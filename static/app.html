@@ -331,7 +331,7 @@ async function doLogin(){
   errEl.classList.add('hidden');
 
   if(tok){
-    // Static token login — test it
+    // Static token login — test against real endpoint
     try{
       const r=await fetch('/api/v2/status',{headers:{'X-Jarvis-Token':tok}});
       if(r.ok){setToken(tok,'admin');enterApp();return}
@@ -340,12 +340,17 @@ async function doLogin(){
   }
   if(!user||!pass){errEl.textContent='Remplissez les champs';errEl.classList.remove('hidden');return}
   try{
-    const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    // Backend uses OAuth2 form-data, NOT JSON
+    const body=new URLSearchParams();body.append('username',user);body.append('password',pass);
+    const r=await fetch('/auth/login',{method:'POST',body:body});
     const d=await r.json();
-    if(d.ok!==false&&(d.token||d.access_token)){
-      setToken(d.token||d.access_token,d.role||'user');enterApp();
-    }else{errEl.textContent=d.error||'Identifiants incorrects';errEl.classList.remove('hidden')}
-  }catch(e){errEl.textContent='Erreur de connexion';errEl.classList.remove('hidden')}
+    if(d.access_token){
+      // JWT login: decode role from token payload
+      let role='user';
+      try{const p=JSON.parse(atob(d.access_token.split('.')[1]));role=p.role||'user'}catch(e){}
+      setToken(d.access_token,role);enterApp();
+    }else{errEl.textContent=d.detail||d.error||'Identifiants incorrects';errEl.classList.remove('hidden')}
+  }catch(e){errEl.textContent='Erreur de connexion au serveur';errEl.classList.remove('hidden')}
 }
 
 function logout(){sessionStorage.clear();TOKEN='';ROLE='user';location.reload()}
@@ -506,19 +511,28 @@ async function openMission(id){
 
   const d=await api('/api/v2/missions/'+id);
   if(!d||!d.data){document.getElementById('detail-content').innerHTML='<div class="empty">Mission introuvable</div>';return}
+  // Real structure: d.data contains all fields directly (no d.data.mission wrapper)
   const m=d.data.mission||d.data;
-  const outputs=d.data.agent_outputs||m.agent_outputs||{};
+  const outputs=m.agent_outputs||{};
   const isErr=m.status==='FAILED'||m.status==='REJECTED';
-  const result=m.final_output||m.result||m.output||'';
+  const result=m.final_output||m.summary||'';
   const planSteps=m.plan_steps||[];
-  const agentsList=m.agents_selected||m.agents||[];
+  const agentsList=m.agents_selected||[];
+  const confidence=m.confidence_score;
+  const fallback=m.fallback_level_used;
+  const approvalReason=m.approval_reason||'';
+  const riskLevel=m.plan_risk||'';
 
   let html=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
       ${statusBadge(m.status)}
+      ${riskLevel?'<span class="badge badge-default">Risque: '+esc(riskLevel)+'</span>':''}
+      ${m.intent?'<span class="badge badge-default">'+esc(m.intent)+'</span>':''}
+      ${confidence!=null?'<span style="font-size:11px;color:var(--t4)">Confiance: '+Math.round(confidence*100)+'%</span>':''}
       <span style="font-size:11px;color:var(--t4)">${m.mission_id}</span>
       <span style="font-size:11px;color:var(--t4)">${timeAgo(m.created_at)}</span>
     </div>
+    ${approvalReason?'<div style="font-size:12px;color:var(--t3);margin-bottom:12px;font-style:italic">'+esc(approvalReason)+'</div>':''}
 
     <div class="detail-section">
       <div class="detail-label">Objectif</div>
@@ -535,9 +549,16 @@ async function openMission(id){
     html+=`</div></div>`;
   }
 
-  if(Object.keys(outputs).length>0){
+  if(agentsList.length>0){
+    html+=`<div class="detail-section"><div class="detail-label">Agents utilisés</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${agentsList.map(a=>'<span class="badge badge-default">'+esc(a)+'</span>').join('')}</div></div>`;
+  }
+
+  // agent_outputs: may be dict with content, or empty dict
+  const outputEntries=Object.entries(outputs).filter(([k,v])=>v&&String(v).trim());
+  if(outputEntries.length>0){
     html+=`<div class="detail-section"><div class="detail-label">Résultats par agent</div>`;
-    for(const[agent,text]of Object.entries(outputs)){
+    for(const[agent,text]of outputEntries){
       html+=`<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);padding:8px 0">${esc(agent)}</summary><div class="detail-block">${esc(String(text))}</div></details>`;
     }
     html+=`</div>`;
@@ -630,11 +651,15 @@ async function loadAdmin(){
       html+=`</div>`;
     }
   }
-  if(health){
+  if(health?.data){
+    const hd=health.data;
     html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Santé système</div>`;
-    const s=health.status||health;
-    html+=`<div style="margin-bottom:8px">Statut global : <span class="badge ${s==='healthy'?'badge-done':'badge-failed'}">${s}</span></div>`;
-    if(health.memory_mb)html+=`<div style="font-size:12px;color:var(--t3)">Mémoire : ${health.memory_mb} MB</div>`;
+    html+=`<div style="margin-bottom:8px">Statut global : <span class="badge ${hd.status==='ok'?'badge-done':'badge-failed'}">${hd.status||'?'}</span></div>`;
+    const comps=hd.components||{};
+    html+=Object.entries(comps).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px">
+      <span style="color:var(--t2)">${esc(v.name||k)}</span>
+      <span class="badge btn-sm ${v.status==='ok'?'badge-done':'badge-failed'}">${v.status||'?'}${v.latency_ms?' · '+v.latency_ms+'ms':''}</span>
+    </div>`).join('');
     html+=`</div>`;
   }
   if(metrics&&metrics.data){
@@ -671,12 +696,13 @@ async function loadModules(){
   const h=await api('/api/v3/modules/health');
   if(h){
     const s=h;
+    const ag=s.agents||{},mc=s.mcp||{},cn=s.connectors||{},sk=s.skills||{};
     document.getElementById('mod-health').innerHTML=`
       <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat"><div class="stat-val">${s.agents?.total||0}</div><div class="stat-lbl">Agents (${s.agents?.ready||0} prêts)</div></div>
-        <div class="stat"><div class="stat-val">${s.mcp?.total||0}</div><div class="stat-lbl">MCP (${s.mcp?.connected||0} connectés)</div></div>
-        <div class="stat"><div class="stat-val">${s.connectors?.total||0}</div><div class="stat-lbl">Connecteurs</div></div>
-        <div class="stat"><div class="stat-val">${(s.mcp?.zero_tools||0)>0?'⚠️':'✓'}</div><div class="stat-lbl">${s.mcp?.zero_tools||0} MCP sans outils</div></div>
+        <div class="stat"><div class="stat-val">${ag.total||0}</div><div class="stat-lbl">Agents (${ag.ready||0} prêts)</div></div>
+        <div class="stat"><div class="stat-val">${mc.total||0}</div><div class="stat-lbl">MCP (${mc.connected||0} connectés)</div></div>
+        <div class="stat"><div class="stat-val">${sk.total||cn.total||0}</div><div class="stat-lbl">Skills (${sk.enabled||0} actifs)</div></div>
+        <div class="stat"><div class="stat-val">${mc.zero_tools||0}</div><div class="stat-lbl">MCP sans outils</div></div>
       </div>`;
   }
   let items=[];
@@ -691,7 +717,7 @@ async function loadModules(){
     items=(d?.connectors||[]).map(c=>({id:c.name||c.id,name:c.name||c.id,desc:c.description||'',status:c.enabled?'enabled':'disabled',icon:'🔌',type:'connectors'}));
   }else if(CURRENT_MOD_TAB==='mcp'){
     const d=await api('/api/v3/mcp');
-    items=(d?.mcp||[]).map(m=>({id:m.id,name:m.name||m.id,desc:m.description||m.transport||'',status:m.status||'enabled',icon:'⚡',type:'mcp',tools:m.tools_count||0}));
+    items=(d?.mcp||[]).map(m=>({id:m.id,name:m.name||m.id,desc:m.description||m.transport||'',status:m.status||'enabled',icon:'⚡',type:'mcp',tools:Array.isArray(m.tools)?m.tools.length:(m.tools_count||0)}));
   }
   if(items.length===0){
     document.getElementById('mod-content').innerHTML='<div class="empty"><div class="empty-icon">📦</div>Aucun module dans cette catégorie</div>';
@@ -708,15 +734,19 @@ async function loadModules(){
       <div class="mod-icon">${m.icon}</div>
       <div class="mod-info"><div class="mod-name">${esc(m.name)}</div><div class="mod-desc">${esc(m.desc)}${m.type==='mcp'?' · '+m.tools+' outil'+(m.tools!==1?'s':''):''}</div></div>
       <span class="badge ${realClass}">${realLabel}</span>
-      <div class="toggle ${isOn?'on':''}" onclick="toggleModule('${m.type}','${m.id}',${!isOn})" title="${isOn?'Désactiver':'Activer'}"></div>
+      <div class="toggle ${isOn?'on':''}" onclick="toggleModule('${m.type}','${m.id}')" title="${isOn?'Désactiver':'Activer'}"></div>
     </div>`;
   }).join('');
 }
 
-async function toggleModule(type,id,enable){
-  const r=await api(`/api/v3/${type}/${id}/toggle`,{method:'POST',body:JSON.stringify({enabled:enable})});
-  if(r&&r.ok!==false){toast((enable?'Activé':'Désactivé')+' ✓');loadModules()}
-  else{toast(r?.error||'Erreur lors du toggle','err')}
+async function toggleModule(type,id){
+  // Backend toggle is a flipflop — no body needed, response contains new status
+  const r=await api(`/api/v3/${type}/${id}/toggle`,{method:'POST'});
+  if(r){
+    const newSt=r.status||'?';
+    toast(newSt==='enabled'?'Activé ✓':'Désactivé');
+    loadModules();
+  }else{toast('Erreur lors du toggle','err')}
 }
 
 // ── System ──────────────────────────────────────────────────────────────────
@@ -725,13 +755,21 @@ async function loadSystem(){
   document.getElementById('sys-content').innerHTML='<div class="spin"></div>';
   const[health,caps]=await Promise.all([api('/api/health'),api('/api/v2/system/capabilities')]);
   let html='';
-  if(health&&health.data){
-    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Composants</div>`;
+  if(health?.data){
     const comps=health.data.components||{};
-    html+=Object.entries(comps).map(([k,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b-subtle)">
-      <span style="font-size:13px;font-weight:500">${esc(v.name||k)}</span>
-      <span class="badge ${v.status==='ok'?'badge-done':'badge-failed'}">${v.status||'?'}</span>
-    </div>`).join('');
+    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Composants (${Object.keys(comps).length})</div>`;
+    html+=Object.entries(comps).map(([k,v])=>{
+      const meta=v.metadata||{};
+      let sub='';
+      if(meta.model)sub=meta.model;
+      else if(meta.backend)sub=meta.backend;
+      else if(meta.running!==undefined)sub=meta.running?'actif':'arrêté';
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b-subtle)">
+        <div><span style="font-size:13px;font-weight:500">${esc(v.name||k)}</span>${sub?'<span style="font-size:11px;color:var(--t4);margin-left:8px">'+esc(sub)+'</span>':''}</div>
+        <span class="badge ${v.status==='ok'?'badge-done':'badge-failed'}">${v.status||'?'}</span>
+      </div>`;
+    }).join('');
+    if(health.data.version)html+=`<div style="font-size:11px;color:var(--t4);margin-top:8px">Version API : ${esc(health.data.version)}</div>`;
     html+=`</div>`;
   }
   if(caps&&caps.data){
