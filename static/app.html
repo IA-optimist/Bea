@@ -1,896 +1,790 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Jarvis — AI Operating System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   JARVIS — AI OS  |  Design System v3
-   Premium, calm, high-trust. Progressive disclosure.
-   ═══════════════════════════════════════════════════════════════ */
-:root {
-  --bg-base:#09090b;--bg-surface:#111113;--bg-elevated:#18181b;
-  --bg-overlay:#1f1f23;--bg-hover:#27272a;--bg-active:#2d2d32;
-  --border-subtle:#1f1f23;--border-default:#27272a;--border-strong:#3f3f46;--border-focus:#3b82f6;
-  --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;--text-dim:#52525b;
-  --blue:#3b82f6;--blue-soft:rgba(59,130,246,.10);--blue-glow:rgba(59,130,246,.20);
-  --green:#22c55e;--green-soft:rgba(34,197,94,.10);
-  --amber:#f59e0b;--amber-soft:rgba(245,158,11,.10);
-  --red:#ef4444;--red-soft:rgba(239,68,68,.10);
-  --violet:#8b5cf6;--violet-soft:rgba(139,92,246,.10);
-  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;
-  --font:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-  --font-mono:'JetBrains Mono','Fira Code',ui-monospace,monospace;
-  --ease:cubic-bezier(.25,.1,.25,1);--dur:200ms;
-  --sidebar-w:260px;
-}
+:root{--bg:#09090b;--surface:#111113;--elevated:#18181b;--overlay:#1f1f23;--hover:#27272a;--active:#2d2d32;--b-subtle:#1f1f23;--b-default:#27272a;--b-strong:#3f3f46;--b-focus:#3b82f6;--t1:#fafafa;--t2:#a1a1aa;--t3:#71717a;--t4:#52525b;--blue:#3b82f6;--blue-s:rgba(59,130,246,.1);--green:#22c55e;--green-s:rgba(34,197,94,.1);--amber:#f59e0b;--amber-s:rgba(245,158,11,.1);--red:#ef4444;--red-s:rgba(239,68,68,.1);--violet:#8b5cf6;--violet-s:rgba(139,92,246,.1);--r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;--font:'Inter',system-ui,sans-serif}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden;height:100vh}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-default);border-radius:3px}
-a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;border:none;background:none}input,textarea{font-family:inherit}
+body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden;height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--b-default);border-radius:3px}
+a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;color:var(--t1)}
 
-/* ─── Layout ──────────────────────────────────────────────── */
-.app-shell{display:flex;height:100vh}
-
-/* ─── Sidebar ─────────────────────────────────────────────── */
-.sidebar{width:var(--sidebar-w);background:var(--bg-surface);border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width var(--dur) var(--ease)}
-.sidebar-header{padding:20px 20px 16px;border-bottom:1px solid var(--border-subtle)}
+/* Layout */
+.shell{display:flex;height:100vh}
+.sidebar{width:250px;background:var(--surface);border-right:1px solid var(--b-subtle);display:flex;flex-direction:column;flex-shrink:0;transition:transform .2s}
+.sidebar-hdr{padding:20px 16px 14px;border-bottom:1px solid var(--b-subtle)}
 .brand{display:flex;align-items:center;gap:10px}
 .brand-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--violet));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
-.brand-text{display:flex;flex-direction:column}
-.brand-name{font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.2}
-.brand-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-.sidebar-status{margin-top:14px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elevated);border-radius:var(--radius-sm);border:1px solid var(--border-subtle)}
-.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--text-dim)}
-.status-dot.online{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
-.status-dot.error{background:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
-.status-text{font-size:12px;color:var(--text-secondary)}
-
-/* ─── Nav ─────────────────────────────────────────────────── */
-.sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px}
+.brand-name{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.brand-sub{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 8px}
 .nav-group{margin-bottom:4px}
-.nav-group-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:12px 12px 6px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius-sm);color:var(--text-secondary);font-size:13px;font-weight:500;transition:background 120ms,color 120ms;cursor:pointer;position:relative;border-left:2px solid transparent}
-.nav-item:hover{background:var(--bg-hover);color:var(--text-primary)}
-.nav-item.active{background:var(--blue-soft);color:var(--blue);border-left-color:var(--blue)}
-.nav-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0;opacity:.75}
-.nav-item.active .nav-icon{opacity:1}
-.nav-badge{margin-left:auto;background:var(--amber-soft);color:var(--amber);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
-.nav-badge.blue{background:var(--blue-soft);color:var(--blue)}
+.nav-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--t4);padding:12px 12px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-sm);color:var(--t2);font-size:13px;font-weight:500;cursor:pointer;border-left:2px solid transparent;transition:all .12s}
+.nav-item:hover{background:var(--hover);color:var(--t1)}
+.nav-item.active{background:var(--blue-s);color:var(--blue);border-left-color:var(--blue)}
+.nav-icon{width:18px;text-align:center;font-size:14px;opacity:.75}
+.nav-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:var(--amber);color:#000;margin-left:auto}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--b-subtle);font-size:11px;color:var(--t4)}
 
-/* Mode visibility */
-.nav-item[data-mode="full"],.nav-item[data-mode="admin"]{display:none}
-[data-app-mode="full"] .nav-item[data-mode="full"],[data-app-mode="admin"] .nav-item[data-mode="full"],[data-app-mode="admin"] .nav-item[data-mode="admin"]{display:flex}
-.nav-group-label[data-mode="full"],.nav-group-label[data-mode="admin"]{display:none}
-[data-app-mode="full"] .nav-group-label[data-mode="full"],[data-app-mode="admin"] .nav-group-label[data-mode="full"],[data-app-mode="admin"] .nav-group-label[data-mode="admin"]{display:block}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-hdr{padding:14px 20px;border-bottom:1px solid var(--b-subtle);display:flex;align-items:center;gap:12px}
+.main-title{font-size:16px;font-weight:700}
+.main-body{flex:1;overflow-y:auto;padding:20px}
+.menu-btn{display:none;font-size:20px;padding:4px 8px}
 
-/* ─── Sidebar Footer ──────────────────────────────────────── */
-.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border-subtle)}
-.mode-switch{display:flex;background:var(--bg-elevated);border-radius:var(--radius-sm);padding:3px;gap:2px;border:1px solid var(--border-subtle)}
-.mode-btn{flex:1;padding:6px 0;font-size:11px;font-weight:600;color:var(--text-muted);border-radius:4px;text-align:center;transition:all 120ms}
-.mode-btn:hover{color:var(--text-secondary)}
-.mode-btn.active{background:var(--bg-active);color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--b-subtle);border-radius:var(--r-md);padding:16px}
+.card-header{font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--b-subtle);border-radius:var(--r-md);padding:14px;text-align:center}
+.stat-val{font-size:24px;font-weight:700;line-height:1}
+.stat-lbl{font-size:11px;color:var(--t3);margin-top:4px}
 
-/* ─── Main ────────────────────────────────────────────────── */
-.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.main-header{height:52px;padding:0 28px;display:flex;align-items:center;border-bottom:1px solid var(--border-subtle);flex-shrink:0}
-.main-title{font-size:15px;font-weight:600;color:var(--text-primary);letter-spacing:-.2px}
-.main-header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.main-body{flex:1;overflow-y:auto;padding:28px}
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-done{background:var(--green-s);color:var(--green)}.badge-running{background:var(--blue-s);color:var(--blue)}
+.badge-failed{background:var(--red-s);color:var(--red)}.badge-pending{background:var(--amber-s);color:var(--amber)}
+.badge-planned{background:var(--violet-s);color:var(--violet)}.badge-default{background:var(--overlay);color:var(--t3)}
+.badge-enabled{background:var(--green-s);color:var(--green)}.badge-disabled{background:var(--overlay);color:var(--t4)}
+.badge-registered{background:var(--blue-s);color:var(--blue)}
 
-/* ─── Views ───────────────────────────────────────────────── */
-.view-panel{display:none}.view-panel.active{display:block}
-.view-panel iframe{width:100%;height:calc(100vh - 52px);border:none}
+/* Buttons */
+.btn{padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transition:all .12s;border:1px solid transparent}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{opacity:.9}
+.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;color:var(--t2);border-color:var(--b-default)}.btn-ghost:hover{background:var(--hover);color:var(--t1)}
+.btn-sm{padding:4px 10px;font-size:11px}
 
-/* ─── Chat ────────────────────────────────────────────────── */
-.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px);overflow:hidden}
-.chat-messages{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px}
-.chat-bubble{max-width:72%;animation:fadeUp .18s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.chat-bubble.user{align-self:flex-end}
-.chat-bubble.jarvis{align-self:flex-start}
-.bubble-inner{padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.6}
-.chat-bubble.user .bubble-inner{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
-.chat-bubble.jarvis .bubble-inner{background:var(--bg-elevated);border:1px solid var(--border-default);color:var(--text-primary);border-bottom-left-radius:4px}
-.bubble-meta{font-size:11px;color:var(--text-dim);margin-top:4px}
-.chat-bubble.user .bubble-meta{text-align:right}
-.bubble-inner pre{white-space:pre-wrap;font-family:var(--font-mono);font-size:12px;margin-top:8px;padding:10px;background:rgba(0,0,0,.25);border-radius:6px}
-.chat-input-bar{border-top:1px solid var(--border-subtle);padding:16px 24px;display:flex;gap:10px;align-items:flex-end;background:var(--bg-surface)}
-.chat-input-bar textarea{flex:1;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-family:var(--font);font-size:13px;padding:10px 14px;resize:none;min-height:44px;max-height:140px;line-height:1.5;transition:border-color .15s;overflow-y:auto}
-.chat-input-bar textarea:focus{outline:none;border-color:var(--border-focus)}
-.chat-input-bar textarea::placeholder{color:var(--text-dim)}
-.chat-send-btn{width:40px;height:40px;background:var(--blue);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;font-size:16px;color:#fff}
-.chat-send-btn:disabled{opacity:.4}
-.chat-send-btn:not(:disabled):hover{opacity:.85}
-.chat-typing{display:flex;align-items:center;gap:5px;padding:10px 14px}
-.chat-typing span{width:7px;height:7px;border-radius:50%;background:var(--text-dim);animation:bounce 1.2s ease-in-out infinite}
-.chat-typing span:nth-child(2){animation-delay:.2s}
-.chat-typing span:nth-child(3){animation-delay:.4s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-dim)}
-.chat-empty-icon{font-size:40px;opacity:.5}
-.chat-empty-text{font-size:14px;color:var(--text-secondary)}
-.chat-suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
-.chat-suggestion{padding:8px 14px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:20px;font-size:12px;color:var(--text-secondary);cursor:pointer;transition:all .15s}
-.chat-suggestion:hover{border-color:var(--blue);color:var(--blue)}
+/* Forms */
+.input{width:100%;padding:10px 14px;background:var(--elevated);border:1px solid var(--b-default);border-radius:var(--r-sm);font-size:14px;color:var(--t1);outline:none}
+.input:focus{border-color:var(--blue)}
+.textarea{min-height:80px;resize:vertical}
 
-/* ─── Skeleton ────────────────────────────────────────────── */
-@keyframes shimmer{0%{opacity:.06}50%{opacity:.1}100%{opacity:.06}}
-.skeleton{background:var(--text-primary);border-radius:4px;animation:shimmer 1.5s ease-in-out infinite}
+/* Table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--b-subtle)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--b-subtle);font-size:13px}
+.tbl tr:hover td{background:var(--hover)}
 
-/* ─── Badges ──────────────────────────────────────────────── */
-.badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:10px;letter-spacing:.3px;white-space:nowrap}
-.badge-running{background:var(--blue-soft);color:var(--blue)}.badge-completed,.badge-done{background:var(--green-soft);color:var(--green)}
-.badge-failed{background:var(--red-soft);color:var(--red)}.badge-pending,.badge-awaiting_approval{background:var(--amber-soft);color:var(--amber)}
-.risk-low{background:var(--green-soft);color:var(--green)}.risk-medium{background:var(--amber-soft);color:var(--amber)}
-.risk-high,.risk-critical{background:var(--red-soft);color:var(--red)}
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--b-subtle);padding:0 4px;margin-bottom:16px}
+.tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s}
+.tab:hover{color:var(--t1)}.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
-/* ─── Cards ───────────────────────────────────────────────── */
-.card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:16px;transition:border-color 120ms}
-.card:hover{border-color:var(--border-default)}
-.card-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;transition:border-color 120ms,background 120ms}
-.card-row:hover{border-color:var(--border-default);background:var(--bg-elevated)}
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:500;z-index:999;animation:slideUp .2s;max-width:340px}
+.toast-ok{background:var(--green);color:#fff}.toast-err{background:var(--red);color:#fff}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-/* ─── Readiness Meter ─────────────────────────────────────── */
-.meter{height:6px;background:var(--bg-overlay);border-radius:3px;overflow:hidden}
-.meter-fill{height:100%;border-radius:3px;transition:width .5s var(--ease)}
+/* Spinner */
+.spin{width:20px;height:20px;border:2px solid var(--b-default);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;margin:20px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ─── Empty State ─────────────────────────────────────────── */
-.empty-state{text-align:center;padding:48px 20px;color:var(--text-dim);font-size:13px;background:var(--bg-surface);border:1px dashed var(--border-default);border-radius:var(--radius-md)}
-.empty-state-icon{font-size:32px;margin-bottom:10px}
-.empty-state-title{font-size:15px;color:var(--text-secondary);font-weight:600;margin-bottom:4px}
+/* Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--t3)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
 
-/* ─── Toast ───────────────────────────────────────────────── */
-.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:var(--radius-md);font-size:13px;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .3s var(--ease);pointer-events:none}
-.toast.show{transform:translateX(0)}
-.toast.ok{background:var(--green);color:#fff}.toast.err{background:var(--red);color:#fff}
+/* Mission list */
+.mission-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-sm);cursor:pointer;transition:background .12s}
+.mission-row:hover{background:var(--hover)}
+.mission-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.mission-goal{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mission-time{font-size:11px;color:var(--t4);flex-shrink:0}
 
-/* ─── Buttons ─────────────────────────────────────────────── */
-.btn-primary{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 20px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:opacity 120ms}
-.btn-primary:hover{opacity:.88}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-ghost{font-size:12px;color:var(--text-muted);padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-default);transition:all 120ms}
-.btn-ghost:hover{color:var(--text-primary);border-color:var(--border-strong)}
-.btn-green{background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 20px;font-size:13px;font-weight:600}
-.btn-green:hover{opacity:.88}
-.btn-red-outline{background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--radius-sm);padding:7px 18px;font-size:13px;font-weight:600}
-.btn-red-outline:hover{background:var(--red-soft)}
+/* Module card */
+.mod-card{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--b-subtle);border-radius:var(--r-md);margin-bottom:8px}
+.mod-icon{width:36px;height:36px;border-radius:var(--r-sm);background:var(--elevated);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.mod-info{flex:1;min-width:0}
+.mod-name{font-size:14px;font-weight:600}
+.mod-desc{font-size:12px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--b-default);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
 
-/* ─── Section ─────────────────────────────────────────────── */
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
-.section-count{background:var(--bg-overlay);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--text-dim);font-weight:600}
+/* Detail panel */
+.detail-section{margin-bottom:20px}
+.detail-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.detail-block{background:var(--elevated);border:1px solid var(--b-subtle);border-radius:var(--r-sm);padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:400px;overflow-y:auto}
+.copy-btn{font-size:11px;color:var(--t3);cursor:pointer;margin-left:8px}
+.copy-btn:hover{color:var(--blue)}
 
-/* ─── Stats ───────────────────────────────────────────────── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
-.stat-tile{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:16px 18px}
-.stat-val{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1;margin-bottom:4px}
-.stat-lbl{font-size:12px;color:var(--text-muted);font-weight:500}
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+.login-box{width:360px;padding:40px;background:var(--surface);border:1px solid var(--b-subtle);border-radius:var(--r-lg)}
+.login-brand{text-align:center;margin-bottom:32px}
+.login-brand h1{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.login-brand p{font-size:12px;color:var(--t3);margin-top:4px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:12px;font-weight:500;color:var(--t3);margin-bottom:4px}
+.login-err{color:var(--red);font-size:12px;margin-bottom:12px}
 
-/* ─── Composer ────────────────────────────────────────────── */
-.composer{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:28px;transition:border-color var(--dur),box-shadow var(--dur)}
-.composer:focus-within{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--blue-glow)}
-.composer textarea{width:100%;background:none;border:none;color:var(--text-primary);font-size:15px;line-height:1.6;resize:none;outline:none;min-height:70px}
-.composer textarea::placeholder{color:var(--text-dim)}
-.composer-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle)}
-.composer-hint{font-size:12px;color:var(--text-dim)}
-.composer-hint kbd{background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:4px;padding:1px 6px;font-size:11px;font-family:var(--font-mono)}
-
-/* ─── Mission Detail ──────────────────────────────────────── */
-.detail-back{font-size:13px;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:16px}
-.detail-back:hover{color:var(--text-primary)}
-.detail-title{font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px;letter-spacing:-.2px}
-.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
-.detail-cell{background:var(--bg-elevated);border-radius:var(--radius-sm);padding:12px}
-.detail-cell-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
-.detail-cell-value{font-size:14px;font-weight:600;color:var(--text-primary)}
-.detail-section{margin-top:20px}
-.detail-section h3{font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-
-/* ─── Approval Card ───────────────────────────────────────── */
-.approval-card{background:var(--bg-surface);border-radius:var(--radius-lg);padding:20px;margin-bottom:12px}
-.approval-what{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.approval-desc{font-size:15px;font-weight:500;color:var(--text-primary);line-height:1.5;margin-bottom:10px}
-.approval-meta{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px}
-.approval-consequences{background:var(--bg-overlay);border-radius:var(--radius-sm);padding:10px 12px;margin:12px 0;font-size:12px;color:var(--text-secondary)}
-.approval-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
-
-/* ─── System View ─────────────────────────────────────────── */
-.sys-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.sys-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:18px}
-.sys-card h4{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
-.limitation-item{display:flex;align-items:start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:13px}
-.limitation-item:last-child{border-bottom:none}
-.cap-item{display:flex;align-items:center;gap:10px;padding:6px 0}
-.cap-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
-/* ─── Responsive ──────────────────────────────────────────── */
+/* Responsive */
 @media(max-width:768px){
-  .sidebar{width:0;overflow:hidden;position:fixed;z-index:999;height:100vh}.sidebar.open{width:280px}
-  .stats-row{grid-template-columns:repeat(2,1fr)}.main-body{padding:20px 16px}
-  .sys-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}
-  #menu-btn{display:block!important}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .menu-btn{display:block}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
 }
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.fade-in{animation:fadeIn .3s var(--ease) both}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.hidden{display:none!important}
+.view{display:none}.view.active{display:block}
 </style>
 </head>
-<body data-app-mode="lite">
-<div class="app-shell">
+<body>
 
-<!-- ═══ SIDEBAR ═══════════════════════════════════════════════ -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <div class="brand"><div class="brand-mark">J</div><div class="brand-text"><div class="brand-name">Jarvis</div><div class="brand-label">AI Operating System</div></div></div>
-    <div class="sidebar-status"><div class="status-dot" id="status-dot"></div><span class="status-text" id="status-text">Connecting…</span></div>
+<!-- ═══ LOGIN ═══ -->
+<div id="login-page" class="login-wrap">
+  <div class="login-box">
+    <div class="login-brand">
+      <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--violet));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px">J</div>
+      <h1>Jarvis</h1>
+      <p>AI Operating System</p>
+    </div>
+    <div id="login-err" class="login-err hidden"></div>
+    <div class="login-field">
+      <label>Nom d'utilisateur</label>
+      <input id="login-user" class="input" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Mot de passe</label>
+      <input id="login-pass" class="input" type="password" placeholder="••••••" autocomplete="current-password">
+    </div>
+    <div style="margin:8px 0 16px;text-align:center;font-size:11px;color:var(--t4)">— ou —</div>
+    <div class="login-field">
+      <label>Token d'accès (API Token)</label>
+      <input id="login-token" class="input" placeholder="Collez votre token…">
+    </div>
+    <button id="login-btn" class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()">Se connecter</button>
   </div>
-  <nav class="sidebar-nav">
-    <div class="nav-group">
-      <div class="nav-group-label">Core</div>
-      <div class="nav-item active" data-view="home" onclick="nav(this)"><span class="nav-icon">🏠</span>Home</div>
-      <div class="nav-item" data-view="chat" onclick="nav(this)"><span class="nav-icon">💬</span>Chat</div>
-      <div class="nav-item" data-view="missions" onclick="nav(this)"><span class="nav-icon">🚀</span>Missions<span class="nav-badge blue" id="nav-m-count" style="display:none"></span></div>
-      <div class="nav-item" data-view="approvals" onclick="nav(this)"><span class="nav-icon">✅</span>Approvals<span class="nav-badge" id="nav-a-count" style="display:none"></span></div>
-    </div>
-    <div class="nav-group">
-      <div class="nav-group-label" data-mode="full">Operate</div>
-      <div class="nav-item" data-view="runs" data-mode="full" onclick="nav(this)"><span class="nav-icon">▶️</span>Plan Runs</div>
-      <div class="nav-item" data-view="modules" data-mode="full" onclick="nav(this)"><span class="nav-icon">🧩</span>Modules</div>
-      <div class="nav-item" data-view="operations" data-mode="full" onclick="nav(this)"><span class="nav-icon">🎯</span>Operations</div>
-      <div class="nav-item" data-view="economic" data-mode="full" onclick="nav(this)"><span class="nav-icon">💡</span>Economic</div>
-    </div>
-    <div class="nav-group">
-      <div class="nav-group-label" data-mode="admin">System</div>
-      <div class="nav-item" data-view="system" data-mode="admin" onclick="nav(this)"><span class="nav-icon">🧠</span>System Health</div>
-      <div class="nav-item" data-view="routing" data-mode="admin" onclick="nav(this)"><span class="nav-icon">⚡</span>Routing</div>
-      <div class="nav-item" data-view="events" data-mode="admin" onclick="nav(this)"><span class="nav-icon">📋</span>Events</div>
-      <div class="nav-item" data-view="dashboard" data-mode="admin" onclick="nav(this)"><span class="nav-icon">📊</span>Dashboard</div>
-      <div class="nav-item" data-view="mcp" data-mode="admin" onclick="nav(this)"><span class="nav-icon">🔌</span>MCP</div>
-      <div class="nav-item" data-view="finance" data-mode="admin" onclick="nav(this)"><span class="nav-icon">💰</span>Finance</div>
-    </div>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="mode-switch">
-      <button class="mode-btn active" data-mode="lite" onclick="setMode('lite')">Lite</button>
-      <button class="mode-btn" data-mode="full" onclick="setMode('full')">Full</button>
-      <button class="mode-btn" data-mode="admin" id="admin-mode-btn" onclick="requireAdminMode()" title="Admin access required">Admin</button>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 2px">
-      <span style="font-size:11px;color:var(--text-muted)" id="session-user"></span>
-      <button onclick="logout()" style="font-size:11px;color:var(--text-muted);padding:4px 8px;border-radius:4px;border:1px solid var(--border-subtle);background:none;cursor:pointer;transition:color .15s" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">Sign out</button>
-    </div>
-  </div>
-</aside>
-
-<!-- ═══ MAIN ══════════════════════════════════════════════════ -->
-<main class="main-content">
-  <div class="main-header">
-    <button class="btn-ghost" id="menu-btn" onclick="toggleSidebar()" style="display:none;margin-right:8px">☰</button>
-    <span class="main-title" id="main-title">Home</span>
-    <div class="main-header-right">
-      <span style="font-size:11px;color:var(--text-dim)" id="ws-dot">●</span>
-      <a href="/login.html" onclick="logout();return false;" style="font-size:12px;color:var(--text-muted);text-decoration:none;padding:4px 10px;border:1px solid var(--border-subtle);border-radius:6px;margin-left:8px;transition:all .15s" onmouseover="this.style.borderColor='var(--border-default)'" onmouseout="this.style.borderColor='var(--border-subtle)'">↩ Logout</a>
-    </div>
-  </div>
-  <div class="main-body" id="main-body">
-
-    <!-- ═══ HOME ══════════════════════════════════════════════ -->
-    <div class="view-panel active" id="view-home">
-      <div class="fade-in">
-        <div style="margin-bottom:32px"><div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:4px" id="home-date"></div><div style="font-size:clamp(24px,3.5vw,36px);font-weight:700;letter-spacing:-.5px;line-height:1.2" id="home-greeting"></div></div>
-
-        <!-- Readiness -->
-        <div id="home-readiness" style="display:none;margin-bottom:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;color:var(--text-secondary);font-weight:500">System Readiness</span>
-            <span style="font-size:12px;font-weight:700" id="readiness-pct"></span>
-          </div>
-          <div class="meter"><div class="meter-fill" id="readiness-bar"></div></div>
-        </div>
-
-        <!-- Approval alert -->
-        <div id="home-alert" style="display:none;background:var(--amber-soft);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius-md);padding:14px 18px;margin-bottom:24px;align-items:center;gap:12px;cursor:pointer" onclick="nav(document.querySelector('[data-view=approvals]'))">
-          <span style="font-size:18px">⏳</span>
-          <div style="flex:1"><strong style="color:var(--amber)" id="alert-count"></strong><br><span style="font-size:12px;color:var(--text-secondary)">Jarvis needs your decision before proceeding</span></div>
-          <span style="color:var(--amber)">→</span>
-        </div>
-
-        <!-- Composer -->
-        <div class="composer">
-          <textarea id="composer" placeholder="What do you need? Research, analysis, code, automation…" rows="3"></textarea>
-          <div class="composer-footer">
-            <span class="composer-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to submit</span>
-            <button class="btn-primary" id="submit-btn" onclick="submitMission()"><span id="submit-lbl">▶ Run Mission</span></button>
-          </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="stats-row" id="home-stats">
-          <div class="stat-tile"><div class="stat-val" id="s-active" style="color:var(--blue)">—</div><div class="stat-lbl">Active</div></div>
-          <div class="stat-tile"><div class="stat-val" id="s-done" style="color:var(--green)">—</div><div class="stat-lbl">Completed</div></div>
-          <div class="stat-tile"><div class="stat-val" id="s-failed" style="color:var(--red)">—</div><div class="stat-lbl">Failed</div></div>
-          <div class="stat-tile"><div class="stat-val" id="s-uptime">—</div><div class="stat-lbl">Uptime</div></div>
-        </div>
-
-        <!-- Recent missions -->
-        <div class="section-head">
-          <div class="section-label">Recent Missions <span class="section-count" id="m-count">—</span></div>
-          <button class="btn-ghost" onclick="loadMissions()">↺ Refresh</button>
-        </div>
-        <div id="home-missions"><div class="empty-state"><div class="empty-state-icon">🚀</div><div class="empty-state-title">Loading missions…</div></div></div>
-      </div>
-    </div>
-
-    <!-- ═══ MISSIONS (inline) ═════════════════════════════════ -->
-    <div class="view-panel" id="view-missions">
-      <div id="missions-list-view">
-        <div class="section-head"><div class="section-label">All Missions <span class="section-count" id="ml-count">—</span></div><button class="btn-ghost" onclick="loadMissionsFull()">↺ Refresh</button></div>
-        <div id="missions-full-list"><div class="empty-state"><div class="empty-state-icon">🚀</div><div class="empty-state-title">Loading…</div></div></div>
-      </div>
-      <div id="missions-detail-view" style="display:none">
-        <div class="detail-back" onclick="closeMissionDetail()">← Back to missions</div>
-        <div id="mission-detail-content"></div>
-      </div>
-    </div>
-
-    <!-- ═══ APPROVALS (inline) ════════════════════════════════ -->
-    <div class="view-panel" id="view-approvals">
-      <div class="section-head"><div class="section-label">Pending Approvals <span class="section-count" id="ap-count">0</span></div><button class="btn-ghost" onclick="loadApprovals()">↺ Refresh</button></div>
-      <div id="approvals-list"><div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">All clear</div>Nothing needs your approval right now.</div></div>
-    </div>
-
-    <!-- ═══ SYSTEM (inline, admin) ════════════════════════════ -->
-    <div class="view-panel" id="view-system">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-        <div style="font-size:18px;font-weight:700;color:var(--text-primary)">System Health</div>
-        <button class="btn-ghost" onclick="loadSystemView()">↺ Refresh</button>
-      </div>
-      <div id="system-content"><div class="empty-state"><div class="empty-state-icon">🧠</div><div class="empty-state-title">Loading system state…</div></div></div>
-    </div>
-
-    <!-- ═══ IFRAME PANELS ═════════════════════════════════════ -->
-    <div class="view-panel" id="view-runs"><iframe data-src="/runs.html"></iframe></div>
-    <div class="view-panel" id="view-modules"><iframe data-src="/modules.html"></iframe></div>
-    <div class="view-panel" id="view-operations"><iframe data-src="/operations.html"></iframe></div>
-    <div class="view-panel" id="view-economic"><iframe data-src="/economic.html"></iframe></div>
-    <div class="view-panel" id="view-routing"><iframe data-src="/capability-routing.html"></iframe></div>
-    <div class="view-panel" id="view-events"><iframe data-src="/cognitive-events.html"></iframe></div>
-    <div class="view-panel" id="view-dashboard"><iframe data-src="/dashboard.html"></iframe></div>
-    <div class="view-panel" id="view-mcp"><iframe data-src="/mcp.html"></iframe></div>
-    <div class="view-panel" id="view-finance"><iframe data-src="/finance.html"></iframe></div>
-
-    <!-- ═══ CHAT ══════════════════════════════════════════════ -->
-    <div class="view-panel" id="view-chat" style="padding:0">
-      <div class="chat-wrap">
-        <div class="chat-messages" id="chat-messages">
-          <div class="chat-empty" id="chat-empty">
-            <div class="chat-empty-icon">💬</div>
-            <div class="chat-empty-text">Ask Jarvis anything</div>
-            <div class="chat-suggestions">
-              <div class="chat-suggestion" onclick="chatSuggest('What can you do?')">What can you do?</div>
-              <div class="chat-suggestion" onclick="chatSuggest('Show me the last 5 missions')">Show last 5 missions</div>
-              <div class="chat-suggestion" onclick="chatSuggest('What is the system status?')">System status</div>
-              <div class="chat-suggestion" onclick="chatSuggest('Search GitHub issues')">Search GitHub issues</div>
-            </div>
-          </div>
-        </div>
-        <div class="chat-input-bar">
-          <textarea id="chat-input" placeholder="Message Jarvis… (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
-          <button class="chat-send-btn" id="chat-send-btn" onclick="chatSend()">➤</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</main>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+<!-- ═══ APP SHELL ═══ -->
+<div id="app" class="shell hidden">
 
-<!-- ═══ JAVASCRIPT ════════════════════════════════════════════ -->
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-hdr">
+      <div class="brand"><div class="brand-mark">J</div><div><div class="brand-name">Jarvis</div><div class="brand-sub">AI Operating System</div></div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-label">Principal</div>
+        <div class="nav-item active" data-v="home" onclick="nav(this)"><span class="nav-icon">🏠</span>Accueil</div>
+        <div class="nav-item" data-v="missions" onclick="nav(this)"><span class="nav-icon">🚀</span>Missions</div>
+        <div class="nav-item" data-v="approvals" onclick="nav(this)"><span class="nav-icon">✅</span>Approbations<span id="nav-appr-n" class="nav-badge hidden">0</span></div>
+      </div>
+      <div id="nav-admin-group" class="nav-group hidden">
+        <div class="nav-label">Administration</div>
+        <div class="nav-item" data-v="admin" onclick="nav(this)"><span class="nav-icon">📊</span>Tableau de bord</div>
+        <div class="nav-item" data-v="modules" onclick="nav(this)"><span class="nav-icon">🧩</span>Modules</div>
+        <div class="nav-item" data-v="system" onclick="nav(this)"><span class="nav-icon">🔧</span>Système</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-item" data-v="settings" onclick="nav(this)"><span class="nav-icon">⚙️</span>Paramètres</div>
+      </div>
+    </nav>
+    <div class="sidebar-foot"><span id="foot-role"></span> · v2.0.0</div>
+  </aside>
+
+  <!-- Overlay for mobile sidebar -->
+  <div id="sidebar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-hdr">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
+      <span id="main-title" class="main-title">Accueil</span>
+      <div style="flex:1"></div>
+      <span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--t4)"></span>
+    </div>
+    <div class="main-body">
+
+      <!-- HOME -->
+      <div id="v-home" class="view active">
+        <div style="margin-bottom:24px">
+          <div id="home-date" style="font-size:12px;color:var(--t3)"></div>
+          <div id="home-greeting" style="font-size:26px;font-weight:700;letter-spacing:-.5px;margin-top:4px"></div>
+        </div>
+        <div id="home-alert" class="hidden" style="background:var(--amber-s);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-md);padding:14px;margin-bottom:20px;cursor:pointer" onclick="nav(document.querySelector('[data-v=approvals]'))">
+          <strong id="home-alert-n" style="color:var(--amber)"></strong>
+          <span style="font-size:12px;color:var(--t2)"> — Jarvis attend votre décision</span>
+        </div>
+        <div class="card" style="margin-bottom:20px">
+          <textarea id="home-input" class="input textarea" placeholder="Que voulez-vous faire ? Recherche, analyse, code, stratégie…" rows="3"></textarea>
+          <div style="display:flex;align-items:center;margin-top:10px;gap:8px">
+            <select id="home-type" class="input" style="max-width:200px;padding:6px 10px;font-size:12px">
+              <option value="">Libre</option>
+              <option value="market_research">Recherche marché</option>
+              <option value="competitor_analysis">Concurrents</option>
+              <option value="positioning">Positionnement</option>
+              <option value="pricing_strategy">Stratégie prix</option>
+              <option value="growth_plan">Plan de croissance</option>
+              <option value="acquisition_strategy">Acquisition</option>
+              <option value="value_proposition">Valeur client</option>
+              <option value="offer_design">Design offre</option>
+              <option value="customer_persona">Persona client</option>
+              <option value="copywriting">Copywriting</option>
+              <option value="funnel_design">Funnel</option>
+              <option value="landing_structure">Landing page</option>
+              <option value="spec_writing">Rédaction spec</option>
+              <option value="automation_opportunity">Automatisation</option>
+              <option value="strategy_reasoning">Conseil stratégique</option>
+            </select>
+            <div style="flex:1"></div>
+            <button id="home-send" class="btn btn-primary" onclick="submitMission()">Lancer la mission</button>
+          </div>
+        </div>
+        <div id="home-stats" class="stat-grid" style="margin-bottom:20px"></div>
+        <div class="card-header">Missions récentes</div>
+        <div id="home-recents"></div>
+      </div>
+
+      <!-- MISSIONS -->
+      <div id="v-missions" class="view">
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <input id="m-search" class="input" placeholder="Rechercher…" style="max-width:260px" oninput="renderMissions()">
+          <select id="m-filter" class="input" style="max-width:160px;padding:8px" onchange="renderMissions()">
+            <option value="">Tous les statuts</option>
+            <option value="DONE">Terminé</option>
+            <option value="RUNNING">En cours</option>
+            <option value="FAILED">Échoué</option>
+            <option value="REJECTED">Rejeté</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadMissions()">↻ Actualiser</button>
+        </div>
+        <div id="mission-list"></div>
+      </div>
+
+      <!-- MISSION DETAIL -->
+      <div id="v-detail" class="view">
+        <button class="btn btn-ghost btn-sm" onclick="nav(document.querySelector('[data-v=missions]'))" style="margin-bottom:16px">← Retour aux missions</button>
+        <div id="detail-content"></div>
+      </div>
+
+      <!-- APPROVALS -->
+      <div id="v-approvals" class="view">
+        <div id="approval-list"></div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="v-admin" class="view">
+        <div id="admin-content"></div>
+      </div>
+
+      <!-- MODULES -->
+      <div id="v-modules" class="view">
+        <div class="tabs" id="mod-tabs">
+          <div class="tab active" data-tab="agents" onclick="modTab(this)">Agents</div>
+          <div class="tab" data-tab="skills" onclick="modTab(this)">Skills</div>
+          <div class="tab" data-tab="connectors" onclick="modTab(this)">Connecteurs</div>
+          <div class="tab" data-tab="mcp" onclick="modTab(this)">MCP</div>
+        </div>
+        <div id="mod-health" style="margin-bottom:16px"></div>
+        <div id="mod-content"></div>
+      </div>
+
+      <!-- SYSTEM -->
+      <div id="v-system" class="view">
+        <div id="sys-content"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="v-settings" class="view">
+        <div class="card" style="max-width:500px">
+          <div class="card-header">Compte</div>
+          <div style="margin-bottom:12px"><span style="font-size:12px;color:var(--t3)">Rôle :</span> <span id="set-role" class="badge badge-default"></span></div>
+          <div style="margin-bottom:12px"><span style="font-size:12px;color:var(--t3)">Serveur :</span> <span id="set-server" style="font-size:13px;color:var(--t2)"></span></div>
+          <button class="btn btn-ghost" onclick="logout()" style="margin-top:12px">Se déconnecter</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script>
-/* ─── Auth guard ──────────────────────────────────────────── */
-(function authGuard() {
-  const t = localStorage.getItem('jarvis_token');
-  if (!t) {
-    window.location.replace('/login.html?next=' + encodeURIComponent(location.pathname));
+// ═══════════════════════════════════════════════════════════════════════════════
+// JARVIS — Web Application (PROVEN endpoints only)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let TOKEN='',ROLE='user',MISSIONS=[],CURRENT_MOD_TAB='agents';
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+function getToken(){return sessionStorage.getItem('j_token')||''}
+function setToken(t,r){TOKEN=t;ROLE=r||'user';sessionStorage.setItem('j_token',t);sessionStorage.setItem('j_role',r)}
+
+async function doLogin(){
+  const user=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const tok=document.getElementById('login-token').value.trim();
+  const errEl=document.getElementById('login-err');
+  errEl.classList.add('hidden');
+
+  if(tok){
+    // Static token login — test it
+    try{
+      const r=await fetch('/api/v2/status',{headers:{'X-Jarvis-Token':tok}});
+      if(r.ok){setToken(tok,'admin');enterApp();return}
+    }catch(e){}
+    errEl.textContent='Token invalide';errEl.classList.remove('hidden');return;
   }
+  if(!user||!pass){errEl.textContent='Remplissez les champs';errEl.classList.remove('hidden');return}
+  try{
+    const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    const d=await r.json();
+    if(d.ok!==false&&(d.token||d.access_token)){
+      setToken(d.token||d.access_token,d.role||'user');enterApp();
+    }else{errEl.textContent=d.error||'Identifiants incorrects';errEl.classList.remove('hidden')}
+  }catch(e){errEl.textContent='Erreur de connexion';errEl.classList.remove('hidden')}
+}
+
+function logout(){sessionStorage.clear();TOKEN='';ROLE='user';location.reload()}
+
+function enterApp(){
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if(ROLE==='admin')document.getElementById('nav-admin-group').classList.remove('hidden');
+  document.getElementById('foot-role').textContent=ROLE==='admin'?'Administrateur':'Utilisateur';
+  document.getElementById('set-role').textContent=ROLE==='admin'?'ADMIN':'USER';
+  document.getElementById('set-server').textContent=location.host;
+  document.getElementById('status-dot').style.background='var(--green)';
+  initHome();
+}
+
+// Check saved session
+(function(){
+  const t=sessionStorage.getItem('j_token');
+  const r=sessionStorage.getItem('j_role');
+  if(t){TOKEN=t;ROLE=r||'user';enterApp()}
 })();
 
-/* ─── State ───────────────────────────────────────────────── */
-let appMode = localStorage.getItem('jarvis_mode') || 'lite';
-let token = localStorage.getItem('jarvis_token') || '';
-let userRole = localStorage.getItem('jarvis_role') || 'user';
-let ws = null;
-let allMissions = [];
+// ── API helper ──────────────────────────────────────────────────────────────
 
-/* ─── Init ────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  // Restore session info
-  const username = localStorage.getItem('jarvis_username') || '';
-  const sessionEl = document.getElementById('session-user');
-  if (sessionEl && username) sessionEl.textContent = username;
+async function api(path,opts={}){
+  const h={'X-Jarvis-Token':TOKEN,'Authorization':'Bearer '+TOKEN};
+  if(opts.body)h['Content-Type']='application/json';
+  try{
+    const r=await fetch(path,{...opts,headers:{...h,...(opts.headers||{})}});
+    if(r.status===401){toast('Session expirée','err');logout();return null}
+    return await r.json();
+  }catch(e){return null}
+}
 
-  // Admin button: only show if role=admin
-  const adminBtn = document.getElementById('admin-mode-btn');
-  if (adminBtn && userRole !== 'admin') {
-    adminBtn.style.opacity = '.4';
-    adminBtn.title = 'Requires admin credentials — sign in as admin';
-  }
+// ── Navigation ──────────────────────────────────────────────────────────────
 
-  setMode(appMode);
-  updateGreeting();
-  connectWS();
-  loadStatus();
-  loadMissions();
-  loadApprovals();
-  loadReadiness();
-  setInterval(updateGreeting, 60000);
-  setInterval(loadStatus, 30000);
-  document.getElementById('composer').addEventListener('keydown', e => {
-    if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); submitMission(); }
-  });
-  if (window.innerWidth <= 768) document.getElementById('menu-btn').style.display = 'block';
-});
-
-/* ─── Nav ─────────────────────────────────────────────────── */
-function nav(el) {
-  const view = el.dataset.view;
-  if (!view) return;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+function nav(el){
+  if(!el)return;
+  const v=el.dataset.v;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
-  const panel = document.getElementById('view-' + view);
-  if (panel) {
-    panel.classList.add('active');
-    const iframe = panel.querySelector('iframe[data-src]');
-    if (iframe && !iframe.src) { iframe.src = iframe.dataset.src; iframe.removeAttribute('data-src'); }
+  document.querySelectorAll('.view').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById('v-'+v);
+  if(panel)panel.classList.add('active');
+  document.getElementById('main-title').textContent=el.textContent.trim();
+  closeSidebar();
+  if(v==='missions')loadMissions();
+  if(v==='approvals')loadApprovals();
+  if(v==='admin')loadAdmin();
+  if(v==='modules')loadModules();
+  if(v==='system')loadSystem();
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebar-overlay').style.display='block'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').style.display='none'}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+
+function toast(msg,type='ok'){
+  const t=document.createElement('div');t.className='toast toast-'+type;t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
+// ── Home ────────────────────────────────────────────────────────────────────
+
+async function initHome(){
+  const wk=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const mo=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const now=new Date();
+  document.getElementById('home-date').textContent=wk[now.getDay()]+' '+now.getDate()+' '+mo[now.getMonth()];
+  const h=now.getHours();
+  document.getElementById('home-greeting').textContent=h<6?'Vous travaillez tard ?':h<12?'Bonjour.':h<18?'Bon après-midi.':'Bonsoir.';
+
+  const d=await api('/api/v2/status');
+  if(d&&d.data){
+    const s=d.data;const ms=s.missions||{};const byS=ms.by_status||{};
+    const done=byS.DONE||0,failed=byS.FAILED||0,rejected=byS.REJECTED||0,running=byS.RUNNING||0;
+    document.getElementById('home-stats').innerHTML=`
+      <div class="stat"><div class="stat-val" style="color:var(--blue)">${running}</div><div class="stat-lbl">En cours</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green)">${done}</div><div class="stat-lbl">Terminées</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red)">${failed+rejected}</div><div class="stat-lbl">Échouées</div></div>
+      <div class="stat"><div class="stat-val">${ms.total||0}</div><div class="stat-lbl">Total</div></div>`;
   }
-  const titles = {home:'Home',chat:'Chat',missions:'Missions',approvals:'Approvals',system:'System Health',runs:'Plan Runs',modules:'Modules',operations:'Operations',economic:'Economic Intelligence',routing:'Routing',events:'Events',dashboard:'Dashboard',mcp:'MCP Servers',finance:'Finance'};
-  document.getElementById('main-title').textContent = titles[view] || view;
-  if (view === 'missions') loadMissionsFull();
-  if (view === 'approvals') loadApprovals();
-  if (view === 'system') loadSystemView();
-  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
-}
-
-/* ─── Mode ────────────────────────────────────────────────── */
-function setMode(mode) {
-  appMode = mode;
-  localStorage.setItem('jarvis_mode', mode);
-  document.body.dataset.appMode = mode;
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  const activeNav = document.querySelector('.nav-item.active');
-  if (activeNav && activeNav.dataset.mode) {
-    const order = {lite:0,full:1,admin:2};
-    if ((order[mode]||0) < (order[activeNav.dataset.mode]||0)) nav(document.querySelector('.nav-item[data-view="home"]'));
+  // Recent missions
+  const ml=await api('/api/v2/missions?limit=8');
+  if(ml&&ml.data&&ml.data.missions){
+    MISSIONS=ml.data.missions;
+    const pending=MISSIONS.filter(m=>m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL');
+    if(pending.length>0){
+      document.getElementById('home-alert').classList.remove('hidden');
+      document.getElementById('home-alert-n').textContent=pending.length+' approbation'+(pending.length>1?'s':'')+' en attente';
+    }
+    document.getElementById('home-recents').innerHTML=MISSIONS.slice(0,6).map(m=>`
+      <div class="mission-row" onclick="openMission('${m.mission_id}')">
+        <div class="mission-dot" style="background:${dotColor(m.status)}"></div>
+        <div class="mission-goal">${esc(m.user_input||m.goal||m.mission_id)}</div>
+        ${statusBadge(m.status)}
+        <div class="mission-time">${timeAgo(m.created_at)}</div>
+      </div>`).join('');
   }
 }
 
-function requireAdminMode() {
-  if (userRole === 'admin') {
-    setMode('admin');
-  } else {
-    // Not admin — redirect to login with a hint
-    const msg = encodeURIComponent('Admin access required. Please sign in with admin credentials.');
-    window.location.href = '/login.html?hint=' + msg;
+// ── Submit Mission ──────────────────────────────────────────────────────────
+
+async function submitMission(){
+  const input=document.getElementById('home-input');
+  const type=document.getElementById('home-type').value;
+  const text=input.value.trim();
+  if(!text){toast('Décrivez votre mission','err');return}
+  const goal=type?`[${type}] ${text}`:text;
+  const btn=document.getElementById('home-send');
+  btn.disabled=true;btn.textContent='Envoi…';
+  const r=await api('/api/v2/missions/submit',{method:'POST',body:JSON.stringify({goal:goal,mode:'auto'})});
+  btn.disabled=false;btn.textContent='Lancer la mission';
+  if(r&&r.ok!==false){
+    toast('Mission lancée ✓');
+    input.value='';
+    document.getElementById('home-type').value='';
+    initHome();
+  }else{toast(r?.error||'Erreur lors de la soumission','err')}
+}
+
+// ── Missions ────────────────────────────────────────────────────────────────
+
+async function loadMissions(){
+  document.getElementById('mission-list').innerHTML='<div class="spin"></div>';
+  const d=await api('/api/v2/missions?limit=100');
+  if(d&&d.data&&d.data.missions){MISSIONS=d.data.missions;renderMissions()}
+  else{document.getElementById('mission-list').innerHTML='<div class="empty"><div class="empty-icon">🚀</div>Impossible de charger les missions</div>'}
+}
+
+function renderMissions(){
+  const search=(document.getElementById('m-search').value||'').toLowerCase();
+  const filter=document.getElementById('m-filter').value;
+  let list=MISSIONS;
+  if(search)list=list.filter(m=>(m.user_input||m.goal||'').toLowerCase().includes(search));
+  if(filter)list=list.filter(m=>m.status===filter);
+  if(list.length===0){
+    document.getElementById('mission-list').innerHTML='<div class="empty"><div class="empty-icon">📭</div>Aucune mission trouvée</div>';
+    return;
   }
+  document.getElementById('mission-list').innerHTML=list.map(m=>`
+    <div class="mission-row" onclick="openMission('${m.mission_id}')">
+      <div class="mission-dot" style="background:${dotColor(m.status)}"></div>
+      <div class="mission-goal">${esc(m.user_input||m.goal||m.mission_id)}</div>
+      ${statusBadge(m.status)}
+      <div class="mission-time">${timeAgo(m.created_at)}</div>
+    </div>`).join('');
 }
 
-function logout() {
-  localStorage.removeItem('jarvis_token');
-  localStorage.removeItem('jarvis_username');
-  localStorage.removeItem('jarvis_role');
-  localStorage.removeItem('jarvis_mode');
-  localStorage.removeItem('jarvis_remember');
-  if (ws) try { ws.close(); } catch(_) {}
-  window.location.replace('/login.html');
-}
+// ── Mission Detail ──────────────────────────────────────────────────────────
 
-/* ─── Greeting ────────────────────────────────────────────── */
-function updateGreeting() {
-  const h = new Date().getHours();
-  const p = h<6?'Working late?':h<12?'Good morning.':h<18?'Good afternoon.':'Good evening.';
-  document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  document.getElementById('home-greeting').textContent = p;
-}
+async function openMission(id){
+  document.querySelectorAll('.view').forEach(p=>p.classList.remove('active'));
+  document.getElementById('v-detail').classList.add('active');
+  document.getElementById('main-title').textContent='Détail mission';
+  document.getElementById('detail-content').innerHTML='<div class="spin"></div>';
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+  const d=await api('/api/v2/missions/'+id);
+  if(!d||!d.data){document.getElementById('detail-content').innerHTML='<div class="empty">Mission introuvable</div>';return}
+  const m=d.data.mission||d.data;
+  const outputs=d.data.agent_outputs||m.agent_outputs||{};
+  const isErr=m.status==='FAILED'||m.status==='REJECTED';
+  const result=m.final_output||m.result||m.output||'';
+  const planSteps=m.plan_steps||[];
+  const agentsList=m.agents_selected||m.agents||[];
 
-/* ─── API ─────────────────────────────────────────────────── */
-function hdrs() {
-  const h = {'Content-Type':'application/json'};
-  if (token) { h['Authorization']='Bearer '+token; h['X-Jarvis-Token']=token; }
-  return h;
-}
-async function api(path) {
-  try {
-    const r = await fetch(path, {headers:hdrs()});
-    if (r.status === 401) { logout(); return null; }
-    if (!r.ok) return null;
-    return r.json();
-  } catch { return null; }
-}
-
-/* ─── Status ──────────────────────────────────────────────── */
-async function loadStatus() {
-  const d = await api('/api/v2/status');
-  if (!d) { setSys('error','Offline'); return; }
-  setSys('online', d.status==='operational'?'Operational':d.status||'Online');
-  const m = d.missions||{};
-  document.getElementById('s-active').textContent = m.running||0;
-  document.getElementById('s-done').textContent = m.completed||0;
-  document.getElementById('s-failed').textContent = m.failed||0;
-  if (d.uptime) { const min=Math.floor(d.uptime/60); document.getElementById('s-uptime').textContent=min>=60?Math.floor(min/60)+'h':min+'m'; }
-  const ap = d.pending_approvals||0;
-  const ab = document.getElementById('nav-a-count');
-  const al = document.getElementById('home-alert');
-  if (ap>0) { ab.textContent=ap; ab.style.display=''; al.style.display='flex'; document.getElementById('alert-count').textContent=ap+' item'+(ap>1?'s':'')+' need'+(ap===1?'s':'')+' review'; }
-  else { ab.style.display='none'; al.style.display='none'; }
-}
-function setSys(s,l) { document.getElementById('status-dot').className='status-dot '+s; document.getElementById('status-text').textContent=l; }
-
-/* ─── Readiness ───────────────────────────────────────────── */
-async function loadReadiness() {
-  const d = await api('/api/v3/self-model/readiness');
-  if (!d || d.score === undefined) return;
-  const pct = Math.round(d.score * 100);
-  const color = pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
-  document.getElementById('home-readiness').style.display='block';
-  document.getElementById('readiness-pct').textContent=pct+'%';
-  document.getElementById('readiness-pct').style.color=color;
-  const bar = document.getElementById('readiness-bar');
-  bar.style.width=pct+'%';
-  bar.style.background=color;
-}
-
-/* ─── Missions ────────────────────────────────────────────── */
-async function loadMissions() {
-  const d = await api('/api/v3/missions');
-  const el = document.getElementById('home-missions');
-  if (!d||!d.missions||!d.missions.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✨</div><div class="empty-state-title">No missions yet</div>Describe a task above to get started.</div>'; document.getElementById('m-count').textContent='0'; return; }
-  allMissions = d.missions;
-  const list = d.missions.slice(0,10);
-  document.getElementById('m-count').textContent=d.missions.length;
-  const active = list.filter(m=>(m.status||'').toLowerCase()==='running').length;
-  const mb = document.getElementById('nav-m-count');
-  if (active>0){mb.textContent=active;mb.style.display=''}else{mb.style.display='none'}
-  el.innerHTML = list.map(m => missionRow(m, true)).join('');
-}
-
-async function loadMissionsFull() {
-  const d = await api('/api/v3/missions');
-  const el = document.getElementById('missions-full-list');
-  if (!d||!d.missions||!d.missions.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">🚀</div><div class="empty-state-title">No missions</div></div>'; document.getElementById('ml-count').textContent='0'; return; }
-  allMissions = d.missions;
-  document.getElementById('ml-count').textContent=d.missions.length;
-  el.innerHTML = d.missions.map(m => missionRow(m, false)).join('');
-}
-
-function missionRow(m, home) {
-  const st = (m.status||'').toLowerCase();
-  const cls = st==='completed'||st==='done'?'completed':st==='failed'?'failed':st==='running'?'running':'pending';
-  const goal = esc(m.user_input||m.goal||m.description||m.id||'—');
-  const age = m.created_at?timeSince(m.created_at):'';
-  const provider = m.provider?'<span style="font-size:11px;color:var(--text-dim);margin-left:8px">'+esc(m.provider)+'</span>':'';
-  return `<div class="card-row" style="margin-bottom:6px" onclick="openMissionDetail('${m.id||''}')"><div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--${cls==='completed'?'green':cls==='failed'?'red':cls==='running'?'blue':'amber'})${cls==='running'?';animation:pulse 2s ease-in-out infinite':''}"></div><div style="flex:1;min-width:0"><div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${goal}</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">${age}${provider}</div></div><span class="badge badge-${cls}">${st||'unknown'}</span></div>`;
-}
-
-function openMissionDetail(id) {
-  if (!id) return;
-  const m = allMissions.find(x=>x.id===id);
-  document.getElementById('missions-list-view').style.display='none';
-  document.getElementById('missions-detail-view').style.display='block';
-  const el = document.getElementById('mission-detail-content');
-  if (!m) { el.innerHTML='<div class="empty-state">Mission not found</div>'; return; }
-  const st = (m.status||'').toLowerCase();
-  const cls = st==='completed'||st==='done'?'completed':st==='failed'?'failed':st==='running'?'running':'pending';
-  el.innerHTML = `
-    <div class="detail-title">${esc(m.user_input||m.goal||m.id)}</div>
-    <span class="badge badge-${cls}" style="font-size:12px;padding:4px 12px">${st}</span>
-    <div class="detail-grid">
-      <div class="detail-cell"><div class="detail-cell-label">Status</div><div class="detail-cell-value">${st}</div></div>
-      <div class="detail-cell"><div class="detail-cell-label">Created</div><div class="detail-cell-value">${m.created_at?timeSince(m.created_at):'—'}</div></div>
-      <div class="detail-cell"><div class="detail-cell-label">ID</div><div class="detail-cell-value" style="font-family:var(--font-mono);font-size:12px">${esc((m.id||'').substring(0,12))}</div></div>
+  let html=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      ${statusBadge(m.status)}
+      <span style="font-size:11px;color:var(--t4)">${m.mission_id}</span>
+      <span style="font-size:11px;color:var(--t4)">${timeAgo(m.created_at)}</span>
     </div>
-    ${m.error?`<div class="detail-section"><h3>Error</h3><div style="background:var(--red-soft);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-sm);padding:12px;font-size:13px;color:var(--red)">${esc(m.error)}</div></div>`:''}
-    ${m.result?`<div class="detail-section"><h3>Output</h3><div class="card" style="font-size:13px;max-height:300px;overflow:auto"><pre style="white-space:pre-wrap;font-family:var(--font-mono);font-size:12px">${esc(typeof m.result==='string'?m.result:JSON.stringify(m.result,null,2))}</pre></div></div>`:''}
-  `;
+
+    <div class="detail-section">
+      <div class="detail-label">Objectif</div>
+      <div class="detail-block">${esc(m.user_input||m.goal||'')}</div>
+    </div>`;
+
+  if(planSteps.length>0){
+    html+=`<div class="detail-section"><div class="detail-label">Plan d'exécution (${planSteps.length} étapes)</div><div class="detail-block">`;
+    planSteps.forEach((s,i)=>{
+      const task=s.task||s.description||s.name||'Étape '+(i+1);
+      const agent=s.agent||'';
+      html+=`<div style="margin-bottom:6px"><span style="color:var(--blue);font-weight:600">${i+1}.</span> ${esc(task)}${agent?' <span style="color:var(--t4);font-size:11px">('+esc(agent)+')</span>':''}</div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  if(Object.keys(outputs).length>0){
+    html+=`<div class="detail-section"><div class="detail-label">Résultats par agent</div>`;
+    for(const[agent,text]of Object.entries(outputs)){
+      html+=`<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);padding:8px 0">${esc(agent)}</summary><div class="detail-block">${esc(String(text))}</div></details>`;
+    }
+    html+=`</div>`;
+  }
+
+  if(result){
+    html+=`<div class="detail-section">
+      <div class="detail-label">Résultat final <span class="copy-btn" onclick="copyText(this)" data-text="${esc(result).replace(/"/g,'&quot;')}">📋 Copier</span></div>
+      <div class="detail-block" style="${isErr?'color:var(--red)':''}">${esc(result)}</div>
+    </div>`;
+  }
+
+  if(m.error){
+    html+=`<div class="detail-section"><div class="detail-label" style="color:var(--red)">Erreur</div><div class="detail-block" style="color:var(--red);border-color:var(--red-s)">${esc(m.error)}</div></div>`;
+  }
+
+  if(m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL'){
+    html+=`<div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-green" onclick="approveMission('${m.mission_id}')">✓ Approuver</button>
+      <button class="btn btn-red" onclick="rejectMission('${m.mission_id}')">✗ Rejeter</button>
+    </div>`;
+  }
+
+  document.getElementById('detail-content').innerHTML=html;
 }
 
-function closeMissionDetail() {
-  document.getElementById('missions-list-view').style.display='';
-  document.getElementById('missions-detail-view').style.display='none';
+function copyText(el){const t=el.dataset.text;navigator.clipboard.writeText(t).then(()=>toast('Copié ✓')).catch(()=>toast('Échec copie','err'))}
+
+// ── Approvals ───────────────────────────────────────────────────────────────
+
+async function loadApprovals(){
+  document.getElementById('approval-list').innerHTML='<div class="spin"></div>';
+  const d=await api('/api/v2/missions?limit=100');
+  if(!d||!d.data){document.getElementById('approval-list').innerHTML='<div class="empty">Erreur de chargement</div>';return}
+  const pending=(d.data.missions||[]).filter(m=>m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL');
+  if(pending.length===0){
+    document.getElementById('approval-list').innerHTML='<div class="empty"><div class="empty-icon">✅</div>Aucune approbation en attente</div>';
+    return;
+  }
+  document.getElementById('approval-list').innerHTML=pending.map(m=>`
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:500;margin-bottom:8px">${esc(m.user_input||m.goal||m.mission_id)}</div>
+      <div style="font-size:11px;color:var(--t4);margin-bottom:12px">${m.mission_id} · ${timeAgo(m.created_at)}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green btn-sm" onclick="approveMission('${m.mission_id}')">✓ Approuver</button>
+        <button class="btn btn-red btn-sm" onclick="rejectMission('${m.mission_id}')">✗ Rejeter</button>
+        <button class="btn btn-ghost btn-sm" onclick="openMission('${m.mission_id}')">Voir détail</button>
+      </div>
+    </div>`).join('');
+  // Update badge
+  const b=document.getElementById('nav-appr-n');
+  if(pending.length>0){b.textContent=pending.length;b.classList.remove('hidden')}
+  else{b.classList.add('hidden')}
 }
 
-/* ─── Approvals ───────────────────────────────────────────── */
-async function loadApprovals() {
-  const d = await api('/api/v3/console/pending');
-  const el = document.getElementById('approvals-list');
-  const items = d && Array.isArray(d.requests) ? d.requests : (d && Array.isArray(d) ? d : []);
-  document.getElementById('ap-count').textContent = items.length;
-  if (!items.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">All clear</div>Nothing needs your approval right now.</div>'; return; }
-  el.innerHTML = items.map(a => {
-    const risk = (a.risk_level||a.risk||'low').toLowerCase();
-    return `<div class="approval-card" style="border:1px solid var(--${risk==='critical'||risk==='high'?'red':risk==='medium'?'amber':'green'})" id="ap-${a.id||a.request_id}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="badge risk-${risk}">${risk} risk</span>${a.tool_id?'<span style="font-size:11px;color:var(--text-dim)">'+esc(a.tool_id)+'</span>':''}</div>
-      <div class="approval-what">Jarvis wants to:</div>
-      <div class="approval-desc">${esc(a.description||a.action||'Perform action')}</div>
-      ${a.reason?'<div class="approval-meta">💡 '+esc(a.reason)+'</div>':''}
-      ${a.impact?'<div class="approval-meta">📊 Impact: '+esc(a.impact)+'</div>':''}
-      <div class="approval-consequences">
-        <div style="margin-bottom:4px"><span style="color:var(--green)">✓ If approved:</span> Jarvis proceeds with this action</div>
-        <div><span style="color:var(--text-dim)">✗ If denied:</span> Action is skipped, mission continues</div>
-      </div>
-      <div class="approval-actions">
-        <button class="btn-red-outline" onclick="denyApproval('${a.id||a.request_id}')">Deny</button>
-        <button class="btn-green" onclick="approveApproval('${a.id||a.request_id}')">Approve</button>
-      </div>
+async function approveMission(id){
+  const r=await api('/api/v2/missions/'+id+'/approve',{method:'POST'});
+  if(r&&r.ok!==false){toast('Mission approuvée ✓');loadApprovals();initHome()}
+  else{toast(r?.error||'Erreur','err')}
+}
+async function rejectMission(id){
+  const r=await api('/api/v2/missions/'+id+'/reject',{method:'POST'});
+  if(r&&r.ok!==false){toast('Mission rejetée');loadApprovals();initHome()}
+  else{toast(r?.error||'Erreur','err')}
+}
+
+// ── Admin Panel ─────────────────────────────────────────────────────────────
+
+async function loadAdmin(){
+  document.getElementById('admin-content').innerHTML='<div class="spin"></div>';
+  const[status,health,metrics,caps]=await Promise.all([
+    api('/api/v2/status'),api('/api/v2/system/health'),api('/api/v3/metrics/summary'),api('/api/v2/system/capabilities')
+  ]);
+  let html='';
+  if(status&&status.data){
+    const s=status.data;const ms=s.missions||{};const byS=ms.by_status||{};const byI=ms.by_intent||{};
+    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Vue d'ensemble</div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val">${ms.total||0}</div><div class="stat-lbl">Missions totales</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--green)">${byS.DONE||0}</div><div class="stat-lbl">Terminées</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--red)">${(byS.FAILED||0)+(byS.REJECTED||0)}</div><div class="stat-lbl">Échouées</div></div>
+        <div class="stat"><div class="stat-val">${formatUptime(s.uptime_s)}</div><div class="stat-lbl">Uptime</div></div>
+        <div class="stat"><div class="stat-val">${s.mode||'?'}</div><div class="stat-lbl">Mode</div></div>
+        <div class="stat"><div class="stat-val">${s.version||'?'}</div><div class="stat-lbl">Version</div></div>
+      </div></div>`;
+    // Intent breakdown
+    if(Object.keys(byI).length>0){
+      html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Missions par type</div>`;
+      html+=Object.entries(byI).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b-subtle)"><span style="font-size:13px">${esc(k)}</span><span style="font-weight:600">${v}</span></div>`).join('');
+      html+=`</div>`;
+    }
+  }
+  if(health){
+    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Santé système</div>`;
+    const s=health.status||health;
+    html+=`<div style="margin-bottom:8px">Statut global : <span class="badge ${s==='healthy'?'badge-done':'badge-failed'}">${s}</span></div>`;
+    if(health.memory_mb)html+=`<div style="font-size:12px;color:var(--t3)">Mémoire : ${health.memory_mb} MB</div>`;
+    html+=`</div>`;
+  }
+  if(metrics&&metrics.data){
+    const md=metrics.data;
+    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Métriques</div>
+      <div style="font-size:13px">Santé globale : <span class="badge ${md.health==='ok'?'badge-done':'badge-failed'}">${md.health||'?'}</span></div>
+      <div style="font-size:13px;margin-top:4px">Taux de succès : <strong>${md.success_rate!=null?Math.round(md.success_rate*100)+'%':'?'}</strong></div>
+    </div>`;
+  }
+  if(caps&&caps.data){
+    const cd=caps.data;
+    html+=`<div class="card"><div class="card-header">Capacités</div>`;
+    if(cd.modalities){
+      html+=Object.entries(cd.modalities).map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b-subtle)">
+        <span style="font-size:13px;flex:1">${esc(k)}</span>
+        <span class="badge ${v.status==='active'?'badge-done':'badge-disabled'}">${v.status||'?'}</span>
+      </div>`).join('');
+    }
+    html+=`</div>`;
+  }
+  document.getElementById('admin-content').innerHTML=html||'<div class="empty">Données indisponibles</div>';
+}
+
+// ── Modules ─────────────────────────────────────────────────────────────────
+
+function modTab(el){
+  document.querySelectorAll('#mod-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');CURRENT_MOD_TAB=el.dataset.tab;loadModules();
+}
+
+async function loadModules(){
+  document.getElementById('mod-content').innerHTML='<div class="spin"></div>';
+  // Health summary
+  const h=await api('/api/v3/modules/health');
+  if(h){
+    const s=h;
+    document.getElementById('mod-health').innerHTML=`
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="stat-val">${s.agents?.total||0}</div><div class="stat-lbl">Agents (${s.agents?.ready||0} prêts)</div></div>
+        <div class="stat"><div class="stat-val">${s.mcp?.total||0}</div><div class="stat-lbl">MCP (${s.mcp?.connected||0} connectés)</div></div>
+        <div class="stat"><div class="stat-val">${s.connectors?.total||0}</div><div class="stat-lbl">Connecteurs</div></div>
+        <div class="stat"><div class="stat-val">${(s.mcp?.zero_tools||0)>0?'⚠️':'✓'}</div><div class="stat-lbl">${s.mcp?.zero_tools||0} MCP sans outils</div></div>
+      </div>`;
+  }
+  let items=[];
+  if(CURRENT_MOD_TAB==='agents'){
+    const d=await api('/api/v3/agents');
+    items=(d?.agents||[]).map(a=>({id:a.id,name:a.name||a.id,desc:a.description||'',status:a.status||'enabled',icon:'🤖',type:'agents'}));
+  }else if(CURRENT_MOD_TAB==='skills'){
+    const d=await api('/api/v3/skills');
+    items=(d?.skills||[]).map(s=>({id:s.id,name:s.name||s.id,desc:s.description||'',status:s.status||'enabled',icon:'🎯',type:'skills'}));
+  }else if(CURRENT_MOD_TAB==='connectors'){
+    const d=await api('/api/v3/connectors');
+    items=(d?.connectors||[]).map(c=>({id:c.name||c.id,name:c.name||c.id,desc:c.description||'',status:c.enabled?'enabled':'disabled',icon:'🔌',type:'connectors'}));
+  }else if(CURRENT_MOD_TAB==='mcp'){
+    const d=await api('/api/v3/mcp');
+    items=(d?.mcp||[]).map(m=>({id:m.id,name:m.name||m.id,desc:m.description||m.transport||'',status:m.status||'enabled',icon:'⚡',type:'mcp',tools:m.tools_count||0}));
+  }
+  if(items.length===0){
+    document.getElementById('mod-content').innerHTML='<div class="empty"><div class="empty-icon">📦</div>Aucun module dans cette catégorie</div>';
+    return;
+  }
+  document.getElementById('mod-content').innerHTML=items.map(m=>{
+    const isOn=m.status==='enabled'||m.status==='active'||m.status==='ready';
+    const badgeClass=isOn?'badge-enabled':'badge-disabled';
+    const badgeLabel=isOn?'Actif':'Inactif';
+    // For MCP, show "Enregistré" if enabled but 0 tools (not "Connecté")
+    const realLabel=(m.type==='mcp'&&isOn&&m.tools===0)?'Enregistré':badgeLabel;
+    const realClass=(m.type==='mcp'&&isOn&&m.tools===0)?'badge-registered':badgeClass;
+    return`<div class="mod-card">
+      <div class="mod-icon">${m.icon}</div>
+      <div class="mod-info"><div class="mod-name">${esc(m.name)}</div><div class="mod-desc">${esc(m.desc)}${m.type==='mcp'?' · '+m.tools+' outil'+(m.tools!==1?'s':''):''}</div></div>
+      <span class="badge ${realClass}">${realLabel}</span>
+      <div class="toggle ${isOn?'on':''}" onclick="toggleModule('${m.type}','${m.id}',${!isOn})" title="${isOn?'Désactiver':'Activer'}"></div>
     </div>`;
   }).join('');
 }
 
-async function approveApproval(id) {
-  const r = await fetch('/api/v3/console/approve/'+id, {method:'POST',headers:hdrs()});
-  toast(r.ok?'Approved':'Error', r.ok);
-  loadApprovals(); loadStatus();
-}
-async function denyApproval(id) {
-  const r = await fetch('/api/v3/console/deny/'+id, {method:'POST',headers:hdrs()});
-  toast(r.ok?'Denied':'Error', r.ok);
-  loadApprovals(); loadStatus();
+async function toggleModule(type,id,enable){
+  const r=await api(`/api/v3/${type}/${id}/toggle`,{method:'POST',body:JSON.stringify({enabled:enable})});
+  if(r&&r.ok!==false){toast((enable?'Activé':'Désactivé')+' ✓');loadModules()}
+  else{toast(r?.error||'Erreur lors du toggle','err')}
 }
 
-/* ─── System View ─────────────────────────────────────────── */
-async function loadSystemView() {
-  const el = document.getElementById('system-content');
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">Loading system state…</div>';
-  const [readiness, limitations, caps, health, autonomy] = await Promise.all([
-    api('/api/v3/self-model/readiness'),
-    api('/api/v3/self-model/limitations'),
-    api('/api/v3/self-model/capabilities'),
-    api('/api/v3/self-model/health-card'),
-    api('/api/v3/self-model/autonomy'),
-  ]);
+// ── System ──────────────────────────────────────────────────────────────────
 
-  let html = '<div class="sys-grid">';
-
-  // Readiness
-  const score = readiness?.score ?? 0;
-  const pct = Math.round(score*100);
-  const rColor = pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
-  html += `<div class="sys-card"><h4>Readiness</h4><div style="font-size:36px;font-weight:700;color:${rColor};margin-bottom:8px">${pct}%</div><div class="meter"><div class="meter-fill" style="width:${pct}%;background:${rColor}"></div></div></div>`;
-
-  // Autonomy
-  const mode = autonomy?.mode || autonomy?.autonomy_mode || 'unknown';
-  html += `<div class="sys-card"><h4>Autonomy</h4><div style="font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:4px">${esc(mode)}</div><div style="font-size:12px;color:var(--text-muted)">${autonomy?.max_risk_level?'Max risk: '+autonomy.max_risk_level:''}</div></div>`;
-
-  html += '</div>';
-
-  // Health signals
-  if (health) {
-    html += '<div style="margin-top:20px"><div class="section-label" style="margin-bottom:12px">Health Signals</div><div class="sys-grid">';
-    const signals = health.signals || health.health_signals || health;
-    if (typeof signals === 'object') {
-      for (const [k,v] of Object.entries(signals)) {
-        const ok = v===true||v==='healthy'||v==='ok';
-        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-sm)"><div style="width:8px;height:8px;border-radius:50%;background:var(--${ok?'green':'red'})"></div><span style="font-size:13px">${esc(k.replace(/_/g,' '))}</span><span style="margin-left:auto;font-size:12px;color:var(--${ok?'green':'red'})">${ok?'Healthy':'Degraded'}</span></div>`;
-      }
-    }
-    html += '</div></div>';
+async function loadSystem(){
+  document.getElementById('sys-content').innerHTML='<div class="spin"></div>';
+  const[health,caps]=await Promise.all([api('/api/health'),api('/api/v2/system/capabilities')]);
+  let html='';
+  if(health&&health.data){
+    html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Composants</div>`;
+    const comps=health.data.components||{};
+    html+=Object.entries(comps).map(([k,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b-subtle)">
+      <span style="font-size:13px;font-weight:500">${esc(v.name||k)}</span>
+      <span class="badge ${v.status==='ok'?'badge-done':'badge-failed'}">${v.status||'?'}</span>
+    </div>`).join('');
+    html+=`</div>`;
   }
-
-  // Capabilities
-  if (caps) {
-    const capList = caps.capabilities || caps;
-    if (Array.isArray(capList)) {
-      html += '<div style="margin-top:20px"><div class="section-label" style="margin-bottom:12px">Capabilities ('+capList.length+')</div>';
-      html += capList.slice(0,20).map(c => {
-        const st = (c.status||'ready').toLowerCase();
-        const color = st==='ready'?'var(--green)':st==='degraded'?'var(--amber)':'var(--text-dim)';
-        return `<div class="cap-item"><div class="cap-dot" style="background:${color}"></div><span style="font-size:13px">${esc(c.name||c.id||'—')}</span><span style="margin-left:auto;font-size:11px;color:${color}">${st}</span></div>`;
-      }).join('');
-      html += '</div>';
+  if(caps&&caps.data){
+    if(caps.data.tools){
+      html+=`<div class="card" style="margin-bottom:16px"><div class="card-header">Outils disponibles</div>`;
+      const tools=Array.isArray(caps.data.tools)?caps.data.tools:Object.entries(caps.data.tools).map(([k,v])=>({name:k,...v}));
+      tools.forEach(t=>{
+        html+=`<div style="padding:6px 0;border-bottom:1px solid var(--b-subtle);font-size:13px">${esc(t.name||t)}</div>`;
+      });
+      html+=`</div>`;
     }
   }
-
-  // Limitations
-  if (limitations) {
-    const lims = limitations.limitations || limitations;
-    if (Array.isArray(lims) && lims.length) {
-      html += '<div style="margin-top:20px"><div class="section-label" style="margin-bottom:12px">Known Limitations ('+lims.length+')</div>';
-      html += lims.map(l => {
-        const sev = (l.severity||'medium').toLowerCase();
-        const icon = sev==='high'?'🔴':sev==='medium'?'🟡':'🔵';
-        return `<div class="limitation-item">${icon}<div><div style="font-size:13px;color:var(--text-primary)">${esc(l.description||l.title||'—')}</div>${l.source?'<div style="font-size:11px;color:var(--text-dim)">Source: '+esc(l.source)+'</div>':''}</div></div>`;
-      }).join('');
-      html += '</div>';
-    }
-  }
-
-  el.innerHTML = html;
+  document.getElementById('sys-content').innerHTML=html||'<div class="empty">Données système indisponibles</div>';
 }
 
-/* ─── Submit ──────────────────────────────────────────────── */
-async function submitMission() {
-  const inp = document.getElementById('composer');
-  const text = inp.value.trim();
-  if (!text) return;
-  const btn = document.getElementById('submit-btn');
-  const lbl = document.getElementById('submit-lbl');
-  btn.disabled=true; lbl.textContent='⏳ Submitting…';
-  try {
-    const r = await fetch('/api/v3/missions',{method:'POST',headers:hdrs(),body:JSON.stringify({user_input:text})});
-    const d = await r.json();
-    if (r.ok && d.mission_id) { toast('✓ Mission created',true); inp.value=''; setTimeout(loadMissions,500); }
-    else { toast('✗ '+(d.detail||d.error||'Failed'),false); }
-  } catch { toast('✗ Connection failed',false); }
-  btn.disabled=false; lbl.textContent='▶ Run Mission';
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function dotColor(st){
+  const s=(st||'').toUpperCase();
+  if(s==='DONE'||s==='COMPLETED')return'var(--green)';
+  if(s==='RUNNING'||s==='EXECUTING')return'var(--blue)';
+  if(s==='FAILED'||s==='ERROR')return'var(--red)';
+  if(s==='REJECTED')return'var(--red)';
+  if(s.includes('PENDING')||s.includes('APPROVAL')||s==='REVIEW')return'var(--amber)';
+  if(s==='PLANNED'||s==='ANALYZING')return'var(--violet)';
+  return'var(--t4)';
 }
 
-/* ─── WebSocket ───────────────────────────────────────────── */
-function connectWS() {
-  try {
-    const p = location.protocol==='https:'?'wss':'ws';
-    ws = new WebSocket(`${p}://${location.host}/ws?token=${encodeURIComponent(token)}`);
-    ws.onopen = () => { document.getElementById('ws-dot').style.color='var(--green)'; };
-    ws.onclose = () => { document.getElementById('ws-dot').style.color='var(--text-dim)'; setTimeout(connectWS,5000); };
-    ws.onmessage = e => { try { const m=JSON.parse(e.data); if(m.type==='mission_update'||m.type==='status_update'){loadMissions();loadStatus();} }catch{} };
-  } catch { document.getElementById('ws-dot').style.color='var(--red)'; setTimeout(connectWS,5000); }
+function statusBadge(st){
+  const s=(st||'').toUpperCase();
+  const map={DONE:'badge-done',COMPLETED:'badge-done',RUNNING:'badge-running',EXECUTING:'badge-running',FAILED:'badge-failed',ERROR:'badge-failed',REJECTED:'badge-failed',PENDING_VALIDATION:'badge-pending',AWAITING_APPROVAL:'badge-pending',REVIEW:'badge-pending',PLANNED:'badge-planned',ANALYZING:'badge-planned',CREATED:'badge-default'};
+  const labels={DONE:'Terminé',COMPLETED:'Terminé',RUNNING:'En cours',EXECUTING:'En cours',FAILED:'Échoué',ERROR:'Erreur',REJECTED:'Rejeté',PENDING_VALIDATION:'En attente',AWAITING_APPROVAL:'Approbation',REVIEW:'Révision',PLANNED:'Planifié',ANALYZING:'Analyse',CREATED:'Créé'};
+  return`<span class="badge ${map[s]||'badge-default'}">${labels[s]||s}</span>`;
 }
 
-/* ─── Chat ────────────────────────────────────────────────── */
-let chatHistory = [];
-
-(function initChat() {
-  document.addEventListener('DOMContentLoaded', () => {
-    const inp = document.getElementById('chat-input');
-    if (!inp) return;
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
-    });
-    inp.addEventListener('input', () => {
-      inp.style.height = 'auto';
-      inp.style.height = Math.min(inp.scrollHeight, 140) + 'px';
-    });
-  });
-})();
-
-function chatSuggest(text) {
-  document.getElementById('chat-input').value = text;
-  chatSend();
+function timeAgo(ts){
+  if(!ts)return'';
+  const d=typeof ts==='number'?(ts>1e12?new Date(ts):new Date(ts*1000)):new Date(ts);
+  const diff=Date.now()-d.getTime();
+  const m=Math.floor(diff/60000);
+  if(m<1)return"à l'instant";if(m<60)return m+'min';
+  const h=Math.floor(m/60);if(h<24)return h+'h';
+  const dy=Math.floor(h/24);return dy+'j';
 }
 
-async function chatSend() {
-  const inp = document.getElementById('chat-input');
-  const text = inp.value.trim();
-  if (!text) return;
+function formatUptime(s){if(!s)return'?';const h=Math.floor(s/3600);const m=Math.floor((s%3600)/60);return h>0?h+'h '+m+'m':m+'m'}
 
-  const btn = document.getElementById('chat-send-btn');
-  btn.disabled = true;
-  inp.value = '';
-  inp.style.height = 'auto';
-
-  // Hide empty state
-  const empty = document.getElementById('chat-empty');
-  if (empty) empty.style.display = 'none';
-
-  // Add user bubble
-  chatAppend('user', text);
-  chatHistory.push({role:'user', text});
-
-  // Add typing indicator
-  const typingId = 'typing-' + Date.now();
-  const msgs = document.getElementById('chat-messages');
-  const typing = document.createElement('div');
-  typing.className = 'chat-bubble jarvis';
-  typing.id = typingId;
-  typing.innerHTML = '<div class="bubble-inner"><div class="chat-typing"><span></span><span></span><span></span></div></div>';
-  msgs.appendChild(typing);
-  msgs.scrollTop = msgs.scrollHeight;
-
-  try {
-    // Submit mission
-    const r = await fetch('/api/v3/missions', {
-      method: 'POST',
-      headers: hdrs(),
-      body: JSON.stringify({user_input: text})
-    });
-    const d = await r.json();
-
-    if (!r.ok || !d.mission_id) {
-      removeTyping(typingId);
-      chatAppend('jarvis', '⚠️ ' + (d.detail || d.error || 'Submission failed'), null, true);
-      btn.disabled = false;
-      return;
-    }
-
-    // Poll for result
-    const result = await chatPoll(d.mission_id);
-    removeTyping(typingId);
-
-    if (result) {
-      const output = result.final_output || result.result || result.summary || '';
-      const status = (result.status || '').toLowerCase();
-      if (status === 'failed' || status === 'error') {
-        chatAppend('jarvis', '⚠️ Mission failed: ' + (result.error || 'Unknown error'), d.mission_id, true);
-      } else {
-        chatAppend('jarvis', output || 'Mission completed.', d.mission_id);
-      }
-      chatHistory.push({role:'jarvis', text: output || ''});
-    } else {
-      chatAppend('jarvis', '⏳ Mission is running… check the Missions tab for results.', d.mission_id);
-    }
-  } catch(e) {
-    removeTyping(typingId);
-    chatAppend('jarvis', '⚠️ Connection error.', null, true);
-  }
-
-  btn.disabled = false;
-  loadMissions(); // refresh mission count
-}
-
-async function chatPoll(missionId, maxWait = 60000) {
-  const start = Date.now();
-  const interval = 1500;
-  while (Date.now() - start < maxWait) {
-    await new Promise(r => setTimeout(r, interval));
-    try {
-      const r = await fetch('/api/v3/missions/' + missionId, {headers: hdrs()});
-      if (!r.ok) continue;
-      const d = await r.json();
-      const m = d.mission || d;
-      const st = (m.status || '').toLowerCase();
-      if (st === 'done' || st === 'completed' || st === 'failed' || st === 'error') return m;
-    } catch { /* continue polling */ }
-  }
-  return null; // timeout
-}
-
-function chatAppend(role, text, missionId, isError) {
-  const msgs = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'chat-bubble ' + role;
-
-  const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  const metaExtra = missionId ? ' · <span style="font-family:var(--font-mono)">' + missionId.substring(0,8) + '…</span>' : '';
-
-  // Format text: detect JSON blocks
-  let formatted = esc(text);
-  if (text && text.trim().startsWith('{')) {
-    try { JSON.parse(text); formatted = '<pre>' + esc(text) + '</pre>'; } catch {}
-  } else if (text && text.includes('\n')) {
-    formatted = esc(text).replace(/\n/g, '<br>');
-  }
-
-  div.innerHTML = `
-    <div class="bubble-inner" style="${isError ? 'border-color:var(--red-soft);' : ''}">
-      ${formatted || '<span style="color:var(--text-dim)">—</span>'}
-    </div>
-    <div class="bubble-meta">${role === 'user' ? 'You' : 'Jarvis'} · ${now}${metaExtra}</div>
-  `;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function removeTyping(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-/* ─── Utils ───────────────────────────────────────────────── */
-function esc(s) { const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
-function timeSince(ts) { const s=Math.floor(Date.now()/1000-ts); if(s<60)return 'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
-function toast(msg, ok) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast '+(ok?'ok':'err')+' show';
-  setTimeout(()=>{t.classList.remove('show')},3000);
-}
+// ── Keyboard ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.ctrlKey&&document.activeElement===document.getElementById('home-input')){submitMission()}
+});
 </script>
 </body>
 </html>
