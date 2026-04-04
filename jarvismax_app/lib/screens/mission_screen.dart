@@ -60,6 +60,7 @@ class MissionScreen extends StatefulWidget {
 }
 
 class _MissionScreenState extends State<MissionScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _controller  = TextEditingController();
   final _focus       = FocusNode();
   final _scrollCtrl  = ScrollController();
@@ -433,6 +434,66 @@ class _MissionScreenState extends State<MissionScreen> {
     });
   }
 
+  // ── Open a specific mission from drawer ────────────────────────────────────
+
+  void _openMissionInChat(Mission m) {
+    // Close drawer
+    _scaffoldKey.currentState?.closeDrawer();
+
+    // Clear current chat and show this mission
+    _pollTimer?.cancel();
+    _sseSub?.cancel();
+
+    final msgs = <_ChatMsg>[];
+    // User bubble
+    msgs.add(_ChatMsg(
+      localId: _nextId(),
+      type: _MsgType.user,
+      text: m.userInput,
+      missionId: m.id,
+      ts: _parseTs(m.createdAt),
+    ));
+    // Response bubble
+    if (m.isTerminal) {
+      final output = m.finalOutput.isNotEmpty
+          ? m.finalOutput
+          : m.planSummary.isNotEmpty
+              ? m.planSummary
+              : m.isFailed
+                  ? '❌ Mission échouée'
+                  : '✓ Mission terminée';
+      msgs.add(_ChatMsg(
+        localId: _nextId(),
+        type: _MsgType.jarvis,
+        text: output,
+        mission: m,
+        missionId: m.id,
+        ts: _parseTs(m.completedAt ?? m.createdAt),
+      ));
+    } else if (m.isActive) {
+      msgs.add(_ChatMsg(
+        localId: _nextId(),
+        type: _MsgType.working,
+        text: 'Jarvis travaille...',
+        missionId: m.id,
+        ts: _parseTs(m.createdAt),
+      ));
+    }
+
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(msgs);
+      _activeMid = m.isActive ? m.id : null;
+      _selectedTaskKey = 'libre';
+    });
+
+    if (_activeMid != null) {
+      _startLiveTracking(_activeMid!);
+    }
+    _scrollToBottom(instant: true);
+  }
+
   // ── Scroll helpers ────────────────────────────────────────────────────────
 
   void _scrollToBottom({bool instant = false}) {
@@ -464,7 +525,19 @@ class _MissionScreenState extends State<MissionScreen> {
         )['hint'] as String);
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: _MissionHistoryDrawer(
+        missions: context.watch<ApiService>().missions,
+        activeMissionId: _activeMid,
+        onSelectMission: _openMissionInChat,
+        onNewMission: _newMission,
+      ),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, size: 22),
+          tooltip: 'Historique',
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         title: const Text('JARVIS'),
         actions: [
           _WsDot(state: ws.connectionState),
@@ -1254,6 +1327,234 @@ class _MissionTypeBar extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ─── Mission History Drawer ────────────────────────────────────────────────────
+
+class _MissionHistoryDrawer extends StatefulWidget {
+  final List<Mission> missions;
+  final String? activeMissionId;
+  final void Function(Mission) onSelectMission;
+  final VoidCallback onNewMission;
+
+  const _MissionHistoryDrawer({
+    required this.missions,
+    required this.activeMissionId,
+    required this.onSelectMission,
+    required this.onNewMission,
+  });
+
+  @override
+  State<_MissionHistoryDrawer> createState() => _MissionHistoryDrawerState();
+}
+
+class _MissionHistoryDrawerState extends State<_MissionHistoryDrawer> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort by creation date descending
+    final sorted = [...widget.missions]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // Filter by search
+    final filtered = _search.isEmpty
+        ? sorted
+        : sorted.where((m) =>
+            m.userInput.toLowerCase().contains(_search.toLowerCase())).toList();
+
+    // Group by date
+    final grouped = <String, List<Mission>>{};
+    for (final m in filtered) {
+      final dt = DateTime.tryParse(m.createdAt);
+      final key = dt != null ? _dateLabel(dt) : 'Autre';
+      grouped.putIfAbsent(key, () => []).add(m);
+    }
+
+    return Drawer(
+      backgroundColor: JDS.bgBase,
+      child: SafeArea(
+        child: Column(children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(children: [
+              const Expanded(child: Text('Historique', style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w700, color: JDS.textPrimary,
+              ))),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: JDS.blue, size: 22),
+                onPressed: () {
+                  Navigator.pop(context); // close drawer
+                  widget.onNewMission();
+                },
+                tooltip: 'Nouvelle mission',
+              ),
+            ]),
+          ),
+
+          // Search
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              style: const TextStyle(color: JDS.textPrimary, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Rechercher…',
+                hintStyle: const TextStyle(color: JDS.textDim, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, size: 18, color: JDS.textMuted),
+                filled: true,
+                fillColor: JDS.bgElevated,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.borderSubtle),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.borderSubtle),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.blue),
+                ),
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+
+          // Mission list
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(child: Text(
+                    _search.isEmpty ? 'Aucune mission' : 'Aucun résultat',
+                    style: const TextStyle(color: JDS.textMuted, fontSize: 13),
+                  ))
+                : ListView(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    children: grouped.entries.expand((entry) => [
+                      // Date header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: Text(entry.key, style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600,
+                          color: JDS.textDim, letterSpacing: 0.5,
+                        )),
+                      ),
+                      // Mission items
+                      ...entry.value.map((m) => _HistoryItem(
+                        mission: m,
+                        isActive: m.id == widget.activeMissionId,
+                        onTap: () => widget.onSelectMission(m),
+                      )),
+                    ]).toList(),
+                  ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  String _dateLabel(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final mDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(mDay).inDays;
+    if (diff == 0) return "Aujourd'hui";
+    if (diff == 1) return 'Hier';
+    if (diff < 7) return 'Cette semaine';
+    if (diff < 30) return 'Ce mois';
+    return 'Plus ancien';
+  }
+}
+
+class _HistoryItem extends StatelessWidget {
+  final Mission mission;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _HistoryItem({
+    required this.mission,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = mission.userInput.isNotEmpty
+        ? mission.userInput
+        : mission.id;
+    final status = mission.status.toLowerCase();
+
+    final Color dotColor;
+    final String statusText;
+    if (mission.isActive) {
+      dotColor = JDS.blue;
+      statusText = 'En cours';
+    } else if (mission.isDone) {
+      dotColor = JDS.green;
+      statusText = 'Terminé';
+    } else if (mission.isFailed) {
+      dotColor = JDS.red;
+      statusText = 'Échoué';
+    } else if (status.contains('approval') || status.contains('pending')) {
+      dotColor = JDS.amber;
+      statusText = 'En attente';
+    } else {
+      dotColor = JDS.textDim;
+      statusText = mission.statusLabel;
+    }
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? JDS.blueSoft : Colors.transparent,
+          border: Border(
+            left: BorderSide(
+              color: isActive ? JDS.blue : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Row(children: [
+          // Status dot
+          Container(
+            width: 8, height: 8,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+              boxShadow: mission.isActive
+                  ? [BoxShadow(color: dotColor.withOpacity(0.4), blurRadius: 4)]
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Title + meta
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  color: isActive ? JDS.textPrimary : JDS.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                statusText,
+                style: TextStyle(fontSize: 10, color: dotColor),
+              ),
+            ],
+          )),
+        ]),
       ),
     );
   }
