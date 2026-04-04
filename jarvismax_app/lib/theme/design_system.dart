@@ -6,6 +6,29 @@ import 'package:flutter/material.dart';
 // Premium, calm, high-trust. Matches web app.html design tokens.
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ── Legacy JvColors compat — maps old cyan-themed palette to JDS tokens ─────
+// Used by: mission_screen.dart, actions_screen.dart, and their sub-widgets.
+// TODO: Migrate all JvColors references to JDS directly.
+class JvColors {
+  JvColors._();
+  static const bg       = JDS.bgBase;
+  static const surface  = JDS.bgSurface;
+  static const card     = JDS.bgElevated;
+  static const border   = JDS.borderDefault;
+  static const cyan     = JDS.blue;     // Primary accent: cyan → blue
+  static const cyanDark = Color(0xFF2563EB); // Darker blue
+  static const green    = JDS.green;
+  static const orange   = JDS.amber;
+  static const red      = JDS.red;
+  static const textPrim = JDS.textPrimary;
+  static const textSec  = JDS.textSecondary;
+  static const textMut  = JDS.textMuted;
+  static const text     = JDS.textPrimary;
+  static const error    = JDS.red;
+  static const success  = JDS.green;
+  static const warning  = JDS.amber;
+}
+
 // ── Tokens ───────────────────────────────────────────────────────────────────
 
 class JDS {

@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/uncensored_notifier.dart';
 import '../services/websocket_service.dart';
 import '../models/mission.dart';
+import '../theme/design_system.dart';
 
 // ─── Chat message model ───────────────────────────────────────────────────────
 
