@@ -254,6 +254,14 @@ class Mission {
     }
   }
 
+  /// Auto-generated display title from first ~60 chars of goal.
+  String get displayTitle {
+    if (userInput.isEmpty) return 'Mission ${id.substring(0, 8.clamp(0, id.length))}';
+    return userInput.length > 60
+        ? '${userInput.substring(0, 60)}…'
+        : userInput;
+  }
+
   String get statusLabel => status.replaceAll('_', ' ');
   bool get isPending => status == 'CREATED' || status == 'PLANNED';
   bool get isRunning => status == 'RUNNING' || status == 'REVIEW';
