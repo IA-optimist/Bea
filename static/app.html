@@ -571,8 +571,25 @@ async function openMission(id){
     </div>`;
   }
 
+  // Execution trace — what the system tried
+  const trace=m.execution_trace||[];
+  if(trace.length>0){
+    html+=`<div class="detail-section"><div class="detail-label">Trace d'exécution</div><div class="detail-block" style="font-size:12px;color:var(--t3)">`;
+    trace.forEach((t,i)=>{
+      const ev=t.event||t.type||'step';
+      const detail=t.detail||t.message||t.output||JSON.stringify(t).substring(0,120);
+      html+=`<div style="margin-bottom:4px"><span style="color:var(--t4)">${i+1}.</span> <span style="color:var(--blue)">${esc(ev)}</span> ${esc(String(detail).substring(0,200))}</div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // Error with context
   if(m.error){
-    html+=`<div class="detail-section"><div class="detail-label" style="color:var(--red)">Erreur</div><div class="detail-block" style="color:var(--red);border-color:var(--red-s)">${esc(m.error)}</div></div>`;
+    html+=`<div class="detail-section"><div class="detail-label" style="color:var(--red)">❌ Erreur</div><div class="detail-block" style="color:var(--red);border-color:rgba(239,68,68,.2)">
+      <div style="margin-bottom:8px">${esc(m.error)}</div>
+      ${fallback!=null?'<div style="font-size:11px;color:var(--t3)">Niveau de fallback utilisé : '+fallback+'</div>':''}
+      ${m.skipped_agents?.length?'<div style="font-size:11px;color:var(--t3);margin-top:4px">Agents ignorés : '+m.skipped_agents.map(a=>esc(a)).join(', ')+'</div>':''}
+    </div></div>`;
   }
 
   if(m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL'){
@@ -822,7 +839,17 @@ function formatUptime(s){if(!s)return'?';const h=Math.floor(s/3600);const m=Math
 // ── Keyboard ────────────────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.ctrlKey&&document.activeElement===document.getElementById('home-input')){submitMission()}
+  // Login: Enter key submits
+  if(e.key==='Enter'&&(document.activeElement===document.getElementById('login-user')||document.activeElement===document.getElementById('login-pass')||document.activeElement===document.getElementById('login-token'))){doLogin()}
 });
+
+// ── Auto-refresh on mission submit ──────────────────────────────────────────
+let _pollTimer=null;
+function startPoll(){if(_pollTimer)return;_pollTimer=setInterval(()=>{if(document.getElementById('v-home').classList.contains('active'))initHome()},15000)}
+function stopPoll(){if(_pollTimer){clearInterval(_pollTimer);_pollTimer=null}}
+// Start polling after login
+const _origEnter=enterApp;
+enterApp=function(){_origEnter();startPoll()};
 </script>
 </body>
 </html>

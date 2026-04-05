@@ -61,6 +61,7 @@ _PUBLIC_PATHS = {
 _PUBLIC_PREFIXES = (
     "/static/",
     "/docs/",
+    "/.well-known/",  # ACME TLS challenges (Caddy/certbot)
 )
 
 
