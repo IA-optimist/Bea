@@ -135,6 +135,11 @@ def retrieve_mission_lessons(
         )
 
 
+# Pass 43: minimum cosine-like score to consider a memory entry relevant.
+# Entries below this threshold are noise — ignore rather than inject misleading lessons.
+_SCORE_THRESHOLD = 0.40
+
+
 def _retrieve(goal: str, task_type: str, top_k: int) -> MissionLessons:
     """Internal retrieval — may raise; caller wraps in try/except."""
     from core.memory_facade import get_memory_facade
@@ -143,11 +148,11 @@ def _retrieve(goal: str, task_type: str, top_k: int) -> MissionLessons:
     # ── Retrieve failures ──────────────────────────────────────────────────
     raw_failures: list[Any] = []
     try:
-        raw_failures = facade.search(goal, content_type="failure", top_k=top_k)
+        raw_failures = facade.search(goal, content_type="failure", top_k=top_k + 2)
         if not raw_failures:
             # Fallback: unfiltered search with failure keywords
             raw_failures = facade.search(
-                f"failed error {goal[:40]}", top_k=top_k
+                f"failed error {goal[:40]}", top_k=top_k + 2
             )
     except Exception as fe:
         log.debug("memory_retrieval_failures_failed", err=str(fe)[:60])
@@ -155,17 +160,27 @@ def _retrieve(goal: str, task_type: str, top_k: int) -> MissionLessons:
     # ── Retrieve successes ─────────────────────────────────────────────────
     raw_successes: list[Any] = []
     try:
-        raw_successes = facade.search(goal, content_type="mission_outcome", top_k=top_k)
+        raw_successes = facade.search(goal, content_type="mission_outcome", top_k=top_k + 2)
         if not raw_successes:
             raw_successes = facade.search(
-                f"success complete done {goal[:40]}", top_k=top_k
+                f"success complete done {goal[:40]}", top_k=top_k + 2
             )
     except Exception as se:
         log.debug("memory_retrieval_successes_failed", err=str(se)[:60])
 
     # ── Normalize to dicts ─────────────────────────────────────────────────
-    failures  = [_normalize(e) for e in raw_failures[:top_k]]
-    successes = [_normalize(e) for e in raw_successes[:top_k]]
+    all_failures  = [_normalize(e) for e in raw_failures]
+    all_successes = [_normalize(e) for e in raw_successes]
+
+    # ── Pass 43: filter by score threshold + deduplicate by content prefix ─
+    failures  = _filter_and_dedup(all_failures,  threshold=_SCORE_THRESHOLD, top_k=top_k)
+    successes = _filter_and_dedup(all_successes, threshold=_SCORE_THRESHOLD, top_k=top_k)
+
+    if len(all_failures) != len(failures) or len(all_successes) != len(successes):
+        log.debug("memory_retrieval_filtered",
+                  raw_failures=len(all_failures), kept_failures=len(failures),
+                  raw_successes=len(all_successes), kept_successes=len(successes),
+                  threshold=_SCORE_THRESHOLD)
 
     # ── Synthesize guidance ────────────────────────────────────────────────
     avoid = _extract_avoid(failures, task_type)
@@ -195,6 +210,34 @@ def _retrieve(goal: str, task_type: str, top_k: int) -> MissionLessons:
     )
 
     return lessons
+
+
+def _filter_and_dedup(
+    entries: list[dict[str, Any]],
+    threshold: float,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    """
+    Pass 43: filter entries below score threshold and deduplicate by content prefix.
+    Returns at most top_k entries, sorted by score descending.
+    """
+    seen_prefixes: set[str] = set()
+    kept: list[dict[str, Any]] = []
+    # Sort by score desc so highest-quality entries win dedup
+    sorted_entries = sorted(entries, key=lambda e: e.get("score", 0.0), reverse=True)
+    for entry in sorted_entries:
+        score = entry.get("score", 0.0)
+        if score < threshold:
+            continue
+        # Dedup key: first 60 chars of content (normalised)
+        prefix = entry.get("content", "")[:60].lower().strip()
+        if prefix in seen_prefixes:
+            continue
+        seen_prefixes.add(prefix)
+        kept.append(entry)
+        if len(kept) >= top_k:
+            break
+    return kept
 
 
 def _normalize(entry: Any) -> dict[str, Any]:

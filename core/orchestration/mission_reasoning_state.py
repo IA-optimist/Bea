@@ -37,6 +37,22 @@ import structlog
 log = structlog.get_logger("orchestration.mission_reasoning_state")
 
 
+# Pass 43 — synonym table for state_satisfied matching.
+# Module-level constant (not inside @dataclass to avoid mutable-default error).
+# Maps canonical criterion phrase fragments to paraphrase signals in real results.
+_CRITERION_SYNONYMS: dict[str, list[str]] = {
+    "runs without errors": ["pass", "passing", "no error", "no exception", "✓", "ok"],
+    "target behavior":     ["fixed", "resolved", "works", "working", "implemented", "done"],
+    "health endpoint":     ["healthy", "200", "ok", "up", "running", "reachable"],
+    "findings address":    ["answers", "covers", "addressed", "found", "identified"],
+    "sources are credible":["cited", "source", "referenced", "link", "url"],
+    "conclusion stated":   ["conclusion", "finding", "result", "summary", "therefore"],
+    "directly addresses":  ["answers", "responds", "addressed", "here is"],
+    "appropriately concise":["brief", "short", "concise", "summary"],
+    "goal satisfied":      ["done", "complete", "finished", "accomplished"],
+}
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Data model
 # ══════════════════════════════════════════════════════════════════════════════
@@ -82,6 +98,7 @@ class MissionReasoningState:
         """
         Fill observed effects from execution result. Runs expected vs observed diff.
         Call once after execution completes.
+        Pass 43: improved satisfaction detection with synonym matching + soft threshold.
         """
         self.updated_at = time.time()
 
@@ -101,15 +118,33 @@ class MissionReasoningState:
             self.state_satisfied = False
             self.satisfaction_reason = f"execution_error: {error[:100]}"
         elif result:
-            # Heuristic: check if success criteria keywords appear in result
-            matched = sum(
-                1 for crit in self.success_criteria
-                if any(kw.lower() in result.lower() for kw in crit.split()[:3])
-            )
+            result_lower = result.lower()
+            matched = 0
+            for crit in self.success_criteria:
+                crit_lower = crit.lower()
+                # Primary: any of first 3 keywords in result
+                primary_hit = any(
+                    kw in result_lower
+                    for kw in crit_lower.split()[:3]
+                    if len(kw) > 3
+                )
+                if primary_hit:
+                    matched += 1
+                    continue
+                # Pass 43 — secondary: synonym lookup
+                for frag, synonyms in _CRITERION_SYNONYMS.items():
+                    if frag in crit_lower:
+                        if any(syn in result_lower for syn in synonyms):
+                            matched += 1
+                            break
+
             total = max(len(self.success_criteria), 1)
-            self.state_satisfied = (matched / total) >= 0.5
+            # Pass 43: soft threshold 0.33 (was 0.50) — criteria are conservative estimates;
+            # partial match is still meaningful signal, not failure.
+            ratio = matched / total
+            self.state_satisfied = ratio >= 0.33
             self.satisfaction_reason = (
-                f"criteria_match: {matched}/{total} "
+                f"criteria_match: {matched}/{total} ratio={ratio:.2f} "
                 f"({'satisfied' if self.state_satisfied else 'unsatisfied'})"
             )
         else:

@@ -28,6 +28,13 @@ _provider_override: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "_provider_override", default=None
 )
 
+# Pass 43 — use_safer_model: when True, non-LOCAL_ONLY roles prefer ollama (lighter, local)
+# Set by meta_orchestrator when confidence_policy.use_safer_model=True.
+# Async-safe ContextVar — scoped to the running coroutine only.
+_safer_model_active: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_safer_model_active", default=False
+)
+
 
 @contextlib.contextmanager
 def _null_ctx():
@@ -233,6 +240,14 @@ class LLMFactory:
             log.debug("llm_provider_override_applied", role=role, provider=_override)
         else:
             preferred = ROLE_PROVIDERS.get(role, self.s.model_strategy)
+
+        # Pass 43 — use_safer_model: downgrade cloud roles to ollama (local, conservative)
+        # when confidence_policy decided the mission needs a lighter/safer model.
+        # LOCAL_ONLY_ROLES already use ollama; _provider_override from routing takes priority.
+        if _safer_model_active.get() and not _override and role not in LOCAL_ONLY_ROLES:
+            preferred = "ollama"
+            log.info("llm_safer_model_applied", role=role, downgraded_to="ollama")
+
         providers = self._build_chain(role, preferred)
 
         for provider in providers:

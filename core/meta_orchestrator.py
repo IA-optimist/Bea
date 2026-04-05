@@ -985,6 +985,40 @@ class MetaOrchestrator:
                     log.warning("phase_failed", phase="confidence_policy",
                                 err=str(_cp_err)[:100])
 
+            # ── Pass 43: decompose_mission — restructure enriched_goal ─────────────
+            # When confidence_policy decided the mission needs decomposition,
+            # REPLACE the generic DECOMPOSE_MODE prompt with an explicit numbered
+            # step list derived from MissionReasoningState.candidate_actions.
+            # This gives agents a concrete plan to follow, not just an instruction.
+            # Fail-open: if _mission_state is unavailable, original goal is unchanged.
+            _cp_meta_decompose = ctx.metadata.get("confidence_policy", {})
+            if _cp_meta_decompose.get("decompose_mission") and _mission_state is not None:
+                try:
+                    _actions = _mission_state.candidate_actions
+                    if _actions:
+                        _steps = "\n".join(
+                            f"  Step {i + 1}: {a}"
+                            for i, a in enumerate(_actions[:5])
+                        )
+                        # Restructure goal: explicit numbered plan + original goal appended
+                        enriched_goal = (
+                            f"[DECOMPOSED MISSION — execute each step in order, "
+                            f"do not attempt the full goal in one pass]\n"
+                            f"{_steps}\n\n"
+                            f"Original goal: {goal}"
+                        )
+                        trace.record(
+                            "plan", "mission_decomposed",
+                            steps=len(_actions[:5]),
+                            reason="confidence_policy:decompose_mission",
+                        )
+                        log.info("mission_goal_decomposed",
+                                 mission_id=mid,
+                                 steps=len(_actions[:5]),
+                                 first_step=_actions[0][:60])
+                except Exception as _de:
+                    log.debug("decompose_mission_failed", err=str(_de)[:60])
+
             from core.orchestration.execution_supervisor import supervise
             delegate = self.v2 if use_budget else self.jarvis
             # Wire the capability dispatcher onto the delegate instance so that
@@ -1152,6 +1186,23 @@ class MetaOrchestrator:
                 except Exception:
                     pass
 
+            # ── Pass 43: use_safer_model — activate ContextVar before execution ──
+            # When confidence_policy.use_safer_model=True, LLMFactory.get() will
+            # prefer ollama over cloud providers for the duration of this mission.
+            # Scoped to this coroutine via ContextVar token. Fail-open: never blocks.
+            _safer_token = None
+            _cp_meta = ctx.metadata.get("confidence_policy", {})
+            if _cp_meta.get("use_safer_model") and not force_approved:
+                try:
+                    from core.llm_factory import _safer_model_active as _sma
+                    _safer_token = _sma.set(True)
+                    log.info("safer_model_activated",
+                             mission_id=mid,
+                             tier=_cp_meta.get("tier", "?"),
+                             confidence=_cp_meta.get("confidence", "?"))
+                except Exception as _sme:
+                    log.debug("safer_model_activation_failed", err=str(_sme)[:60])
+
             # Enforce a hard mission deadline — prevents infinite hangs.
             _mission_timeout = getattr(self.s, "mission_timeout_s", 600)
             try:
@@ -1175,6 +1226,13 @@ class MetaOrchestrator:
                     try:
                         from core.llm_factory import _provider_override as _pov
                         _pov.reset(_provider_token)
+                    except Exception:
+                        pass
+                # Pass 43: reset safer_model ContextVar
+                if _safer_token is not None:
+                    try:
+                        from core.llm_factory import _safer_model_active as _sma
+                        _sma.reset(_safer_token)
                     except Exception:
                         pass
 

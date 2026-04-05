@@ -641,5 +641,205 @@ class TestNeedsApprovalPreservation:
         assert d.require_approval is False
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Pass 43 — use_safer_model, decompose_mission, MemoryRetrieval, state_satisfied
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestUseSaferModel:
+    """
+    use_safer_model: DECOMPOSE tier must set use_safer_model=True.
+    LLMFactory ContextVar _safer_model_active must exist and default to False.
+    """
+
+    def test_decompose_tier_sets_use_safer_model(self):
+        from core.orchestration.confidence_policy import ConfidencePolicy
+        d = ConfidencePolicy().decide(confidence=0.25, risk_level="low", goal="Vague task")
+        assert d.use_safer_model is True, "DECOMPOSE tier must set use_safer_model"
+
+    def test_proceed_tier_does_not_set_use_safer_model(self):
+        from core.orchestration.confidence_policy import ConfidencePolicy
+        d = ConfidencePolicy().decide(confidence=0.90, risk_level="low", goal="Simple task")
+        assert d.use_safer_model is False
+
+    def test_safer_model_contextvar_exists_and_defaults_false(self):
+        from core.llm_factory import _safer_model_active
+        assert _safer_model_active.get() is False
+
+    def test_safer_model_contextvar_can_be_set_and_reset(self):
+        from core.llm_factory import _safer_model_active
+        token = _safer_model_active.set(True)
+        assert _safer_model_active.get() is True
+        _safer_model_active.reset(token)
+        assert _safer_model_active.get() is False
+
+    def test_safer_model_does_not_activate_on_proceed(self):
+        """Orchestrator should NOT set safer_model when tier=PROCEED."""
+        from core.orchestration.confidence_policy import ConfidencePolicy
+        d = ConfidencePolicy().decide(confidence=0.85, risk_level="low", goal="Hi")
+        # Simulate orchestrator logic: only activate if use_safer_model=True
+        _would_activate = d.use_safer_model and not False  # force_approved=False
+        assert _would_activate is False
+
+
+class TestDecomposeMission:
+    """
+    decompose_mission: when True + candidate_actions available,
+    enriched_goal must be restructured into numbered steps.
+    """
+
+    def test_decompose_tier_sets_decompose_mission(self):
+        from core.orchestration.confidence_policy import ConfidencePolicy
+        d = ConfidencePolicy().decide(confidence=0.25, risk_level="low", goal="Big task")
+        assert d.decompose_mission is True
+
+    def test_goal_restructure_logic(self):
+        """Simulate the decompose_mission goal restructuring in meta_orchestrator."""
+        from core.orchestration.mission_reasoning_state import build
+
+        state = build(
+            goal="Fix the authentication module",
+            mission_id="decomp-001",
+            classification={"task_type": "code", "complexity": "moderate"},
+        )
+        assert state.candidate_actions, "Must have candidate_actions to decompose"
+
+        actions = state.candidate_actions[:5]
+        steps = "\n".join(f"  Step {i+1}: {a}" for i, a in enumerate(actions))
+        restructured = (
+            f"[DECOMPOSED MISSION — execute each step in order, "
+            f"do not attempt the full goal in one pass]\n"
+            f"{steps}\n\n"
+            f"Original goal: Fix the authentication module"
+        )
+        assert "Step 1:" in restructured
+        assert "Original goal:" in restructured
+        assert "DECOMPOSED MISSION" in restructured
+        # Must not be a simple appended prompt — goal is replaced, not just extended
+        assert restructured.startswith("[DECOMPOSED")
+
+    def test_decompose_uses_candidate_actions_from_state(self):
+        from core.orchestration.mission_reasoning_state import build
+        state = build(
+            goal="Deploy new service",
+            mission_id="decomp-002",
+            classification={"task_type": "deployment", "complexity": "complex"},
+        )
+        # deployment candidate_actions known from _TASK_TYPE_PATTERNS
+        assert len(state.candidate_actions) >= 2
+        assert any("deploy" in a.lower() or "build" in a.lower()
+                   for a in state.candidate_actions)
+
+
+class TestMemoryRetrievalFiltering:
+    """
+    Pass 43: _filter_and_dedup must:
+    - drop entries below SCORE_THRESHOLD
+    - deduplicate by content prefix
+    - return at most top_k entries
+    """
+
+    def test_filter_drops_low_score_entries(self):
+        from core.orchestration.memory_retrieval import _filter_and_dedup, _SCORE_THRESHOLD
+        entries = [
+            {"content": "good entry A", "score": 0.80},
+            {"content": "bad entry B",  "score": 0.10},   # below threshold
+            {"content": "ok entry C",   "score": 0.50},
+        ]
+        kept = _filter_and_dedup(entries, threshold=_SCORE_THRESHOLD, top_k=10)
+        contents = [e["content"] for e in kept]
+        assert "good entry A" in contents
+        assert "ok entry C" in contents
+        assert "bad entry B" not in contents
+
+    def test_filter_deduplicates_by_prefix(self):
+        from core.orchestration.memory_retrieval import _filter_and_dedup
+        # Build two entries that share the exact same first 60 chars
+        shared = "auth failed because the token was not present in the request"  # 60 chars
+        assert len(shared) == 60
+        entries = [
+            {"content": shared + " — first occurrence with extra detail", "score": 0.80},
+            {"content": shared + " — second occurrence is duplicate",     "score": 0.75},
+            {"content": "deployment failed due to missing environment config file", "score": 0.70},
+        ]
+        kept = _filter_and_dedup(entries, threshold=0.0, top_k=10)
+        # First two share the same 60-char prefix → only highest score kept
+        assert len(kept) == 2
+
+    def test_filter_respects_top_k(self):
+        from core.orchestration.memory_retrieval import _filter_and_dedup
+        entries = [{"content": f"entry {i}", "score": 0.9 - i * 0.05} for i in range(10)]
+        kept = _filter_and_dedup(entries, threshold=0.0, top_k=3)
+        assert len(kept) == 3
+
+    def test_score_threshold_constant_is_reasonable(self):
+        from core.orchestration.memory_retrieval import _SCORE_THRESHOLD
+        assert 0.30 <= _SCORE_THRESHOLD <= 0.60, "Threshold should be between 0.3 and 0.6"
+
+    def test_empty_entries_returns_empty(self):
+        from core.orchestration.memory_retrieval import _filter_and_dedup
+        assert _filter_and_dedup([], threshold=0.4, top_k=5) == []
+
+
+class TestStateSatisfiedImproved:
+    """
+    Pass 43: state_satisfied improvements.
+    - Synonym matching must rescue paraphrase hits.
+    - Soft threshold 0.33 (was 0.50).
+    - Error with no result must be unsatisfied.
+    """
+
+    def test_synonym_match_tests_pass_satisfies_code_criteria(self):
+        """'Tests pass' in result matches 'code runs without errors' via synonym."""
+        from core.orchestration.mission_reasoning_state import build
+        state = build(
+            goal="Fix the auth bug in login.py",
+            mission_id="sat-001",
+            classification={"task_type": "code", "complexity": "simple"},
+        )
+        # Result uses paraphrase "Tests pass" not literal "code runs without errors"
+        state.update_observed(
+            result="Fixed: added missing token validation. Tests pass. No imports broken.",
+            error="",
+        )
+        assert state.state_satisfied is True, (
+            "Synonym 'pass' must match criteria 'runs without errors'"
+        )
+
+    def test_soft_threshold_partial_match_is_satisfied(self):
+        """1/3 criteria matched at ratio=0.33 → satisfied (was failing at 0.50)."""
+        from core.orchestration.mission_reasoning_state import build
+        state = build(
+            goal="Deploy the service",
+            mission_id="sat-002",
+            classification={"task_type": "deployment", "complexity": "moderate"},
+        )
+        # success_criteria for deployment: ["health endpoint returns OK", "no error spike"]
+        # Result only mentions "healthy" → triggers synonym for "health endpoint" → 1 match
+        state.update_observed(result="Service is healthy.", error="")
+        ratio = state.expected_vs_observed.get("coverage_ratio", 0)
+        # state_satisfied depends on 0.33 threshold — 1/2 = 0.5 → satisfied
+        assert state.state_satisfied is True
+
+    def test_error_no_result_is_unsatisfied(self):
+        from core.orchestration.mission_reasoning_state import build
+        state = build(goal="Deploy", mission_id="sat-003",
+                      classification={"task_type": "deployment"})
+        state.update_observed(result="", error="ConnectionRefusedError")
+        assert state.state_satisfied is False
+        assert "execution_error" in state.satisfaction_reason
+
+    def test_empty_result_is_unsatisfied(self):
+        from core.orchestration.mission_reasoning_state import build
+        state = build(goal="Research topic", mission_id="sat-004",
+                      classification={"task_type": "research"})
+        state.update_observed(result="", error="")
+        assert state.state_satisfied is False
+        assert state.satisfaction_reason == "no_result"
+
+    def test_synonym_dict_is_non_empty(self):
+        from core.orchestration.mission_reasoning_state import _CRITERION_SYNONYMS
+        assert len(_CRITERION_SYNONYMS) >= 5
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
