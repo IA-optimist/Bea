@@ -19,7 +19,7 @@ All mutations enforced through governance layer:
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -126,9 +126,17 @@ def set_instances(mgr=None, audit=None, health=None, validator=None):
     if validator: _validator = validator
 
 
-def _role_from_header(x_role: str | None) -> str:
-    """Extract role. Default admin for now (real auth deferred to middleware)."""
-    return x_role or "admin"
+def _role_from_request(request: Request) -> str:
+    """Extract role from verified auth state set by AccessEnforcementMiddleware.
+
+    Reads request.state.user (populated from the validated JWT/token by the
+    global middleware) instead of a client-controlled X-Role header.
+    Fails safe to 'viewer' — never grants admin by default.
+    """
+    user = getattr(request.state, "user", None)
+    if user and isinstance(user, dict):
+        return user.get("role", "viewer")
+    return "viewer"
 
 
 # ── Agents ──
@@ -138,9 +146,9 @@ def list_agents(status: str | None = None, simple: bool = False):
     return {"agents": _get_mgr().list_agents(status, simple)}
 
 @router.post("/agents")
-def create_agent(req: AgentRequest, x_role: Optional[str] = Header(None), x_source: Optional[str] = Header("api")):
+def create_agent(req: AgentRequest, request: Request, x_source: Optional[str] = Header("api")):
     from core.modules.module_governance import check_rbac, MODEL_TIER_MAP
-    role = _role_from_header(x_role)
+    role = _role_from_request(request)
     rbac = check_rbac(role, "agent", "create")
     if not rbac.allowed:
         raise HTTPException(403, rbac.reason)
@@ -157,8 +165,8 @@ def create_agent(req: AgentRequest, x_role: Optional[str] = Header(None), x_sour
     return {"agent": agent.to_dict(), "approval_needed": rbac.needs_approval}
 
 @router.put("/agents/{agent_id}")
-def update_agent(agent_id: str, req: UpdateRequest, x_role: Optional[str] = Header(None)):
-    role = _role_from_header(x_role)
+def update_agent(agent_id: str, req: UpdateRequest, request: Request):
+    role = _role_from_request(request)
     from core.modules.module_governance import check_rbac
     rbac = check_rbac(role, "agent", "update")
     if not rbac.allowed:
@@ -173,8 +181,8 @@ def update_agent(agent_id: str, req: UpdateRequest, x_role: Optional[str] = Head
     return {"agent": result.to_dict()}
 
 @router.delete("/agents/{agent_id}")
-def delete_agent(agent_id: str, x_role: Optional[str] = Header(None)):
-    role = _role_from_header(x_role)
+def delete_agent(agent_id: str, request: Request):
+    role = _role_from_request(request)
     from core.modules.module_governance import check_rbac
     rbac = check_rbac(role, "agent", "delete")
     if not rbac.allowed:
@@ -190,11 +198,12 @@ def test_agent(agent_id: str):
     return health.to_dict()
 
 @router.post("/agents/{agent_id}/toggle")
-def toggle_agent(agent_id: str, x_role: Optional[str] = Header(None)):
+def toggle_agent(agent_id: str, request: Request):
     status = _get_mgr().toggle_agent(agent_id)
     if status is None:
         raise HTTPException(404, "Agent not found")
-    _get_audit().record(_role_from_header(x_role), _role_from_header(x_role), "agent", agent_id, "toggle")
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "agent", agent_id, "toggle")
     return {"status": status}
 
 @router.post("/agents/{agent_id}/duplicate")
@@ -212,9 +221,10 @@ def list_skills(category: str | None = None):
     return {"skills": _get_mgr().list_skills(category)}
 
 @router.post("/skills")
-def create_skill(req: SkillRequest):
+def create_skill(req: SkillRequest, request: Request):
     skill = _get_mgr().create_skill(req.model_dump())
-    _get_audit().record("admin", "admin", "skill", skill.id, "create", after=skill.to_dict())
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "skill", skill.id, "create", after=skill.to_dict())
     return {"skill": skill.to_dict()}
 
 @router.put("/skills/{skill_id}")
@@ -225,10 +235,11 @@ def update_skill(skill_id: str, req: UpdateRequest):
     return {"skill": result.to_dict()}
 
 @router.delete("/skills/{skill_id}")
-def delete_skill(skill_id: str):
+def delete_skill(skill_id: str, request: Request):
     if not _get_mgr().delete_skill(skill_id):
         raise HTTPException(404, "Skill not found")
-    _get_audit().record("admin", "admin", "skill", skill_id, "delete")
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "skill", skill_id, "delete")
     return {"status": "deleted"}
 
 @router.post("/skills/{skill_id}/toggle")
@@ -253,8 +264,8 @@ def list_connectors(provider: str | None = None):
     return {"connectors": _get_mgr().list_connectors(provider)}
 
 @router.post("/connectors")
-def create_connector(req: ConnectorRequest, x_role: Optional[str] = Header(None)):
-    role = _role_from_header(x_role)
+def create_connector(req: ConnectorRequest, request: Request):
+    role = _role_from_request(request)
     from core.modules.module_governance import check_rbac
     risk_ctx = "payment" if req.provider in ("stripe", "paypal") else ""
     rbac = check_rbac(role, "connector", "create", risk_ctx)
@@ -273,10 +284,11 @@ def update_connector(conn_id: str, req: UpdateRequest):
     return {"connector": result.to_dict()}
 
 @router.delete("/connectors/{conn_id}")
-def delete_connector(conn_id: str):
+def delete_connector(conn_id: str, request: Request):
     if not _get_mgr().delete_connector(conn_id):
         raise HTTPException(404, "Connector not found")
-    _get_audit().record("admin", "admin", "connector", conn_id, "delete")
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "connector", conn_id, "delete")
     return {"status": "deleted"}
 
 @router.post("/connectors/{conn_id}/toggle")
@@ -293,7 +305,7 @@ def test_connector(conn_id: str):
     return {**test_result, "health": health.to_dict()}
 
 @router.post("/connectors/{conn_id}/rebind")
-def rebind_connector(conn_id: str, req: UpdateRequest):
+def rebind_connector(conn_id: str, req: UpdateRequest, request: Request):
     """Rebind secrets/identity for a connector."""
     updates = {}
     if "identity" in req.updates:
@@ -303,7 +315,8 @@ def rebind_connector(conn_id: str, req: UpdateRequest):
     result = _get_mgr().update_connector(conn_id, updates)
     if not result:
         raise HTTPException(404, "Connector not found")
-    _get_audit().record("admin", "admin", "connector", conn_id, "rebind")
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "connector", conn_id, "rebind")
     return {"connector": result.to_dict()}
 
 
@@ -314,9 +327,10 @@ def list_mcp():
     return {"mcp": _get_mgr().list_mcp()}
 
 @router.post("/mcp")
-def create_mcp(req: MCPRequest):
+def create_mcp(req: MCPRequest, request: Request):
     mcp = _get_mgr().create_mcp(req.model_dump())
-    _get_audit().record("admin", "admin", "mcp", mcp.id, "create", after=mcp.to_safe_dict())
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "mcp", mcp.id, "create", after=mcp.to_safe_dict())
     return {"mcp": mcp.to_safe_dict()}
 
 @router.put("/mcp/{mcp_id}")
@@ -327,10 +341,11 @@ def update_mcp(mcp_id: str, req: UpdateRequest):
     return {"mcp": result.to_safe_dict()}
 
 @router.delete("/mcp/{mcp_id}")
-def delete_mcp(mcp_id: str):
+def delete_mcp(mcp_id: str, request: Request):
     if not _get_mgr().delete_mcp(mcp_id):
         raise HTTPException(404, "MCP not found")
-    _get_audit().record("admin", "admin", "mcp", mcp_id, "delete")
+    role = _role_from_request(request)
+    _get_audit().record(role, role, "mcp", mcp_id, "delete")
     return {"status": "deleted"}
 
 @router.post("/mcp/{mcp_id}/toggle")
@@ -348,12 +363,22 @@ def test_mcp(mcp_id: str):
 
 @router.post("/mcp/{mcp_id}/discover")
 def discover_mcp_tools(mcp_id: str):
-    """Discover tools from MCP server."""
+    """Discover tools from MCP server.
+
+    NOT IMPLEMENTED: live MCP connection not yet built.
+    Returns 501 so callers know this is a genuine stub, not a silent no-op.
+    Configure tools manually via PUT /api/v3/mcp/{mcp_id} until this lands.
+    """
     mcp = _get_mgr().get_mcp(mcp_id)
     if not mcp:
         raise HTTPException(404, "MCP not found")
-    # Simulated discovery — real implementation would connect to MCP server
-    return {"mcp_id": mcp_id, "tools": mcp.discovered_tools, "status": "discovery_pending"}
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            "MCP live discovery is not yet implemented. "
+            "Configure tools manually or use PUT /api/v3/mcp/{mcp_id}."
+        ),
+    )
 
 
 # ── Catalog ──
@@ -363,10 +388,11 @@ def get_catalog(module_type: str | None = None, category: str | None = None):
     return {"catalog": _get_mgr().get_catalog(module_type, category)}
 
 @router.post("/catalog/install")
-def install_from_catalog(catalog_id: str):
+def install_from_catalog(catalog_id: str, request: Request):
     result = _get_mgr().install_from_catalog(catalog_id)
     if result.get("success"):
-        _get_audit().record("admin", "admin", result.get("type", ""), result.get("id", ""), "install")
+        role = _role_from_request(request)
+        _get_audit().record(role, role, result.get("type", ""), result.get("id", ""), "install")
     return result
 
 
