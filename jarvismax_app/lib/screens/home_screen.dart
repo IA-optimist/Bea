@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../main.dart' show tabNotifier;
 import '../services/api_service.dart';
 import '../services/websocket_service.dart';
 import '../models/mission.dart';
@@ -15,34 +16,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-// ── Task type definitions ─────────────────────────────────────────────────────
-// Maps backend skill key → French label + icon + composer hint
-const List<Map<String, dynamic>> _kTaskTypes = [
-  {'key': 'libre',                  'label': 'Libre',               'icon': 0xe3c9, 'hint': 'Que voulez-vous faire ? Recherche, analyse, code, automatisation…'},
-  {'key': 'market_research',        'label': 'Recherche marché',    'icon': 0xe8b6, 'hint': 'Ex : Analysez le marché des outils IA pour PME en France…'},
-  {'key': 'competitor_analysis',    'label': 'Concurrents',         'icon': 0xe14f, 'hint': 'Ex : Analysez les concurrents de [votre produit/service]…'},
-  {'key': 'positioning',            'label': 'Positionnement',      'icon': 0xe1e0, 'hint': 'Ex : Définissez le positionnement de [votre offre] face au marché…'},
-  {'key': 'pricing_strategy',       'label': 'Stratégie prix',      'icon': 0xe263, 'hint': 'Ex : Proposez une grille tarifaire pour [votre produit]…'},
-  {'key': 'growth_plan',            'label': 'Plan de croissance',  'icon': 0xe6de, 'hint': 'Ex : Créez un plan de croissance sur 6 mois pour [votre entreprise]…'},
-  {'key': 'acquisition_strategy',   'label': 'Acquisition',         'icon': 0xe7fe, 'hint': 'Ex : Définissez une stratégie d\'acquisition pour [cible client]…'},
-  {'key': 'value_proposition',      'label': 'Valeur client',       'icon': 0xe838, 'hint': 'Ex : Formulez la proposition de valeur de [votre offre]…'},
-  {'key': 'offer_design',           'label': 'Design offre',        'icon': 0xe19c, 'hint': 'Ex : Concevez une offre commerciale pour [votre marché cible]…'},
-  {'key': 'customer_persona',       'label': 'Persona client',      'icon': 0xe7fd, 'hint': 'Ex : Créez des personas clients pour [votre produit]…'},
-  {'key': 'copywriting',            'label': 'Copywriting',         'icon': 0xe22b, 'hint': 'Ex : Rédigez un texte de vente percutant pour [votre offre]…'},
-  {'key': 'funnel_design',          'label': 'Funnel',              'icon': 0xef4f, 'hint': 'Ex : Concevez un funnel de conversion pour [votre offre]…'},
-  {'key': 'landing_structure',      'label': 'Landing page',        'icon': 0xe051, 'hint': 'Ex : Structurez une landing page pour [votre produit]…'},
-  {'key': 'spec_writing',           'label': 'Rédaction spec',      'icon': 0xe873, 'hint': 'Ex : Rédigez les spécifications de [votre fonctionnalité]…'},
-  {'key': 'automation_opportunity', 'label': 'Automatisation',      'icon': 0xe553, 'hint': 'Ex : Identifiez les opportunités d\'automatisation dans [votre activité]…'},
-  {'key': 'strategy_reasoning',     'label': 'Conseil stratégique', 'icon': 0xe90f, 'hint': 'Ex : Donnez un conseil stratégique sur [ma situation actuelle]…'},
-];
-
 class _HomeScreenState extends State<HomeScreen> {
-  final _controller = TextEditingController();
+  // FocusNode used by GestureDetector to dismiss keyboard on tap-outside.
   final _focus = FocusNode();
-  bool _sending = false;
-  String? _feedback;
-  bool _feedbackIsError = false;
-  String _selectedTaskKey = 'libre';
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,39 +91,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _ApprovalAlert(count: api.pendingActions.length),
                 )),
 
-              // ── Task Type Selector ──
+              // ── Quick Action — navigate to Missions chat ──
               SliverToBoxAdapter(child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                child: _TaskTypeBar(
-                  selected: _selectedTaskKey,
-                  onSelect: (key) => setState(() => _selectedTaskKey = key),
-                ),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: _QuickMissionButton(onTap: () {
+                  _navigateToMissions(context);
+                }),
               )),
-
-              // ── Composer ──
-              SliverToBoxAdapter(child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _Composer(
-                  controller: _controller,
-                  focus: _focus,
-                  sending: _sending,
-                  onSend: _send,
-                  hintText: _currentHint,
-                  selectedLabel: _selectedTaskKey == 'libre' ? null : _currentLabel,
-                  onClearType: () => setState(() => _selectedTaskKey = 'libre'),
-                ),
-              )),
-
-              // ── Feedback ──
-              if (_feedback != null)
-                SliverToBoxAdapter(child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: _FeedbackBanner(
-                    message: _feedback!,
-                    isError: _feedbackIsError,
-                    onDismiss: () => setState(() => _feedback = null),
-                  ),
-                )),
 
               // ── Stats ──
               SliverToBoxAdapter(child: Padding(
@@ -184,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: JEmptyState(
                     icon: Icons.rocket_launch_outlined,
                     title: 'Aucune mission',
-                    subtitle: 'Décrivez une tâche ci-dessus pour commencer',
+                    subtitle: 'Lancez une mission depuis l'onglet Missions',
                   ),
                 ))
               else
@@ -207,12 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Map<String, dynamic> get _currentTypeData =>
-      _kTaskTypes.firstWhere((t) => t['key'] == _selectedTaskKey,
-          orElse: () => _kTaskTypes.first);
-
-  String get _currentHint => _currentTypeData['hint'] as String;
-  String get _currentLabel => _currentTypeData['label'] as String;
+  void _navigateToMissions(BuildContext ctx) {
+    // Switch to Missions tab (index 1) via shared notifier
+    tabNotifier.value = 1;
+  }
 
   String _dateString() {
     final now = DateTime.now();
@@ -230,59 +184,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Bonsoir.';
   }
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    // Prefix the domain skill key so the backend can route to the right skill
-    final goal = (_selectedTaskKey != 'libre')
-        ? '[$_selectedTaskKey] $text'
-        : text;
-
-    setState(() { _sending = true; _feedback = null; });
-
-    try {
-      final api = context.read<ApiService>();
-      final result = await api.submitMission(goal);
-      if (!mounted) return;
-
-      if (result != null) {
-        setState(() {
-          _sending = false;
-          _feedback = '✓ Mission lancée';
-          _feedbackIsError = false;
-          _selectedTaskKey = 'libre'; // reset type after send
-        });
-        _controller.clear();
-        await api.refresh();
-      } else {
-        setState(() {
-          _sending = false;
-          _feedback = 'Échec d\'envoi de la mission';
-          _feedbackIsError = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() {
-        _sending = false;
-        _feedback = 'Erreur de connexion';
-        _feedbackIsError = true;
-      });
-    }
-  }
-
   void _openMission(Mission m) {
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => MissionDetailScreen(mission: m),
     ));
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
 }
 
 // ── Connection Indicator ─────────────────────────────────────────────────────
@@ -354,204 +261,52 @@ class _ApprovalAlert extends StatelessWidget {
   }
 }
 
-// ── Composer ──────────────────────────────────────────────────────────────────
+// ── Quick Mission Button ─────────────────────────────────────────────────────
 
-class _Composer extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focus;
-  final bool sending;
-  final VoidCallback onSend;
-  final String hintText;
-  final String? selectedLabel;
-  final VoidCallback? onClearType;
-
-  const _Composer({
-    required this.controller,
-    required this.focus,
-    required this.sending,
-    required this.onSend,
-    this.hintText = 'Que voulez-vous faire ? Recherche, analyse, code, automatisation…',
-    this.selectedLabel,
-    this.onClearType,
-  });
+class _QuickMissionButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _QuickMissionButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: JDS.bgSurface,
-        borderRadius: BorderRadius.circular(JDS.radiusLg),
-        border: Border.all(
-          color: selectedLabel != null
-              ? JDS.blue.withValues(alpha: 0.4)
-              : JDS.borderDefault,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: JDS.bgSurface,
+          borderRadius: BorderRadius.circular(JDS.radiusLg),
+          border: Border.all(color: JDS.borderDefault),
         ),
-      ),
-      child: Column(children: [
-        // ── Selected category badge ──
-        if (selectedLabel != null) ...[
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: JDS.blue.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: JDS.blue.withValues(alpha: 0.3)),
+        child: Row(children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [JDS.blue, JDS.violet],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.category_rounded, size: 11, color: JDS.blue),
-                const SizedBox(width: 4),
-                Text(selectedLabel!, style: const TextStyle(
-                  fontSize: 11, color: JDS.blue, fontWeight: FontWeight.w600,
-                )),
-              ]),
+              borderRadius: BorderRadius.circular(JDS.radiusMd),
             ),
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: onClearType,
-              child: const Icon(Icons.close_rounded, size: 14, color: JDS.textDim),
-            ),
-          ]),
-          const SizedBox(height: 10),
-        ],
-        TextField(
-          controller: controller,
-          focusNode: focus,
-          maxLines: 3,
-          minLines: 2,
-          style: const TextStyle(color: JDS.textPrimary, fontSize: 15, height: 1.5),
-          decoration: InputDecoration(
-            hintText: hintText,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-            contentPadding: EdgeInsets.zero,
+            child: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Colors.white),
           ),
-        ),
-        const Divider(height: 24),
-        Row(children: [
-          const Text('Jarvis s\'occupe du reste', style: TextStyle(
-            fontSize: 12, color: JDS.textDim,
+          const SizedBox(width: 14),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text('Nouvelle mission', style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, color: JDS.textPrimary,
+              )),
+              SizedBox(height: 2),
+              Text('Recherche, analyse, code, stratégie…', style: TextStyle(
+                fontSize: 13, color: JDS.textMuted,
+              )),
+            ],
           )),
-          const Spacer(),
-          SizedBox(
-            height: 36,
-            child: ElevatedButton(
-              onPressed: sending ? null : onSend,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-              ),
-              child: sending
-                  ? const SizedBox(width: 16, height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.play_arrow_rounded, size: 16),
-                      SizedBox(width: 4),
-                      Text('Lancer'),
-                    ]),
-            ),
-          ),
+          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: JDS.textDim),
         ]),
-      ]),
-    );
-  }
-}
-
-// ── Task Type Bar ─────────────────────────────────────────────────────────────
-
-class _TaskTypeBar extends StatelessWidget {
-  final String selected;
-  final ValueChanged<String> onSelect;
-
-  const _TaskTypeBar({required this.selected, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: _kTaskTypes.map((t) {
-          final key = t['key'] as String;
-          final label = t['label'] as String;
-          final iconCode = t['icon'] as int;
-          final isSelected = key == selected;
-
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => onSelect(key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? JDS.blue.withValues(alpha: 0.15)
-                      : JDS.bgSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? JDS.blue : JDS.borderSubtle,
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(
-                    IconData(iconCode, fontFamily: 'MaterialIcons'),
-                    size: 13,
-                    color: isSelected ? JDS.blue : JDS.textMuted,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? JDS.blue : JDS.textSecondary,
-                    ),
-                  ),
-                ]),
-              ),
-            ),
-          );
-        }).toList(),
       ),
-    );
-  }
-}
-
-// ── Feedback Banner ──────────────────────────────────────────────────────────
-
-class _FeedbackBanner extends StatelessWidget {
-  final String message;
-  final bool isError;
-  final VoidCallback onDismiss;
-
-  const _FeedbackBanner({
-    required this.message,
-    required this.isError,
-    required this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isError ? JDS.red : JDS.green;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(JDS.radiusSm),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(children: [
-        Text(message, style: TextStyle(fontSize: 13, color: color, fontWeight: FontWeight.w500)),
-        const Spacer(),
-        GestureDetector(
-          onTap: onDismiss,
-          child: Icon(Icons.close_rounded, size: 16, color: color),
-        ),
-      ]),
     );
   }
 }
@@ -715,3 +470,4 @@ class _MissionSkeleton extends StatelessWidget {
   }
 }
 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  

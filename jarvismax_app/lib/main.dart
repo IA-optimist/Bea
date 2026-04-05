@@ -146,14 +146,20 @@ class _AppEntryState extends State<_AppEntry> {
         onLoginSuccess: () => setState(() => _loggedIn = true),
       );
     }
-    return const _AppShell();
+    return _AppShell(key: _AppShell.globalKey);
   }
 }
+
+// ─── Tab navigation notifier — allows child screens to switch tabs ────────────
+
+/// Shared notifier for programmatic tab switching.
+/// Set [tabNotifier.value] from any screen to switch tabs.
+final ValueNotifier<int> tabNotifier = ValueNotifier<int>(0);
 
 // ─── App Shell — Tab navigation ──────────────────────────────────────────────
 
 class _AppShell extends StatefulWidget {
-  const _AppShell();
+  const _AppShell({super.key});
 
   @override
   State<_AppShell> createState() => _AppShellState();
@@ -164,17 +170,25 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
 
   // 5 core tabs — clean and focused
   static const _tabs = <Widget>[
-    HomeScreen(),        // 0: Home — ask, status, recents
-    MissionScreen(),     // 1: Missions — submit + track
+    HomeScreen(),        // 0: Home — status, recents, quick action
+    MissionScreen(),     // 1: Missions — chat AI interface
     ApprovalsScreen(),   // 2: Approvals
     HistoryScreen(),     // 3: History
     SettingsScreen(),    // 4: Settings + advanced
   ];
 
+  void _onTabNotifier() {
+    final target = tabNotifier.value;
+    if (target != _tab && target >= 0 && target < _tabs.length) {
+      setState(() => _tab = target);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    tabNotifier.addListener(_onTabNotifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final api = context.read<ApiService>();
       api.checkHealth();
@@ -197,7 +211,10 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
         ),
         child: BottomNavigationBar(
           currentIndex: _tab,
-          onTap: (i) => setState(() => _tab = i),
+          onTap: (i) {
+            setState(() => _tab = i);
+            tabNotifier.value = i;
+          },
           type: BottomNavigationBarType.fixed,
           items: [
             const BottomNavigationBarItem(
@@ -256,6 +273,7 @@ class _AppShellState extends State<_AppShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    tabNotifier.removeListener(_onTabNotifier);
     WidgetsBinding.instance.removeObserver(this);
     context.read<ApiService>().stopAutoRefresh();
     context.read<WebSocketService>().disconnect();

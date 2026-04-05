@@ -2,32 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../config/task_types.dart';
 import '../services/api_service.dart';
 import '../services/uncensored_notifier.dart';
 import '../services/websocket_service.dart';
 import '../models/mission.dart';
-import '../theme/app_theme.dart';
-
-// ─── Mission task types ───────────────────────────────────────────────────────
-
-const List<Map<String, dynamic>> _kMissionTaskTypes = [
-  {'key': 'libre',                  'label': 'Libre',               'icon': 0xe3c9, 'hint': 'Décrivez votre mission ou posez une question...'},
-  {'key': 'market_research',        'label': 'Recherche marché',    'icon': 0xe8b6, 'hint': 'Ex : Analysez le marché des outils IA pour PME en France…'},
-  {'key': 'competitor_analysis',    'label': 'Concurrents',         'icon': 0xe14f, 'hint': 'Ex : Analysez les concurrents de [votre produit/service]…'},
-  {'key': 'positioning',            'label': 'Positionnement',      'icon': 0xe1e0, 'hint': 'Ex : Définissez le positionnement de [votre offre]…'},
-  {'key': 'pricing_strategy',       'label': 'Stratégie prix',      'icon': 0xe263, 'hint': 'Ex : Proposez une grille tarifaire pour [votre produit]…'},
-  {'key': 'growth_plan',            'label': 'Plan de croissance',  'icon': 0xe6de, 'hint': 'Ex : Créez un plan de croissance sur 6 mois pour [votre entreprise]…'},
-  {'key': 'acquisition_strategy',   'label': 'Acquisition',         'icon': 0xe7fe, 'hint': 'Ex : Définissez une stratégie d\'acquisition pour [cible client]…'},
-  {'key': 'value_proposition',      'label': 'Valeur client',       'icon': 0xe838, 'hint': 'Ex : Formulez la proposition de valeur de [votre offre]…'},
-  {'key': 'offer_design',           'label': 'Design offre',        'icon': 0xe19c, 'hint': 'Ex : Concevez une offre commerciale pour [votre marché cible]…'},
-  {'key': 'customer_persona',       'label': 'Persona client',      'icon': 0xe7fd, 'hint': 'Ex : Créez des personas clients pour [votre produit]…'},
-  {'key': 'copywriting',            'label': 'Copywriting',         'icon': 0xe22b, 'hint': 'Ex : Rédigez un texte de vente percutant pour [votre offre]…'},
-  {'key': 'funnel_design',          'label': 'Funnel',              'icon': 0xef4f, 'hint': 'Ex : Concevez un funnel de conversion pour [votre offre]…'},
-  {'key': 'landing_structure',      'label': 'Landing page',        'icon': 0xe051, 'hint': 'Ex : Structurez une landing page pour [votre produit]…'},
-  {'key': 'spec_writing',           'label': 'Rédaction spec',      'icon': 0xe873, 'hint': 'Ex : Rédigez les spécifications de [votre fonctionnalité]…'},
-  {'key': 'automation_opportunity', 'label': 'Automatisation',      'icon': 0xe553, 'hint': 'Ex : Identifiez les opportunités d\'automatisation dans [votre activité]…'},
-  {'key': 'strategy_reasoning',     'label': 'Conseil stratégique', 'icon': 0xe90f, 'hint': 'Ex : Donnez un conseil stratégique sur [ma situation actuelle]…'},
-];
+import '../theme/design_system.dart';
 
 // ─── Chat message model ───────────────────────────────────────────────────────
 
@@ -80,6 +60,7 @@ class MissionScreen extends StatefulWidget {
 }
 
 class _MissionScreenState extends State<MissionScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _controller  = TextEditingController();
   final _focus       = FocusNode();
   final _scrollCtrl  = ScrollController();
@@ -453,6 +434,66 @@ class _MissionScreenState extends State<MissionScreen> {
     });
   }
 
+  // ── Open a specific mission from drawer ────────────────────────────────────
+
+  void _openMissionInChat(Mission m) {
+    // Close drawer
+    _scaffoldKey.currentState?.closeDrawer();
+
+    // Clear current chat and show this mission
+    _pollTimer?.cancel();
+    _sseSub?.cancel();
+
+    final msgs = <_ChatMsg>[];
+    // User bubble
+    msgs.add(_ChatMsg(
+      localId: _nextId(),
+      type: _MsgType.user,
+      text: m.userInput,
+      missionId: m.id,
+      ts: _parseTs(m.createdAt),
+    ));
+    // Response bubble
+    if (m.isTerminal) {
+      final output = m.finalOutput.isNotEmpty
+          ? m.finalOutput
+          : m.planSummary.isNotEmpty
+              ? m.planSummary
+              : m.isFailed
+                  ? '❌ Mission échouée'
+                  : '✓ Mission terminée';
+      msgs.add(_ChatMsg(
+        localId: _nextId(),
+        type: _MsgType.jarvis,
+        text: output,
+        mission: m,
+        missionId: m.id,
+        ts: _parseTs(m.completedAt ?? m.createdAt),
+      ));
+    } else if (m.isActive) {
+      msgs.add(_ChatMsg(
+        localId: _nextId(),
+        type: _MsgType.working,
+        text: 'Jarvis travaille...',
+        missionId: m.id,
+        ts: _parseTs(m.createdAt),
+      ));
+    }
+
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(msgs);
+      _activeMid = m.isActive ? m.id : null;
+      _selectedTaskKey = 'libre';
+    });
+
+    if (_activeMid != null) {
+      _startLiveTracking(_activeMid!);
+    }
+    _scrollToBottom(instant: true);
+  }
+
   // ── Scroll helpers ────────────────────────────────────────────────────────
 
   void _scrollToBottom({bool instant = false}) {
@@ -478,13 +519,25 @@ class _MissionScreenState extends State<MissionScreen> {
     final isUncensored = context.watch<UncensoredModeNotifier>().isUncensored;
     final ws = context.watch<WebSocketService>();
     final locked = _sending || _activeMid != null;
-    final hint = (_kMissionTaskTypes.firstWhere(
+    final hint = (kTaskTypes.firstWhere(
           (t) => t['key'] == _selectedTaskKey,
-          orElse: () => _kMissionTaskTypes.first,
+          orElse: () => kTaskTypes.first,
         )['hint'] as String);
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: _MissionHistoryDrawer(
+        missions: context.watch<ApiService>().missions,
+        activeMissionId: _activeMid,
+        onSelectMission: _openMissionInChat,
+        onNewMission: _newMission,
+      ),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, size: 22),
+          tooltip: 'Historique',
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         title: const Text('JARVIS'),
         actions: [
           _WsDot(state: ws.connectionState),
@@ -1230,9 +1283,9 @@ class _MissionTypeBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        itemCount: _kMissionTaskTypes.length,
+        itemCount: kTaskTypes.length,
         itemBuilder: (ctx, i) {
-          final t = _kMissionTaskTypes[i];
+          final t = kTaskTypes[i];
           final key = t['key'] as String;
           final label = t['label'] as String;
           final code = t['icon'] as int;
@@ -1274,6 +1327,234 @@ class _MissionTypeBar extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ─── Mission History Drawer ────────────────────────────────────────────────────
+
+class _MissionHistoryDrawer extends StatefulWidget {
+  final List<Mission> missions;
+  final String? activeMissionId;
+  final void Function(Mission) onSelectMission;
+  final VoidCallback onNewMission;
+
+  const _MissionHistoryDrawer({
+    required this.missions,
+    required this.activeMissionId,
+    required this.onSelectMission,
+    required this.onNewMission,
+  });
+
+  @override
+  State<_MissionHistoryDrawer> createState() => _MissionHistoryDrawerState();
+}
+
+class _MissionHistoryDrawerState extends State<_MissionHistoryDrawer> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort by creation date descending
+    final sorted = [...widget.missions]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // Filter by search
+    final filtered = _search.isEmpty
+        ? sorted
+        : sorted.where((m) =>
+            m.userInput.toLowerCase().contains(_search.toLowerCase())).toList();
+
+    // Group by date
+    final grouped = <String, List<Mission>>{};
+    for (final m in filtered) {
+      final dt = DateTime.tryParse(m.createdAt);
+      final key = dt != null ? _dateLabel(dt) : 'Autre';
+      grouped.putIfAbsent(key, () => []).add(m);
+    }
+
+    return Drawer(
+      backgroundColor: JDS.bgBase,
+      child: SafeArea(
+        child: Column(children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(children: [
+              const Expanded(child: Text('Historique', style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w700, color: JDS.textPrimary,
+              ))),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: JDS.blue, size: 22),
+                onPressed: () {
+                  Navigator.pop(context); // close drawer
+                  widget.onNewMission();
+                },
+                tooltip: 'Nouvelle mission',
+              ),
+            ]),
+          ),
+
+          // Search
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              style: const TextStyle(color: JDS.textPrimary, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Rechercher…',
+                hintStyle: const TextStyle(color: JDS.textDim, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, size: 18, color: JDS.textMuted),
+                filled: true,
+                fillColor: JDS.bgElevated,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.borderSubtle),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.borderSubtle),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(JDS.radiusMd),
+                  borderSide: BorderSide(color: JDS.blue),
+                ),
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+
+          // Mission list
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(child: Text(
+                    _search.isEmpty ? 'Aucune mission' : 'Aucun résultat',
+                    style: const TextStyle(color: JDS.textMuted, fontSize: 13),
+                  ))
+                : ListView(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    children: grouped.entries.expand((entry) => [
+                      // Date header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: Text(entry.key, style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600,
+                          color: JDS.textDim, letterSpacing: 0.5,
+                        )),
+                      ),
+                      // Mission items
+                      ...entry.value.map((m) => _HistoryItem(
+                        mission: m,
+                        isActive: m.id == widget.activeMissionId,
+                        onTap: () => widget.onSelectMission(m),
+                      )),
+                    ]).toList(),
+                  ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  String _dateLabel(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final mDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(mDay).inDays;
+    if (diff == 0) return "Aujourd'hui";
+    if (diff == 1) return 'Hier';
+    if (diff < 7) return 'Cette semaine';
+    if (diff < 30) return 'Ce mois';
+    return 'Plus ancien';
+  }
+}
+
+class _HistoryItem extends StatelessWidget {
+  final Mission mission;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _HistoryItem({
+    required this.mission,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = mission.userInput.isNotEmpty
+        ? mission.userInput
+        : mission.id;
+    final status = mission.status.toLowerCase();
+
+    final Color dotColor;
+    final String statusText;
+    if (mission.isActive) {
+      dotColor = JDS.blue;
+      statusText = 'En cours';
+    } else if (mission.isDone) {
+      dotColor = JDS.green;
+      statusText = 'Terminé';
+    } else if (mission.isFailed) {
+      dotColor = JDS.red;
+      statusText = 'Échoué';
+    } else if (status.contains('approval') || status.contains('pending')) {
+      dotColor = JDS.amber;
+      statusText = 'En attente';
+    } else {
+      dotColor = JDS.textDim;
+      statusText = mission.statusLabel;
+    }
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? JDS.blueSoft : Colors.transparent,
+          border: Border(
+            left: BorderSide(
+              color: isActive ? JDS.blue : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Row(children: [
+          // Status dot
+          Container(
+            width: 8, height: 8,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+              boxShadow: mission.isActive
+                  ? [BoxShadow(color: dotColor.withOpacity(0.4), blurRadius: 4)]
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Title + meta
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  color: isActive ? JDS.textPrimary : JDS.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                statusText,
+                style: TextStyle(fontSize: 10, color: dotColor),
+              ),
+            ],
+          )),
+        ]),
       ),
     );
   }

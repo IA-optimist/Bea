@@ -1,6 +1,6 @@
+import '../theme/design_system.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 /// Graphique en ligne des derniers scores advisory.
 /// Utilise uniquement CustomPainter — zéro dépendance externe.

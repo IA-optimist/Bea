@@ -525,7 +525,7 @@ async def session_info(request: Request):
 @app.get("/", include_in_schema=False)
 async def root_redirect():
     # Entry point → login page (redirects to /app.html after auth)
-    return RedirectResponse(url="/login.html")
+    return RedirectResponse(url="/app.html")
 
 
 # ── Startup : workspace cleanup ────────────────────────────────
