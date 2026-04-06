@@ -464,3 +464,6 @@ def get_rag_pipeline(settings=None) -> RagPipeline:
     if _pipeline is None:
         _pipeline = RagPipeline(settings)
     return _pipeline
+
+# Alias for backward compatibility (some consumers use uppercase RAG)
+RAGPipeline = RagPipeline
