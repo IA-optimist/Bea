@@ -118,3 +118,47 @@ Classification based on runtime testing on jarvismax-prod.
 
 **Reality**: Only ~5% of endpoints are proven canonical.
 The API surface is 10-20x larger than what's actually used and verified.
+
+---
+
+## CLIENT ENDPOINT MAP
+
+### Web (static/*.html) — 65+ distinct calls
+| Endpoint | Classification | Action Needed |
+|----------|---------------|---------------|
+| /api/v2/missions/submit | CANONICAL | ✅ Keep |
+| /api/v2/missions | CANONICAL | ✅ Keep |
+| /api/v2/agents | CANONICAL | ✅ Keep |
+| /api/v2/session | CANONICAL | ✅ Keep (fixed auth) |
+| /api/v3/modules/health | CANONICAL | ✅ Keep |
+| /api/v3/mcp/servers | PARTIAL | ✅ Keep (honest empty) |
+| /api/v3/connectors | PARTIAL | ✅ Keep (honest not_configured) |
+| /api/v3/cognitive-events | PARTIAL | ✅ Keep |
+| /api/v3/finance/* | STUB | 🚫 Gated behind ENABLE_STUB_ROUTES |
+| /api/v3/plans | STUB | Keep for now (returns []) |
+| /api/v2/multimodal/* | STUB | ✅ Keep (honest false caps) |
+| /api/v2/task | LEGACY | Should migrate to /api/v2/missions/submit |
+| /api/v2/tasks | LEGACY | Should migrate to /api/v2/missions |
+
+### Mobile (Flutter) — 27 distinct calls
+| Endpoint | Classification | Action Needed |
+|----------|---------------|---------------|
+| /api/v2/session | CANONICAL | ✅ Keep (fixed auth) |
+| /api/v3/missions | CANONICAL | ✅ Keep |
+| /api/v3/agents | CANONICAL | ✅ Keep |
+| /api/v3/modules/health | CANONICAL | ✅ Keep |
+| /api/v3/skills | CANONICAL | ✅ Keep |
+| /api/v2/status | CANONICAL | ✅ Keep |
+| /api/v3/mcp | PARTIAL | ✅ Keep |
+| /api/v3/connectors | PARTIAL | ✅ Keep |
+| /api/v3/metrics/* | PARTIAL | Keep |
+| /api/v2/tasks | LEGACY | Migrate to /api/v3/missions |
+| /api/stats | LEGACY | Migrate to /api/v2/status |
+| /api/system/mode | LEGACY | Review: uncensored mode |
+| /api/v1/missions/$id/stream | LEGACY-ACTIVE | Keep (SSE needed) |
+| /api/v2/self-improvement/* | PARTIAL | Keep |
+
+### Migration Priority
+1. **Don't break mobile**: Legacy endpoints MUST keep working until app update
+2. **Add Deprecation header** to legacy endpoints for tracking
+3. **Finance/Venture/Browser/Voice**: Gated behind ENABLE_STUB_ROUTES=false

@@ -22,6 +22,12 @@ import json as _json
 import os
 import time
 from pathlib import Path
+
+# ── Feature flags ─────────────────────────────────────────────
+# ENABLE_STUB_ROUTES=true to mount stub/unimplemented route handlers
+# (finance, venture, playbooks, browser, voice). Default: false.
+# When false, these endpoints return 404 instead of fake 200 with empty data.
+_ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
 from typing import Any, Optional
 
 import structlog
@@ -179,12 +185,13 @@ try:
 except Exception as _e:
     log.warning("mission_control_router_unavailable", err=str(_e))
 
-# ── Import du routeur Browser (Phase 8) ───────────────────────
-try:
-    from api.routes.browser import router as browser_router
-    app.include_router(browser_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
+# ── Import du routeur Browser (Phase 8) — STUB ───────────────
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.browser import router as browser_router
+        app.include_router(browser_router)
+    except Exception as _e:
+        log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Import du routeur Routing Diagnostics ──────────────────────
 try:
@@ -201,12 +208,13 @@ try:
 except Exception as _e:
     log.warning("monitoring_router_unavailable", err=str(_e))
 
-# ── Import du routeur Voice & Call (Phase 10) ──────────────────
-try:
-    from api.routes.voice import router as voice_router
-    app.include_router(voice_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
+# ── Import du routeur Voice & Call (Phase 10) — STUB ──────────
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.voice import router as voice_router
+        app.include_router(voice_router)
+    except Exception as _e:
+        log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Import du routeur Objective Engine ─────────────────────────
 try:
@@ -300,11 +308,13 @@ try:
 except Exception as _e:
     log.warning("system_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.finance import router as finance_router
-    app.include_router(finance_router)
-except Exception as _e:
-    log.warning("finance_router_unavailable", err=str(_e))
+# Finance — STUB (all zeros, no Stripe configured)
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.finance import router as finance_router
+        app.include_router(finance_router)
+    except Exception as _e:
+        log.warning("finance_router_unavailable", err=str(_e))
 
 try:
     from api.routes.missions import router as missions_v3_router
@@ -418,11 +428,13 @@ try:
 except Exception as _e:
     log.warning("plan_runner_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.playbooks import router as playbooks_router
-    app.include_router(playbooks_router)
-except Exception as _e:
-    log.warning("playbooks_router_unavailable", err=str(_e))
+# Playbooks — STUB (static templates, never executed)
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.playbooks import router as playbooks_router
+        app.include_router(playbooks_router)
+    except Exception as _e:
+        log.warning("playbooks_router_unavailable", err=str(_e))
 
 try:
     from api.routes.economic import router as economic_router
@@ -442,11 +454,13 @@ try:
 except Exception as _e:
     log.warning("execution_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.venture import router as venture_router
-    app.include_router(venture_router)
-except Exception as _e:
-    log.warning("venture_router_unavailable", err=str(_e))
+# Venture — STUB (0 experiments, static data)
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.venture import router as venture_router
+        app.include_router(venture_router)
+    except Exception as _e:
+        log.warning("venture_router_unavailable", err=str(_e))
 
 try:
     from api.routes.strategy import router as strategy_router
