@@ -60,25 +60,9 @@ jobs:
         # If you add a test that needs a new import, add it here too.
         run: |
           pip install --quiet \
-            pytest pytest-asyncio structlog pydantic pydantic-settings \
+            pytest pytest-asyncio pytest-timeout structlog pydantic pydantic-settings \
             fastapi uvicorn langchain-core langchain-anthropic langchain-openai \
-            sqlalchemy aiosqlite
-
-      - name: Run terminal state regression tests (20 tests)
-        run: |
-          python -m pytest tests/test_terminal_state_truth.py -v --tb=short
-
-      - name: Run canonical mission persistence tests (17 tests)
-        run: |
-          python -m pytest tests/test_canonical_mission_persistence.py -v --tb=short
-
-      - name: Run hierarchical planner regression tests (21 tests)
-        run: |
-          python -m pytest tests/test_hierarchical_planner.py -v --tb=short
-
-      - name: Run production hardening tests (37 tests)
-        run: |
-          python -m pytest tests/test_production_hardening_p34.py -v --tb=short
+            sqlalchemy aiosqlite psycopg2-binary
 
       - name: Run ALL unit tests (4900+ expected pass)
         run: |
