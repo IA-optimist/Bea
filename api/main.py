@@ -593,6 +593,25 @@ async def _on_startup():
     except Exception as exc:
         log.warning("mcp_adapters_startup_failed", err=str(exc)[:80])
 
+    # ── Auto-register all mounted routers with the registry ───────
+    try:
+        from api.router_registry import register_router as _auto_reg
+        from fastapi.routing import APIRoute, APIRouter
+        _seen = set()
+        for route in app.routes:
+            if isinstance(route, APIRoute):
+                prefix = route.path.rsplit("/", 1)[0] if "/" in route.path else ""
+                tags = list(route.tags) if route.tags else []
+                name = tags[0] if tags else prefix.strip("/").replace("/", "_") or "root"
+                if name not in _seen:
+                    r = APIRouter()
+                    r.routes = [rt for rt in app.routes if isinstance(rt, APIRoute) and (list(rt.tags) or [""])[0] == (tags[0] if tags else "")]
+                    _auto_reg(name, r, prefix=prefix, tags=tags)
+                    _seen.add(name)
+        log.info("router_registry_auto_populated", count=len(_seen))
+    except Exception as exc:
+        log.warning("router_registry_auto_failed", err=str(exc)[:80])
+
 
 @app.on_event("shutdown")
 async def _on_shutdown():
