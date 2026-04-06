@@ -1,97 +1,40 @@
-# ================================================================
-# JARVIS MAX — Dépendances Python
-#
-# Stratégie de versioning :
-#   - Packages critiques (LangChain, Pydantic, FastAPI) :
-#     contraintes upper-bound >=X.Y,<X+1 pour bloquer les bumps majeurs.
-#   - Packages stables (bcrypt, PyJWT, structlog) : >= suffisant.
-#
-# Pour générer un requirements.lock exact (reproductibilité totale) :
-#   docker build -t jarvismax-lock . && \
-#   docker run --rm jarvismax-lock pip freeze > requirements.lock
-#
-# Le Dockerfile utilise requirements.txt pour l'install.
-# En CI critique, substituez `requirements.lock` si disponible.
-# ================================================================
+# Core dependencies
+python-dotenv==1.0.0
+pyyaml==6.0.1
+requests==2.31.0
 
-# ── LangChain / LLM ─────────────────────────────────────────────
-# Contrainte majeure bloquée : LangChain 0.x → 1.x est un breaking change.
-langchain>=0.3.0,<0.4.0
-langchain-core>=0.3.0,<0.4.0
-langchain-openai>=0.2.0,<0.4.0
-langchain-anthropic>=0.1.0,<0.4.0
-langchain-google-genai>=1.0.0,<3.0.0
-langchain-community>=0.3.0,<0.4.0
-langchain-ollama>=0.1.0,<0.4.0
-langsmith>=0.1.0,<0.4.0
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+alembic==1.13.1
 
-# ── API & Server ─────────────────────────────────────────────────
-# Pydantic v2→v3 est un breaking change connu — bloqué.
-# FastAPI <1.0 — bloqué.
-fastapi>=0.111.0,<1.0.0
-uvicorn[standard]>=0.30.0,<1.0.0
-python-multipart>=0.0.9,<1.0.0
-httpx>=0.27.0,<1.0.0
-pydantic>=2.7.0,<3.0.0
-pydantic-settings>=2.2.0,<3.0.0
+# Cache & Queue
+redis==5.0.1
+celery==5.3.4
 
-# ── Database ─────────────────────────────────────────────────────
-asyncpg>=0.29.0,<1.0.0
-psycopg2-binary>=2.9.9,<3.0.0
-redis>=5.0.0,<6.0.0
+# Web framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+websockets==12.0
 
-# ── Vector memory ────────────────────────────────────────────────
-qdrant-client>=1.9.0,<2.0.0
-openai>=1.30.0,<2.0.0
-pgvector>=0.2.4,<1.0.0
-tiktoken>=0.7.0,<1.0.0
+# Data processing
+beautifulsoup4==4.12.3
+lxml==5.1.0
+pandas==2.2.0
 
-# ── Browser automation ───────────────────────────────────────────
-playwright>=1.44.0,<2.0.0
-# run: playwright install chromium
+# Security
+cryptography==42.0.2
+pyjwt==2.8.0
 
-# ── Logging ──────────────────────────────────────────────────────
-structlog>=24.1.0
-rich>=13.7.0
+# Payments
+stripe==8.0.0
 
-# ── Utilities ────────────────────────────────────────────────────
-python-dotenv>=1.0.0
-aiofiles>=23.0.0
-tenacity>=8.3.0,<10.0.0
-sentence-transformers>=3.0.0,<4.0.0
+# Monitoring
+prometheus-client==0.19.0
 
-# ── Observability ─────────────────────────────────────────────────
-psutil>=5.9.0          # monitoring mémoire/CPU (ResourceGuard)
-langfuse>=2.0.0,<3.0.0 # traçage LLM optionnel (self-hosted)
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
 
-# ── MCP (Model Context Protocol) ──────────────────────────────────
-# Official Python SDK — exposes Jarvis tools via MCP protocol (FastMCP)
-# Sidecar: mcp/jarvis_mcp_server.py  (MCP_SERVER_ENABLED=true to activate)
-mcp>=1.0.0,<2.0.0
-
-# ── Workflow / Human-in-loop ───────────────────────────────────────
-langgraph>=0.2.0,<0.4.0  # StateGraph + interrupt() human-in-loop (updated upper bound)
-
-# ── Multimodal (Phase 6) — optional heavy deps ────────────────────
-# openai-whisper          # local STT fallback (~1 GB models)
-# TTS                     # Coqui TTS local synthesis (heavy)
-# opencv-python-headless  # video frame extraction
-
-# ── RAG / Document Intelligence (Phase A) ─────────────────────────
-pypdf>=3.0.0,<6.0.0      # PDF text extraction
-python-docx>=1.0.0,<2.0.0 # DOCX text extraction
-
-# ── Voice & Call System (Phase 10) — optional ─────────────────────
-# twilio>=8.0.0           # optional: pip install twilio
-
-# ── Security (obligatoire) ────────────────────────────────────────
-bcrypt>=4.0.0            # Hachage mots de passe (authentification)
-PyJWT>=2.0               # JWT tokens (authentification)
-
-# ── MCP servers (Model Context Protocol) ─────────────────────────
-mcp-server-fetch>=2025.4.0   # HTTP fetch MCP server
-mcp-server-sqlite>=2025.4.0  # SQLite MCP server
-
-# ── Testing ───────────────────────────────────────────────────────
-pytest>=7.0.0
-pytest-asyncio>=0.23
+# Utilities
+psutil==5.9.8
