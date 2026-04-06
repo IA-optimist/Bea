@@ -60,7 +60,7 @@ def _extract_final_output(text: str) -> str:
                 or data.get("message")
                 or str(data)
             )
-            return f"[Résultat de Jarvis]\n{str(readable)[:2000]}"
+            return f"[Résultat de Jarvis]\n{str(readable)[:10000]}"
         except (_json.JSONDecodeError, Exception):
             pass
     return text

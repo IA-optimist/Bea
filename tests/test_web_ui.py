@@ -26,7 +26,7 @@ class TestWebAppShell:
         assert len(self.html) > 15000
 
     def test_UI02_design_system_v3_tokens(self):
-        for token in ["--bg-base", "--bg-surface", "--text-primary", "--blue", "--border-subtle", "--radius-md"]:
+        for token in ["--bg", "--surface", "--blue", "--b-subtle", "--r-md"]:
             assert token in self.html
 
     def test_UI03_sidebar_navigation(self):
@@ -152,18 +152,18 @@ class TestWebAppShell:
         assert "toggleSidebar" in self.html
 
     def test_UI23_auth_401_redirect(self):
-        """401 response redirects to login."""
+        """401 response triggers logout/reload in SPA."""
         assert "401" in self.html
-        assert "/index.html" in self.html
+        assert "logout" in self.html
 
 
 class TestLegacyCompatibility:
-    def test_UI24_legacy_pages_exist(self):
-        for page in ["index.html", "dashboard.html", "missions.html", "modules.html",
-                      "runs.html", "operations.html", "self-model.html",
-                      "capability-routing.html", "cognitive-events.html",
-                      "economic.html", "finance.html", "mcp.html"]:
-            assert Path(f"static/{page}").exists(), f"Missing: {page}"
+    def test_UI24_only_spa_exists(self):
+        """After cleanup: only app.html remains. Legacy pages removed."""
+        assert Path("static/app.html").exists()
+        for dead_page in ["index.html", "dashboard.html", "cockpit.html",
+                          "self-model.html", "business.html"]:
+            assert not Path(f"static/{dead_page}").exists(), f"Dead page not removed: {dead_page}"
 
     def test_UI25_root_redirects_to_app(self):
         import inspect, importlib

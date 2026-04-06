@@ -128,3 +128,7 @@ storage/
 
 # Legacy audit reports (165 files, moved out of docs/archive/)
 docs/archive_legacy/
+
+# ── Lab / external tool artifacts ─────────────────────────────
+codex.plugin
+mcp/hexstrike-ai/

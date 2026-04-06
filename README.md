@@ -50,14 +50,15 @@ Jarvis App / API (port 8000)  ← PRIMARY INTERFACE
 
 **Couches du code source :**
 ```
-api/                  → FastAPI + routes (50+ routers, v1/v2/v3)
-core/                 → Orchestration + planner + memory + self-improvement (359 py files)
+api/                  → FastAPI + routes (55 routers, v1/v2/v3)
+core/                 → Orchestration + planner + memory + self-improvement (357 py files)
 core/self_improvement/→ CANONICAL self-improvement pipeline (weakness→patch→test→score→promote)
-kernel/               → Capability registry, policy, memory interfaces, kernel contracts
-agents/               → 36 agents + crew parallèle + kernel bridge
+kernel/               → Capability registry, policy, memory interfaces, kernel contracts (50 py files)
+agents/               → Agent registry + crew parallèle + kernel bridge
 security/             → SecurityLayer (6 active rules) + audit trail + policy ruleset
 business/             → Business orchestration layer (assisted, not autonomous)
-tests/                → 4900+ passing unit tests; 700+ CI-gated; smoke tests require --run-infra-tests
+static/               → Single-page app (app.html) — premium French web interface
+tests/                → 5000+ passing unit tests; 700+ CI-gated; smoke tests require --run-infra-tests
 ```
 
 > **Maturity note:** This is an **internal beta** platform. The core orchestration,
