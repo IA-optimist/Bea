@@ -29,6 +29,25 @@ from typing import Any, Dict, List, Optional
 import structlog
 
 log = structlog.get_logger()
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_LEGACY_FILESYSTEM_ROOTS = {
+    "/root/.openclaw/workspace/Jarvismax",
+    "/root/.openclaw/workspace/Jarvismax-master",
+}
+
+
+def _resolve_filesystem_root() -> str:
+    """Return the MCP filesystem root, preferring an explicit env override."""
+    override = os.environ.get("JARVIS_MCP_FILESYSTEM_ROOT", "").strip()
+    candidate = override or str(_REPO_ROOT)
+    try:
+        return str(Path(candidate).expanduser().resolve())
+    except Exception:
+        return candidate
+
+
+def _build_filesystem_args() -> List[str]:
+    return ["-y", "@modelcontextprotocol/server-filesystem", _resolve_filesystem_root()]
 
 
 class TrustLevel(str, Enum):
@@ -369,6 +388,7 @@ class MCPRegistry:
         path = self._dir / "registry.json"
         if not path.exists():
             return
+        mutated = False
         try:
             data = json.loads(path.read_text())
             for mid, d in data.items():
@@ -386,7 +406,11 @@ class MCPRegistry:
                                          if k in MCPServerEntry.__dataclass_fields__})
                 entry.trust_level = tl
                 entry.health = h
+                if self._normalize_entry(entry):
+                    mutated = True
                 self._servers[mid] = entry
+            if mutated:
+                self._persist()
         except Exception as e:
             log.warning("mcp_registry_load_failed", err=str(e))
 
@@ -400,6 +424,25 @@ class MCPRegistry:
                 self.register(entry)
                 count += 1
         return count
+
+    def _normalize_entry(self, entry: MCPServerEntry) -> bool:
+        """Migrate runtime-sensitive defaults without overwriting custom paths."""
+        if entry.id != "mcp-filesystem" or entry.command != "npx":
+            return False
+        if len(entry.args) >= 2 and entry.args[1] != "@modelcontextprotocol/server-filesystem":
+            return False
+
+        current_root = entry.args[2] if len(entry.args) >= 3 else ""
+        desired_root = _resolve_filesystem_root()
+        should_update = (
+            not current_root
+            or current_root in _LEGACY_FILESYSTEM_ROOTS
+            or not Path(current_root).expanduser().exists()
+        )
+        if should_update:
+            entry.args = _build_filesystem_args()
+            return True
+        return False
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -430,7 +473,7 @@ _CORE_MCP_STACK: List[MCPServerEntry] = [
         description="Official filesystem MCP — scoped file read/write/search",
         source="modelcontextprotocol/servers", source_url="https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
         trust_level=TrustLevel.OFFICIAL,
-        transport="stdio", command="npx", args=["-y", "@modelcontextprotocol/server-filesystem", "/root/.openclaw/workspace/Jarvismax"],
+        transport="stdio", command="npx", args=_build_filesystem_args(),
         risk_level="medium", category="engineering",
         tags=["filesystem", "files", "read", "write"],
         dangerous_tools=["write_file", "move_file", "create_directory"],

@@ -4,6 +4,36 @@ Format : `type: description (commit hash)`
 
 ---
 
+## [Pass 40 — ExecutionResult NameError & Fast Routing for Short Goals] — 2026-04-04
+
+### Bugs critiques corrigés
+
+- `fix`: `executor/runner.py` — **`ExecutionResult` non défini**.
+  La classe `ActionExecutor.execute()` référençait `ExecutionResult` partout
+  (type hints, instanciations) mais ne l'importait pas et ne la définissait pas.
+  Seule `ActionResult` était définie dans le fichier.
+  Résultat : `NameError: name 'ExecutionResult' is not defined` à chaque action
+  (`create_file`, `write_file`...), causant 3 retries × ~107s = **5+ min de blocage**.
+  Correction minimale : ajout de l'alias `ExecutionResult = ActionResult` après
+  la définition de la classe `ActionResult` (ligne 148).
+
+- `fix`: `core/task_router.py` — **Pipeline 7-agents déclenché pour les salutations**.
+  `TaskRouter.route(explicit_mode="auto")` court-circuitait toute la détection
+  heuristique (longueur, patterns) et retournait directement le mode `AUTO` avec
+  les 7 agents (`vault-memory`, `scout-research`, `shadow-advisor`, `map-planner`,
+  `forge-builder`, `lens-reviewer`, `pulse-ops`). Résultat : "bonjour" déclenchait
+  le pipeline complet (~75s), amplifié ×3 par les retries du bug ExecutionResult.
+  Correction : guard ajouté dans le bloc `explicit_mode` — si `mode == AUTO` et
+  `len(input) <= 30`, force le mode `CHAT` (raison : `heuristic:short_override_auto`).
+
+### Impact
+
+- Missions conversationnelles (< 30 chars) : < 5s au lieu de 5+ minutes
+- Plus de `NameError` sur les actions `create_file` / `write_file`
+- 2 fichiers modifiés, 0 régression
+
+---
+
 ## [Pass 37 — Syntax Errors, Truncated File & Git Hygiene] — 2026-04-04
 
 ### Bugs critiques corrigés
