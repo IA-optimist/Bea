@@ -272,7 +272,8 @@ async def analyze_video(
 # ── Capability probe ──────────────────────────────────────────
 
 def video_capabilities() -> dict:
-    has_openai = bool(os.getenv("OPENAI_API_KEY"))
+    _key = os.getenv("OPENAI_API_KEY", "")
+    has_openai = bool(_key) and not _key.startswith("sk-or-")  # OpenRouter can't do Vision API
     has_cv2 = False
     try:
         import cv2  # noqa: F401
