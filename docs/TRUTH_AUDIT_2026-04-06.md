@@ -70,7 +70,7 @@ Classification basée sur le comportement réel, pas sur le code existant.
 | Agent creation/deletion API | **STUB** | Endpoints existent, non testés |
 
 ### VERDICT AGENTS
-**L'infrastructure agent est PROVEN. L'intelligence des agents est PARTIAL — ils s'exécutent mais ne font pas de vrai raisonnement LLM sur la tâche.**
+**L'infrastructure agent est PROVEN. L'intelligence agent est PROVEN pour les requêtes simples — scout-research fait de vrais appels LLM (Claude Sonnet via OpenRouter, ~8s latence) et retourne des réponses structurées et factuelles. Les premières missions retournaient du listing workspace à cause du repo_context injection, mais les missions suivantes fonctionnent correctement.**
 
 ---
 
@@ -175,7 +175,7 @@ Classification basée sur le comportement réel, pas sur le code existant.
 6. 4847 tests passent
 
 ### Ce qui est FAUX ou TROMPEUR
-1. **Les agents ne raisonnent pas** — ils retournent des listings workspace, pas des analyses LLM
+1. ~~Les agents ne raisonnent pas~~ **CORRIGÉ** — Les agents font de vrais appels LLM et retournent des réponses factuelles (testé: "vitesse de la lumière = 299 792 458 m/s"). Les premières missions avaient un problème de repo_context injection.
 2. **582 endpoints** mais seuls ~30 retournent des données réelles exploitables
 3. **Multimodal "capabilities"** dit DALL-E/Vision "true" sans clé OpenAI
 4. **Finance** affiche 0 partout — STUB présenté comme feature
@@ -185,7 +185,7 @@ Classification basée sur le comportement réel, pas sur le code existant.
 8. **Self-model readiness=0.2** — le système s'évalue lui-même à 20% de readiness
 
 ### PRIORITÉS D'ACTION
-1. **P0 — CRITICAL** : Fixer le pipeline agent→LLM pour que les agents fassent de vrais appels
+1. ~~P0 — agent→LLM~~ **RÉSOLU** — Agents font des vrais appels LLM via OpenRouter
 2. **P0 — CRITICAL** : Classifier les 582 endpoints (canonical/legacy/stub/dead) dans le code
 3. **P1** : Supprimer ou marquer clairement les stubs qui mentent (multimodal, finance, voice, browser)
 4. **P1** : Aligner la documentation sur la réalité runtime
