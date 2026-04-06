@@ -358,6 +358,9 @@ class JarvisMaxOS:
         """Task worker (processes queued tasks)"""
         logger.info(f"🔧 Worker {worker_id} started")
         
+        # Import action executor
+        from core.modules_integration import execute_action
+        
         while self.running:
             try:
                 # Get task from queue
@@ -365,17 +368,36 @@ class JarvisMaxOS:
                 
                 module_name = task['module']
                 action = task['action']
-                params = task['params']
+                params = task.get('params', {})
                 
                 logger.info(f"⚙️  Worker {worker_id}: {module_name}.{action}")
                 
                 # Execute task
-                # In real implementation: dispatch to module's action handler
-                await asyncio.sleep(0.1)  # Simulate work
+                start_time = datetime.now()
                 
-                # Update metrics
-                module = self.modules[module_name]
-                module.requests_total += 1
+                try:
+                    result = await execute_action(module_name, action, params)
+                    
+                    # Update metrics
+                    module = self.modules[module_name]
+                    module.requests_total += 1
+                    
+                    # Update avg response time
+                    response_time = (datetime.now() - start_time).total_seconds()
+                    if module.avg_response_time == 0:
+                        module.avg_response_time = response_time
+                    else:
+                        module.avg_response_time = (module.avg_response_time + response_time) / 2
+                    
+                    logger.info(f"✅ Worker {worker_id}: {module_name}.{action} completed ({response_time:.2f}s)")
+                
+                except Exception as e:
+                    # Update error metrics
+                    module = self.modules[module_name]
+                    module.requests_total += 1
+                    module.requests_failed += 1
+                    
+                    logger.error(f"❌ Worker {worker_id}: {module_name}.{action} failed: {e}")
                 
                 self.task_queue.task_done()
             
