@@ -369,6 +369,7 @@ class MetaOrchestrator:
         # ── Decision trace ────────────────────────────────────────
         from core.orchestration.decision_trace import DecisionTrace
         trace = DecisionTrace(mission_id=mid)
+        needs_approval = False  # initialized early; may be set True by confidence_policy or kernel
 
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 
