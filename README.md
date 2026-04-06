@@ -30,8 +30,8 @@ python main.py
 JARVIS_ADMIN_PASSWORD=<password> bash scripts/verify_boot.sh
 ```
 
-**See [RUNBOOK.md](docs/RUNBOOK.md) for the full setup guide.**
-**See [RUNTIME_TRUTH.md](docs/RUNTIME_TRUTH.md) for current proven capabilities.**
+**See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full architecture reference.**
+**See [docs/DB_RECONCILIATION_PLAN.md](docs/DB_RECONCILIATION_PLAN.md) for database setup.**
 
 ---
 
@@ -50,14 +50,14 @@ Jarvis App / API (port 8000)  ← PRIMARY INTERFACE
 
 **Couches du code source :**
 ```
-api/                  → FastAPI + routes (150+ endpoints, v1/v2/v3)
-core/                 → Orchestration + planner + memory + self-improvement (367 py files)
+api/                  → FastAPI + routes (50+ routers, v1/v2/v3)
+core/                 → Orchestration + planner + memory + self-improvement (359 py files)
 core/self_improvement/→ CANONICAL self-improvement pipeline (weakness→patch→test→score→promote)
 kernel/               → Capability registry, policy, memory interfaces, kernel contracts
-agents/               → 9 agents + crew parallèle + kernel bridge
+agents/               → 36 agents + crew parallèle + kernel bridge
 security/             → SecurityLayer (6 active rules) + audit trail + policy ruleset
 business/             → Business orchestration layer (assisted, not autonomous)
-tests/                → 5700+ passing (Cycle 18 Docker run); 95 CI-gated unit tests; smoke tests require --run-infra-tests
+tests/                → 4900+ passing unit tests; 700+ CI-gated; smoke tests require --run-infra-tests
 ```
 
 > **Maturity note:** This is an **internal beta** platform. The core orchestration,
