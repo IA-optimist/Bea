@@ -252,10 +252,17 @@ async def generate_image_hf(prompt: str) -> Optional[str]:
 # ── Capability probe ──────────────────────────────────────────
 
 def image_capabilities() -> dict:
-    """Returns which image providers are currently available."""
+    """Returns which image providers are currently available.
+
+    Checks actual capability, not just key existence.
+    OpenRouter keys (sk-or-*) cannot call DALL-E or Vision directly.
+    """
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    # OpenRouter keys start with sk-or- and cannot do DALL-E/Vision
+    is_real_openai = bool(openai_key) and not openai_key.startswith("sk-or-")
     return {
-        "dalle3":       bool(os.getenv("OPENAI_API_KEY")),
+        "dalle3":       is_real_openai,
         "huggingface":  bool(os.getenv("HUGGINGFACE_API_TOKEN") or os.getenv("HF_TOKEN")),
-        "vision_gpt4o": bool(os.getenv("OPENAI_API_KEY")),
+        "vision_gpt4o": is_real_openai,
         "stub":         True,
     }

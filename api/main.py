@@ -501,23 +501,21 @@ except Exception as _e:
 # ── Session info endpoint (used by mobile app for role detection) ──
 @app.get("/api/v2/session", include_in_schema=False)
 async def session_info(request: Request):
-    """Returns current user session info: role, username."""
-    try:
-        from api.auth import _check_auth
-        user = _check_auth(request)
-        if user:
-            return {
-                "ok": True,
-                "role": getattr(user, 'role', None) or user.get('role', 'admin') if isinstance(user, dict) else 'admin',
-                "username": getattr(user, 'username', None) or user.get('sub', 'admin') if isinstance(user, dict) else 'admin',
-            }
-    except Exception:
-        pass
-    # Fallback: if auth passes at middleware level, assume admin
-    # (single-operator system)
-    token = request.headers.get("authorization", "")
-    if token:
-        return {"ok": True, "role": "admin", "username": "admin"}
+    """Returns current user session info: role, username.
+
+    No admin fallback — returns the real role from the token.
+    If the token cannot be verified, returns 401.
+    """
+    from api.auth import verify_token
+    token_str = request.headers.get("authorization", "")
+    user = verify_token(token_str)
+    if user:
+        return {
+            "ok": True,
+            "role": user.get("role", "user"),
+            "username": user.get("username", "unknown"),
+            "auth_type": user.get("auth_type", "unknown"),
+        }
     return JSONResponse({"ok": False, "error": "Unauthorized"}, status_code=401)
 
 

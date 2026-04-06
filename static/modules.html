@@ -242,9 +242,9 @@ async function loadTab(tab) {
 }
 
 function statusBadge(status) {
-  const map = {enabled:'ready',disabled:'disabled',active:'ready',error:'error',pending:'setup'};
+  const map = {enabled:'setup',disabled:'disabled',active:'ready',connected:'ready',error:'error',pending:'setup',not_configured:'setup'};
   const cls = map[status] || 'setup';
-  const label = {enabled:'Ready',disabled:'Disabled',active:'Active',pending:'Needs setup',error:'Error'}[status] || status;
+  const label = {enabled:'Enabled (not connected)',disabled:'Disabled',active:'Active',connected:'Connected',pending:'Needs setup',error:'Error',not_configured:'Not configured'}[status] || status;
   return `<span class="badge badge-${cls}">${label}</span>`;
 }
 
