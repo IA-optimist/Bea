@@ -175,3 +175,19 @@ BEGIN
     END IF;
 END;
 $$;
+
+-- Canonical missions (matches core/canonical_mission_store.py SQLite schema)
+CREATE TABLE IF NOT EXISTS canonical_missions (
+    mission_id    TEXT PRIMARY KEY,
+    goal          TEXT NOT NULL,
+    status        TEXT NOT NULL,
+    risk_level    TEXT NOT NULL DEFAULT 'WRITE_LOW',
+    error         TEXT NOT NULL DEFAULT '',
+    result        TEXT NOT NULL DEFAULT '',
+    source_system TEXT NOT NULL DEFAULT '',
+    created_at    REAL NOT NULL,
+    updated_at    REAL NOT NULL,
+    context_json  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_canonical_missions_created_at ON canonical_missions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_canonical_missions_status ON canonical_missions(status);

@@ -96,6 +96,21 @@ CREATE INDEX IF NOT EXISTS idx_canonical_missions_status
     ON canonical_missions(status)
 """
 
+_CREATE_TABLE_PG = """
+CREATE TABLE IF NOT EXISTS canonical_missions (
+    mission_id    TEXT PRIMARY KEY,
+    goal          TEXT NOT NULL,
+    status        TEXT NOT NULL,
+    risk_level    TEXT NOT NULL DEFAULT 'WRITE_LOW',
+    error         TEXT NOT NULL DEFAULT '',
+    result        TEXT NOT NULL DEFAULT '',
+    source_system TEXT NOT NULL DEFAULT '',
+    created_at    REAL NOT NULL,
+    updated_at    REAL NOT NULL,
+    context_json  TEXT NOT NULL
+)
+"""
+
 _UPSERT = """
 INSERT INTO canonical_missions
     (mission_id, goal, status, risk_level, error, result, source_system, created_at, updated_at, context_json)
@@ -115,7 +130,8 @@ ON CONFLICT(mission_id) DO UPDATE SET
 
 class CanonicalMissionStore:
     """
-    SQLite-backed store for CanonicalMissionContext.
+    Persistent store for CanonicalMissionContext.
+    Postgres primary (via settings.database_url), SQLite fallback.
     All methods are synchronous and safe to call from any thread.
     Never raises — errors are logged and the store degrades gracefully.
     """
@@ -123,7 +139,26 @@ class CanonicalMissionStore:
     def __init__(self, db_path: Optional[Path] = None):
         self._db_path: Optional[Path] = None
         self._ok = False
+        self._pg_dsn: Optional[str] = None
 
+        # Try Postgres first
+        try:
+            from config.settings import Settings
+            dsn = Settings().database_url
+            if dsn:
+                import psycopg2
+                conn = psycopg2.connect(dsn)
+                conn.autocommit = True
+                conn.cursor().execute(_CREATE_TABLE_PG)
+                conn.close()
+                self._pg_dsn = dsn
+                self._ok = True
+                log.info("canonical_mission_store.ready", backend="postgres")
+                return
+        except Exception as exc:
+            log.debug("canonical_mission_store.pg_skipped", err=str(exc)[:80])
+
+        # SQLite fallback
         try:
             path = db_path or _default_db_path()
             self._db_path = Path(path)
@@ -153,24 +188,28 @@ class CanonicalMissionStore:
 
     def save(self, ctx: CanonicalMissionContext) -> None:
         """Persist a CanonicalMissionContext. Upserts on conflict."""
-        if not self._ok or self._db_path is None:
+        if not self._ok:
             return
         try:
             d = ctx.to_dict()
             context_json = json.dumps(d)
-            with self._connect() as conn:
-                conn.execute(_UPSERT, (
-                    ctx.mission_id,
-                    ctx.goal[:500],
-                    ctx.status.value,
-                    ctx.risk_level.value,
-                    (ctx.error or "")[:500],
-                    (ctx.result or "")[:2000],
-                    ctx.source_system or "",
-                    ctx.created_at,
-                    ctx.updated_at,
-                    context_json,
-                ))
+            values = (
+                ctx.mission_id,
+                ctx.goal[:500],
+                ctx.status.value,
+                ctx.risk_level.value,
+                (ctx.error or "")[:500],
+                (ctx.result or "")[:2000],
+                ctx.source_system or "",
+                ctx.created_at,
+                ctx.updated_at,
+                context_json,
+            )
+            if self._pg_dsn:
+                self._save_pg(values)
+            elif self._db_path:
+                with self._connect() as conn:
+                    conn.execute(_UPSERT, values)
         except Exception as exc:
             log.warning(
                 "canonical_mission_store.save_failed",
@@ -178,18 +217,46 @@ class CanonicalMissionStore:
                 err=str(exc)[:200],
             )
 
+    def _save_pg(self, values: tuple) -> None:
+        import psycopg2
+        conn = psycopg2.connect(self._pg_dsn)
+        conn.autocommit = True
+        conn.cursor().execute(
+            """INSERT INTO canonical_missions
+               (mission_id, goal, status, risk_level, error, result,
+                source_system, created_at, updated_at, context_json)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT(mission_id) DO UPDATE SET
+                goal=EXCLUDED.goal, status=EXCLUDED.status,
+                risk_level=EXCLUDED.risk_level, error=EXCLUDED.error,
+                result=EXCLUDED.result, source_system=EXCLUDED.source_system,
+                updated_at=EXCLUDED.updated_at, context_json=EXCLUDED.context_json""",
+            values,
+        )
+        conn.close()
+
     # ── Read ────────────────────────────────────────────────────────────────
 
     def get(self, mission_id: str) -> Optional[CanonicalMissionContext]:
         """Fetch a single mission by ID. Returns None if not found."""
-        if not self._ok or self._db_path is None:
+        if not self._ok:
             return None
         try:
-            with self._connect() as conn:
-                row = conn.execute(
-                    "SELECT context_json FROM canonical_missions WHERE mission_id = ?",
-                    (mission_id,),
-                ).fetchone()
+            if self._pg_dsn:
+                import psycopg2
+                conn = psycopg2.connect(self._pg_dsn)
+                cur = conn.cursor()
+                cur.execute("SELECT context_json FROM canonical_missions WHERE mission_id = %s", (mission_id,))
+                row = cur.fetchone()
+                conn.close()
+            elif self._db_path:
+                with self._connect() as conn:
+                    row = conn.execute(
+                        "SELECT context_json FROM canonical_missions WHERE mission_id = ?",
+                        (mission_id,),
+                    ).fetchone()
+            else:
+                return None
             if row:
                 return _row_to_ctx(row[0])
         except Exception as exc:
@@ -198,14 +265,24 @@ class CanonicalMissionStore:
 
     def load_all(self, limit: int = 500) -> list[CanonicalMissionContext]:
         """Load all missions, ordered by created_at DESC. Used on startup."""
-        if not self._ok or self._db_path is None:
+        if not self._ok:
             return []
         try:
-            with self._connect() as conn:
-                rows = conn.execute(
-                    "SELECT context_json FROM canonical_missions ORDER BY created_at DESC LIMIT ?",
-                    (limit,),
-                ).fetchall()
+            if self._pg_dsn:
+                import psycopg2
+                conn = psycopg2.connect(self._pg_dsn)
+                cur = conn.cursor()
+                cur.execute("SELECT context_json FROM canonical_missions ORDER BY created_at DESC LIMIT %s", (limit,))
+                rows = cur.fetchall()
+                conn.close()
+            elif self._db_path:
+                with self._connect() as conn:
+                    rows = conn.execute(
+                        "SELECT context_json FROM canonical_missions ORDER BY created_at DESC LIMIT ?",
+                        (limit,),
+                    ).fetchall()
+            else:
+                return []
             result = []
             for (json_str,) in rows:
                 ctx = _row_to_ctx(json_str)
@@ -218,11 +295,21 @@ class CanonicalMissionStore:
 
     def count(self) -> int:
         """Return total number of missions in store."""
-        if not self._ok or self._db_path is None:
+        if not self._ok:
             return 0
         try:
-            with self._connect() as conn:
-                row = conn.execute("SELECT COUNT(*) FROM canonical_missions").fetchone()
+            if self._pg_dsn:
+                import psycopg2
+                conn = psycopg2.connect(self._pg_dsn)
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(*) FROM canonical_missions")
+                row = cur.fetchone()
+                conn.close()
+            elif self._db_path:
+                with self._connect() as conn:
+                    row = conn.execute("SELECT COUNT(*) FROM canonical_missions").fetchone()
+            else:
+                return 0
             return row[0] if row else 0
         except Exception:
             return 0
