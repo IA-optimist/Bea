@@ -69,7 +69,7 @@ async function showTab(t){
 }
 
 async function renderOverview(el){
-  const r=await api('/api/v3/readiness');
+  const r=await api('/api/v3/system/readiness');
   if(!r.ok){el.innerHTML='<p>Failed to load readiness</p>';return}
   const layers=r.layers||{};
   let html='<div class="grid">';
@@ -88,7 +88,7 @@ async function renderOverview(el){
 }
 
 async function renderAgents(el){
-  const r=await api('/api/v3/readiness/agents');
+  const r=await api('/api/v3/system/readiness/agents');
   if(!r.ok){el.innerHTML='<p>No agent data</p>';return}
   let html='<div class="section"><h2 style="color:#f0f6fc;margin-bottom:16px">Agent Roles</h2><table><tr><th>Role</th><th>Name</th><th>Risk</th><th>Capabilities</th><th>Delegates To</th></tr>';
   for(const a of r.data){
@@ -99,7 +99,7 @@ async function renderAgents(el){
 }
 
 async function renderSkills(el){
-  const r=await api('/api/v3/readiness/skills');
+  const r=await api('/api/v3/system/readiness/skills');
   if(!r.ok){el.innerHTML='<p>No skill data</p>';return}
   let html=`<div class="section"><h2 style="color:#f0f6fc;margin-bottom:16px">${r.data.count} Skills Loaded</h2><table><tr><th>ID</th><th>Domain</th><th>Version</th><th>Logic</th><th>Examples</th></tr>`;
   for(const s of r.data.skills){
@@ -110,7 +110,7 @@ async function renderSkills(el){
 }
 
 async function renderTools(el){
-  const r=await api('/api/v3/readiness/tools');
+  const r=await api('/api/v3/system/readiness/tools');
   if(!r.ok){el.innerHTML='<p>No tool data</p>';return}
   let html='<div class="section"><h2 style="color:#f0f6fc;margin-bottom:16px">Tool Readiness</h2><table><tr><th>Tool</th><th>Ready</th><th>Risk</th><th>Approval</th><th>Missing</th></tr>';
   for(const t of r.data){

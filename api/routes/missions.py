@@ -984,8 +984,12 @@ async def legacy_missions(
 
 @router.get("/api/stats", deprecated=True)
 async def legacy_stats():
-    """Alias v1 → GET /api/v2/metrics"""
-    return await get_metrics()
+    """Alias v1 → GET /api/v2/metrics. Used by mobile."""
+    try:
+        ms = _get_mission_system()
+        return {"ok": True, "data": {"missions": ms.stats()}}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ── Task approve/reject (Flutter uses these) ──────────────────

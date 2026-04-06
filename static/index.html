@@ -1198,7 +1198,7 @@ async function loginWithCredentials(username, password, remember) {
 async function createToken() {
   const name = document.getElementById('new-token-name')?.value?.trim();
   if (!name) return;
-  const r = await apiFetch('/api/auth/tokens', {
+  const r = await apiFetch('/api/v3/tokens', {
     method: 'POST',
     body: JSON.stringify({ name }),
   });
@@ -1213,7 +1213,7 @@ async function createToken() {
 }
 
 async function revokeToken(id) {
-  await apiFetch(`/api/auth/tokens/${id}`, { method: 'DELETE' });
+  await apiFetch(`/api/v3/tokens/${id}`, { method: 'DELETE' });
   loadTokens?.();
 }
 
