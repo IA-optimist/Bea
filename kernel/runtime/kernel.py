@@ -43,7 +43,11 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-log = logging.getLogger("kernel.kernel")
+try:
+    import structlog
+    log = structlog.get_logger("kernel.kernel")
+except ImportError:
+    log = logging.getLogger("kernel.kernel")
 
 # ── Registration slot for execution backend ───────────────────────────────────
 # MetaOrchestrator registers itself here at boot.
