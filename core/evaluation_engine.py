@@ -786,3 +786,7 @@ class AgentEvaluationEngine:
     @property
     def history(self) -> EvaluationMemory:
         return self._memory
+
+
+# Compat alias — main.py imports EvaluationEngine (legacy name)
+EvaluationEngine = AgentEvaluationEngine
