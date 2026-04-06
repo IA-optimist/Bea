@@ -121,44 +121,78 @@ The API surface is 10-20x larger than what's actually used and verified.
 
 ---
 
-## CLIENT ENDPOINT MAP
+## CLIENT ENDPOINT MAP (verified 2026-04-06)
 
-### Web (static/*.html) — 65+ distinct calls
-| Endpoint | Classification | Action Needed |
-|----------|---------------|---------------|
-| /api/v2/missions/submit | CANONICAL | ✅ Keep |
-| /api/v2/missions | CANONICAL | ✅ Keep |
-| /api/v2/agents | CANONICAL | ✅ Keep |
-| /api/v2/session | CANONICAL | ✅ Keep (fixed auth) |
-| /api/v3/modules/health | CANONICAL | ✅ Keep |
-| /api/v3/mcp/servers | PARTIAL | ✅ Keep (honest empty) |
-| /api/v3/connectors | PARTIAL | ✅ Keep (honest not_configured) |
-| /api/v3/cognitive-events | PARTIAL | ✅ Keep |
-| /api/v3/finance/* | STUB | 🚫 Gated behind ENABLE_STUB_ROUTES |
-| /api/v3/plans | STUB | Keep for now (returns []) |
-| /api/v2/multimodal/* | STUB | ✅ Keep (honest false caps) |
-| /api/v2/task | LEGACY | Should migrate to /api/v2/missions/submit |
-| /api/v2/tasks | LEGACY | Should migrate to /api/v2/missions |
+### Web (static/*.html) — 52 distinct endpoints
 
-### Mobile (Flutter) — 27 distinct calls
-| Endpoint | Classification | Action Needed |
-|----------|---------------|---------------|
-| /api/v2/session | CANONICAL | ✅ Keep (fixed auth) |
-| /api/v3/missions | CANONICAL | ✅ Keep |
-| /api/v3/agents | CANONICAL | ✅ Keep |
-| /api/v3/modules/health | CANONICAL | ✅ Keep |
-| /api/v3/skills | CANONICAL | ✅ Keep |
-| /api/v2/status | CANONICAL | ✅ Keep |
-| /api/v3/mcp | PARTIAL | ✅ Keep |
-| /api/v3/connectors | PARTIAL | ✅ Keep |
-| /api/v3/metrics/* | PARTIAL | Keep |
-| /api/v2/tasks | LEGACY | Migrate to /api/v3/missions |
-| /api/stats | LEGACY | Migrate to /api/v2/status |
-| /api/system/mode | LEGACY | Review: uncensored mode |
-| /api/v1/missions/$id/stream | LEGACY-ACTIVE | Keep (SSE needed) |
-| /api/v2/self-improvement/* | PARTIAL | Keep |
+| Endpoint | HTTP | Classification | Status |
+|----------|------|---------------|--------|
+| /api/v2/missions/submit | POST | CANONICAL | ✅ 200 |
+| /api/v2/missions | GET | CANONICAL | ✅ 200 |
+| /api/v2/agents | GET | CANONICAL | ✅ 200 |
+| /api/v2/agents/:id | GET | CANONICAL | ✅ 200 |
+| /api/v2/agents/create | POST | CANONICAL | ✅ 200 |
+| /api/v2/status | GET | CANONICAL | ✅ 200 |
+| /api/v2/system/capabilities | GET | CANONICAL | ✅ 200 |
+| /api/v2/system/health | GET | CANONICAL | ✅ 200 |
+| /api/v2/multimodal/capabilities | GET | CANONICAL | ✅ 200 (honest) |
+| /api/v2/learning/report | GET | PARTIAL | ✅ 200 |
+| /api/v2/learning/global_lessons | GET | PARTIAL | ✅ 200 |
+| /api/v3/agents | GET | CANONICAL | ✅ 200 |
+| /api/v3/missions | GET | CANONICAL | ✅ 200 |
+| /api/v3/modules/health | GET | CANONICAL | ✅ 200 |
+| /api/v3/mcp/servers | GET | PARTIAL | ✅ 200 |
+| /api/v3/mcp/stats | GET | PARTIAL | ✅ 200 |
+| /api/v3/connectors | GET | PARTIAL | ✅ 200 |
+| /api/v3/skills | GET | CANONICAL | ✅ 200 |
+| /api/v3/tokens | GET | CANONICAL | ✅ 200 (fixed: was /api/auth/tokens) |
+| /api/v3/system/readiness | GET | CANONICAL | ✅ 200 (fixed: was /api/v3/readiness) |
+| /api/v3/cognitive-events/* | GET | PARTIAL | ✅ 200 |
+| /api/v3/capability-routing/* | GET | PARTIAL | ✅ 200 |
+| /api/v3/economic/* | GET | PARTIAL | ✅ 200 |
+| /api/v3/execution-history | GET | PARTIAL | ✅ 200 |
+| /api/v3/plans | GET | PARTIAL | ✅ 200 (returns []) |
+| /api/v3/runs | GET | PARTIAL | ✅ 200 |
+| /api/v3/templates | GET | PARTIAL | ✅ 200 |
+| /api/health | GET | CANONICAL | ✅ 200 |
+| /api/v3/metrics/summary | GET | PARTIAL | ✅ 200 |
+| /api/v3/finance | GET | STUB | 🚫 404 (feature-flagged) |
+| /api/v2/task | POST | LEGACY-ACTIVE | ✅ 200 (alias → submit) |
+| /api/v2/tasks | GET | LEGACY-ACTIVE | ✅ 200 (alias → missions) |
+| /api/v2/multimodal/image/generate | POST | STUB | returns error (no key) |
+| /api/v2/multimodal/voice/tts | POST | STUB | 🚫 404 (feature-flagged) |
 
-### Migration Priority
-1. **Don't break mobile**: Legacy endpoints MUST keep working until app update
-2. **Add Deprecation header** to legacy endpoints for tracking
-3. **Finance/Venture/Browser/Voice**: Gated behind ENABLE_STUB_ROUTES=false
+### Mobile (Flutter) — 26 distinct endpoints
+
+| Endpoint | HTTP | Classification | Status |
+|----------|------|---------------|--------|
+| /api/v2/session | GET | CANONICAL | ✅ 200 (real role) |
+| /api/v3/missions | GET | CANONICAL | ✅ 200 |
+| /api/v3/missions/:id | GET | CANONICAL | ✅ 200 |
+| /api/v3/missions/:id/approve | POST | CANONICAL | ✅ 200 |
+| /api/v3/missions/:id/reject | POST | CANONICAL | ✅ 200 |
+| /api/v3/agents | GET | CANONICAL | ✅ 200 |
+| /api/v3/modules/health | GET | CANONICAL | ✅ 200 |
+| /api/v3/skills | GET | CANONICAL | ✅ 200 |
+| /api/v3/mcp | GET | PARTIAL | ✅ 200 |
+| /api/v3/connectors | GET | PARTIAL | ✅ 200 |
+| /api/v2/agents | GET | CANONICAL | ✅ 200 |
+| /api/v2/status | GET | CANONICAL | ✅ 200 |
+| /api/v2/system/capabilities | GET | CANONICAL | ✅ 200 |
+| /api/v2/system/policy-mode | GET | CANONICAL | ✅ 200 |
+| /api/v2/self-improvement/suggestions | GET | PARTIAL | ✅ 200 |
+| /api/v2/metrics/recent | GET | PARTIAL | ✅ 200 |
+| /api/v3/metrics/* | GET | PARTIAL | ✅ 200 |
+| /api/v3/:type/:id/toggle | POST | CANONICAL | ✅ 200 |
+| /api/v3/:type/:id/test | POST | CANONICAL | ✅ 200 |
+| /api/v2/tasks | GET | LEGACY-ACTIVE | ✅ 200 |
+| /api/stats | GET | LEGACY-ACTIVE | ✅ 200 (fixed: was 500) |
+| /api/system/mode | GET | LEGACY-ACTIVE | ✅ 200 |
+| /api/system/mode/uncensored | POST | LEGACY-ACTIVE | ⚠️ works but dangerous |
+| /api/v1/missions/:id/stream | GET | LEGACY-ACTIVE | ✅ 200 (SSE) |
+
+### Convergence Strategy
+1. **No breaking changes**: All legacy endpoints kept until mobile app update
+2. **Feature-flagged stubs**: finance/venture/browser/voice/playbooks → 404 by default
+3. **Fixed broken paths**: /api/stats (500→200), /api/auth/tokens (404→200), /api/v3/readiness (404→200)
+4. **Next mobile release**: Migrate /api/v2/tasks → /api/v3/missions, /api/stats → /api/v2/status
