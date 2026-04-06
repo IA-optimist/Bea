@@ -181,6 +181,15 @@ def loads(s: str | None, default=None):
         return default
 
 
+def get_sqlite_path() -> Path:
+    """Return the path to the SQLite database file.
+
+    Used by orchestrator_v2 and improvement_memory for their
+    SQLite fallback when asyncpg/Postgres is unavailable.
+    """
+    return _DB_PATH
+
+
 def reset_singleton():
     """Réinitialise le singleton (utile pour les tests)."""
     global _conn
