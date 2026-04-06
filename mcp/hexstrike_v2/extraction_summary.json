@@ -1,0 +1,36 @@
+{
+  "total_generated": 17,
+  "by_category": {
+    "scanning": 3,
+    "recon": 6,
+    "web": 6,
+    "exploitation": 2
+  },
+  "tools": {
+    "scanning": [
+      "nuclei",
+      "nikto",
+      "wpscan"
+    ],
+    "recon": [
+      "nmap",
+      "amass",
+      "subfinder",
+      "masscan",
+      "nmap_advanced",
+      "dnsenum"
+    ],
+    "web": [
+      "dirb",
+      "sqlmap",
+      "ffuf",
+      "waybackurls",
+      "dalfox",
+      "httpx"
+    ],
+    "exploitation": [
+      "metasploit",
+      "burpsuite_alternative"
+    ]
+  }
+}
