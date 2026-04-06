@@ -41,7 +41,7 @@ concurrency:
 # ── Job 1: Unit tests (no external services) ─────────────────────────────────
 jobs:
   unit-tests:
-    name: Unit Tests (95 regression tests)
+    name: Unit Tests (360+ regression tests)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -80,13 +80,33 @@ jobs:
         run: |
           python -m pytest tests/test_production_hardening_p34.py -v --tb=short
 
-      - name: Confirm 95 total pass, 0 skipped
+      - name: Run build recovery tests (50 tests)
+        run: |
+          python -m pytest tests/test_build_recovery.py -v --tb=short
+
+      - name: Run mission engine tests (60 tests)
+        run: |
+          python -m pytest tests/test_mission_engine.py -v --tb=short
+
+      - name: Run capability routing tests (105 tests)
+        run: |
+          python -m pytest tests/test_capability_routing.py -v --tb=short
+
+      - name: Run execution layer tests (77 tests)
+        run: |
+          python -m pytest tests/test_execution_layer.py -v --tb=short
+
+      - name: Confirm 360+ total pass
         run: |
           python -m pytest \
             tests/test_terminal_state_truth.py \
             tests/test_canonical_mission_persistence.py \
             tests/test_hierarchical_planner.py \
             tests/test_production_hardening_p34.py \
+            tests/test_build_recovery.py \
+            tests/test_mission_engine.py \
+            tests/test_capability_routing.py \
+            tests/test_execution_layer.py \
             --tb=short -q
 
   # ── Job 2: Integration tests (requires live stack + secrets) ─────────────────
