@@ -700,19 +700,15 @@ def _get_monitoring_agent():
 
 
 
-# ── Multimodal endpoints (require app-level deps) ────────────
-
-@app.post("/api/multimodal/image")
-async def multimodal_image(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
-
-@app.post("/api/multimodal/tts")
-async def multimodal_tts(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
-
-@app.post("/api/multimodal/stt")
-async def multimodal_stt(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
+# ── Multimodal endpoints ──────────────────────────────────────
+# Removed: 3 inline stubs that returned "not implemented".
+# Real multimodal is served by api/routes/multimodal.py (v2):
+#   POST /api/v2/multimodal/image/generate
+#   POST /api/v2/multimodal/image/describe
+#   POST /api/v2/multimodal/voice/stt
+#   POST /api/v2/multimodal/voice/tts
+#   GET  /api/v2/multimodal/capabilities
+# Provider implementations in modules/multimodal/ (image, voice, video).
 
 
 # ── Auth endpoints ────────────────────────────────────────────
