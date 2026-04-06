@@ -347,6 +347,27 @@ async def submit_task(
                 )
             _final = _extract_final_output(_final)
 
+            # Niveau 0b: quality check — if _final is workspace noise (listing files
+            # instead of answering the question), prefer agent_outputs synthesis.
+            # Workspace noise pattern: contains "fichier(s)" or "Workspace :" in
+            # the first 500 chars, which indicates repo_inspector injection, not
+            # a real answer. The actual LLM responses are in agent_outputs.
+            if _final and ("fichier(s)" in _final[:500] or "Workspace :" in _final[:500]):
+                _workspace_agent_outputs = _extract_agent_outputs(result.mission_id)
+                # Filter out vault-memory and internal agents — keep real analysis agents
+                _useful = {k: v for k, v in _workspace_agent_outputs.items()
+                           if k not in ("vault-memory", "pulse-ops", "observer")
+                           and v and len(str(v).strip()) >= 10}
+                if _useful:
+                    _parts = []
+                    for _aname, _aout in _useful.items():
+                        if _aout and str(_aout).strip():
+                            _parts.append(f"## {_aname}\n{str(_aout)[:1500]}")
+                    if _parts:
+                        _final = "# Résultats de mission\n\n" + "\n\n".join(_parts)
+                        _final_source = "agent_outputs_preferred"
+                        _fallback_level = 0
+
             # Niveau 1 : synthétiser depuis les agent_outputs bruts (MissionStateStore)
             if not _final or not _final.strip():
                 _fallback_level = 1

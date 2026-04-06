@@ -551,14 +551,30 @@ class ActionExecutor:
                 except Exception as _agg_err:
                     log.warning("result_aggregator_fallback", error=str(_agg_err))
                     full_output = f"{executed}/{len(all_acts)} actions exécutées avec succès."
-                ms.complete(
-                    mission_id,
-                    result_text=full_output
-                )
-                log.info("mission_auto_completed",
+
+                # DO NOT call ms.complete() here — the main pipeline in
+                # api/routes/missions.py background task handles completion
+                # with the real LLM-synthesized final_report.
+                # action_executor completing first was causing a race condition
+                # where the workspace listing overwrote the real LLM answer.
+                #
+                # Instead, store the action results in decision_trace for
+                # traceability, and let the main pipeline do the final write.
+                try:
+                    r_action = ms.get(mission_id)
+                    if r_action:
+                        dt = getattr(r_action, "decision_trace", {}) or {}
+                        dt["action_executor_output"] = full_output[:2000]
+                        dt["action_executor_completed"] = True
+                        r_action.decision_trace = dt
+                except Exception:
+                    pass
+
+                log.info("action_executor_results_stored",
                          mission_id=mission_id,
                          executed=executed,
-                         total=len(all_acts))
+                         total=len(all_acts),
+                         hint="completion deferred to main pipeline")
                 # Persist trace for completed mission
                 try:
                     from core.orchestration.decision_trace import DecisionTrace
