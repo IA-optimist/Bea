@@ -18,12 +18,25 @@ _conn: sqlite3.Connection | None = None
 
 
 def _get_connection() -> sqlite3.Connection:
-    """Retourne la connexion SQLite (singleton thread-safe)."""
+    """Retourne la connexion SQLite (singleton thread-safe).
+
+    NOTE: This is the DEV/FALLBACK database. In production, modules should
+    use PostgreSQL via settings.database_url. SQLite is used when:
+    - DATABASE_URL is not set
+    - asyncpg connection fails
+    """
     global _conn
     if _conn is None:
         with _lock:
             if _conn is None:
                 try:
+                    import os
+                    if os.environ.get("PRODUCTION_MODE", "").lower() in ("1", "true", "yes"):
+                        import logging
+                        logging.getLogger("jarvis.db").warning(
+                            "SQLite fallback active in PRODUCTION_MODE. "
+                            "Set DATABASE_URL for PostgreSQL."
+                        )
                     _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
                     conn = sqlite3.connect(str(_DB_PATH), check_same_thread=False)
                     conn.row_factory = sqlite3.Row
