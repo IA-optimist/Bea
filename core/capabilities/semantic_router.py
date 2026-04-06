@@ -107,8 +107,9 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
             uncached_texts.append(t)
 
     if uncached_texts:
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
         resp = httpx.post(
-            "https://api.openai.com/v1/embeddings",
+            f"{base_url}/embeddings",
             headers={"Authorization": f"Bearer {key}"},
             json={"model": EMBEDDING_MODEL, "input": uncached_texts},
             timeout=10,
