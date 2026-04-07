@@ -98,10 +98,19 @@ def create_api(settings) -> FastAPI:
                 from kernel.runtime.kernel import get_kernel, register_orchestrator
                 from core.meta_orchestrator import get_meta_orchestrator
                 _jk = get_kernel()
-                register_orchestrator(get_meta_orchestrator().run_mission)
+                _meta_orch = get_meta_orchestrator()
+                register_orchestrator(_meta_orch.run_mission)
                 log.info("jarvis_kernel_ready",
                          status=_jk.status().to_dict()["booted"],
                          orchestrator=True)
+                
+                # Register business mission handlers
+                try:
+                    from core.orchestration.business_missions import register_business_handlers
+                    register_business_handlers(_meta_orch)
+                    log.info("business_handlers_registered")
+                except Exception as _biz_err:
+                    log.warning("business_handlers_register_failed", err=str(_biz_err)[:120])
             except Exception as _jke:
                 # BLOC F: orchestrator registration failure is critical — kernel cannot run missions.
                 log.warning("jarvis_kernel_orchestrator_register_failed", err=str(_jke)[:80])

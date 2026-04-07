@@ -178,6 +178,9 @@ class MetaOrchestrator:
         # Circuit breaker: opens after 5 consecutive delegate failures,
         # resets after 60s. Prevents cascade pressure on a broken backend.
         self._circuit_breaker = _CircuitBreaker(failure_threshold=5, reset_s=60.0)
+        
+        # Custom mission handlers registry {mission_type: handler_fn}
+        self._custom_handlers: dict[str, Callable] = {}
 
     # ── Lazy accessors ──────────────────────────────────────────────────────
 
@@ -1862,6 +1865,53 @@ class MetaOrchestrator:
 
         log.info("recovery.complete", **recovered)
         return recovered
+
+    # ── Custom mission handlers ───────────────────────────────────────────────
+    
+    def register_mission_handler(self, mission_type: str, handler: Callable) -> None:
+        """
+        Register a custom mission handler for a specific mission type.
+        
+        Example:
+            async def handle_custom_mission(mission: dict, context: dict) -> dict:
+                return {"status": "success", "result": ...}
+            
+            orchestrator.register_mission_handler("custom.mission", handle_custom_mission)
+        
+        Args:
+            mission_type: Mission type identifier (e.g. "business.scan_opportunities")
+            handler: Async function that takes (mission: dict, context: dict) and returns dict
+        """
+        self._custom_handlers[mission_type] = handler
+        log.info("mission_handler_registered", mission_type=mission_type)
+    
+    async def dispatch_custom_mission(self, mission_type: str, mission: dict, context: dict | None = None) -> dict:
+        """
+        Dispatch a mission to a custom handler if registered.
+        
+        Args:
+            mission_type: Mission type identifier
+            mission: Mission dict with params
+            context: Optional execution context
+        
+        Returns:
+            Handler result dict
+        
+        Raises:
+            KeyError: If mission_type not registered
+        """
+        if mission_type not in self._custom_handlers:
+            raise KeyError(f"No handler registered for mission type: {mission_type}")
+        
+        handler = self._custom_handlers[mission_type]
+        log.info("mission_dispatch", mission_type=mission_type)
+        
+        try:
+            result = await handler(mission, context or {})
+            return result
+        except Exception as e:
+            log.error("mission_handler_failed", mission_type=mission_type, error=str(e))
+            raise
 
     # ── Backward-compat shims ────────────────────────────────────────────────
     # Ces méthodes permettent aux modules qui appelaient JarvisOrchestrator.run()
