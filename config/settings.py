@@ -245,8 +245,10 @@ class Settings:
 
     @property
     def has_llm_key(self) -> bool:
-        """True if at least one LLM provider API key is configured."""
-        return bool(self.openai_api_key or self.anthropic_api_key or self.openrouter_api_key)
+        """True if at least one LLM provider is available (cloud key OR local Ollama)."""
+        has_cloud = bool(self.openai_api_key or self.anthropic_api_key or self.openrouter_api_key)
+        has_ollama = bool(getattr(self, 'ollama_host', ''))
+        return has_cloud or has_ollama
 
     def enforce_llm_key(self) -> None:
         """
