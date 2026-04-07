@@ -6,13 +6,13 @@ pytestmark = pytest.mark.integration
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.tool_executor import (
-    execute_http_get,
     execute_python_snippet,
     read_file_content,
+    write_file_safe,
     run_shell_command,
-    query_vector_db,
+    # query_vector_db,  # LEGACY désactivé
     get_tool_executor,
-    _ensure_collection,
+    # _ensure_collection,  # LEGACY désactivé
 )
 
 

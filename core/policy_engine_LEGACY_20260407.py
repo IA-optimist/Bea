@@ -1,4 +1,30 @@
 """
+⚠️  LEGACY COMPONENT - DO NOT USE IN NEW CODE  ⚠️
+
+This PolicyEngine (Constitution-based) has been superseded by:
+→ core/policy/policy_engine.py (Economic Policy Engine)
+
+MIGRATION GUIDE:
+- Old: from core.policy_engine import PolicyEngine
+- New: from core.policy.policy_engine import PolicyEngine
+
+FILES TO UPDATE:
+1. main.py line 77
+2. kernel/adapters/policy_adapter.py line 14
+3. core/orchestrator.py line 241 (if keeping that file)
+
+REASON FOR DEPRECATION:
+- Duplicate implementation with overlapping responsibilities
+- Economic policy engine provides superior budget tracking, EV analysis, cost estimation
+- Constitution logic can be integrated into economic engine if needed
+
+MARKED LEGACY: 2026-04-07
+SAFE TO DELETE AFTER: 2026-05-01 (once migration complete)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+ORIGINAL DOCSTRING:
+
 JARVIS MAX — PolicyEngine
 Moteur de décision pour les actions : autorisation, limites, cloud vs local.
 
