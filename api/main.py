@@ -472,25 +472,24 @@ except Exception as _e:
 
 # ── Session info endpoint (used by mobile app for role detection) ──
 @app.get("/api/v2/session", include_in_schema=False)
-async def session_info(request: Request):
-    """Returns current user session info: role, username."""
-    try:
-        from api.auth import _check_auth
-        user = _check_auth(request)
-        if user:
-            return {
-                "ok": True,
-                "role": getattr(user, 'role', None) or user.get('role', 'admin') if isinstance(user, dict) else 'admin',
-                "username": getattr(user, 'username', None) or user.get('sub', 'admin') if isinstance(user, dict) else 'admin',
-            }
-    except Exception:
-        pass
-    # Fallback: if auth passes at middleware level, assume admin
-    # (single-operator system)
-    token = request.headers.get("authorization", "")
-    if token:
-        return {"ok": True, "role": "admin", "username": "admin"}
-    return JSONResponse({"ok": False, "error": "Unauthorized"}, status_code=401)
+async def session_info(request: Request, user: dict = Depends(require_auth)):
+    """Returns current user session info: role, username.
+
+    Auth enforced via Depends(require_auth) — the middleware has already
+    validated the token and set request.state.user; this dependency re-reads
+    it (or re-verifies as fallback). No silent admin fallback.
+    """
+    if isinstance(user, dict):
+        return {
+            "ok": True,
+            "role": user.get("role", "user"),
+            "username": user.get("username") or user.get("sub", ""),
+        }
+    return {
+        "ok": True,
+        "role": getattr(user, "role", "user"),
+        "username": getattr(user, "username", "") or getattr(user, "sub", ""),
+    }
 
 
 # ── Root: serve the login page ─────────────────────────────────
@@ -746,8 +745,8 @@ async def ws_stream_alias(websocket: WebSocket):
 # ── Router Registry Status ────────────────────────────────────
 
 @app.get("/api/v3/system/registry", tags=["system"])
-async def router_registry_status():
-    """Show status of all registered API routers."""
+async def router_registry_status(user: dict = Depends(require_auth)):
+    """Show status of all registered API routers. Admin-only (exposes API surface)."""
     try:
         from api.router_registry import get_registry_status
         return get_registry_status()
