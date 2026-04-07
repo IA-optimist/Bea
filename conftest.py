@@ -26,7 +26,7 @@ import pytest
 
 # Bypass improvement gate security check for all tests — prevents dependency
 # on security layer availability (qdrant, structlog) inside test environments.
-os.environ.setdefault("JARVIS_SKIP_IMPROVEMENT_GATE", "1")
+# DISABLED FOR SECURITY TESTS: # os.environ.setdefault("JARVIS_SKIP_IMPROVEMENT_GATE", "1")
 
 # ── Pre-load key modules so test-level mocks cannot overwrite them ──────────
 # Tests that do sys.modules.setdefault("some.module", MagicMock()) can only

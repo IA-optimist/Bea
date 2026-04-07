@@ -140,7 +140,7 @@ class TestWebSessionContracts:
 
     def test_session_store_in_html(self):
         """A13: SessionStore.save exists in web frontend."""
-        with open("static/index.html") as f:
+        with open("static/app.html") as f:
             content = f.read()
         assert "SessionStore" in content
         assert "save(" in content
@@ -150,7 +150,7 @@ class TestWebSessionContracts:
 
     def test_session_clear_in_html(self):
         """A14: SessionStore.clear removes all keys."""
-        with open("static/index.html") as f:
+        with open("static/app.html") as f:
             content = f.read()
         assert "clear()" in content
         # Must clear all storage keys
@@ -158,7 +158,7 @@ class TestWebSessionContracts:
 
     def test_remember_me_checkbox(self):
         """A15: Remember me checkbox in login form."""
-        with open("static/index.html") as f:
+        with open("static/app.html") as f:
             content = f.read()
         assert 'id="remember-me"' in content
         assert "Remember me" in content

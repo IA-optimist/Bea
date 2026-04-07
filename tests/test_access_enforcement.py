@@ -285,14 +285,14 @@ class TestSessionUX:
 
     def test_web_login_overlay(self):
         """E19: Web has login overlay."""
-        content = (REPO / "static/index.html").read_text()
+        content = (REPO / "static/app.html").read_text()
         assert 'id="login-overlay"' in content
         assert 'Access token' in content or 'access token' in content
         assert 'loginWithToken' in content
 
     def test_web_logout(self):
         """E20: Web has logout button."""
-        content = (REPO / "static/index.html").read_text()
+        content = (REPO / "static/app.html").read_text()
         assert 'logout()' in content
         assert 'Sign out' in content
 
@@ -305,7 +305,7 @@ class TestSessionUX:
 
     def test_user_friendly_errors(self):
         """E22: Error messages are user-friendly."""
-        content = (REPO / "static/index.html").read_text()
+        content = (REPO / "static/app.html").read_text()
         assert 'invalid' in content.lower()
         assert 'try again' in content.lower()
         # Login screen uses friendly language

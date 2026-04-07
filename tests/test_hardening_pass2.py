@@ -145,7 +145,7 @@ class TestStartupChecks:
 # DASHBOARD FALLBACK
 # ═══════════════════════════════════════════════════════════════
 
-_DASH = Path("static/dashboard.html")
+_DASH = Path("static/app.html")
 _DASH_CONTENT = _DASH.read_text(encoding="utf-8") if _DASH.exists() else ""
 
 
@@ -194,7 +194,7 @@ class TestVerification:
 
     def test_index_exists(self):
         """S17: index.html exists and is complete."""
-        index = Path("static/index.html")
+        index = Path("static/app.html")
         assert index.exists()
         content = index.read_text()
         assert 'login-overlay' in content
