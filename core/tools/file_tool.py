@@ -430,8 +430,8 @@ def workspace_snapshot() -> dict:
                     stats["total_size"] += file_path.stat().st_size
                     ext = file_path.suffix or "(no_ext)"
                     stats["file_types"][ext] = stats["file_types"].get(ext, 0) + 1
-                except:
-                    pass
+                except (OSError, PermissionError) as e:
+                    logger.debug(f"Cannot stat {file_path}: {e}")
         
         output = f"Workspace: {_WORKSPACE}\n"
         output += f"Total files: {stats['total_files']}\n"
