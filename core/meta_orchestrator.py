@@ -1799,6 +1799,7 @@ class MetaOrchestrator:
                     mode=ctx.mode,
                     mission_id=mission_id,
                     callback=callback,
+                    force_approved=True,
                 )
                 return resumed
             except Exception as e:
