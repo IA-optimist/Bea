@@ -103,6 +103,7 @@ class RoutingDecision:
     candidates_evaluated: int = 0
     all_candidates: list[dict] = field(default_factory=list)
     blocked_candidates: list[dict] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def success(self) -> bool:
@@ -118,6 +119,7 @@ class RoutingDecision:
             "candidates_evaluated": self.candidates_evaluated,
             "all_candidates": self.all_candidates,
             "blocked_candidates": self.blocked_candidates,
+            "metadata": self.metadata,
         }
 
 

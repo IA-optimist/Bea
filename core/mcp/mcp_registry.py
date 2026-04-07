@@ -580,6 +580,19 @@ _CORE_MCP_STACK: List[MCPServerEntry] = [
             {"name": "get_thread_user_context"}, {"name": "create_graph"},
         ],
     ),
+    # ── Context7 (documentation lookup) ──
+    MCPServerEntry(
+        id="mcp-context7", name="Context7 MCP",
+        description="Up-to-date documentation and code examples for libraries and frameworks via Context7",
+        source="upstash/context7", source_url="https://github.com/upstash/context7",
+        trust_level=TrustLevel.COMMUNITY,
+        transport="stdio", command="npx", args=["-y", "@upstash/context7-mcp@latest"],
+        risk_level="low", category="engineering",
+        tags=["documentation", "context", "libraries", "code_examples"],
+        discovered_tools=[
+            {"name": "resolve-library-id"}, {"name": "get-library-docs"},
+        ],
+    ),
     # ── PentestMCP (community security) ──
     MCPServerEntry(
         id="mcp-pentest", name="PentestMCP",

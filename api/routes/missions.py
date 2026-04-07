@@ -102,6 +102,7 @@ async def submit_task(
         _running_missions.add(result.mission_id)
 
     async def _run_mission():
+        import time; open("/tmp/jarvis_trace.log", "a").write(f"[TRACE_B] RUN_MISSION_ENTER {time.time()}\n")
         _mission_start = time.time()
         try:
             from core.mission_system import is_capability_query, CAPABILITY_DEMO
@@ -633,6 +634,7 @@ async def submit_task(
             _running_missions.discard(result.mission_id)
 
     background_tasks.add_task(_run_mission)
+    with open("/tmp/jarvis_trace.log", "a") as _tf: _tf.write(f"[TRACE_A] ADD_TASK_CALLED {time.time()}\n")
 
     try:
         from api.event_emitter import emit_mission_created
