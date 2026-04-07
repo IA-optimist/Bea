@@ -20,12 +20,14 @@ Unified REST endpoints for Agents, Skills, Connectors, MCP.
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+from api._deps import require_auth
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/modules", tags=["modules"])
+router = APIRouter(prefix="/modules", tags=["modules"], dependencies=[Depends(require_auth)])
 
 
 # ── Request Models ──

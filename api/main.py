@@ -18,7 +18,6 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 from __future__ import annotations
 
 import asyncio
-import json as _json
 import os
 import time
 from pathlib import Path
@@ -36,34 +35,6 @@ from pydantic import BaseModel, Field
 
 log = structlog.get_logger()
 
-
-def _extract_final_output(text: str) -> str:
-    """
-    Post-processing du final_output : si le texte ressemble à du JSON brut,
-    le convertit en texte lisible. Sinon, retourne tel quel.
-    """
-    if not text:
-        return text
-    stripped = text.strip()
-    if "{" in stripped and "}" in stripped:
-        try:
-            data = _json.loads(stripped)
-            # Extraire les champs textuels les plus probables
-            readable = (
-                data.get("result")
-                or data.get("output")
-                or data.get("response")
-                or data.get("content")
-                or data.get("reasoning")
-                or data.get("answer")
-                or data.get("text")
-                or data.get("message")
-                or str(data)
-            )
-            return f"[Résultat de Jarvis]\n{str(readable)[:10000]}"
-        except (_json.JSONDecodeError, Exception):
-            pass
-    return text
 
 
 # ── App ───────────────────────────────────────────────────────
@@ -301,8 +272,9 @@ except Exception as _e:
     log.warning("system_router_unavailable", err=str(_e))
 
 try:
-    from api.routes.finance import router as finance_router
+    from api.routes.finance import router as finance_router, webhook_router as finance_webhook_router
     app.include_router(finance_router)
+    app.include_router(finance_webhook_router)  # Webhook: no auth (Stripe signature verification)
 except Exception as _e:
     log.warning("finance_router_unavailable", err=str(_e))
 
