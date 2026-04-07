@@ -94,6 +94,8 @@ def route_mission(
     # Enrich decisions with domain skill context (fail-open)
     try:
         from core.skills.domain_skill_router import resolve_via_domain_routers
+        # Ensure domain routers are registered (import triggers registration)
+        import core.skills.security_skill_router  # noqa: F401
         for d in decisions:
             ctx = resolve_via_domain_routers(d.capability_id, goal)
             if ctx and ctx.get("matched"):

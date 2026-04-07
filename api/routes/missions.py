@@ -642,7 +642,7 @@ async def submit_task(
     except Exception as e:
         log.debug("emit_mission_created_skipped", mission=result.mission_id, err=str(e)[:80])
 
-    return {"ok": True, "data": {
+    _response_data = {"ok": True, "data": {
         "task_id":    result.mission_id,
         "mission_id": result.mission_id,
         "status":     result.status,
@@ -650,6 +650,7 @@ async def submit_task(
         "created_at": result.created_at,
     }}
 
+    return JSONResponse(content=_response_data, headers={"X-Jarvis-Stack": "jarvis_core", "X-Trace-Time": str(time.time())})
 
 @router.get("/api/v2/task/{task_id}")
 async def get_task(task_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):

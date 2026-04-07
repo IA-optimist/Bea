@@ -56,6 +56,10 @@ _KEYWORD_PATTERNS: list[tuple[str, str, ProviderType | None]] = [
      "security.blue_team", ProviderType.AGENT),
     (r"\b(cloud.security|aws.security|azure.security|gcp.security|cspm)\b",
      "security.blue_team", ProviderType.AGENT),
+    (r"\b(s[eé]curit[eé]|securite)\b.*\b(cloud|aws|azure|gcp|infra)\b",
+     "security.blue_team", ProviderType.AGENT),
+    (r"\b(cloud|aws|azure|gcp)\b.*\b(s[eé]curit[eé]|security|audit|review)\b",
+     "security.blue_team", ProviderType.AGENT),
     (r"\b(endpoint|edr|xdr|antivirus|malware.analysis)\b",
      "security.blue_team", ProviderType.AGENT),
     (r"\b(network.defense|ids|ips|firewall|ndr)\b",
@@ -107,8 +111,8 @@ _KEYWORD_PATTERNS: list[tuple[str, str, ProviderType | None]] = [
     (r"\b(asset.discovery|attack.surface|external.exposure)\b",
      "security.osint", ProviderType.AGENT),
 
-    # Security — General (legacy, kept for backward compat)
-    (r"\b(security|vulnerability|pentest|audit)\b",
+    # Security — General (legacy + FR support, kept for backward compat)
+    (r"\b(security|vulnerability|pentest|audit|s[eé]curit[eé]|vuln[eé]rabilit[eé])\b",
      "security.audit", ProviderType.AGENT),
     (r"\b(secret|credential|token|api.key)\b",
      "security.secrets", ProviderType.TOOL),
