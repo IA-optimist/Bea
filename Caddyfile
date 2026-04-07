@@ -1,42 +1,21 @@
-# ================================================================
-# JARVIS MAX — Caddy reverse proxy with automatic TLS
-# Domain : jarvis.jarvismaxapp.co.uk → 77.42.40.146
-# ACME   : HTTP-01 challenge (ports 80 + 443 must be open on host)
-# ================================================================
-
-jarvis.jarvismaxapp.co.uk {
-
-    # ── Security headers ─────────────────────────────────────────
-    header {
-        X-Frame-Options           DENY
-        X-Content-Type-Options    nosniff
-        X-XSS-Protection          "1; mode=block"
-        Referrer-Policy           strict-origin-when-cross-origin
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        -Server
+jarvismax.local {
+    # Frontend
+    handle /app/* {
+        reverse_proxy frontend:3000
     }
 
-    # ── Reverse proxy — HTTP + WebSocket ─────────────────────────
-    # Caddy v2 handles WebSocket upgrades transparently.
-    reverse_proxy jarvis:8000 {
-        header_up X-Real-IP {remote_host}
-        header_up Host      {upstream_hostport}
-
-        transport http {
-            dial_timeout            10s
-            response_header_timeout 300s
-        }
-
-        health_uri      /health
-        health_interval 30s
-        health_timeout  5s
-        health_status   200
+    # API
+    handle /api/* {
+        reverse_proxy api:8000
     }
 
-    # ── Access log ───────────────────────────────────────────────
-    log {
-        output stdout
-        format console
-        level  WARN
+    # WebSocket
+    handle /ws/* {
+        reverse_proxy api:8000
+    }
+
+    # Default to frontend
+    handle {
+        reverse_proxy frontend:3000
     }
 }

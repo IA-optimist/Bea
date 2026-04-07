@@ -1,148 +1,145 @@
 version: '3.8'
 
 services:
-  # PostgreSQL database
   postgres:
     image: postgres:16-alpine
     container_name: jarvismax-postgres
     environment:
-      POSTGRES_USER: jarvismax
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax_secret_2026}
       POSTGRES_DB: jarvismax
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax2025}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U jarvismax"]
+      test: ["CMD-SHELL", "pg_isready -U jarvis"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
     networks:
       - jarvismax-network
 
-  # Redis cache & task queue
   redis:
     image: redis:7-alpine
     container_name: jarvismax-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret_2026}
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
-    restart: unless-stopped
     networks:
       - jarvismax-network
 
-  # JarvisMax Core OS
-  jarvismax-core:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: jarvismax-core
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: jarvismax
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax_secret_2026}
-      POSTGRES_DB: jarvismax
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secret_2026}
-      JARVISMAX_ENV: production
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: jarvismax-qdrant
     volumes:
-      - ./:/app
-      - jarvismax_data:/root/.jarvismax
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - qdrant_data:/qdrant/storage
     ports:
-      - "8080:8080"  # API server
-    command: python3 core/jarvismax_os.py
-    restart: unless-stopped
+      - "6333:6333"
+      - "6334:6334"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - jarvismax-network
 
-  # FastAPI REST API
-  jarvismax-api:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: jarvismax-api
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: jarvismax
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax_secret_2026}
-      POSTGRES_DB: jarvismax
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secret_2026}
-      JARVISMAX_ENV: production
+      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD:-jarvismax2025}@postgres:5432/jarvismax
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      PYTHONUNBUFFERED: 1
     volumes:
       - ./:/app
-      - jarvismax_data:/root/.jarvismax
+      - ~/.jarvismax:/root/.jarvismax
+    ports:
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      jarvismax-core:
-        condition: service_started
-    ports:
-      - "8000:8000"
-    command: uvicorn web_api.main:app --host 0.0.0.0 --port 8000 --reload
-    restart: unless-stopped
+      qdrant:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     networks:
       - jarvismax-network
 
-  # Web Dashboard (optional - coming soon)
-  # jarvismax-dashboard:
-  #   build:
-  #     context: ./web_dashboard
-  #     dockerfile: Dockerfile
-  #   container_name: jarvismax-dashboard
-  #   environment:
-  #     API_URL: http://jarvismax-api:8000
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - jarvismax-api
-  #   restart: unless-stopped
-  #   networks:
-  #     - jarvismax-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jarvismax-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - jarvismax-network
 
-  # Nginx reverse proxy (optional)
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: jarvismax-nginx
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   depends_on:
-  #     - jarvismax-api
-  #   restart: unless-stopped
-  #   networks:
-  #     - jarvismax-network
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jarvismax-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - jarvismax-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: jarvismax-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - jarvismax-network
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
-  jarvismax_data:
-    driver: local
+  qdrant_data:
+  ollama_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   jarvismax-network:
