@@ -4,9 +4,11 @@ api/routes/debug.py — Debugging and inspection endpoints.
 Provides operator visibility into execution internals:
 learning memory, model selection, execution traces, pipeline health.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-router = APIRouter(prefix="/api/v3/debug", tags=["debug"])
+from api._deps import require_auth
+
+router = APIRouter(prefix="/api/v3/debug", tags=["debug"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/learning-memory")

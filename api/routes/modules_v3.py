@@ -19,13 +19,15 @@ All mutations enforced through governance layer:
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException, Header, Request
+from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from api._deps import require_auth
+
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v3", tags=["modules-v3"])
+router = APIRouter(prefix="/api/v3", tags=["modules-v3"], dependencies=[Depends(require_auth)])
 
 
 # ── Request Models ──

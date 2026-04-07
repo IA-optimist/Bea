@@ -18,7 +18,6 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 from __future__ import annotations
 
 import asyncio
-import json as _json
 import os
 import time
 from pathlib import Path
@@ -42,34 +41,6 @@ from pydantic import BaseModel, Field
 
 log = structlog.get_logger()
 
-
-def _extract_final_output(text: str) -> str:
-    """
-    Post-processing du final_output : si le texte ressemble à du JSON brut,
-    le convertit en texte lisible. Sinon, retourne tel quel.
-    """
-    if not text:
-        return text
-    stripped = text.strip()
-    if "{" in stripped and "}" in stripped:
-        try:
-            data = _json.loads(stripped)
-            # Extraire les champs textuels les plus probables
-            readable = (
-                data.get("result")
-                or data.get("output")
-                or data.get("response")
-                or data.get("content")
-                or data.get("reasoning")
-                or data.get("answer")
-                or data.get("text")
-                or data.get("message")
-                or str(data)
-            )
-            return f"[Résultat de Jarvis]\n{str(readable)[:2000]}"
-        except (_json.JSONDecodeError, Exception):
-            pass
-    return text
 
 
 # ── App ───────────────────────────────────────────────────────
@@ -308,7 +279,15 @@ try:
 except Exception as _e:
     log.warning("system_router_unavailable", err=str(_e))
 
-# Finance — STUB (all zeros, no Stripe configured)
+# Finance — gated behind ENABLE_STUB_ROUTES feature flag.
+# Webhook router is always mounted (Stripe needs to call it externally),
+# with signature verification as auth.
+try:
+    from api.routes.finance import webhook_router as finance_webhook_router
+    app.include_router(finance_webhook_router)  # Webhook: no auth (Stripe signature verification)
+except Exception as _e:
+    log.warning("finance_webhook_router_unavailable", err=str(_e))
+
 if _ENABLE_STUB_ROUTES:
     try:
         from api.routes.finance import router as finance_router
@@ -514,23 +493,24 @@ except Exception as _e:
 
 # ── Session info endpoint (used by mobile app for role detection) ──
 @app.get("/api/v2/session", include_in_schema=False)
-async def session_info(request: Request):
+async def session_info(request: Request, user: dict = Depends(require_auth)):
     """Returns current user session info: role, username.
 
-    No admin fallback — returns the real role from the token.
-    If the token cannot be verified, returns 401.
+    Auth enforced via Depends(require_auth) — no silent admin fallback.
+    Returns 401 if the token cannot be verified.
     """
-    from api.auth import verify_token
-    token_str = request.headers.get("authorization", "")
-    user = verify_token(token_str)
-    if user:
+    if isinstance(user, dict):
         return {
             "ok": True,
             "role": user.get("role", "user"),
-            "username": user.get("username", "unknown"),
+            "username": user.get("username") or user.get("sub", ""),
             "auth_type": user.get("auth_type", "unknown"),
         }
-    return JSONResponse({"ok": False, "error": "Unauthorized"}, status_code=401)
+    return {
+        "ok": True,
+        "role": getattr(user, "role", "user"),
+        "username": getattr(user, "username", "") or getattr(user, "sub", ""),
+    }
 
 
 # ── Root: serve the login page ─────────────────────────────────
@@ -805,8 +785,8 @@ async def ws_stream_alias(websocket: WebSocket):
 # ── Router Registry Status ────────────────────────────────────
 
 @app.get("/api/v3/system/registry", tags=["system"])
-async def router_registry_status():
-    """Show status of all registered API routers."""
+async def router_registry_status(user: dict = Depends(require_auth)):
+    """Show status of all registered API routers. Admin-only (exposes API surface)."""
     try:
         from api.router_registry import get_registry_status
         return get_registry_status()

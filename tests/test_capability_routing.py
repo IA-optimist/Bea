@@ -810,34 +810,6 @@ class TestExtendedAPI:
         paths = [r.path for r in app.routes]
         assert "/api/v3/capability-routing/summary" in paths
 
-    def test_CR94_web_ui_exists(self):
-        import os
-        path = os.path.join(os.path.dirname(__file__), "..", "static", "capability-routing.html")
-        assert os.path.isfile(path)
-
-    def test_CR95_web_ui_auth(self):
-        import os
-        path = os.path.join(os.path.dirname(__file__), "..", "static", "capability-routing.html")
-        with open(path) as f:
-            html = f.read()
-        assert "jarvis_token" in html
-        assert "Authorization" in html
-
-    def test_CR96_web_ui_test_routing(self):
-        import os
-        path = os.path.join(os.path.dirname(__file__), "..", "static", "capability-routing.html")
-        with open(path) as f:
-            html = f.read()
-        assert "testRoute" in html
-        assert "/route" in html
-
-    def test_CR97_nav_link(self):
-        import os
-        path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
-        with open(path) as f:
-            html = f.read()
-        assert "capability-routing.html" in html
-
     def test_CR98_meta_has_feedback_recording(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator

@@ -6,13 +6,14 @@ Exposes routing policy state and recent decisions for debugging.
 from __future__ import annotations
 
 try:
-    from fastapi import APIRouter
+    from fastapi import APIRouter, Depends
     from fastapi.responses import JSONResponse
+    from api._deps import require_auth
 except ImportError:
     APIRouter = None
 
 if APIRouter:
-    router = APIRouter(prefix="/api/routing", tags=["routing"])
+    router = APIRouter(prefix="/api/routing", tags=["routing"], dependencies=[Depends(require_auth)])
 
     @router.get("/decisions")
     async def get_routing_decisions(limit: int = 20):

@@ -16,9 +16,10 @@ import hmac
 import json
 import logging
 import time
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from api._deps import require_auth
 from tools.integrations.stripe_tool import StripeTool
 from agents.finance_agent import FinanceAgent
 from core.finance.finance_memory import FinanceMemory
@@ -26,7 +27,7 @@ from core.finance.revenue_tracker import RevenueTracker
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["finance"])
+router = APIRouter(tags=["finance"], dependencies=[Depends(require_auth)])
 
 # ── Singleton (lazy init) ──
 _agent: FinanceAgent | None = None
@@ -203,7 +204,11 @@ async def audit_log(limit: int = 50):
 
 WEBHOOK_SECRET = ""  # Set from env at startup
 
-@router.post("/finance/webhook/stripe")
+# Webhook uses a separate router — no auth (Stripe calls this externally).
+# Signature verification replaces token auth for webhooks.
+webhook_router = APIRouter(tags=["finance-webhook"])
+
+@webhook_router.post("/finance/webhook/stripe")
 async def stripe_webhook(request: Request):
     """
     Handle Stripe webhook events.
