@@ -25,6 +25,8 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
+from api._deps import _check_auth
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v3/cognitive", tags=["cognitive"])
@@ -63,22 +65,24 @@ def _get_bridge():
         raise HTTPException(status_code=503, detail=f"Cognitive bridge unavailable: {e}")
 
 
-def _check_auth(authorization: str | None) -> None:
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization required")
-
-
 # ── Routes ──
 
 @router.get("/stats")
-async def cognitive_stats(authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def cognitive_stats(
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     return _get_bridge().stats()
 
 
 @router.post("/analyze")
-async def analyze_task(req: AnalyzeRequest, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def analyze_task(
+    req: AnalyzeRequest,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     result = bridge.pre_mission(
         goal=req.goal, agent_id=req.agent_id, context=req.context or None
@@ -87,8 +91,12 @@ async def analyze_task(req: AnalyzeRequest, authorization: str | None = Header(N
 
 
 @router.post("/score")
-async def score_decision(req: ScoreRequest, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def score_decision(
+    req: ScoreRequest,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     return bridge.score_decision(
         decision_type=req.decision_type,
@@ -104,8 +112,11 @@ async def score_decision(req: ScoreRequest, authorization: str | None = Header(N
 # ── Reputation ──
 
 @router.get("/reputation")
-async def reputation_leaderboard(authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def reputation_leaderboard(
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     rep = bridge.reputation
     if not rep:
@@ -114,8 +125,12 @@ async def reputation_leaderboard(authorization: str | None = Header(None)):
 
 
 @router.get("/reputation/{agent_id}")
-async def agent_reputation(agent_id: str, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def agent_reputation(
+    agent_id: str,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     rep = bridge.reputation
     if not rep:
@@ -129,8 +144,11 @@ async def agent_reputation(agent_id: str, authorization: str | None = Header(Non
 # ── Memory Graph ──
 
 @router.get("/graph/stats")
-async def graph_stats(authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def graph_stats(
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     g = bridge.memory_graph
     if not g:
@@ -139,8 +157,13 @@ async def graph_stats(authorization: str | None = Header(None)):
 
 
 @router.get("/graph/subgraph/{node_id}")
-async def graph_subgraph(node_id: str, depth: int = 2, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def graph_subgraph(
+    node_id: str,
+    depth: int = 2,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     g = bridge.memory_graph
     if not g:
@@ -152,8 +175,12 @@ async def graph_subgraph(node_id: str, depth: int = 2, authorization: str | None
 # ── Learning Traces ──
 
 @router.get("/traces")
-async def learning_traces(limit: int = 50, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def learning_traces(
+    limit: int = 50,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     lt = bridge.learning_traces
     if not lt:
@@ -165,8 +192,11 @@ async def learning_traces(limit: int = 50, authorization: str | None = Header(No
 # ── Capabilities ──
 
 @router.get("/capabilities")
-async def list_capabilities(authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def list_capabilities(
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     cg = bridge.capability_graph
     if not cg:
@@ -175,8 +205,12 @@ async def list_capabilities(authorization: str | None = Header(None)):
 
 
 @router.post("/capabilities/find")
-async def find_agents_for_task(req: FindAgentsRequest, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def find_agents_for_task(
+    req: FindAgentsRequest,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     cg = bridge.capability_graph
     if not cg:
@@ -188,18 +222,24 @@ async def find_agents_for_task(req: FindAgentsRequest, authorization: str | None
 
 @router.get("/playbooks")
 async def list_playbooks(
-    category: str = "", query: str = "",
-    authorization: str | None = Header(None),
+    category: str = "",
+    query: str = "",
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
 ):
-    _check_auth(authorization)
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     results = bridge.find_playbook(category=category, query=query)
     return {"playbooks": results}
 
 
 @router.post("/playbooks/start")
-async def start_playbook(req: StartPlaybookRequest, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def start_playbook(
+    req: StartPlaybookRequest,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     result = bridge.start_playbook(req.playbook_id, req.mission_id, req.params)
     if not result:
@@ -211,10 +251,12 @@ async def start_playbook(req: StartPlaybookRequest, authorization: str | None = 
 
 @router.get("/marketplace")
 async def marketplace_search(
-    query: str = "", type: str = "",
-    authorization: str | None = Header(None),
+    query: str = "",
+    type: str = "",
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
 ):
-    _check_auth(authorization)
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     results = bridge.marketplace_search(query=query, type=type)
     return {"items": results}
@@ -223,8 +265,11 @@ async def marketplace_search(
 # ── Confidence ──
 
 @router.get("/confidence")
-async def confidence_report(authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def confidence_report(
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     conf = bridge.confidence
     if not conf:
@@ -233,8 +278,12 @@ async def confidence_report(authorization: str | None = Header(None)):
 
 
 @router.get("/confidence/history")
-async def confidence_history(limit: int = 50, authorization: str | None = Header(None)):
-    _check_auth(authorization)
+async def confidence_history(
+    limit: int = 50,
+    x_jarvis_token: str | None = Header(None),
+    authorization: str | None = Header(None)
+):
+    _check_auth(x_jarvis_token, authorization)
     bridge = _get_bridge()
     conf = bridge.confidence
     if not conf:
