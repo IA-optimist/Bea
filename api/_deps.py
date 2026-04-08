@@ -236,7 +236,7 @@ def _init_db():
     """Initialize database engine and session maker (lazy)"""
     global _db_engine, _SessionLocal
     if _db_engine is None:
-        database_url = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvismax2025@jarvis_postgres:5432/jarvis")
+        database_url = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvismax2025@jarvis_postgres:5432/jarvismax")
         _db_engine = create_engine(database_url, pool_pre_ping=True)
         _SessionLocal = sessionmaker(bind=_db_engine, autocommit=False, autoflush=False)
     return _SessionLocal
