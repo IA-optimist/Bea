@@ -328,11 +328,15 @@ async def switch_project(
     authorization: Optional[str] = Header(None)
 ):
     """Switch current project context."""
+    # Verify token
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+    
     from core.project_context import set_project
-    from core.db.project_crud import get_project
+    # get_project imported from models.project at top
     
     # Validate project exists
-    project = await get_project(project_id)
+    project = get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
@@ -341,6 +345,10 @@ async def switch_project(
     
     return {
         "ok": True,
-        "project": project,
-        "message": f"Switched to project: {project['name']}"
+        "project": {
+            "id": str(project.id),
+            "name": project.name,
+            "description": project.description
+        },
+        "message": f"Switched to project: {project.name}"
     }
