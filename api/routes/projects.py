@@ -325,7 +325,7 @@ async def health_check():
 @router.post("/{project_id}/switch")
 async def switch_project(
     project_id: str,
-    _token=Depends(verify_token)
+    authorization: Optional[str] = Header(None)
 ):
     """Switch current project context."""
     from core.project_context import set_project
