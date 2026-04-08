@@ -1234,9 +1234,10 @@ class MetaOrchestrator:
                 log.info("cognition.activating", mission_id=mid, conf=pre_assess.estimated_confidence)
                 try:
                     from core.cognition.orchestrator import CognitionOrchestrator
-                    from core.llm_factory import get_llm_factory
+                    from core.llm_factory import LLMFactory
                     
-                    _llm = get_llm_factory().get(provider="openrouter", model="anthropic/claude-3.7-sonnet")
+                    _llm_factory = LLMFactory(self.s)
+                    _llm = _llm_factory.get(provider="openrouter", model="anthropic/claude-3.7-sonnet")
                     _cog = CognitionOrchestrator(llm_client=_llm)
                     
                     _payload = {
