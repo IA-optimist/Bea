@@ -35,6 +35,39 @@ class CognitionOrchestrator:
         self.discoverer = SkillDiscoverer(llm_client)
         self.tracker = _performance_tracker
     
+    async def _execute_with_llm(self, mission: Dict[str, Any]) -> str:
+        """
+        Execute mission goal using LLM.
+        
+        This is the core executor that was missing from the original design.
+        Generates output based on mission goal and user input.
+        """
+        goal = mission.get("goal", "")
+        user_input = mission.get("user_input", "")
+        
+        # Build prompt
+        prompt = f"""Mission: {goal}
+
+{user_input if user_input else ''}
+
+Provide a comprehensive response addressing the mission goal."""
+        
+        try:
+            # Call LLM (async invoke)
+            response = await self.llm.ainvoke(prompt)
+            
+            # Extract content
+            if hasattr(response, 'content'):
+                return response.content
+            elif isinstance(response, str):
+                return response
+            else:
+                return str(response)
+                
+        except Exception as e:
+            log.error("llm_execution_failed", error=str(e), mission_id=mission.get("mission_id"))
+            return f"ERROR: LLM execution failed - {str(e)}"
+
     async def execute_mission_with_cognition(
         self,
         mission: Dict[str, Any],
@@ -67,9 +100,11 @@ class CognitionOrchestrator:
             mission["tot_plan"] = tot_result
             mission["plan_confidence"] = tot_result["confidence"]
         
-        # Step 2: Execute mission (placeholder - would call actual executor)
-        # For now, assume mission["result"] is already populated
+        # Step 2: Execute mission with LLM
         output = mission.get("result", "")
+        if not output:
+            output = await self._execute_with_llm(mission)
+            mission["result"] = output
         
         # Step 3: Score confidence
         confidence_result = None
