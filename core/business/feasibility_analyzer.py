@@ -268,7 +268,7 @@ MARKET_FIT_SCORE: [0-100]
         Extracts fields from result['response'] text using simple parsing
         Falls back to safe defaults if parsing fails
         """
-        response_text = result.get("response", "")
+        response_text = result.get("result", "")
         confidence = result.get("confidence", {})
         
         # Extract structured data from response text
