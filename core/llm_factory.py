@@ -465,7 +465,9 @@ class LLMFactory:
         _selector_reason: str = ""
         _selector_is_fallback: bool = True
         _selector_score: float = 0.0
-        _selector_enabled = os.getenv("MODEL_SELECTOR_ENABLED", "true").lower() not in ("false", "0", "no")
+        # Default to DISABLED — model_selector was overriding reliable configured models
+        # with free/unstable models causing timeouts. Set MODEL_SELECTOR_ENABLED=true to re-enable.
+        _selector_enabled = os.getenv("MODEL_SELECTOR_ENABLED", "false").lower() in ("true", "1", "yes")
         if _selector_enabled:
             try:
                 from core.model_intelligence.selector import get_model_selector

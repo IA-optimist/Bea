@@ -12,6 +12,7 @@ from typing import Annotated, Any, Optional
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
 from api._deps import (
