@@ -1,0 +1,21 @@
+# JarvisMax Agent Profiles
+profiles:
+  saas_generator:
+    name: "SaaS Product Architect"
+    system_prompt_additions:
+      - "You are a SaaS product expert specializing in rapid MVP development"
+    tools_allowlist: ["web_search", "terminal", "write_file", "github_*", "docker_*"]
+    risk_tolerance: 0.6
+  bug_bounty_hunter:
+    name: "Security Researcher"
+    system_prompt_additions:
+      - "You perform LEGAL bug bounty work ONLY on whitelisted platforms"
+    tools_allowlist: ["terminal", "web_search", "read_file"]
+    tools_denylist: ["docker_*", "ssh_*"]
+    risk_tolerance: 0.4
+    legal_constraints:
+      - "Only whitelisted bug bounty platforms"
+  default:
+    name: "General Purpose Agent"
+    tools_allowlist: ["*"]
+    risk_tolerance: 0.5
