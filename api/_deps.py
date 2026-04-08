@@ -99,6 +99,16 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if bearer and hmac.compare_digest(bearer.encode(), _api_bytes):
         return
 
+    # 1.5. Check access token (jv-* tokens from TokenManager)
+    if candidate and candidate.startswith('jv-'):
+        try:
+            from api.auth import verify_token
+            token_data = verify_token(candidate)
+            if token_data:
+                return
+        except Exception as e:
+            log.warning(f"access_token_verification_failed token={candidate[:10]}... error={e}")
+
     # 2. Check JWT token (issued by /auth/token)
     candidate = bearer or token
     if candidate:
