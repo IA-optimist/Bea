@@ -687,3 +687,277 @@ async def get_mvp_status(
             "files_created": 8,  # Static (backend, frontend, docker, deployment, README, gitignore)
         }
     }
+
+
+# ========================================
+# P3.4 — DEPLOYMENT ENDPOINTS
+# ========================================
+
+@router.post("/{opportunity_id}/deploy", status_code=202)
+async def deploy_mvp(
+    opportunity_id: int,
+    background_tasks: BackgroundTasks,
+    project_id: int = Query(1, description="JarvisMax project ID"),
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(verify_token),
+):
+    """
+    Deploy generated MVP to VPS with GitHub + Docker + Caddy.
+    
+    Steps:
+    1. Validate: opportunity + analysis + mvp_generated = TRUE
+    2. GitHub: Create repo + push code
+    3. VPS: Clone repo + docker-compose up
+    4. Caddy: Configure reverse proxy
+    5. DB: Create deployment record
+    
+    Returns 202 Accepted immediately, runs deployment in background.
+    
+    Check status: GET /api/v3/business/opportunities/{id}/deployment
+    """
+    from models.opportunity import Opportunity
+    from models.opportunity_analysis import OpportunityAnalysis
+    from models.opportunity_deployment import OpportunityDeployment
+    from core.business.github_automation import GitHubAutomation
+    from core.business.deploy_manager import DeployManager
+    import time
+    
+    # 1. Validate opportunity
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # 2. Validate analysis exists
+    analysis = (
+        db.query(OpportunityAnalysis)
+        .filter(OpportunityAnalysis.opportunity_id == opportunity_id)
+        .order_by(OpportunityAnalysis.created_at.desc())
+        .first()
+    )
+    if not analysis:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No analysis found for opportunity {opportunity_id}. Run analysis first."
+        )
+    
+    # 3. Validate MVP generated
+    if not opportunity.mvp_generated:
+        raise HTTPException(
+            status_code=400,
+            detail=f"MVP not generated for opportunity {opportunity_id}. Generate MVP first."
+        )
+    
+    # 4. Check if already deployed
+    existing = db.query(OpportunityDeployment).filter(
+        OpportunityDeployment.opportunity_id == opportunity_id,
+        OpportunityDeployment.status.in_(["deploying", "live"])
+    ).first()
+    
+    if existing:
+        return {
+            "status": "already_deployed",
+            "message": f"MVP already deployed: {existing.url}",
+            "data": existing.to_dict(),
+        }
+    
+    # 5. Start background deployment
+    logger.info(f"background_deployment_started opportunity_id={opportunity_id} project_id={project_id}")
+    
+    async def _run_deployment():
+        """Background deployment task"""
+        start_time = time.time()
+        
+        try:
+            # Get MVP directory (from mvp_generator output)
+            from core.business.mvp_generator import MVPGenerator
+            generator = MVPGenerator()
+            project_slug = generator._slugify(opportunity.title)
+            mvp_dir = f"/tmp/jarvismax_mvp/{project_slug}"
+            
+            # GitHub automation
+            logger.info(f"deploying_to_github opportunity_id={opportunity_id}")
+            github = GitHubAutomation()
+            github_result = github.create_and_push(opportunity, mvp_dir)
+            
+            if not github_result["success"]:
+                logger.error(f"github_automation_failed opportunity_id={opportunity_id}: {github_result.get('message')}")
+                return
+            
+            logger.info(f"github_push_completed opportunity_id={opportunity_id} repo={github_result['repo_name']}")
+            
+            # VPS deployment
+            logger.info(f"deploying_to_vps opportunity_id={opportunity_id}")
+            deployer = DeployManager()
+            deploy_result = deployer.deploy(opportunity, github_result["repo_url"], project_slug)
+            
+            if not deploy_result["success"]:
+                logger.error(f"vps_deployment_failed opportunity_id={opportunity_id}: {deploy_result.get('message')}")
+                return
+            
+            logger.info(f"vps_deployment_completed opportunity_id={opportunity_id} url={deploy_result['url']}")
+            
+            # Create deployment record
+            duration = int(time.time() - start_time)
+            
+            deployment = OpportunityDeployment(
+                opportunity_id=opportunity_id,
+                repo_name=github_result["repo_name"],
+                repo_url=github_result["repo_url"],
+                clone_url=github_result.get("clone_url"),
+                html_url=github_result.get("html_url"),
+                deploy_path=deploy_result["deploy_path"],
+                subdomain=deploy_result["subdomain"],
+                url=deploy_result["url"],
+                status="live",
+                deploy_duration_seconds=duration,
+            )
+            
+            db.add(deployment)
+            opportunity.deployed = True
+            db.commit()
+            
+            logger.info(
+                f"background_deployment_completed "
+                f"opportunity_id={opportunity_id} "
+                f"url={deploy_result['url']} "
+                f"duration={duration}s"
+            )
+        
+        except Exception as e:
+            logger.error(f"background_deployment_failed opportunity_id={opportunity_id}: {e}", exc_info=True)
+            db.rollback()
+    
+    background_tasks.add_task(_run_deployment)
+    
+    return {
+        "status": "success",
+        "message": "Deployment started",
+        "data": {
+            "opportunity_id": opportunity_id,
+            "project_id": project_id,
+            "estimated_duration": "5-10 minutes",
+            "status_endpoint": f"/api/v3/business/opportunities/{opportunity_id}/deployment",
+        },
+    }
+
+
+@router.get("/{opportunity_id}/deployment")
+async def get_deployment_status(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(verify_token),
+):
+    """
+    Get deployment status for an opportunity.
+    
+    Returns 200 if deployed (live, down, or removed)
+    Returns 202 if currently deploying
+    Returns 404 if never deployed
+    """
+    from models.opportunity import Opportunity
+    from models.opportunity_deployment import OpportunityDeployment
+    
+    # Check opportunity exists
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # Get latest deployment
+    deployment = (
+        db.query(OpportunityDeployment)
+        .filter(OpportunityDeployment.opportunity_id == opportunity_id)
+        .order_by(OpportunityDeployment.deployed_at.desc())
+        .first()
+    )
+    
+    if not deployment:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No deployment found for opportunity {opportunity_id}"
+        )
+    
+    # Return status
+    if deployment.status == "deploying":
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": 202,
+                "detail": "Deployment in progress. Please try again in 5-10 minutes.",
+                "data": deployment.to_dict(),
+            }
+        )
+    
+    return {
+        "status": "success",
+        "data": deployment.to_dict(),
+    }
+
+
+@router.delete("/{opportunity_id}/deployment")
+async def undeploy_mvp(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(verify_token),
+):
+    """
+    Remove deployment from VPS.
+    
+    Steps:
+    1. Stop Docker containers
+    2. Remove deployment directory
+    3. Remove Caddy config
+    4. Update deployment status to 'removed'
+    """
+    from models.opportunity import Opportunity
+    from models.opportunity_deployment import OpportunityDeployment
+    from core.business.deploy_manager import DeployManager
+    from datetime import datetime
+    
+    # Check opportunity exists
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # Get active deployment
+    deployment = (
+        db.query(OpportunityDeployment)
+        .filter(
+            OpportunityDeployment.opportunity_id == opportunity_id,
+            OpportunityDeployment.status.in_(["deploying", "live", "down"])
+        )
+        .order_by(OpportunityDeployment.deployed_at.desc())
+        .first()
+    )
+    
+    if not deployment:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No active deployment found for opportunity {opportunity_id}"
+        )
+    
+    # Undeploy
+    logger.info(f"undeploying_mvp opportunity_id={opportunity_id} subdomain={deployment.subdomain}")
+    
+    deployer = DeployManager()
+    project_slug = deployment.subdomain.split('.')[0]  # Extract slug from subdomain
+    success = deployer.undeploy(project_slug)
+    
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to undeploy MVP for opportunity {opportunity_id}"
+        )
+    
+    # Update status
+    deployment.status = "removed"
+    deployment.removed_at = datetime.utcnow()
+    opportunity.deployed = False
+    db.commit()
+    
+    logger.info(f"mvp_undeployed opportunity_id={opportunity_id}")
+    
+    return {
+        "status": "success",
+        "message": f"MVP undeployed successfully: {deployment.subdomain}",
+        "data": deployment.to_dict(),
+    }
