@@ -1,5 +1,7 @@
 {
-    # Disable automatic HTTPS (use self-signed for now)
+    # Listen on port 8080 only (nginx will proxy to us)
+    http_port 8080
+    # Disable all HTTPS/TLS
     auto_https off
 }
 
@@ -19,8 +21,8 @@ jarvismax.local {
     }
 }
 
-# Production domain (HTTP only for testing)
-http://jarvis.jarvismaxapp.co.uk {
+# Production domain (HTTP only, nginx handles HTTPS)
+jarvis.jarvismaxapp.co.uk {
     # API
     handle /api/* {
         reverse_proxy jarvis_core:8000
