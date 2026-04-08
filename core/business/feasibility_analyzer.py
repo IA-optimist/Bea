@@ -33,7 +33,9 @@ class FeasibilityAnalyzer:
     """
     
     def __init__(self):
-        self.cognition = CognitionOrchestrator()
+        from core.llm_client import LLMClient
+        llm = LLMClient(model="anthropic/claude-3.7-sonnet")
+        self.cognition = CognitionOrchestrator(llm_client=llm)
     
     async def analyze(self, opportunity: Opportunity, project_id: int = 1) -> Dict[str, Any]:
         """
