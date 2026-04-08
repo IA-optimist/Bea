@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from api.auth import verify_token
 from api._deps import require_auth, get_db
 from models.opportunity import Opportunity
 from business.automation.opportunity_scanner import OpportunityScanner
