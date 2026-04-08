@@ -8,6 +8,7 @@ import structlog
 from core.cognition.tot_wrapper import plan_with_tot, should_use_tot
 from core.cognition.self_confidence import ConfidenceScorer, SelfCorrector
 from core.cognition.active_learning import SkillDiscoverer, PerformanceTracker
+from core.cognition.project_context import ProjectContextManager, ProjectContext
 
 log = structlog.get_logger(__name__)
 
@@ -28,13 +29,15 @@ class CognitionOrchestrator:
     6. Discover skills from successes
     """
     
-    def __init__(self, llm_client):
+    def __init__(self, llm_client, project_manager=None):
         self.llm = llm_client
         self.scorer = ConfidenceScorer(llm_client)
         self.corrector = SelfCorrector(llm_client)
         self.discoverer = SkillDiscoverer(llm_client)
         self.tracker = _performance_tracker
     
+        self.project_manager = project_manager or ProjectContextManager()
+
     async def _execute_with_llm(self, mission: Dict[str, Any]) -> str:
         """
         Execute mission goal using LLM.
@@ -302,3 +305,77 @@ Provide a comprehensive response addressing the mission goal."""
         )
         
         return outcome
+
+    async def execute_with_project_context(
+        self,
+        mission: Dict[str, Any],
+        project_id: int = 1,
+        enable_tot: bool = True,
+        enable_confidence: bool = True,
+        enable_learning: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Execute mission with full project context awareness.
+        
+        Phase 5.2: Multi-project cognition
+        - Loads project-specific memory
+        - Stores results in project context
+        - Updates skills learned by project
+        """
+        
+        # Switch to project context
+        try:
+            project_ctx = self.project_manager.switch_project(project_id)
+        except ValueError:
+            log.warning("project_not_found", project_id=project_id)
+            project_ctx = None
+        
+        # Add project memory to mission context
+        if project_ctx:
+            recent_memory = self.project_manager.get_project_memory(project_id, limit=5)
+            mission["project_context"] = {
+                "project_id": project_id,
+                "project_name": project_ctx.name,
+                "recent_messages": recent_memory,
+                "learned_skills": project_ctx.learned_skills,
+                "performance": {
+                    "success_count": project_ctx.success_count,
+                    "avg_confidence": project_ctx.avg_confidence
+                }
+            }
+        
+        # Execute with cognition
+        result = await self.execute_mission_with_cognition(
+            mission,
+            enable_tot=enable_tot,
+            enable_confidence=enable_confidence,
+            enable_learning=enable_learning
+        )
+        
+        # Store result in project context
+        if project_ctx and result.get("result"):
+            project_ctx.add_message("assistant", result["result"])
+            
+            # Record performance
+            success = result.get("confidence_score", 0) > 0.7
+            confidence = result.get("confidence_score", 0.5)
+            project_ctx.record_mission_result(success, confidence)
+            
+            # Store in long-term memory if high confidence
+            if confidence > 0.8:
+                await self.project_manager.store_in_long_term_memory(
+                    project_id,
+                    result["result"],
+                    metadata={
+                        "mission_id": mission.get("mission_id"),
+                        "confidence": confidence,
+                        "goal": mission.get("goal", "")
+                    }
+                )
+        
+        result["project_id"] = project_id
+        return result
+    
+    def get_project_performance(self) -> Dict[str, Any]:
+        """Get performance summary across all projects."""
+        return self.project_manager.get_performance_summary()
