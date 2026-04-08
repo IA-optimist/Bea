@@ -475,7 +475,7 @@ class OrchestratorV2:
 
     def _get_inner(self):
         if self._inner is None:
-            from core.orchestrator import JarvisOrchestrator
+            from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
             self._inner = JarvisOrchestrator(self.s)
         return self._inner
 

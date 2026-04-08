@@ -37,7 +37,7 @@ def _fail(name: str, detail: str = ""):
 # ══════════════════════════════════════════════════════════════
 
 def test_import():
-    from core.orchestrator import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
     from config.settings import get_settings
     orch = JarvisOrchestrator(get_settings())
     assert orch is not None
@@ -49,7 +49,7 @@ def test_import():
 # ══════════════════════════════════════════════════════════════
 
 def test_intent_map():
-    from core.orchestrator import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
     required_keys = {"improve", "code", "research", "plan", "night", "chat", "default"}
     present = set(JarvisOrchestrator.INTENT_MAP.keys())
     missing = required_keys - present
@@ -62,7 +62,7 @@ def test_intent_map():
 # ══════════════════════════════════════════════════════════════
 
 def test_classify_intent():
-    from core.orchestrator import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
     from config.settings import get_settings
 
     orch = JarvisOrchestrator(get_settings())
@@ -95,7 +95,7 @@ def test_classify_intent():
 # ══════════════════════════════════════════════════════════════
 
 def test_supervised_property():
-    from core.orchestrator import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
     from config.settings import get_settings
     from executor.supervised_executor import SupervisedExecutor
 

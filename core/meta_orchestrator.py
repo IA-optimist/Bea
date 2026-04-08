@@ -188,7 +188,7 @@ class MetaOrchestrator:
     def jarvis(self):
         """JarvisOrchestrator — orchestrateur principal."""
         if self._jarvis is None:
-            from core.orchestrator import JarvisOrchestrator
+            from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
             self._jarvis = JarvisOrchestrator(self.s)
             log.debug("meta_orchestrator.jarvis_loaded")
         return self._jarvis
