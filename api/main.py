@@ -389,6 +389,12 @@ try:
     app.include_router(business_artifacts_router)
 except Exception as _e:
     log.warning("business_artifacts_router_unavailable", err=str(_e))
+try:
+    from api.routes.opportunities import router as opportunities_router
+    app.include_router(opportunities_router)
+except Exception as _e:
+    log.warning("opportunities_router_unavailable", err=str(_e))
+
 
 try:
     from api.routes.domain_skills import router as domain_skills_router
