@@ -178,6 +178,13 @@ try:
     app.include_router(monitoring_router)
 except Exception as _e:
     log.warning("monitoring_router_unavailable", err=str(_e))
+# ── Import du routeur Projects (Phase 2.1) ────────────────────────────
+try:
+    from api.routes.projects import router as projects_router
+    app.include_router(projects_router)
+except Exception as _e:
+    log.warning("projects_router_unavailable", err=str(_e))
+
 
 # ── Import du routeur Voice & Call (Phase 10) — STUB ──────────
 if _ENABLE_STUB_ROUTES:
@@ -382,6 +389,12 @@ try:
     app.include_router(business_artifacts_router)
 except Exception as _e:
     log.warning("business_artifacts_router_unavailable", err=str(_e))
+try:
+    from api.routes.opportunities import router as opportunities_router
+    app.include_router(opportunities_router)
+except Exception as _e:
+    log.warning("opportunities_router_unavailable", err=str(_e))
+
 
 try:
     from api.routes.domain_skills import router as domain_skills_router
@@ -604,6 +617,17 @@ async def _on_startup():
     except Exception as exc:
         log.warning("router_registry_auto_failed", err=str(exc)[:80])
 
+
+
+    # Initialize project CRUD pool
+    try:
+        import os
+        from core.db.project_crud import init_pool
+        dsn = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvis123@postgres:5432/jarvis")
+        await init_pool(dsn)
+        log.info("project_crud_pool_initialized")
+    except Exception as exc:
+        log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
 
 @app.on_event("shutdown")
 async def _on_shutdown():

@@ -49,8 +49,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.self_improvement.code_patcher import (
     CodePatcher, FileAnalysis, CodePatch, PatchDiff,
-    PROTECTED_FILES, MAX_FILES_PER_PATCH, MAX_LINES_CHANGED,
+    MAX_FILES_PER_PATCH, MAX_LINES_CHANGED,
 )
+from core.self_improvement.protected_paths import PROTECTED_FILES
 from core.self_improvement.sandbox_executor import (
     SandboxExecutor, SandboxResult, SandboxConfig,
 )

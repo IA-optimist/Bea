@@ -99,6 +99,16 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if bearer and hmac.compare_digest(bearer.encode(), _api_bytes):
         return
 
+    # 1.5. Check access token (jv-* tokens from TokenManager)
+    if candidate and candidate.startswith('jv-'):
+        try:
+            from api.auth import verify_token
+            token_data = verify_token(candidate)
+            if token_data:
+                return
+        except Exception as e:
+            log.warning(f"access_token_verification_failed token={candidate[:10]}... error={e}")
+
     # 2. Check JWT token (issued by /auth/token)
     candidate = bearer or token
     if candidate:
@@ -208,3 +218,45 @@ def _extract_final_output(text: str) -> str:
         except (_json.JSONDecodeError, Exception):
             pass
     return text
+
+
+# ═════════════════════════════════════════════════════════════════════
+# DATABASE SESSION DEPENDENCY
+# ═════════════════════════════════════════════════════════════════════
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
+
+# Lazy init database engine
+_db_engine = None
+_SessionLocal = None
+
+
+def _init_db():
+    """Initialize database engine and session maker (lazy)"""
+    global _db_engine, _SessionLocal
+    if _db_engine is None:
+        database_url = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvismax2025@jarvis_postgres:5432/jarvismax")
+        _db_engine = create_engine(database_url, pool_pre_ping=True)
+        _SessionLocal = sessionmaker(bind=_db_engine, autocommit=False, autoflush=False)
+    return _SessionLocal
+
+
+def get_db() -> SQLAlchemySession:
+    """
+    FastAPI dependency for database sessions
+    
+    Usage:
+        @router.get("/items")
+        def list_items(db: Session = Depends(get_db)):
+            items = db.query(Item).all()
+            return items
+    
+    Automatically closes session after request completes.
+    """
+    SessionLocal = _init_db()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

@@ -131,3 +131,5 @@ docs/archive_legacy/
 
 # ── Lab / external tool artifacts ─────────────────────────────
 codex.plugin
+core/action_executor.py.backup_20260408_022055
+workspace/improvement_proposals.json

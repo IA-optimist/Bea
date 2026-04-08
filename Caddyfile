@@ -1,21 +1,45 @@
+{
+    # Listen on port 8080 only (nginx will proxy to us)
+    http_port 8080
+    # Disable all HTTPS/TLS
+    auto_https off
+}
+
+# Local development
 jarvismax.local {
+    handle /app/* {
+        reverse_proxy frontend:3000
+    }
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle /ws/* {
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy frontend:3000
+    }
+}
+
+# Production domain (HTTP only, nginx handles HTTPS)
+jarvis.jarvismaxapp.co.uk {
+    # API
+    handle /api/* {
+        reverse_proxy jarvis_core:8000
+    }
+
+    # WebSocket
+    handle /ws/* {
+        reverse_proxy jarvis_core:8000
+    }
+
     # Frontend
     handle /app/* {
         reverse_proxy frontend:3000
     }
 
-    # API
-    handle /api/* {
-        reverse_proxy api:8000
-    }
-
-    # WebSocket
-    handle /ws/* {
-        reverse_proxy api:8000
-    }
-
-    # Default to frontend
+    # Default to API docs
     handle {
-        reverse_proxy frontend:3000
+        redir /docs permanent
     }
 }

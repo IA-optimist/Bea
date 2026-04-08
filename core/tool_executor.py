@@ -33,10 +33,11 @@ try:
     from core.tools.test_toolkit import (
         run_unit_tests, run_smoke_tests, api_healthcheck, test_endpoint,
     )
-    from core.tools.memory_toolkit import (
-        memory_store_solution, memory_store_error, memory_store_patch,
-        memory_search_similar,
-    )
+    # LEGACY: memory_toolkit (Qdrant) désactivé, utiliser memory/vector_store.py
+    # from core.tools.memory_toolkit import (
+    #     memory_store_solution, memory_store_error, memory_store_patch,
+    #     memory_search_similar,
+    # )
     from core.tools.app_sync_toolkit import check_api_fields, sync_app_fields
     from core.tools.tool_builder_tool import (
         analyze_tool_need, generate_tool_skeleton, generate_tool_tests, build_complete_tool,
@@ -45,9 +46,10 @@ try:
         dependency_analyzer, code_search_multi_file, api_schema_generator,
         env_checker, requirements_validator,
     )
-    from core.tools.memory_toolkit import (
-        memory_store_with_ttl, memory_cleanup_expired, memory_deduplicate, memory_summarize_recent,
-    )
+    # LEGACY: memory_toolkit (Qdrant) désactivé
+    # from core.tools.memory_toolkit import (
+    #     memory_store_with_ttl, memory_cleanup_expired, memory_deduplicate, memory_summarize_recent,
+    # )
     _L4_AVAILABLE = True
 except Exception as _l4_err:
     _L4_AVAILABLE = False
@@ -275,62 +277,62 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
         return _err(str(e))
 
 
-# ── Tool 5 : Vector DB search ─────────────────────────────────────────────────
+# ── Tool 5 : Vector DB search (LEGACY - désactivé, utiliser memory/vector_store.py) ───
 
-_QDRANT_BASE = "http://qdrant:6333"
-_COLLECTION  = "default_memory"
-_VECTOR_DIM  = 768
+# _QDRANT_BASE = "http://qdrant:6333"
+# _COLLECTION  = "default_memory"
+# _VECTOR_DIM  = 768
 
-def _ensure_collection(collection: str = _COLLECTION) -> bool:
-    """Crée la collection si elle n'existe pas. Retourne True si prête."""
-    try:
-        import requests as _req
-        # Vérifie si la collection existe
-        r = _req.get(f"{_QDRANT_BASE}/collections/{collection}", timeout=3)
-        if r.status_code == 200:
-            return True
-        if r.status_code == 404:
-            # Crée la collection
-            payload = {
-                "vectors": {
-                    "size": _VECTOR_DIM,
-                    "distance": "Cosine"
-                }
-            }
-            cr = _req.put(
-                f"{_QDRANT_BASE}/collections/{collection}",
-                json=payload,
-                timeout=5,
-            )
-            return cr.status_code in (200, 201)
-        return False
-    except Exception as _exc:
-        log.warning("exception_caught", err=str(_exc)[:200], stage="tool_executor")
-        return False
+# def _ensure_collection(collection: str = _COLLECTION) -> bool:
+#     """Crée la collection si elle n'existe pas. Retourne True si prête."""
+#     try:
+#         import requests as _req
+#         # Vérifie si la collection existe
+#         r = _req.get(f"{_QDRANT_BASE}/collections/{collection}", timeout=3)
+#         if r.status_code == 200:
+#             return True
+#         if r.status_code == 404:
+#             # Crée la collection
+#             payload = {
+#                 "vectors": {
+#                     "size": _VECTOR_DIM,
+#                     "distance": "Cosine"
+#                 }
+#             }
+#             cr = _req.put(
+#                 f"{_QDRANT_BASE}/collections/{collection}",
+#                 json=payload,
+#                 timeout=5,
+#             )
+#             return cr.status_code in (200, 201)
+#         return False
+#     except Exception as _exc:
+#         log.warning("exception_caught", err=str(_exc)[:200], stage="tool_executor")
+#         return False
 
 
-def query_vector_db(query: str, collection: str = _COLLECTION, top_k: int = 3) -> dict:
-    """Requête Qdrant. Auto-crée la collection si absente. Fail-open si Qdrant indisponible."""
-    try:
-        import requests as _req
+# def query_vector_db(query: str, collection: str = _COLLECTION, top_k: int = 3) -> dict:
+#     """Requête Qdrant. Auto-crée la collection si absente. Fail-open si Qdrant indisponible."""
+#     try:
+#         import requests as _req
 
-        # Auto-création si nécessaire
-        if not _ensure_collection(collection):
-            return _err("qdrant_unavailable")
+#         # Auto-création si nécessaire
+#         if not _ensure_collection(collection):
+#             return _err("qdrant_unavailable")
 
-        # Vecteur nul (placeholder sans embedder)
-        dummy_vector = [0.0] * _VECTOR_DIM
-        resp = _req.post(
-            f"{_QDRANT_BASE}/collections/{collection}/points/search",
-            json={"vector": dummy_vector, "limit": top_k, "with_payload": True},
-            timeout=4,
-        )
-        if resp.status_code == 200:
-            results = resp.json().get("result", [])
-            return _ok(f"found={len(results)} results: {str(results)[:800]}")
-        return _err(f"qdrant_search_error: status={resp.status_code}")
-    except Exception as e:
-        return _err(f"qdrant_unavailable: {e}")
+#         # Vecteur nul (placeholder sans embedder)
+#         dummy_vector = [0.0] * _VECTOR_DIM
+#         resp = _req.post(
+#             f"{_QDRANT_BASE}/collections/{collection}/points/search",
+#             json={"vector": dummy_vector, "limit": top_k, "with_payload": True},
+#             timeout=4,
+#         )
+#         if resp.status_code == 200:
+#             results = resp.json().get("result", [])
+#             return _ok(f"found={len(results)} results: {str(results)[:800]}")
+#         return _err(f"qdrant_search_error: status={resp.status_code}")
+#     except Exception as e:
+#         return _err(f"qdrant_unavailable: {e}")
 
 
 # ── ToolExecutor singleton ────────────────────────────────────────────────────
@@ -344,7 +346,7 @@ class ToolExecutor:
         "read_file":       read_file_content,
         "write_file_safe": write_file_safe,
         "shell_command":   run_shell_command,
-        "vector_search":   query_vector_db,
+        # "vector_search": query_vector_db,  # LEGACY
         # L4 tools (registered only if import succeeded)
         **({
             # git
@@ -387,10 +389,13 @@ class ToolExecutor:
             "api_healthcheck":      api_healthcheck,
             "test_endpoint":        test_endpoint,
             # memory_toolkit
-            "memory_store_solution": memory_store_solution,
-            "memory_store_error":    memory_store_error,
-            "memory_store_patch":    memory_store_patch,
-            "memory_search_similar": memory_search_similar,
+            # LEGACY memory_toolkit
+
+            # memory_toolkit
+            # "memory_store_solution": memory_store_solution,
+            # "memory_store_error":    memory_store_error,
+            # "memory_store_patch":    memory_store_patch,
+            # "memory_search_similar": memory_search_similar,
             # app_sync_toolkit
             "check_api_fields":     check_api_fields,
             "sync_app_fields":      sync_app_fields,
@@ -406,10 +411,13 @@ class ToolExecutor:
             "env_checker":          env_checker,
             "requirements_validator": requirements_validator,
             # memory_toolkit v3
-            "memory_store_with_ttl":   memory_store_with_ttl,
-            "memory_cleanup_expired":  memory_cleanup_expired,
-            "memory_deduplicate":      memory_deduplicate,
-            "memory_summarize_recent": memory_summarize_recent,
+            # LEGACY memory_toolkit v3
+
+            # memory_toolkit v3
+            # "memory_store_with_ttl":   memory_store_with_ttl,
+            # "memory_cleanup_expired":  memory_cleanup_expired,
+            # "memory_deduplicate":      memory_deduplicate,
+            # "memory_summarize_recent": memory_summarize_recent,
         } if _L4_AVAILABLE else {}),
     }
 
@@ -419,7 +427,7 @@ class ToolExecutor:
         "http_get": 8,
         "read_file": 5,
         "python_snippet": 8,
-        "vector_search": 6,
+        # "vector_search": 6,  # LEGACY
         # git
         "git_status": 15, "git_diff": 15, "git_log": 15, "git_branch": 15,
         "git_commit": 15, "git_push": 30, "git_pull": 30,
@@ -437,8 +445,11 @@ class ToolExecutor:
         # test_toolkit
         "run_unit_tests": 60, "run_smoke_tests": 15, "api_healthcheck": 15, "test_endpoint": 10,
         # memory_toolkit
-        "memory_store_solution": 10, "memory_store_error": 10,
-        "memory_store_patch": 10, "memory_search_similar": 10,
+        # LEGACY memory_toolkit
+
+        # memory_toolkit
+        # "memory_store_solution": 10, # "memory_store_error": 10,
+        # "memory_store_patch": 10, # "memory_search_similar": 10,
         # app_sync_toolkit
         "check_api_fields": 15, "sync_app_fields": 15,
         # tool_builder_tool
@@ -448,8 +459,11 @@ class ToolExecutor:
         "dependency_analyzer": 30, "code_search_multi_file": 10,
         "api_schema_generator": 10, "env_checker": 10, "requirements_validator": 10,
         # memory_toolkit v3
-        "memory_store_with_ttl": 10, "memory_cleanup_expired": 30,
-        "memory_deduplicate": 30, "memory_summarize_recent": 10,
+        # LEGACY memory_toolkit v3
+
+        # memory_toolkit v3
+        # "memory_store_with_ttl": 10, # "memory_cleanup_expired": 30,
+        # "memory_deduplicate": 30, # "memory_summarize_recent": 10,
         # browser (registered dynamically below)
     }
 
@@ -470,7 +484,7 @@ class ToolExecutor:
         "http_get": ["url"],
         "read_file": ["path"],
         "python_snippet": ["code"],
-        "vector_search": ["query"],
+        # "vector_search": ["query"],  # LEGACY
         # git
         "git_status": ["repo_path"], "git_diff": ["repo_path"],
         "git_log": ["repo_path"], "git_branch": ["repo_path"],
@@ -498,10 +512,13 @@ class ToolExecutor:
         # test_toolkit
         "test_endpoint": ["method", "url"],
         # memory_toolkit
-        "memory_store_solution": ["problem", "solution"],
-        "memory_store_error": ["error_type", "context"],
-        "memory_store_patch": ["filename", "description", "diff"],
-        "memory_search_similar": ["query"],
+        # LEGACY memory_toolkit
+
+        # memory_toolkit
+        # "memory_store_solution": ["problem", "solution"],
+        # "memory_store_error": ["error_type", "context"],
+        # "memory_store_patch": ["filename", "description", "diff"],
+        # "memory_search_similar": ["query"],
         # tool_builder_tool
         "analyze_tool_need": ["description", "required_inputs", "required_outputs"],
         "generate_tool_skeleton": ["tool_name", "description", "input_schema", "output_schema"],
@@ -511,7 +528,10 @@ class ToolExecutor:
         "code_search_multi_file": ["directory", "pattern"],
         "api_schema_generator": ["module_path"],
         # memory_toolkit v3
-        "memory_store_with_ttl": ["content", "tags"],
+        # LEGACY memory_toolkit v3
+
+        # memory_toolkit v3
+        # "memory_store_with_ttl": ["content", "tags"],
     }
 
     # ── Browser bridge params registration (fail-open) ────────────────────
@@ -531,7 +551,7 @@ class ToolExecutor:
         "read_file":       "read",
         "write_file_safe": "write",
         "shell_command":   "execute",
-        "vector_search":   "read",
+        # "vector_search":   "read",  # LEGACY
         # git
         "git_status": "read", "git_diff": "read", "git_log": "read", "git_branch": "read",
         "git_commit": "write", "git_push": "write", "git_pull": "write",
@@ -551,8 +571,11 @@ class ToolExecutor:
         "run_unit_tests": "execute", "run_smoke_tests": "read",
         "api_healthcheck": "read", "test_endpoint": "external_api",
         # memory_toolkit
-        "memory_store_solution": "write", "memory_store_error": "write",
-        "memory_store_patch": "write", "memory_search_similar": "read",
+        # LEGACY memory_toolkit
+
+        # memory_toolkit
+        # "memory_store_solution": "write", # "memory_store_error": "write",
+        # "memory_store_patch": "write", # "memory_search_similar": "read",
         # app_sync_toolkit
         "check_api_fields": "read", "sync_app_fields": "read",
         # tool_builder_tool
@@ -562,8 +585,11 @@ class ToolExecutor:
         "dependency_analyzer": "read", "code_search_multi_file": "read",
         "api_schema_generator": "read", "env_checker": "read", "requirements_validator": "read",
         # memory_toolkit v3
-        "memory_store_with_ttl": "write", "memory_cleanup_expired": "write",
-        "memory_deduplicate": "write", "memory_summarize_recent": "read",
+        # LEGACY memory_toolkit v3
+
+        # memory_toolkit v3
+        # "memory_store_with_ttl": "write", # "memory_cleanup_expired": "write",
+        # "memory_deduplicate": "write", # "memory_summarize_recent": "read",
     }
 
     # ── Browser bridge action types registration (fail-open) ──────────────
@@ -584,15 +610,15 @@ class ToolExecutor:
         "check_url_status": "low", "doc_fetch": "low",
         "run_unit_tests": "low", "run_smoke_tests": "low",
         "api_healthcheck": "low", "test_endpoint": "low",
-        "memory_search_similar": "low",
+        # "memory_search_similar": "low",
         "check_api_fields": "low", "sync_app_fields": "low",
-        "workspace_snapshot": "low", "read_file": "low", "vector_search": "low",
+        # "workspace_snapshot": "low", "read_file": "low", "vector_search": "low",  # LEGACY
         # medium risk
         "replace_in_file": "medium", "file_create": "medium", "create_directory": "low",
         "file_delete_safe": "medium", "workspace_snapshot": "low",
         "docker_restart": "medium", "docker_compose_build": "medium", "docker_compose_up": "medium",
         "http_post_json": "medium",
-        "memory_store_solution": "low", "memory_store_error": "low", "memory_store_patch": "low",
+        # "memory_store_solution": "low", # "memory_store_error": "low", # "memory_store_patch": "low",  # LEGACY
         "write_file_safe": "medium", "shell_command": "medium", "python_snippet": "medium",
         "http_get": "low",
         # high risk
@@ -605,8 +631,11 @@ class ToolExecutor:
         "dependency_analyzer": "low", "code_search_multi_file": "low",
         "api_schema_generator": "low", "env_checker": "low", "requirements_validator": "low",
         # memory_toolkit v3
-        "memory_store_with_ttl": "low", "memory_cleanup_expired": "medium",
-        "memory_deduplicate": "medium", "memory_summarize_recent": "low",
+        # LEGACY memory_toolkit v3
+
+        # memory_toolkit v3
+        # "memory_store_with_ttl": "low", # "memory_cleanup_expired": "medium",
+        # "memory_deduplicate": "medium", # "memory_summarize_recent": "low",
         # browser bridge
         "browser_navigate": "medium", "browser_get_text": "low",
         "browser_click": "medium", "browser_fill": "medium",

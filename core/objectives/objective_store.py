@@ -36,115 +36,115 @@ def _get_store_path() -> Path:
     return path / "objectives.json"
 
 
-# ── Qdrant (optionnel, fail-open) ──────────────────────────────────────────────
+# ── Qdrant (LEGACY - désactivé, migration pgvector terminée) ───────────────────
 
-_QDRANT_AVAILABLE = False
-_QDRANT_HEADERS: dict = {}
-try:
-    import requests as _requests
-    _QDRANT_HOST = os.environ.get("QDRANT_HOST", "qdrant")
-    _QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
-    _QDRANT_URL  = f"http://{_QDRANT_HOST}:{_QDRANT_PORT}"
-    _QDRANT_COLLECTION = "jarvis_objectives"
-    _QDRANT_DIM = 768
-    _QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY", "")
-    if _QDRANT_API_KEY:
-        _QDRANT_HEADERS = {"api-key": _QDRANT_API_KEY}
-    _QDRANT_AVAILABLE = True
-except ImportError:
-    pass
-
-
-def _make_vector(text: str, dim: int = 768) -> List[float]:
-    """Vecteur pseudo-aléatoire déterministe basé sur le hash du texte."""
-    seed = int(hashlib.md5(text.encode("utf-8", errors="replace")).hexdigest()[:8], 16)
-    rng = random.Random(seed)
-    vec = [rng.gauss(0, 1) for _ in range(dim)]
-    norm = sum(x * x for x in vec) ** 0.5
-    if norm == 0:
-        return [0.0] * dim
-    return [x / norm for x in vec]
+# _QDRANT_AVAILABLE = False
+# _QDRANT_HEADERS: dict = {}
+# try:
+#     import requests as _requests
+#     _QDRANT_HOST = os.environ.get("QDRANT_HOST", "qdrant")
+#     _QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
+#     _QDRANT_URL  = f"http://{_QDRANT_HOST}:{_QDRANT_PORT}"
+#     _QDRANT_COLLECTION = "jarvis_objectives"
+#     _QDRANT_DIM = 768
+#     _QDRANT_API_KEY=os.environ.get("QDRANT_API_KEY", "")
+#     if _QDRANT_API_KEY:
+#         _QDRANT_HEADERS = {"api-key": _QDRANT_API_KEY}
+#     _QDRANT_AVAILABLE = True
+# except ImportError:
+#     pass
 
 
-def _qdrant_ensure_collection() -> bool:
-    """Crée la collection Qdrant si elle n'existe pas. Fail-open."""
-    if not _QDRANT_AVAILABLE:
-        return False
-    try:
-        r = _requests.get(
-            f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}",
-            headers=_QDRANT_HEADERS,
-            timeout=3,
-        )
-        if r.status_code == 200:
-            return True
-        # Créer la collection
-        _requests.put(
-            f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}",
-            headers=_QDRANT_HEADERS,
-            json={
-                "vectors": {
-                    "size": _QDRANT_DIM,
-                    "distance": "Cosine",
-                }
-            },
-            timeout=3,
-        )
-        return True
-    except Exception as e:
-        logger.debug(f"[OBJECTIVE_STORE] qdrant collection check failed: {e}")
-        return False
+# def _make_vector(text: str, dim: int = 768) -> List[float]:
+#     """Vecteur pseudo-aléatoire déterministe basé sur le hash du texte."""
+#     seed = int(hashlib.md5(text.encode("utf-8", errors="replace")).hexdigest()[:8], 16)
+#     rng = random.Random(seed)
+#     vec = [rng.gauss(0, 1) for _ in range(dim)]
+#     norm = sum(x * x for x in vec) ** 0.5
+#     if norm == 0:
+#         return [0.0] * dim
+#     return [x / norm for x in vec]
 
 
-def _qdrant_upsert(obj: Objective) -> bool:
-    """Upsert un objectif dans Qdrant. Fail-open."""
-    if not _QDRANT_AVAILABLE:
-        return False
-    try:
-        _qdrant_ensure_collection()
-        text = f"{obj.title} {obj.description} {obj.category}"
-        vector = _make_vector(text)
-        # Convertir objective_id en int pour Qdrant (utiliser hash)
-        point_id = abs(hash(obj.objective_id)) % (2**31)
-        payload = {
-            "objective_id": obj.objective_id,
-            "title":         obj.title,
-            "status":        obj.status,
-            "category":      obj.category,
-            "priority_score": obj.priority_score,
-            "updated_at":    obj.updated_at,
-        }
-        _requests.put(
-            f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}/points",
-            headers=_QDRANT_HEADERS,
-            json={"points": [{"id": point_id, "vector": vector, "payload": payload}]},
-            timeout=3,
-        )
-        return True
-    except Exception as e:
-        logger.debug(f"[OBJECTIVE_STORE] qdrant upsert failed: {e}")
-        return False
+# def _qdrant_ensure_collection() -> bool:
+#     """Crée la collection Qdrant si elle n'existe pas. Fail-open."""
+#     if not _QDRANT_AVAILABLE:
+#         return False
+#     try:
+#         r = _requests.get(
+#             f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}",
+#             headers=_QDRANT_HEADERS,
+#             timeout=3,
+#         )
+#         if r.status_code == 200:
+#             return True
+#         # Créer la collection
+#         _requests.put(
+#             f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}",
+#             headers=_QDRANT_HEADERS,
+#             json={
+#                 "vectors": {
+#                     "size": _QDRANT_DIM,
+#                     "distance": "Cosine",
+#                 }
+#             },
+#             timeout=3,
+#         )
+#         return True
+#     except Exception as e:
+#         logger.debug(f"[OBJECTIVE_STORE] qdrant collection check failed: {e}")
+#         return False
 
 
-def _qdrant_search(query: str, top_k: int = 5) -> List[dict]:
-    """Recherche des objectifs similaires dans Qdrant. Fail-open."""
-    if not _QDRANT_AVAILABLE:
-        return []
-    try:
-        _qdrant_ensure_collection()
-        vector = _make_vector(query)
-        r = _requests.post(
-            f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}/points/search",
-            headers=_QDRANT_HEADERS,
-            json={"vector": vector, "limit": top_k, "with_payload": True},
-            timeout=3,
-        )
-        if r.status_code == 200:
-            return [hit.get("payload", {}) for hit in r.json().get("result", [])]
-        return []
-    except Exception as e:
-        logger.debug(f"[OBJECTIVE_STORE] qdrant search failed: {e}")
-        return []
+# def _qdrant_upsert(obj: Objective) -> bool:
+#     """Upsert un objectif dans Qdrant. Fail-open."""
+#     if not _QDRANT_AVAILABLE:
+#         return False
+#     try:
+#         _qdrant_ensure_collection()
+#         text = f"{obj.title} {obj.description} {obj.category}"
+#         vector = _make_vector(text)
+#         # Convertir objective_id en int pour Qdrant (utiliser hash)
+#         point_id = abs(hash(obj.objective_id)) % (2**31)
+#         payload = {
+#             "objective_id": obj.objective_id,
+#             "title":         obj.title,
+#             "status":        obj.status,
+#             "category":      obj.category,
+#             "priority_score": obj.priority_score,
+#             "updated_at":    obj.updated_at,
+#         }
+#         _requests.put(
+#             f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}/points",
+#             headers=_QDRANT_HEADERS,
+#             json={"points": [{"id": point_id, "vector": vector, "payload": payload}]},
+#             timeout=3,
+#         )
+#         return True
+#     except Exception as e:
+#         logger.debug(f"[OBJECTIVE_STORE] qdrant upsert failed: {e}")
+#         return False
+
+
+# def _qdrant_search(query: str, top_k: int = 5) -> List[dict]:
+#     """Recherche des objectifs similaires dans Qdrant. Fail-open."""
+#     if not _QDRANT_AVAILABLE:
+#         return []
+#     try:
+#         _qdrant_ensure_collection()
+#         vector = _make_vector(query)
+#         r = _requests.post(
+#             f"{_QDRANT_URL}/collections/{_QDRANT_COLLECTION}/points/search",
+#             headers=_QDRANT_HEADERS,
+#             json={"vector": vector, "limit": top_k, "with_payload": True},
+#             timeout=3,
+#         )
+#         if r.status_code == 200:
+#             return [hit.get("payload", {}) for hit in r.json().get("result", [])]
+#         return []
+#     except Exception as e:
+#         logger.debug(f"[OBJECTIVE_STORE] qdrant search failed: {e}")
+#         return []
 
 
 # ── Persistance JSON locale ────────────────────────────────────────────────────
@@ -211,8 +211,8 @@ class ObjectiveStore:
             obj.updated_at = time.time()
             self._cache[obj.objective_id] = obj
             ok = self._save()
-            # Qdrant secondaire — fail-open
-            _qdrant_upsert(obj)
+            # Qdrant secondaire — LEGACY désactivé
+            # _qdrant_upsert(obj)
             if ok:
                 logger.info(
                     json.dumps({
@@ -279,10 +279,10 @@ class ObjectiveStore:
         Primaire : Qdrant. Fallback : recherche textuelle locale.
         """
         try:
-            # Tenter Qdrant d'abord
-            qdrant_results = _qdrant_search(query, top_k)
-            if qdrant_results:
-                return qdrant_results
+            # Tenter Qdrant d'abord — LEGACY désactivé
+            # qdrant_results = _qdrant_search(query, top_k)
+            # if qdrant_results:
+            #     return qdrant_results
             # Fallback : recherche locale par mots-clés
             self._load()
             query_words = set(query.lower().split())

@@ -803,3 +803,26 @@ class LLMFactory:
         """Réinitialise manuellement le circuit breaker (debug/admin)."""
         _OLLAMA_CIRCUIT.record_success()
         log.info("ollama_circuit_reset_manual")
+
+
+def get_llm(role: str = "fast") -> BaseChatModel:
+    """
+    Helper function to instantiate LLMFactory and return a LangChain model for the given role.
+    
+    Args:
+        role: The role identifier (e.g., "fast", "director", "builder")
+        
+    Returns:
+        BaseChatModel: A configured LangChain model instance
+        
+    Raises:
+        RuntimeError: If no LLM is available for the given role
+    """
+    from core.config import get_settings
+    settings = get_settings()
+    factory = LLMFactory(settings)
+    provider = ROLE_PROVIDERS.get(role, "openrouter")
+    llm = factory._build(provider, role)
+    if llm is None:
+        raise RuntimeError(f"LLM unavailable for role={role}")
+    return llm
