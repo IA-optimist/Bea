@@ -129,7 +129,7 @@ class CognitionOrchestrator:
         """Get current performance metrics."""
         return self.tracker.get_report()
 
-    async def execute_mission_with_cognition(
+    async def execute_mission_with_delegate_cognition(
         self,
         delegate: Any,
         supervise_fn: Callable,
