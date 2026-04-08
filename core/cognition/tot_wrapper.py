@@ -28,7 +28,7 @@ async def plan_with_tot(
         try:
             # Use OpenRouter client
             response = llm_client.chat.completions.create(
-                model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.5-sonnet"),
+                model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.7-sonnet"),
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=500,
                 temperature=0.7

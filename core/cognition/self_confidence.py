@@ -40,7 +40,7 @@ class ConfidenceScorer:
         
         try:
             response = self.llm.chat.completions.create(
-                model="anthropic/claude-3.5-sonnet",
+                model="anthropic/claude-3.7-sonnet",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=300,
                 temperature=0.3  # Lower temp for consistent scoring
@@ -207,7 +207,7 @@ Generate an improved version that addresses these issues while maintaining accur
         
         try:
             response = self.llm.chat.completions.create(
-                model="anthropic/claude-3.5-sonnet",
+                model="anthropic/claude-3.7-sonnet",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000,
                 temperature=0.5
