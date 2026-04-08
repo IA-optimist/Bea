@@ -96,6 +96,19 @@ class ModelSelector:
                 log.debug("model_selector_no_learning", err=str(e)[:60])
         return self._learning
 
+        # TEMPORARY: Force OpenRouter for cognition (Ollama hangs)
+        if role == "cognition":
+            if self._cloud_allowed():
+                return ModelRecommendation(
+                    provider="openrouter",
+                    model=self.s.openrouter_model_main,
+                    role="cognition",
+                    reason="Cognition requires reliable cloud model (Ollama unstable)",
+                    complexity=0.0,
+                )
+            else:
+                log.warning("cognition_role_no_cloud", msg="OpenRouter keys missing, falling back to Ollama")
+
     # ── API publique ──────────────────────────────────────────
 
     def _cloud_allowed(self) -> bool:
