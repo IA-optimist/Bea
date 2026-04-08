@@ -97,7 +97,7 @@ class FeasibilityAnalyzer:
             # Execute cognition analysis
             result = await self.cognition.execute_mission_with_cognition(
                 mission,
-                enable_tot=False,
+                enable_tot=True,
                 enable_confidence=True,
                 enable_learning=True,
             )
