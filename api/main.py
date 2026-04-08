@@ -34,6 +34,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Qu
 from api._deps import require_auth, get_start_time, _check_auth
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
+from api.security_headers import SecurityHeadersMiddleware
 from api.token_utils import strip_bearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -82,6 +83,9 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Jarvis-Token", "X-Request-ID"],
     expose_headers=["X-Request-ID"],
 )
+
+# Security headers (Phase 4.2)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Global access enforcement middleware (fail-closed) ────────
 try:

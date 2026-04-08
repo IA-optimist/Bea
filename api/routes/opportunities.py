@@ -1,4 +1,5 @@
 """
+import tempfile
 JarvisMax — Opportunities API
 REST endpoints for SaaS opportunity management (Phase 3)
 """
@@ -644,7 +645,7 @@ async def get_mvp_status(
             "data": {
                 "opportunity_id": 1,
                 "mvp_generated": true,
-                "output_dir": "/tmp/jarvismax_mvp/ai-powered-code-review-tool",
+                "output_dir": f"{tempfile.gettempdir()}/jarvismax_mvp/ai-powered-code-review-tool",
                 "project_slug": "ai-powered-code-review-tool",
                 "files_created": 8
             }
@@ -773,7 +774,10 @@ async def deploy_mvp(
             from core.business.mvp_generator import MVPGenerator
             generator = MVPGenerator()
             project_slug = generator._slugify(opportunity.title)
-            mvp_dir = f"/tmp/jarvismax_mvp/{project_slug}"
+            # Create secure temp directory
+            base_dir = Path(tempfile.gettempdir()) / "jarvismax_mvp"
+            base_dir.mkdir(parents=True, exist_ok=True)
+            mvp_dir = str(base_dir / project_slug)
             
             # GitHub automation
             logger.info(f"deploying_to_github opportunity_id={opportunity_id}")
