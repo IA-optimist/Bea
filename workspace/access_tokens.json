@@ -124,31 +124,6 @@
     "daily_missions": 0,
     "token_hash": "352102aa0c2003ee3d5839c47420d57e2b2a54c10950e26607ba0d14e2d4a981"
   },
-  "tok-e3fc31df21cf": {
-    "id": "tok-e3fc31df21cf",
-    "name": "e2e_test_admin",
-    "role": "admin",
-    "plan_type": "admin",
-    "created_at": 1775674601.632359,
-    "expires_at": 0,
-    "max_uses": 0,
-    "use_count": 22,
-    "last_used": 1775677640.2951386,
-    "enabled": true,
-    "valid": true,
-    "status": "active",
-    "created_by": "hermes",
-    "metadata": {},
-    "plan_limits": {
-      "missions_per_day": 0,
-      "concurrent_missions": 0,
-      "model_tier": "premium",
-      "multimodal_enabled": true,
-      "premium_tools_enabled": true
-    },
-    "daily_missions": 0,
-    "token_hash": "ab79e3ad4164f7aaf749be7dc9462ea0bbc83a0e5dbcebd88858f1a8e8c0b29e"
-  },
   "tok-hermes-admin": {
     "id": "tok-hermes-admin",
     "name": "hermes_e2e_admin",
@@ -157,8 +132,8 @@
     "created_at": 1775677800.0,
     "expires_at": 0,
     "max_uses": 0,
-    "use_count": 4,
-    "last_used": 1775678258.3944411,
+    "use_count": 9,
+    "last_used": 1775681404.2220645,
     "enabled": true,
     "valid": true,
     "status": "active",
