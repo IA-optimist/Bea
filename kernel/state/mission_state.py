@@ -77,6 +77,7 @@ class MissionContext:
     result:     str | None = None
     error:      str | None = None
     metadata:   dict       = field(default_factory=dict)
+    project_id: str | None = None  # Phase 2: Multi-project isolation
 
     def get_output(self, agent: str) -> str:
         """Get agent output — compatibility with JarvisSession interface."""
