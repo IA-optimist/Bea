@@ -207,7 +207,7 @@ class CognitionOrchestrator:
         if outcome.success:
             try:
                 result_text = getattr(outcome, "result", "")
-                confidence_score = self.confidence_scorer.score_output(goal, result_text)
+                confidence_score = self.scorer.score_output(goal, result_text)
                 log.info(
                     "cognition.confidence_scored",
                     mission_id=mission_id,
@@ -225,7 +225,7 @@ class CognitionOrchestrator:
             "confidence": confidence_score,
             "domain": mission_payload.get("classification", {}).get("domain", "general"),
         }
-        self.performance_tracker.record_mission(mission_record)
+        self.tracker.record_mission(mission_record)
         
         # Phase 5: Skill discovery (for successful complex missions)
         complexity = mission_payload.get("classification", {}).get("complexity", 0)
@@ -236,7 +236,7 @@ class CognitionOrchestrator:
                 if hasattr(outcome, "decision_trace") and outcome.decision_trace:
                     steps = [d.get("step", "") for d in outcome.decision_trace if isinstance(d, dict)]
                 
-                skill_complexity = self.skill_discoverer.calculate_complexity(
+                skill_complexity = self.discoverer.calculate_complexity(
                     goal=goal,
                     steps=steps,
                     agent_count=1,
@@ -254,7 +254,7 @@ class CognitionOrchestrator:
                 log.warning("cognition.skill_discovery_failed", error=str(skill_err)[:100])
         
         # Log final cognition summary
-        perf_report = self.performance_tracker.get_report()
+        perf_report = self.tracker.get_report()
         log.info(
             "cognition.mission_complete",
             mission_id=mission_id,
