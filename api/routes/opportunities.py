@@ -503,3 +503,187 @@ async def delete_analysis(
     db.commit()
     
     return _response(message=f"Analysis deleted (opportunity {opportunity_id} can be re-analyzed)")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# P3.3 — MVP GENERATION
+# ═══════════════════════════════════════════════════════════════════
+
+@router.post("/{opportunity_id}/generate-mvp")
+async def generate_mvp(
+    opportunity_id: int,
+    background_tasks: BackgroundTasks,
+    project_id: int = 1,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Generate MVP codebase from feasibility analysis (P3.3).
+    
+    Args:
+        opportunity_id: Opportunity ID
+        project_id: JarvisMax project ID (default: 1)
+        db: Database session
+    
+    Returns:
+        Dict with generation status:
+        {
+            "status": "success",
+            "message": "MVP generation started",
+            "data": {
+                "opportunity_id": 1,
+                "project_id": 1,
+                "estimated_duration": "2-4 minutes",
+                "status_endpoint": "/api/v3/business/opportunities/1/mvp"
+            }
+        }
+    
+    Errors:
+        - 404: Opportunity not found
+        - 400: Analysis not found or not approved
+    """
+    from core.business.mvp_generator import MVPGenerator
+    from models.opportunity_analysis import OpportunityAnalysis
+    
+    # Validate opportunity
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # Validate analysis exists and is approved
+    analysis = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    
+    if not analysis:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No feasibility analysis found for opportunity {opportunity_id}. Run POST /opportunities/{opportunity_id}/analyze first."
+        )
+    
+    if not analysis.approved:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Analysis for opportunity {opportunity_id} is not approved. Set approved=true before generating MVP."
+        )
+    
+    # Check if already generated
+    if opportunity.mvp_generated:
+        logger.warning(f"mvp_already_generated opportunity_id={opportunity_id}")
+        return {
+            "status": "success",
+            "message": "MVP already generated",
+            "data": {
+                "opportunity_id": opportunity_id,
+                "project_id": project_id,
+                "status_endpoint": f"/api/v3/business/opportunities/{opportunity_id}/mvp",
+            }
+        }
+    
+    # Run MVP generation in background
+    async def _run_generation():
+        try:
+            logger.info(f"background_mvp_generation_started opportunity_id={opportunity_id}")
+            
+            generator = MVPGenerator()
+            result = generator.generate(opportunity, analysis)
+            
+            if result["success"]:
+                # Update opportunity
+                opportunity.mvp_generated = True
+                db.commit()
+                
+                logger.info(
+                    f"background_mvp_generation_completed "
+                    f"opportunity_id={opportunity_id} "
+                    f"files_created={result['files_created']} "
+                    f"output_dir={result['output_dir']}"
+                )
+            else:
+                logger.error(
+                    f"background_mvp_generation_failed "
+                    f"opportunity_id={opportunity_id} "
+                    f"error={result.get('error')}"
+                )
+        
+        except Exception as e:
+            logger.error(f"background_mvp_generation_exception opportunity_id={opportunity_id}: {e}", exc_info=True)
+            db.rollback()
+    
+    # Add background task
+    background_tasks.add_task(_run_generation)
+    
+    return {
+        "status": "success",
+        "message": "MVP generation started",
+        "data": {
+            "opportunity_id": opportunity_id,
+            "project_id": project_id,
+            "estimated_duration": "2-4 minutes",
+            "status_endpoint": f"/api/v3/business/opportunities/{opportunity_id}/mvp",
+        }
+    }
+
+
+@router.get("/{opportunity_id}/mvp")
+async def get_mvp_status(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Get MVP generation status (P3.3).
+    
+    Args:
+        opportunity_id: Opportunity ID
+        db: Database session
+    
+    Returns:
+        Dict with MVP status:
+        {
+            "status": "success",
+            "data": {
+                "opportunity_id": 1,
+                "mvp_generated": true,
+                "output_dir": "/tmp/jarvismax_mvp/ai-powered-code-review-tool",
+                "project_slug": "ai-powered-code-review-tool",
+                "files_created": 8
+            }
+        }
+    
+    Errors:
+        - 404: Opportunity not found
+        - 202: MVP generation in progress
+    """
+    # Validate opportunity
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # Check if generated
+    if not opportunity.mvp_generated:
+        raise HTTPException(
+            status_code=202,
+            detail="MVP generation in progress. Please try again in 2-4 minutes."
+        )
+    
+    # Get analysis for project slug
+    from models.opportunity_analysis import OpportunityAnalysis
+    analysis = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    
+    # Calculate output dir
+    from core.business.mvp_generator import MVPGenerator
+    generator = MVPGenerator()
+    project_slug = generator._slugify(opportunity.title)
+    output_dir = generator.workspace_dir / project_slug
+    
+    return {
+        "status": "success",
+        "data": {
+            "opportunity_id": opportunity_id,
+            "mvp_generated": True,
+            "output_dir": str(output_dir),
+            "project_slug": project_slug,
+            "files_created": 8,  # Static (backend, frontend, docker, deployment, README, gitignore)
+        }
+    }
