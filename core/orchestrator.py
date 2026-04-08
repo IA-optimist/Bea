@@ -758,7 +758,8 @@ class JarvisOrchestrator:
         ]
         try:
             factory = LLMFactory(self.s)
-            resp = await factory.safe_invoke(messages, role="fast", timeout=45.0)
+                        # Timeout: 120s to accommodate Ollama CPU inference. Cloud providers respond in <5s.
+            resp = await factory.safe_invoke(messages, role="fast", timeout=120.0)
             session.final_report = resp.content
             await emit(resp.content[:3500])
         except asyncio.TimeoutError:
