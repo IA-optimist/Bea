@@ -207,11 +207,12 @@ class CognitionOrchestrator:
         if outcome.success:
             try:
                 result_text = getattr(outcome, "result", "")
-                confidence_score = self.scorer.score_output(goal, result_text)
+                confidence_result = self.scorer.score_output(goal, result_text)
+                confidence_score = confidence_result.get("confidence", 0.5)
                 log.info(
                     "cognition.confidence_scored",
                     mission_id=mission_id,
-                    score=confidence_score,
+                    score=confidence_result,
                 )
             except Exception as conf_err:
                 log.warning("cognition.confidence_failed", error=str(conf_err)[:100])
