@@ -254,14 +254,20 @@ class SkillStore:
                     must=[FieldCondition(key="mission_type", match=MatchValue(value=mission_type))]
                 )
 
-            results = client.search(
-                collection_name=_COLLECTION,
-                query_vector=embedding,
-                limit=top_k,
-                score_threshold=min_score,
-                with_payload=True,
-                **filter_kw,
-            )
+            # qdrant-client v1.7+: use query_points (search was removed in v1.13+)
+            from qdrant_client.models import QueryRequest
+            qp_kwargs: dict = {
+                "collection_name": _COLLECTION,
+                "query": embedding,
+                "limit": top_k,
+                "score_threshold": min_score,
+                "with_payload": True,
+            }
+            if filter_kw.get("query_filter"):
+                qp_kwargs["query_filter"] = filter_kw["query_filter"]
+
+            response = client.query_points(**qp_kwargs)
+            results = response.points if hasattr(response, "points") else response
 
             skills = []
             for hit in results:
