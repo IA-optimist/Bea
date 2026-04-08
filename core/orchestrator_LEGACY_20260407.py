@@ -98,6 +98,17 @@ class JarvisOrchestrator:
     # ── Lazy properties ───────────────────────────────────────
 
     @property
+    def llm(self):
+        """
+        LLM client for cognition wrapper.
+        Returns default role LLM (OpenRouter claude-3.7-sonnet).
+        """
+        from core.llm_factory import LLMFactory
+        factory = LLMFactory(self.s)
+        return factory.get(role="default")
+
+
+    @property
     def agents(self):
         if not self._agents:
             from agents.crew import AgentCrew
