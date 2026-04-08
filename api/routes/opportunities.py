@@ -376,14 +376,14 @@ async def analyze_feasibility(
         )
     
     # Background analysis task
-    def _run_analysis():
+    async def _run_analysis():
         try:
             analyzer = FeasibilityAnalyzer()
             
             logger.info(f"Starting feasibility analysis for opportunity {opportunity_id}")
             
             # Run analysis (cognition-powered, may take 4-8 minutes)
-            analysis_result = analyzer.analyze(opportunity, project_id=project_id)
+            analysis_result = await analyzer.analyze(opportunity, project_id=project_id)
             
             # Store in database
             analysis = OpportunityAnalysis(

@@ -10,9 +10,9 @@ import time
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
+import uuid
 
 from core.cognition.orchestrator import CognitionOrchestrator
-from kernel.state.mission_state import MissionState, MissionMode
 from models.opportunity import Opportunity
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class FeasibilityAnalyzer:
     def __init__(self):
         self.cognition = CognitionOrchestrator()
     
-    def analyze(self, opportunity: Opportunity, project_id: int = 1) -> Dict[str, Any]:
+    async def analyze(self, opportunity: Opportunity, project_id: int = 1) -> Dict[str, Any]:
         """
         Analyze technical feasibility of an opportunity
         
@@ -70,38 +70,41 @@ class FeasibilityAnalyzer:
         # Build analysis prompt
         prompt = self._build_analysis_prompt(opportunity)
         
-        # Create mission state
-        mission_state = MissionState(
-            mode=MissionMode.MISSION,
-            goal=f"Analyze technical feasibility: {opportunity.title}",
-            project_id=project_id,
-            metadata={
+        # Create mission dict (cognition expects Dict, not MissionState)
+        mission_id = f"feasibility-{opportunity.id}-{uuid.uuid4().hex[:8]}"
+        mission = {
+            "mission_id": mission_id,
+            "goal": f"Analyze technical feasibility: {opportunity.title}",
+            "project_id": project_id,
+            "metadata": {
                 "opportunity_id": opportunity.id,
                 "opportunity_url": opportunity.url,
                 "source": opportunity.source,
                 "total_score": opportunity.total_score,
-            }
-        )
+            },
+            "user_input": prompt,
+        }
         
-        logger.info(f"feasibility_analysis_started opportunity_id={opportunity.id} mission={mission_state.id}")
+        logger.info(f"feasibility_analysis_started opportunity_id={opportunity.id} mission={mission_id}")
         
         try:
             # Execute cognition analysis
-            result = self.cognition.execute_mission_with_cognition(
-                mission_state=mission_state,
-                user_input=prompt,
-                confidence_threshold=0.8,  # High confidence required
+            result = await self.cognition.execute_mission_with_cognition(
+                mission=mission,
+                enable_tot=True,
+                enable_confidence=True,
+                enable_learning=True,
             )
             
             duration = int(time.time() - start_time)
             
             # Parse result
-            analysis = self._parse_analysis_result(result, opportunity, mission_state.id, duration)
+            analysis = self._parse_analysis_result(result, opportunity, mission_id, duration)
             
             logger.info(
                 f"feasibility_analysis_completed "
                 f"opportunity_id={opportunity.id} "
-                f"mission={mission_state.id} "
+                f"mission={mission_id} "
                 f"recommendation={analysis.get('recommendation')} "
                 f"confidence={analysis.get('confidence_score', 0):.3f} "
                 f"duration={duration}s"
@@ -118,7 +121,7 @@ class FeasibilityAnalyzer:
                 "recommendation": "NEEDS_MORE_RESEARCH",
                 "reasoning": f"Analysis failed: {str(e)}",
                 "confidence_score": 0.0,
-                "mission_id": mission_state.id,
+                "mission_id": mission_id,
                 "duration_seconds": duration,
                 "error": str(e),
             }
