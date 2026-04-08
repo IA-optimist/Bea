@@ -108,7 +108,7 @@ class Settings:
 
     # ── Ollama ────────────────────────────────────────────────
     ollama_host:              str = field(default_factory=lambda: os.environ.get("OLLAMA_HOST", "http://ollama:11434"))
-    ollama_model_main:        str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_MAIN", "llama3.1:8b"))
+    ollama_model_main:        str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_MAIN", "mistral:7b"))
     ollama_model_code:        str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_CODE", "deepseek-coder-v2:16b"))
     ollama_model_fast:        str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_FAST", "mistral:7b"))
     ollama_model_vision:      str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_VISION", "llava:7b"))
