@@ -178,6 +178,13 @@ try:
     app.include_router(monitoring_router)
 except Exception as _e:
     log.warning("monitoring_router_unavailable", err=str(_e))
+# ── Import du routeur Projects (Phase 2.1) ────────────────────────────
+try:
+    from api.routes.projects import router as projects_router
+    app.include_router(projects_router)
+except Exception as _e:
+    log.warning("projects_router_unavailable", err=str(_e))
+
 
 # ── Import du routeur Voice & Call (Phase 10) — STUB ──────────
 if _ENABLE_STUB_ROUTES:
