@@ -320,3 +320,27 @@ async def delete_project_endpoint(
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok", "service": "projects"}
+
+# Project context switching endpoint
+@router.post("/{project_id}/switch")
+async def switch_project(
+    project_id: str,
+    _token=Depends(verify_token)
+):
+    """Switch current project context."""
+    from core.project_context import set_project
+    from core.db.project_crud import get_project
+    
+    # Validate project exists
+    project = await get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Set context
+    set_project(project_id)
+    
+    return {
+        "ok": True,
+        "project": project,
+        "message": f"Switched to project: {project['name']}"
+    }
