@@ -15,7 +15,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, HTTPException, Header, Query
+from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from pydantic import BaseModel, Field
 
 log = structlog.get_logger(__name__)
