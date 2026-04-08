@@ -1234,11 +1234,10 @@ class MetaOrchestrator:
                 log.info("cognition.activating", mission_id=mid, conf=pre_assess.estimated_confidence)
                 try:
                     from core.cognition.orchestrator import CognitionOrchestrator
-                    from core.llm_factory import LLMFactory
                     
-                    _llm_factory = LLMFactory(self.s)
-                    _llm = _llm_factory.get(provider="openrouter", model="anthropic/claude-3.7-sonnet")
-                    _cog = CognitionOrchestrator(llm_client=_llm)
+                    # Use delegate's LLM client (already configured with OpenRouter)
+                    # JarvisOrchestrator.llm is a BaseChatModel (OpenAI-compatible)
+                    _cog = CognitionOrchestrator(llm_client=delegate.llm)
                     
                     _payload = {
                         "mission_id": mid, "goal": enriched_goal, "mode": mode,
