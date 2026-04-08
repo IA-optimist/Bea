@@ -1,173 +1,5 @@
 [
   {
-    "proposal_id": "47e3951b",
-    "created_at": "2026-04-08T11:24:42Z",
-    "problem": "Mission 3b179f96 terminée avec final_output vide",
-    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
-    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
-    "files_to_modify": [
-      "api/event_emitter.py",
-      "api/main.py"
-    ],
-    "risk_level": "low",
-    "expected_impact": "Élimination des réponses vides — meilleure UX",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_mission_simple",
-      "test_final_output_not_empty"
-    ],
-    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
-    "confidence_score": 0.8,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "fa8f9c1b",
-    "created_at": "2026-04-08T11:24:42Z",
-    "problem": "Mission 3b179f96 durée > 60s",
-    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
-    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
-    "files_to_modify": [
-      "agents/crew.py",
-      "core/llm_factory.py"
-    ],
-    "risk_level": "medium",
-    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_health",
-      "test_mission_simple"
-    ],
-    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
-    "confidence_score": 0.7,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "0bde5012",
-    "created_at": "2026-04-08T11:28:39Z",
-    "problem": "Mission 3b179f96 terminée avec final_output vide",
-    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
-    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
-    "files_to_modify": [
-      "api/event_emitter.py",
-      "api/main.py"
-    ],
-    "risk_level": "low",
-    "expected_impact": "Élimination des réponses vides — meilleure UX",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_mission_simple",
-      "test_final_output_not_empty"
-    ],
-    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
-    "confidence_score": 0.8,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "a35ae7bb",
-    "created_at": "2026-04-08T11:28:39Z",
-    "problem": "Mission 3b179f96 durée > 60s",
-    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
-    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
-    "files_to_modify": [
-      "agents/crew.py",
-      "core/llm_factory.py"
-    ],
-    "risk_level": "medium",
-    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_health",
-      "test_mission_simple"
-    ],
-    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
-    "confidence_score": 0.7,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "bb682363",
-    "created_at": "2026-04-08T11:45:39Z",
-    "problem": "Mission 3b179f96 terminée avec final_output vide",
-    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
-    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
-    "files_to_modify": [
-      "api/event_emitter.py",
-      "api/main.py"
-    ],
-    "risk_level": "low",
-    "expected_impact": "Élimination des réponses vides — meilleure UX",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_mission_simple",
-      "test_final_output_not_empty"
-    ],
-    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
-    "confidence_score": 0.8,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "ed4dd999",
-    "created_at": "2026-04-08T11:45:39Z",
-    "problem": "Mission 3b179f96 durée > 60s",
-    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
-    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
-    "files_to_modify": [
-      "agents/crew.py",
-      "core/llm_factory.py"
-    ],
-    "risk_level": "medium",
-    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_health",
-      "test_mission_simple"
-    ],
-    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
-    "confidence_score": 0.7,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "065522da",
-    "created_at": "2026-04-08T11:49:14Z",
-    "problem": "Mission 3b179f96 terminée avec final_output vide",
-    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
-    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
-    "files_to_modify": [
-      "api/event_emitter.py",
-      "api/main.py"
-    ],
-    "risk_level": "low",
-    "expected_impact": "Élimination des réponses vides — meilleure UX",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_mission_simple",
-      "test_final_output_not_empty"
-    ],
-    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
-    "confidence_score": 0.8,
-    "status": "pending"
-  },
-  {
-    "proposal_id": "bdde6fcd",
-    "created_at": "2026-04-08T11:49:14Z",
-    "problem": "Mission 3b179f96 durée > 60s",
-    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
-    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
-    "files_to_modify": [
-      "agents/crew.py",
-      "core/llm_factory.py"
-    ],
-    "risk_level": "medium",
-    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
-    "ram_cpu_cost": "negligible",
-    "tests_required": [
-      "test_health",
-      "test_mission_simple"
-    ],
-    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
-    "confidence_score": 0.7,
-    "status": "pending"
-  },
-  {
     "proposal_id": "27e63212",
     "created_at": "2026-04-08T11:51:02Z",
     "problem": "Mission 3b179f96 terminée avec final_output vide",
@@ -1031,6 +863,174 @@
   {
     "proposal_id": "d382ec6b",
     "created_at": "2026-04-08T19:37:59Z",
+    "problem": "Mission 3b179f96 durée > 60s",
+    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
+    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
+    "files_to_modify": [
+      "agents/crew.py",
+      "core/llm_factory.py"
+    ],
+    "risk_level": "medium",
+    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_health",
+      "test_mission_simple"
+    ],
+    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
+    "confidence_score": 0.7,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "5e2f41ae",
+    "created_at": "2026-04-08T19:40:09Z",
+    "problem": "Mission 3b179f96 terminée avec final_output vide",
+    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
+    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
+    "files_to_modify": [
+      "api/event_emitter.py",
+      "api/main.py"
+    ],
+    "risk_level": "low",
+    "expected_impact": "Élimination des réponses vides — meilleure UX",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_mission_simple",
+      "test_final_output_not_empty"
+    ],
+    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
+    "confidence_score": 0.8,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "e9381e23",
+    "created_at": "2026-04-08T19:40:09Z",
+    "problem": "Mission 3b179f96 durée > 60s",
+    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
+    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
+    "files_to_modify": [
+      "agents/crew.py",
+      "core/llm_factory.py"
+    ],
+    "risk_level": "medium",
+    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_health",
+      "test_mission_simple"
+    ],
+    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
+    "confidence_score": 0.7,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "592546db",
+    "created_at": "2026-04-08T19:50:37Z",
+    "problem": "Mission 3b179f96 terminée avec final_output vide",
+    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
+    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
+    "files_to_modify": [
+      "api/event_emitter.py",
+      "api/main.py"
+    ],
+    "risk_level": "low",
+    "expected_impact": "Élimination des réponses vides — meilleure UX",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_mission_simple",
+      "test_final_output_not_empty"
+    ],
+    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
+    "confidence_score": 0.8,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "c2c55404",
+    "created_at": "2026-04-08T19:50:37Z",
+    "problem": "Mission 3b179f96 durée > 60s",
+    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
+    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
+    "files_to_modify": [
+      "agents/crew.py",
+      "core/llm_factory.py"
+    ],
+    "risk_level": "medium",
+    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_health",
+      "test_mission_simple"
+    ],
+    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
+    "confidence_score": 0.7,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "96b196f7",
+    "created_at": "2026-04-08T19:56:02Z",
+    "problem": "Mission 3b179f96 terminée avec final_output vide",
+    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
+    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
+    "files_to_modify": [
+      "api/event_emitter.py",
+      "api/main.py"
+    ],
+    "risk_level": "low",
+    "expected_impact": "Élimination des réponses vides — meilleure UX",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_mission_simple",
+      "test_final_output_not_empty"
+    ],
+    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
+    "confidence_score": 0.8,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "b86c8fd3",
+    "created_at": "2026-04-08T19:56:02Z",
+    "problem": "Mission 3b179f96 durée > 60s",
+    "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
+    "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
+    "files_to_modify": [
+      "agents/crew.py",
+      "core/llm_factory.py"
+    ],
+    "risk_level": "medium",
+    "expected_impact": "Réduction des timeouts non gérés, UX plus réactive",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_health",
+      "test_mission_simple"
+    ],
+    "rollback_plan": "Supprimer le wrapper asyncio.wait_for() ajouté",
+    "confidence_score": 0.7,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "65874d03",
+    "created_at": "2026-04-08T19:56:49Z",
+    "problem": "Mission 3b179f96 terminée avec final_output vide",
+    "probable_cause": "emit_agent_result non appelé ou résultat non propagé dans set_final_output()",
+    "fix_proposed": "Vérifier que emit_agent_result est bien appelé dans l'agent concerné, et que set_final_output() reçoit le résultat non-vide.",
+    "files_to_modify": [
+      "api/event_emitter.py",
+      "api/main.py"
+    ],
+    "risk_level": "low",
+    "expected_impact": "Élimination des réponses vides — meilleure UX",
+    "ram_cpu_cost": "negligible",
+    "tests_required": [
+      "test_mission_simple",
+      "test_final_output_not_empty"
+    ],
+    "rollback_plan": "Aucun rollback requis — ajout de vérification seulement",
+    "confidence_score": 0.8,
+    "status": "pending"
+  },
+  {
+    "proposal_id": "1fd35c65",
+    "created_at": "2026-04-08T19:56:49Z",
     "problem": "Mission 3b179f96 durée > 60s",
     "probable_cause": "LLM lent ou agent bloqué sans circuit breaker actif",
     "fix_proposed": "Ajouter un timeout explicite de 30s par agent dans BaseAgent.run() via asyncio.wait_for(), et activer le circuit breaker Ollama.",
