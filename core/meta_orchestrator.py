@@ -695,6 +695,28 @@ class MetaOrchestrator:
                 except Exception as _kplan_err:
                     log.debug("kernel_planning_skipped", err=str(_kplan_err)[:100])
 
+            # ── Skill Store: retrieve similar past successes (Voyager pattern) ──
+            # Inject before planning so the planner can reuse proven strategies.
+            # Fail-open: returns [] if Qdrant unavailable or no matches.
+            _skill_context = ""
+            if not _is_chat_mode:
+                try:
+                    from core.skill_store import get_skill_store, format_skills_for_prompt
+                    _similar_skills = await get_skill_store().retrieve(
+                        goal=goal,
+                        top_k=3,
+                        mission_type=str(ctx.metadata.get("classification", {}).get("task_type", "")),
+                    )
+                    if _similar_skills:
+                        _skill_context = format_skills_for_prompt(_similar_skills)
+                        ctx.metadata["retrieved_skills"] = _similar_skills
+                        trace.record("retrieve", "skills_from_store",
+                                     count=len(_similar_skills),
+                                     top_score=_similar_skills[0].get("_score", 0))
+                        log.info("skill_store_retrieved", mission_id=mid, count=len(_similar_skills))
+                except Exception as _sk_err:
+                    log.debug("skill_retrieve_skip", err=str(_sk_err)[:80])
+
             # ── Phase 3-P42: Pre-planning memory retrieval ────────
             # Retrieve 3 failures + 3 successes BEFORE context assembly
             # so planner has explicit "avoid/reuse" guidance (Pass 42 — Phase 3).
@@ -1432,6 +1454,28 @@ class MetaOrchestrator:
                                  retries=outcome.retries,
                                  duration_ms=outcome.duration_ms,
                                  confidence=result_confidence)
+                # ── Skill Store: persist successful mission pattern (Voyager pattern) ──
+                # Store if confidence >= threshold (default 0.70).
+                # Fail-open: any exception is silently swallowed.
+                try:
+                    from core.skill_store import get_skill_store
+                    _plan_to_store = ctx.metadata.get("context", {})
+                    if not _plan_to_store:
+                        _plan_to_store = {"steps": ["direct_execution"], "result_len": len(ctx.result)}
+                    _mission_type_for_skill = str(
+                        ctx.metadata.get("classification", {}).get("task_type", "general") or "general"
+                    )
+                    asyncio.ensure_future(get_skill_store().store(
+                        mission_id=mid,
+                        goal=goal,
+                        plan=_plan_to_store,
+                        confidence=result_confidence,
+                        mission_type=_mission_type_for_skill,
+                        tags=[mode, _mission_type_for_skill],
+                    ))
+                    log.info("skill_store_triggered", mission_id=mid, confidence=result_confidence)
+                except Exception as _ss_err:
+                    log.debug("skill_store_skip", err=str(_ss_err)[:80])
                 # Journal: mission completed
                 try:
                     from core.cognitive_events.emitter import emit_mission_completed
