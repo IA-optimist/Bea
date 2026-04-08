@@ -1210,38 +1210,87 @@ class MetaOrchestrator:
                 except Exception as _sme:
                     log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
-            # Enforce a hard mission deadline — prevents infinite hangs.
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            # PHASE 4: AGI COGNITION WRAPPER (2026-04-08)
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            # Execute mission with cognitive reasoning pipeline:
+            #   - Tree-of-Thought for complex reasoning
+            #   - Self-Confidence scoring for output quality
+            #   - Performance Tracking + Active Learning
+            # Activation: NOT chat mode + confidence < 0.9 + goal > 50 chars
+            # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             _mission_timeout = getattr(self.s, "mission_timeout_s", 600)
-            try:
-                outcome = await asyncio.wait_for(
-                    supervise(
-                        delegate.run,
-                        mission_id=mid,
-                        goal=enriched_goal,
-                        mode=mode,
-                        session_id=mid,
-                        risk_level=risk,
-                        requires_approval=needs_approval,
-                        skip_approval=force_approved,
-                        callback=callback,
-                    ),
-                    timeout=_mission_timeout,
-                )
-            finally:
-                # Always reset the provider override after execution
-                if _provider_token is not None:
-                    try:
-                        from core.llm_factory import _provider_override as _pov
-                        _pov.reset(_provider_token)
-                    except Exception:
-                        pass
-                # Pass 43: reset safer_model ContextVar
-                if _safer_token is not None:
-                    try:
-                        from core.llm_factory import _safer_model_active as _sma
-                        _sma.reset(_safer_token)
-                    except Exception:
-                        pass
+
+            
+            _use_cognition = (
+                not _is_chat_mode
+                and pre_assess is not None
+                and pre_assess.estimated_confidence < 0.9
+                and len(goal) > 50
+            )
+            
+            outcome = None
+            if _use_cognition:
+                log.info("cognition.activating", mission_id=mid, conf=pre_assess.estimated_confidence)
+                try:
+                    from core.cognition.orchestrator import CognitionOrchestrator
+                    from core.llm_factory import get_llm_factory
+                    
+                    _llm = get_llm_factory().get(provider="openrouter", model="anthropic/claude-3.7-sonnet")
+                    _cog = CognitionOrchestrator(llm_client=_llm)
+                    
+                    _payload = {
+                        "mission_id": mid, "goal": enriched_goal, "mode": mode,
+                        "session_id": mid, "risk_level": risk,
+                        "requires_approval": needs_approval, "skip_approval": force_approved,
+                        "callback": callback,
+                        "classification": ctx.metadata.get("classification", {}),
+                    }
+                    
+                    outcome = await _cog.execute_mission_with_cognition(
+                        delegate=delegate, supervise_fn=supervise,
+                        mission_payload=_payload, timeout=_mission_timeout,
+                    )
+                    trace.record("cognition", "success", conf=pre_assess.estimated_confidence)
+                except Exception as _cog_err:
+                    log.warning("cognition.failed", mission_id=mid, err=str(_cog_err)[:100])
+                    outcome = None
+            
+            if outcome is None:
+                if _use_cognition:
+                    log.info("cognition.fallback_direct", mission_id=mid)
+
+
+                try:
+                    outcome = await asyncio.wait_for(
+                        supervise(
+                            delegate.run,
+                            mission_id=mid,
+                            goal=enriched_goal,
+                            mode=mode,
+                            session_id=mid,
+                            risk_level=risk,
+                            requires_approval=needs_approval,
+                            skip_approval=force_approved,
+                            callback=callback,
+                        ),
+                        timeout=_mission_timeout,
+                    )
+                finally:
+                    # Always reset the provider override after execution
+                    if _provider_token is not None:
+                        try:
+                            from core.llm_factory import _provider_override as _pov
+                            _pov.reset(_provider_token)
+                        except Exception:
+                            pass
+                    # Pass 43: reset safer_model ContextVar
+                    if _safer_token is not None:
+                        try:
+                            from core.llm_factory import _safer_model_active as _sma
+                            _sma.reset(_safer_token)
+                        except Exception:
+                            pass
 
             # Record supervisor decisions in trace (with schema guard)
             _dtrace = outcome.decision_trace if isinstance(
