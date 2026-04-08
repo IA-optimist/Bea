@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: jarvismax
       POSTGRES_USER: jarvis
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax2025}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -58,7 +58,7 @@ services:
       dockerfile: Dockerfile
     container_name: jarvismax-api
     environment:
-      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD:-jarvismax2025}@postgres:5432/jarvismax
+      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
       OPENAI_API_KEY: ${OPENAI_API_KEY}
