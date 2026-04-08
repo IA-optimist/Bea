@@ -36,7 +36,7 @@ class FeasibilityAnalyzer:
     def __init__(self):
         from core.llm_factory import LLMFactory
         from config.settings import get_settings
-        settings = get_settings(project_id=1)
+        settings = get_settings()
         factory = LLMFactory(settings)
         llm = factory.get(role="cognition")
         self.cognition = CognitionOrchestrator(llm_client=llm)
