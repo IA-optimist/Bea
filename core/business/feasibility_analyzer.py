@@ -32,17 +32,12 @@ class FeasibilityAnalyzer:
     Cognition confidence threshold: 0.8 (high confidence required)
     """
     
+    
     def __init__(self):
         from core.llm.pool import LLMPool
         llm = LLMPool.get_client(model="anthropic/claude-3.7-sonnet")
         self.cognition = CognitionOrchestrator(llm_client=llm)
-        from core.llm.pool import LLMPool
-        llm = LLMPool.get_client(model="anthropic/claude-3.7-sonnet")
-        self.cognition = CognitionOrchestrator(llm_client=llm)
-        from core.llm.pool import LLMPool
-        llm = LLMPool.get_client(model="anthropic/claude-3.7-sonnet")
-        self.cognition = CognitionOrchestrator(llm_client=llm)
-    
+
     async def analyze(self, opportunity: Opportunity, project_id: int = 1) -> Dict[str, Any]:
         """
         Analyze technical feasibility of an opportunity
