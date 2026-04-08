@@ -189,6 +189,7 @@ ROLE_PROVIDERS: dict[str, str] = {
     "analyst":   "openrouter",  # Business analysis, strategy — Sonnet via OpenRouter
     "fast":      "openrouter",  # GPT-4o-mini via OpenRouter
     "default":   "openrouter",
+    "cognition":  "openrouter",  # Phase 3.5: AI cognition needs reliable cloud model
     # Cloud-preferred roles (were ollama-only, now openrouter with ollama fallback)
     "advisor":    "openrouter",  # shadow-advisor — needs real LLM
     "memory":     "openrouter",  # vault-memory — needs real LLM
