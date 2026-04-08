@@ -135,6 +135,7 @@ except ImportError:
         created_at: float; updated_at: float
         result: str | None = None; error: str | None = None
         metadata: dict = field(default_factory=dict)
+        project_id: str | None = None  # Phase 2.1: Project isolation
         def get_output(self, agent: str) -> str:
             outputs = self.metadata.get("agent_outputs", {})
             if isinstance(outputs, dict):
@@ -328,6 +329,7 @@ class MetaOrchestrator:
         callback: CB | None = None,
         use_budget: bool = False,
         force_approved: bool = False,
+        project_id: str | None = None,  # Phase 2.1: Project isolation
     ) -> MissionContext:
         """
         Enhanced mission lifecycle with classification, context assembly,
@@ -346,6 +348,7 @@ class MetaOrchestrator:
             status=MissionStatus.CREATED,
             created_at=now,
             updated_at=now,
+            project_id=project_id,  # Phase 2.1: Project isolation
         )
         with self._lock:
             self._missions[mid] = ctx
