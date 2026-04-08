@@ -180,3 +180,44 @@ def require_permission(user: dict, permission: str) -> bool:
     if not has_permission(role, permission):
         return False
     return True
+
+
+# ========================================
+# FASTAPI DEPENDENCY FOR TOKEN AUTH
+# ========================================
+
+from fastapi import Header, HTTPException, status
+
+async def get_current_user(
+    authorization: str = Header(None)
+) -> dict:
+    """
+    FastAPI dependency to verify Authorization header.
+    
+    Usage:
+        @router.get("/protected")
+        async def protected_endpoint(user: dict = Depends(get_current_user)):
+            return {"user": user["username"]}
+    
+    Returns:
+        dict: User info {username, role, token_id, auth_type}
+    
+    Raises:
+        HTTPException: 401 if token invalid or missing
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing",
+        )
+    
+    # verify_token handles "Bearer xxx" or "xxx" format
+    user_data = verify_token(authorization)
+    
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your access token is invalid. Please check and try again.",
+        )
+    
+    return user_data

@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from api.auth import verify_token
+from api.auth import get_current_user
 from api._deps import require_auth, get_db
 from models.opportunity import Opportunity
 from business.automation.opportunity_scanner import OpportunityScanner
@@ -700,7 +700,7 @@ async def deploy_mvp(
     background_tasks: BackgroundTasks,
     project_id: int = Query(1, description="JarvisMax project ID"),
     db: Session = Depends(get_db),
-    token_data: dict = Depends(verify_token),
+    user: dict = Depends(get_current_user),
 ):
     """
     Deploy generated MVP to VPS with GitHub + Docker + Caddy.
@@ -846,7 +846,7 @@ async def deploy_mvp(
 async def get_deployment_status(
     opportunity_id: int,
     db: Session = Depends(get_db),
-    token_data: dict = Depends(verify_token),
+    user: dict = Depends(get_current_user),
 ):
     """
     Get deployment status for an opportunity.
@@ -898,7 +898,7 @@ async def get_deployment_status(
 async def undeploy_mvp(
     opportunity_id: int,
     db: Session = Depends(get_db),
-    token_data: dict = Depends(verify_token),
+    user: dict = Depends(get_current_user),
 ):
     """
     Remove deployment from VPS.

@@ -1,3 +1,4 @@
+# Local development
 jarvismax.local {
     # Frontend
     handle /app/* {
@@ -17,5 +18,40 @@ jarvismax.local {
     # Default to frontend
     handle {
         reverse_proxy frontend:3000
+    }
+}
+
+# Production domain
+jarvis.jarvismaxapp.co.uk {
+    # API (direct to jarvis_core container)
+    handle /api/* {
+        reverse_proxy jarvis_core:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # WebSocket
+    handle /ws/* {
+        reverse_proxy jarvis_core:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Connection {>Connection}
+            header_up Upgrade {>Upgrade}
+        }
+    }
+
+    # Frontend
+    handle /app/* {
+        reverse_proxy frontend:3000
+    }
+
+    # Default to API docs
+    handle {
+        redir /docs permanent
     }
 }
