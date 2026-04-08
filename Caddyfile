@@ -1,48 +1,34 @@
+{
+    # Disable automatic HTTPS (use self-signed for now)
+    auto_https off
+}
+
 # Local development
 jarvismax.local {
-    # Frontend
     handle /app/* {
         reverse_proxy frontend:3000
     }
-
-    # API
     handle /api/* {
         reverse_proxy api:8000
     }
-
-    # WebSocket
     handle /ws/* {
         reverse_proxy api:8000
     }
-
-    # Default to frontend
     handle {
         reverse_proxy frontend:3000
     }
 }
 
-# Production domain
-jarvis.jarvismaxapp.co.uk {
-    # API (direct to jarvis_core container)
+# Production domain (HTTP only for testing)
+http://jarvis.jarvismaxapp.co.uk {
+    # API
     handle /api/* {
-        reverse_proxy jarvis_core:8000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-        }
+        reverse_proxy jarvis_core:8000
     }
 
     # WebSocket
     handle /ws/* {
-        reverse_proxy jarvis_core:8000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up Connection {>Connection}
-            header_up Upgrade {>Upgrade}
-        }
+        reverse_proxy jarvis_core:8000
     }
 
     # Frontend
