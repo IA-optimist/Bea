@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
@@ -307,3 +308,198 @@ async def get_stats(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"get_stats_failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# P3.2: FEASIBILITY ANALYSIS
+# ═══════════════════════════════════════════════════════════════════
+
+from models.opportunity_analysis import OpportunityAnalysis
+from core.business.feasibility_analyzer import FeasibilityAnalyzer
+
+
+@router.post("/{opportunity_id}/analyze", response_model=dict)
+async def analyze_feasibility(
+    opportunity_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    project_id: int = Query(1, description="JarvisMax project ID"),
+):
+    """
+    Analyze technical feasibility of an opportunity (cognition-powered)
+    
+    **Process:**
+    1. Retrieve opportunity from database
+    2. Run FeasibilityAnalyzer (CognitionOrchestrator + Tree-of-Thought)
+    3. Store analysis result in opportunity_analyses table
+    4. Update opportunity.analyzed = TRUE
+    
+    **Returns immediately** — analysis runs in background (4-8 minutes)
+    
+    **Cognition confidence threshold:** 0.8 (high confidence required)
+    
+    **Example response:**
+    ```json
+    {
+      "status": "success",
+      "message": "Analysis started",
+      "data": {
+        "opportunity_id": 1,
+        "mission_id": "abc123",
+        "estimated_duration": "4-8 minutes"
+      }
+    }
+    ```
+    
+    **After completion, GET /api/v3/business/opportunities/{id}/analysis to view results.**
+    """
+    # Validate opportunity exists
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    # Check if already analyzed
+    existing = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    
+    if existing:
+        return _response(
+            message="Opportunity already analyzed",
+            data={
+                "opportunity_id": opportunity_id,
+                "analysis_id": existing.id,
+                "analyzed_at": existing.analyzed_at.isoformat(),
+                "recommendation": existing.recommendation,
+            }
+        )
+    
+    # Background analysis task
+    def _run_analysis():
+        try:
+            analyzer = FeasibilityAnalyzer()
+            
+            logger.info(f"Starting feasibility analysis for opportunity {opportunity_id}")
+            
+            # Run analysis (cognition-powered, may take 4-8 minutes)
+            analysis_result = analyzer.analyze(opportunity, project_id=project_id)
+            
+            # Store in database
+            analysis = OpportunityAnalysis(
+                opportunity_id=opportunity_id,
+                analyzed_at=datetime.utcnow(),
+                analysis_duration_seconds=analysis_result.get("duration_seconds"),
+                mission_id=analysis_result.get("mission_id"),
+                confidence_score=analysis_result.get("confidence_score"),
+                cognition_reasoning=analysis_result.get("cognition_reasoning"),
+                tech_stack=analysis_result.get("tech_stack"),
+                dependencies=analysis_result.get("dependencies"),
+                complexity_score=analysis_result.get("complexity_score"),
+                estimated_hours=analysis_result.get("estimated_hours"),
+                mvp_features=analysis_result.get("mvp_features"),
+                nice_to_have_features=analysis_result.get("nice_to_have_features"),
+                out_of_scope=analysis_result.get("out_of_scope"),
+                technical_risks=analysis_result.get("technical_risks"),
+                mitigation_strategies=analysis_result.get("mitigation_strategies"),
+                recommendation=analysis_result.get("recommendation"),
+                reasoning=analysis_result.get("reasoning"),
+                market_fit_score=analysis_result.get("market_fit_score"),
+                full_analysis=analysis_result.get("full_analysis"),
+                raw_output=analysis_result,
+            )
+            
+            db.add(analysis)
+            
+            # Update opportunity.analyzed = TRUE
+            opportunity.analyzed = True
+            
+            db.commit()
+            db.refresh(analysis)
+            
+            logger.info(
+                f"feasibility_analysis_stored "
+                f"opportunity_id={opportunity_id} "
+                f"analysis_id={analysis.id} "
+                f"recommendation={analysis.recommendation} "
+                f"confidence={analysis.confidence_score:.3f}"
+            )
+        
+        except Exception as e:
+            logger.error(f"feasibility_analysis_background_failed opportunity_id={opportunity_id}: {e}", exc_info=True)
+            db.rollback()
+    
+    # Run in background
+    background_tasks.add_task(_run_analysis)
+    
+    return _response(
+        message="Feasibility analysis started",
+        data={
+            "opportunity_id": opportunity_id,
+            "project_id": project_id,
+            "estimated_duration": "4-8 minutes",
+            "status_endpoint": f"/api/v3/business/opportunities/{opportunity_id}/analysis",
+        }
+    )
+
+
+@router.get("/{opportunity_id}/analysis", response_model=dict)
+async def get_analysis(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get feasibility analysis result for an opportunity
+    
+    **Returns:**
+    - 404: Opportunity not found
+    - 202: Analysis in progress (not ready yet)
+    - 200: Analysis complete (full result)
+    """
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    
+    if not opportunity:
+        raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
+    
+    analysis = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    
+    if not analysis:
+        # Check if analysis is in progress (opportunity.analyzed = FALSE)
+        if not opportunity.analyzed:
+            raise HTTPException(
+                status_code=202,
+                detail="Analysis in progress or not started. Please try again in 4-8 minutes."
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Analysis not found (may have been deleted)"
+            )
+    
+    return _response(data=analysis.to_dict())
+
+
+@router.delete("/{opportunity_id}/analysis", response_model=dict)
+async def delete_analysis(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete feasibility analysis (allows re-analysis)"""
+    analysis = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    
+    # Also reset opportunity.analyzed = FALSE
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if opportunity:
+        opportunity.analyzed = False
+    
+    db.delete(analysis)
+    db.commit()
+    
+    return _response(message=f"Analysis deleted (opportunity {opportunity_id} can be re-analyzed)")
