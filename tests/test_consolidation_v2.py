@@ -160,7 +160,7 @@ class TestDeadCodeRemoval:
         assert "cockpit.html" not in content
 
     def test_CV29_index_html_no_cockpit(self):
-        content = Path("static/index.html").read_text()
+        content = Path("static/app.html").read_text()
         assert "cockpit.html" not in content
 
 

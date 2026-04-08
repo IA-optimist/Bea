@@ -320,8 +320,86 @@ let TOKEN='',ROLE='user',MISSIONS=[],CURRENT_MOD_TAB='agents';
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 
-function getToken(){return sessionStorage.getItem('j_token')||''}
-function setToken(t,r){TOKEN=t;ROLE=r||'user';sessionStorage.setItem('j_token',t);sessionStorage.setItem('j_role',r)}
+function getToken(){return localStorage.getItem('j_token')||''}
+function setToken(t,r){TOKEN=t;ROLE...,r)}
+
+// ── Token Refresh ───────────────────────────────────────────────────────────
+
+let tokenRefreshInterval=null;
+
+function decodeJWT(token){
+  try{
+    const parts=token.split('.');
+    if(parts.length!==3)return null;
+    const payload=parts[1];
+    // Decode base64url (replace - with +, _ with /, and pad if needed)
+    const base64=payload.replace(/-/g,'+').replace(/_/g,'/');
+    const decoded=atob(base64);
+    return JSON.parse(decoded);
+  }catch(e){
+    console.error('Failed to decode JWT:',e);
+    return null;
+  }
+}
+
+async function checkTokenExpiry(){
+  if(!TOKEN||TOKEN==='***')return;
+  
+  const decoded=decodeJWT(TOKEN);
+  if(!decoded||!decoded.exp)return;
+  
+  const now=Math.floor(Date.now()/1000);
+  const expiresIn=decoded.exp-now;
+  
+  // If token expires in less than 10 minutes (600 seconds), refresh it
+  if(expiresIn<600){
+    try{
+      const r=await fetch('/auth/refresh',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+TOKEN}
+      });
+      
+      if(r.ok){
+        const d=await r.json();
+        if(d.token||d.access_token){
+          const newToken=d.token||d.access_token;
+          // Decode role from new token
+          let role='user';
+          try{
+            const p=decodeJWT(newToken);
+            role=p.role||'user';
+          }catch(e){}
+          setToken(newToken,role);
+          // Silent refresh: no notification
+        }
+      }else if(r.status===401){
+        toast('Session expirée','err');
+        logout();
+      }
+    }catch(e){
+      console.error('Token refresh failed:',e);
+      toast('Erreur de rafraîchissement du token','err');
+      logout();
+    }
+  }
+}
+
+function startTokenRefresh(){
+  if(tokenRefreshInterval)clearInterval(tokenRefreshInterval);
+  // Check every 5 minutes
+  tokenRefreshInterval=setInterval(checkTokenExpiry,5*60*1000);
+  // Also check immediately on start
+  checkTokenExpiry();
+}
+
+function stopTokenRefresh(){
+  if(tokenRefreshInterval){
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval=null;
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 async function doLogin(){
   const user=document.getElementById('login-user').value.trim();
@@ -333,7 +411,7 @@ async function doLogin(){
   if(tok){
     // Static token login — test against real endpoint
     try{
-      const r=await fetch('/api/v2/status',{headers:{'X-Jarvis-Token':tok}});
+      const r=await fetch('/api/v3/system/status',{headers:{'X-Jarvis-Token':tok}});
       if(r.ok){setToken(tok,'admin');enterApp();return}
     }catch(e){}
     errEl.textContent='Token invalide';errEl.classList.remove('hidden');return;
@@ -353,7 +431,7 @@ async function doLogin(){
   }catch(e){errEl.textContent='Erreur de connexion au serveur';errEl.classList.remove('hidden')}
 }
 
-function logout(){sessionStorage.clear();TOKEN='';ROLE='user';location.reload()}
+function logout(){stopTokenRefresh();localStorage.clear();TOKEN='***';location.reload()}
 
 function enterApp(){
   document.getElementById('login-page').classList.add('hidden');
@@ -363,13 +441,14 @@ function enterApp(){
   document.getElementById('set-role').textContent=ROLE==='admin'?'ADMIN':'USER';
   document.getElementById('set-server').textContent=location.host;
   document.getElementById('status-dot').style.background='var(--green)';
+  startTokenRefresh();
   initHome();
 }
 
 // Check saved session
 (function(){
-  const t=sessionStorage.getItem('j_token');
-  const r=sessionStorage.getItem('j_role');
+  const t=localStorage.getItem('j_token');
+  const r=localStorage.getItem('j_role');
   if(t){TOKEN=t;ROLE=r||'user';enterApp()}
 })();
 
@@ -424,7 +503,7 @@ async function initHome(){
   const h=now.getHours();
   document.getElementById('home-greeting').textContent=h<6?'Vous travaillez tard ?':h<12?'Bonjour.':h<18?'Bon après-midi.':'Bonsoir.';
 
-  const d=await api('/api/v2/status');
+  const d=await api('/api/v3/system/status');
   if(d&&d.data){
     const s=d.data;const ms=s.missions||{};const byS=ms.by_status||{};
     const done=byS.DONE||0,failed=byS.FAILED||0,rejected=byS.REJECTED||0,running=byS.RUNNING||0;
@@ -435,7 +514,7 @@ async function initHome(){
       <div class="stat"><div class="stat-val">${ms.total||0}</div><div class="stat-lbl">Total</div></div>`;
   }
   // Recent missions
-  const ml=await api('/api/v2/missions?limit=8');
+  const ml=await api('/api/v3/missions?limit=8');
   if(ml&&ml.data&&ml.data.missions){
     MISSIONS=ml.data.missions;
     const pending=MISSIONS.filter(m=>m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL');
@@ -463,7 +542,7 @@ async function submitMission(){
   const goal=type?`[${type}] ${text}`:text;
   const btn=document.getElementById('home-send');
   btn.disabled=true;btn.textContent='Envoi…';
-  const r=await api('/api/v2/missions/submit',{method:'POST',body:JSON.stringify({goal:goal,mode:'auto'})});
+  const r=await api('/api/v3/missions',{method:'POST',body:JSON.stringify({goal:goal,mode:'auto'})});
   btn.disabled=false;btn.textContent='Lancer la mission';
   if(r&&r.ok!==false){
     toast('Mission lancée ✓');
@@ -475,10 +554,27 @@ async function submitMission(){
 
 // ── Missions ────────────────────────────────────────────────────────────────
 
-async function loadMissions(){
-  document.getElementById('mission-list').innerHTML='<div class="spin"></div>';
-  const d=await api('/api/v2/missions?limit=100');
-  if(d&&d.data&&d.data.missions){MISSIONS=d.data.missions;renderMissions()}
+let MISSIONS_OFFSET = 0;
+let MISSIONS_HAS_MORE = true;
+
+async function loadMissions(loadMore = false){
+  if (!loadMore) {
+    MISSIONS_OFFSET = 0;
+    MISSIONS_HAS_MORE = true;
+    document.getElementById('mission-list').innerHTML='<div class="spin"></div>';
+  }
+  
+  const d=await api(`/api/v3/missions?limit=50&offset=${MISSIONS_OFFSET}`);
+  if(d&&d.data&&d.data.missions){
+    if (loadMore) {
+      MISSIONS = MISSIONS.concat(d.data.missions);
+    } else {
+      MISSIONS = d.data.missions;
+    }
+    MISSIONS_HAS_MORE = d.data.missions.length >= 50;
+    MISSIONS_OFFSET += d.data.missions.length;
+    renderMissions();
+  }
   else{document.getElementById('mission-list').innerHTML='<div class="empty"><div class="empty-icon">🚀</div>Impossible de charger les missions</div>'}
 }
 
@@ -492,13 +588,36 @@ function renderMissions(){
     document.getElementById('mission-list').innerHTML='<div class="empty"><div class="empty-icon">📭</div>Aucune mission trouvée</div>';
     return;
   }
-  document.getElementById('mission-list').innerHTML=list.map(m=>`
+  
+  let html = list.map(m=>`
     <div class="mission-row" onclick="openMission('${m.mission_id}')">
       <div class="mission-dot" style="background:${dotColor(m.status)}"></div>
       <div class="mission-goal">${esc(m.user_input||m.goal||m.mission_id)}</div>
       ${statusBadge(m.status)}
       <div class="mission-time">${timeAgo(m.created_at)}</div>
     </div>`).join('');
+  
+  // Add pagination button if there are more missions to load (only when no filter/search active)
+  if (MISSIONS_HAS_MORE && !search && !filter) {
+    html += `<div class="page-actions" style="margin-top:16px;text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="loadMoreMissions()" id="load-more-btn">Charger plus</button>
+    </div>`;
+  } else if (!MISSIONS_HAS_MORE && MISSIONS.length > 0 && !search && !filter) {
+    html += `<div class="page-actions" style="margin-top:16px;text-align:center;color:var(--t3);font-size:12px">
+      Toutes les missions sont chargées
+    </div>`;
+  }
+  
+  document.getElementById('mission-list').innerHTML = html;
+}
+
+async function loadMoreMissions() {
+  const btn = document.getElementById('load-more-btn');
+  if (btn) {
+    btn.textContent = 'Chargement...';
+    btn.disabled = true;
+  }
+  await loadMissions(true);
 }
 
 // ── Mission Detail ──────────────────────────────────────────────────────────
@@ -509,7 +628,7 @@ async function openMission(id){
   document.getElementById('main-title').textContent='Détail mission';
   document.getElementById('detail-content').innerHTML='<div class="spin"></div>';
 
-  const d=await api('/api/v2/missions/'+id);
+  const d=await api('/api/v3/missions/'+id);
   if(!d||!d.data){document.getElementById('detail-content').innerHTML='<div class="empty">Mission introuvable</div>';return}
   // Real structure: d.data contains all fields directly (no d.data.mission wrapper)
   const m=d.data.mission||d.data;
@@ -608,7 +727,7 @@ function copyText(el){const t=el.dataset.text;navigator.clipboard.writeText(t).t
 
 async function loadApprovals(){
   document.getElementById('approval-list').innerHTML='<div class="spin"></div>';
-  const d=await api('/api/v2/missions?limit=100');
+  const d=await api('/api/v3/missions?limit=50');
   if(!d||!d.data){document.getElementById('approval-list').innerHTML='<div class="empty">Erreur de chargement</div>';return}
   const pending=(d.data.missions||[]).filter(m=>m.status==='PENDING_VALIDATION'||m.status==='AWAITING_APPROVAL');
   if(pending.length===0){
@@ -632,12 +751,12 @@ async function loadApprovals(){
 }
 
 async function approveMission(id){
-  const r=await api('/api/v2/missions/'+id+'/approve',{method:'POST'});
+  const r=await api('/api/v3/missions/'+id+'/approve',{method:'POST'});
   if(r&&r.ok!==false){toast('Mission approuvée ✓');loadApprovals();initHome()}
   else{toast(r?.error||'Erreur','err')}
 }
 async function rejectMission(id){
-  const r=await api('/api/v2/missions/'+id+'/reject',{method:'POST'});
+  const r=await api('/api/v3/missions/'+id+'/reject',{method:'POST'});
   if(r&&r.ok!==false){toast('Mission rejetée');loadApprovals();initHome()}
   else{toast(r?.error||'Erreur','err')}
 }
@@ -647,7 +766,7 @@ async function rejectMission(id){
 async function loadAdmin(){
   document.getElementById('admin-content').innerHTML='<div class="spin"></div>';
   const[status,health,metrics,caps]=await Promise.all([
-    api('/api/v2/status'),api('/api/v2/system/health'),api('/api/v3/metrics/summary'),api('/api/v2/system/capabilities')
+    api('/api/v3/system/status'),api('/api/v3/system/health'),api('/api/v3/metrics/summary'),api('/api/v3/system/capabilities')
   ]);
   let html='';
   if(status&&status.data){
@@ -770,7 +889,7 @@ async function toggleModule(type,id){
 
 async function loadSystem(){
   document.getElementById('sys-content').innerHTML='<div class="spin"></div>';
-  const[health,caps]=await Promise.all([api('/api/health'),api('/api/v2/system/capabilities')]);
+  const[health,caps]=await Promise.all([api('/api/health'),api('/api/v3/system/capabilities')]);
   let html='';
   if(health?.data){
     const comps=health.data.components||{};

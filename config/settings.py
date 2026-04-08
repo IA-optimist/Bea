@@ -122,7 +122,27 @@ class Settings:
     postgres_db:       str = field(default_factory=lambda: os.environ.get("POSTGRES_DB", "jarvis"))
 
     @property
+    def database_url(self) -> str | None:
+        """Database URL for asyncpg (raw postgresql:// without +asyncpg).
+
+        Returns None if no postgres host is configured (triggers SQLite fallback).
+        Modules should use: dsn = settings.database_url or settings.pg_dsn
+        asyncpg needs the raw format, SQLAlchemy needs +asyncpg.
+        """
+        env_url = os.environ.get("DATABASE_URL")
+        if env_url:
+            # Strip +asyncpg if present (asyncpg wants raw postgresql://)
+            return env_url.replace("postgresql+asyncpg://", "postgresql://")
+        if self.postgres_host and self.postgres_password:
+            return (
+                f"postgresql://{self.postgres_user}:{self.postgres_password}"
+                f"@{self.postgres_host}/{self.postgres_db}"
+            )
+        return None
+
+    @property
     def pg_dsn(self) -> str:
+        """SQLAlchemy-compatible DSN (with +asyncpg driver prefix)."""
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}/{self.postgres_db}"
@@ -225,8 +245,10 @@ class Settings:
 
     @property
     def has_llm_key(self) -> bool:
-        """True if at least one LLM provider API key is configured."""
-        return bool(self.openai_api_key or self.anthropic_api_key or self.openrouter_api_key)
+        """True if at least one LLM provider is available (cloud key OR local Ollama)."""
+        has_cloud = bool(self.openai_api_key or self.anthropic_api_key or self.openrouter_api_key)
+        has_ollama = bool(getattr(self, 'ollama_host', ''))
+        return has_cloud or has_ollama
 
     def enforce_llm_key(self) -> None:
         """

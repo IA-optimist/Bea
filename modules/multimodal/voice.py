@@ -417,7 +417,8 @@ class VoiceSession:
 # ── Capability probe ──────────────────────────────────────────
 
 def voice_capabilities() -> dict:
-    has_openai = bool(os.getenv("OPENAI_API_KEY"))
+    _key = os.getenv("OPENAI_API_KEY", "")
+    has_openai = bool(_key) and not _key.startswith("sk-or-")  # OpenRouter can't do Whisper/TTS
     has_whisper_local = False
     try:
         import whisper  # noqa: F401

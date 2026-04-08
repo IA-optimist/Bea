@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""
+JarvisMax OS — Command Line Interface
+
+Usage:
+    jarvismax start                  # Start OS
+    jarvismax stop                   # Stop OS
+    jarvismax status                 # Show status
+    jarvismax modules                # List modules
+    jarvismax revenue                # Show revenue dashboard
+    jarvismax logs [module]          # Show logs
+    jarvismax exec <module> <action> # Execute module action
+"""
+import argparse
+import asyncio
+import json
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+from core.jarvismax_os import JarvisMaxOS
+
+
+def cmd_start(args):
+    """Start JarvisMax OS"""
+    print("🚀 Starting JarvisMax OS...")
+    
+    os_instance = JarvisMaxOS()
+    
+    try:
+        asyncio.run(os_instance.start())
+        
+        # Keep running
+        print("\n✅ JarvisMax OS is running. Press Ctrl+C to stop.\n")
+        
+        while os_instance.running:
+            asyncio.run(asyncio.sleep(1))
+    
+    except KeyboardInterrupt:
+        print("\n\n🛑 Stopping JarvisMax OS...")
+        asyncio.run(os_instance.stop())
+        print("✅ Stopped.\n")
+
+
+def cmd_status(args):
+    """Show OS status"""
+    os_instance = JarvisMaxOS()
+    asyncio.run(os_instance.start())
+    
+    os_instance.print_status()
+    
+    asyncio.run(os_instance.stop())
+
+
+def cmd_modules(args):
+    """List modules"""
+    os_instance = JarvisMaxOS()
+    asyncio.run(os_instance.start())
+    
+    print("\n" + "=" * 80)
+    print("📦 JARVISMAX MODULES")
+    print("=" * 80 + "\n")
+    
+    for name, module in os_instance.modules.items():
+        print(f"## {name} v{module.version}")
+        print(f"   {module.description}")
+        print(f"   Status: {module.status.value}")
+        print(f"   MRR: €{module.mrr:,.2f} | Customers: {module.customers}")
+        print()
+    
+    asyncio.run(os_instance.stop())
+
+
+def cmd_revenue(args):
+    """Show revenue dashboard"""
+    os_instance = JarvisMaxOS()
+    asyncio.run(os_instance.start())
+    
+    status = os_instance.get_status()
+    
+    print("\n" + "=" * 80)
+    print("💰 JARVISMAX REVENUE DASHBOARD")
+    print("=" * 80 + "\n")
+    
+    print(f"Monthly Recurring Revenue: €{status['revenue']['mrr']:,.2f}")
+    print(f"Annual Recurring Revenue:  €{status['revenue']['arr']:,.2f}")
+    print(f"Total Customers:           {status['revenue']['customers']}")
+    print()
+    
+    print("Breakdown by Module:\n")
+    
+    for name, module in sorted(os_instance.modules.items(), key=lambda x: x[1].mrr, reverse=True):
+        if module.mrr > 0:
+            percentage = (module.mrr / status['revenue']['mrr']) * 100 if status['revenue']['mrr'] > 0 else 0
+            print(f"  {name:20s} €{module.mrr:>8,.2f}/month ({percentage:>5.1f}%) — {module.customers} customers")
+    
+    print("\n" + "=" * 80 + "\n")
+    
+    asyncio.run(os_instance.stop())
+
+
+def cmd_logs(args):
+    """Show logs"""
+    # In real implementation: tail ~/.jarvismax/logs/<module>.log
+    print("📋 Logs feature coming soon...")
+
+
+def cmd_exec(args):
+    """Execute module action"""
+    if not args.module or not args.action:
+        print("❌ Usage: jarvismax exec <module> <action>")
+        return
+    
+    os_instance = JarvisMaxOS()
+    asyncio.run(os_instance.start())
+    
+    try:
+        result = asyncio.run(os_instance.dispatch(args.module, args.action))
+        print(f"✅ Result: {json.dumps(result, indent=2)}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+    finally:
+        asyncio.run(os_instance.stop())
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="JarvisMax OS — Autonomous AI Operating System",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  jarvismax start                      Start the OS
+  jarvismax status                     Show current status
+  jarvismax revenue                    Show revenue dashboard
+  jarvismax exec business_engine scan  Scan opportunities
+        """
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    
+    # Commands
+    subparsers.add_parser('start', help='Start JarvisMax OS')
+    subparsers.add_parser('stop', help='Stop JarvisMax OS')
+    subparsers.add_parser('status', help='Show OS status')
+    subparsers.add_parser('modules', help='List all modules')
+    subparsers.add_parser('revenue', help='Show revenue dashboard')
+    
+    logs_parser = subparsers.add_parser('logs', help='Show logs')
+    logs_parser.add_argument('module', nargs='?', help='Module name (optional)')
+    
+    exec_parser = subparsers.add_parser('exec', help='Execute module action')
+    exec_parser.add_argument('module', help='Module name')
+    exec_parser.add_argument('action', help='Action to execute')
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return
+    
+    # Dispatch command
+    commands = {
+        'start': cmd_start,
+        'stop': lambda a: print("Use Ctrl+C to stop running instance"),
+        'status': cmd_status,
+        'modules': cmd_modules,
+        'revenue': cmd_revenue,
+        'logs': cmd_logs,
+        'exec': cmd_exec,
+    }
+    
+    cmd_fn = commands.get(args.command)
+    if cmd_fn:
+        cmd_fn(args)
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    main()

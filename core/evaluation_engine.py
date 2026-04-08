@@ -718,6 +718,14 @@ class AgentEvaluationEngine:
         self._detector = WeaknessDetector()
         self._memory = EvaluationMemory(history_path)
 
+    def evaluate_result(self, result: dict | None = None) -> EvaluationReport:
+        """Evaluate a mission result (or run full evaluation if no result given).
+
+        This is the entry point registered with kernel.evaluation.scorer
+        via register_core_evaluator at boot.
+        """
+        return self.evaluate()
+
     def evaluate(self) -> EvaluationReport:
         """Run full evaluation cycle. Returns complete report."""
         # 1. Collect
@@ -786,3 +794,7 @@ class AgentEvaluationEngine:
     @property
     def history(self) -> EvaluationMemory:
         return self._memory
+
+
+# Compat alias — main.py imports EvaluationEngine (legacy name)
+EvaluationEngine = AgentEvaluationEngine

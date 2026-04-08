@@ -14,9 +14,11 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
-router = APIRouter(tags=["monitoring"])
+from api._deps import require_auth
+
+router = APIRouter(tags=["monitoring"], dependencies=[Depends(require_auth)])
 
 _start_time = time.time()
 _WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", "workspace"))

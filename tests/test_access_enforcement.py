@@ -136,8 +136,9 @@ class TestEnforcement:
         """E7: Public paths bypass auth."""
         from api.access_enforcement import check_access, is_public_path
         assert is_public_path("/health")
-        assert is_public_path("/index.html")
+        assert is_public_path("/app.html")
         assert is_public_path("/auth/login")
+        assert not is_public_path("/index.html")  # Removed: orphan page deleted
         assert not is_public_path("/api/v3/missions")
 
         result = check_access(None, path="/health")
@@ -284,17 +285,16 @@ class TestUsageLimits:
 class TestSessionUX:
 
     def test_web_login_overlay(self):
-        """E19: Web has login overlay."""
-        content = (REPO / "static/index.html").read_text()
-        assert 'id="login-overlay"' in content
-        assert 'Access token' in content or 'access token' in content
-        assert 'loginWithToken' in content
+        """E19: Web SPA has login section."""
+        content = (REPO / "static/app.html").read_text()
+        assert 'doLogin' in content
+        assert 'token' in content.lower()
 
     def test_web_logout(self):
-        """E20: Web has logout button."""
-        content = (REPO / "static/index.html").read_text()
+        """E20: Web has logout function."""
+        content = (REPO / "static/app.html").read_text()
         assert 'logout()' in content
-        assert 'Sign out' in content
+        assert 'déconnecter' in content.lower()
 
     def test_mobile_login_screen(self):
         """E21: Mobile login screen exists."""
@@ -305,12 +305,9 @@ class TestSessionUX:
 
     def test_user_friendly_errors(self):
         """E22: Error messages are user-friendly."""
-        content = (REPO / "static/index.html").read_text()
-        assert 'invalid' in content.lower()
-        assert 'try again' in content.lower()
-        # Login screen uses friendly language
-        assert 'Sign in' in content
-        assert 'access token' in content.lower()
+        content = (REPO / "static/app.html").read_text()
+        assert 'invalide' in content.lower()  # French: "Token invalide"
+        assert 'expirée' in content.lower() or 'erreur' in content.lower()
         # Enforcement module has friendly messages
         from api.access_enforcement import get_user_friendly_error
         assert "authentication" in get_user_friendly_error(401).lower()

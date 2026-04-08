@@ -47,9 +47,7 @@ _PUBLIC_PATHS = {
     "/api/v2/health",
     "/api/v3/system/readiness",   # Required: Docker healthcheck + verify_boot.sh call this without auth
     "/",
-    "/index.html",
-    "/dashboard.html",
-    # "/cockpit.html",  # DELETED: dead page removed
+    "/app.html",
     "/auth/login",
     "/auth/token",
     "/docs",
@@ -72,8 +70,9 @@ def is_public_path(path: str) -> bool:
     for prefix in _PUBLIC_PREFIXES:
         if path.startswith(prefix):
             return True
-    # Allow static file extensions
-    if path.endswith((".html", ".css", ".js", ".png", ".ico", ".svg", ".woff2")):
+    # Allow static asset extensions (CSS/JS/images/fonts only — NOT .html)
+    # HTML pages must be explicitly listed in _PUBLIC_PATHS to prevent exposure
+    if path.endswith((".css", ".js", ".png", ".ico", ".svg", ".woff2")):
         return True
     return False
 

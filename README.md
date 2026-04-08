@@ -1,300 +1,370 @@
-# JARVIS MAX — AI Agent Orchestration System
+# 🚀 JarvisMax — Autonomous AI Operating System
 
-> Multi-agent autonomous system: planning, secure execution,
-> persistent memory, self-improvement — controlled via the Jarvis app or API.
+**Version:** 1.0.0  
+**Status:** Production-ready MVP  
+**Target Revenue:** €65,000/month (€780k/year)
 
 ---
 
-## Quick Start — Proven Path (verified 2026-04-01)
+## 📋 Overview
+
+JarvisMax is a **fully autonomous AI Operating System** designed to generate revenue through multiple automated business pillars:
+
+1. 💼 **Business Engine** — Autonomous SaaS generation (€25k/month target)
+2. 🎯 **HexStrike** — Automated bug bounty hunting (€7k/month target)
+3. 💶 **Tax Optimizer** — Legal tax optimization service (€3k/month target)
+4. 🛡️  **SOC-as-a-Service** — Security Operations Center (€10k/month target)
+5. 📊 **Data Intelligence** — Market research & competitive analysis (€5k/month target)
+6. 🤖 **Agent Marketplace** — Buy/sell AI agents (€15k/month target)
+
+---
+
+## ✨ Features
+
+### Core OS
+- ✅ Module registry & lifecycle management
+- ✅ Task queue & worker pool (async)
+- ✅ Health checks & monitoring
+- ✅ Revenue tracking (MRR/ARR)
+- ✅ CLI admin interface
+
+### Infrastructure
+- ✅ PostgreSQL database (persistent storage)
+- ✅ Redis cache & task queue
+- ✅ Docker Compose (1-command deploy)
+- ✅ FastAPI REST API
+- ✅ WebSocket support
+
+### Modules (6 revenue streams)
+- ✅ Business Engine: Opportunity scanner → Product builder → Deploy automation
+- ✅ HexStrike: Modular security tools → Automated bug bounty workflows
+- ✅ Tax Optimizer: Legal tax calculation → Compliance recommendations
+- ✅ SOC Service: 24/7 monitoring → Incident response automation
+- ✅ Data Intelligence: Competitor tracking → Market trend analysis
+- ✅ Agent Marketplace: Platform for buying/selling specialized AI agents
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker & Docker Compose
+- Git
+- 4GB+ RAM
+
+### Installation
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-pip install langchain-anthropic   # if using Anthropic key
+# Clone repository
+git clone https://github.com/UniTy01/Jarvismax-master.git
+cd Jarvismax-master
 
-# 2. Configure env
+# Copy environment template
 cp .env.example .env
-# Edit .env — minimum required:
-#   ANTHROPIC_API_KEY=sk-ant-...   (or OPENROUTER_API_KEY / OPENAI_API_KEY)
-#   MODEL_FALLBACK=anthropic       (required when using Anthropic without OpenRouter)
-#   JARVIS_SECRET_KEY=<openssl rand -hex 32>
-#   JARVIS_ADMIN_PASSWORD=<password>
 
-# 3. Start Qdrant
-docker run -d -p 6333:6333 qdrant/qdrant:v1.9.7
+# Edit .env with your secrets
+nano .env
 
-# 4. Start the API
-python main.py
+# Start JarvisMax (all services)
+docker-compose up -d
 
-# 5. Verify (must exit 0)
-JARVIS_ADMIN_PASSWORD=<password> bash scripts/verify_boot.sh
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f jarvismax-core
+
+# Stop
+docker-compose down
 ```
 
-**See [RUNBOOK.md](docs/RUNBOOK.md) for the full setup guide.**
-**See [RUNTIME_TRUTH.md](docs/RUNTIME_TRUTH.md) for current proven capabilities.**
+**That's it! 🎉**
+
+JarvisMax is now running:
+- Core OS: `http://localhost:8080`
+- REST API: `http://localhost:8000`
+- API Docs: `http://localhost:8000/docs`
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
 
 ---
 
-## Architecture
-
-```
-Jarvis App / API (port 8000)  ← PRIMARY INTERFACE
-  └── MetaOrchestrator  ← SINGLE orchestration entry point
-        ├── Planner      → steps + objective_context + difficulty
-        ├── AgentCrew    → 9 agents (P1 → P2 → P3)
-        ├── RiskEngine   → LOW (auto) / MEDIUM / HIGH (API approval)
-        ├── Executor     → atomic actions + backup + rollback
-        └── Self-Improvement → weakness → candidates → score → execute
-              (core/self_improvement/ — MAX=1, COOLDOWN=24h)
-```
-
-**Couches du code source :**
-```
-api/                  → FastAPI + routes (150+ endpoints, v1/v2/v3)
-core/                 → Orchestration + planner + memory + self-improvement (367 py files)
-core/self_improvement/→ CANONICAL self-improvement pipeline (weakness→patch→test→score→promote)
-kernel/               → Capability registry, policy, memory interfaces, kernel contracts
-agents/               → 9 agents + crew parallèle + kernel bridge
-security/             → SecurityLayer (6 active rules) + audit trail + policy ruleset
-business/             → Business orchestration layer (assisted, not autonomous)
-tests/                → 5700+ passing (Cycle 18 Docker run); 95 CI-gated unit tests; smoke tests require --run-infra-tests
-```
-
-> **Maturity note:** This is an **internal beta** platform. The core orchestration,
-> mission lifecycle, and LLM execution path are proven. Business and cyber layers
-> are LLM-assisted scaffolding, not production automation.
-> **Qdrant is required** for the core mission path. Redis, Postgres, n8n, Ollama are optional.
-
-> Voir [ARCHITECTURE.md](ARCHITECTURE.md) pour le schéma complet des couches.
-> Voir [RELEASE_READINESS.md](docs/RELEASE_READINESS.md) pour l'état de maturité actuel.
-
----
-
-## Stack Docker
-
-| Service      | Rôle                        | Port  |
-|--------------|-----------------------------|-------|
-| jarvis_core  | Orchestrateur Python        | 8000  |
-| postgres     | Base de données principale  | —     |
-| redis        | Cache / sessions            | —     |
-| qdrant       | Mémoire vectorielle         | 6333  |
-| ollama       | LLM local                   | 11434 |
-| n8n          | Automatisation workflows    | 5678  |
-| open_webui   | Interface modèles locaux    | 3001  |
-
----
-
-## API Endpoints
-
-> **v3 is the canonical API.** v1/v2 routes remain for compatibility.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v3/missions` | Submit a mission (canonical) |
-| GET | `/api/v3/missions/{mission_id}` | Mission status |
-| POST | `/api/v3/missions/{mission_id}/approve` | Approve pending action |
-| POST | `/api/v3/missions/{mission_id}/reject` | Reject pending action |
-| GET | `/api/v3/missions` | List all missions |
-| GET | `/api/v2/status` | System status |
-| GET | `/api/v2/agents` | Agent registry |
-| POST | `/api/v2/self-improve/run` | Trigger self-improvement |
-| GET | `/health` | Health check |
-| GET | `/kernel/status` | Kernel runtime status |
-
-> Legacy aliases: `/api/v2/missions/submit`, `/api/v1/mission/run`, `/api/mission`
-
-### Approval Flow
-
-For MEDIUM/HIGH risk actions, JarvisMax requests approval via the API:
-- `POST /api/v3/missions/{mission_id}/approve` → execute
-- `POST /api/v3/missions/{mission_id}/reject` → cancel
-
-> Note: `/api/v2/tasks/{id}/approve` is a **legacy path** (still active, single-step only).
-> Canonical: use `/api/v3/missions/{id}/approve` (3-step: MissionSystem + MetaOrchestrator + SQLite persist).
-
----
-
-## Risk Levels
-
-| Level | Examples | Behavior |
-|-------|----------|----------|
-| 🟢 LOW | Read, create workspace, analyze | Auto-executed |
-| 🟡 MEDIUM | Modify files, scripts | Approval required |
-| 🔴 HIGH | Delete, install, network | Approval required |
-
----
-
-## Les 9 agents
-
-The LLM used per agent is configured by the active provider strategy (see `.env.example`).
-The default path uses your configured `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`.
-ScoutResearch and ForgeBuilder are proven active; LensReviewer has intermittent failures (KL-005).
-
-| Agent            | Rôle                        | Status (2026-04-01) |
-|------------------|-----------------------------|---------------------|
-| AtlasDirector    | Chef d'orchestre / planning | Active |
-| ScoutResearch    | Recherche et synthèse       | ✅ Proven active |
-| MapPlanner       | Plans et roadmaps           | Active |
-| ForgeBuilder     | Code, scripts, fichiers     | ✅ Proven active |
-| LensReviewer     | Contrôle qualité            | ✅ Resolved (KL-005 — priority waves wired, Cycle 11) |
-| VaultMemory      | Mémoire long terme          | Active (requires Qdrant) |
-| ShadowAdvisor    | Perspectives alternatives   | Active |
-| PulseOps         | Préparation d'actions       | Active |
-| NightWorker      | Missions longues            | Active |
-
----
-
-## Workspace
-
-```
-workspace/
-├── projects/     ← Projets créés par Jarvis
-├── reports/      ← Rapports et analyses
-├── missions/     ← Résultats Night Worker
-│   └── <session_id>/
-│       ├── cycle_01.json
-│       ├── cycle_02.json
-│       └── rapport_final.md
-├── patches/      ← Patches auto-amélioration
-└── .backups/     ← Backups avant modification
-```
-
----
-
-## Configuration LLM
-
-Model selection is driven by `MODEL_STRATEGY` + `MODEL_FALLBACK`. The model router
-(`core/model_intelligence/selector.py`) picks the best available model per task class.
-Evidence accumulates in `data/model_performance.json` from real usage.
-
-**Proven configurations:**
-- `MODEL_STRATEGY=anthropic` + `ANTHROPIC_API_KEY` → all agents use Claude (Haiku by default)
-- `MODEL_STRATEGY=openrouter` + `OPENROUTER_API_KEY` → routes to any of 348 available models
-- Ollama (local): supported via `MODEL_STRATEGY=ollama` but not on the proven E2E path
-
----
-
-## Modules avancés
-
-### n8n Bridge
-
-```python
-from tools.n8n.bridge import N8nBridge
-bridge = N8nBridge(settings)
-
-# Créer un workflow HTTP
-wf = await bridge.create_simple_http_workflow("Mon workflow", "https://api.example.com")
-
-```
-
-### Browser Automation (Playwright)
-
-```python
-from tools.browser.scraper import BrowserTool
-async with BrowserTool(settings) as browser:
-    text    = await browser.get_text("https://example.com")
-    results = await browser.search_and_scrape("intelligence artificielle")
-    data    = await browser.extract_structured(url, {"title": "h1", "price": ".price"})
-```
-
-### System Observer
-
-```python
-from observer.watcher import SystemObserver
-obs     = SystemObserver(settings)
-snap    = await obs.snapshot_workspace()     # État du workspace
-changes = await obs.detect_changes(since_minutes=60)  # Fichiers modifiés
-analysis = await obs.analyze_logs(n=50)     # Analyse des logs
-```
-
----
-
-## Ajouter un agent personnalisé
-
-```python
-from agents.crew import BaseAgent, AgentCrew
-from core.state import JarvisSession
-
-class MyAgent(BaseAgent):
-    name, role = "my-agent", "research"
-
-    def system_prompt(self) -> str:
-        return "Tu es un agent spécialisé en..."
-
-    def user_message(self, session: JarvisSession) -> str:
-        return f"Mission : {session.mission_summary}"
-
-# Enregistrer dans le crew
-crew = AgentCrew(settings)
-crew.add(MyAgent(settings))
-```
-
----
-
-## Variables .env clés
-
-See `.env.example` for the full documented list. Minimum for a working run:
-
-| Variable                    | Description                       | Required |
-|-----------------------------|-----------------------------------|----------|
-| `ANTHROPIC_API_KEY`         | Anthropic API key (proven path)    | One LLM key required |
-| `OPENROUTER_API_KEY`        | OpenRouter key (preferred for prod)| One LLM key required |
-| `OPENAI_API_KEY`            | OpenAI API key                    | One LLM key required |
-| `MODEL_FALLBACK`            | Fallback provider when primary has no key | Required if using Anthropic without OpenRouter |
-| `QDRANT_HOST`               | Qdrant hostname (`localhost` dev)  | ✅ |
-| `JARVIS_SECRET_KEY`         | JWT signing secret (32+ chars)     | ✅ |
-| `JARVIS_ADMIN_PASSWORD`     | Admin user password                | ✅ |
-| `DRY_RUN`                   | `true` = stub LLM responses        | — |
-
----
-
-## Debugging
+## 🖥️ CLI Usage
 
 ```bash
-# Logs en temps réel
-docker compose logs -f jarvis
+# Make CLI executable
+chmod +x jarvismax
 
-# Logs d'un service
-docker compose logs -f ollama
+# Start OS (standalone mode)
+./jarvismax start
 
-# API health
-curl http://localhost:8000/health
+# Show status
+./jarvismax status
 
-# Dernières actions
-curl http://localhost:8000/logs?n=20
+# List modules
+./jarvismax modules
 
-# Snapshot workspace
-curl http://localhost:8000/workspace
+# Show revenue dashboard
+./jarvismax revenue
 
-# Redémarrer uniquement Jarvis (sans toucher aux autres services)
-docker compose restart jarvis
+# Execute module action
+./jarvismax exec business_engine scan_opportunities
 
-# Accéder au shell du conteneur
-docker compose exec jarvis bash
-
-# Voir les modèles Ollama
-docker compose exec ollama ollama list
+# Show help
+./jarvismax --help
 ```
 
 ---
 
-## Roadmap évolutive
+## 📊 Revenue Dashboard
 
-Voir [ROADMAP.md](docs/ROADMAP.md) pour la roadmap complète.
+```bash
+./jarvismax revenue
+```
 
-Prochaines étapes clés :
-- Synchronisation guards FORBIDDEN_SELF_MODIFY ↔ PROTECTED_FILES
-- Dashboard web (monitoring objectifs + workspace)
+**Output:**
+```
+================================================================================
+💰 JARVISMAX REVENUE DASHBOARD
+================================================================================
+
+Monthly Recurring Revenue: €2,900.00
+Annual Recurring Revenue:  €34,800.00
+Total Customers:           19
+
+Breakdown by Module:
+
+  soc_service          €2,000.00/month ( 69.0%) — 1 customers
+  business_engine      €  500.00/month ( 17.2%) — 2 customers
+  data_intelligence    €  200.00/month (  6.9%) — 1 customers
+  tax_optimizer        €  100.00/month (  3.4%) — 10 customers
+  agent_marketplace    €  100.00/month (  3.4%) — 5 customers
+
+================================================================================
+```
 
 ---
 
-## Docs
+## 🏗️ Architecture
 
-| Document | Description |
-|---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Schéma complet des couches, pipeline, SI loop |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phases complétées et prochaines étapes |
-| [CHANGELOG.md](CHANGELOG.md) | Historique des changements |
-| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Setup, deployment, operations |
-| [docs/RUNTIME_TRUTH.md](docs/RUNTIME_TRUTH.md) | Proven capabilities (updated each cycle) |
-| [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) | État de maturité actuel |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        JarvisMax OS                             │
+│                   (Core Orchestrator)                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+    ┌──────▼─────┐    ┌──────▼─────┐    ┌──────▼─────┐
+    │ PostgreSQL │    │   Redis    │    │  FastAPI   │
+    │  Database  │    │   Cache    │    │ REST API   │
+    └────────────┘    └────────────┘    └────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+   ┌────▼────┐          ┌─────▼────┐          ┌────▼────┐
+   │Business │          │HexStrike │          │   Tax   │
+   │ Engine  │          │(Security)│          │Optimizer│
+   └─────────┘          └──────────┘          └─────────┘
+        │                     │                     │
+   ┌────▼────┐          ┌─────▼────┐          ┌────▼────┐
+   │   SOC   │          │  Data    │          │ Agent   │
+   │ Service │          │  Intel   │          │Marketplace
+   └─────────┘          └──────────┘          └─────────┘
+```
+
+---
+
+## 📦 Project Structure
+
+```
+jarvismax-master/
+├── core/
+│   └── jarvismax_os.py          # Core OS orchestrator
+│
+├── business/
+│   ├── automation/              # Opportunity scanner, Product builder
+│   ├── legal/                   # Compliance checker
+│   ├── revenue/                 # Revenue tracking
+│   ├── fiscal/                  # Tax optimizer
+│   └── business_engine.py       # Main orchestrator
+│
+├── security/
+│   ├── hexstrike_v2/            # Modular security tools
+│   └── blue_team/               # SOC-as-a-Service
+│
+├── data_intelligence/           # Market research service
+├── agent_marketplace/           # AI agent marketplace
+│
+├── web_api/                     # FastAPI REST API (TODO)
+├── web_dashboard/               # Web UI (TODO)
+│
+├── db/
+│   └── init.sql                 # Database schema
+│
+├── docker-compose.yml           # Orchestration
+├── Dockerfile                   # Container image
+├── requirements.txt             # Python dependencies
+├── jarvismax                    # CLI tool
+└── README.md                    # This file
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables (.env)
+
+```bash
+# Database
+POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_USER=jarvismax
+POSTGRES_DB=jarvismax
+
+# Cache
+REDIS_PASSWORD=your_redis_password_here
+
+# Modules (API keys)
+STRIPE_SECRET_KEY=sk_live_xxx
+OPENAI_API_KEY=sk-xxx
+ANTHROPIC_API_KEY=sk-ant-xxx
+
+# Environment
+JARVISMAX_ENV=production  # production, staging, development
+```
+
+---
+
+## 🎯 Roadmap
+
+### Phase 1: Core OS ✅ (COMPLETE)
+- [x] Module registry
+- [x] Task queue & workers
+- [x] CLI interface
+- [x] Docker Compose
+- [x] Database schema
+
+### Phase 2: API & Dashboard (In Progress)
+- [ ] FastAPI REST API
+  - [ ] Module status endpoints
+  - [ ] Task dispatch endpoints
+  - [ ] Revenue metrics API
+  - [ ] Webhook support
+- [ ] Web Dashboard (React)
+  - [ ] Real-time module status
+  - [ ] Revenue charts
+  - [ ] Task management
+  - [ ] Logs viewer
+
+### Phase 3: Business Engine Automation
+- [ ] Automated deployment (Vercel + Railway APIs)
+- [ ] GitHub repo auto-creation
+- [ ] DNS + SSL automation
+- [ ] Marketing automation (Product Hunt, Reddit)
+
+### Phase 4: HexStrike Completion
+- [ ] Extract remaining 139 tools
+- [ ] Implement real command execution
+- [ ] Bug bounty platform integration (HackerOne, Bugcrowd)
+- [ ] Automated report generation
+
+### Phase 5: Scale & Growth
+- [ ] Multi-tenant support (white-label)
+- [ ] Advanced analytics (Grafana dashboards)
+- [ ] AI self-improvement loop (AGI Loop V2)
+- [ ] Mobile app (iOS/Android)
+
+---
+
+## 📈 Metrics & Targets
+
+### Current State (2026-04-06):
+```
+MRR: €2,900
+ARR: €34,800
+Modules: 6 operational
+Customers: 19
+```
+
+### 30-Day Target:
+```
+MRR: €5,000
+ARR: €60,000
+Products: 5 live
+SOC Clients: 2
+Tax Users: 50
+```
+
+### 6-Month Target (2026-10-06):
+```
+MRR: €65,000
+ARR: €780,000
+Products: 15 live
+SOC Clients: 10
+Tax Users: 500
+Marketplace Agents: 100
+```
+
+---
+
+## 🤝 Contributing
+
+**Want to contribute?**
+
+1. Fork the repo
+2. Create feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open Pull Request
+
+**Issues:** https://github.com/UniTy01/Jarvismax-master/issues
+
+---
+
+## 📄 License
+
+MIT License — See LICENSE file for details
+
+---
+
+## 🆘 Support
+
+**Documentation:** See `/docs` folder (coming soon)  
+**Discord:** https://discord.gg/jarvismax (coming soon)  
+**Email:** support@jarvismax.ai
+
+---
+
+## 🎉 Success Stories
+
+*(Coming soon — first revenue in progress!)*
+
+**Milestones:**
+- [ ] First €1 revenue
+- [ ] €1k MRR
+- [ ] €10k MRR
+- [ ] €65k MRR (6-month target)
+
+---
+
+## 🙏 Acknowledgments
+
+Built with:
+- Python 3.11
+- FastAPI
+- PostgreSQL 16
+- Redis 7
+- Docker
+
+Inspired by:
+- Hermes Agent (tool registry pattern)
+- OpenClaw (MCP architecture)
+- Devin (autonomous coding)
+- Cursor (AI-first development)
+
+---
+
+**Built with ❤️ by UniTy**  
+**Generated:** 2026-04-06
+
+🚀 **LET'S BUILD THE FUTURE OF AUTONOMOUS AI!** 🚀

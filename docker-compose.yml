@@ -1,299 +1,75 @@
-# ================================================================
-# JARVIS MAX — Stack complète
-# Démarrage : docker compose up -d
-# Note : l attribut "version" est obsolète depuis Compose v2 — supprimé.
-# ================================================================
-
-networks:
-  jarvis_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-
-volumes:
-  postgres_data:
-  redis_data:
-  qdrant_data:
-  ollama_data:
-  n8n_data:
-  open_webui_data:
-  caddy_data:      # TLS certificates + ACME state (persist across restarts)
-  caddy_config:    # Caddy runtime config
+version: '3.8'
 
 services:
-
-  # ── PostgreSQL ────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: jarvis_postgres
-    restart: unless-stopped
+    container_name: jarvismax-postgres
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER:-jarvis}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB:       ${POSTGRES_DB:-jarvis}
+      POSTGRES_DB: jarvismax
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jarvismax2025}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
-      - ./docker/postgres/init_n8n.sh:/docker-entrypoint-initdb.d/01_n8n_db.sh:ro
-    networks: [jarvis_net]
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 128m
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jarvis} -d ${POSTGRES_DB:-jarvis}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-  # ── Redis ─────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: jarvis_redis
-    restart: unless-stopped
-    command: >
-      redis-server
-      --requirepass ${REDIS_PASSWORD}
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-    volumes: [redis_data:/data]
-    networks: [jarvis_net]
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 64m
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U jarvis"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - jarvismax-network
 
-  # ── Qdrant (mémoire vectorielle) ──────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: jarvismax-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - jarvismax-network
+
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: jarvis_qdrant
-    restart: unless-stopped
-    environment:
-      QDRANT__SERVICE__HTTP_PORT: 6333
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
-      QDRANT__LOG_LEVEL: WARN
-    volumes: [qdrant_data:/qdrant/storage]
-    networks: [jarvis_net]
-    # Port exposé UNIQUEMENT en dev local (commenter en production).
-    # En production, Qdrant est interne au réseau Docker (jarvis_net).
-    # Pour accès admin ponctuel : docker exec -it jarvis_qdrant ...
-    # ports:
-    #   - "127.0.0.1:6333:6333"  # décommenter pour debug local uniquement
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-        reservations:
-          memory: 128m
-    healthcheck:
-      # qdrant image has bash but not wget/curl — use TCP dev/tcp check
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6333 && echo ok' 2>/dev/null || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-
-  # ── Ollama (LLM local) ────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: jarvis_ollama
-    restart: unless-stopped
-    volumes: [ollama_data:/root/.ollama]
-    networks: [jarvis_net]
-    # Port exposé UNIQUEMENT pour debug local.
-    # En production, Ollama est interne (accessible via http://ollama:11434).
-    # ports:
-    #   - "127.0.0.1:11434:11434"  # décommenter pour debug local uniquement
-    # Limite mémoire : évite qu'Ollama monopolise toute la RAM
-    # Ajuster selon la RAM disponible (min 6GB pour un modèle 7B)
-    deploy:
-      resources:
-        limits:
-          memory: ${OLLAMA_MEMORY_LIMIT:-8g}
-        reservations:
-          memory: 512m
-        # Décommenter pour GPU NVIDIA :
-        # reservations:
-        #   devices:
-        #     - driver: nvidia
-        #       count: 1
-        #       capabilities: [gpu]
-    healthcheck:
-      # ollama image has ollama CLI but not curl — use 'ollama list' as health probe
-      test: ["CMD-SHELL", "ollama list > /dev/null 2>&1 || exit 1"]
-      interval: 30s
-      timeout: 15s
-      retries: 8
-      start_period: 45s
-
-  # ── n8n (automatisation workflows) ───────────────────────
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: jarvis_n8n
-    restart: unless-stopped
-    environment:
-      DB_TYPE:                   postgresdb
-      DB_POSTGRESDB_HOST:        postgres
-      DB_POSTGRESDB_PORT:        5432
-      DB_POSTGRESDB_DATABASE:    n8n
-      DB_POSTGRESDB_USER:        ${POSTGRES_USER:-jarvis}
-      DB_POSTGRESDB_PASSWORD:    ${POSTGRES_PASSWORD}
-      N8N_ENCRYPTION_KEY:        ${N8N_ENCRYPTION_KEY}
-      N8N_HOST:                  ${N8N_EXTERNAL_HOST:-localhost}
-      N8N_PORT:                  5678
-      N8N_PROTOCOL:              http
-      WEBHOOK_URL:               http://${N8N_EXTERNAL_HOST:-localhost}:5678/
-      N8N_BASIC_AUTH_ACTIVE:     true
-      N8N_BASIC_AUTH_USER:       ${N8N_BASIC_AUTH_USER:-admin}
-      N8N_BASIC_AUTH_PASSWORD:   ${N8N_BASIC_AUTH_PASSWORD}
-      EXECUTIONS_DATA_PRUNE:     true
-      EXECUTIONS_DATA_MAX_AGE:   336
-      GENERIC_TIMEZONE:          Europe/Paris
-      N8N_LOG_LEVEL:             warn
-    volumes: [n8n_data:/home/node/.n8n]
-    networks: [jarvis_net]
-    ports:
-      - "5678:5678"
-    deploy:
-      resources:
-        limits:
-          memory: 1g
-        reservations:
-          memory: 256m
-    healthcheck:
-      # n8n image has wget but not curl
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz 2>/dev/null | grep -q ok || exit 1"]
-      interval: 30s
-      timeout: 15s
-      retries: 8
-      start_period: 90s
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  # ── Open WebUI (interface modèles locaux) ─────────────────
-  open_webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: jarvis_webui
-    restart: unless-stopped
-    environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-      WEBUI_SECRET_KEY: ${JARVIS_SECRET_KEY}
-    volumes: [open_webui_data:/app/backend/data]
-    networks: [jarvis_net]
-    ports:
-      - "3001:8080"
-    deploy:
-      resources:
-        limits:
-          memory: 2g
-        reservations:
-          memory: 512m
-    depends_on:
-      ollama:
-        condition: service_healthy
-
-  # ── Langfuse (observabilité LLM, self-hosted) ────────────
-  langfuse:
-    image: langfuse/langfuse:latest
-    container_name: jarvis_langfuse
-    restart: unless-stopped
-    environment:
-      DATABASE_URL:       postgresql://${POSTGRES_USER:-jarvis}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
-      NEXTAUTH_SECRET:    ${LANGFUSE_NEXTAUTH_SECRET:-changeme-langfuse-secret-32chars0}
-      SALT:               ${LANGFUSE_SALT:-changeme-langfuse-salt-32chars000}
-      NEXTAUTH_URL:       http://localhost:3002
-      TELEMETRY_ENABLED:  "false"
-      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
-    networks: [jarvis_net]
-    ports:
-      - "3002:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/public/health 2>/dev/null | grep -q ok || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 8
-      start_period: 60s
-    profiles: ["observability"]   # Démarrer avec: docker compose --profile observability up
-
-  # ── Caddy (TLS reverse proxy) ─────────────────────────────
-  caddy:
-    image: caddy:2-alpine
-    container_name: jarvis_caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"       # ACME HTTP-01 challenge + HTTP→HTTPS redirect
-      - "443:443"     # HTTPS
-      - "443:443/udp" # HTTP/3 (QUIC)
+    container_name: jarvismax-qdrant
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data      # Persists TLS certs across container restarts
-      - caddy_config:/config  # Caddy runtime config
-    networks: [jarvis_net]
-    depends_on:
-      jarvis:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-        reservations:
-          memory: 32m
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - jarvismax-network
 
-  # ── Jarvis Core ───────────────────────────────────────────
-  jarvis:
+  api:
     build:
       context: .
-      dockerfile: docker/Dockerfile
-    container_name: jarvis_core
-    restart: unless-stopped
-    env_file: .env
+      dockerfile: Dockerfile
+    container_name: jarvismax-api
     environment:
-      # Chemins internes Docker
-      WORKSPACE_DIR:  /app/workspace
-      LOGS_DIR:       /app/logs
-      JARVIS_ROOT:    /app
-      # Hôtes services
-      POSTGRES_HOST:  postgres
-      REDIS_HOST:     redis
-      QDRANT_HOST:    qdrant
-      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
-      OLLAMA_HOST:    http://ollama:11434
-      N8N_HOST:       http://n8n:5678
-      LANGFUSE_HOST:  http://langfuse:3000
-      # Mode d'exécution : local (2 agents max) ou vps (5 agents max)
-      JARVIS_MODE:    ${JARVIS_MODE:-local}
-    deploy:
-      resources:
-        limits:
-          memory: ${JARVIS_MEMORY_LIMIT:-1g}
-        reservations:
-          memory: 256m
+      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD:-jarvismax2025}@postgres:5432/jarvismax
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      PYTHONUNBUFFERED: 1
     volumes:
-      - ./:/app                        # Code source live (évite rebuild à chaque modif)
-      - ./workspace:/app/workspace     # Persistance workspace
-      - ./logs:/app/logs               # Persistance logs
-    networks: [jarvis_net]
+      - ./:/app
+      - ~/.jarvismax:/root/.jarvismax
     ports:
-      # Bind to loopback only — external traffic goes through Caddy (port 443).
-      # Remove the 127.0.0.1: prefix if you need direct VPN/Tailscale access.
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -301,16 +77,70 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
-      # n8n est optionnel : jarvis fonctionne sans lui au démarrage
-      n8n:
-        condition: service_started
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 90s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - jarvismax-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jarvismax-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - jarvismax-network
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jarvismax-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - jarvismax-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: jarvismax-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - jarvismax-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  ollama_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  jarvismax-network:
+    driver: bridge

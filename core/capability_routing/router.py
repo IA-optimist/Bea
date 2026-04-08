@@ -91,6 +91,29 @@ def route_mission(
     except Exception:
         pass  # fail-open
 
+    # Enrich decisions with domain skill context (fail-open)
+    try:
+        from core.skills.domain_skill_router import resolve_via_domain_routers
+        # Ensure domain routers are registered (import triggers registration)
+        import core.skills.security_skill_router  # noqa: F401
+        for d in decisions:
+            ctx = resolve_via_domain_routers(d.capability_id, goal)
+            if ctx and ctx.get("matched"):
+                d.metadata["domain_routing"] = ctx
+                log.info("domain_routing.resolved",
+                         capability=d.capability_id,
+                         router=ctx.get("router", "unknown"),
+                         domain=ctx.get("domain", "unknown"),
+                         skills_count=ctx.get("skills_count", 0),
+                         top_skill=ctx["top_skills"][0]["name"] if ctx.get("top_skills") else None,
+                         blocked=ctx.get("blocked", False))
+                if ctx.get("blocked"):
+                    d.reason = f"BLOCKED: {ctx['block_reason']}"
+                    d.metadata["blocked"] = True
+                    d.metadata["block_reason"] = ctx["block_reason"]
+    except Exception as _dr_err:
+        log.debug("domain_routing.enrichment_failed", err=str(_dr_err)[:80])
+
     elapsed_ms = (time.time() - start) * 1000
     log.info("capability_routing.complete",
              decisions=len(decisions),

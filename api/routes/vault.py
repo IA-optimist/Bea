@@ -27,9 +27,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from api._deps import require_auth
+
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/vault", tags=["vault"])
+router = APIRouter(prefix="/vault", tags=["vault"], dependencies=[Depends(require_auth)])
 
 
 # ── Request/Response Models ──

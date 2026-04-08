@@ -168,6 +168,8 @@ class VaultMemory:
         self._entries:   dict[str, VaultEntry] = {}
         self._fps:       set[str] = set()          # fingerprints
         self._use_sqlite: bool = False
+        self._use_pg:     bool = False
+        self._pg_dsn:   str | None = None
         self._load()
 
     # ── API publique ──────────────────────────────────────────────────────────
@@ -423,13 +425,24 @@ class VaultMemory:
             self._fps.discard(e.fingerprint)
 
     def _load(self) -> None:
-        # Detect temp/test paths → skip SQLite, use JSON only
+        # Detect temp/test paths → skip DB, use JSON only
         import tempfile as _tf
         _tmp_dir = str(_tf.gettempdir()).replace("\\", "/").lower()
         _vpath   = str(self._path).replace("\\", "/").lower()
         _is_temp = _vpath.startswith(_tmp_dir) or "/temp/" in _vpath or "/tmp/" in _vpath
 
-        # Try SQLite only for real workspace paths
+        # Try Postgres first (production)
+        if not _is_temp:
+            try:
+                from config.settings import Settings
+                dsn = Settings().database_url
+                if dsn:
+                    self._load_pg(dsn)
+                    return
+            except Exception as exc:
+                log.debug("vault_pg_load_skipped", err=str(exc)[:80])
+
+        # Try SQLite for real workspace paths
         if not _is_temp:
             try:
                 from core.db import get_db, loads as db_loads
@@ -484,8 +497,84 @@ class VaultMemory:
         except Exception as exc:
             log.warning("vault_memory_load_failed", err=str(exc))
 
+    # ── Postgres paths ──────────────────────────────────────────────────────
+
+    def _load_pg(self, dsn: str) -> None:
+        """Load vault entries from Postgres."""
+        import psycopg2, psycopg2.extras
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = True
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            "SELECT * FROM vault_entries WHERE valid=1 ORDER BY confidence DESC"
+        )
+        for row in cur.fetchall():
+            try:
+                d = {
+                    "id":          row["id"],
+                    "type":        row["type"],
+                    "content":     row["content"],
+                    "source":      row["source"],
+                    "confidence":  row["confidence"],
+                    "usage_count": row["usage_count"] or 0,
+                    "last_used":   row["last_used"],
+                    "tags":        json.loads(row["tags"]) if row.get("tags") else [],
+                    "related_to":  json.loads(row["related_to"]) if row.get("related_to") else [],
+                    "valid":       bool(row["valid"]),
+                    "created_at":  row["created_at"],
+                    "expires_at":  row["expires_at"],
+                }
+                entry = VaultEntry.from_dict(d)
+                self._entries[entry.id] = entry
+                self._fps.add(entry.fingerprint)
+            except Exception:
+                pass
+        cur.close()
+        conn.close()
+        self._use_pg = True
+        self._pg_dsn = dsn
+        log.debug("vault_memory_loaded_pg", count=len(self._entries))
+
+    def _save_pg(self) -> None:
+        """Persist vault entries to Postgres."""
+        try:
+            import psycopg2
+            conn = psycopg2.connect(self._pg_dsn)
+            conn.autocommit = True
+            cur = conn.cursor()
+            for entry in self._entries.values():
+                cur.execute(
+                    """INSERT INTO vault_entries
+                       (id, type, content, source, confidence, usage_count, last_used,
+                        tags, related_to, valid, created_at, expires_at)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                       ON CONFLICT (id) DO UPDATE SET
+                        type=EXCLUDED.type, content=EXCLUDED.content,
+                        source=EXCLUDED.source, confidence=EXCLUDED.confidence,
+                        usage_count=EXCLUDED.usage_count, last_used=EXCLUDED.last_used,
+                        tags=EXCLUDED.tags, related_to=EXCLUDED.related_to,
+                        valid=EXCLUDED.valid, expires_at=EXCLUDED.expires_at""",
+                    (
+                        entry.id, entry.type, entry.content, entry.source,
+                        entry.confidence, entry.usage_count, entry.last_used,
+                        json.dumps(entry.tags), json.dumps(entry.related_to),
+                        1 if entry.valid else 0,
+                        entry.created_at, entry.expires_at,
+                    )
+                )
+            cur.close()
+            conn.close()
+            log.debug("vault_memory_saved_pg", count=len(self._entries))
+        except Exception as exc:
+            log.warning("vault_pg_save_failed", err=str(exc)[:80])
+            self._save_sqlite()   # fallback
+
+    # ── Save dispatcher ──────────────────────────────────────────────────────
+
     def _save(self) -> None:
-        if getattr(self, "_use_sqlite", False):
+        if getattr(self, "_use_pg", False):
+            self._save_pg()
+        elif getattr(self, "_use_sqlite", False):
             self._save_sqlite()
         else:
             self._save_json()

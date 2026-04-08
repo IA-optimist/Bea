@@ -359,7 +359,22 @@ class OrchestrationBridge:
             try:
                 from core.meta_orchestrator import get_meta_orchestrator
                 _orch = get_meta_orchestrator()
-                _orch.resolve_approval(mission_id, granted=True, reason=note or "Approved via bridge")
+                import asyncio
+                _coro = _orch.resolve_approval(mission_id, granted=True, reason=note or "Approved via bridge")
+                # Schedule the coroutine on the running event loop (non-blocking)
+                try:
+                    _loop = asyncio.get_running_loop()
+                    asyncio.ensure_future(_coro, loop=_loop)
+                except RuntimeError:
+                    # No running loop — create one in a thread
+                    import threading
+                    def _run():
+                        _l = asyncio.new_event_loop()
+                        try:
+                            _l.run_until_complete(_coro)
+                        finally:
+                            _l.close()
+                    threading.Thread(target=_run, daemon=True).start()
                 log.info("bridge.approve_meta_resolved", mission_id=mission_id)
             except Exception as _me:
                 log.debug("bridge.approve_meta_skip", err=str(_me)[:80])
@@ -403,8 +418,21 @@ class OrchestrationBridge:
             try:
                 from core.meta_orchestrator import get_meta_orchestrator
                 _orch = get_meta_orchestrator()
-                _orch.resolve_approval(mission_id, granted=False,
+                import asyncio
+                _coro = _orch.resolve_approval(mission_id, granted=False,
                                        reason=note or "Rejected via bridge")
+                try:
+                    _loop = asyncio.get_running_loop()
+                    asyncio.ensure_future(_coro, loop=_loop)
+                except RuntimeError:
+                    import threading
+                    def _run():
+                        _l = asyncio.new_event_loop()
+                        try:
+                            _l.run_until_complete(_coro)
+                        finally:
+                            _l.close()
+                    threading.Thread(target=_run, daemon=True).start()
                 log.info("bridge.reject_meta_resolved", mission_id=mission_id)
             except Exception as _me:
                 log.debug("bridge.reject_meta_skip", err=str(_me)[:80])

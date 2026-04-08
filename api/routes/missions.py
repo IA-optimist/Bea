@@ -12,6 +12,7 @@ from typing import Annotated, Any, Optional
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
 from api._deps import (
@@ -102,6 +103,7 @@ async def submit_task(
         _running_missions.add(result.mission_id)
 
     async def _run_mission():
+        import time; open("/tmp/jarvis_trace.log", "a").write(f"[TRACE_B] RUN_MISSION_ENTER {time.time()}\n")
         _mission_start = time.time()
         try:
             from core.mission_system import is_capability_query, CAPABILITY_DEMO
@@ -346,6 +348,27 @@ async def submit_task(
                     else "meta_orchestrator"
                 )
             _final = _extract_final_output(_final)
+
+            # Niveau 0b: quality check — if _final is workspace noise (listing files
+            # instead of answering the question), prefer agent_outputs synthesis.
+            # Workspace noise pattern: contains "fichier(s)" or "Workspace :" in
+            # the first 500 chars, which indicates repo_inspector injection, not
+            # a real answer. The actual LLM responses are in agent_outputs.
+            if _final and ("fichier(s)" in _final[:500] or "Workspace :" in _final[:500]):
+                _workspace_agent_outputs = _extract_agent_outputs(result.mission_id)
+                # Filter out vault-memory and internal agents — keep real analysis agents
+                _useful = {k: v for k, v in _workspace_agent_outputs.items()
+                           if k not in ("vault-memory", "pulse-ops", "observer")
+                           and v and len(str(v).strip()) >= 10}
+                if _useful:
+                    _parts = []
+                    for _aname, _aout in _useful.items():
+                        if _aout and str(_aout).strip():
+                            _parts.append(f"## {_aname}\n{str(_aout)[:1500]}")
+                    if _parts:
+                        _final = "# Résultats de mission\n\n" + "\n\n".join(_parts)
+                        _final_source = "agent_outputs_preferred"
+                        _fallback_level = 0
 
             # Niveau 1 : synthétiser depuis les agent_outputs bruts (MissionStateStore)
             if not _final or not _final.strip():
@@ -612,6 +635,7 @@ async def submit_task(
             _running_missions.discard(result.mission_id)
 
     background_tasks.add_task(_run_mission)
+    with open("/tmp/jarvis_trace.log", "a") as _tf: _tf.write(f"[TRACE_A] ADD_TASK_CALLED {time.time()}\n")
 
     try:
         from api.event_emitter import emit_mission_created
@@ -619,7 +643,7 @@ async def submit_task(
     except Exception as e:
         log.debug("emit_mission_created_skipped", mission=result.mission_id, err=str(e)[:80])
 
-    return {"ok": True, "data": {
+    _response_data = {"ok": True, "data": {
         "task_id":    result.mission_id,
         "mission_id": result.mission_id,
         "status":     result.status,
@@ -627,6 +651,7 @@ async def submit_task(
         "created_at": result.created_at,
     }}
 
+    return JSONResponse(content=_response_data, headers={"X-Jarvis-Stack": "jarvis_core", "X-Trace-Time": str(time.time())})
 
 @router.get("/api/v2/task/{task_id}")
 async def get_task(task_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
@@ -963,8 +988,12 @@ async def legacy_missions(
 
 @router.get("/api/stats", deprecated=True)
 async def legacy_stats():
-    """Alias v1 → GET /api/v2/metrics"""
-    return await get_metrics()
+    """Alias v1 → GET /api/v2/metrics. Used by mobile."""
+    try:
+        ms = _get_mission_system()
+        return {"ok": True, "data": {"missions": ms.stats()}}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ── Task approve/reject (Flutter uses these) ──────────────────

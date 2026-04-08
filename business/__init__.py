@@ -1,21 +1,14 @@
 """
-JARVIS BUSINESS LAYER
-Extension business sur le Core JarvisMax.
+Business Engine — Autonomous SaaS Generation & Revenue Automation
 
-Modules :
-    venture     — Venture Builder (analyse d'opportunités)
-    offer       — Offer Designer (design d'offre commerciale)
-    workflow    — Workflow Architect (architecture de workflows)
-    saas        — SaaS Builder (blueprint MVP)
-    trade_ops   — Trade Ops (agent IA métier, ex: chauffagiste)
-    meta_builder— Meta Builder (clonage de systèmes multi-agents)
+Architecture:
+├── automation/        # Product discovery & building
+├── legal/            # Compliance & legal checks
+├── revenue/          # Monetization & payments
+└── templates/        # SaaS templates
 
-Point d'entrée recommandé :
-    from business.layer import BusinessLayer, get_business_layer
+Target: €25,000/month in 6 months
+Strategy: Automated micro-SaaS portfolio + bug bounty
 """
 
-def get_business_layer(settings):
-    from business.layer import BusinessLayer
-    return BusinessLayer(settings)
-
-__all__ = ["get_business_layer"]
+__version__ = "1.0.0"

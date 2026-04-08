@@ -18,10 +18,15 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 from __future__ import annotations
 
 import asyncio
-import json as _json
 import os
 import time
 from pathlib import Path
+
+# ── Feature flags ─────────────────────────────────────────────
+# ENABLE_STUB_ROUTES=true to mount stub/unimplemented route handlers
+# (finance, venture, playbooks, browser, voice). Default: false.
+# When false, these endpoints return 404 instead of fake 200 with empty data.
+_ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
 from typing import Any, Optional
 
 import structlog
@@ -36,34 +41,6 @@ from pydantic import BaseModel, Field
 
 log = structlog.get_logger()
 
-
-def _extract_final_output(text: str) -> str:
-    """
-    Post-processing du final_output : si le texte ressemble à du JSON brut,
-    le convertit en texte lisible. Sinon, retourne tel quel.
-    """
-    if not text:
-        return text
-    stripped = text.strip()
-    if "{" in stripped and "}" in stripped:
-        try:
-            data = _json.loads(stripped)
-            # Extraire les champs textuels les plus probables
-            readable = (
-                data.get("result")
-                or data.get("output")
-                or data.get("response")
-                or data.get("content")
-                or data.get("reasoning")
-                or data.get("answer")
-                or data.get("text")
-                or data.get("message")
-                or str(data)
-            )
-            return f"[Résultat de Jarvis]\n{str(readable)[:2000]}"
-        except (_json.JSONDecodeError, Exception):
-            pass
-    return text
 
 
 # ── App ───────────────────────────────────────────────────────
@@ -179,12 +156,13 @@ try:
 except Exception as _e:
     log.warning("mission_control_router_unavailable", err=str(_e))
 
-# ── Import du routeur Browser (Phase 8) ───────────────────────
-try:
-    from api.routes.browser import router as browser_router
-    app.include_router(browser_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
+# ── Import du routeur Browser (Phase 8) — STUB ───────────────
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.browser import router as browser_router
+        app.include_router(browser_router)
+    except Exception as _e:
+        log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Import du routeur Routing Diagnostics ──────────────────────
 try:
@@ -201,12 +179,13 @@ try:
 except Exception as _e:
     log.warning("monitoring_router_unavailable", err=str(_e))
 
-# ── Import du routeur Voice & Call (Phase 10) ──────────────────
-try:
-    from api.routes.voice import router as voice_router
-    app.include_router(voice_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
+# ── Import du routeur Voice & Call (Phase 10) — STUB ──────────
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.voice import router as voice_router
+        app.include_router(voice_router)
+    except Exception as _e:
+        log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Import du routeur Objective Engine ─────────────────────────
 try:
@@ -300,11 +279,21 @@ try:
 except Exception as _e:
     log.warning("system_router_unavailable", err=str(_e))
 
+# Finance — gated behind ENABLE_STUB_ROUTES feature flag.
+# Webhook router is always mounted (Stripe needs to call it externally),
+# with signature verification as auth.
 try:
-    from api.routes.finance import router as finance_router
-    app.include_router(finance_router)
+    from api.routes.finance import webhook_router as finance_webhook_router
+    app.include_router(finance_webhook_router)  # Webhook: no auth (Stripe signature verification)
 except Exception as _e:
-    log.warning("finance_router_unavailable", err=str(_e))
+    log.warning("finance_webhook_router_unavailable", err=str(_e))
+
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.finance import router as finance_router
+        app.include_router(finance_router)
+    except Exception as _e:
+        log.warning("finance_router_unavailable", err=str(_e))
 
 try:
     from api.routes.missions import router as missions_v3_router
@@ -418,11 +407,13 @@ try:
 except Exception as _e:
     log.warning("plan_runner_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.playbooks import router as playbooks_router
-    app.include_router(playbooks_router)
-except Exception as _e:
-    log.warning("playbooks_router_unavailable", err=str(_e))
+# Playbooks — STUB (static templates, never executed)
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.playbooks import router as playbooks_router
+        app.include_router(playbooks_router)
+    except Exception as _e:
+        log.warning("playbooks_router_unavailable", err=str(_e))
 
 try:
     from api.routes.economic import router as economic_router
@@ -442,11 +433,13 @@ try:
 except Exception as _e:
     log.warning("execution_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.venture import router as venture_router
-    app.include_router(venture_router)
-except Exception as _e:
-    log.warning("venture_router_unavailable", err=str(_e))
+# Venture — STUB (0 experiments, static data)
+if _ENABLE_STUB_ROUTES:
+    try:
+        from api.routes.venture import router as venture_router
+        app.include_router(venture_router)
+    except Exception as _e:
+        log.warning("venture_router_unavailable", err=str(_e))
 
 try:
     from api.routes.strategy import router as strategy_router
@@ -500,25 +493,24 @@ except Exception as _e:
 
 # ── Session info endpoint (used by mobile app for role detection) ──
 @app.get("/api/v2/session", include_in_schema=False)
-async def session_info(request: Request):
-    """Returns current user session info: role, username."""
-    try:
-        from api.auth import _check_auth
-        user = _check_auth(request)
-        if user:
-            return {
-                "ok": True,
-                "role": getattr(user, 'role', None) or user.get('role', 'admin') if isinstance(user, dict) else 'admin',
-                "username": getattr(user, 'username', None) or user.get('sub', 'admin') if isinstance(user, dict) else 'admin',
-            }
-    except Exception:
-        pass
-    # Fallback: if auth passes at middleware level, assume admin
-    # (single-operator system)
-    token = request.headers.get("authorization", "")
-    if token:
-        return {"ok": True, "role": "admin", "username": "admin"}
-    return JSONResponse({"ok": False, "error": "Unauthorized"}, status_code=401)
+async def session_info(request: Request, user: dict = Depends(require_auth)):
+    """Returns current user session info: role, username.
+
+    Auth enforced via Depends(require_auth) — no silent admin fallback.
+    Returns 401 if the token cannot be verified.
+    """
+    if isinstance(user, dict):
+        return {
+            "ok": True,
+            "role": user.get("role", "user"),
+            "username": user.get("username") or user.get("sub", ""),
+            "auth_type": user.get("auth_type", "unknown"),
+        }
+    return {
+        "ok": True,
+        "role": getattr(user, "role", "user"),
+        "username": getattr(user, "username", "") or getattr(user, "sub", ""),
+    }
 
 
 # ── Root: serve the login page ─────────────────────────────────
@@ -592,6 +584,25 @@ async def _on_startup():
         log.info("mcp_adapters_startup", **mcp_result)
     except Exception as exc:
         log.warning("mcp_adapters_startup_failed", err=str(exc)[:80])
+
+    # ── Auto-register all mounted routers with the registry ───────
+    try:
+        from api.router_registry import register_router as _auto_reg
+        from fastapi.routing import APIRoute, APIRouter
+        _seen = set()
+        for route in app.routes:
+            if isinstance(route, APIRoute):
+                prefix = route.path.rsplit("/", 1)[0] if "/" in route.path else ""
+                tags = list(route.tags) if route.tags else []
+                name = tags[0] if tags else prefix.strip("/").replace("/", "_") or "root"
+                if name not in _seen:
+                    r = APIRouter()
+                    r.routes = [rt for rt in app.routes if isinstance(rt, APIRoute) and (list(rt.tags) or [""])[0] == (tags[0] if tags else "")]
+                    _auto_reg(name, r, prefix=prefix, tags=tags)
+                    _seen.add(name)
+        log.info("router_registry_auto_populated", count=len(_seen))
+    except Exception as exc:
+        log.warning("router_registry_auto_failed", err=str(exc)[:80])
 
 
 @app.on_event("shutdown")
@@ -700,19 +711,15 @@ def _get_monitoring_agent():
 
 
 
-# ── Multimodal endpoints (require app-level deps) ────────────
-
-@app.post("/api/multimodal/image")
-async def multimodal_image(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
-
-@app.post("/api/multimodal/tts")
-async def multimodal_tts(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
-
-@app.post("/api/multimodal/stt")
-async def multimodal_stt(request: dict, _user: dict = Depends(require_auth)):
-    return {"ok": False, "error": "multimodal not implemented"}
+# ── Multimodal endpoints ──────────────────────────────────────
+# Removed: 3 inline stubs that returned "not implemented".
+# Real multimodal is served by api/routes/multimodal.py (v2):
+#   POST /api/v2/multimodal/image/generate
+#   POST /api/v2/multimodal/image/describe
+#   POST /api/v2/multimodal/voice/stt
+#   POST /api/v2/multimodal/voice/tts
+#   GET  /api/v2/multimodal/capabilities
+# Provider implementations in modules/multimodal/ (image, voice, video).
 
 
 # ── Auth endpoints ────────────────────────────────────────────
@@ -778,8 +785,8 @@ async def ws_stream_alias(websocket: WebSocket):
 # ── Router Registry Status ────────────────────────────────────
 
 @app.get("/api/v3/system/registry", tags=["system"])
-async def router_registry_status():
-    """Show status of all registered API routers."""
+async def router_registry_status(user: dict = Depends(require_auth)):
+    """Show status of all registered API routers. Admin-only (exposes API surface)."""
     try:
         from api.router_registry import get_registry_status
         return get_registry_status()

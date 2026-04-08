@@ -256,7 +256,12 @@ class ConfidencePolicy:
             )
 
         elif tier == PolicyTier.CAUTIOUS:
-            decision.require_approval = True
+            # Only require approval for medium+ risk when cautious.
+            # Low/no risk missions should proceed even at low confidence —
+            # they can't cause damage. This prevents simple info queries
+            # from being blocked behind an approval gate.
+            _needs_approval = risk_level in ("medium", "high", "critical")
+            decision.require_approval = _needs_approval
             decision.add_context = True
             decision.context_queries = self._build_context_queries(goal, task_type)
             decision.approval_reason = (
@@ -267,9 +272,14 @@ class ConfidencePolicy:
                 "CAUTIOUS_MODE: Confidence is low. Prefer the smallest, safest "
                 "next step. Avoid irreversible actions. Stop and report if uncertain."
             )
-            policy_log.append(
-                f"require_approval: reason='{decision.approval_reason}'"
-            )
+            if _needs_approval:
+                policy_log.append(
+                    f"require_approval: reason='{decision.approval_reason}'"
+                )
+            else:
+                policy_log.append(
+                    f"cautious_no_approval: low/no risk — proceed without gate"
+                )
 
         elif tier == PolicyTier.DECOMPOSE:
             decision.require_approval = True

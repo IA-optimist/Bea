@@ -42,6 +42,20 @@ from typing import TYPE_CHECKING
 import structlog
 from core.resilience import JarvisExecutionError
 
+# ===== LLM AGENT SUPPORT (2026-04-08) =====
+try:
+    from core.llm_agent_helper import get_agent_helper
+    from core.llm_factory import LLMFactory
+    from core.settings import get_settings
+    LLM_AGENTS_AVAILABLE = True
+except ImportError:
+    LLM_AGENTS_AVAILABLE = False
+    get_agent_helper = None
+    LLMFactory = None
+    get_settings = None
+# ===== END LLM AGENT SUPPORT =====
+
+
 if TYPE_CHECKING:
     pass
 
@@ -85,6 +99,18 @@ class ActionExecutor:
         self._last_cycle_at: float | None = None
         self._current_action_id: str | None = None
         self._started_at: float | None = None
+
+        # LLM Agent Helper (si disponible)
+        self._llm_helper = None
+        if LLM_AGENTS_AVAILABLE:
+            try:
+                settings = get_settings()
+                factory = LLMFactory(settings)
+                self._llm_helper = get_agent_helper(factory)
+                log.info("llm_agent_helper_initialized")
+            except Exception as e:
+                log.warning("llm_agent_helper_init_failed", error=str(e))
+
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -217,8 +243,51 @@ class ActionExecutor:
 
     # ── Handlers par type ─────────────────────────────────────────────────────
 
+
+    def _call_llm_agent(self, agent_type: str, description: str, context: dict = None) -> str | None:
+        """
+        Appelle un agent LLM si disponible, sinon retourne None (fallback templates).
+        
+        Args:
+            agent_type: scout-research, shadow-advisor, map-planner
+            description: Description de la tâche
+            context: Contexte additionnel
+        
+        Returns:
+            Réponse LLM ou None si indisponible
+        """
+        if not self._llm_helper:
+            return None
+        
+        try:
+            # Appel synchrone (action_executor est synchrone)
+            return self._llm_helper.call_agent(
+                agent_type=agent_type,
+                task_description=description,
+                context=context or {},
+                role="default"
+            )
+        except Exception as e:
+            log.warning("llm_agent_call_failed", agent=agent_type, error=str(e))
+            return None
+
     def _run_research(self, action) -> str:
         """Agent: WebScout / Research — lit vraiment vault + workspace."""
+        # === ESSAI LLM AGENT EN PREMIER ===
+        llm_result = self._call_llm_agent(
+            agent_type="scout-research",
+            description=action.description,
+            context={
+                "target": action.target,
+                "action_id": action.id
+            }
+        )
+        if llm_result:
+            log.info("research_agent_llm_used", action_id=action.id)
+            return llm_result
+        
+        # === FALLBACK SUR TEMPLATE SI LLM ÉCHOUE ===
+        log.info("research_agent_fallback_template", action_id=action.id)
         ts     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         desc   = action.description
         target = action.target or ""
@@ -262,6 +331,16 @@ class ActionExecutor:
 
     def _run_planner(self, action) -> str:
         """Agent: MapPlanner — plan contextuel basé sur la mission réelle."""
+        # === ESSAI LLM AGENT EN PREMIER ===
+        llm_result = self._call_llm_agent(
+            agent_type="map-planner",
+            description=action.description,
+            context={"target": action.target, "action_id": action.id}
+        )
+        if llm_result:
+            log.info("_run_planner_llm_used", action_id=action.id)
+            return llm_result
+        log.info("_run_planner_fallback_template", action_id=action.id)
         ts   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         desc = action.description
         lines = [f"[PLAN — {ts}]", f"Objectif : {desc}", f"Cible    : {action.target}", ""]
@@ -348,6 +427,16 @@ class ActionExecutor:
 
     def _run_reviewer(self, action) -> str:
         """Agent: Lens / Reviewer — vérifie l'état réel du système."""
+        # === ESSAI LLM AGENT EN PREMIER ===
+        llm_result = self._call_llm_agent(
+            agent_type="shadow-advisor",
+            description=action.description,
+            context={"target": action.target, "action_id": action.id}
+        )
+        if llm_result:
+            log.info("_run_reviewer_llm_used", action_id=action.id)
+            return llm_result
+        log.info("_run_reviewer_fallback_template", action_id=action.id)
         ts    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         lines = [f"[REVIEW — {ts}]", f"Sujet : {action.description}", f"Cible : {action.target}", ""]
 
@@ -551,14 +640,30 @@ class ActionExecutor:
                 except Exception as _agg_err:
                     log.warning("result_aggregator_fallback", error=str(_agg_err))
                     full_output = f"{executed}/{len(all_acts)} actions exécutées avec succès."
-                ms.complete(
-                    mission_id,
-                    result_text=full_output
-                )
-                log.info("mission_auto_completed",
+
+                # DO NOT call ms.complete() here — the main pipeline in
+                # api/routes/missions.py background task handles completion
+                # with the real LLM-synthesized final_report.
+                # action_executor completing first was causing a race condition
+                # where the workspace listing overwrote the real LLM answer.
+                #
+                # Instead, store the action results in decision_trace for
+                # traceability, and let the main pipeline do the final write.
+                try:
+                    r_action = ms.get(mission_id)
+                    if r_action:
+                        dt = getattr(r_action, "decision_trace", {}) or {}
+                        dt["action_executor_output"] = full_output[:2000]
+                        dt["action_executor_completed"] = True
+                        r_action.decision_trace = dt
+                except Exception:
+                    pass
+
+                log.info("action_executor_results_stored",
                          mission_id=mission_id,
                          executed=executed,
-                         total=len(all_acts))
+                         total=len(all_acts),
+                         hint="completion deferred to main pipeline")
                 # Persist trace for completed mission
                 try:
                     from core.orchestration.decision_trace import DecisionTrace

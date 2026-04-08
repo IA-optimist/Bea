@@ -1,14 +1,21 @@
 """
-core/tools/file_tool.py — Structured file read/write tool.
+core/tools/file_tool.py — Structured file read/write tool + standalone functions.
 
 LOW risk for read, MEDIUM for write.
 Sandboxed to workspace directory.
+
+Standalone functions (used by tool_executor.py):
+    search_in_files, replace_in_file, create_directory,
+    list_project_structure, count_lines,
+    file_create, file_delete_safe, workspace_snapshot
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import logging
+import subprocess
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
@@ -96,350 +103,264 @@ class FileWriteTool(BaseTool):
             return ToolResult(ok=False, error=f"write_error: {str(e)[:200]}")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Legacy function-based tools (imported by tool_executor.py)
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _ok_legacy(output: str, logs: list = None) -> dict:
-    """Helper for legacy function return format."""
-    return {
-        "ok": True,
-        "status": "ok",
-        "output": output,
-        "result": output,
-        "error": None,
-        "logs": logs or [],
-        "risk_level": "low",
-    }
+# ── Standalone functions (used by tool_executor.py) ───────────────────────────
+# These are the canonical tool functions called by the execution engine.
+# All are sandboxed to _WORKSPACE and fail-open (return error strings, never raise).
 
 
-def _err_legacy(error: str, logs: list = None) -> dict:
-    """Helper for legacy function error format."""
-    return {
-        "ok": False,
-        "status": "error",
-        "output": "",
-        "result": "",
-        "error": error,
-        "logs": logs or [],
-        "risk_level": "low",
-    }
+def search_in_files(directory: str = ".", pattern: str = "", **kw) -> str:
+    """Search for a text pattern in files recursively within the workspace.
 
+    Uses subprocess grep for performance. Falls back to pure-Python if grep
+    is unavailable.
 
-def search_in_files(directory: str, pattern: str) -> dict:
-    """
-    Search for pattern in files recursively within directory.
-    Uses grep -r for recursive search within workspace sandbox.
-    
     Args:
-        directory: Directory path (relative to workspace)
-        pattern: Search pattern (string literal, not regex)
-    
+        directory: Relative path within workspace to search (default: root).
+        pattern: Regex or literal pattern to search for.
+
     Returns:
-        dict with ok/error/output/logs fields
+        Matching lines as "file:line_number:content" or an error string.
     """
-    import subprocess
-    
-    logs = [f"search_in_files: directory={directory}, pattern={pattern}"]
-    
-    if not directory:
-        return _err_legacy("missing_directory", logs=logs)
     if not pattern:
-        return _err_legacy("missing_pattern", logs=logs)
-    
-    # Sandbox check
-    safe = _safe_path(directory)
-    if safe is None:
-        return _err_legacy(f"path_escape: {directory} must stay within workspace", logs=logs)
-    
-    if not safe.exists():
-        return _err_legacy(f"directory_not_found: {directory}", logs=logs)
-    
-    if not safe.is_dir():
-        return _err_legacy(f"not_a_directory: {directory}", logs=logs)
-    
+        return "error: missing 'pattern' argument"
+
+    search_root = _safe_path(directory or ".")
+    if search_root is None:
+        return "error: path_escape — directory must be within workspace"
+    if not search_root.exists():
+        return f"error: directory not found: {directory}"
+
     try:
-        # Use grep -r (recursive) with fixed-string mode for safety
-        # -n: line numbers
-        # -H: show filename
-        # -I: skip binary files
-        # -F: fixed string (not regex)
-        cmd = ["grep", "-rnHIF", pattern, str(safe)]
-        
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=10,
-            cwd=str(_WORKSPACE)
+        result = subprocess.run(
+            ["grep", "-rn", "--include=*.py", "--include=*.md", "--include=*.txt",
+             "--include=*.json", "--include=*.yaml", "--include=*.yml",
+             "--include=*.html", "--include=*.js", "--include=*.ts",
+             "-I",  # skip binary files
+             pattern, str(search_root)],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(_WORKSPACE),
         )
-        
-        # grep returns 0 if matches found, 1 if no matches, >1 for errors
-        if proc.returncode > 1:
-            return _err_legacy(
-                f"grep_error: rc={proc.returncode}, stderr={proc.stderr[:200]}",
-                logs=logs
-            )
-        
-        output = proc.stdout
+        output = result.stdout.strip()
         if not output:
-            return _ok_legacy("no_matches_found", logs=logs + ["matches=0"])
-        
+            return f"No matches found for pattern '{pattern}' in {directory}"
         # Truncate if too large
         lines = output.split("\n")
-        match_count = len([l for l in lines if l.strip()])
-        
-        if len(output) > _MAX_READ_CHARS:
-            output = output[:_MAX_READ_CHARS] + f"\n\n[truncated at {_MAX_READ_CHARS} chars, {match_count} matches]"
-        
-        logs.append(f"matches={match_count}")
-        return _ok_legacy(output, logs=logs)
-        
-    except subprocess.TimeoutExpired:
-        return _err_legacy("timeout_exceeded", logs=logs)
+        if len(lines) > 200:
+            output = "\n".join(lines[:200]) + f"\n\n[truncated: {len(lines)} total matches]"
+        return output
     except FileNotFoundError:
-        return _err_legacy("grep_not_found: grep not available", logs=logs)
+        # grep not available — pure Python fallback
+        return _search_in_files_python(search_root, pattern)
+    except subprocess.TimeoutExpired:
+        return "error: search timed out after 30s"
     except Exception as e:
-        return _err_legacy(f"search_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"
 
 
-def replace_in_file(path: str, old_text: str, new_text: str) -> dict:
-    """
-    Replace old_text with new_text in file.
-    
-    Args:
-        path: File path (relative to workspace)
-        old_text: Text to find
-        new_text: Replacement text
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"replace_in_file: path={path}"]
-    
+def _search_in_files_python(root: Path, pattern: str) -> str:
+    """Pure-Python fallback for search_in_files."""
+    matches = []
+    try:
+        compiled = re.compile(pattern, re.IGNORECASE)
+    except re.error:
+        compiled = None
+
+    for fpath in root.rglob("*"):
+        if not fpath.is_file():
+            continue
+        if fpath.suffix not in _ALLOWED_EXTENSIONS:
+            continue
+        try:
+            for i, line in enumerate(fpath.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                hit = (compiled.search(line) if compiled else pattern in line)
+                if hit:
+                    rel = fpath.relative_to(_WORKSPACE)
+                    matches.append(f"{rel}:{i}:{line.rstrip()}")
+                    if len(matches) >= 200:
+                        matches.append(f"\n[truncated at 200 matches]")
+                        return "\n".join(matches)
+        except Exception:
+            continue
+
+    return "\n".join(matches) if matches else f"No matches found for '{pattern}'"
+
+
+def replace_in_file(path: str = "", old_text: str = "", new_text: str = "", **kw) -> str:
+    """Replace exact text in a file. Returns confirmation or error."""
     if not path or not old_text:
-        return _err_legacy("missing_required_params", logs=logs)
-    
+        return "error: missing 'path' or 'old_text' argument"
+
     safe = _safe_path(path)
     if safe is None:
-        return _err_legacy(f"path_escape: {path}", logs=logs)
-    
+        return "error: path_escape — must stay within workspace"
     if not safe.exists():
-        return _err_legacy(f"file_not_found: {path}", logs=logs)
-    
+        return f"error: file not found: {path}"
+
     try:
         content = safe.read_text(encoding="utf-8")
-        
         if old_text not in content:
-            return _err_legacy(f"text_not_found: '{old_text[:50]}...'", logs=logs)
-        
-        new_content = content.replace(old_text, new_text)
+            return f"error: old_text not found in {path}"
+        new_content = content.replace(old_text, new_text, 1)
         safe.write_text(new_content, encoding="utf-8")
-        
-        count = content.count(old_text)
-        logs.append(f"replaced={count}_occurrences")
-        return _ok_legacy(f"replaced {count} occurrence(s)", logs=logs)
-        
+        return f"Replaced in {path} ({len(old_text)} chars → {len(new_text)} chars)"
     except Exception as e:
-        return _err_legacy(f"replace_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"
 
 
-def create_directory(path: str) -> dict:
-    """
-    Create directory (and parents if needed).
-    
-    Args:
-        path: Directory path (relative to workspace)
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"create_directory: path={path}"]
-    
+def create_directory(path: str = "", **kw) -> str:
+    """Create a directory within the workspace."""
     if not path:
-        return _err_legacy("missing_path", logs=logs)
-    
+        return "error: missing 'path' argument"
+
     safe = _safe_path(path)
     if safe is None:
-        return _err_legacy(f"path_escape: {path}", logs=logs)
-    
+        return "error: path_escape — must stay within workspace"
+
     try:
         safe.mkdir(parents=True, exist_ok=True)
-        logs.append("created")
-        return _ok_legacy(f"created directory: {path}", logs=logs)
+        return f"Created directory: {path}"
     except Exception as e:
-        return _err_legacy(f"mkdir_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"
 
 
-def list_project_structure(directory: str = ".") -> dict:
-    """
-    List directory structure as tree.
-    
-    Args:
-        directory: Directory path (relative to workspace)
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"list_project_structure: directory={directory}"]
-    
-    safe = _safe_path(directory)
+def list_project_structure(directory: str = ".", max_depth: int = 3, **kw) -> str:
+    """List project file structure as a tree."""
+    root = _safe_path(directory or ".")
+    if root is None:
+        return "error: path_escape"
+    if not root.exists():
+        return f"error: directory not found: {directory}"
+
+    lines = []
+    _SKIP = {".git", "__pycache__", "node_modules", ".venv", "venv", ".mypy_cache"}
+
+    def _walk(p: Path, prefix: str, depth: int):
+        if depth > max_depth:
+            return
+        try:
+            entries = sorted(p.iterdir(), key=lambda x: (x.is_file(), x.name))
+        except PermissionError:
+            return
+        for i, entry in enumerate(entries):
+            if entry.name in _SKIP:
+                continue
+            connector = "└── " if i == len(entries) - 1 else "├── "
+            lines.append(f"{prefix}{connector}{entry.name}")
+            if entry.is_dir():
+                extension = "    " if i == len(entries) - 1 else "│   "
+                _walk(entry, prefix + extension, depth + 1)
+
+    lines.append(str(root.relative_to(_WORKSPACE)) if root != _WORKSPACE else ".")
+    _walk(root, "", 1)
+
+    output = "\n".join(lines)
+    if len(output) > _MAX_READ_CHARS:
+        output = output[:_MAX_READ_CHARS] + "\n[truncated]"
+    return output
+
+
+def count_lines(path: str = "", **kw) -> str:
+    """Count lines in a file or directory."""
+    safe = _safe_path(path or ".")
     if safe is None:
-        return _err_legacy(f"path_escape: {directory}", logs=logs)
-    
+        return "error: path_escape"
     if not safe.exists():
-        return _err_legacy(f"directory_not_found: {directory}", logs=logs)
-    
-    try:
-        lines = []
-        for root, dirs, files in os.walk(safe):
-            level = root.replace(str(safe), "").count(os.sep)
-            indent = " " * 2 * level
-            lines.append(f"{indent}{os.path.basename(root)}/")
-            sub_indent = " " * 2 * (level + 1)
-            for file in files:
-                lines.append(f"{sub_indent}{file}")
-        
-        output = "\n".join(lines[:1000])  # Limit to 1000 lines
-        if len(lines) > 1000:
-            output += f"\n\n[truncated at 1000 lines, total={len(lines)}]"
-        
-        return _ok_legacy(output, logs=logs)
-    except Exception as e:
-        return _err_legacy(f"list_error: {str(e)[:200]}", logs=logs)
+        return f"error: not found: {path}"
+
+    if safe.is_file():
+        try:
+            count = len(safe.read_text(encoding="utf-8", errors="ignore").splitlines())
+            return f"{path}: {count} lines"
+        except Exception as e:
+            return f"error: {str(e)[:200]}"
+
+    # Directory: count all source files
+    total = 0
+    file_counts = []
+    for fpath in safe.rglob("*.py"):
+        if "__pycache__" in str(fpath):
+            continue
+        try:
+            c = len(fpath.read_text(encoding="utf-8", errors="ignore").splitlines())
+            total += c
+            file_counts.append((str(fpath.relative_to(_WORKSPACE)), c))
+        except Exception:
+            continue
+
+    file_counts.sort(key=lambda x: -x[1])
+    top = file_counts[:20]
+    result = f"Total: {total} lines in {len(file_counts)} .py files\n\nTop 20:\n"
+    for fp, c in top:
+        result += f"  {c:>6}  {fp}\n"
+    return result
 
 
-def count_lines(path: str) -> dict:
-    """
-    Count lines in file.
-    
-    Args:
-        path: File path (relative to workspace)
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"count_lines: path={path}"]
-    
+def file_create(path: str = "", content: str = "", **kw) -> str:
+    """Create a new file with content. Fails if file already exists."""
     if not path:
-        return _err_legacy("missing_path", logs=logs)
-    
+        return "error: missing 'path' argument"
+
     safe = _safe_path(path)
     if safe is None:
-        return _err_legacy(f"path_escape: {path}", logs=logs)
-    
-    if not safe.exists():
-        return _err_legacy(f"file_not_found: {path}", logs=logs)
-    
-    try:
-        with open(safe, 'r', encoding='utf-8') as f:
-            lines = sum(1 for _ in f)
-        
-        logs.append(f"lines={lines}")
-        return _ok_legacy(f"{lines} lines", logs=logs)
-    except Exception as e:
-        return _err_legacy(f"count_error: {str(e)[:200]}", logs=logs)
-
-
-def file_create(path: str, content: str = "") -> dict:
-    """
-    Create new file with optional content.
-    
-    Args:
-        path: File path (relative to workspace)
-        content: Initial content (optional)
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"file_create: path={path}"]
-    
-    if not path:
-        return _err_legacy("missing_path", logs=logs)
-    
-    safe = _safe_path(path)
-    if safe is None:
-        return _err_legacy(f"path_escape: {path}", logs=logs)
-    
+        return "error: path_escape"
     if safe.exists():
-        return _err_legacy(f"file_already_exists: {path}", logs=logs)
-    
+        return f"error: file already exists: {path} (use replace_in_file to modify)"
+
     try:
         safe.parent.mkdir(parents=True, exist_ok=True)
-        safe.write_text(content, encoding="utf-8")
-        logs.append(f"created_size={len(content)}")
-        return _ok_legacy(f"created file: {path}", logs=logs)
+        safe.write_text(content or "", encoding="utf-8")
+        return f"Created {path} ({len(content or '')} chars)"
     except Exception as e:
-        return _err_legacy(f"create_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"
 
 
-def file_delete_safe(path: str) -> dict:
-    """
-    Delete file (with confirmation via logs).
-    
-    Args:
-        path: File path (relative to workspace)
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = [f"file_delete_safe: path={path}"]
-    
+def file_delete_safe(path: str = "", **kw) -> str:
+    """Soft-delete a file by moving it to .trash/ in workspace."""
     if not path:
-        return _err_legacy("missing_path", logs=logs)
-    
+        return "error: missing 'path' argument"
+
     safe = _safe_path(path)
     if safe is None:
-        return _err_legacy(f"path_escape: {path}", logs=logs)
-    
+        return "error: path_escape"
     if not safe.exists():
-        return _err_legacy(f"file_not_found: {path}", logs=logs)
-    
-    if not safe.is_file():
-        return _err_legacy(f"not_a_file: {path}", logs=logs)
-    
+        return f"error: not found: {path}"
+
     try:
-        safe.unlink()
-        logs.append("deleted")
-        return _ok_legacy(f"deleted file: {path}", logs=logs)
+        trash = _WORKSPACE / ".trash"
+        trash.mkdir(parents=True, exist_ok=True)
+        dest = trash / safe.name
+        # Handle name collisions
+        counter = 1
+        while dest.exists():
+            dest = trash / f"{safe.stem}_{counter}{safe.suffix}"
+            counter += 1
+        safe.rename(dest)
+        return f"Moved {path} → .trash/{dest.name} (recoverable)"
     except Exception as e:
-        return _err_legacy(f"delete_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"
 
 
-def workspace_snapshot() -> dict:
-    """
-    Generate snapshot of workspace state.
-    
-    Returns:
-        dict with ok/error/output/logs fields
-    """
-    logs = ["workspace_snapshot"]
-    
+def workspace_snapshot(**kw) -> str:
+    """Return a snapshot of the workspace: file count, total size, structure."""
     try:
-        stats = {
-            "total_files": 0,
-            "total_size": 0,
-            "file_types": {},
-        }
-        
-        for root, _, files in os.walk(_WORKSPACE):
-            for file in files:
-                stats["total_files"] += 1
-                file_path = Path(root) / file
+        files = list(_WORKSPACE.rglob("*"))
+        py_files = [f for f in files if f.suffix == ".py" and f.is_file() and "__pycache__" not in str(f)]
+        total_size = sum(f.stat().st_size for f in files if f.is_file())
+
+        dirs = set()
+        for f in files:
+            if f.is_dir() and f.name not in {".git", "__pycache__", "node_modules"}:
                 try:
-                    stats["total_size"] += file_path.stat().st_size
-                    ext = file_path.suffix or "(no_ext)"
-                    stats["file_types"][ext] = stats["file_types"].get(ext, 0) + 1
-                except (OSError, PermissionError) as e:
-                    logger.debug(f"Cannot stat {file_path}: {e}")
-        
-        output = f"Workspace: {_WORKSPACE}\n"
-        output += f"Total files: {stats['total_files']}\n"
-        output += f"Total size: {stats['total_size'] / 1024:.2f} KB\n"
-        output += "File types:\n"
-        for ext, count in sorted(stats["file_types"].items(), key=lambda x: -x[1])[:20]:
-            output += f"  {ext}: {count}\n"
-        
-        return _ok_legacy(output, logs=logs)
+                    dirs.add(str(f.relative_to(_WORKSPACE)).split("/")[0])
+                except Exception:
+                    pass
+
+        return (
+            f"Workspace: {_WORKSPACE}\n"
+            f"Total files: {len([f for f in files if f.is_file()])}\n"
+            f"Python files: {len(py_files)}\n"
+            f"Total size: {total_size / 1024 / 1024:.1f} MB\n"
+            f"Top-level dirs: {', '.join(sorted(dirs))}"
+        )
     except Exception as e:
-        return _err_legacy(f"snapshot_error: {str(e)[:200]}", logs=logs)
+        return f"error: {str(e)[:200]}"

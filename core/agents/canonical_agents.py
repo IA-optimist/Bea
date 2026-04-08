@@ -231,6 +231,56 @@ SPECIALIST_PACKS: dict[str, SpecialistPack] = {
         llm_role="operator",
         parent_agent=CanonicalAgentId.SYSTEMS_ENGINEER,
     ),
+    "blue_team": SpecialistPack(
+        id="blue_team",
+        name="Blue Team — Defensive Security",
+        description="SIEM analysis, incident response, forensics, cloud security, endpoint protection, network defense.",
+        capabilities=[
+            "siem_analysis", "incident_response", "digital_forensics",
+            "cloud_security", "endpoint_protection", "network_defense",
+            "threat_detection", "log_analysis", "malware_analysis",
+            "vulnerability_management",
+        ],
+        llm_role="analyst",
+        parent_agent=CanonicalAgentId.SAFETY_GUARDIAN,
+    ),
+    "red_team_ethical": SpecialistPack(
+        id="red_team_ethical",
+        name="Red Team — Ethical Offensive Security",
+        description="Penetration testing, web app security, social engineering assessment, infrastructure testing.",
+        capabilities=[
+            "penetration_testing", "web_app_security", "social_engineering_assessment",
+            "infrastructure_testing", "exploit_development", "red_team_operations",
+            "wireless_testing", "physical_security_assessment",
+        ],
+        llm_role="analyst",
+        parent_agent=CanonicalAgentId.SAFETY_GUARDIAN,
+        active=False,  # Requires explicit activation — safety gate
+    ),
+    "nis2_compliance": SpecialistPack(
+        id="nis2_compliance",
+        name="NIS2 & Regulatory Compliance",
+        description="NIS2 directive compliance, GDPR, risk assessment, policy writing, audit preparation.",
+        capabilities=[
+            "nis2_compliance", "gdpr_compliance", "risk_assessment",
+            "policy_writing", "audit_preparation", "gap_analysis",
+            "regulatory_mapping", "incident_reporting_compliance",
+        ],
+        llm_role="analyst",
+        parent_agent=CanonicalAgentId.SAFETY_GUARDIAN,
+    ),
+    "osint_legal": SpecialistPack(
+        id="osint_legal",
+        name="OSINT — Legal Open Source Intelligence",
+        description="Domain reconnaissance, threat intelligence, breach monitoring, social media OSINT.",
+        capabilities=[
+            "domain_reconnaissance", "threat_intelligence", "breach_monitoring",
+            "social_media_osint", "dark_web_monitoring", "asset_discovery",
+            "reputation_monitoring", "supply_chain_intelligence",
+        ],
+        llm_role="analyst",
+        parent_agent=CanonicalAgentId.SAFETY_GUARDIAN,
+    ),
 }
 
 

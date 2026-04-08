@@ -1,137 +1,99 @@
 """
-api/routes/system_readiness.py — System readiness across all 6 layers.
+api/routes/system_readiness.py — System readiness endpoint.
 
-Validates: cognition, skills, planning, execution, memory, control.
+Reports which API components actually loaded vs which are missing.
+Uses runtime route introspection (not the unused router_registry).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import time
+import structlog
+from fastapi import APIRouter
 
-from api._deps import require_auth
+log = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/api/v3/readiness", tags=["readiness"])
+router = APIRouter(prefix="/api/v3/system", tags=["system"])
+
+# Expected routers and their signature routes.
+# If a route prefix is found in the mounted routes, the component is "loaded".
+EXPECTED_COMPONENTS = {
+    "missions":           "/api/v3/missions",
+    "auth":               "/auth/token",
+    "websocket":          "/ws/",
+    "sse_stream":         "/api/v2/stream",
+    "learning":           "/api/v2/learning",
+    "multimodal":         "/api/multimodal",
+    "rag":                "/api/v2/rag",
+    "agent_builder":      "/api/v2/agent-builder",
+    "mission_control":    "/api/v3/mission-control",
+    "browser":            "/api/v2/browser",
+    "monitoring":         "/api/v3/monitoring",
+    "voice":              "/api/v2/voice",
+    "objectives":         "/api/v3/objectives",
+    "self_improvement":   "/api/v2/self-improvement",
+    "dashboard":          "/api/v3/dashboard",
+    "approval":           "/api/v3/approval",
+    "convergence":        "/api/v3/convergence",
+    "performance":        "/api/v3/performance",
+    "observability":      "/api/v3/observability",
+    "finance":            "/api/v3/finance",
+    "vault":              "/api/v3/vault",
+    "identity":           "/api/v3/identity",
+    "connectors":         "/api/v3/connectors",
+    "cognitive":          "/api/v3/cognitive",
+    "mcp_management":     "/api/v3/mcp",
+    "skills":             "/api/v3/skills",
+    "models":             "/api/v3/models",
+    "execution":          "/api/v3/execution",
+    "strategy":           "/api/v3/strategy",
+    "kernel":             "/api/v3/kernel",
+    "security_audit":     "/api/v3/security",
+    "system":             "/api/v3/system",
+    "health":             "/health",
+}
 
 
-@router.get("")
-async def system_readiness(_user: dict = Depends(require_auth)):
-    """Check readiness of all 6 system layers."""
-    layers = {}
+@router.get("/readiness", tags=["system"])
+async def system_readiness():
+    """Report which API components are loaded vs missing.
 
-    # 1. Cognition Layer
-    try:
-        from core.cognitive_bridge import get_bridge
-        bridge = get_bridge()
-        layers["cognition"] = {
-            "ready": True,
-            "components": {
-                "cognitive_bridge": True,
-                "capability_graph": bool(bridge._capability_graph),
-                "decision_confidence": bool(bridge._decision_confidence),
-            },
-        }
-    except Exception as e:
-        layers["cognition"] = {"ready": False, "error": str(e)[:100]}
+    Introspects the running FastAPI app's mounted routes to determine
+    which expected components actually loaded. This replaces the need
+    for the unused router_registry.
+    """
+    from api.main import app
 
-    # 2. Skills Layer
-    try:
-        from core.skills.domain_loader import get_domain_registry
-        reg = get_domain_registry()
-        skills = reg.list_all()
-        layers["skills"] = {
-            "ready": len(skills) >= 6,
-            "count": len(skills),
-            "domains": list(set(s.domain for s in skills)),
-        }
-    except Exception as e:
-        layers["skills"] = {"ready": False, "error": str(e)[:100]}
+    # Collect all mounted route paths
+    mounted_paths: set[str] = set()
+    for route in app.routes:
+        if hasattr(route, "path"):
+            mounted_paths.add(route.path)
+        # Include sub-routes from mounted routers
+        if hasattr(route, "routes"):
+            for sub in route.routes:
+                if hasattr(sub, "path"):
+                    mounted_paths.add(sub.path)
 
-    # 3. Planning Layer
-    try:
-        from core.planning.workflow_templates import load_templates
-        from core.planning.plan_serializer import get_plan_store
-        templates = load_templates()
-        layers["planning"] = {
-            "ready": len(templates) >= 1,
-            "templates": len(templates),
-            "plans": get_plan_store().stats(),
-        }
-    except Exception as e:
-        layers["planning"] = {"ready": False, "error": str(e)[:100]}
+    loaded = []
+    failed = []
+    for name, signature_path in EXPECTED_COMPONENTS.items():
+        found = any(signature_path in p for p in mounted_paths)
+        if found:
+            loaded.append(name)
+        else:
+            failed.append(name)
 
-    # 4. Execution Layer
-    try:
-        from core.tools_operational.tool_registry import get_tool_registry
-        from core.tools_operational.tool_readiness import get_ready_tools
-        tools = get_tool_registry().list_all()
-        ready_tools = get_ready_tools()
-        layers["execution"] = {
-            "ready": len(tools) >= 1,
-            "tools_total": len(tools),
-            "tools_ready": len(ready_tools),
-            "ready_tool_ids": ready_tools,
-        }
-    except Exception as e:
-        layers["execution"] = {"ready": False, "error": str(e)[:100]}
-
-    # 5. Memory Layer
-    try:
-        from core.planning.execution_memory import get_execution_memory
-        from core.skills.skill_feedback import get_feedback_store
-        layers["memory"] = {
-            "ready": True,
-            "execution_history": get_execution_memory().stats(),
-        }
-    except Exception as e:
-        layers["memory"] = {"ready": False, "error": str(e)[:100]}
-
-    # 6. Control Layer
-    try:
-        from core.cognitive_events.store import get_journal
-        journal = get_journal()
-        layers["control"] = {
-            "ready": True,
-            "journal_entries": len(journal._buffer) if hasattr(journal, '_buffer') else 0,
-        }
-    except Exception as e:
-        layers["control"] = {"ready": False, "error": str(e)[:100]}
-
-    # Summary
-    ready_count = sum(1 for l in layers.values() if l.get("ready"))
-    total = len(layers)
+    total_routes = len(mounted_paths)
+    ready = len(failed) <= 5  # allow up to 5 optional missing components
 
     return {
-        "ok": True,
-        "ready": ready_count == total,
-        "score": f"{ready_count}/{total}",
-        "layers": layers,
-    }
-
-
-@router.get("/agents")
-async def agent_readiness(_user: dict = Depends(require_auth)):
-    """List agent roles and their readiness."""
-    from core.agents.roles import list_roles
-    return {"ok": True, "data": list_roles()}
-
-
-@router.get("/skills")
-async def skill_readiness(_user: dict = Depends(require_auth)):
-    """Skill layer readiness details."""
-    from core.skills.domain_loader import get_domain_registry
-    skills = get_domain_registry().list_all()
-    return {
-        "ok": True,
-        "data": {
-            "count": len(skills),
-            "skills": [{"id": s.id, "domain": s.domain, "version": s.version,
-                        "has_logic": bool(s.logic), "has_examples": bool(s.examples)}
-                       for s in skills],
+        "ready": ready,
+        "total_routes_mounted": total_routes,
+        "components": {
+            "loaded": len(loaded),
+            "failed": len(failed),
+            "loaded_list": sorted(loaded),
+            "failed_list": sorted(failed),
         },
+        "summary": f"{len(loaded)}/{len(EXPECTED_COMPONENTS)} components loaded, {total_routes} routes mounted",
     }
-
-
-@router.get("/tools")
-async def tool_readiness_detail(_user: dict = Depends(require_auth)):
-    """Tool layer readiness details."""
-    from core.tools_operational.tool_readiness import check_all_readiness
-    return {"ok": True, "data": check_all_readiness()}

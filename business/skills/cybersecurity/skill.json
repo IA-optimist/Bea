@@ -1,0 +1,1046 @@
+{
+  "id": "cybersecurity",
+  "name": "Cybersecurity Skills Catalog",
+  "version": "1.0",
+  "description": "Comprehensive cybersecurity skill catalog covering blue team, red team, compliance, and OSINT domains.",
+  "skills": [
+    {
+      "id": "bt-01",
+      "name": "siem_alert_analysis",
+      "domain": "blue_team",
+      "subdomain": "soc",
+      "description": "Analyze SIEM alerts, correlate events, identify true positives vs false positives, prioritize response.",
+      "risk_level": "medium",
+      "confidence_weight": 0.9,
+      "tool_requirements": [
+        "splunk",
+        "elastic",
+        "sentinel"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "siem",
+        "soc",
+        "alert",
+        "correlation",
+        "detection"
+      ]
+    },
+    {
+      "id": "bt-02",
+      "name": "incident_response_triage",
+      "domain": "blue_team",
+      "subdomain": "soc",
+      "description": "Triage security incidents, classify severity, initiate containment procedures, document timeline.",
+      "risk_level": "high",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "ticketing",
+        "siem",
+        "edr"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "incident",
+        "response",
+        "triage",
+        "containment"
+      ]
+    },
+    {
+      "id": "bt-03",
+      "name": "digital_forensics_analysis",
+      "domain": "blue_team",
+      "subdomain": "forensics",
+      "description": "Conduct digital forensics on disk images, memory dumps, and network captures to reconstruct attack chains.",
+      "risk_level": "high",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "volatility",
+        "autopsy",
+        "wireshark"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "forensics",
+        "memory",
+        "disk",
+        "analysis",
+        "evidence"
+      ]
+    },
+    {
+      "id": "bt-04",
+      "name": "cloud_security_posture",
+      "domain": "blue_team",
+      "subdomain": "cloud",
+      "description": "Assess cloud security posture across AWS/Azure/GCP, identify misconfigurations, recommend hardening.",
+      "risk_level": "medium",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "prowler",
+        "scout_suite",
+        "cspm"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "cloud",
+        "aws",
+        "azure",
+        "gcp",
+        "posture",
+        "cspm"
+      ]
+    },
+    {
+      "id": "bt-05",
+      "name": "endpoint_protection_review",
+      "domain": "blue_team",
+      "subdomain": "endpoint",
+      "description": "Review endpoint protection deployment, EDR/XDR coverage, detection rules, and response capabilities.",
+      "risk_level": "medium",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "edr",
+        "xdr"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "endpoint",
+        "edr",
+        "xdr",
+        "protection",
+        "detection"
+      ]
+    },
+    {
+      "id": "bt-06",
+      "name": "network_traffic_analysis",
+      "domain": "blue_team",
+      "subdomain": "network",
+      "description": "Analyze network traffic patterns, detect anomalies, identify C2 communications, lateral movement.",
+      "risk_level": "medium",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "wireshark",
+        "zeek",
+        "suricata"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "network",
+        "traffic",
+        "anomaly",
+        "c2",
+        "lateral"
+      ]
+    },
+    {
+      "id": "bt-07",
+      "name": "vulnerability_assessment",
+      "domain": "blue_team",
+      "subdomain": "network",
+      "description": "Conduct vulnerability assessment, scan infrastructure, prioritize CVEs, recommend remediation.",
+      "risk_level": "medium",
+      "confidence_weight": 0.9,
+      "tool_requirements": [
+        "nessus",
+        "openvas",
+        "nuclei"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "vulnerability",
+        "scan",
+        "cve",
+        "remediation",
+        "patching"
+      ]
+    },
+    {
+      "id": "bt-08",
+      "name": "threat_hunting",
+      "domain": "blue_team",
+      "subdomain": "soc",
+      "description": "Proactive threat hunting using hypothesis-driven analysis, IOC sweeps, and behavioral analytics.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "siem",
+        "edr",
+        "threat_intel"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "threat",
+        "hunting",
+        "proactive",
+        "behavioral",
+        "ioc"
+      ]
+    },
+    {
+      "id": "bt-09",
+      "name": "malware_analysis",
+      "domain": "blue_team",
+      "subdomain": "forensics",
+      "description": "Static and dynamic malware analysis, sandbox detonation, indicator extraction, family classification.",
+      "risk_level": "high",
+      "confidence_weight": 0.75,
+      "tool_requirements": [
+        "sandbox",
+        "ida",
+        "ghidra",
+        "yara"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "malware",
+        "analysis",
+        "sandbox",
+        "reverse",
+        "yara"
+      ]
+    },
+    {
+      "id": "bt-10",
+      "name": "log_analysis_correlation",
+      "domain": "blue_team",
+      "subdomain": "soc",
+      "description": "Centralized log analysis and correlation across multiple sources to detect patterns and anomalies.",
+      "risk_level": "low",
+      "confidence_weight": 0.9,
+      "tool_requirements": [
+        "siem",
+        "elastic"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "log",
+        "analysis",
+        "correlation",
+        "pattern"
+      ]
+    },
+    {
+      "id": "bt-11",
+      "name": "security_monitoring_design",
+      "domain": "blue_team",
+      "subdomain": "soc",
+      "description": "Design security monitoring architecture, define detection rules, alerting thresholds, and escalation paths.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "siem"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "monitoring",
+        "design",
+        "rules",
+        "alerting",
+        "soc"
+      ]
+    },
+    {
+      "id": "bt-12",
+      "name": "container_security_review",
+      "domain": "blue_team",
+      "subdomain": "cloud",
+      "description": "Review container and Kubernetes security posture, image scanning, runtime protection, network policies.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "trivy",
+        "falco",
+        "kube-bench"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "container",
+        "kubernetes",
+        "docker",
+        "runtime",
+        "security"
+      ]
+    },
+    {
+      "id": "bt-13",
+      "name": "identity_access_review",
+      "domain": "blue_team",
+      "subdomain": "endpoint",
+      "description": "Review IAM policies, access controls, privilege escalation paths, and authentication mechanisms.",
+      "risk_level": "medium",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "iam_tools"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "iam",
+        "access",
+        "privilege",
+        "authentication",
+        "identity"
+      ]
+    },
+    {
+      "id": "rt-01",
+      "name": "web_application_pentest",
+      "domain": "red_team",
+      "subdomain": "web",
+      "description": "Web application penetration testing covering OWASP Top 10, business logic flaws, and API security.",
+      "risk_level": "high",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "burpsuite",
+        "zap",
+        "sqlmap"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "web",
+        "owasp",
+        "injection",
+        "xss",
+        "api"
+      ]
+    },
+    {
+      "id": "rt-02",
+      "name": "infrastructure_pentest",
+      "domain": "red_team",
+      "subdomain": "infrastructure",
+      "description": "Infrastructure penetration testing: network scanning, service exploitation, privilege escalation.",
+      "risk_level": "critical",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "nmap",
+        "metasploit",
+        "crackmapexec"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "infrastructure",
+        "network",
+        "exploitation",
+        "privilege"
+      ]
+    },
+    {
+      "id": "rt-03",
+      "name": "social_engineering_assessment",
+      "domain": "red_team",
+      "subdomain": "social",
+      "description": "Social engineering assessment: phishing simulations, pretexting scenarios, awareness testing.",
+      "risk_level": "high",
+      "confidence_weight": 0.75,
+      "tool_requirements": [
+        "gophish",
+        "set"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "social",
+        "phishing",
+        "pretexting",
+        "awareness"
+      ]
+    },
+    {
+      "id": "rt-04",
+      "name": "wireless_security_testing",
+      "domain": "red_team",
+      "subdomain": "network",
+      "description": "Wireless network security testing: WPA/WPA2 assessment, rogue AP detection, protocol analysis.",
+      "risk_level": "high",
+      "confidence_weight": 0.7,
+      "tool_requirements": [
+        "aircrack",
+        "kismet",
+        "wifite"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "wireless",
+        "wifi",
+        "wpa",
+        "rogue",
+        "protocol"
+      ]
+    },
+    {
+      "id": "rt-05",
+      "name": "active_directory_pentest",
+      "domain": "red_team",
+      "subdomain": "infrastructure",
+      "description": "Active Directory penetration testing: Kerberoasting, pass-the-hash, DCSync, trust exploitation.",
+      "risk_level": "critical",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "bloodhound",
+        "impacket",
+        "rubeus"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "active_directory",
+        "kerberos",
+        "lateral",
+        "domain"
+      ]
+    },
+    {
+      "id": "rt-06",
+      "name": "api_security_testing",
+      "domain": "red_team",
+      "subdomain": "web",
+      "description": "API security testing: authentication bypass, authorization flaws, rate limiting, injection.",
+      "risk_level": "high",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "burpsuite",
+        "postman",
+        "nuclei"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "api",
+        "rest",
+        "graphql",
+        "authentication",
+        "authorization"
+      ]
+    },
+    {
+      "id": "rt-07",
+      "name": "mobile_app_security",
+      "domain": "red_team",
+      "subdomain": "web",
+      "description": "Mobile application security testing: binary analysis, API interception, storage inspection.",
+      "risk_level": "high",
+      "confidence_weight": 0.75,
+      "tool_requirements": [
+        "frida",
+        "objection",
+        "mobsf"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "mobile",
+        "android",
+        "ios",
+        "binary",
+        "api"
+      ]
+    },
+    {
+      "id": "rt-08",
+      "name": "cloud_pentest",
+      "domain": "red_team",
+      "subdomain": "infrastructure",
+      "description": "Cloud penetration testing: privilege escalation, storage exposure, serverless exploitation.",
+      "risk_level": "critical",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "pacu",
+        "prowler",
+        "scout_suite"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "cloud",
+        "aws",
+        "azure",
+        "privilege",
+        "serverless"
+      ]
+    },
+    {
+      "id": "rt-09",
+      "name": "password_audit",
+      "domain": "red_team",
+      "subdomain": "infrastructure",
+      "description": "Password strength auditing: hash cracking, policy assessment, credential stuffing simulation.",
+      "risk_level": "high",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "hashcat",
+        "john"
+      ],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "password",
+        "hash",
+        "cracking",
+        "policy",
+        "credential"
+      ]
+    },
+    {
+      "id": "rt-10",
+      "name": "red_team_reporting",
+      "domain": "red_team",
+      "subdomain": "infrastructure",
+      "description": "Red team engagement reporting: attack narrative, impact assessment, remediation roadmap.",
+      "risk_level": "medium",
+      "confidence_weight": 0.9,
+      "tool_requirements": [],
+      "requires_activation": true,
+      "expected_output_type": "assessment",
+      "tags": [
+        "reporting",
+        "narrative",
+        "remediation",
+        "impact"
+      ]
+    },
+    {
+      "id": "co-01",
+      "name": "nis2_gap_analysis",
+      "domain": "compliance",
+      "subdomain": "nis2",
+      "description": "NIS2 Directive gap analysis: assess current posture against NIS2 requirements, identify gaps and priorities.",
+      "risk_level": "low",
+      "confidence_weight": 0.9,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "nis2",
+        "gap",
+        "analysis",
+        "directive",
+        "eu"
+      ]
+    },
+    {
+      "id": "co-02",
+      "name": "nis2_implementation_plan",
+      "domain": "compliance",
+      "subdomain": "nis2",
+      "description": "Create NIS2 implementation roadmap: phased approach, resource allocation, timeline, milestones.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "nis2",
+        "implementation",
+        "roadmap",
+        "planning"
+      ]
+    },
+    {
+      "id": "co-03",
+      "name": "gdpr_compliance_audit",
+      "domain": "compliance",
+      "subdomain": "gdpr",
+      "description": "GDPR/RGPD compliance audit: data mapping, legal basis review, rights processing, DPA assessment.",
+      "risk_level": "low",
+      "confidence_weight": 0.9,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "gdpr",
+        "rgpd",
+        "privacy",
+        "data_protection",
+        "audit"
+      ]
+    },
+    {
+      "id": "co-04",
+      "name": "security_policy_writing",
+      "domain": "compliance",
+      "subdomain": "policy",
+      "description": "Draft security policies: information security policy, acceptable use, incident response, access control.",
+      "risk_level": "low",
+      "confidence_weight": 0.9,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "policy",
+        "writing",
+        "governance",
+        "controls"
+      ]
+    },
+    {
+      "id": "co-05",
+      "name": "risk_assessment_framework",
+      "domain": "compliance",
+      "subdomain": "risk",
+      "description": "Conduct risk assessment using standard frameworks (ISO 27005, NIST): identify, analyze, evaluate risks.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "risk",
+        "assessment",
+        "framework",
+        "iso27005",
+        "nist"
+      ]
+    },
+    {
+      "id": "co-06",
+      "name": "audit_preparation",
+      "domain": "compliance",
+      "subdomain": "nis2",
+      "description": "Prepare for security audits: evidence collection, control documentation, audit trail, readiness check.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "audit",
+        "preparation",
+        "evidence",
+        "documentation"
+      ]
+    },
+    {
+      "id": "co-07",
+      "name": "incident_reporting_procedure",
+      "domain": "compliance",
+      "subdomain": "nis2",
+      "description": "Define NIS2 incident reporting procedures: notification timelines, authority communication, templates.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "incident",
+        "reporting",
+        "notification",
+        "nis2",
+        "authority"
+      ]
+    },
+    {
+      "id": "co-08",
+      "name": "supply_chain_security",
+      "domain": "compliance",
+      "subdomain": "risk",
+      "description": "Assess supply chain security: vendor risk, third-party dependencies, software bill of materials.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "supply_chain",
+        "vendor",
+        "sbom",
+        "third_party"
+      ]
+    },
+    {
+      "id": "co-09",
+      "name": "regulatory_mapping",
+      "domain": "compliance",
+      "subdomain": "policy",
+      "description": "Map regulatory requirements across frameworks: NIS2, GDPR, ISO 27001, SOC 2 cross-reference.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "regulatory",
+        "mapping",
+        "crosswalk",
+        "framework"
+      ]
+    },
+    {
+      "id": "co-10",
+      "name": "business_continuity_plan",
+      "domain": "compliance",
+      "subdomain": "risk",
+      "description": "Develop business continuity and disaster recovery plans: BIA, RTO/RPO, recovery procedures.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "bcp",
+        "disaster_recovery",
+        "continuity",
+        "rto",
+        "rpo"
+      ]
+    },
+    {
+      "id": "co-11",
+      "name": "security_awareness_program",
+      "domain": "compliance",
+      "subdomain": "policy",
+      "description": "Design security awareness training program: content, frequency, metrics, phishing simulations.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "awareness",
+        "training",
+        "phishing",
+        "program"
+      ]
+    },
+    {
+      "id": "co-12",
+      "name": "privacy_impact_assessment",
+      "domain": "compliance",
+      "subdomain": "gdpr",
+      "description": "Conduct Data Protection Impact Assessment (DPIA) for high-risk processing activities.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "dpia",
+        "privacy",
+        "impact",
+        "assessment",
+        "gdpr"
+      ]
+    },
+    {
+      "id": "os-01",
+      "name": "domain_reconnaissance",
+      "domain": "osint",
+      "subdomain": "domain",
+      "description": "Domain reconnaissance: DNS enumeration, subdomain discovery, WHOIS analysis, certificate transparency.",
+      "risk_level": "low",
+      "confidence_weight": 0.9,
+      "tool_requirements": [
+        "subfinder",
+        "amass",
+        "whois"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "domain",
+        "dns",
+        "subdomain",
+        "whois",
+        "recon"
+      ]
+    },
+    {
+      "id": "os-02",
+      "name": "threat_intelligence_analysis",
+      "domain": "osint",
+      "subdomain": "threat_intel",
+      "description": "Threat intelligence gathering and analysis: IOC enrichment, threat actor profiling, campaign tracking.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "misp",
+        "otx",
+        "virustotal"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "threat",
+        "intelligence",
+        "ioc",
+        "actor",
+        "campaign"
+      ]
+    },
+    {
+      "id": "os-03",
+      "name": "breach_monitoring",
+      "domain": "osint",
+      "subdomain": "breach",
+      "description": "Monitor for data breaches: credential leaks, dark web mentions, paste site monitoring.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "haveibeenpwned",
+        "dehashed"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "breach",
+        "leak",
+        "credential",
+        "monitoring",
+        "dark_web"
+      ]
+    },
+    {
+      "id": "os-04",
+      "name": "social_media_osint",
+      "domain": "osint",
+      "subdomain": "social",
+      "description": "Social media OSINT: profile analysis, connection mapping, digital footprint assessment.",
+      "risk_level": "low",
+      "confidence_weight": 0.75,
+      "tool_requirements": [
+        "sherlock",
+        "maltego"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "social",
+        "media",
+        "profile",
+        "footprint",
+        "osint"
+      ]
+    },
+    {
+      "id": "os-05",
+      "name": "attack_surface_mapping",
+      "domain": "osint",
+      "subdomain": "domain",
+      "description": "External attack surface mapping: exposed services, technologies, cloud assets, API endpoints.",
+      "risk_level": "medium",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "shodan",
+        "censys",
+        "nuclei"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "attack_surface",
+        "exposed",
+        "services",
+        "cloud",
+        "api"
+      ]
+    },
+    {
+      "id": "os-06",
+      "name": "dark_web_monitoring",
+      "domain": "osint",
+      "subdomain": "breach",
+      "description": "Dark web monitoring: marketplace surveillance, data dump tracking, threat actor forum analysis.",
+      "risk_level": "medium",
+      "confidence_weight": 0.7,
+      "tool_requirements": [
+        "tor",
+        "onionscan"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "dark_web",
+        "darknet",
+        "marketplace",
+        "forum",
+        "tor"
+      ]
+    },
+    {
+      "id": "os-07",
+      "name": "technology_fingerprinting",
+      "domain": "osint",
+      "subdomain": "domain",
+      "description": "Technology stack fingerprinting: web technologies, CMS detection, framework identification.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "wappalyzer",
+        "whatweb"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "technology",
+        "fingerprint",
+        "cms",
+        "framework",
+        "stack"
+      ]
+    },
+    {
+      "id": "os-08",
+      "name": "ip_reputation_analysis",
+      "domain": "osint",
+      "subdomain": "threat_intel",
+      "description": "IP and domain reputation analysis: blacklist checks, geolocation, ASN mapping, historical data.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [
+        "abuseipdb",
+        "virustotal"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "ip",
+        "reputation",
+        "blacklist",
+        "geolocation",
+        "asn"
+      ]
+    },
+    {
+      "id": "os-09",
+      "name": "certificate_transparency",
+      "domain": "osint",
+      "subdomain": "domain",
+      "description": "Certificate transparency monitoring: new cert detection, subdomain discovery via CT logs.",
+      "risk_level": "low",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "crt.sh",
+        "certstream"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "certificate",
+        "transparency",
+        "ssl",
+        "tls",
+        "ct"
+      ]
+    },
+    {
+      "id": "os-10",
+      "name": "supply_chain_intel",
+      "domain": "osint",
+      "subdomain": "threat_intel",
+      "description": "Supply chain intelligence: vendor breach monitoring, dependency vulnerability tracking, package analysis.",
+      "risk_level": "medium",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "snyk",
+        "deps.dev"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "supply_chain",
+        "dependency",
+        "vendor",
+        "package",
+        "sbom"
+      ]
+    },
+    {
+      "id": "os-11",
+      "name": "email_intelligence",
+      "domain": "osint",
+      "subdomain": "social",
+      "description": "Email intelligence: email validation, breach correlation, organization mapping via email patterns.",
+      "risk_level": "low",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "hunter.io",
+        "emailrep"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "email",
+        "intelligence",
+        "validation",
+        "pattern"
+      ]
+    },
+    {
+      "id": "os-12",
+      "name": "geospatial_osint",
+      "domain": "osint",
+      "subdomain": "social",
+      "description": "Geospatial OSINT: location verification, satellite imagery analysis, geofencing intelligence.",
+      "risk_level": "low",
+      "confidence_weight": 0.7,
+      "tool_requirements": [
+        "google_earth",
+        "overpass"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "geospatial",
+        "location",
+        "satellite",
+        "imagery"
+      ]
+    },
+    {
+      "id": "os-13",
+      "name": "brand_monitoring",
+      "domain": "osint",
+      "subdomain": "social",
+      "description": "Brand and reputation monitoring: typosquatting detection, impersonation alerts, mention tracking.",
+      "risk_level": "low",
+      "confidence_weight": 0.8,
+      "tool_requirements": [
+        "dnstwist"
+      ],
+      "requires_activation": false,
+      "expected_output_type": "report",
+      "tags": [
+        "brand",
+        "monitoring",
+        "typosquat",
+        "impersonation"
+      ]
+    },
+    {
+      "id": "bt-14",
+      "name": "security_architecture_review",
+      "domain": "blue_team",
+      "subdomain": "network",
+      "description": "Review security architecture: network segmentation, defense in depth, zero trust assessment.",
+      "risk_level": "low",
+      "confidence_weight": 0.85,
+      "tool_requirements": [],
+      "requires_activation": false,
+      "expected_output_type": "assessment",
+      "tags": [
+        "architecture",
+        "segmentation",
+        "zero_trust",
+        "defense_in_depth"
+      ]
+    }
+  ]
+}

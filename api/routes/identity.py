@@ -19,12 +19,14 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+from api._deps import require_auth
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/identity", tags=["identity"])
+router = APIRouter(prefix="/identity", tags=["identity"], dependencies=[Depends(require_auth)])
 
 
 # ── Request Models ──
