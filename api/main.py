@@ -612,6 +612,17 @@ async def _on_startup():
         log.warning("router_registry_auto_failed", err=str(exc)[:80])
 
 
+
+    # Initialize project CRUD pool
+    try:
+        import os
+        from core.db.project_crud import init_pool
+        dsn = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvis123@postgres:5432/jarvis")
+        await init_pool(dsn)
+        log.info("project_crud_pool_initialized")
+    except Exception as exc:
+        log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
+
 @app.on_event("shutdown")
 async def _on_shutdown():
     # Save kernel performance data to survive restarts
