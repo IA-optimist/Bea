@@ -132,8 +132,8 @@
     "created_at": 1775677800.0,
     "expires_at": 0,
     "max_uses": 0,
-    "use_count": 34,
-    "last_used": 1775685304.340267,
+    "use_count": 35,
+    "last_used": 1775685360.2424448,
     "enabled": true,
     "valid": true,
     "status": "active",
@@ -148,5 +148,33 @@
     },
     "daily_missions": 0,
     "token_hash": "ab79e3ad4164f7aaf749be7dc9462ea0bbc83a0e5dbcebd88858f1a8e8c0b29e"
+  },
+  "tok-abb41a9b80ce": {
+    "id": "tok-abb41a9b80ce",
+    "name": "hermes_phase4_secure",
+    "role": "admin",
+    "plan_type": "custom",
+    "created_at": 1775685903.8692355,
+    "expires_at": 0,
+    "max_uses": 0,
+    "use_count": 1,
+    "last_used": 1775685938.2324722,
+    "enabled": true,
+    "valid": true,
+    "status": "active",
+    "created_by": "hermes_security_rotation",
+    "metadata": {
+      "phase": "4",
+      "purpose": "production_secure"
+    },
+    "plan_limits": {
+      "missions_per_day": 50,
+      "concurrent_missions": 3,
+      "model_tier": "standard",
+      "multimodal_enabled": false,
+      "premium_tools_enabled": false
+    },
+    "daily_missions": 0,
+    "token_hash": "e70a547c7fb9189d8e95dd0f33ab0f184638bc4c13dbaf6e134f58f958a82730"
   }
 }
