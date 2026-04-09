@@ -17,6 +17,9 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import asyncio
 import os
 import time
