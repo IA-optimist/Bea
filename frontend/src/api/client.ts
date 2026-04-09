@@ -152,6 +152,11 @@ class ApiClient {
     const { data } = await this.client.patch<ApiResponse<Settings>>('/settings', settings);
     return data.data;
   }
+
+  // Generic request method for chat API
+  async post<T = any>(url: string, data: any): Promise<{ data: T }> {
+    return await this.client.post<T>(url, data);
+  }
 }
 
 export const apiClient = new ApiClient();

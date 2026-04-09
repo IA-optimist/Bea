@@ -7,6 +7,7 @@ import {
   DollarSign,
   Settings,
   Activity,
+  Brain,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
@@ -15,7 +16,8 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Missions', href: '/', icon: Brain },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Opportunities', href: '/opportunities', icon: TrendingUp },
   { name: 'Products', href: '/products', icon: Package },
   { name: 'Revenue', href: '/revenue', icon: DollarSign },
