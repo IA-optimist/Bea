@@ -17,16 +17,14 @@ from typing import Optional, List
 
 logger = logging.getLogger("jarvis.api.venture")
 
-try:
-    from api._deps import require_auth
-    _auth = Depends(require_auth)
-except Exception:
-    _auth = None
+# Fail-hard on auth import: if require_auth is unavailable, the router
+# must NOT register — a silent fallback to no-auth is worse than 404.
+from api._deps import require_auth
 
 router = APIRouter(
     prefix="/api/v3/venture",
     tags=["venture"],
-    dependencies=[_auth] if _auth else [],
+    dependencies=[Depends(require_auth)],
 )
 
 

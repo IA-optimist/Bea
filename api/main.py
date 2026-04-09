@@ -97,7 +97,14 @@ try:
 except ImportError as _enf_err:
     log.error("access_enforcement_MISSING", err=str(_enf_err),
               note="Security middleware unavailable — API will rely on per-route auth only")
-    # NOT silenced: this is logged as error, not warning
+    # Fail-hard in production: a missing security middleware is a block-startup
+    # condition. In dev we fall through to per-route auth only (logged error).
+    if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+        raise RuntimeError(
+            "PRODUCTION STARTUP BLOCKED — AccessEnforcementMiddleware failed "
+            f"to import: {_enf_err}. Fix the import or unset JARVIS_PRODUCTION "
+            "to run in dev mode with per-route auth only."
+        ) from _enf_err
 
 # ── Security headers middleware ───────────────────────────────
 try:

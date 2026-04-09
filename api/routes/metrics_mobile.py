@@ -28,7 +28,11 @@ if APIRouter:
     router = APIRouter(prefix="/api/v3/metrics", tags=["metrics-mobile"])
 
     def _auth(token: str | None = None, authorization: str | None = None) -> None:
-        """Accept X-Jarvis-Token (static) OR Authorization: Bearer (JWT)."""
+        """Accept X-Jarvis-Token (static) OR Authorization: Bearer (JWT).
+
+        Fail-closed: always raises 401 if no valid auth provided.
+        Previously had a silent bypass when JARVIS_API_TOKEN was unset.
+        """
         # Try static token first
         t = os.getenv("JARVIS_API_TOKEN", "")
         if token and t and token == t:
@@ -49,9 +53,8 @@ if APIRouter:
                     return
             except Exception:
                 pass
-        # Require at least one valid auth
-        if t:
-            raise HTTPException(401, "Unauthorized")
+        # Always require valid auth — no silent bypass
+        raise HTTPException(401, "Unauthorized")
 
     # ── Summary ───────────────────────────────────────────────
 

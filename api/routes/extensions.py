@@ -13,8 +13,9 @@ from __future__ import annotations
 from pathlib import Path
 
 try:
-    from fastapi import APIRouter, HTTPException, Request, Body
+    from fastapi import APIRouter, Depends, HTTPException, Request, Body
     from fastapi.responses import JSONResponse
+    from api._deps import require_auth
 except ImportError:
     # Stub for environments without FastAPI
     class _Stub:
@@ -24,13 +25,21 @@ except ImportError:
     HTTPException = Exception  # type: ignore
     Request = object  # type: ignore
     Body = lambda *a, **kw: None  # type: ignore
+    Depends = lambda *a, **kw: None  # type: ignore
+    require_auth = None  # type: ignore
     class JSONResponse:  # type: ignore
         def __init__(self, *a, **kw): pass
 
 from core.extension_registry import get_extension_registry
 
 
-router = APIRouter(prefix="/api/v3/extensions", tags=["extensions"])
+# Defense-in-depth: router-level auth (in addition to global middleware).
+# Prevents exposure if middleware fails to load.
+router = APIRouter(
+    prefix="/api/v3/extensions",
+    tags=["extensions"],
+    dependencies=[Depends(require_auth)] if require_auth else [],
+)
 
 
 # ── Helpers ──────────────────────────────────────────────────
