@@ -56,6 +56,10 @@ _PUBLIC_PATHS = {
     "/redoc",
 }
 
+# TEMPORARY DEV MODE: Allow all /api/* paths without auth if JARVIS_PRODUCTION not set
+import os
+_PRODUCTION_MODE = os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes")
+
 # Paths that match by prefix (static files)
 _PUBLIC_PREFIXES = (
     "/static/",
@@ -66,6 +70,10 @@ _PUBLIC_PREFIXES = (
 
 def is_public_path(path: str) -> bool:
     """Check if a path is publicly accessible without auth."""
+    # TEMPORARY DEV MODE: All paths public if not in production
+    if not _PRODUCTION_MODE:
+        return True
+    
     if path in _PUBLIC_PATHS:
         return True
     for prefix in _PUBLIC_PREFIXES:
