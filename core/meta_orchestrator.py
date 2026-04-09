@@ -1156,6 +1156,23 @@ class MetaOrchestrator:
             except Exception as _causal_err:
                 log.debug("causal_module.skipped", err=str(_causal_err)[:80])
 
+            # ── ComprehensionChecker : verify goal is well-understood ────────────────
+            try:
+                from core.orchestration.comprehension_checker import ComprehensionChecker
+                _cc = ComprehensionChecker()
+                import asyncio as _cc_asyncio
+                if not _cc_asyncio.get_event_loop().is_running():
+                    _cc_report = _cc_asyncio.get_event_loop().run_until_complete(
+                        _cc.check(enriched_goal)
+                    )
+                    if _cc_report and not _cc_report.get("understood", True):
+                        _clarification = _cc_report.get("clarification_needed", "")
+                        if _clarification:
+                            enriched_goal = enriched_goal + f"\n\n[COMPREHENSION NOTE] {_clarification}"
+                            log.info("comprehension_checker.clarification_injected", mission_id=mid)
+            except Exception as _cc_err:
+                log.debug("comprehension_checker.skipped", err=str(_cc_err)[:80])
+
             from core.orchestration.execution_supervisor import supervise
             delegate = self.v2 if use_budget else self.jarvis
             # Wire the capability dispatcher onto the delegate instance so that
