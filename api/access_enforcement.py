@@ -44,6 +44,7 @@ class AccessResult:
 # ── Public / unprotected paths ──
 _PUBLIC_PATHS = {
     "/health",
+    "/api/health",  # TEMPORARY: Allow dev access
     "/api/v2/health",
     "/api/v3/system/readiness",   # Required: Docker healthcheck + verify_boot.sh call this without auth
     "/",
