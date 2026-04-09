@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Moon, Sun, Bell, RefreshCw, Save, Settings as SettingsIcon } from 'lucide-react';
+import { Moon, Sun, Bell, RefreshCw, Save } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useTheme } from '../hooks/useTheme';
@@ -14,7 +14,7 @@ export const Settings = () => {
     auto_scan_enabled: false,
     scan_interval: 3600,
   });
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
