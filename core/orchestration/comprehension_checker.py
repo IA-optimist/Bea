@@ -313,6 +313,33 @@ class ComprehensionChecker:
         return report
 
 
+    # ── Wrapper meta_orchestrator ───────────────────────────────────────────────
+
+    async def check(self, goal: str) -> dict:
+        """
+        Wrapper léger pour meta_orchestrator : vérifie si le goal est bien formulé.
+        Retourne {"understood": bool, "clarification_needed": str}
+        """
+        try:
+            # Prompt minimal de vérification de compréhension
+            prompt = (
+                f"Tu dois exécuter cette mission : {goal[:300]}\n\n"
+                "Est-ce que l'objectif est clair et complet ? "
+                "Réponds en JSON : {\"understood\": true/false, \"clarification_needed\": \"<vide ou question>\"}. "
+                "Ne réponds qu'avec le JSON, rien d'autre."
+            )
+            response = self.ask(prompt, use_cos=False)
+            import json as _json
+            # Extraire le JSON de la réponse
+            start = response.find("{")
+            end = response.rfind("}") + 1
+            if start >= 0 and end > start:
+                return _json.loads(response[start:end])
+            return {"understood": True, "clarification_needed": ""}
+        except Exception:
+            return {"understood": True, "clarification_needed": ""}
+
+
 # ── Helpers module-level ──────────────────────────────────────────────────────
 
 def _p(result: dict):
