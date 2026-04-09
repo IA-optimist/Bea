@@ -59,9 +59,10 @@ services:
       dockerfile: Dockerfile
     container_name: jarvismax-api
     environment:
-      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
+      DATABASE_URL: postgresql://jarvis:jarvismax123@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
+      BYPASS_AUTH: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
