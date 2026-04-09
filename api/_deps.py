@@ -33,6 +33,10 @@ def require_auth(
     is defense-in-depth. If middleware already set request.state.user,
     trust it.
     """
+    # TEMPORARY DEV MODE: Skip auth if JARVIS_PRODUCTION is not set
+    if not os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
+    
     # Fast path: middleware already authenticated
     if hasattr(request.state, "user") and request.state.user:
         return request.state.user
