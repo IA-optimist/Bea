@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = 'http://localhost:8000/api/v2';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://77.42.40.146:8000/api/v2';
 
 class ApiClient {
   private client: AxiosInstance;
