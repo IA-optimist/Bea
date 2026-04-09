@@ -87,19 +87,19 @@ services:
     networks:
       - jarvismax-network
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: jarvismax-frontend
-    ports:
-      - "3000:3000"
-    environment:
-      VITE_API_URL: http://localhost:8000
-    depends_on:
-      - api
-    networks:
-      - jarvismax-network
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: jarvismax-frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     VITE_API_URL: http://localhost:8000
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - jarvismax-network
 
   ollama:
     image: ollama/ollama:latest
@@ -130,7 +130,6 @@ services:
       - caddy_config:/config
     depends_on:
       - api
-      - frontend
     networks:
       - jarvismax-network
 
