@@ -1173,6 +1173,23 @@ class MetaOrchestrator:
             except Exception as _cc_err:
                 log.debug("comprehension_checker.skipped", err=str(_cc_err)[:80])
 
+            # ── UnifiedMemory : semantic recall before mission ───────────────────────
+            try:
+                from core.orchestration.memory_system import UnifiedMemory
+                _um = UnifiedMemory()
+                import asyncio as _um_asyncio
+                if not _um_asyncio.get_event_loop().is_running():
+                    _memories = _um_asyncio.get_event_loop().run_until_complete(
+                        _um.recall(enriched_goal, top_k=3)
+                    )
+                    if _memories:
+                        _mem_block = "\n".join(f"- {m['content'][:200]}" for m in _memories if m.get('content'))
+                        if _mem_block:
+                            enriched_goal = enriched_goal + f"\n\n[MEMORY RECALL]\n{_mem_block}"
+                            log.info("unified_memory.recalled", mission_id=mid, n=len(_memories))
+            except Exception as _um_err:
+                log.debug("unified_memory.skipped", err=str(_um_err)[:80])
+
             from core.orchestration.execution_supervisor import supervise
             delegate = self.v2 if use_budget else self.jarvis
             # Wire the capability dispatcher onto the delegate instance so that
@@ -1631,6 +1648,22 @@ class MetaOrchestrator:
                                  retries=outcome.retries,
                                  duration_ms=outcome.duration_ms,
                                  confidence=result_confidence)
+                # ── UnifiedMemory : store result after mission ─────────────────────────
+                try:
+                    from core.orchestration.memory_system import UnifiedMemory
+                    _um2 = UnifiedMemory()
+                    import asyncio as _um2_asyncio
+                    if not _um2_asyncio.get_event_loop().is_running():
+                        _um2_asyncio.get_event_loop().run_until_complete(
+                            _um2.store(
+                                content=f"Mission: {enriched_goal[:200]}\nResult: {(ctx.result or '')[:300]}",
+                                memory_type="episodic",
+                                metadata={"mission_id": mid, "mode": mode}
+                            )
+                        )
+                        log.info("unified_memory.stored", mission_id=mid)
+                except Exception as _um2_err:
+                    log.debug("unified_memory.store_skipped", err=str(_um2_err)[:80])
                 # ── ContinualMemory : store experience ─────────────────────────────────
                 try:
                     from core.orchestration.continual_memory import ContinualMemory
