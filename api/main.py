@@ -569,6 +569,26 @@ async def root_redirect():
     return RedirectResponse(url="/app.html")
 
 
+# ── Prometheus Metrics Endpoint ────────────────────────────────
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, REGISTRY
+from fastapi.responses import Response
+
+@app.get("/metrics", include_in_schema=False)
+async def prometheus_metrics():
+    """
+    Prometheus-compatible metrics endpoint.
+    
+    Exposes all registered Prometheus metrics including:
+    - Business engine metrics (scans, builds, deploys)
+    - System metrics (CPU, memory, etc.)
+    - API metrics (requests, latency, etc.)
+    """
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
+
 # ── Startup : workspace cleanup ────────────────────────────────
 @app.on_event("startup")
 async def _on_startup():
