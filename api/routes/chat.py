@@ -127,6 +127,7 @@ async def chat(
     
     try:
         # Execute with project context
+        result = await orchestrator.execute_with_project_context(
             mission,
             project_id=req.project_id,
             enable_tot=use_tot,
