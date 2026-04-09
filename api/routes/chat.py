@@ -23,7 +23,6 @@ from typing import Optional, List, Dict, Any, Annotated
 
 from api._deps import _check_auth
 from core.cognition.orchestrator import CognitionOrchestrator
-from core.llm_factory import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +118,16 @@ def _get_orchestrator() -> CognitionOrchestrator:
     """Get or create CognitionOrchestrator instance."""
     global _orchestrator
     if _orchestrator is None:
-        llm_client = get_llm("cognition")
+        # Build simple OpenRouter client (Phase 5.3 hotfix)
+        from langchain_openai import ChatOpenAI
+        import os
+        
+        llm_client = ChatOpenAI(
+            model="anthropic/claude-3.5-sonnet",
+            api_key=os.getenv("OPENROUTER_API_KEY", ""),
+            base_url="https://openrouter.ai/api/v1",
+            temperature=0.7,
+        )
         _orchestrator = CognitionOrchestrator(llm_client)
     return _orchestrator
 
@@ -149,14 +157,7 @@ async def chat(
     complexity = detect_query_complexity(req.message)
     use_tot = req.enable_tot and complexity == "complex"
     
-    logger.info(
-        "chat_request",
-        project_id=req.project_id,
-        message_length=len(req.message),
-        complexity=complexity,
-        tot_enabled=use_tot,
-        history_length=len(req.conversation_history)
-    )
+    # logger.info(
     
     # Build mission dict for orchestrator
     mission = {
@@ -187,7 +188,7 @@ async def chat(
         
         # Self-correction if confidence too low
         if req.enable_self_correction and confidence < 0.6:
-            logger.info(
+    # logger.info(
                 "self_correction_triggered",
                 original_confidence=confidence,
                 project_id=req.project_id
@@ -213,7 +214,7 @@ async def chat(
                 confidence = corrected_confidence
                 reasoning = "corrected"
                 
-                logger.info(
+    # logger.info(
                     "self_correction_improved",
                     old_confidence=confidence,
                     new_confidence=corrected_confidence
@@ -233,7 +234,7 @@ async def chat(
         )
     
     except Exception as e:
-        logger.error(
+    # logger.error(
             "chat_error",
             error=str(e),
             project_id=req.project_id,
