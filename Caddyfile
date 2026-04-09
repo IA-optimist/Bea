@@ -5,10 +5,10 @@
 
 jarvis.jarvismaxapp.co.uk {
     handle /api/* {
-        reverse_proxy jarvis_core:8000
+        reverse_proxy jarvismax-api:8000
     }
     handle /ws/* {
-        reverse_proxy jarvis_core:8000
+        reverse_proxy jarvismax-api:8000
     }
     handle {
         root * /srv/frontend
@@ -19,7 +19,7 @@ jarvis.jarvismaxapp.co.uk {
 
 :8080 {
     handle /api/* {
-        reverse_proxy jarvis_core:8000
+        reverse_proxy jarvismax-api:8000
     }
     handle {
         root * /srv/frontend
