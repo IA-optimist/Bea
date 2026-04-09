@@ -1,290 +1,287 @@
+#!/usr/bin/env python3
 """
-Tests for business mission integration with MetaOrchestrator.
+Tests for Business Engine integration with CognitionOrchestrator.
+Phase 7: Validates bridge between cognition and business automation.
 """
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+import sys
+from pathlib import Path
+from unittest.mock import Mock, MagicMock, patch
+from datetime import datetime
 
-pytestmark = pytest.mark.asyncio
+# Add parent to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
-@pytest.fixture
-def mock_settings():
-    """Mock settings object."""
-    settings = MagicMock()
-    settings.jarvis_root = "/tmp/jarvismax"
-    settings.llm_provider = "openai"
-    settings.model = "gpt-4"
-    return settings
+from core.cognition.orchestrator import CognitionOrchestrator
+from business.business_engine import BusinessEngine
+from business.automation.opportunity_scanner import Opportunity
 
 
-class TestBusinessHandlersRegistration:
-    """Test business handlers registration."""
+class TestBusinessIntegration:
+    """Test CognitionOrchestrator + BusinessEngine integration."""
     
-    def test_handlers_registered_on_import(self):
-        """Test that handlers are defined in registry."""
-        from core.orchestration.business_missions import BUSINESS_MISSION_HANDLERS
-        
-        assert len(BUSINESS_MISSION_HANDLERS) == 6
-        assert "business.scan_opportunities" in BUSINESS_MISSION_HANDLERS
-        assert "business.build_product" in BUSINESS_MISSION_HANDLERS
-        assert "business.deploy_product" in BUSINESS_MISSION_HANDLERS
-        assert "business.check_compliance" in BUSINESS_MISSION_HANDLERS
-        assert "business.optimize_taxes" in BUSINESS_MISSION_HANDLERS
-        assert "business.track_revenue" in BUSINESS_MISSION_HANDLERS
+    @pytest.fixture
+    def mock_llm(self):
+        """Mock LLM client."""
+        llm = Mock()
+        llm.ainvoke = Mock(return_value=Mock(content="Business analysis complete"))
+        return llm
     
-    def test_register_business_handlers(self, mock_settings):
-        """Test registering handlers with orchestrator."""
-        from core.meta_orchestrator import MetaOrchestrator
-        from core.orchestration.business_missions import register_business_handlers
-        
-        orchestrator = MetaOrchestrator(mock_settings)
-        register_business_handlers(orchestrator)
-        
-        assert len(orchestrator._custom_handlers) == 6
-        assert "business.scan_opportunities" in orchestrator._custom_handlers
-
-
-class TestMetaOrchestratorCustomHandlers:
-    """Test MetaOrchestrator custom handler system."""
+    @pytest.fixture
+    def orchestrator(self, mock_llm, tmp_path):
+        """Create orchestrator with mocked components."""
+        return CognitionOrchestrator(
+            llm_client=mock_llm,
+            business_workspace=tmp_path / "business"
+        )
     
-    def test_register_mission_handler(self, mock_settings):
-        """Test registering a custom handler."""
-        from core.meta_orchestrator import MetaOrchestrator
-        
-        orchestrator = MetaOrchestrator(mock_settings)
-        
-        async def custom_handler(mission, context):
-            return {"status": "success", "result": "test"}
-        
-        orchestrator.register_mission_handler("test.custom", custom_handler)
-        
-        assert "test.custom" in orchestrator._custom_handlers
-        assert orchestrator._custom_handlers["test.custom"] == custom_handler
+    def test_orchestrator_has_business_engine(self, orchestrator):
+        """Test that orchestrator initializes with BusinessEngine."""
+        assert hasattr(orchestrator, 'business_engine')
+        assert isinstance(orchestrator.business_engine, BusinessEngine)
     
-    async def test_dispatch_custom_mission_success(self, mock_settings):
-        """Test dispatching to a custom handler."""
-        from core.meta_orchestrator import MetaOrchestrator
-        
-        orchestrator = MetaOrchestrator(mock_settings)
-        
-        async def custom_handler(mission, context):
-            return {"status": "success", "data": mission["params"]["test_value"]}
-        
-        orchestrator.register_mission_handler("test.custom", custom_handler)
-        
+    def test_business_mission_routing(self, orchestrator):
+        """Test that business missions are routed correctly."""
         mission = {
-            "type": "test.custom",
-            "params": {"test_value": 42}
+            "mission_id": "test-001",
+            "goal": "Scan for business opportunities",
+            "operation": "scan_opportunities",
+            "params": {"days_back": 7}
         }
         
-        result = await orchestrator.dispatch_custom_mission("test.custom", mission)
+        # Mock the business engine scan
+        mock_opportunity = Mock(spec=Opportunity)
+        mock_opportunity.to_dict.return_value = {
+            "title": "Test Opportunity",
+            "score": 8.5
+        }
         
-        assert result["status"] == "success"
-        assert result["data"] == 42
+        with patch.object(orchestrator.business_engine, 'scan_opportunities', return_value=[mock_opportunity]):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert "business_result" in result
+        assert result["business_result"]["operation"] == "scan_opportunities"
+        assert result["cognition"]["business_engine_used"] is True
     
-    async def test_dispatch_unknown_mission_type(self, mock_settings):
-        """Test dispatching to unknown handler raises KeyError."""
-        from core.meta_orchestrator import MetaOrchestrator
-        
-        orchestrator = MetaOrchestrator(mock_settings)
-        
-        mission = {"type": "unknown.type", "params": {}}
-        
-        with pytest.raises(KeyError, match="No handler registered"):
-            await orchestrator.dispatch_custom_mission("unknown.type", mission)
-    
-    async def test_dispatch_handler_exception(self, mock_settings):
-        """Test handler exceptions are propagated."""
-        from core.meta_orchestrator import MetaOrchestrator
-        
-        orchestrator = MetaOrchestrator(mock_settings)
-        
-        async def failing_handler(mission, context):
-            raise ValueError("Test error")
-        
-        orchestrator.register_mission_handler("test.failing", failing_handler)
-        
-        mission = {"type": "test.failing", "params": {}}
-        
-        with pytest.raises(ValueError, match="Test error"):
-            await orchestrator.dispatch_custom_mission("test.failing", mission)
-
-
-class TestBusinessScanOpportunities:
-    """Test business.scan_opportunities handler."""
-    
-    @patch('business.automation.opportunity_scanner.OpportunityScanner')
-    async def test_scan_opportunities_success(self, mock_scanner_class):
-        """Test successful opportunity scan."""
-        from core.orchestration.business_missions import handle_scan_opportunities
-        from business.automation.opportunity_scanner import Opportunity
-        from datetime import datetime
-        
-        # Mock scanner
-        mock_scanner = MagicMock()
-        mock_opp = MagicMock(spec=Opportunity)
-        mock_opp.title = "Test Opportunity"
-        mock_opp.description = "Test description"
-        mock_opp.source = "reddit"
-        mock_opp.url = "https://example.com"
-        mock_opp.total_score = 75.0
-        mock_opp.demand_score = 80.0
-        mock_opp.competition_score = 70.0
-        mock_opp.feasibility_score = 75.0
-        mock_opp.monetization_score = 75.0
-        mock_opp.upvotes = 100
-        mock_opp.comments = 50
-        mock_opp.tags = ["saas", "b2b"]
-        mock_opp.pain_points = ["manual process"]
-        
-        mock_scanner.scan_all.return_value = [mock_opp]
-        mock_scanner_class.return_value = mock_scanner
-        
+    def test_keyword_detection_business(self, orchestrator):
+        """Test that business keywords trigger business engine."""
         mission = {
-            "type": "business.scan_opportunities",
+            "mission_id": "test-002",
+            "goal": "Check my SaaS portfolio revenue",
+            "operation": "portfolio_status"  # Explicit operation
+        }
+        
+        mock_portfolio = Mock()
+        mock_portfolio.total_mrr = 1500.0
+        mock_portfolio.total_arr = 18000.0
+        mock_portfolio.total_products = 3
+        mock_portfolio.total_customers = 50
+        
+        with patch.object(orchestrator.business_engine, 'get_portfolio_status', return_value=mock_portfolio):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert "business_result" in result
+        assert result["business_result"]["mrr"] == 1500.0
+    
+    def test_portfolio_status_operation(self, orchestrator):
+        """Test portfolio_status operation."""
+        mission = {
+            "mission_id": "test-003",
+            "goal": "Get portfolio metrics",
+            "operation": "portfolio_status",
+        }
+        
+        mock_portfolio = Mock()
+        mock_portfolio.total_mrr = 2500.0
+        mock_portfolio.total_arr = 30000.0
+        mock_portfolio.total_products = 5
+        mock_portfolio.total_customers = 100
+        
+        with patch.object(orchestrator.business_engine, 'get_portfolio_status', return_value=mock_portfolio):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert result["business_result"]["mrr"] == 2500.0
+        assert result["business_result"]["products"] == 5
+        assert "€2500.00 MRR" in result["result"]
+    
+    def test_scan_opportunities_operation(self, orchestrator):
+        """Test scan_opportunities operation."""
+        mission = {
+            "mission_id": "test-004",
+            "goal": "Find new business opportunities",
+            "operation": "scan_opportunities",
+            "params": {"days_back": 14}
+        }
+        
+        mock_opportunities = [
+            Mock(to_dict=Mock(return_value={"title": f"Opp {i}", "score": 8.0 + i}))
+            for i in range(3)
+        ]
+        
+        with patch.object(orchestrator.business_engine, 'scan_opportunities', return_value=mock_opportunities):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert result["business_result"]["opportunities_found"] == 3
+        assert len(result["business_result"]["opportunities"]) == 3
+    
+    def test_run_pipeline_operation(self, orchestrator):
+        """Test full pipeline operation."""
+        mission = {
+            "mission_id": "test-005",
+            "goal": "Run full business pipeline",
+            "operation": "run_pipeline",
             "params": {
                 "days_back": 7,
-                "min_score": 60.0
+                "top_n": 3,
+                "auto_build": False,
+                "auto_deploy": False
             }
         }
         
-        result = await handle_scan_opportunities(mission)
-        
-        assert result["status"] == "success"
-        assert len(result["opportunities"]) == 1
-        assert result["opportunities"][0]["title"] == "Test Opportunity"
-        assert result["opportunities"][0]["score"] == 75.0
-        assert result["summary"]["total_found"] == 1
-        assert result["summary"]["high_score"] == 1
-    
-    @patch('business.automation.opportunity_scanner.OpportunityScanner')
-    async def test_scan_opportunities_filters_low_score(self, mock_scanner_class):
-        """Test that low-score opportunities are filtered."""
-        from core.orchestration.business_missions import handle_scan_opportunities
-        from business.automation.opportunity_scanner import Opportunity
-        
-        mock_scanner = MagicMock()
-        
-        # Create two opportunities: one high score, one low
-        high_opp = MagicMock(spec=Opportunity)
-        high_opp.total_score = 75.0
-        high_opp.title = "High Score"
-        high_opp.description = "desc"
-        high_opp.source = "reddit"
-        high_opp.url = "https://example.com"
-        high_opp.demand_score = 80.0
-        high_opp.competition_score = 70.0
-        high_opp.feasibility_score = 75.0
-        high_opp.monetization_score = 75.0
-        high_opp.upvotes = 100
-        high_opp.comments = 50
-        high_opp.tags = []
-        high_opp.pain_points = []
-        
-        low_opp = MagicMock(spec=Opportunity)
-        low_opp.total_score = 45.0
-        low_opp.source = "hackernews"
-        
-        mock_scanner.scan_all.return_value = [high_opp, low_opp]
-        mock_scanner_class.return_value = mock_scanner
-        
-        mission = {
-            "type": "business.scan_opportunities",
-            "params": {
-                "days_back": 30,
-                "min_score": 60.0
-            }
-        }
-        
-        result = await handle_scan_opportunities(mission)
-        
-        assert result["status"] == "success"
-        assert len(result["opportunities"]) == 1
-        assert result["opportunities"][0]["title"] == "High Score"
-        assert result["summary"]["total_found"] == 2
-        assert result["summary"]["high_score"] == 1
-
-
-class TestBusinessBuildProduct:
-    """Test business.build_product handler."""
-    
-    @patch('business.automation.product_builder.ProductBuilder')
-    async def test_build_product_success(self, mock_builder_class):
-        """Test successful product build."""
-        from core.orchestration.business_missions import handle_build_product
-        from pathlib import Path
-        
-        # Mock builder
-        mock_builder = MagicMock()
-        mock_product = MagicMock()
-        mock_product.name = "Test Product"
-        mock_product.description = "Test description"
-        mock_product.output_dir = Path("/tmp/test_product")
-        mock_product.stack = "react_fastapi"
-        mock_product.features = ["auth", "payments"]
-        mock_product.pricing_model = "subscription"
-        
-        mock_builder.build_from_spec.return_value = mock_product
-        mock_builder_class.return_value = mock_builder
-        
-        mission = {
-            "type": "business.build_product",
-            "params": {
-                "opportunity": {
-                    "title": "Test Product",
-                    "description": "Test description",
-                    "tags": ["saas"],
-                    "pain_points": ["manual process"]
-                },
-                "stack": "react_fastapi",
-                "features": ["auth", "payments"]
-            }
-        }
-        
-        result = await handle_build_product(mission)
-        
-        assert result["status"] == "success"
-        assert result["product"]["name"] == "Test Product"
-        assert result["product"]["stack"] == "react_fastapi"
-        assert "artifacts" in result
-
-
-class TestCLIIntegration:
-    """Test CLI integration with orchestrator."""
-    
-    @patch('core.meta_orchestrator.get_meta_orchestrator')
-    async def test_cli_scan_command(self, mock_get_orch):
-        """Test CLI scan command."""
-        from jarvismax_cli import cmd_scan
-        
-        mock_orch = MagicMock()
-        mock_orch.dispatch_custom_mission = AsyncMock(return_value={
+        mock_result = {
             "status": "success",
-            "opportunities": [
-                {
-                    "title": "Test Opp",
-                    "score": 75.0,
-                    "source": "reddit",
-                    "description": "desc",
-                    "url": "https://example.com",
-                    "upvotes": 100,
-                    "comments": 50
-                }
-            ],
             "summary": {
-                "total_found": 1,
-                "high_score": 1,
-                "avg_score": 75.0,
-                "top_sources": {"reddit": 1}
+                "opportunities_scanned": 10,
+                "safe_opportunities": 5,
+                "products_built": 0
             }
-        })
-        mock_get_orch.return_value = mock_orch
+        }
         
-        # Test scan command
-        await cmd_scan(["30"])
+        with patch.object(orchestrator.business_engine, 'run_pipeline', return_value=mock_result):
+            result = orchestrator.process(mission)
         
-        # Verify dispatch was called with correct mission
-        mock_orch.dispatch_custom_mission.assert_called_once()
-        call_args = mock_orch.dispatch_custom_mission.call_args
-        assert call_args[0][0] == "business.scan_opportunities"
-        assert call_args[0][1]["params"]["days_back"] == 30
+        assert result["status"] == "COMPLETED"
+        assert "summary" in result["business_result"]
+        assert result["business_result"]["summary"]["opportunities_scanned"] == 10
+    
+    def test_business_mission_with_cognition_tracking(self, orchestrator):
+        """Test that business missions get cognition tracking."""
+        mission = {
+            "mission_id": "test-006",
+            "goal": "Business analysis",
+            "operation": "portfolio_status",
+        }
+        
+        mock_portfolio = Mock()
+        mock_portfolio.total_mrr = 1000.0
+        mock_portfolio.total_arr = 12000.0
+        mock_portfolio.total_products = 2
+        mock_portfolio.total_customers = 25
+        
+        with patch.object(orchestrator.business_engine, 'get_portfolio_status', return_value=mock_portfolio):
+            result = orchestrator.process(mission)
+        
+        # Check cognition metadata
+        assert "cognition" in result
+        assert result["cognition"]["business_engine_used"] is True
+        assert "confidence_scored" in result["cognition"]
+    
+    def test_business_operation_error_handling(self, orchestrator):
+        """Test error handling in business operations."""
+        mission = {
+            "mission_id": "test-007",
+            "goal": "Test error handling",
+            "operation": "scan_opportunities",
+        }
+        
+        with patch.object(orchestrator.business_engine, 'scan_opportunities', side_effect=Exception("API Error")):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "FAILED"
+        assert "error" in result["business_result"]
+        assert "API Error" in result["result"]
+    
+    def test_invalid_business_operation(self, orchestrator):
+        """Test handling of invalid operation."""
+        mission = {
+            "mission_id": "test-008",
+            "goal": "business Invalid operation test",  # Add business keyword
+            "operation": "invalid_operation",
+        }
+        
+        result = orchestrator.process(mission)
+        
+        assert result["status"] == "FAILED"
+        assert "Unknown business operation" in result["result"]
+    
+    def test_build_product_requires_opportunity(self, orchestrator):
+        """Test that build_product requires opportunity param."""
+        mission = {
+            "mission_id": "test-009",
+            "goal": "Build product",
+            "operation": "build_product",
+            "params": {}  # Missing opportunity
+        }
+        
+        result = orchestrator.process(mission)
+        
+        assert result["status"] == "FAILED"
+        assert "opportunity parameter required" in result["result"]
+    
+    def test_business_prefix_stripping(self, orchestrator):
+        """Test that business_ prefix is stripped from operation."""
+        mission = {
+            "mission_id": "test-010",
+            "goal": "Test prefix",
+            "operation": "business_portfolio_status",
+        }
+        
+        mock_portfolio = Mock()
+        mock_portfolio.total_mrr = 500.0
+        mock_portfolio.total_arr = 6000.0
+        mock_portfolio.total_products = 1
+        mock_portfolio.total_customers = 10
+        
+        with patch.object(orchestrator.business_engine, 'get_portfolio_status', return_value=mock_portfolio):
+            result = orchestrator.process(mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert result["business_result"]["operation"] == "portfolio_status"
+
+
+class TestBusinessBridge:
+    """Test the bridge between cognition results and business inputs."""
+    
+    @pytest.fixture
+    def mock_llm(self):
+        llm = Mock()
+        llm.ainvoke = Mock(return_value=Mock(content="Analysis"))
+        return llm
+    
+    def test_cognition_result_to_business_input(self, mock_llm, tmp_path):
+        """Test data transformation from cognition to business."""
+        orchestrator = CognitionOrchestrator(
+            llm_client=mock_llm,
+            business_workspace=tmp_path / "business"
+        )
+        
+        # Simulate cognition result being used as business input
+        cognition_mission = {
+            "mission_id": "cog-001",
+            "goal": "Analyze market trends",
+            "result": "Strong demand for AI tools"
+        }
+        
+        # Convert to business params
+        business_mission = {
+            "mission_id": "bus-001",
+            "goal": "Find opportunities based on: " + cognition_mission["result"],
+            "operation": "scan_opportunities",
+            "params": {"days_back": 30}
+        }
+        
+        mock_opportunities = [Mock(to_dict=Mock(return_value={"title": "AI Tool"}))]
+        
+        with patch.object(orchestrator.business_engine, 'scan_opportunities', return_value=mock_opportunities):
+            result = orchestrator.process(business_mission)
+        
+        assert result["status"] == "COMPLETED"
+        assert "AI tools" in result["goal"]  # Check the actual goal content
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

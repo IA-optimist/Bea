@@ -3,13 +3,15 @@ Cognition Orchestrator - Integrates all AGI patterns.
 Coordinates ToT, self-confidence, and active learning.
 """
 from __future__ import annotations
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Callable
 import structlog
+from pathlib import Path
 from core.cognition.tot_wrapper import plan_with_tot, should_use_tot
 from core.cognition.self_confidence import ConfidenceScorer, SelfCorrector
 from core.cognition.active_learning import SkillDiscoverer, PerformanceTracker
 from core.cognition.project_context import ProjectContextManager, ProjectContext
 from core.cognition.lifelong_learning import LifelongLearningEngine
+from business.business_engine import BusinessEngine
 
 log = structlog.get_logger(__name__)
 
@@ -30,7 +32,7 @@ class CognitionOrchestrator:
     6. Discover skills from successes
     """
     
-    def __init__(self, llm_client, project_manager=None):
+    def __init__(self, llm_client, project_manager=None, business_workspace=None):
         self.llm = llm_client
         self.scorer = ConfidenceScorer(llm_client)
         self.corrector = SelfCorrector(llm_client)
@@ -39,6 +41,9 @@ class CognitionOrchestrator:
     
         self.project_manager = project_manager or ProjectContextManager()
         self.learning_engine = LifelongLearningEngine()
+        
+        # Phase 7: Business Engine integration
+        self.business_engine = BusinessEngine(workspace=business_workspace)
 
     async def _execute_with_llm(self, mission: Dict[str, Any]) -> str:
         """
@@ -439,3 +444,216 @@ Provide a comprehensive response addressing the mission goal."""
             }
             for s in skills
         ]
+    
+    async def execute_business_mission(
+        self,
+        mission: Dict[str, Any],
+        enable_tot: bool = True,
+        enable_confidence: bool = True,
+        enable_learning: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Execute business-related mission using BusinessEngine.
+        
+        Phase 7: Business Engine Integration
+        Bridge between cognition orchestrator and business automation pipeline.
+        
+        Supports operations:
+        - scan_opportunities: Find business opportunities
+        - build_product: Generate SaaS from opportunity
+        - run_pipeline: Full autonomous pipeline
+        - portfolio_status: Get revenue metrics
+        
+        Args:
+            mission: Dict with goal, operation, and params
+            enable_tot: Enable Tree-of-Thought planning
+            enable_confidence: Enable confidence scoring
+            enable_learning: Enable performance tracking
+        
+        Returns:
+            Mission result with business_result and cognition metadata
+        """
+        from datetime import datetime
+        
+        goal = mission.get("goal", "")
+        mission_id = mission.get("mission_id", "unknown")
+        operation = mission.get("operation", "run_pipeline")  # Default to full pipeline
+        params = mission.get("params", {})
+        
+        log.info(
+            "business_mission_start",
+            mission_id=mission_id,
+            operation=operation,
+            goal=goal[:100]
+        )
+        
+        start_time = datetime.now()
+        
+        # Step 1: ToT planning for complex business decisions
+        if enable_tot and should_use_tot(goal):
+            log.info("using_tot_for_business", mission_id=mission_id)
+            tot_result = await plan_with_tot(goal, self.llm)
+            mission["tot_plan"] = tot_result
+            mission["plan_confidence"] = tot_result["confidence"]
+        
+        # Step 2: Execute business operation
+        business_result = None
+        try:
+            if operation == "scan_opportunities":
+                days_back = params.get("days_back", 30)
+                opportunities = self.business_engine.scan_opportunities(days_back=days_back)
+                business_result = {
+                    "operation": "scan_opportunities",
+                    "opportunities_found": len(opportunities),
+                    "opportunities": [opp.to_dict() for opp in opportunities[:10]],  # Limit to top 10
+                }
+                output = f"Found {len(opportunities)} business opportunities in the last {days_back} days."
+            
+            elif operation == "build_product":
+                opportunity = params.get("opportunity")
+                if not opportunity:
+                    raise ValueError("opportunity parameter required for build_product")
+                
+                product_dir = self.business_engine.build_product(opportunity)
+                business_result = {
+                    "operation": "build_product",
+                    "product_path": str(product_dir),
+                    "opportunity": opportunity,
+                }
+                output = f"Product built successfully at: {product_dir}"
+            
+            elif operation == "portfolio_status":
+                portfolio = self.business_engine.get_portfolio_status()
+                business_result = {
+                    "operation": "portfolio_status",
+                    "mrr": portfolio.total_mrr,
+                    "arr": portfolio.total_arr,
+                    "products": portfolio.total_products,
+                    "customers": portfolio.total_customers,
+                }
+                output = f"Portfolio: €{portfolio.total_mrr:.2f} MRR, {portfolio.total_products} products, {portfolio.total_customers} customers"
+            
+            elif operation == "run_pipeline":
+                days_back = params.get("days_back", 30)
+                top_n = params.get("top_n", 5)
+                auto_build = params.get("auto_build", False)
+                auto_deploy = params.get("auto_deploy", False)
+                
+                pipeline_result = self.business_engine.run_pipeline(
+                    days_back=days_back,
+                    top_n=top_n,
+                    auto_build=auto_build,
+                    auto_deploy=auto_deploy
+                )
+                business_result = pipeline_result
+                
+                summary = business_result.get("summary", {})
+                output = f"Business pipeline complete: {summary.get('opportunities_scanned', 0)} opportunities, {summary.get('safe_opportunities', 0)} safe, {summary.get('products_built', 0)} built"
+            
+            else:
+                raise ValueError(f"Unknown business operation: {operation}")
+            
+            mission["result"] = output
+            mission["business_result"] = business_result
+            mission["status"] = "COMPLETED"
+            
+        except Exception as e:
+            log.error("business_execution_failed", error=str(e), mission_id=mission_id)
+            mission["result"] = f"Business operation failed: {str(e)}"
+            mission["business_result"] = {"error": str(e), "operation": operation}
+            mission["status"] = "FAILED"
+            output = mission["result"]
+        
+        # Step 3: Score confidence
+        if enable_confidence and output:
+            confidence_result = self.scorer.score_output(goal, output)
+            mission["confidence_score"] = confidence_result["confidence"]
+            mission["confidence_issues"] = confidence_result["issues"]
+            
+            # Auto-correct if needed
+            if confidence_result["should_retry"] and mission["status"] != "FAILED":
+                log.info("attempting_business_correction", mission_id=mission_id)
+                correction = await self.corrector.correct_output(
+                    goal, output, confidence_result
+                )
+                
+                if correction["corrected"]:
+                    mission["result"] = correction["output"]
+                    mission["was_corrected"] = True
+        
+        # Step 4: Track performance
+        duration = (datetime.now() - start_time).total_seconds()
+        
+        if enable_learning:
+            mission_record = {
+                "id": mission_id,
+                "status": mission["status"],
+                "duration": duration,
+                "confidence": mission.get("confidence_score", 0.5),
+                "domain": "business",
+            }
+            self.tracker.record_mission(mission_record)
+        
+        # Step 5: Skill discovery for successful business operations
+        if enable_learning and mission["status"] == "COMPLETED":
+            skill_analysis = self.discoverer.analyze_mission(mission)
+            if skill_analysis.get("is_skill_worthy"):
+                log.info(
+                    "business_skill_discovered",
+                    mission_id=mission_id,
+                    skill_name=skill_analysis.get("skill_name")
+                )
+                mission["discovered_skill"] = skill_analysis
+        
+        # Add cognition metadata
+        mission["cognition"] = {
+            "tot_used": "tot_plan" in mission,
+            "confidence_scored": "confidence_score" in mission,
+            "was_corrected": mission.get("was_corrected", False),
+            "skill_discovered": "discovered_skill" in mission,
+            "business_engine_used": True,
+        }
+        
+        log.info(
+            "business_mission_complete",
+            mission_id=mission_id,
+            operation=operation,
+            status=mission["status"],
+            duration=duration
+        )
+        
+        return mission
+    
+    def process(self, mission: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Main entry point for mission processing.
+        Routes to appropriate executor based on mission type.
+        
+        Args:
+            mission: Dict with at minimum: goal, mission_id
+                     Optional: operation (for business missions), params
+        
+        Returns:
+            Processed mission with results
+        """
+        import asyncio
+        
+        # Detect mission type
+        goal = mission.get("goal", "").lower()
+        operation = mission.get("operation", "")
+        
+        # Route business missions
+        if operation.startswith("business_") or operation in [
+            "scan_opportunities", "build_product", "portfolio_status", "run_pipeline"
+        ] or any(keyword in goal for keyword in [
+            "business", "saas", "product", "revenue", "opportunity", "portfolio"
+        ]):
+            log.info("routing_to_business_engine", mission_id=mission.get("mission_id"))
+            # Strip business_ prefix if present
+            if operation.startswith("business_"):
+                mission["operation"] = operation.replace("business_", "")
+            
+            return asyncio.run(self.execute_business_mission(mission))
+        
+        # Default to standard cognition pipeline
+        return asyncio.run(self.execute_mission_with_cognition(mission))
