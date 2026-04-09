@@ -779,6 +779,30 @@ class MetaOrchestrator:
             # PLANNED -> RUNNING
             self._transition(ctx, MissionStatus.RUNNING)
 
+            # ── Creative Mode dispatcher ──────────────────────────────────────────────────
+            if mode == "creative":
+                try:
+                    from core.orchestration.creative_engine import JarvisCreativePipeline
+                    _creative = JarvisCreativePipeline(ollama_url="http://localhost:11434")
+                    import asyncio as _creative_asyncio
+                    if not _creative_asyncio.get_event_loop().is_running():
+                        _creative_result = _creative_asyncio.get_event_loop().run_until_complete(
+                            _creative.run(enriched_goal, n_solutions=3)
+                        )
+                    else:
+                        _creative_result = {"best": None, "all_solutions": []}
+                    if _creative_result.get("best"):
+                        ctx.result = _creative_result["best"]
+                        ctx.metadata["creative_solutions"] = len(_creative_result.get("all_solutions", []))
+                        self._transition(ctx, MissionStatus.REVIEW)
+                        self._transition(ctx, MissionStatus.DONE,
+                                         result_len=len(ctx.result), retries=0, duration_ms=0, confidence=0.75)
+                        log.info("creative_mode.done", mission_id=mid, n_solutions=ctx.metadata["creative_solutions"])
+                        return ctx
+                except Exception as _creative_err:
+                    log.warning("creative_mode.failed", err=str(_creative_err)[:80])
+                    # Fall through to standard pipeline
+
             # ── JarvisTeam dispatcher (mode=improve/lab/dev) ──────────────────────────
             # Route to architect→coder→reviewer→qa chain when mode indicates improvement.
             if mode in ("improve", "lab", "dev") and not _is_chat_mode:
@@ -1610,6 +1634,22 @@ class MetaOrchestrator:
                     log.info("continual_memory.stored", mission_id=mid, surprise=round(_surprise, 3))
                 except Exception as _cm2_err:
                     log.debug("continual_memory.store_skipped", err=str(_cm2_err)[:80])
+                # ── ArtificialCuriosity : detect and log surprising results ───────────────────
+                try:
+                    from core.orchestration.creative_engine import ArtificialCuriosity
+                    _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
+                    _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
+                    if _surprise_ac > 0.6:
+                        import asyncio as _ac_asyncio
+                        if not _ac_asyncio.get_event_loop().is_running():
+                            _questions = _ac_asyncio.get_event_loop().run_until_complete(
+                                _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
+                            )
+                            if _questions:
+                                ctx.metadata["curiosity_questions"] = _questions[:3]
+                                log.info("curiosity.triggered", mission_id=mid, surprise=round(_surprise_ac, 2), questions=len(_questions))
+                except Exception as _ac_err:
+                    log.debug("curiosity.skipped", err=str(_ac_err)[:80])
                 # ── Skill Store: persist successful mission pattern (Voyager pattern) ──
                 # Store if confidence >= threshold (default 0.70).
                 # Fail-open: any exception is silently swallowed.
