@@ -35,11 +35,14 @@ def get_rate_limit_key(request: Request) -> str:
     return f"ip:{ip}"
 
 
-# Initialize limiter
+# Initialize limiter with Redis backend (distributed across API replicas)
+import os
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+
 limiter = Limiter(
     key_func=get_rate_limit_key,
     default_limits=["100/minute"],  # Global default
-    storage_uri="memory://",  # Use Redis in production: redis://redis:6379
+    storage_uri=REDIS_URL,  # Redis for distributed rate limiting
 )
 
 
