@@ -1105,6 +1105,33 @@ class MetaOrchestrator:
             except Exception as _al_err:
                 log.debug("alignment.check_skipped", err=str(_al_err)[:80])
 
+            # ── CausalModule : enrich goal with causal context ──────────────────────────────────────
+            try:
+                from core.orchestration.causal_module import JarvisMaxCausalIntegration
+                _causal = JarvisMaxCausalIntegration()
+                # get_causal_context → get_prompt_injection() (maps to class API)
+                _causal_ctx = (
+                    _causal.get_causal_context(enriched_goal)
+                    if hasattr(_causal, "get_causal_context")
+                    else _causal.get_prompt_injection()
+                )
+                if _causal_ctx and _causal_ctx.strip() and "No causal" not in _causal_ctx:
+                    enriched_goal = enriched_goal + "\n\n" + _causal_ctx
+                    log.info("causal_module.context_injected", mission_id=mid)
+                # Extract and store causal claims from goal (async, non-blocking)
+                import asyncio as _causal_asyncio
+                try:
+                    if not _causal_asyncio.get_event_loop().is_running():
+                        # update_graph_from_text → ingest_mission_result() (maps to class API)
+                        if hasattr(_causal, "update_graph_from_text"):
+                            _causal.update_graph_from_text(enriched_goal[:500])
+                        else:
+                            _causal.ingest_mission_result(enriched_goal[:500])
+                except Exception:
+                    pass
+            except Exception as _causal_err:
+                log.debug("causal_module.skipped", err=str(_causal_err)[:80])
+
             from core.orchestration.execution_supervisor import supervise
             delegate = self.v2 if use_budget else self.jarvis
             # Wire the capability dispatcher onto the delegate instance so that
