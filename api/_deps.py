@@ -100,6 +100,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
         return
 
     # 1.5. Check access token (jv-* tokens from TokenManager)
+    candidate = token or bearer  # Extract candidate from token/bearer
     if candidate and candidate.startswith('jv-'):
         try:
             from api.auth import verify_token
