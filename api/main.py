@@ -32,8 +32,8 @@ from typing import Any, Optional
 import structlog
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, WebSocket
 from api._deps import require_auth, get_start_time, _check_auth
-from api.rate_limit_middleware import limiter, custom_rate_limit_handler
-from slowapi.errors import RateLimitExceeded
+# from api.rate_limit_middleware import limiter, custom_rate_limit_handler
+# from slowapi.errors import RateLimitExceeded
 from api.security_headers import SecurityHeadersMiddleware
 from api.token_utils import strip_bearer
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,8 +61,8 @@ app = FastAPI(
 )
 
 # Rate limiting (Phase 4 Security)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 # CORS: restrict to known origins (override via CORS_ORIGINS env var)
 _cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
@@ -152,6 +152,13 @@ try:
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
+
+# ── Import du routeur Chat (Phase 5.3 — AGI Cognition) ──
+try:
+    from api.routes.chat import router as chat_router
+    app.include_router(chat_router)
+except Exception as _e:
+    log.warning("router_import_failed", err=str(_e)[:120])
 # ── Import du routeur Agent Builder ───────────────────────────
 try:
     from api.routes.agent_builder import router as agent_builder_router
