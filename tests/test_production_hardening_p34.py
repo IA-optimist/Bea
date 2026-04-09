@@ -274,12 +274,17 @@ class TestEnforceLLMKey:
             s.enforce_llm_key()
 
     def test_no_llm_key_raises(self):
-        """No LLM key + DRY_RUN=false → RuntimeError."""
+        """No LLM key + no Ollama + DRY_RUN=false → RuntimeError.
+
+        has_llm_key now considers Ollama as a valid local provider.
+        To reproduce the 'no LLM' state, we must also clear OLLAMA_HOST.
+        """
         with pytest.raises(RuntimeError, match="NO LLM KEY"):
             self._run_llm_check({
                 "OPENAI_API_KEY": "",
                 "ANTHROPIC_API_KEY": "",
                 "OPENROUTER_API_KEY": "",
+                "OLLAMA_HOST": "",
                 "DRY_RUN": "false",
             })
 
@@ -320,13 +325,28 @@ class TestEnforceLLMKey:
         })
 
     def test_has_llm_key_property(self):
-        """has_llm_key property reflects presence of any key."""
+        """has_llm_key property reflects presence of any cloud key OR local Ollama."""
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-x", "ANTHROPIC_API_KEY": "", "OPENROUTER_API_KEY": ""}, clear=False):
             import config.settings as _mod
             s = _mod.Settings()
             assert s.has_llm_key is True
 
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "", "ANTHROPIC_API_KEY": "", "OPENROUTER_API_KEY": ""}, clear=False):
+        # No cloud key AND no Ollama → False
+        with patch.dict(
+            os.environ,
+            {"OPENAI_API_KEY": "", "ANTHROPIC_API_KEY": "", "OPENROUTER_API_KEY": "", "OLLAMA_HOST": ""},
+            clear=False,
+        ):
             import config.settings as _mod
             s = _mod.Settings()
             assert s.has_llm_key is False
+
+        # No cloud key BUT Ollama host configured → True (local provider counts)
+        with patch.dict(
+            os.environ,
+            {"OPENAI_API_KEY": "", "ANTHROPIC_API_KEY": "", "OPENROUTER_API_KEY": "", "OLLAMA_HOST": "http://ollama:11434"},
+            clear=False,
+        ):
+            import config.settings as _mod
+            s = _mod.Settings()
+            assert s.has_llm_key is True

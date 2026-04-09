@@ -244,13 +244,23 @@ class TestConfidencePolicy:
         assert not d.require_approval
 
     def test_low_confidence_requires_approval(self):
-        """confidence=0.40 + low risk → CAUTIOUS, require_approval=True."""
+        """confidence=0.40 + medium risk → CAUTIOUS, require_approval=True.
+
+        Post-phase0 fix: CAUTIOUS only requires approval for medium+ risk.
+        Low-risk missions proceed even at low confidence (can't cause damage).
+        """
         p = self.get_policy()
-        d = p.decide(confidence=0.40, risk_level="low")
+        d = p.decide(confidence=0.40, risk_level="medium")
         from core.orchestration.confidence_policy import PolicyTier
         assert d.tier == PolicyTier.CAUTIOUS
         assert d.require_approval
         assert d.add_context
+
+        # Sanity check: low risk does NOT require approval at CAUTIOUS
+        d_low = p.decide(confidence=0.40, risk_level="low")
+        assert d_low.tier == PolicyTier.CAUTIOUS
+        assert not d_low.require_approval, "low-risk CAUTIOUS should proceed without approval"
+        assert d_low.add_context
 
     def test_very_low_confidence_decomposes(self):
         """confidence=0.25 → DECOMPOSE tier."""
@@ -289,9 +299,13 @@ class TestConfidencePolicy:
         assert d.require_approval
 
     def test_destructive_task_overrides_proceed(self):
-        """Even high confidence, destructive=True forces CAUTIOUS."""
+        """Even high confidence, destructive=True forces CAUTIOUS and approval.
+
+        Post-phase0 fix: approval only requires medium+ risk at CAUTIOUS tier.
+        Destructive actions should explicitly bump the risk level.
+        """
         p = self.get_policy()
-        d = p.decide(confidence=0.85, risk_level="low", is_destructive=True)
+        d = p.decide(confidence=0.85, risk_level="medium", is_destructive=True)
         from core.orchestration.confidence_policy import PolicyTier
         assert d.tier == PolicyTier.CAUTIOUS
         assert d.require_approval
@@ -516,14 +530,18 @@ class TestNeedsApprovalPreservation:
     """
 
     def test_cautious_tier_sets_require_approval(self):
-        """CAUTIOUS tier must have require_approval=True (low conf + prior failures)."""
+        """CAUTIOUS tier with medium+ risk must have require_approval=True.
+
+        Post-phase0 fix: CAUTIOUS only requires approval for medium+ risk.
+        Low-risk CAUTIOUS missions proceed without approval.
+        """
         from core.orchestration.confidence_policy import ConfidencePolicy, PolicyTier
         d = ConfidencePolicy().decide(
-            confidence=0.72, risk_level="low", task_type="code",
+            confidence=0.72, risk_level="medium", task_type="code",
             goal="Fix auth bug", has_prior_failures=True
         )
         assert d.tier == PolicyTier.CAUTIOUS
-        assert d.require_approval is True, "CAUTIOUS must require_approval"
+        assert d.require_approval is True, "CAUTIOUS with medium risk must require_approval"
 
     def test_decompose_tier_sets_require_approval(self):
         """DECOMPOSE tier must have require_approval=True (very low confidence)."""
@@ -553,12 +571,15 @@ class TestNeedsApprovalPreservation:
 
         Prove that require_approval=True from confidence_policy survives classification
         reassignment when classification does NOT have needs_approval=True.
+
+        Post-phase0 fix: CAUTIOUS only sets require_approval for medium+ risk.
+        Uses medium risk to keep the require_approval behavior.
         """
         from core.orchestration.confidence_policy import ConfidencePolicy
 
-        # Simulate: confidence_policy raises require_approval
+        # Simulate: confidence_policy raises require_approval (medium risk CAUTIOUS)
         d = ConfidencePolicy().decide(
-            confidence=0.72, risk_level="low", task_type="code",
+            confidence=0.72, risk_level="medium", task_type="code",
             goal="Fix auth bug", has_prior_failures=True
         )
         assert d.require_approval is True  # Policy said: require approval
@@ -589,12 +610,15 @@ class TestNeedsApprovalPreservation:
         )
 
     def test_force_approved_overrides_cp_approval(self):
-        """force_approved=True must win over confidence_policy require_approval."""
+        """force_approved=True must win over confidence_policy require_approval.
+
+        Post-phase0 fix: Use medium risk to trigger CAUTIOUS require_approval.
+        """
         from core.orchestration.confidence_policy import ConfidencePolicy
 
-        # Use confidence=0.45, risk=low → CAUTIOUS (adjusted=0.45 ≥ 0.35) → require_approval=True
+        # Use confidence=0.45, risk=medium → CAUTIOUS → require_approval=True
         d = ConfidencePolicy().decide(
-            confidence=0.45, risk_level="low", task_type="code",
+            confidence=0.45, risk_level="medium", task_type="code",
             goal="Emergency hotfix", has_prior_failures=False
         )
         assert d.require_approval is True
