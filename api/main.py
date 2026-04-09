@@ -162,6 +162,13 @@ try:
     app.include_router(chat_router)
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
+
+# ── Import Business Performance Router (Phase 7.3) ──
+try:
+    from api.routes.business import router as business_router
+    app.include_router(business_router)
+except Exception as _e:
+    log.warning("router_import_failed", err=str(_e)[:120])
 # ── Import du routeur Agent Builder ───────────────────────────
 try:
     from api.routes.agent_builder import router as agent_builder_router
