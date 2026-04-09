@@ -30,14 +30,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
         # CSP: Content Security Policy (strict but functional)
-        # Allows self + inline scripts/styles (needed for FastAPI docs)
+        # Allows self + inline scripts/styles + Google Fonts
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data: https:; "
-            "font-src 'self' data:; "
-            "connect-src 'self'; "
+            "font-src 'self' data: https://fonts.gstatic.com; "
+            "connect-src 'self' https:; "
             "frame-ancestors 'none'"
         )
         
