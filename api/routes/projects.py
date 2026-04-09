@@ -18,6 +18,8 @@ import structlog
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from pydantic import BaseModel, Field
 
+from api._deps import require_auth
+
 log = structlog.get_logger(__name__)
 
 # Import project model
@@ -37,8 +39,12 @@ except ImportError as e:
     log.error("failed_to_import_project_model", error=str(e))
     raise
 
-# Create router
-router = APIRouter(prefix="/api/v3/projects", tags=["projects"])
+# Create router with real auth dependency (uses canonical require_auth from api._deps)
+router = APIRouter(
+    prefix="/api/v3/projects",
+    tags=["projects"],
+    dependencies=[Depends(require_auth)],
+)
 
 
 # Request/Response Models
@@ -84,36 +90,24 @@ class ErrorResponse(BaseModel):
     details: Optional[str] = None
 
 
-# Authentication Helper
+# Authentication is now enforced at router level via api._deps.require_auth.
+# The previous verify_token() function was a CRITICAL BYPASS that accepted
+# any Bearer token starting with 'jv-' without backend verification.
+# All endpoints now rely on the canonical require_auth (constant-time compare,
+# JWT validation, access token verification via TokenManager).
+#
+# For backward compatibility with internal in-function calls, we keep a
+# fail-closed stub that always rejects. Endpoints should use the router-level
+# dependency instead.
 
 def verify_token(authorization: Optional[str]) -> bool:
-    """
-    Verify Bearer token.
-    
-    In production, this should validate against stored tokens.
-    For now, accepts any token starting with 'jv-' (JarvisMax tokens).
-    """
-    if not authorization:
-        return False
-    
-    if not authorization.startswith("Bearer "):
-        return False
-    
-    token = authorization[7:]  # Remove "Bearer " prefix
-    
-    # Simple validation: must start with jv-
-    # TODO: Implement proper token validation against database
-    return token.startswith("jv-")
+    """DEPRECATED — always returns False.
 
-
-# Dependency for auth
-async def require_auth(authorization: Optional[str] = Header(None)) -> None:
-    """FastAPI dependency for authentication."""
-    if not verify_token(authorization):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or missing authorization token. Use 'Bearer jv-YOUR_TOKEN'"
-        )
+    The canonical auth is Depends(require_auth) from api._deps at the router
+    level. This stub exists only for backward compatibility with legacy
+    in-function auth checks. Do not use for new code.
+    """
+    return False
 
 
 # Route Handlers
@@ -128,10 +122,6 @@ async def create_project_endpoint(
     
     Requires Bearer token authentication.
     """
-    # Check auth
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing authorization token")
-    
     try:
         project = create_project(
             name=request.name,
@@ -167,10 +157,6 @@ async def list_projects_endpoint(
     
     Requires Bearer token authentication.
     """
-    # Check auth
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing authorization token")
-    
     try:
         projects = list_projects(active_only=active_only)
         
@@ -205,10 +191,6 @@ async def get_project_endpoint(
     
     Requires Bearer token authentication.
     """
-    # Check auth
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing authorization token")
-    
     try:
         # Try UUID lookup first, then name lookup
         try:
@@ -249,10 +231,6 @@ async def update_project_endpoint(
     
     Requires Bearer token authentication.
     """
-    # Check auth
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing authorization token")
-    
     try:
         project = update_project(
             project_id=project_id,
@@ -297,10 +275,6 @@ async def delete_project_endpoint(
     Requires Bearer token authentication.
     Use ?hard_delete=true to permanently delete.
     """
-    # Check auth
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing authorization token")
-    
     try:
         success = delete_project(project_id, hard_delete=hard_delete)
         
@@ -328,10 +302,6 @@ async def switch_project(
     authorization: Optional[str] = Header(None)
 ):
     """Switch current project context."""
-    # Verify token
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
-    
     from core.project_context import set_project
     # get_project imported from models.project at top
     
