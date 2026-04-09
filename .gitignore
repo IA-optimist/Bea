@@ -133,3 +133,14 @@ docs/archive_legacy/
 codex.plugin
 core/action_executor.py.backup_20260408_022055
 workspace/improvement_proposals.json
+
+# ── Backup files (never commit) ───────────────────────────────
+*.bak
+*.backup
+*.backup_*
+.env.backup*
+.env.production-ready
+.env.test
+.env.agents
+workspace/access_tokens.json
+workspace/SI_V3_APPLICATION_REPORT_*.md
