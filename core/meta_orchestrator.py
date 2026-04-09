@@ -779,6 +779,31 @@ class MetaOrchestrator:
             # PLANNED -> RUNNING
             self._transition(ctx, MissionStatus.RUNNING)
 
+            # ── JarvisTeam dispatcher (mode=improve/lab/dev) ──────────────────────────
+            # Route to architect→coder→reviewer→qa chain when mode indicates improvement.
+            if mode in ("improve", "lab", "dev") and not _is_chat_mode:
+                try:
+                    from core.orchestration.jarvis_team_dispatcher import dispatch_improve
+                    log.info("jarvis_team.dispatching", mission_id=mid, mode=mode)
+                    _team_result = await dispatch_improve(
+                        goal=enriched_goal,
+                        llm_client=self.jarvis.llm,
+                        mission_id=mid,
+                    )
+                    if _team_result.get("result"):
+                        ctx.result = _team_result["result"]
+                        ctx.metadata["jarvis_team"] = _team_result
+                        self._transition(ctx, MissionStatus.REVIEW)
+                        self._transition(ctx, MissionStatus.DONE,
+                                         result_len=len(ctx.result),
+                                         retries=0,
+                                         duration_ms=0,
+                                         confidence=0.75)
+                        return ctx
+                except Exception as _jt_err:
+                    log.warning("jarvis_team.dispatch_failed", err=str(_jt_err)[:80])
+                    # Fall through to standard pipeline
+
             # ── Phase 3: Supervised execution ─────────────────────
             risk = ctx.metadata.get("classification", {}).get("risk_level", "low")
 
