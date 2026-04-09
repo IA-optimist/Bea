@@ -22,6 +22,7 @@ python-multipart==0.0.9
 beautifulsoup4==4.12.3
 lxml==5.1.0
 pandas==2.2.0
+playwright==1.41.2
 
 # Security
 cryptography==42.0.2

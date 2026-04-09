@@ -30,8 +30,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
-import requests
+import asyncio
+
 from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -107,11 +109,11 @@ class Opportunity:
 
 class OpportunityScanner:
     """
-    Scan multiple sources for business opportunities.
+    Scan multiple sources for business opportunities using Playwright.
     
     Usage:
         scanner = OpportunityScanner()
-        opportunities = scanner.scan_all(days_back=30)
+        opportunities = await scanner.scan_all(days_back=30)
         
         # Get top opportunities
         top_10 = scanner.get_top_opportunities(opportunities, limit=10)
@@ -120,16 +122,74 @@ class OpportunityScanner:
         scanner.save_opportunities(opportunities, "opportunities.json")
     """
     
-    def __init__(self, cache_dir: Optional[Path] = None):
+    def __init__(self, cache_dir: Optional[Path] = None, headless: bool = True):
         self.cache_dir = cache_dir or Path.home() / ".jarvismax" / "opportunities"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.headless = headless
         
-        # User agent for requests
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; JarvisMaxBot/1.0; +https://github.com/UniTy01/Jarvismax-master)'
-        }
+        # Screenshot directory for errors
+        self.screenshot_dir = self.cache_dir / "screenshots"
+        self.screenshot_dir.mkdir(parents=True, exist_ok=True)
     
-    def scan_all(self, days_back: int = 30) -> List[Opportunity]:
+    async def _setup_browser(self, browser: Browser) -> Page:
+        """
+        Setup browser page with stealth mode configurations.
+        
+        Args:
+            browser: Playwright browser instance
+            
+        Returns:
+            Configured page
+        """
+        # Create context with stealth settings
+        context = await browser.new_context(
+            viewport={'width': 1920, 'height': 1080},
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            locale='en-US',
+            timezone_id='America/New_York',
+            # Extra stealth
+            extra_http_headers={
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+        )
+        
+        page = await context.new_page()
+        
+        # Additional JavaScript stealth
+        await page.add_init_script("""
+            // Override the navigator.webdriver property
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            
+            // Override the plugins property
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            
+            // Override languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en']
+            });
+        """)
+        
+        return page
+    
+    async def _capture_error_screenshot(self, page: Page, error_name: str):
+        """Capture screenshot on error for debugging"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            screenshot_path = self.screenshot_dir / f"error_{error_name}_{timestamp}.png"
+            await page.screenshot(path=str(screenshot_path), full_page=True)
+            logger.info(f"📸 Error screenshot saved: {screenshot_path}")
+        except Exception as e:
+            logger.error(f"Failed to capture screenshot: {e}")
+    
+    async def scan_all(self, days_back: int = 30) -> List[Opportunity]:
         """
         Scan all sources for opportunities.
         
@@ -143,32 +203,39 @@ class OpportunityScanner:
         
         opportunities = []
         
-        # Product Hunt
-        logger.info("📱 Scanning Product Hunt...")
-        try:
-            ph_opps = self.scan_product_hunt(days_back)
-            opportunities.extend(ph_opps)
-            logger.info(f"  Found {len(ph_opps)} opportunities")
-        except Exception as e:
-            logger.error(f"  Failed: {e}")
-        
-        # Reddit
-        logger.info("🔴 Scanning Reddit...")
-        try:
-            reddit_opps = self.scan_reddit(days_back)
-            opportunities.extend(reddit_opps)
-            logger.info(f"  Found {len(reddit_opps)} opportunities")
-        except Exception as e:
-            logger.error(f"  Failed: {e}")
-        
-        # Hacker News
-        logger.info("🟠 Scanning Hacker News...")
-        try:
-            hn_opps = self.scan_hackernews(days_back)
-            opportunities.extend(hn_opps)
-            logger.info(f"  Found {len(hn_opps)} opportunities")
-        except Exception as e:
-            logger.error(f"  Failed: {e}")
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=self.headless)
+            
+            try:
+                # Product Hunt
+                logger.info("📱 Scanning Product Hunt...")
+                try:
+                    ph_opps = await self.scan_product_hunt(browser, days_back)
+                    opportunities.extend(ph_opps)
+                    logger.info(f"  Found {len(ph_opps)} opportunities")
+                except Exception as e:
+                    logger.error(f"  Failed: {e}")
+                
+                # Reddit
+                logger.info("🔴 Scanning Reddit...")
+                try:
+                    reddit_opps = await self.scan_reddit(browser, days_back)
+                    opportunities.extend(reddit_opps)
+                    logger.info(f"  Found {len(reddit_opps)} opportunities")
+                except Exception as e:
+                    logger.error(f"  Failed: {e}")
+                
+                # Hacker News
+                logger.info("🟠 Scanning Hacker News...")
+                try:
+                    hn_opps = await self.scan_hackernews(browser, days_back)
+                    opportunities.extend(hn_opps)
+                    logger.info(f"  Found {len(hn_opps)} opportunities")
+                except Exception as e:
+                    logger.error(f"  Failed: {e}")
+                
+            finally:
+                await browser.close()
         
         # Calculate scores
         logger.info("📊 Calculating scores...")
@@ -179,50 +246,72 @@ class OpportunityScanner:
         
         return opportunities
     
-    def scan_product_hunt(self, days_back: int = 30) -> List[Opportunity]:
+    async def scan_product_hunt(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
         """
         Scan Product Hunt for trending products and pain points.
         
-        Note: Product Hunt API requires auth. Using public RSS feed instead.
+        Uses Playwright to handle JS-heavy content.
         """
         opportunities = []
+        page = await self._setup_browser(browser)
         
         try:
-            # Product Hunt RSS feed
-            url = "https://www.producthunt.com/feed"
-            response = requests.get(url, headers=self.headers, timeout=10)
-            response.raise_for_status()
+            # Navigate to Product Hunt
+            url = "https://www.producthunt.com/"
+            await page.goto(url, wait_until='networkidle', timeout=30000)
             
-            soup = BeautifulSoup(response.content, 'xml')
+            # Wait for posts to load
+            try:
+                await page.wait_for_selector('[data-test="post-item"]', timeout=10000)
+            except PlaywrightTimeoutError:
+                logger.warning("Product Hunt posts not found with expected selector, trying alternative...")
+                await page.wait_for_selector('article, [class*="post"]', timeout=10000)
+            
+            # Get page content
+            content = await page.content()
+            soup = BeautifulSoup(content, 'html.parser')
             
             cutoff_date = datetime.now() - timedelta(days=days_back)
             
-            for item in soup.find_all('item')[:50]:  # Top 50 items
+            # Parse posts - Product Hunt structure (adapt selectors as needed)
+            posts = soup.find_all(['article', 'div'], class_=lambda x: x and ('post' in str(x).lower() or 'item' in str(x).lower()))
+            
+            for post in posts[:50]:  # Top 50
                 try:
-                    title = item.title.text if item.title else "Unknown"
-                    description = item.description.text if item.description else ""
-                    link = item.link.text if item.link else ""
-                    pub_date_str = item.pubDate.text if item.pubDate else ""
+                    # Extract title
+                    title_elem = post.find(['h2', 'h3', 'a'], class_=lambda x: x and 'title' in str(x).lower())
+                    if not title_elem:
+                        title_elem = post.find(['h2', 'h3'])
                     
-                    # Parse date
-                    try:
-                        pub_date = datetime.strptime(pub_date_str, '%a, %d %b %Y %H:%M:%S %z')
-                        pub_date = pub_date.replace(tzinfo=None)  # Remove timezone
-                    except:
-                        pub_date = datetime.now()
+                    title = title_elem.get_text(strip=True) if title_elem else "Unknown"
                     
-                    if pub_date < cutoff_date:
-                        continue
+                    # Extract description
+                    desc_elem = post.find(['p', 'div'], class_=lambda x: x and ('description' in str(x).lower() or 'tagline' in str(x).lower()))
+                    description = desc_elem.get_text(strip=True) if desc_elem else ""
                     
-                    # Extract pain points from description
+                    # Extract link
+                    link_elem = post.find('a', href=True)
+                    link = link_elem['href'] if link_elem else ""
+                    if link and not link.startswith('http'):
+                        link = f"https://www.producthunt.com{link}"
+                    
+                    # Extract metrics
+                    upvotes = 0
+                    upvote_elem = post.find(['span', 'div'], class_=lambda x: x and 'vote' in str(x).lower())
+                    if upvote_elem:
+                        upvote_text = upvote_elem.get_text(strip=True)
+                        upvotes = int(re.search(r'\d+', upvote_text).group()) if re.search(r'\d+', upvote_text) else 0
+                    
+                    # Extract pain points
                     pain_points = self._extract_pain_points(description)
                     
                     opp = Opportunity(
                         title=title,
-                        description=description[:500],  # Truncate
+                        description=description[:500],
                         source="product_hunt",
-                        url=link,
-                        discovered_at=pub_date,
+                        url=link or url,
+                        discovered_at=datetime.now(),  # PH doesn't easily expose dates without auth
+                        upvotes=upvotes,
                         pain_points=pain_points,
                         tags=self._extract_tags(title + " " + description),
                     )
@@ -230,15 +319,19 @@ class OpportunityScanner:
                     opportunities.append(opp)
                 
                 except Exception as e:
-                    logger.debug(f"Failed to parse item: {e}")
+                    logger.debug(f"Failed to parse Product Hunt item: {e}")
                     continue
         
         except Exception as e:
             logger.error(f"Product Hunt scan failed: {e}")
+            await self._capture_error_screenshot(page, "product_hunt")
+        
+        finally:
+            await page.close()
         
         return opportunities
     
-    def scan_reddit(self, days_back: int = 30) -> List[Opportunity]:
+    async def scan_reddit(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
         """
         Scan Reddit for pain points and business ideas.
         
@@ -247,107 +340,202 @@ class OpportunityScanner:
         - r/Entrepreneur
         - r/startups
         - r/SideProject
+        
+        Uses Playwright for JS-rendered content.
         """
         opportunities = []
         
         subreddits = ['SaaS', 'Entrepreneur', 'startups', 'SideProject']
         
         for subreddit in subreddits:
+            page = await self._setup_browser(browser)
+            
             try:
-                # Reddit JSON API (no auth needed for public posts)
-                url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
-                response = requests.get(url, headers=self.headers, timeout=10)
-                response.raise_for_status()
+                # Navigate to subreddit
+                url = f"https://old.reddit.com/r/{subreddit}/hot"
+                await page.goto(url, wait_until='domcontentloaded', timeout=30000)
                 
-                data = response.json()
+                # Wait for content to load
+                await page.wait_for_selector('.thing', timeout=10000)
+                
+                # Get page content
+                content = await page.content()
+                soup = BeautifulSoup(content, 'html.parser')
                 
                 cutoff_timestamp = (datetime.now() - timedelta(days=days_back)).timestamp()
                 
-                for post in data.get('data', {}).get('children', []):
-                    post_data = post.get('data', {})
+                # Parse posts
+                posts = soup.find_all('div', class_='thing')
+                
+                for post in posts[:25]:
+                    try:
+                        # Extract data
+                        title_elem = post.find('a', class_='title')
+                        title = title_elem.get_text(strip=True) if title_elem else ""
+                        
+                        # Get post URL
+                        post_url = title_elem['href'] if title_elem and title_elem.has_attr('href') else ""
+                        if post_url and not post_url.startswith('http'):
+                            post_url = f"https://old.reddit.com{post_url}"
+                        
+                        # Extract upvotes
+                        upvotes = 0
+                        score_elem = post.find('div', class_='score unvoted')
+                        if not score_elem:
+                            score_elem = post.find('div', attrs={'class': lambda x: x and 'score' in x})
+                        if score_elem:
+                            score_text = score_elem.get_text(strip=True)
+                            if score_text and score_text != '•':
+                                try:
+                                    upvotes = int(score_text)
+                                except ValueError:
+                                    pass
+                        
+                        # Extract comments
+                        comments = 0
+                        comments_elem = post.find('a', class_='comments')
+                        if comments_elem:
+                            comments_text = comments_elem.get_text(strip=True)
+                            match = re.search(r'(\d+)', comments_text)
+                            if match:
+                                comments = int(match.group(1))
+                        
+                        # Get selftext if available
+                        expando = post.find('div', class_='expando')
+                        selftext = expando.get_text(strip=True) if expando else ""
+                        
+                        # Filter for problem posts
+                        if not self._is_problem_post(title, selftext):
+                            continue
+                        
+                        pain_points = self._extract_pain_points(title + " " + selftext)
+                        
+                        opp = Opportunity(
+                            title=title,
+                            description=selftext[:500],
+                            source=f"reddit_r_{subreddit}",
+                            url=post_url,
+                            discovered_at=datetime.now(),
+                            upvotes=upvotes,
+                            comments=comments,
+                            pain_points=pain_points,
+                            tags=self._extract_tags(title + " " + selftext),
+                        )
+                        
+                        opportunities.append(opp)
                     
-                    created_utc = post_data.get('created_utc', 0)
-                    if created_utc < cutoff_timestamp:
+                    except Exception as e:
+                        logger.debug(f"Failed to parse Reddit post: {e}")
+                        continue
+                
+                await asyncio.sleep(2)  # Rate limiting
+            
+            except Exception as e:
+                logger.error(f"Reddit r/{subreddit} scan failed: {e}")
+                await self._capture_error_screenshot(page, f"reddit_{subreddit}")
+            
+            finally:
+                await page.close()
+        
+        return opportunities
+    
+    async def scan_hackernews(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
+        """
+        Scan Hacker News for Show HN and Ask HN posts.
+        
+        Uses Playwright for consistent scraping.
+        """
+        opportunities = []
+        page = await self._setup_browser(browser)
+        
+        try:
+            # Navigate to HN
+            url = "https://news.ycombinator.com/show"
+            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+            
+            # Wait for content
+            await page.wait_for_selector('.athing', timeout=10000)
+            
+            # Get page content
+            content = await page.content()
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            cutoff_date = datetime.now() - timedelta(days=days_back)
+            
+            # Parse items
+            items = soup.find_all('tr', class_='athing')
+            
+            for item in items[:50]:
+                try:
+                    # Get item ID
+                    item_id = item.get('id', '')
+                    
+                    # Extract title
+                    titleline = item.find('span', class_='titleline')
+                    if not titleline:
                         continue
                     
-                    title = post_data.get('title', '')
-                    selftext = post_data.get('selftext', '')
-                    url = f"https://www.reddit.com{post_data.get('permalink', '')}"
-                    upvotes = post_data.get('ups', 0)
-                    comments = post_data.get('num_comments', 0)
+                    title_link = titleline.find('a')
+                    title = title_link.get_text(strip=True) if title_link else ""
+                    item_url = f"https://news.ycombinator.com/item?id={item_id}"
                     
-                    # Filter for pain points / problems
-                    if not self._is_problem_post(title, selftext):
+                    # Get the next row for metadata
+                    subtext = item.find_next_sibling('tr')
+                    if not subtext:
                         continue
                     
-                    pain_points = self._extract_pain_points(title + " " + selftext)
+                    subtext_td = subtext.find('td', class_='subtext')
+                    if not subtext_td:
+                        continue
+                    
+                    # Extract points
+                    points = 0
+                    score_span = subtext_td.find('span', class_='score')
+                    if score_span:
+                        score_text = score_span.get_text(strip=True)
+                        match = re.search(r'(\d+)', score_text)
+                        if match:
+                            points = int(match.group(1))
+                    
+                    # Extract comments
+                    comments = 0
+                    comments_link = subtext_td.find_all('a')[-1] if subtext_td.find_all('a') else None
+                    if comments_link:
+                        comments_text = comments_link.get_text(strip=True)
+                        match = re.search(r'(\d+)', comments_text)
+                        if match:
+                            comments = int(match.group(1))
+                    
+                    # Extract time (for filtering)
+                    age_span = subtext_td.find('span', class_='age')
+                    # Basic time filtering (HN shows relative times)
+                    
+                    pain_points = self._extract_pain_points(title)
                     
                     opp = Opportunity(
                         title=title,
-                        description=selftext[:500],
-                        source=f"reddit_r_{subreddit}",
-                        url=url,
-                        discovered_at=datetime.fromtimestamp(created_utc),
-                        upvotes=upvotes,
+                        description="",  # Would need to visit item page for full description
+                        source="hackernews_show",
+                        url=item_url,
+                        discovered_at=datetime.now(),
+                        upvotes=points,
                         comments=comments,
                         pain_points=pain_points,
-                        tags=self._extract_tags(title + " " + selftext),
+                        tags=self._extract_tags(title),
                     )
                     
                     opportunities.append(opp)
                 
-                time.sleep(1)  # Rate limiting
-            
-            except Exception as e:
-                logger.error(f"Reddit r/{subreddit} scan failed: {e}")
-        
-        return opportunities
-    
-    def scan_hackernews(self, days_back: int = 30) -> List[Opportunity]:
-        """
-        Scan Hacker News for Show HN and Ask HN posts.
-        """
-        opportunities = []
-        
-        try:
-            # HN Algolia API
-            cutoff_timestamp = int((datetime.now() - timedelta(days=days_back)).timestamp())
-            
-            # Show HN
-            url = f"https://hn.algolia.com/api/v1/search?tags=show_hn&numericFilters=created_at_i>{cutoff_timestamp}&hitsPerPage=50"
-            response = requests.get(url, headers=self.headers, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            for hit in data.get('hits', []):
-                title = hit.get('title', '')
-                url = f"https://news.ycombinator.com/item?id={hit.get('objectID', '')}"
-                created_at = datetime.fromtimestamp(hit.get('created_at_i', 0))
-                points = hit.get('points', 0)
-                comments = hit.get('num_comments', 0)
-                
-                # Extract description from story_text or first comment
-                description = hit.get('story_text', '') or hit.get('comment_text', '')
-                
-                pain_points = self._extract_pain_points(title + " " + description)
-                
-                opp = Opportunity(
-                    title=title,
-                    description=description[:500],
-                    source="hackernews_show",
-                    url=url,
-                    discovered_at=created_at,
-                    upvotes=points,
-                    comments=comments,
-                    pain_points=pain_points,
-                    tags=self._extract_tags(title + " " + description),
-                )
-                
-                opportunities.append(opp)
+                except Exception as e:
+                    logger.debug(f"Failed to parse HN item: {e}")
+                    continue
         
         except Exception as e:
             logger.error(f"Hacker News scan failed: {e}")
+            await self._capture_error_screenshot(page, "hackernews")
+        
+        finally:
+            await page.close()
         
         return opportunities
     
@@ -510,12 +698,13 @@ def main():
     parser.add_argument('--days', type=int, default=30, help='Days back to scan (default: 30)')
     parser.add_argument('--top', type=int, default=10, help='Top N opportunities (default: 10)')
     parser.add_argument('--output', default='opportunities.json', help='Output filename')
+    parser.add_argument('--no-headless', action='store_true', help='Run browser in visible mode')
     args = parser.parse_args()
     
-    scanner = OpportunityScanner()
+    scanner = OpportunityScanner(headless=not args.no_headless)
     
-    # Scan all sources
-    opportunities = scanner.scan_all(days_back=args.days)
+    # Run async scan
+    opportunities = asyncio.run(scanner.scan_all(days_back=args.days))
     
     # Save to JSON
     scanner.save_opportunities(opportunities, args.output)
