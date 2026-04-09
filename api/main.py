@@ -115,11 +115,12 @@ except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Rate limiting middleware (sliding window per IP+path) ─────
-try:
-    from api.rate_limiter import RateLimitMiddleware
-    app.add_middleware(RateLimitMiddleware)
-except ImportError as _rl_err:
-    log.error("rate_limiter_MISSING", err=str(_rl_err))
+# TEMP: Skip rate limiter middleware to fix startup
+# try:
+#     from api.rate_limiter import RateLimitMiddleware
+#     app.add_middleware(RateLimitMiddleware, redis_client=redis_client)
+# except ImportError as _rl_err:
+#     log.error("rate_limiter_MISSING", err=str(_rl_err))
 
 # ── Router Registry ───────────────────────────────────────────
 try:
