@@ -1073,6 +1073,38 @@ class MetaOrchestrator:
                 except Exception as _de:
                     log.debug("decompose_mission_failed", err=str(_de)[:60])
 
+            # ── ContinualMemory : inject past experiences ─────────────────────────────
+            try:
+                from core.orchestration.continual_memory import ContinualMemory
+                _cm = ContinualMemory()
+                import asyncio as _asyncio
+                _experiences = _asyncio.get_event_loop().run_until_complete(
+                    _cm.get_replay_batch(enriched_goal, n=3)
+                ) if not _asyncio.get_event_loop().is_running() else []
+                if _experiences:
+                    _ctx_injection = _cm.build_context_injection(_experiences)
+                    enriched_goal = enriched_goal + "\n\n" + _ctx_injection
+                    log.info("continual_memory.injected", n=len(_experiences))
+            except Exception as _cm_err:
+                log.debug("continual_memory.inject_skipped", err=str(_cm_err)[:80])
+
+            # ── AlignmentLayer : check action before execution ───────────────────────
+            try:
+                from core.orchestration.alignment_layer import AlignmentLayer
+                _al = AlignmentLayer()
+                _al_decision = _al.check_action(enriched_goal, {"mode": mode, "mission_id": mid})
+                if not _al_decision.allowed and not _al_decision.requires_confirmation:
+                    log.warning("alignment.blocked", reason=_al_decision.reasoning, mission_id=mid)
+                    ctx.result = f"[BLOCKED BY ALIGNMENT] {_al_decision.reasoning}"
+                    self._transition(ctx, MissionStatus.DONE, result_len=len(ctx.result), retries=0, duration_ms=0, confidence=0.0)
+                    return ctx
+                if _al_decision.requires_confirmation:
+                    log.info("alignment.confirmation_required", action=enriched_goal[:60], mission_id=mid)
+                    ctx.metadata["alignment_confirmation_required"] = True
+                    ctx.metadata["alignment_reason"] = _al_decision.reasoning
+            except Exception as _al_err:
+                log.debug("alignment.check_skipped", err=str(_al_err)[:80])
+
             from core.orchestration.execution_supervisor import supervise
             delegate = self.v2 if use_budget else self.jarvis
             # Wire the capability dispatcher onto the delegate instance so that
@@ -1531,6 +1563,26 @@ class MetaOrchestrator:
                                  retries=outcome.retries,
                                  duration_ms=outcome.duration_ms,
                                  confidence=result_confidence)
+                # ── ContinualMemory : store experience ─────────────────────────────────
+                try:
+                    from core.orchestration.continual_memory import ContinualMemory
+                    _cm2 = ContinualMemory()
+                    _surprise = _cm2.compute_surprise(enriched_goal, ctx.result or "")
+                    import asyncio as _asyncio2
+                    if not _asyncio2.get_event_loop().is_running():
+                        _asyncio2.get_event_loop().run_until_complete(
+                            _cm2.store_experience(
+                                mission_id=mid,
+                                goal=enriched_goal[:300],
+                                result=(ctx.result or "")[:300],
+                                surprise_score=_surprise,
+                                success=True,
+                                tags=[ctx.metadata.get("task_type", "general")]
+                            )
+                        )
+                    log.info("continual_memory.stored", mission_id=mid, surprise=round(_surprise, 3))
+                except Exception as _cm2_err:
+                    log.debug("continual_memory.store_skipped", err=str(_cm2_err)[:80])
                 # ── Skill Store: persist successful mission pattern (Voyager pattern) ──
                 # Store if confidence >= threshold (default 0.70).
                 # Fail-open: any exception is silently swallowed.
