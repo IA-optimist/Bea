@@ -22,7 +22,7 @@ HORIZONS = {"immediate", "weekly", "monthly", "permanent"}
 
 
 @dataclass
-class Goal:
+class ProactiveGoal:
     """Représente un objectif persistant de Jarvis."""
 
     id: str
@@ -71,7 +71,7 @@ class Goal:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Goal":
+    def from_dict(cls, data: dict) -> "ProactiveGoal":
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 
@@ -87,12 +87,12 @@ class GoalRegistry:
 
     def __init__(self, storage_path: Optional[Path] = None) -> None:
         self._path = Path(storage_path or self.DEFAULT_PATH)
-        self._goals: dict[str, Goal] = {}
+        self._goals: dict[str, ProactiveGoal] = {}
         self._load()
 
     # ── CRUD ─────────────────────────────────────────────────────────────────
 
-    def add_goal(self, goal: Goal) -> Goal:
+    def add_goal(self, goal: ProactiveGoal) -> ProactiveGoal:
         """Ajoute ou remplace un objectif."""
         if goal.horizon not in HORIZONS:
             raise ValueError(f"horizon doit être dans {HORIZONS}")
@@ -110,10 +110,10 @@ class GoalRegistry:
         priority: int = 5,
         next_action: str = "",
         tags: Optional[list[str]] = None,
-    ) -> Goal:
+    ) -> ProactiveGoal:
         """Crée et enregistre un nouvel objectif avec ID auto-généré."""
         now = time.time()
-        goal = Goal(
+        goal = ProactiveGoal(
             id=str(uuid.uuid4())[:8],
             description=description,
             horizon=horizon,
@@ -126,10 +126,10 @@ class GoalRegistry:
         )
         return self.add_goal(goal)
 
-    def get_goal(self, goal_id: str) -> Optional[Goal]:
+    def get_goal(self, goal_id: str) -> Optional[ProactiveGoal]:
         return self._goals.get(goal_id)
 
-    def get_active_goals(self, horizon: Optional[str] = None) -> list[Goal]:
+    def get_active_goals(self, horizon: Optional[str] = None) -> list[ProactiveGoal]:
         """Retourne les objectifs actifs, optionnellement filtrés par horizon."""
         goals = [g for g in self._goals.values() if g.is_active()]
         if horizon:
@@ -142,7 +142,7 @@ class GoalRegistry:
         progress: float,
         notes: str = "",
         next_action: str = "",
-    ) -> Goal:
+    ) -> ProactiveGoal:
         """Met à jour la progression d'un objectif."""
         goal = self._goals.get(goal_id)
         if not goal:
@@ -161,16 +161,16 @@ class GoalRegistry:
         self.save()
         return goal
 
-    def mark_completed(self, goal_id: str) -> Goal:
+    def mark_completed(self, goal_id: str) -> ProactiveGoal:
         return self.update_progress(goal_id, 1.0, notes="Marqué complété manuellement")
 
-    def pause_goal(self, goal_id: str) -> Goal:
+    def pause_goal(self, goal_id: str) -> ProactiveGoal:
         goal = self._goals[goal_id]
         goal.paused = True
         self.save()
         return goal
 
-    def resume_goal(self, goal_id: str) -> Goal:
+    def resume_goal(self, goal_id: str) -> ProactiveGoal:
         goal = self._goals[goal_id]
         goal.paused = False
         goal.last_checked = time.time()
@@ -186,7 +186,7 @@ class GoalRegistry:
 
     # ── Détection d'opportunités ──────────────────────────────────────────────
 
-    def detect_opportunity(self, context: dict) -> list[Goal]:
+    def detect_opportunity(self, context: dict) -> list[ProactiveGoal]:
         """
         Retourne les objectifs qui peuvent avancer compte tenu du contexte actuel.
 
@@ -197,7 +197,7 @@ class GoalRegistry:
           - "hour": int                    → heure locale (0-23)
           - "tags_available": list[str]    → tags de capacités disponibles
         """
-        opportunities: list[Goal] = []
+        opportunities: list[ProactiveGoal] = []
         active = self.get_active_goals()
 
         for goal in active:
@@ -206,7 +206,7 @@ class GoalRegistry:
 
         return sorted(opportunities, key=lambda g: -g.priority)
 
-    def _goal_has_opportunity(self, goal: Goal, context: dict) -> bool:
+    def _goal_has_opportunity(self, goal: ProactiveGoal, context: dict) -> bool:
         services_down: list[str] = context.get("services_down", [])
         files_changed: list[str] = context.get("files_changed", [])
         hour: int = context.get("hour", 12)
@@ -255,7 +255,7 @@ class GoalRegistry:
         try:
             data = json.loads(self._path.read_text())
             for gid, gdata in data.get("goals", {}).items():
-                self._goals[gid] = Goal.from_dict(gdata)
+                self._goals[gid] = ProactiveGoal.from_dict(gdata)
             logger.info("GoalRegistry chargé : %d objectifs", len(self._goals))
         except Exception as exc:  # noqa: BLE001
             logger.error("Erreur chargement goals.json : %s", exc)
@@ -273,6 +273,9 @@ class GoalRegistry:
             )
         return "".join(lines) if lines else "Aucun objectif actif."
 
+
+# Alias de compatibilité ascendante — évite de casser les imports existants
+Goal = ProactiveGoal
 
 # ── Utilitaires ───────────────────────────────────────────────────────────────
 

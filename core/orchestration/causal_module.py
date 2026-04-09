@@ -405,6 +405,18 @@ class JarvisMaxCausalIntegration:
     def ask(self, question: str, system_prefix: str = "") -> str:
         return self.wrapper.ask_with_causal_context(question, self.graph, system_prefix)
 
+    # Alias pour compatibilité meta_orchestrator
+    def get_causal_context(self, text: str) -> str:
+        """Alias pour get_prompt_injection()"""
+        return self.get_prompt_injection()
+
+    def update_graph_from_text(self, text: str) -> None:
+        """Alias pour ingest_mission_result()"""
+        try:
+            self.ingest_mission_result(text)
+        except Exception:
+            pass
+
     def _index_to_qdrant(self, edges: list[tuple[str, str]]) -> None:
         try:
             from qdrant_client import QdrantClient

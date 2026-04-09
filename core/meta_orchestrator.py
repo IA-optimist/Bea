@@ -784,13 +784,7 @@ class MetaOrchestrator:
                 try:
                     from core.orchestration.creative_engine import JarvisCreativePipeline
                     _creative = JarvisCreativePipeline(ollama_url="http://localhost:11434")
-                    import asyncio as _creative_asyncio
-                    if not _creative_asyncio.get_event_loop().is_running():
-                        _creative_result = _creative_asyncio.get_event_loop().run_until_complete(
-                            _creative.run(enriched_goal, n_solutions=3)
-                        )
-                    else:
-                        _creative_result = {"best": None, "all_solutions": []}
+                    _creative_result = await _creative.run(goal, n_solutions=3)
                     if _creative_result.get("best"):
                         ctx.result = _creative_result["best"]
                         ctx.metadata["creative_solutions"] = len(_creative_result.get("all_solutions", []))
@@ -810,7 +804,7 @@ class MetaOrchestrator:
                     from core.orchestration.jarvis_team_dispatcher import dispatch_improve
                     log.info("jarvis_team.dispatching", mission_id=mid, mode=mode)
                     _team_result = await dispatch_improve(
-                        goal=enriched_goal,
+                        goal=goal,
                         llm_client=self.jarvis.llm,
                         mission_id=mid,
                     )
@@ -1101,10 +1095,7 @@ class MetaOrchestrator:
             try:
                 from core.orchestration.continual_memory import ContinualMemory
                 _cm = ContinualMemory()
-                import asyncio as _asyncio
-                _experiences = _asyncio.get_event_loop().run_until_complete(
-                    _cm.get_replay_batch(enriched_goal, n=3)
-                ) if not _asyncio.get_event_loop().is_running() else []
+                _experiences = await _cm.get_replay_batch(enriched_goal, n=3)
                 if _experiences:
                     _ctx_injection = _cm.build_context_injection(_experiences)
                     enriched_goal = enriched_goal + "\n\n" + _ctx_injection
@@ -1133,24 +1124,14 @@ class MetaOrchestrator:
             try:
                 from core.orchestration.causal_module import JarvisMaxCausalIntegration
                 _causal = JarvisMaxCausalIntegration()
-                # get_causal_context → get_prompt_injection() (maps to class API)
-                _causal_ctx = (
-                    _causal.get_causal_context(enriched_goal)
-                    if hasattr(_causal, "get_causal_context")
-                    else _causal.get_prompt_injection()
-                )
+                # get_causal_context → get_prompt_injection() (via alias)
+                _causal_ctx = _causal.get_causal_context(enriched_goal)
                 if _causal_ctx and _causal_ctx.strip() and "No causal" not in _causal_ctx:
                     enriched_goal = enriched_goal + "\n\n" + _causal_ctx
                     log.info("causal_module.context_injected", mission_id=mid)
-                # Extract and store causal claims from goal (async, non-blocking)
-                import asyncio as _causal_asyncio
+                # Extract and store causal claims from goal (sync, non-blocking)
                 try:
-                    if not _causal_asyncio.get_event_loop().is_running():
-                        # update_graph_from_text → ingest_mission_result() (maps to class API)
-                        if hasattr(_causal, "update_graph_from_text"):
-                            _causal.update_graph_from_text(enriched_goal[:500])
-                        else:
-                            _causal.ingest_mission_result(enriched_goal[:500])
+                    _causal.update_graph_from_text(enriched_goal[:500])
                 except Exception:
                     pass
             except Exception as _causal_err:
@@ -1160,16 +1141,12 @@ class MetaOrchestrator:
             try:
                 from core.orchestration.comprehension_checker import ComprehensionChecker
                 _cc = ComprehensionChecker()
-                import asyncio as _cc_asyncio
-                if not _cc_asyncio.get_event_loop().is_running():
-                    _cc_report = _cc_asyncio.get_event_loop().run_until_complete(
-                        _cc.check(enriched_goal)
-                    )
-                    if _cc_report and not _cc_report.get("understood", True):
-                        _clarification = _cc_report.get("clarification_needed", "")
-                        if _clarification:
-                            enriched_goal = enriched_goal + f"\n\n[COMPREHENSION NOTE] {_clarification}"
-                            log.info("comprehension_checker.clarification_injected", mission_id=mid)
+                _cc_report = await _cc.check(enriched_goal)
+                if _cc_report and not _cc_report.get("understood", True):
+                    _clarification = _cc_report.get("clarification_needed", "")
+                    if _clarification:
+                        enriched_goal = enriched_goal + f"\n\n[COMPREHENSION NOTE] {_clarification}"
+                        log.info("comprehension_checker.clarification_injected", mission_id=mid)
             except Exception as _cc_err:
                 log.debug("comprehension_checker.skipped", err=str(_cc_err)[:80])
 
@@ -1177,16 +1154,12 @@ class MetaOrchestrator:
             try:
                 from core.orchestration.memory_system import UnifiedMemory
                 _um = UnifiedMemory()
-                import asyncio as _um_asyncio
-                if not _um_asyncio.get_event_loop().is_running():
-                    _memories = _um_asyncio.get_event_loop().run_until_complete(
-                        _um.recall(enriched_goal, top_k=3)
-                    )
-                    if _memories:
-                        _mem_block = "\n".join(f"- {m['content'][:200]}" for m in _memories if m.get('content'))
-                        if _mem_block:
-                            enriched_goal = enriched_goal + f"\n\n[MEMORY RECALL]\n{_mem_block}"
-                            log.info("unified_memory.recalled", mission_id=mid, n=len(_memories))
+                _memories = await _um.recall(enriched_goal, top_k=3)
+                if _memories:
+                    _mem_block = "\n".join(f"- {m['content'][:200]}" for m in _memories if m.get('content'))
+                    if _mem_block:
+                        enriched_goal = enriched_goal + f"\n\n[MEMORY RECALL]\n{_mem_block}"
+                        log.info("unified_memory.recalled", mission_id=mid, n=len(_memories))
             except Exception as _um_err:
                 log.debug("unified_memory.skipped", err=str(_um_err)[:80])
 
@@ -1652,16 +1625,12 @@ class MetaOrchestrator:
                 try:
                     from core.orchestration.memory_system import UnifiedMemory
                     _um2 = UnifiedMemory()
-                    import asyncio as _um2_asyncio
-                    if not _um2_asyncio.get_event_loop().is_running():
-                        _um2_asyncio.get_event_loop().run_until_complete(
-                            _um2.store(
-                                content=f"Mission: {enriched_goal[:200]}\nResult: {(ctx.result or '')[:300]}",
-                                memory_type="episodic",
-                                metadata={"mission_id": mid, "mode": mode}
-                            )
-                        )
-                        log.info("unified_memory.stored", mission_id=mid)
+                    await _um2.store(
+                        content=f"Mission: {enriched_goal[:200]}\nResult: {(ctx.result or '')[:300]}",
+                        memory_type="episode",
+                        metadata={"mission_id": mid, "mode": mode}
+                    )
+                    log.info("unified_memory.stored", mission_id=mid)
                 except Exception as _um2_err:
                     log.debug("unified_memory.store_skipped", err=str(_um2_err)[:80])
                 # ── ContinualMemory : store experience ─────────────────────────────────
@@ -1669,18 +1638,14 @@ class MetaOrchestrator:
                     from core.orchestration.continual_memory import ContinualMemory
                     _cm2 = ContinualMemory()
                     _surprise = _cm2.compute_surprise(enriched_goal, ctx.result or "")
-                    import asyncio as _asyncio2
-                    if not _asyncio2.get_event_loop().is_running():
-                        _asyncio2.get_event_loop().run_until_complete(
-                            _cm2.store_experience(
-                                mission_id=mid,
-                                goal=enriched_goal[:300],
-                                result=(ctx.result or "")[:300],
-                                surprise_score=_surprise,
-                                success=True,
-                                tags=[ctx.metadata.get("task_type", "general")]
-                            )
-                        )
+                    await _cm2.store_experience(
+                        mission_id=mid,
+                        goal=enriched_goal[:300],
+                        result=(ctx.result or "")[:300],
+                        surprise_score=_surprise,
+                        success=True,
+                        tags=[ctx.metadata.get("task_type", "general")]
+                    )
                     log.info("continual_memory.stored", mission_id=mid, surprise=round(_surprise, 3))
                 except Exception as _cm2_err:
                     log.debug("continual_memory.store_skipped", err=str(_cm2_err)[:80])
@@ -1690,14 +1655,10 @@ class MetaOrchestrator:
                     _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
                     _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
                     if _surprise_ac > 0.6:
-                        import asyncio as _ac_asyncio
-                        if not _ac_asyncio.get_event_loop().is_running():
-                            _questions = _ac_asyncio.get_event_loop().run_until_complete(
-                                _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
-                            )
-                            if _questions:
-                                ctx.metadata["curiosity_questions"] = _questions[:3]
-                                log.info("curiosity.triggered", mission_id=mid, surprise=round(_surprise_ac, 2), questions=len(_questions))
+                        _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
+                        if _questions:
+                            ctx.metadata["curiosity_questions"] = _questions[:3]
+                            log.info("curiosity.triggered", mission_id=mid, surprise=round(_surprise_ac, 2), questions=len(_questions))
                 except Exception as _ac_err:
                     log.debug("curiosity.skipped", err=str(_ac_err)[:80])
                 # ── Skill Store: persist successful mission pattern (Voyager pattern) ──

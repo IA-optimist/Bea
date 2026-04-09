@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from core.orchestration.goal_registry import Goal, GoalRegistry
+from core.orchestration.goal_registry import ProactiveGoal, GoalRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ class ProactiveAgent:
                 return risk
         return RiskLevel.SAFE  # défaut conservateur
 
-    def should_act_now(self, goal: Goal, context: dict) -> bool:
+    def should_act_now(self, goal: ProactiveGoal, context: dict) -> bool:
         """
         Décide si Jarvis doit agir maintenant (vs juste signaler).
 
@@ -330,7 +330,7 @@ class ProactiveAgent:
 
     # ── Construction d'action ─────────────────────────────────────────────────
 
-    def _build_action(self, goal: Goal, context: dict) -> Optional[ProactiveAction]:
+    def _build_action(self, goal: ProactiveGoal, context: dict) -> Optional[ProactiveAction]:
         """Construit l'action appropriée en fonction du goal et du contexte."""
         services_down = context.get("services_down", [])
         files_changed = context.get("files_changed", [])
