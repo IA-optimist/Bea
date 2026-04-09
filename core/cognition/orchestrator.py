@@ -9,6 +9,7 @@ from core.cognition.tot_wrapper import plan_with_tot, should_use_tot
 from core.cognition.self_confidence import ConfidenceScorer, SelfCorrector
 from core.cognition.active_learning import SkillDiscoverer, PerformanceTracker
 from core.cognition.project_context import ProjectContextManager, ProjectContext
+from core.cognition.lifelong_learning import LifelongLearningEngine
 
 log = structlog.get_logger(__name__)
 
@@ -37,6 +38,7 @@ class CognitionOrchestrator:
         self.tracker = _performance_tracker
     
         self.project_manager = project_manager or ProjectContextManager()
+        self.learning_engine = LifelongLearningEngine()
 
     async def _execute_with_llm(self, mission: Dict[str, Any]) -> str:
         """
@@ -379,3 +381,61 @@ Provide a comprehensive response addressing the mission goal."""
     def get_project_performance(self) -> Dict[str, Any]:
         """Get performance summary across all projects."""
         return self.project_manager.get_performance_summary()
+
+    async def execute_with_learning(
+        self,
+        mission: Dict[str, Any],
+        enable_tot: bool = True,
+        enable_confidence: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Execute mission with lifelong learning enabled.
+        
+        Phase 5.4: Records execution for skill extraction
+        """
+        result = await self.execute_mission_with_cognition(
+            mission,
+            enable_tot=enable_tot,
+            enable_confidence=enable_confidence,
+            enable_learning=True
+        )
+        
+        # Record for learning
+        mission_id = mission.get("mission_id", f"mission-{datetime.utcnow().timestamp()}")
+        
+        await self.learning_engine.record_mission(
+            mission_id=mission_id,
+            goal=mission.get("goal", ""),
+            result=result.get("result", ""),
+            success=result.get("confidence_score", 0) > 0.7,
+            confidence=result.get("confidence_score", 0.5),
+            tools_used=result.get("tools_used", []),
+            execution_trace=result.get("execution_trace", [])
+        )
+        
+        # Add learning metadata
+        result["learning"] = {
+            "mission_recorded": True,
+            "skill_library_size": len(self.learning_engine.skills),
+            "validated_skills": len([s for s in self.learning_engine.skills.values() if s.is_validated])
+        }
+        
+        return result
+    
+    def get_learning_summary(self) -> Dict[str, Any]:
+        """Get lifelong learning statistics."""
+        return self.learning_engine.get_skill_library_summary()
+    
+    async def suggest_skills_for_mission(self, mission_goal: str, limit: int = 3) -> List[Dict]:
+        """Get skill suggestions for a mission."""
+        skills = await self.learning_engine.suggest_skills_for_goal(mission_goal, limit)
+        return [
+            {
+                "skill_id": s.skill_id,
+                "name": s.name,
+                "success_rate": s.success_rate,
+                "confidence": s.avg_confidence,
+                "uses": s.success_count + s.failure_count,
+            }
+            for s in skills
+        ]
