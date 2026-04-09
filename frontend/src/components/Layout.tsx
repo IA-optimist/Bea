@@ -6,10 +6,11 @@ import {
   Package,
   DollarSign,
   Settings,
-  Activity,
   Brain,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { Logo } from './Logo';
+import { AIGradientBg } from './AIGradientBg';
 
 interface LayoutProps {
   children: ReactNode;
@@ -28,19 +29,15 @@ export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors relative">
+      <AIGradientBg />
+      
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-colors">
+      <aside className="fixed inset-y-0 left-0 w-64 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 transition-colors z-40">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">JarvisMax</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">AI OS v1.0</p>
-            </div>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <Logo size="sm" showText={true} animated={true} />
           </div>
 
           {/* Navigation */}
