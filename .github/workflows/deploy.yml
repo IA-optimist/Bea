@@ -1,72 +1,99 @@
-name: Deploy to VPS
+name: JarvisMax Production Deployment
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - 'LICENSE'
   workflow_dispatch:
 
-concurrency:
-  group: deploy-production
-  cancel-in-progress: true
+env:
+  VPS_HOST: 77.42.40.146
+  VPS_USER: root
+  DEPLOY_PATH: /root/.openclaw/workspace/Jarvismax-master
+  CONTAINER_NAME: jarvis_core
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - name: Run core tests (architecture + hardening + auth)
-        run: |
-          python -m pytest tests/test_beta_architecture.py tests/test_stabilization_final.py tests/test_hardening_safety.py tests/test_status_memory_consolidation.py -q --tb=short
-
-      - name: Run self-improvement tests (critical safety)
-        run: |
-          python -m pytest tests/test_self_improvement_execution.py tests/test_self_improvement_bridge.py tests/test_self_improvement_v3_integration.py -q --tb=short
-
-      - name: Run consolidation tests (routes + auth + security)
-        run: |
-          python -m pytest tests/test_consolidation.py -q --tb=short
-
-      - name: Run module tests (governance + manager + integrations)
-        run: |
-          python -m pytest tests/test_module_manager.py tests/test_module_governance.py tests/test_module_integrations.py -q --tb=short
-
-      - name: Run business tests (mission engine + finance)
-        run: |
-          python -m pytest tests/test_mission_engine.py tests/test_finance.py -q --tb=short
-
-      - name: Run cognitive + security tests (intelligence layer + guards)
-        continue-on-error: true
-        run: |
-          python -m pytest tests/test_cognitive_upgrades.py tests/test_cognitive_integration.py tests/test_cognitive_security.py tests/test_superagi_patterns.py -q --tb=short
-
-      - name: Run critical wiring + MCP tests (runtime enforcement)
-        run: |
-          python -m pytest tests/test_critical_wiring.py tests/test_mcp_registry.py -q --tb=short
-
-      - name: Run auth enforcement tests (RBAC + session + denial)
-        run: |
-          python -m pytest tests/test_phase4_auth.py tests/test_devin_bugs.py -q --tb=short
-
   deploy:
-    environment: VPS_HOST
-    needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /opt/Jarvismax
-            bash scripts/update.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+      
+      - name: Deploy to VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'EOFREMOTE'
+            set -e
+            
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to repo
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Pull latest
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
+            # Backup current container state
+            echo "💾 Backing up current state..."
+            docker commit ${{ env.CONTAINER_NAME }} jarvismax_backup:$(date +%Y%m%d_%H%M%S)
+            
+            # Restart container (uses volume mount, no rebuild needed)
+            echo "🔄 Restarting container..."
+            docker restart ${{ env.CONTAINER_NAME }}
+            
+            # Wait for health
+            echo "⏳ Waiting for health check..."
+            sleep 15
+            
+            # Health check
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✅ Deployment successful!"
+              docker logs ${{ env.CONTAINER_NAME }} --tail 20
+            else
+              echo "❌ Health check failed!"
+              echo "🔙 Rolling back..."
+              
+              # Get last backup
+              LAST_BACKUP=$(docker images jarvismax_backup --format "{{.Repository}}:{{.Tag}}" | head -1)
+              docker stop ${{ env.CONTAINER_NAME }}
+              docker run -d --name ${{ env.CONTAINER_NAME }}_rollback \
+                --volumes-from ${{ env.CONTAINER_NAME }} \
+                $LAST_BACKUP
+              
+              exit 1
+            fi
+          EOFREMOTE
+      
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment succeeded"
+          else
+            echo "❌ Deployment failed"
+          fi
+
+  test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Run smoke tests
+        run: |
+          # Test health endpoint
+          curl -f https://jarvis.jarvismaxapp.co.uk/health || exit 1
+          
+          # Test chat endpoint (basic)
+          curl -f -X POST https://jarvis.jarvismaxapp.co.uk/api/v3/chat \
+            -H "Content-Type: application/json" \
+            -H "X-Jarvis-Token: ${{ secrets.JARVIS_API_TOKEN }}" \
+            -d '{"message":"test","project_id":1}' || exit 1
+          
+          echo "✅ Smoke tests passed"

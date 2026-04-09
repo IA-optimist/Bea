@@ -1,212 +1,150 @@
-# JarvisMax — Deployment Guide
+# JarvisMax Deployment Guide
 
-**Last Updated**: 2026-04-07  
-**Production Instance**: VPS1
+## Architecture
 
----
+**Production Server:** VPS1 (77.42.40.146)  
+**Repository:** Jarvismax-master  
+**Container:** jarvis_core  
+**Domain:** jarvis.jarvismaxapp.co.uk
 
-## Production Domain
+## Automated Deployment (Phase 6)
 
-### Primary URL
-**Domain**: `jarvis.jarvismaxapp.co.uk`  
-**Protocol**: HTTPS (TLS via Caddy)  
-**Status**: ✅ ACTIVE
+### GitHub Actions CI/CD
 
-### Endpoints
+Workflow: `.github/workflows/deploy.yml`
 
-| Endpoint | Description | Status |
-|----------|-------------|--------|
-| `/health` | Health check | ✅ `{"status":"ok","service":"jarvismax"}` |
-| `/docs` | API documentation (Swagger UI) | ✅ Available |
-| `/redoc` | API documentation (ReDoc) | ✅ Available |
-| `/api/v1/*` | Core API routes | ✅ Available |
-| `/api/v2/*` | Enhanced API routes | ✅ Available |
-| `/api/v3/*` | Canonical missions API | ✅ Available |
+**Triggers:**
+- Push to `main` branch
+- Manual trigger via GitHub Actions UI
 
-### Health Check
+**Process:**
+1. Checkout latest code
+2. SSH to VPS1
+3. Pull latest from `origin/main`
+4. Backup current container state
+5. Restart container (volume-mounted, no rebuild)
+6. Health check validation
+7. Rollback on failure
+
+**Required Secrets:**
+- `VPS_SSH_KEY` — SSH private key for root@77.42.40.146
+- `JARVIS_API_TOKEN` — API token for smoke tests
+
+### Manual Deployment
+
 ```bash
-curl https://jarvis.jarvismaxapp.co.uk/health
-# Response: {"status":"ok","service":"jarvismax"}
+# SSH to VPS1
+ssh root@77.42.40.146
+
+# Navigate to repo
+cd /root/.openclaw/workspace/Jarvismax-master
+
+# Pull latest
+git pull origin main
+
+# Restart container
+docker restart jarvis_core
+
+# Check health
+curl http://localhost:8000/health
+
+# Check logs
+docker logs jarvis_core --tail 50
 ```
 
----
+## Health Checks
 
-## Infrastructure
+**Endpoint:** `/health`  
+**Expected:** `{"status":"ok","service":"jarvismax"}`
 
-### Reverse Proxy: Caddy
-**Config file**: `Caddyfile` (project root)  
-**Status**: ✅ Configured, do not modify without coordination
-
-Caddy handles:
-- HTTPS/TLS termination
-- Domain routing to backend (API_HOST:API_PORT)
-- Certificate management (automatic Let's Encrypt)
-
-### Backend API Server
-**Host**: `0.0.0.0` (all interfaces)  
-**Port**: `8000`  
-**Framework**: FastAPI  
-**Entry point**: `api/main.py`
-
-### Environment Configuration
-**File**: `.env` (project root)  
-**Key variables**:
-```bash
-API_HOST=0.0.0.0
-API_PORT=8000
-LOG_LEVEL=INFO
-DRY_RUN=true
-
-# Database
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=jarvis
-POSTGRES_USER=jarvis
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# Qdrant (Vector DB)
-QDRANT_HOST=qdrant
-QDRANT_PORT=6333
-
-# LLM Provider
-ANTHROPIC_MODEL=claude-haiku-4-5-20251001
-MODEL_STRATEGY=anthropic
-```
-
-**Note**: No explicit `DOMAIN` or `BASE_URL` variable required.  
-Caddy reverse proxy handles domain routing transparently.
-
----
-
-## Deployment Topology
-
-```
-Internet
-   ↓
-jarvis.jarvismaxapp.co.uk (DNS)
-   ↓
-Caddy (HTTPS :443) ← Caddyfile
-   ↓
-FastAPI Backend (HTTP :8000) ← api/main.py
-   ↓
-┌────────────────────────────────────┐
-│ Services (docker-compose.yml)      │
-│ - postgres:5432                    │
-│ - redis:6379                       │
-│ - qdrant:6333                      │
-│ - n8n:5678 (optional)             │
-└────────────────────────────────────┘
-```
-
----
-
-## Monitoring & Logs
-
-### Application Logs
-**Directory**: `logs/`  
-**Format**: JSON structured logs (structlog)  
-**Level**: INFO (production), DEBUG (development)
-
-### Health Monitoring
-```bash
-# Quick health check
-curl -f https://jarvis.jarvismaxapp.co.uk/health || echo "DOWN"
-
-# Full system status
-curl https://jarvis.jarvismaxapp.co.uk/api/v1/system/status
-```
-
-### Observability Endpoints
-- `/api/v1/observability/events` - Cognitive event journal
-- `/api/v1/metrics` - System metrics
-- `/api/v1/monitoring/missions` - Mission health
-
----
-
-## Deployment Checklist
-
-### Pre-Deployment
-- [ ] Review `.env` for sensitive credentials
-- [ ] Verify database migrations applied
-- [ ] Run test suite: `pytest tests/ -v`
-- [ ] Check protected paths unchanged (ARCHITECTURE.md)
-
-### Deployment
-- [ ] Pull latest code: `git pull origin main`
-- [ ] Install dependencies: `pip install -r requirements.txt`
-- [ ] Restart services: `docker-compose restart`
-- [ ] Verify health: `curl https://jarvis.jarvismaxapp.co.uk/health`
-
-### Post-Deployment
-- [ ] Monitor logs: `tail -f logs/jarvismax.log`
-- [ ] Check critical missions succeed
-- [ ] Verify LLM provider connectivity
-- [ ] Test API endpoints with smoke tests
-
----
+**Swagger UI:** `/docs`  
+**OpenAPI:** `/openapi.json`
 
 ## Rollback Procedure
 
-If deployment fails:
+### Automatic (CI/CD)
+If health check fails, workflow automatically:
+1. Stops current container
+2. Restores last backup image
+3. Starts rollback container
+
+### Manual
 ```bash
-# 1. Checkout previous stable version
-git log --oneline -10  # find last stable commit
-git checkout <commit-hash>
+# List backups
+docker images jarvismax_backup
 
-# 2. Restart services
-docker-compose restart
+# Restore specific backup
+docker stop jarvis_core
+docker run -d --name jarvis_core_rollback \
+  --volumes-from jarvis_core \
+  jarvismax_backup:YYYYMMDD_HHMMSS
 
-# 3. Verify health
-curl https://jarvis.jarvismaxapp.co.uk/health
-
-# 4. Review logs for errors
-tail -100 logs/jarvismax.log
+# Verify health
+curl http://localhost:8000/health
 ```
 
----
+## Monitoring
 
-## Security Notes
+**Container Status:**
+```bash
+docker ps --filter name=jarvis_core
+```
 
-### Protected Paths
-Never auto-modify these files (see ARCHITECTURE.md):
-- `core/meta_orchestrator.py`
-- `core/tool_executor.py`
-- `core/policy_engine.py`
-- `api/auth.py`
-- `api/main.py`
-- `config/settings.py`
-- `.env`
-- `docker-compose.yml`
+**Resource Usage:**
+```bash
+docker stats jarvis_core --no-stream
+```
 
-### Secrets Management
-- All API keys stored in `.env`
-- Never commit `.env` to git (in `.gitignore`)
-- Rotate credentials quarterly
-- Use `JARVIS_API_TOKEN` for authenticated API calls
+**Logs:**
+```bash
+# Real-time
+docker logs -f jarvis_core
 
-### DRY_RUN Mode
-Production runs with `DRY_RUN=true` by default:
-- Tool execution simulated (no actual changes)
-- Safe for testing and validation
-- Set `DRY_RUN=false` only when explicitly approved
+# Last 100 lines
+docker logs jarvis_core --tail 100
 
----
+# Since timestamp
+docker logs jarvis_core --since 2026-04-09T00:00:00
+```
 
-## Contact & Support
+## Phase 6 Features
 
-**Production Instance**: VPS1  
-**Managed By**: JarvisMax Team  
-**Incident Response**: Check logs first, then review CANONICAL_COMPONENTS.md for architecture
+✅ **Automated deployment** on push to main  
+✅ **Health validation** before marking success  
+✅ **Automatic rollback** on failure  
+✅ **Container backups** before each deployment  
+✅ **Smoke tests** for critical endpoints
 
-**Documentation**:
-- Architecture: `ARCHITECTURE.md`
-- Changelog: `CHANGELOG.md`
-- Components: `CANONICAL_COMPONENTS.md`
-- This file: `DEPLOYMENT.md`
+## Security
 
----
+- SSH keys stored in GitHub Secrets (encrypted)
+- API tokens never committed to repo
+- VPS firewall: SSH (22), HTTP (80), HTTPS (443) only
+- Container runs as non-root user `jarvis`
 
-**End of Deployment Guide**
+## Troubleshooting
+
+**Deployment fails:**
+1. Check GitHub Actions logs
+2. SSH to VPS1, check `docker logs jarvis_core`
+3. Verify `/root/.openclaw/workspace/Jarvismax-master` is latest
+4. Manual rollback if needed
+
+**Health check fails:**
+1. Check container status: `docker ps -a | grep jarvis_core`
+2. Check logs: `docker logs jarvis_core --tail 100`
+3. Verify .env variables loaded
+4. Test import: `docker exec jarvis_core python3 -c "from api.main import app; print('OK')"`
+
+**Container won't start:**
+1. Check syntax: `docker exec jarvis_core python3 -m py_compile /app/api/main.py`
+2. Check dependencies: `docker exec jarvis_core pip list | grep fastapi`
+3. Rebuild if needed: `docker build -t jarvismax:latest .`
+
+## Next Phase (Phase 7)
+
+**Business Engine Integration:**
+- Wire Tree-of-Thought into opportunity analysis
+- Lifelong learning for business patterns
+- Multi-project business portfolios
+- First autonomous revenue test (€65k/month target)
