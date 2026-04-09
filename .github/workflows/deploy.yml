@@ -10,6 +10,7 @@ env:
   VPS_USER: root
   DEPLOY_PATH: /root/.openclaw/workspace/Jarvismax-master
   CONTAINER_NAME: jarvis_core
+  DOMAIN: jarvis.jarvismaxapp.co.uk
 
 jobs:
   deploy:
