@@ -210,6 +210,11 @@ async def get_current_user(
     Raises:
         HTTPException: 401 if token invalid or missing
     """
+    # TEMPORARY DEV MODE: Skip auth if JARVIS_PRODUCTION is not set
+    import os
+    if not os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
+    
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
