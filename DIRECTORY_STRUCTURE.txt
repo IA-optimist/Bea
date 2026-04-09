@@ -1,0 +1,330 @@
+JarvisMax Directory Structure Overview
+======================================
+
+ROOT: /root/Jarvismax-master (43 MB, 959 Python files, 279,313 LOC)
+
+TOP-LEVEL STRUCTURE (41 directories):
+├── core/                    [9.1 MB, 373 files, 108,945 LOC] ⭐ CORE SYSTEM
+├── tests/                   [15.0 MB, 244 files, 85,094 LOC] 🧪 TEST SUITE
+├── api/                     [1.7 MB, 16,212 LOC] 🌐 API LAYER
+├── business/                [792 KB, 29 files, 3,328 LOC] 💼 BUSINESS LOGIC
+├── kernel/                  [736 KB] 🧠 KERNEL LAYER
+├── agents/                  [764 KB] 🤖 AGENT IMPLEMENTATIONS
+├── tools/                   [132 KB, 13 files, 1,471 LOC] 🔧 TOOL IMPLEMENTATIONS
+├── business_agents/         🏢 BUSINESS AGENTS
+├── executor/                ⚡ EXECUTION LAYER
+├── integrations/            🔌 EXTERNAL INTEGRATIONS
+├── memory/                  💾 MEMORY SYSTEMS
+├── security/                🔒 SECURITY MODULES
+├── risk/                    ⚠️  RISK MANAGEMENT
+├── learning/                📚 LEARNING SYSTEMS
+├── plugins/                 🧩 PLUGIN SYSTEM
+├── modules/                 📦 MODULES
+├── monitoring/              📊 MONITORING
+├── observability/           👁️  OBSERVABILITY
+├── observer/                👀 OBSERVER PATTERN
+├── night_worker/            🌙 BACKGROUND WORKERS
+├── connectors/              🔗 CONNECTORS
+├── adapters/                🔌 ADAPTERS
+├── config/                  ⚙️  CONFIGURATION
+├── docker/                  🐳 DOCKER FILES
+├── docs/                    📄 DOCUMENTATION
+├── data/                    💾 DATA STORAGE
+├── workspace/               📁 WORKSPACE
+├── logs/                    📋 LOG FILES
+├── static/                  🎨 STATIC ASSETS
+├── interfaces/              🖥️  INTERFACES
+├── jarvis_mcp/              🔧 MCP INTEGRATION
+├── jarvismax_app/           📱 APP LAYER
+├── mcp/                     🔧 MCP PROTOCOL
+├── scripts/                 📜 SCRIPTS
+├── workflow/                🔄 WORKFLOWS
+├── .github/                 🐙 GITHUB WORKFLOWS
+├── .git/                    📦 GIT REPOSITORY
+└── .pytest_cache/           🧪 PYTEST CACHE
+
+CORE/ SUBDIRECTORIES (69 total):
+================================
+
+core/
+├── __pycache__/
+├── _legacy/                 [6 files] ⚠️  LEGACY CODE
+├── actions/                 [2 files]
+├── agents/                  [5 files] 🤖 AGENT CORE
+├── browser/                 [6 files] 🌐 BROWSER AUTOMATION
+├── business/                [7 files] 💼 BUSINESS CORE
+├── capabilities/            [5 files] 💪 CAPABILITIES
+├── capability_routing/      [7 files] 🔀 ROUTING
+├── cognitive_events/        [5 files] 🧠 EVENT SYSTEM
+├── connectors/              [3 files] 🔗 CONNECTORS
+├── economic/                [7 files] 💰 ECONOMIC LOGIC
+├── execution/               [12 files] ⚡ EXECUTION ENGINE
+├── finance/                 [4 files] 💵 FINANCE CORE
+├── identity/                [7 files] 👤 IDENTITY MANAGEMENT
+├── knowledge/               [8 files] 📚 KNOWLEDGE BASE
+├── mcp/                     [2 files] 🔧 MCP CORE
+├── memory/                  [4 files] 💾 MEMORY CORE
+├── memory_graph/            [4 files, 551 LOC] 🕸️  GRAPH MEMORY
+│   ├── __init__.py          [5 LOC]
+│   ├── graph_linker.py      [155 LOC]
+│   ├── graph_schema.py      [91 LOC]
+│   └── graph_store.py       [300 LOC]
+├── model_intelligence/      [5 files] 🧠 MODEL INTELLIGENCE
+├── modules/                 [6 files] 📦 MODULE SYSTEM
+├── objectives/              [8 files] 🎯 OBJECTIVES
+├── observability/           [3 files] 👁️  OBSERVABILITY
+├── orchestration/           [14 files] 🎭 ORCHESTRATION ENGINE
+│   ├── confidence_policy.py
+│   ├── context_assembler.py
+│   ├── decision_pipeline.py
+│   ├── decision_trace.py
+│   ├── execution_supervisor.py
+│   ├── learning_loop.py
+│   ├── memory_retrieval.py
+│   ├── mission_classifier.py
+│   ├── mission_reasoning_state.py
+│   ├── output_formatter.py
+│   ├── pre_execution.py
+│   ├── reasoning_engine.py
+│   └── reflection.py
+├── orchestrator_lg/         [3 files, 372 LOC] 🔀 LANGGRAPH ORCHESTRATION
+│   ├── __init__.py
+│   ├── langgraph_flow.py    [372 LOC]
+│   └── tools_registry.py
+├── planning/                [18 files] 📋 PLANNING LAYER
+├── policy/                  [2 files] 📜 POLICY ENGINE
+├── rag/                     [4 files] 🔍 RAG SYSTEM
+├── resilience/              [3 files] 🛡️  RESILIENCE
+├── schemas/                 [2 files] 📐 SCHEMAS
+├── security/                [9 files] 🔒 SECURITY CORE
+├── self_improvement/        [30 files] 🌱 SELF-IMPROVEMENT (LARGEST)
+├── self_model/              [6 files] 🪞 SELF-AWARENESS
+├── skills/                  [13 files] 🎓 SKILLS SYSTEM
+├── tool_intelligence/       [6 files] 🔧 TOOL INTELLIGENCE
+├── tools/                   [17 files] 🔧 TOOLS CORE
+├── tools_operational/       [5 files] ⚙️  OPERATIONAL TOOLS
+└── venture/                 [2 files] 🚀 VENTURE CORE
+
+CORE/ TOP-LEVEL FILES (123 files):
+===================================
+⭐ CRITICAL COMPONENTS:
+├── meta_orchestrator.py             [1,922 LOC] 🎭 PRIMARY ORCHESTRATOR
+├── action_executor.py               [640 LOC] ⚡ ACTION EXECUTOR
+├── tool_executor.py                 [1,085 LOC] 🔧 TOOL EXECUTOR
+├── llm_factory.py                   [803 LOC] 🏭 LLM FACTORY
+├── agent_factory.py                 [268 LOC] 🤖 AGENT FACTORY
+├── tool_registry.py                 [526 LOC] 📋 TOOL REGISTRY (definitions)
+├── tool_config_registry.py          [7,823 LOC] ⚙️  TOOL CONFIG REGISTRY
+├── extension_registry.py            [710 LOC] 🧩 EXTENSION REGISTRY
+├── reasoning_framework.py           [247 LOC] 🧠 REASONING FRAMEWORK
+├── memory_facade.py                 [730 LOC] 💾 MEMORY FACADE
+├── memory.py                        [2,807 LOC] 💾 MEMORY CORE
+├── improvement_memory.py            [12,784 LOC] 🌱 IMPROVEMENT MEMORY
+├── intelligent_memory.py            [2,568 LOC] 🧠 INTELLIGENT MEMORY
+├── knowledge_memory.py              [10,754 LOC] 📚 KNOWLEDGE MEMORY
+└── mission_memory.py                [10,128 LOC] 🎯 MISSION MEMORY
+
+📊 LARGE FILES (>1000 LOC):
+├── mission_system.py                [1,449 LOC]
+├── operating_primitives.py          [1,229 LOC]
+├── workflow_runtime.py              [1,117 LOC]
+├── capability_intelligence.py       [1,074 LOC]
+├── improvement_daemon.py            [897 LOC]
+├── agent_specialization.py          [888 LOC]
+├── runtime_introspection.py         [844 LOC]
+├── evaluation_engine.py             [787 LOC]
+├── business_actions.py              [766 LOC]
+└── governance.py                    [740 LOC]
+
+⚠️  LEGACY/DEPRECATED:
+└── orchestrator_LEGACY_20260407.py  [1,184 LOC] ⚠️  TO BE REMOVED
+
+API/ STRUCTURE:
+===============
+api/
+├── routes/                  [54 route files]
+│   ├── missions.py          [1,184 LOC] 🎯 MISSION ROUTES (MAIN)
+│   ├── action_console.py
+│   ├── agent_builder.py
+│   ├── approval.py
+│   ├── browser.py
+│   ├── business_actions.py
+│   ├── business_artifacts.py
+│   ├── capability_routing.py
+│   ├── cognitive.py
+│   ├── cognitive_events.py
+│   ├── connectors.py
+│   ├── convergence.py
+│   ├── dashboard.py
+│   ├── debug.py
+│   ├── domain_skills.py
+│   ├── economic.py
+│   ├── execution.py
+│   ├── extensions.py
+│   ├── finance.py
+│   ├── identity.py
+│   ├── kernel.py
+│   ├── learning.py
+│   ├── mcp_management.py
+│   ├── metrics_mobile.py
+│   ├── mission_control.py
+│   ├── mission_persistence.py
+│   ├── models.py
+│   ├── modules.py
+│   ├── modules_v3.py
+│   ├── monitoring.py
+│   ├── multimodal.py
+│   ├── objectives.py
+│   ├── observability.py
+│   ├── operational_tools.py
+│   ├── performance.py
+│   ├── plan_runner.py
+│   ├── playbooks.py
+│   ├── rag.py
+│   ├── routing_diagnostics.py
+│   ├── security_audit.py
+│   ├── self_improvement.py
+│   ├── self_improvement_v2.py
+│   ├── self_model.py
+│   ├── skills.py
+│   ├── strategy.py
+│   ├── system.py
+│   ├── system_readiness.py
+│   ├── system_v2.py
+│   ├── token_management.py
+│   ├── trace.py
+│   ├── vault.py
+│   ├── venture.py
+│   └── voice.py
+└── _unused/                 ⚠️  UNUSED CODE
+
+BUSINESS/ STRUCTURE:
+====================
+business/
+├── finance/                 [2 files] 💵 FINANCE PILLAR
+│   ├── __init__.py
+│   └── agent.py
+├── strategy/                [2 files] 📊 STRATEGY PILLAR
+│   ├── __init__.py
+│   └── agent.py
+├── venture/                 [3 files] 🚀 VENTURE PILLAR
+│   ├── __init__.py
+│   ├── agent.py
+│   └── schema.py
+├── saas/                    📦 SAAS PILLAR
+├── offer/                   💼 OFFER PILLAR
+├── meta_builder/            🏗️  META BUILDER
+├── playbooks/               📚 PLAYBOOKS
+├── skills/                  🎓 DOMAIN SKILLS
+├── tools/                   🔧 BUSINESS TOOLS
+├── trade_ops/               💹 TRADING OPS
+├── workflow/                🔄 WORKFLOW LOGIC
+└── workflows/               🔄 WORKFLOW TEMPLATES
+
+TOOLS/ STRUCTURE:
+=================
+tools/
+├── base.py
+├── browser_tool.py          🌐 BROWSER TOOL
+├── dependency_tool.py       📦 DEPENDENCY TOOL
+├── filesystem_tool.py       📁 FILESYSTEM TOOL
+├── python_tool.py           🐍 PYTHON TOOL
+├── web_research_tool.py     🔍 WEB RESEARCH TOOL
+├── tool_registry.py         ⚡ TOOL EXECUTOR REGISTRY
+├── n8n/                     🔗 N8N INTEGRATION
+│   ├── __init__.py
+│   └── bridge.py
+├── browser/                 🌐 BROWSER UTILITIES
+│   ├── __init__.py
+│   └── scraper.py
+└── integrations/            🔌 EXTERNAL INTEGRATIONS
+    ├── __init__.py
+    └── stripe_tool.py       💳 STRIPE INTEGRATION
+
+AGENTS/ STRUCTURE:
+==================
+agents/
+├── autonomous/              🤖 AUTONOMOUS AGENTS
+├── jarvis_team/             👥 JARVIS TEAM AGENTS
+└── shadow_advisor/          🕶️  SHADOW ADVISOR
+
+TESTS/ STRUCTURE:
+=================
+tests/                       [244 files, 85,094 LOC]
+├── smoke/                   💨 SMOKE TESTS
+├── test_access_enforcement.py
+├── test_access_tokens.py
+├── test_action_model.py
+├── test_adaptive_routing.py
+├── test_advanced_capabilities.py
+├── test_agent_specialization.py
+├── test_ai_os_foundation.py
+├── test_aios_dashboard.py
+├── test_api_structure.py
+├── test_approval_gate.py
+├── test_arch_integration_hardening.py
+├── test_architecture_coherence.py
+└── ... (230+ more test files)
+
+KEY CONFIGURATION FILES:
+========================
+├── main.py                  [412 LOC] 🚀 MAIN ENTRY POINT
+├── requirements.txt         [95 lines] 📦 DEPENDENCIES
+├── requirements.lock        [3,844 lines] 🔒 LOCKED DEPENDENCIES
+├── docker-compose.yml       [10,658 bytes] 🐳 DOCKER COMPOSE
+├── docker-compose.test.yml  [4,580 bytes] 🧪 TEST COMPOSE
+├── docker-compose.prod.yml  [1,645 bytes] 🏭 PROD COMPOSE
+├── Dockerfile               (in docker/)
+├── .env                     [1,195 bytes] ⚙️  ENVIRONMENT
+├── .env.example             [6,342 bytes] 📝 ENV TEMPLATE
+├── pytest.ini               [344 bytes] 🧪 PYTEST CONFIG
+└── conftest.py              [4,546 bytes] 🧪 PYTEST FIXTURES
+
+DOCUMENTATION FILES:
+====================
+├── README.md                [10,667 bytes]
+├── ARCHITECTURE.md          [5,432 bytes] ⭐
+├── CHANGELOG.md             [14,854 bytes]
+├── LICENSE                  [1,094 bytes]
+├── DEPLOYMENT.md            [5,016 bytes]
+├── CANONICAL_COMPONENTS.md  [5,891 bytes]
+├── API_CLEANUP.md           [7,988 bytes]
+├── REFACTORING_P1.md        [7,449 bytes]
+├── MISSION_CRITIQUE_REPORT.md [9,695 bytes]
+├── P0_P1_MISSION_COMPLETE.md [12,823 bytes]
+├── RAPPORT_TESTS_LIVE_VPS1.md [10,520 bytes]
+├── ACTIVATION_SI_V3_RAPPORT.md [5,637 bytes]
+├── BUSINESS_ENGINE_QUICKSTART.md [8,576 bytes]
+├── ARCHITECTURAL_AUDIT_2026-04-08.txt [27 KB] ⭐ THIS AUDIT
+└── ARCHITECTURAL_AUDIT_SUMMARY.md [9 KB] ⭐ THIS SUMMARY
+
+LEGEND:
+=======
+⭐ Critical/Important
+🎭 Orchestration
+⚡ Execution
+🤖 Agents
+💾 Memory
+🔧 Tools
+🧠 Intelligence
+💼 Business
+🌐 Web/Browser
+🔒 Security
+⚠️  Warning/Deprecated
+🧪 Testing
+🐳 Docker
+📦 Dependencies
+⚙️  Configuration
+📄 Documentation
+
+METRICS SUMMARY:
+================
+Total Size:            43 MB
+Total Directories:     183 (depth 2)
+Total Python Files:    959 files
+Total Lines of Code:   279,313 LOC
+Core LOC:             108,945 LOC (39%)
+Test LOC:             85,094 LOC (30%)
+API LOC:              16,212 LOC (6%)
+Business LOC:         3,328 LOC (1%)
+Tools LOC:            1,471 LOC (1%)

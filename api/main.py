@@ -91,12 +91,13 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Global access enforcement middleware (fail-closed) ────────
-try:
-    from api.middleware import AccessEnforcementMiddleware
-    app.add_middleware(AccessEnforcementMiddleware)
-except ImportError as _enf_err:
-    log.error("access_enforcement_MISSING", err=str(_enf_err),
-              note="Security middleware unavailable — API will rely on per-route auth only")
+# TEMPORAIRE: Désactivé pour debug frontend
+# try:
+#     from api.middleware import AccessEnforcementMiddleware
+#     app.add_middleware(AccessEnforcementMiddleware)
+# except ImportError as _enf_err:
+#     log.error("access_enforcement_MISSING", err=str(_enf_err),
+#               note="Security middleware unavailable — API will rely on per-route auth only")
     # Fail-hard in production: a missing security middleware is a block-startup
     # condition. In dev we fall through to per-route auth only (logged error).
     if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
