@@ -1,0 +1,13 @@
+# Playwright test results
+test-results/
+playwright-report/
+reports/
+results.json
+
+# Screenshots and videos
+*.png
+*.webm
+*.mp4
+
+# Traces
+trace.zip

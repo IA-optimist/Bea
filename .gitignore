@@ -144,3 +144,10 @@ workspace/improvement_proposals.json
 .env.agents
 workspace/access_tokens.json
 workspace/SI_V3_APPLICATION_REPORT_*.md
+
+# Playwright E2E Tests
+test-results/
+playwright-report/
+tests/e2e/reports/
+tests/e2e/results.json
+*.webm

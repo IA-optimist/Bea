@@ -1,0 +1,17 @@
+{
+  "name": "jarvismax",
+  "version": "1.0.0",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:api": "playwright test api.spec.ts",
+    "test:e2e:frontend": "playwright test frontend.spec.ts",
+    "test:e2e:report": "playwright show-report tests/e2e/reports",
+    "test:e2e:debug": "playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2"
+  }
+}
