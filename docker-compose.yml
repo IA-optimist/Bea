@@ -47,9 +47,9 @@ services:
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:6333/health"]
       interval: 10s
-      timeout: 3s
+      timeout: 30s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     networks:
       - jarvismax-network
 
@@ -79,7 +79,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_started
+        condition: service_healthy
     command: python main.py
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health"]
