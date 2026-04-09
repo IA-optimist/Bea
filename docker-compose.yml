@@ -57,7 +57,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: jarvismax-api
     environment:
       DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
@@ -71,8 +70,6 @@ services:
     volumes:
       - ./:/app
       - ~/.jarvismax:/root/.jarvismax
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +85,21 @@ services:
       retries: 3
     networks:
       - jarvismax-network
+    deploy:
+      replicas: 2
+
+  nginx-lb:
+    image: nginx:alpine
+    container_name: jarvismax-nginx-lb
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx-lb.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - jarvismax-network
+    restart: unless-stopped
 
   frontend:
     build:
