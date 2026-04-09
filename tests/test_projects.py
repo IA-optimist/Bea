@@ -1,10 +1,17 @@
 """
 JarvisMax - Project Model Tests
 Tests for Phase 2.1 multi-project foundation.
+
+NOTE: These are INTEGRATION tests requiring a live PostgreSQL instance
+and psycopg2-binary installed. All tests are marked @pytest.mark.infra
+and skipped by default. Run with --run-infra-tests to include them.
 """
 import os
 import pytest
 from uuid import UUID
+
+# Mark all tests in this module as requiring infrastructure
+pytestmark = pytest.mark.infra
 
 # Set test environment
 os.environ["POSTGRES_HOST"] = "postgres"
@@ -12,15 +19,21 @@ os.environ["POSTGRES_DB"] = "jarvis"
 os.environ["POSTGRES_USER"] = "jarvis"
 os.environ["POSTGRES_PASSWORD"] = "testpass123"
 
-from models.project import (
-    Project,
-    create_project,
-    get_project,
-    get_project_by_name,
-    list_projects,
-    update_project,
-    delete_project,
-)
+try:
+    from models.project import (
+        Project,
+        create_project,
+        get_project,
+        get_project_by_name,
+        list_projects,
+        update_project,
+        delete_project,
+    )
+except ImportError as e:
+    pytest.skip(
+        f"models.project not importable (missing psycopg2?): {e}",
+        allow_module_level=True,
+    )
 
 
 class TestProjectCRUD:
