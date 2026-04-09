@@ -79,7 +79,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_healthy
+        condition: service_started
     command: python main.py
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health"]
@@ -97,7 +97,8 @@ services:
     ports:
       - "3001:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - jarvismax-network
     restart: unless-stopped
