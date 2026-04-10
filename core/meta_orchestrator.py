@@ -1436,23 +1436,42 @@ class MetaOrchestrator:
                     "classification": ctx.metadata.get("classification", {}),
                 }
                 
-                # FIXED: Use correct signature (mission dict, not kwargs)
-                # CognitionOrchestrator.execute_mission_with_cognition expects:
-                #   mission: Dict[str, Any], enable_tot, enable_confidence, enable_learning
-                # 
-                # TODO(ARCHITECTURE): CognitionOrchestrator currently uses a toy LLM executor
-                # (_execute_with_llm) instead of wrapping the real delegate executor.
-                # This means ToT/confidence/correction run but don't integrate with
-                # actual agent execution. Requires refactoring to pass delegate/supervise_fn
-                # through the cognition layer.
-                # 
-                # For now: signature fixed so it can be called without error.
-                outcome = await _cog.execute_mission_with_cognition(
+                # FIXED (Phase 29): Integrate real executor with cognition pipeline
+                # Create async wrapper that calls the real delegate.run through supervise()
+                async def _real_executor(mission: Dict[str, Any]) -> str:
+                    """Execute mission using real JarvisOrchestrator + supervision."""
+                    result = await asyncio.wait_for(
+                        supervise(
+                            delegate.run,
+                            mission_id=mission["mission_id"],
+                            goal=mission["goal"],
+                            mode=mission.get("mode", "normal"),
+                            session_id=mission.get("session_id"),
+                            risk_level=mission.get("risk_level", "medium"),
+                            requires_approval=mission.get("requires_approval", False),
+                            skip_approval=mission.get("skip_approval", False),
+                            callback=mission.get("callback"),
+                        ),
+                        timeout=_mission_timeout,
+                    )
+                    # Extract output from result
+                    if isinstance(result, dict):
+                        return result.get("output", str(result))
+                    return str(result)
+                
+                cognition_result = await _cog.execute_mission_with_cognition(
                     mission=_payload,
                     enable_tot=True,
                     enable_confidence=True,
-                    enable_learning=True
+                    enable_learning=True,
+                    executor_fn=_real_executor  # Pass real executor
                 )
+                # Extract outcome from cognition result
+                # CognitionOrchestrator returns augmented mission dict with "result" key
+                if isinstance(cognition_result, dict):
+                    outcome = cognition_result.get("result", cognition_result)
+                else:
+                    outcome = cognition_result
                 trace.record("cognition", "success", conf=pre_assess_local.estimated_confidence)
             except Exception as _cog_err:
                 log.warning("cognition.failed", mission_id=mid, err=str(_cog_err)[:100])

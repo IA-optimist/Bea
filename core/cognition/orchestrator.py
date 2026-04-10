@@ -83,10 +83,20 @@ Provide a comprehensive response addressing the mission goal."""
         mission: Dict[str, Any],
         enable_tot: bool = True,
         enable_confidence: bool = True,
-        enable_learning: bool = True
+        enable_learning: bool = True,
+        executor_fn: Optional[Callable] = None
     ) -> Dict[str, Any]:
         """
         Execute mission with full AGI cognition pipeline.
+        
+        Args:
+            mission: Mission dict with goal, mission_id, etc.
+            enable_tot: Use Tree-of-Thought for complex missions
+            enable_confidence: Score output confidence and auto-correct
+            enable_learning: Track performance and discover skills
+            executor_fn: Optional custom executor function. If provided, calls
+                        executor_fn(mission) instead of _execute_with_llm().
+                        Signature: async def executor_fn(mission: Dict) -> str
         
         Returns augmented mission with cognition metadata.
         """
@@ -110,10 +120,18 @@ Provide a comprehensive response addressing the mission goal."""
             mission["tot_plan"] = tot_result
             mission["plan_confidence"] = tot_result["confidence"]
         
-        # Step 2: Execute mission with LLM
+        # Step 2: Execute mission
         output = mission.get("result", "")
         if not output:
-            output = await self._execute_with_llm(mission)
+            if executor_fn:
+                # Use custom executor (real delegate workflow)
+                log.info("using_custom_executor", mission_id=mission_id)
+                output = await executor_fn(mission)
+            else:
+                # Fallback to toy LLM executor
+                log.warning("using_fallback_llm_executor", mission_id=mission_id,
+                           warning="No executor_fn provided, using toy LLM call")
+                output = await self._execute_with_llm(mission)
             mission["result"] = output
         
         # Step 3: Score confidence
