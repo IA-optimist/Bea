@@ -2,31 +2,51 @@
 
 **Date:** 2026-04-10  
 **Task:** Refactor `run_mission()` method into smaller private methods  
-**Agent:** Hermes (UniTy's infrastructure agent)
+**Agent:** Hermes (UniTy's infrastructure agent)  
+**Sessions:** 1, 2, 3
 
 ---
 
 ## Overview
 
-Successfully refactored the monolithic `run_mission()` method (originally 1658 lines) by extracting 9 private helper methods, reducing it to 1523 lines (8% reduction, 135 lines).
+Successfully refactored the monolithic `run_mission()` method through three refactoring sessions:
+
+- **Session 1-2:** Extracted 9 helper methods (135 lines), reducing from 1658 to 1523 lines (8% reduction)
+- **Session 3:** Extracted 6 phase methods (240 lines), reducing from 1523 to 1283 lines (15.8% reduction)
+- **Total:** Extracted 15 helper methods (375 lines net), reducing by 375 lines (22.6% total reduction)
 
 ## Extracted Methods
 
-All extracted methods are under 100 lines as required:
+### Session 1-2: Infrastructure Helpers (9 methods, 156 lines)
+
+All methods under 100 lines as required:
 
 | Method Name | Lines | Description |
 |-------------|-------|-------------|
-| `_setup_event_stream` | 11 | Setup EventStream for WebSocket consumers (lines 356-365) |
-| `_check_circuit_breaker` | 12 | Check circuit breaker guard, return True if open (lines 367-373) |
-| `_initialize_decision_trace` | 9 | Initialize decision trace and needs_approval flag (lines 375-378) |
-| `_emit_mission_events` | 14 | Emit mission created events to journal and kernel (lines 382-393) |
-| `_register_mission_guards` | 7 | Register mission guards for iteration limit (lines 395-400) |
-| `_run_cognitive_analysis` | 9 | Run cognitive pre-mission analysis (lines 417-424) |
-| `_execute_reasoning_prepass` | 35 | Execute reasoning pre-pass for intelligence upgrade (lines 514-544) |
-| `_cleanup_event_stream` | 9 | Deregister EventStream after mission completion (lines 1938-1945) |
-| `_post_mission_learning` | 40 | Post-mission cognitive learning + guardian cleanup (lines 1900-1936) |
+| `_setup_event_stream` | 12 | Setup EventStream for WebSocket consumers |
+| `_check_circuit_breaker` | 13 | Check circuit breaker guard, return True if open |
+| `_initialize_decision_trace` | 10 | Initialize decision trace and needs_approval flag |
+| `_emit_mission_events` | 15 | Emit mission created events to journal and kernel |
+| `_register_mission_guards` | 8 | Register mission guards for iteration limit |
+| `_run_cognitive_analysis` | 10 | Run cognitive pre-mission analysis |
+| `_execute_reasoning_prepass` | 36 | Execute reasoning pre-pass for intelligence upgrade |
+| `_cleanup_event_stream` | 10 | Deregister EventStream after mission completion |
+| `_post_mission_learning` | 42 | Post-mission cognitive learning + guardian cleanup |
 
-**Total extracted:** 146 lines across 9 methods
+### Session 3: Cognitive Phase Extraction (6 methods, 369 lines)
+
+All methods under 150 lines as required (largest: 124 lines):
+
+| Method Name | Lines | Type | Description |
+|-------------|-------|------|-------------|
+| `_classify_mission` | 37 | sync | Phase 1: Mission classification via kernel/core classifiers |
+| `_match_ai_os_capabilities` | 53 | sync | Phase 0b: Semantic routing and capability matching (BLOC 2) |
+| `_route_mission` | 124 | sync | Phase 0c: Capability-first routing via kernel.router |
+| `_enrich_kernel_registry` | 42 | sync | Phase 0d: Kernel capability registry enrichment (BLOC 2) |
+| `_apply_performance_intelligence` | 35 | sync | Phase 0e: Kernel performance intelligence (BLOC 2) |
+| `_kernel_planning` | 78 | async | Phase 1b: Kernel planning + skill store retrieval |
+
+**Total extracted:** 525 lines across 15 methods
 
 ## Changes Made
 
@@ -110,12 +130,21 @@ All relevant tests passed after refactoring:
 
 ## File Statistics
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| Total file size | 2225 lines | 2281 lines | +56 lines (+2.5%) |
-| run_mission() size | 1658 lines | 1523 lines | -135 lines (-8%) |
-| Helper methods | 1 (_run_kernel_cognitive_cycle) | 10 | +9 methods |
-| Average method size | N/A | 16 lines | Well under target |
+| Metric | Session 1-2 | Session 3 | Total Change |
+|--------|-------------|-----------|--------------|
+| Total file size | 2281 lines | 2412 lines | +187 lines (+8.4%) |
+| run_mission() size | 1523 lines | 1283 lines | -375 lines (-22.6%) |
+| Helper methods | 10 | 16 | +15 methods |
+| Average extracted method size | 17 lines | 35 lines | Well under target |
+| Largest extracted method | 42 lines | 124 lines | Under 150 line limit |
+
+### Progress Toward Goal
+
+- **Original:** 1,658 lines
+- **Current:** 1,283 lines  
+- **Target:** < 800 lines
+- **Remaining:** 483 lines to reduce
+- **Progress:** 33.2% complete (375 / 858 lines reduced)
 
 ## Next Steps (Recommendations)
 
