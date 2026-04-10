@@ -1,6 +1,11 @@
 """
-core/model_router.py — Minimal model routing stub.
-Consolidation note: this module wraps the new kernel.routing.router.
+core/model_router.py — Legacy model routing stub (TEST-ONLY).
+
+⚠️  DEPRECATED: This router is NOT used in production.
+    Production routing uses: core/capability_routing/router.py
+
+Status: Kept for backward compatibility with test suite (16 tests).
+Consolidation note: Will be removed after tests migrated to capability_routing.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
