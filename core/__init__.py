@@ -59,5 +59,5 @@ class JarvisOrchestrator:  # type: ignore[no-redef]
             stacklevel=2,
         )
         # Import and return the real internal class so behaviour is preserved
-        from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator as _Real
+        from core.jarvis_executor import JarvisOrchestrator as _Real
         return _Real(*args, **kwargs)

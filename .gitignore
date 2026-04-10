@@ -102,6 +102,9 @@ workspace/*.json
 workspace/*.db-shm
 workspace/*.db-wal
 workspace/*.log
+workspace/*.jsonl
+workspace/traces/
+workspace/skill_feedback/
 
 # ── Workspace DB + night reports ─────────────────────────────────────
 workspace/*.db
@@ -110,6 +113,10 @@ workspace/night_reports/
 # ── Claude Code interne ───────────────────────────────────────────────
 .claude/
 workspace/
+
+# ── Node modules (NEVER commit) ──────────────────────────────────────
+node_modules/
+package-lock.json
 
 # ── Build artifacts ─────────────────────────────────────────────
 *.apk
