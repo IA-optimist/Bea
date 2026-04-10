@@ -65,7 +65,7 @@ def _make_patch(patch_id="p1", file="self_improve/auditor.py",
 
 def test_failure_memory_record_and_context():
     """Un rejet enregistré doit apparaître dans get_context."""
-    from memory.failure_memory import FailureMemory
+    from memory.legacy.failure_memory import FailureMemory
     s  = _make_settings()
     fm = FailureMemory(s)
     fm.clear()
@@ -82,7 +82,7 @@ def test_failure_memory_record_and_context():
 
 def test_failure_memory_deduplication():
     """Deux rejets identiques ne doivent pas être doublonnés."""
-    from memory.failure_memory import FailureMemory
+    from memory.legacy.failure_memory import FailureMemory
     s  = _make_settings()
     fm = FailureMemory(s)
     fm.clear()
@@ -98,7 +98,7 @@ def test_failure_memory_deduplication():
 
 def test_failure_memory_has_failed_before():
     """has_failed_before doit retourner True après un enregistrement."""
-    from memory.failure_memory import FailureMemory
+    from memory.legacy.failure_memory import FailureMemory
     s  = _make_settings()
     fm = FailureMemory(s)
     fm.clear()
@@ -112,7 +112,7 @@ def test_failure_memory_has_failed_before():
 
 def test_failure_memory_empty_context():
     """get_context doit retourner '' si aucun échec pour ce fichier."""
-    from memory.failure_memory import FailureMemory
+    from memory.legacy.failure_memory import FailureMemory
     s  = _make_settings()
     fm = FailureMemory(s)
     fm.clear()
@@ -124,7 +124,7 @@ def test_failure_memory_empty_context():
 
 def test_failure_memory_stats():
     """get_stats doit retourner le bon total."""
-    from memory.failure_memory import FailureMemory
+    from memory.legacy.failure_memory import FailureMemory
     s  = _make_settings()
     fm = FailureMemory(s)
     fm.clear()
@@ -149,7 +149,7 @@ def test_failure_memory_stats():
 
 def test_patch_memory_record_and_get_patterns():
     """Un succès enregistré doit apparaître dans get_success_patterns."""
-    from memory.patch_memory import PatchMemory
+    from memory.legacy.patch_memory import PatchMemory
     s  = _make_settings()
     pm = PatchMemory(s)
     pm.clear()
@@ -165,7 +165,7 @@ def test_patch_memory_record_and_get_patterns():
 
 def test_patch_memory_context():
     """get_context doit retourner un bloc de texte formaté."""
-    from memory.patch_memory import PatchMemory
+    from memory.legacy.patch_memory import PatchMemory
     s  = _make_settings()
     pm = PatchMemory(s)
     pm.clear()
@@ -178,7 +178,7 @@ def test_patch_memory_context():
 
 def test_patch_memory_get_best_model():
     """get_best_model doit retourner le modèle avec le plus de succès."""
-    from memory.patch_memory import PatchMemory
+    from memory.legacy.patch_memory import PatchMemory
     s  = _make_settings()
     pm = PatchMemory(s)
     pm.clear()
@@ -194,7 +194,7 @@ def test_patch_memory_get_best_model():
 
 def test_patch_memory_empty_context():
     """get_context doit retourner '' si aucun succès."""
-    from memory.patch_memory import PatchMemory
+    from memory.legacy.patch_memory import PatchMemory
     s  = _make_settings()
     pm = PatchMemory(s)
     pm.clear()
