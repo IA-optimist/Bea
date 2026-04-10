@@ -61,7 +61,26 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/docs" if _enable_docs else None,
     redoc_url="/redoc" if _enable_docs else None,
+    # Disable default /openapi.json — we override with auth-protected version below
+    openapi_url=None,
 )
+
+# Auth-protected OpenAPI schema endpoint (when docs enabled)
+if _enable_docs:
+    @app.get("/openapi.json", include_in_schema=False)
+    async def get_openapi_schema(user: dict = Depends(require_auth)):
+        """OpenAPI schema endpoint — requires authentication.
+        
+        Protects API documentation from unauthorized access.
+        /docs and /redoc will fetch this endpoint automatically.
+        """
+        from fastapi.openapi.utils import get_openapi
+        return get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes,
+        )
 
 # Rate limiting (Phase 4 Security)
 app.state.limiter = limiter
