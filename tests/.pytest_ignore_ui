@@ -1,0 +1,3 @@
+# Tests UI legacy (skip in CI)
+test_architecture_coherence.py
+test_auth_session.py

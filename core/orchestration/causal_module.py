@@ -444,9 +444,9 @@ class JarvisMaxCausalIntegration:
             points.append(PointStruct(
                 id=uid,
                 vector=[0.0] * 384,  # Null embedding — semantic search disabled
-                payload={\"text\": text, \"cause\": cause, \"effect\": effect,
-                         \"strength\": edge_data.get(\"strength\", 1.0),
-                         \"mechanism\": edge_data.get(\"mechanism\", \"\")},
+                payload={"text": text, "cause": cause, "effect": effect,
+                         "strength": edge_data.get("strength", 1.0),
+                         "mechanism": edge_data.get("mechanism", "")},
             ))
         if points:
             client.upsert(collection_name=self.qdrant_collection, points=points)
