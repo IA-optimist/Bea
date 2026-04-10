@@ -29,12 +29,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 import structlog
+
+# Import PostgreSQL backend for dual-write
+try:
+    from memory.postgres_backend import PostgresMemoryBackend
+    _PG_AVAILABLE = True
+except ImportError:
+    _PG_AVAILABLE = False
+    PostgresMemoryBackend = None
 
 log = structlog.get_logger()
 
@@ -170,6 +179,25 @@ class VaultMemory:
         self._use_sqlite: bool = False
         self._use_pg:     bool = False
         self._pg_dsn:   str | None = None
+        self._pg_backend: PostgresMemoryBackend | None = None
+        
+        # Initialize PostgreSQL backend if DATABASE_URL is set
+        database_url = os.getenv("DATABASE_URL")
+        if database_url and _PG_AVAILABLE:
+            try:
+                self._pg_backend = PostgresMemoryBackend(database_url)
+                if self._pg_backend.is_available():
+                    self._use_pg = True
+                    log.info("vault_memory.postgres_enabled", host=self._pg_backend._get_host())
+                else:
+                    self._pg_backend = None
+                    log.debug("vault_memory.postgres_unavailable", reason="connection failed")
+            except Exception as e:
+                log.warning("vault_memory.postgres_init_failed", error=str(e))
+                self._pg_backend = None
+        elif database_url and not _PG_AVAILABLE:
+            log.warning("vault_memory.postgres_unavailable", reason="psycopg2 not installed")
+        
         self._load()
 
     # ── API publique ──────────────────────────────────────────────────────────
@@ -244,6 +272,19 @@ class VaultMemory:
                 self._save_json()
         else:
             self._save()
+        
+        # PostgreSQL dual-write (opt-in, fail gracefully)
+        if self._pg_backend is not None:
+            try:
+                self._pg_backend.store(
+                    memory_type="vault",
+                    key=entry.id,
+                    value=asdict(entry),
+                    tags=entry.tags,
+                )
+            except Exception as e:
+                log.error("vault_memory.postgres_write_failed", id=entry.id, error=str(e))
+        
         log.info("vault_stored", id=entry.id, type=type, tags=entry.tags)
         return entry
 
@@ -394,6 +435,48 @@ class VaultMemory:
             ),
             "total_uses":      sum(e.usage_count for e in active),
         }
+
+    def sync_to_postgres(self, force: bool = False) -> dict[str, int]:
+        """
+        Bulk migrate existing vault entries to PostgreSQL.
+        
+        Args:
+            force: If True, sync all entries. If False, only sync active entries.
+        
+        Returns:
+            Dict with sync statistics: {"synced": N, "failed": M, "skipped": K}
+        """
+        if self._pg_backend is None:
+            log.warning("vault_memory.sync_to_postgres_unavailable", reason="PostgreSQL not configured")
+            return {"synced": 0, "failed": 0, "skipped": len(self._entries)}
+        
+        stats = {"synced": 0, "failed": 0, "skipped": 0}
+        
+        entries_to_sync = (
+            list(self._entries.values()) if force
+            else [e for e in self._entries.values() if e.is_active()]
+        )
+        
+        log.info("vault_memory.sync_to_postgres_started", total=len(entries_to_sync))
+        
+        for entry in entries_to_sync:
+            try:
+                success = self._pg_backend.store(
+                    memory_type="vault",
+                    key=entry.id,
+                    value=asdict(entry),
+                    tags=entry.tags,
+                )
+                if success:
+                    stats["synced"] += 1
+                else:
+                    stats["failed"] += 1
+            except Exception as e:
+                log.error("vault_memory.sync_entry_failed", id=entry.id, error=str(e))
+                stats["failed"] += 1
+        
+        log.info("vault_memory.sync_to_postgres_completed", **stats)
+        return stats
 
     # ── Internals ─────────────────────────────────────────────────────────────
 
