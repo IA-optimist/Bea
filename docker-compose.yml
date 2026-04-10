@@ -57,6 +57,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: jarvismax-api
     environment:
       DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
@@ -85,8 +86,7 @@ services:
       retries: 3
     networks:
       - jarvismax-network
-    deploy:
-      replicas: 2
+    restart: unless-stopped
 
   nginx-lb:
     image: nginx:alpine

@@ -74,9 +74,9 @@ preflight() {
         die "Docker is not running"
     fi
     
-    # Check if docker-compose exists
-    if ! command -v docker-compose > /dev/null 2>&1; then
-        die "docker-compose not found"
+    # Check if docker compose exists (v2 or v1)
+    if ! docker compose version > /dev/null 2>&1 && ! command -v docker compose > /dev/null 2>&1; then
+        die "docker compose not found (neither v2 nor v1)"
     fi
     
     success "Pre-flight checks passed"
@@ -135,7 +135,7 @@ build_containers() {
     log "Building Docker containers..."
     cd "$REPO_DIR"
     
-    docker-compose build --no-cache "$API_CONTAINER"
+    docker compose build --no-cache "$API_CONTAINER"
     
     success "Containers built"
 }
@@ -145,10 +145,10 @@ restart_services() {
     cd "$REPO_DIR"
     
     # Stop API container
-    docker-compose stop "$API_CONTAINER"
+    docker compose stop "$API_CONTAINER"
     
     # Start all services
-    docker-compose up -d
+    docker compose up -d
     
     success "Services restarted"
 }
@@ -288,7 +288,7 @@ main() {
         status)
             log "Checking service status..."
             cd "$REPO_DIR"
-            docker-compose ps
+            docker compose ps
             echo ""
             curl -s "$HEALTH_ENDPOINT" | python3 -m json.tool || error "API not responding"
             ;;

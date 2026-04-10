@@ -11,7 +11,7 @@
 
 services:
 
-  jarvis:
+  api:
     environment:
       # Anthropic API key désactivée — crédit épuisé, cause 300ms overhead + log noise
       # sur tous les rôles builder/reviewer/improve. OpenAI prend le relais directement.
@@ -58,7 +58,7 @@ services:
       QDRANT_URL:        http://qdrant:6333
       QDRANT_API_KEY:    ${QDRANT_API_KEY:-}
       QDRANT_COLLECTION: jarvis_memory
-    networks: [jarvis_net]
+    networks: [jarvismax-network]
     deploy:
       resources:
         limits:
@@ -88,7 +88,7 @@ services:
     restart: unless-stopped
     environment:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN:-}
-    networks: [jarvis_net]
+    networks: [jarvismax-network]
     deploy:
       resources:
         limits:
