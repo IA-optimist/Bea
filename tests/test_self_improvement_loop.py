@@ -66,9 +66,9 @@ from core.self_improvement_loop import (
     ValidationResult, PatchValidator, PatchDecision, PromotionPolicy,
     Lesson, LessonMemory,
     PromptVersion, PromptOptimizer,
-    _is_protected, PROTECTED_FILES,
     JarvisImprovementLoop, CycleReport,
 )
+from core.self_improvement.code_patch_generator import _is_protected, PROTECTED_FILES
 
 
 # ═══════════════════════════════════════════════════════════════

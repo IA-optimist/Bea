@@ -1,0 +1,90 @@
+global:
+  resolve_timeout: 5m
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/*.tmpl'
+
+# Route tree configuration
+route:
+  # Default receiver
+  receiver: 'telegram-alerts'
+  
+  # Grouping configuration
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  
+  # Route specific alerts to different receivers
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'telegram-critical'
+      group_wait: 0s
+      repeat_interval: 4h
+    
+    # Warning alerts - grouped notification
+    - match:
+        severity: warning
+      receiver: 'telegram-alerts'
+      repeat_interval: 12h
+    
+    # Info alerts - daily summary
+    - match:
+        severity: info
+      receiver: 'telegram-info'
+      repeat_interval: 24h
+
+# Inhibition rules - suppress certain alerts when others fire
+inhibit_rules:
+  # If API is down, suppress high error rate alerts
+  - source_match:
+      alertname: 'APIDown'
+    target_match:
+      alertname: 'HighErrorRate'
+    equal: ['instance']
+  
+  # If disk is critical, suppress warning
+  - source_match:
+      alertname: 'DiskSpaceCritical'
+    target_match:
+      alertname: 'DiskSpaceLow'
+    equal: ['instance']
+
+# Receiver configurations
+receivers:
+  # Default Telegram receiver
+  - name: 'telegram-alerts'
+    webhook_configs:
+      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+        max_alerts: 10
+
+  # Critical alerts - higher priority
+  - name: 'telegram-critical'
+    webhook_configs:
+      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager?priority=critical'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+        max_alerts: 5
+
+  # Info alerts - lower priority
+  - name: 'telegram-info'
+    webhook_configs:
+      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager?priority=info'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+        max_alerts: 20
+
+# Note: To enable Telegram notifications, add these environment variables to .env:
+# TELEGRAM_BOT_TOKEN=your_bot_token_here
+# TELEGRAM_CHAT_ID=your_chat_id_here
+# 
+# Then implement the webhook endpoint in the API at /api/v2/webhooks/alertmanager
+# that forwards alerts to Telegram using the bot token and chat ID.

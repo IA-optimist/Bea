@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JarvisMax - Notification Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: #f8fafc;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+        
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .button-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .button-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        .button-test {
+            background: #48bb78;
+            color: white;
+            margin-left: 0.5rem;
+        }
+        
+        .button-test:hover {
+            background: #38a169;
+        }
+        
+        .subscription-list {
+            list-style: none;
+        }
+        
+        .subscription-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subscription-info {
+            flex: 1;
+        }
+        
+        .subscription-channel {
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        
+        .subscription-destination {
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+        
+        .subscription-statuses {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-done {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-failed {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+        
+        .help-text {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-top: 0.5rem;
+        }
+        
+        .emoji {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Notification Settings</h1>
+            <p>Receive notifications when your missions complete or fail</p>
+        </div>
+        
+        <div class="content">
+            <!-- Alert messages -->
+            <div id="alertContainer"></div>
+            
+            <!-- Active Subscriptions -->
+            <div class="section">
+                <div class="section-title">Active Subscriptions</div>
+                <ul class="subscription-list" id="subscriptionList">
+                    <!-- Populated by JavaScript -->
+                </ul>
+            </div>
+            
+            <!-- Telegram Subscription -->
+            <div class="section">
+                <div class="section-title">📱 Telegram Notifications</div>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="telegramChatId">
+                            Telegram Chat ID
+                        </label>
+                        <input 
+                            type="text" 
+                            id="telegramChatId" 
+                            placeholder="123456789"
+                        />
+                        <div class="help-text">
+                            Get your chat ID: Message your bot, then visit 
+                            <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notify me when missions:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="DONE" checked id="telegramDone" />
+                                Complete (DONE)
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="FAILED" checked id="telegramFailed" />
+                                Fail (FAILED)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="button button-primary" onclick="subscribeTelegram()">
+                        Subscribe to Telegram
+                    </button>
+                    <button class="button button-test" onclick="testTelegram()">
+                        Send Test
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Email Subscription -->
+            <div class="section">
+                <div class="section-title">📧 Email Notifications</div>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="emailAddress">
+                            Email Address
+                        </label>
+                        <input 
+                            type="text" 
+                            id="emailAddress" 
+                            placeholder="user@example.com"
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notify me when missions:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="DONE" checked id="emailDone" />
+                                Complete (DONE)
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="FAILED" checked id="emailFailed" />
+                                Fail (FAILED)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="button button-primary" onclick="subscribeEmail()">
+                        Subscribe to Email
+                    </button>
+                    <button class="button button-test" onclick="testEmail()">
+                        Send Test
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const TOKEN = localStorage.getItem('jarvis_token') || 'test-token';
+        
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Fetch subscriptions
+        async function fetchSubscriptions() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/subscriptions`, {
+                    headers: {
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    renderSubscriptions(data.data.subscriptions);
+                }
+            } catch (error) {
+                console.error('Error fetching subscriptions:', error);
+            }
+        }
+        
+        // Render subscriptions
+        function renderSubscriptions(subscriptions) {
+            const list = document.getElementById('subscriptionList');
+            
+            if (subscriptions.length === 0) {
+                list.innerHTML = '<li style="padding: 1rem; text-align: center; color: #718096;">No active subscriptions</li>';
+                return;
+            }
+            
+            list.innerHTML = subscriptions.map(sub => `
+                <li class="subscription-item">
+                    <div class="subscription-info">
+                        <div class="subscription-channel">${sub.channel}</div>
+                        <div class="subscription-destination">${sub.destination}</div>
+                        <div class="subscription-statuses">
+                            ${sub.mission_statuses.map(status => 
+                                `<span class="status-badge status-${status.toLowerCase()}">${status}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <button class="button button-secondary" onclick="unsubscribe('${sub.channel}')">
+                        Unsubscribe
+                    </button>
+                </li>
+            `).join('');
+        }
+        
+        // Subscribe to Telegram
+        async function subscribeTelegram() {
+            const chatId = document.getElementById('telegramChatId').value.trim();
+            
+            if (!chatId) {
+                showAlert('Please enter your Telegram chat ID', 'error');
+                return;
+            }
+            
+            const statuses = [];
+            if (document.getElementById('telegramDone').checked) statuses.push('DONE');
+            if (document.getElementById('telegramFailed').checked) statuses.push('FAILED');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                    body: JSON.stringify({
+                        channel: 'telegram',
+                        destination: chatId,
+                        mission_statuses: statuses,
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showAlert('Successfully subscribed to Telegram notifications!', 'success');
+                    fetchSubscriptions();
+                } else {
+                    showAlert('Subscription failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Subscribe to Email
+        async function subscribeEmail() {
+            const email = document.getElementById('emailAddress').value.trim();
+            
+            if (!email) {
+                showAlert('Please enter your email address', 'error');
+                return;
+            }
+            
+            const statuses = [];
+            if (document.getElementById('emailDone').checked) statuses.push('DONE');
+            if (document.getElementById('emailFailed').checked) statuses.push('FAILED');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                    body: JSON.stringify({
+                        channel: 'email',
+                        destination: email,
+                        mission_statuses: statuses,
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showAlert('Successfully subscribed to Email notifications!', 'success');
+                    fetchSubscriptions();
+                } else {
+                    showAlert('Subscription failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Unsubscribe
+        async function unsubscribe(channel) {
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/unsubscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                    body: JSON.stringify({ channel }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showAlert(`Unsubscribed from ${channel} notifications`, 'success');
+                    fetchSubscriptions();
+                } else {
+                    showAlert('Unsubscribe failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Test Telegram
+        async function testTelegram() {
+            const chatId = document.getElementById('telegramChatId').value.trim();
+            
+            if (!chatId) {
+                showAlert('Please enter your Telegram chat ID', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                    body: JSON.stringify({
+                        channel: 'telegram',
+                        destination: chatId,
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showAlert('Test notification sent! Check your Telegram.', 'success');
+                } else {
+                    showAlert('Test failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Test Email
+        async function testEmail() {
+            const email = document.getElementById('emailAddress').value.trim();
+            
+            if (!email) {
+                showAlert('Please enter your email address', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/notifications/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Jarvis-Token': TOKEN,
+                    },
+                    body: JSON.stringify({
+                        channel: 'email',
+                        destination: email,
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    showAlert('Test notification sent! Check your email.', 'success');
+                } else {
+                    showAlert('Test failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Load subscriptions on page load
+        fetchSubscriptions();
+    </script>
+</body>
+</html>

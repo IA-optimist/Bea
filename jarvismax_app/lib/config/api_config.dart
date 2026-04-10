@@ -6,7 +6,7 @@ class ApiConfig extends ChangeNotifier {
   static const _keyPort = 'api_port';
 
   // Defaults
-  static const defaultEmulatorHost   = '10.0.2.2';
+  static const defaultEmulatorHost = 'jarvis.jarvismaxapp.co.uk';
   /// Production domain with automatic TLS via Caddy.
   static const defaultProductionHost = 'jarvis.jarvismaxapp.co.uk';
   static const defaultLocalHost      = '192.168.1.100';
@@ -18,7 +18,7 @@ class ApiConfig extends ChangeNotifier {
     'emulator':    ('10.0.2.2',                   8000), // Android emulator
     'local':       ('192.168.129.20',              8000), // LAN direct
     'tailscale':   ('100.109.1.124',               8000), // VPN direct
-    'production':  ('jarvis.jarvismaxapp.co.uk',    443), // HTTPS via Caddy
+    'production': ('jarvis.jarvismaxapp.co.uk', 443), // Hetzner VPS
   };
 
   String _host = defaultProductionHost;

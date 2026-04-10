@@ -1,0 +1,423 @@
+{
+  "dashboard": {
+    "title": "JarvisMax - Business Metrics",
+    "uid": "jarvismax-business",
+    "tags": ["jarvismax", "business", "analytics"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Business Tasks - Total Count",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "business_tasks_total",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Tasks Completed (24h)",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "increase(business_tasks_completed_total[24h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 10, "color": "yellow"},
+                {"value": 50, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Task Success Rate",
+        "type": "gauge",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(business_tasks_completed_total[1h]) / rate(business_tasks_total[1h]) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Tasks Failed (24h)",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "increase(business_tasks_failed_total[24h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 5, "color": "yellow"},
+                {"value": 20, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Task Completion Rate Over Time",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 6, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(business_tasks_completed_total[5m])",
+            "legendFormat": "Completed",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(business_tasks_failed_total[5m])",
+            "legendFormat": "Failed",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Task Duration Distribution",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 6, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(business_task_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(business_task_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(business_task_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Tasks by Type",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 14, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (task_type) (business_tasks_total)",
+            "legendFormat": "{{task_type}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right"
+          },
+          "pieType": "donut"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Agent Execution Count",
+        "type": "stat",
+        "gridPos": {"x": 8, "y": 14, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "agent_executions_total",
+            "legendFormat": "{{agent_name}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Agent Success Rate",
+        "type": "bargauge",
+        "gridPos": {"x": 16, "y": 14, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(agent_executions_successful_total[1h]) / rate(agent_executions_total[1h]) * 100",
+            "legendFormat": "{{agent_name}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Business Revenue Metrics",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 22, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "increase(business_revenue_total[1h])",
+            "legendFormat": "Revenue (1h)",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "currencyUSD"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Active Users",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 22, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "business_active_users",
+            "legendFormat": "Active Users",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Data Processing Pipeline",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 30, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (pipeline_stage) (rate(business_pipeline_processed_total[5m]))",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "renameByName": {
+                "pipeline_stage": "Pipeline Stage",
+                "Value": "Processing Rate (items/sec)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "LLM API Calls",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 30, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(business_llm_calls_total[5m])",
+            "legendFormat": "{{provider}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Cost Tracking (24h)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 38, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "increase(business_cost_total[24h])",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD"
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 15,
+        "title": "Database Queries (5m)",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 38, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "rate(business_db_queries_total[5m])",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops"
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 16,
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"x": 12, "y": 38, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "rate(business_cache_hits_total[5m]) / (rate(business_cache_hits_total[5m]) + rate(business_cache_misses_total[5m])) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 80, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 17,
+        "title": "Queue Depth",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 38, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "business_queue_depth",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 100, "color": "yellow"},
+                {"value": 500, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area"
+        }
+      }
+    ]
+  }
+}

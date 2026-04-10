@@ -1,0 +1,114 @@
+# Caddyfile for JarvisMax Real-Time Dashboard with WebSocket
+# Caddy automatically handles HTTPS with Let's Encrypt
+# Much simpler than NGINX for WebSocket + TLS
+
+# Replace with your domain (or use localhost for dev)
+jarvismax.example.com {
+    # Automatic HTTPS with Let's Encrypt
+    # Remove this line for localhost development
+    # tls internal  # Use internal CA for localhost
+
+    # Compression
+    encode gzip zstd
+
+    # Security headers
+    header {
+        X-Frame-Options SAMEORIGIN
+        X-Content-Type-Options nosniff
+        X-XSS-Protection "1; mode=block"
+        # Strict-Transport-Security "max-age=31536000; includeSubDomains"  # Uncomment for HTTPS
+    }
+
+    # WebSocket endpoint - Caddy handles upgrades automatically!
+    handle /ws/* {
+        reverse_proxy localhost:8000 {
+            # Headers for WebSocket
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            
+            # Important: Keep connection alive for WebSocket
+            flush_interval -1
+        }
+    }
+
+    # API endpoints
+    handle /api/* {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            
+            # Timeout for long-running requests
+            timeout 60s
+        }
+    }
+
+    # Metrics HTTP endpoints
+    handle /metrics/* {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Health check (no caching, fast response)
+    handle /health {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+        }
+    }
+
+    # Frontend (React app) - catch-all
+    handle /* {
+        reverse_proxy localhost:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}
+
+# Development configuration (localhost)
+# Uncomment for local development
+# localhost:80 {
+#     handle /ws/* {
+#         reverse_proxy localhost:8000 {
+#             flush_interval -1
+#         }
+#     }
+#     
+#     handle /api/* {
+#         reverse_proxy localhost:8000
+#     }
+#     
+#     handle /metrics/* {
+#         reverse_proxy localhost:8000
+#     }
+#     
+#     handle /* {
+#         reverse_proxy localhost:3000
+#     }
+# }
+
+# Alternative: Direct port forwarding (simpler for dev)
+# :80 {
+#     reverse_proxy /ws/* localhost:8000
+#     reverse_proxy /api/* localhost:8000
+#     reverse_proxy /metrics/* localhost:8000
+#     reverse_proxy /* localhost:3000
+# }
+
+# Notes:
+# 1. Install Caddy: https://caddyserver.com/docs/install
+# 2. Run: caddy run --config Caddyfile_websocket
+# 3. Or as service: sudo systemctl start caddy
+# 4. Caddy automatically handles HTTPS with Let's Encrypt (no manual cert setup!)
+# 5. WebSocket upgrade is automatic (no special config needed unlike NGINX)
+# 6. Logs: caddy logs are written to stderr by default
+# 7. Reload config: caddy reload --config Caddyfile_websocket
