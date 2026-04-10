@@ -264,7 +264,8 @@ class MetaOrchestrator:
                     metadata={"from": prev.value, "to": target.value,
                               "mission_id": ctx.mission_id},
                 )
-                asyncio.ensure_future(_stream.append(_evt))
+                # Use create_task for better exception visibility
+                asyncio.create_task(_stream.append(_evt))
         except Exception:
             pass
         # Persist state to disk (fail-open)
@@ -1840,7 +1841,8 @@ class MetaOrchestrator:
                 ctx.metadata.get("classification", {}).get("task_type", "general") or "general"
             )
             result_confidence = ctx.metadata.get("confidence", 0.7)
-            asyncio.ensure_future(get_skill_store().store(
+            # Use create_task instead of ensure_future for better error handling
+            _skill_task = asyncio.create_task(get_skill_store().store(
                 mission_id=mid,
                 goal=goal,
                 plan=_plan_to_store,
@@ -1848,6 +1850,10 @@ class MetaOrchestrator:
                 mission_type=_mission_type_for_skill,
                 tags=[mode, _mission_type_for_skill],
             ))
+            # Log exceptions from background task (don't let them be silent)
+            _skill_task.add_done_callback(
+                lambda t: log.error("skill_store_error", exc=t.exception()) if t.exception() else None
+            )
             log.info("skill_store_triggered", mission_id=mid, confidence=result_confidence)
         except Exception as _ss_err:
             log.debug("skill_store_skip", err=str(_ss_err)[:80])
