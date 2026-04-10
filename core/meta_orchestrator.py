@@ -1480,7 +1480,582 @@ class MetaOrchestrator:
                     except Exception:
                         pass
 
+        # Store execution context for post-processing helpers
+        ctx.metadata["_exec_enriched_goal"] = enriched_goal
+        ctx.metadata["_exec_risk"] = risk
+        ctx.metadata["_exec_delegate"] = delegate
+        ctx.metadata["_exec_mission_timeout"] = _mission_timeout
+        ctx.metadata["_exec_needs_approval"] = needs_approval
+        
         return outcome
+
+    async def _handle_success_outcome(
+        self,
+        outcome,
+        ctx,
+        mid: str,
+        goal: str,
+        mode: str,
+        trace,
+        _reasoning_result,
+        force_approved: bool,
+        callback,
+    ) -> float:
+        """
+        Handle successful mission outcome: evaluation, retry logic, memory storage, learning.
+        
+        Returns result_confidence.
+        
+        Extracted from run_mission() lines 1705-2053 (~348 lines).
+        Contains:
+        - Kernel evaluation (Phase 8)
+        - Kernel-based retry logic (bounded, shape-aware)
+        - Memory storage (UnifiedMemory, ContinualMemory, ArtificialCuriosity)
+        - Skill store persistence (Voyager pattern)
+        - Event emissions (journal, metrics, kernel)
+        - Output formatting (Phase 3a)
+        - Learning loop (Phase 3b, kernel-authoritative R5)
+        - Skill recording and refinement (Phase 4)
+        - Memory facade storage (Phase 5)
+        """
+        # Extract execution context from metadata
+        enriched_goal = ctx.metadata.get("_exec_enriched_goal", goal)
+        risk = ctx.metadata.get("_exec_risk", "low")
+        delegate = ctx.metadata.get("_exec_delegate", self.jarvis)
+        _mission_timeout = ctx.metadata.get("_exec_mission_timeout", 600)
+        needs_approval = ctx.metadata.get("_exec_needs_approval", False)
+        
+        self._circuit_breaker.record_success()
+        # RUNNING -> REVIEW
+        self._transition(ctx, MissionStatus.REVIEW)
+        ctx.result = outcome.result
+
+        # ── KERNEL EVALUATION (authoritative — Phase 8) ───────
+        # Single call replaces reflect() + critique_output().
+        # kernel.evaluator calls both internally via registration,
+        # synthesizes a unified KernelScore, and populates
+        # ctx.metadata["critique"] + ["reflection"] for backward compat.
+        result_confidence = 0.7
+        _kernel_score = None
+        _shape_val = ""
+        if _reasoning_result:
+            _shape_val = (
+                _reasoning_result.output_shape.value
+                if hasattr(_reasoning_result.output_shape, "value")
+                else str(_reasoning_result.output_shape)
+            )
+        try:
+            from kernel.evaluation.scorer import get_evaluator as _get_kernel_eval
+            _task_type_eval = str(
+                ctx.metadata.get("classification", {}).get("task_type", "")
+                or ""
+            )
+            if hasattr(_task_type_eval, "value"):
+                _task_type_eval = _task_type_eval.value
+            _kernel_score = _get_kernel_eval().evaluate(
+                goal=goal,
+                result=ctx.result or "",
+                task_type=_task_type_eval,
+                mission_id=mid,
+                duration_ms=outcome.duration_ms,
+                retries=outcome.retries,
+                output_shape=_shape_val,
+                reasoning_frame=(
+                    _reasoning_result.frame if _reasoning_result else None
+                ),
+            )
+            result_confidence = _kernel_score.confidence
+            ctx.metadata["kernel_score"] = _kernel_score.to_dict()
+            # Backward compat: populate critique/reflection dicts
+            # so existing downstream code (judgment_signals, etc.) still works
+            if _kernel_score.critique_dict:
+                ctx.metadata["critique"] = _kernel_score.critique_dict
+            if _kernel_score.reflection_dict:
+                ctx.metadata["reflection"] = _kernel_score.reflection_dict
+            if not _kernel_score.passed:
+                log.warning("mission.weak_output_detected",
+                            mission_id=mid,
+                            score=_kernel_score.score,
+                            weaknesses=_kernel_score.weaknesses[:2],
+                            retry_recommended=_kernel_score.retry_recommended)
+            # Judgment signals: kernel_score already contains all signal data
+            # via critique_dict/reflection_dict — no redundant core inline call.
+            trace.record("evaluate", "kernel",
+                         score=round(_kernel_score.score, 3),
+                         confidence=round(_kernel_score.confidence, 3),
+                         retry=_kernel_score.retry_recommended,
+                         source=_kernel_score.source)
+        except Exception as _keval_err:
+            log.debug("kernel_evaluation_skipped", err=str(_keval_err)[:100])
+            result_confidence = 0.7
+
+        # ── Kernel → Retry (bounded, 1 attempt, shape-aware) ─────
+        # Primary: kernel_score.retry_recommended + score vs threshold
+        # Fallback: ctx.metadata["critique"] dict (populated above by kernel)
+        result_confidence = await self._handle_kernel_retry(
+            ctx, mid, goal, mode, trace, outcome, _reasoning_result,
+            enriched_goal, risk, needs_approval, force_approved, callback,
+            delegate, _mission_timeout, result_confidence, _shape_val
+        )
+
+        # REVIEW -> DONE
+        self._transition(ctx, MissionStatus.DONE,
+                         result_len=len(ctx.result),
+                         retries=outcome.retries,
+                         duration_ms=outcome.duration_ms,
+                         confidence=result_confidence)
+        
+        # ── Memory and event storage ───────────────────────────
+        await self._store_mission_memories(mid, goal, mode, ctx, enriched_goal)
+        self._emit_completion_events(mid, goal, outcome, result_confidence, trace)
+        
+        # ── Phase 3a: Output formatting ───────────────
+        try:
+            from core.orchestration.output_formatter import format_output
+            task_type = ctx.metadata.get("classification", {}).get("task_type", "other")
+            ctx.result = format_output(ctx.result, task_type=task_type, goal=goal)
+        except Exception as _exc:
+            log.debug("phase_failed", phase="output_format", err=str(_exc)[:100])
+
+        # ── Phase 3b: Learning loop (kernel-authoritative — R5 / Pass 23) ──
+        self._execute_kernel_learning(goal, ctx, mid, outcome, result_confidence, trace)
+
+        # ── Phase 4: Record skill + refine prior ─────────
+        self._record_skills(mid, goal, ctx, risk, result_confidence, trace)
+
+        # ── Phase 5: Store to memory ──────────────────────
+        self._store_to_memory_facade(mid, goal, ctx, trace)
+        
+        return result_confidence
+
+    async def _handle_kernel_retry(
+        self,
+        ctx,
+        mid: str,
+        goal: str,
+        mode: str,
+        trace,
+        outcome,
+        _reasoning_result,
+        enriched_goal: str,
+        risk: str,
+        needs_approval: bool,
+        force_approved: bool,
+        callback,
+        delegate,
+        _mission_timeout: float,
+        result_confidence: float,
+        _shape_val: str,
+    ) -> float:
+        """
+        Handle kernel-based retry logic (bounded, 1 attempt, shape-aware).
+        
+        Returns updated result_confidence.
+        """
+        _kernel_score_meta = ctx.metadata.get("kernel_score", {})
+        _critique_obj      = ctx.metadata.get("critique", {})
+        _did_retry         = ctx.metadata.get("_critique_retry_done", False)
+        _retry_threshold   = _kernel_score_meta.get(
+            "retry_threshold_used",
+            {"direct_answer": 0.20, "patch": 0.30, "diagnosis": 0.30,
+             "plan": 0.30, "report": 0.35, "warning": 0.20}.get(_shape_val, 0.25),
+        )
+        # Retry recommended by kernel, or critique says weak at threshold
+        _score_for_retry = _kernel_score_meta.get(
+            "score", _critique_obj.get("overall", 1.0),
+        )
+        _is_weak_for_retry = (
+            _kernel_score_meta.get("retry_recommended", False) or
+            _critique_obj.get("is_weak", False)
+        )
+        if (
+            _is_weak_for_retry
+            and _score_for_retry < _retry_threshold
+            and not _did_retry
+            and outcome.retries == 0
+            and len(goal.strip()) > 80           # skip retry for short/conversational goals
+            and not mid.endswith("-retry")       # prevent retry chains
+        ):
+            ctx.metadata["_critique_retry_done"] = True
+            log.info("mission.critique_retry",
+                     mission_id=mid,
+                     score=_score_for_retry,
+                     weaknesses=(_kernel_score_meta.get(
+                         "weaknesses", _critique_obj.get("weaknesses", []),
+                     ))[:2])
+            try:
+                # Build retry goal — kernel weaknesses preferred
+                _weak_list = (
+                    _kernel_score_meta.get("weaknesses", []) or
+                    _critique_obj.get("weaknesses", [])
+                )
+                _weak_reasons = "; ".join(_weak_list[:3])
+                _suggestion = (
+                    _kernel_score_meta.get("improvement_suggestion", "") or
+                    _critique_obj.get("improvement_suggestion", "")
+                )
+                _retry_goal = (
+                    f"{enriched_goal}\n\n"
+                    f"---\nPREVIOUS ATTEMPT WAS WEAK:\n"
+                    f"Weaknesses: {_weak_reasons}\n"
+                    f"Improvement needed: {_suggestion}\n"
+                    f"Produce a more specific, complete, and actionable response."
+                )
+                # Re-run with feedback
+                from core.supervisor import supervise
+                import asyncio
+                self._transition(ctx, MissionStatus.RUNNING, reason="critique_retry")
+                _retry_outcome = await asyncio.wait_for(
+                    supervise(
+                        delegate.run,
+                        mission_id=f"{mid}-retry",
+                        goal=_retry_goal,
+                        mode=mode,
+                        session_id=f"{mid}-retry",
+                        risk_level=risk,
+                        requires_approval=needs_approval,
+                        skip_approval=force_approved,
+                        callback=callback,
+                    ),
+                    timeout=_mission_timeout,
+                )
+                if _retry_outcome.success and _retry_outcome.result:
+                    _retry_len = len(_retry_outcome.result.strip())
+                    _orig_len = len((ctx.result or "").strip())
+                    # Accept retry if it produced more content
+                    if _retry_len > _orig_len * 0.5:
+                        ctx.result = _retry_outcome.result
+                        result_confidence = min(0.8, result_confidence + 0.2)
+                        ctx.metadata["critique_retry_used"] = True
+                        log.info("mission.critique_retry_accepted",
+                                 mission_id=mid,
+                                 orig_len=_orig_len,
+                                 retry_len=_retry_len)
+                        trace.record("retry", "critique_accepted",
+                                     improvement=f"{_orig_len}→{_retry_len}")
+                # Re-enter REVIEW for the retry
+                self._transition(ctx, MissionStatus.REVIEW, reason="post_retry")
+            except Exception as _retry_err:
+                log.warning("mission.critique_retry_failed",
+                            mission_id=mid, err=str(_retry_err)[:80])
+                # Stay with original result
+                self._transition(ctx, MissionStatus.REVIEW, reason="retry_failed")
+        
+        return result_confidence
+
+    async def _store_mission_memories(
+        self,
+        mid: str,
+        goal: str,
+        mode: str,
+        ctx,
+        enriched_goal: str,
+    ) -> None:
+        """Store mission results to various memory systems."""
+        # ── UnifiedMemory : store result after mission ─────────────────────────
+        try:
+            from core.orchestration.memory_system import UnifiedMemory
+            _um2 = UnifiedMemory()
+            await _um2.store(
+                content=f"Mission: {enriched_goal[:200]}\nResult: {(ctx.result or '')[:300]}",
+                memory_type="episode",
+                metadata={"mission_id": mid, "mode": mode}
+            )
+            log.info("unified_memory.stored", mission_id=mid)
+        except Exception as _um2_err:
+            log.debug("unified_memory.store_skipped", err=str(_um2_err)[:80])
+        
+        # ── ContinualMemory : store experience ─────────────────────────────────
+        try:
+            from core.orchestration.continual_memory import ContinualMemory
+            _cm2 = ContinualMemory()
+            _surprise = _cm2.compute_surprise(enriched_goal, ctx.result or "")
+            await _cm2.store_experience(
+                mission_id=mid,
+                goal=enriched_goal[:300],
+                result=(ctx.result or "")[:300],
+                surprise_score=_surprise,
+                success=True,
+                tags=[ctx.metadata.get("task_type", "general")]
+            )
+            log.info("continual_memory.stored", mission_id=mid, surprise=round(_surprise, 3))
+        except Exception as _cm2_err:
+            log.debug("continual_memory.store_skipped", err=str(_cm2_err)[:80])
+        
+        # ── ArtificialCuriosity : detect and log surprising results ───────────────────
+        try:
+            from core.orchestration.creative_engine import ArtificialCuriosity
+            _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
+            _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
+            if _surprise_ac > 0.6:
+                _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
+                if _questions:
+                    ctx.metadata["curiosity_questions"] = _questions[:3]
+                    log.info("curiosity.triggered", mission_id=mid, surprise=round(_surprise_ac, 2), questions=len(_questions))
+        except Exception as _ac_err:
+            log.debug("curiosity.skipped", err=str(_ac_err)[:80])
+        
+        # ── Skill Store: persist successful mission pattern (Voyager pattern) ──
+        # Store if confidence >= threshold (default 0.70).
+        # Fail-open: any exception is silently swallowed.
+        try:
+            from core.skill_store import get_skill_store
+            import asyncio
+            _plan_to_store = ctx.metadata.get("context", {})
+            if not _plan_to_store:
+                _plan_to_store = {"steps": ["direct_execution"], "result_len": len(ctx.result)}
+            _mission_type_for_skill = str(
+                ctx.metadata.get("classification", {}).get("task_type", "general") or "general"
+            )
+            result_confidence = ctx.metadata.get("confidence", 0.7)
+            asyncio.ensure_future(get_skill_store().store(
+                mission_id=mid,
+                goal=goal,
+                plan=_plan_to_store,
+                confidence=result_confidence,
+                mission_type=_mission_type_for_skill,
+                tags=[mode, _mission_type_for_skill],
+            ))
+            log.info("skill_store_triggered", mission_id=mid, confidence=result_confidence)
+        except Exception as _ss_err:
+            log.debug("skill_store_skip", err=str(_ss_err)[:80])
+
+    def _emit_completion_events(
+        self,
+        mid: str,
+        goal: str,
+        outcome,
+        result_confidence: float,
+        trace,
+    ) -> None:
+        """Emit various completion events to journal, metrics, kernel."""
+        # AI OS skill discovery (fail-open)
+        try:
+            from core.skills.skill_discovery import get_skill_discovery
+            sd = get_skill_discovery()
+            # outcome.actions doesn't exist on ExecutionOutcome — use getattr guard
+            tools_used = [a.tool_name for a in getattr(outcome, "actions", [])
+                          if hasattr(a, "tool_name")]
+            sd.discover_from_mission(mid, goal, tools_used, success=True)
+        except Exception as _sd_err:
+            log.debug("skill_discovery_failed", err=str(_sd_err)[:60])
+        
+        trace.record("complete", "done",
+                     reason=f"duration={outcome.duration_ms}ms retries={outcome.retries} confidence={result_confidence}")
+        
+        # Journal: mission completed
+        try:
+            from core.cognitive_events.emitter import emit_mission_completed
+            emit_mission_completed(
+                mission_id=mid, duration_ms=outcome.duration_ms,
+                confidence=result_confidence,
+            )
+        except Exception:
+            pass
+        
+        # Metrics store counter (admin panel)
+        try:
+            from core.metrics_store import emit_mission_completed as _ms_completed
+            _ms_completed("canonical", duration_ms=outcome.duration_ms)
+        except Exception:
+            pass
+        
+        # Kernel event: mission completed (dual emission)
+        try:
+            from kernel.convergence.event_bridge import emit_kernel_event
+            emit_kernel_event("mission.completed", mission_id=mid,
+                              duration_ms=outcome.duration_ms,
+                              confidence=result_confidence)
+        except Exception:
+            pass
+        
+        # Kernel working memory: clear mission slot (it is done)
+        try:
+            from kernel.runtime.boot import get_runtime as _get_kernel_rt
+            _get_kernel_rt().memory.clear_working(mission_id=mid)
+        except Exception:
+            pass
+
+    def _execute_kernel_learning(
+        self,
+        goal: str,
+        ctx,
+        mid: str,
+        outcome,
+        result_confidence: float,
+        trace,
+    ) -> None:
+        """Execute kernel learning loop (R5 - kernel authoritative)."""
+        _kernel_lesson = None
+        try:
+            from kernel.runtime.kernel import get_kernel as _get_jk_learn
+            _kscore_meta = ctx.metadata.get("kernel_score", {})
+            _k_verdict = str(
+                _kscore_meta.get("verdict")
+                or ctx.metadata.get("reflection", {}).get("verdict", "accept")
+                or "accept"
+            )
+            _k_confidence = float(
+                _kscore_meta.get("confidence", result_confidence) or result_confidence
+            )
+            _k_weaknesses = list(_kscore_meta.get("weaknesses") or [])
+            _k_suggestion = str(_kscore_meta.get("improvement_suggestion") or "")
+            _kernel_lesson = _get_jk_learn().learn(  # R5: via kernel.learn()
+                goal=goal,
+                result=ctx.result or "",
+                mission_id=mid,
+                verdict=_k_verdict,
+                confidence=_k_confidence,
+                weaknesses=_k_weaknesses,
+                improvement_suggestion=_k_suggestion,
+                retries=outcome.retries,
+                error_class="",
+            )
+            if _kernel_lesson:
+                ctx.metadata["kernel_lesson"] = _kernel_lesson.to_dict()
+                trace.record("learn", "kernel_lesson_extracted",
+                             verdict=_k_verdict,
+                             confidence=round(_k_confidence, 3),
+                             reason=_kernel_lesson.what_to_do_differently[:60])
+        except Exception as _klearn_err:
+            # BLOC 2 — R5: kernel.learn() is the SOLE learning authority.
+            # The core.orchestration.learning_loop fallback has been removed.
+            # If kernel.learn() fails, we log and continue — no side-channel store.
+            # This enforces R5: structured learning only via kernel.learn().
+            log.debug("kernel_learning_skipped_r5", err=str(_klearn_err)[:100])
+
+    def _record_skills(
+        self,
+        mid: str,
+        goal: str,
+        ctx,
+        risk: str,
+        result_confidence: float,
+        trace,
+    ) -> None:
+        """Record skill outcome and refine prior skills (Phase 4)."""
+        try:
+            from core.skills import get_skill_service
+            svc = get_skill_service()
+            svc.record_outcome(
+                mission_id=mid,
+                goal=goal,
+                result=ctx.result,
+                status="DONE",
+                risk_level=risk,
+                confidence=result_confidence,
+            )
+            # Refine any prior skill that was retrieved
+            for ps in ctx.metadata.get("prior_skills", []):
+                sid = ps.get("skill_id", "")
+                if sid:
+                    svc.refine_skill(sid, ctx.result, success=True)
+            trace.record("store", "skill_evaluated")
+        except Exception as _exc:
+            log.warning("phase_failed", phase="skill_store", err=str(_exc)[:100])
+
+    def _store_to_memory_facade(
+        self,
+        mid: str,
+        goal: str,
+        ctx,
+        trace,
+    ) -> None:
+        """Store outcome to memory facade (Phase 5)."""
+        try:
+            from core.memory_facade import get_memory_facade
+            get_memory_facade().store_outcome(
+                content=f"Mission {mid}: {goal[:100]} -> {ctx.result[:200]}",
+                mission_id=mid,
+                status="DONE",
+            )
+            trace.record("store", "memory_stored")
+        except Exception as _exc:
+            log.debug("phase_failed", phase="memory_store", err=str(_exc)[:100])
+
+    def _handle_failed_outcome(
+        self,
+        outcome,
+        ctx,
+        mid: str,
+        goal: str,
+        trace,
+    ) -> None:
+        """
+        Handle failed mission outcome: circuit breaker, memory storage, event emission.
+        
+        Extracted from run_mission() lines 2071-2114 (~43 lines).
+        """
+        # Execution failed after retries — record for circuit breaker
+        self._circuit_breaker.record_failure()
+        ctx.error = outcome.error
+        self._transition(ctx, MissionStatus.FAILED,
+                         reason=outcome.error_class,
+                         retries=outcome.retries)
+        trace.record("complete", "failed",
+                     reason=f"{outcome.error_class}: {outcome.error[:60]}")
+
+        # Journal: mission failed
+        try:
+            from core.cognitive_events.emitter import emit_mission_failed
+            emit_mission_failed(
+                mission_id=mid, error=outcome.error[:200],
+                error_class=outcome.error_class,
+            )
+        except Exception:
+            pass
+        
+        # Metrics store counter (admin panel)
+        try:
+            from core.metrics_store import emit_mission_failed as _ms_failed
+            _ms_failed("canonical", reason=outcome.error_class)
+        except Exception:
+            pass
+        
+        # Kernel event: mission failed (dual emission)
+        try:
+            from kernel.convergence.event_bridge import emit_kernel_event
+            emit_kernel_event("mission.failed", mission_id=mid,
+                              error=outcome.error[:200],
+                              error_class=outcome.error_class)
+        except Exception:
+            pass
+
+        # Store failure in memory
+        try:
+            from core.memory_facade import get_memory_facade
+            get_memory_facade().store_failure(
+                content=f"Mission {mid} FAILED: {goal[:80]} -> {outcome.error[:200]}",
+                error_class=outcome.error_class,
+                mission_id=mid,
+            )
+        except Exception as _exc:
+            log.debug("phase_failed", phase="memory_store_fail", err=str(_exc)[:100])
+
+    def _handle_awaiting_approval(
+        self,
+        outcome,
+        ctx,
+        mid: str,
+        risk: str,
+        trace,
+    ) -> None:
+        """Handle awaiting approval outcome (lines 2054-2068)."""
+        # Execution paused — waiting for human approval
+        ctx.error = "Awaiting human approval"
+        ctx.metadata["approval_item_id"] = next(
+            (d.get("item_id", "") for d in outcome.decision_trace
+             if d.get("step") == "approval_gate"), ""
+        )
+        ctx.metadata["approval_status"] = "pending"
+        ctx.metadata["approval_paused_at"] = time.time()
+        # Transition to explicit AWAITING_APPROVAL status
+        self._transition(ctx, MissionStatus.AWAITING_APPROVAL,
+                         reason=f"risk={risk}")
+        trace.record("complete", "awaiting_approval",
+                     reason=f"risk={risk}, item_id={ctx.metadata.get('approval_item_id', '')[:8]}")
+        log.info("mission.awaiting_approval",
+                 mission_id=mid, risk_level=risk)
 
     # ── Public API ───────────────────────────────────────────────────────────
 
@@ -1703,415 +2278,38 @@ class MetaOrchestrator:
                                 err=str(_mso_err)[:80])
 
             if outcome.success:
-                self._circuit_breaker.record_success()
-                # RUNNING -> REVIEW
-                self._transition(ctx, MissionStatus.REVIEW)
-                ctx.result = outcome.result
-
-                # ── KERNEL EVALUATION (authoritative — Phase 8) ───────
-                # Single call replaces reflect() + critique_output().
-                # kernel.evaluator calls both internally via registration,
-                # synthesizes a unified KernelScore, and populates
-                # ctx.metadata["critique"] + ["reflection"] for backward compat.
-                result_confidence = 0.7
-                _kernel_score = None
-                _shape_val = ""
-                if _reasoning_result:
-                    _shape_val = (
-                        _reasoning_result.output_shape.value
-                        if hasattr(_reasoning_result.output_shape, "value")
-                        else str(_reasoning_result.output_shape)
-                    )
-                try:
-                    from kernel.evaluation.scorer import get_evaluator as _get_kernel_eval
-                    _task_type_eval = str(
-                        ctx.metadata.get("classification", {}).get("task_type", "")
-                        or ""
-                    )
-                    if hasattr(_task_type_eval, "value"):
-                        _task_type_eval = _task_type_eval.value
-                    _kernel_score = _get_kernel_eval().evaluate(
-                        goal=goal,
-                        result=ctx.result or "",
-                        task_type=_task_type_eval,
-                        mission_id=mid,
-                        duration_ms=outcome.duration_ms,
-                        retries=outcome.retries,
-                        output_shape=_shape_val,
-                        reasoning_frame=(
-                            _reasoning_result.frame if _reasoning_result else None
-                        ),
-                    )
-                    result_confidence = _kernel_score.confidence
-                    ctx.metadata["kernel_score"] = _kernel_score.to_dict()
-                    # Backward compat: populate critique/reflection dicts
-                    # so existing downstream code (judgment_signals, etc.) still works
-                    if _kernel_score.critique_dict:
-                        ctx.metadata["critique"] = _kernel_score.critique_dict
-                    if _kernel_score.reflection_dict:
-                        ctx.metadata["reflection"] = _kernel_score.reflection_dict
-                    if not _kernel_score.passed:
-                        log.warning("mission.weak_output_detected",
-                                    mission_id=mid,
-                                    score=_kernel_score.score,
-                                    weaknesses=_kernel_score.weaknesses[:2],
-                                    retry_recommended=_kernel_score.retry_recommended)
-                    # Judgment signals: kernel_score already contains all signal data
-                    # via critique_dict/reflection_dict — no redundant core inline call.
-                    trace.record("evaluate", "kernel",
-                                 score=round(_kernel_score.score, 3),
-                                 confidence=round(_kernel_score.confidence, 3),
-                                 retry=_kernel_score.retry_recommended,
-                                 source=_kernel_score.source)
-                except Exception as _keval_err:
-                    log.debug("kernel_evaluation_skipped", err=str(_keval_err)[:100])
-                    result_confidence = 0.7
-
-                # ── Kernel → Retry (bounded, 1 attempt, shape-aware) ─────
-                # Primary: kernel_score.retry_recommended + score vs threshold
-                # Fallback: ctx.metadata["critique"] dict (populated above by kernel)
-                _kernel_score_meta = ctx.metadata.get("kernel_score", {})
-                _critique_obj      = ctx.metadata.get("critique", {})
-                _did_retry         = ctx.metadata.get("_critique_retry_done", False)
-                _retry_threshold   = _kernel_score_meta.get(
-                    "retry_threshold_used",
-                    {"direct_answer": 0.20, "patch": 0.30, "diagnosis": 0.30,
-                     "plan": 0.30, "report": 0.35, "warning": 0.20}.get(_shape_val, 0.25),
+                # Delegate to success outcome handler (evaluation, retry, memory, learning)
+                result_confidence = await self._handle_success_outcome(
+                    outcome=outcome,
+                    ctx=ctx,
+                    mid=mid,
+                    goal=goal,
+                    mode=mode,
+                    trace=trace,
+                    _reasoning_result=_reasoning_result,
+                    force_approved=force_approved,
+                    callback=callback,
                 )
-                # Retry recommended by kernel, or critique says weak at threshold
-                _score_for_retry = _kernel_score_meta.get(
-                    "score", _critique_obj.get("overall", 1.0),
-                )
-                _is_weak_for_retry = (
-                    _kernel_score_meta.get("retry_recommended", False) or
-                    _critique_obj.get("is_weak", False)
-                )
-                if (
-                    _is_weak_for_retry
-                    and _score_for_retry < _retry_threshold
-                    and not _did_retry
-                    and outcome.retries == 0
-                    and len(goal.strip()) > 80           # skip retry for short/conversational goals
-                    and not mid.endswith("-retry")       # prevent retry chains
-                ):
-                    ctx.metadata["_critique_retry_done"] = True
-                    log.info("mission.critique_retry",
-                             mission_id=mid,
-                             score=_score_for_retry,
-                             weaknesses=(_kernel_score_meta.get(
-                                 "weaknesses", _critique_obj.get("weaknesses", []),
-                             ))[:2])
-                    try:
-                        # Build retry goal — kernel weaknesses preferred
-                        _weak_list = (
-                            _kernel_score_meta.get("weaknesses", []) or
-                            _critique_obj.get("weaknesses", [])
-                        )
-                        _weak_reasons = "; ".join(_weak_list[:3])
-                        _suggestion = (
-                            _kernel_score_meta.get("improvement_suggestion", "") or
-                            _critique_obj.get("improvement_suggestion", "")
-                        )
-                        _retry_goal = (
-                            f"{enriched_goal}\n\n"
-                            f"---\nPREVIOUS ATTEMPT WAS WEAK:\n"
-                            f"Weaknesses: {_weak_reasons}\n"
-                            f"Improvement needed: {_suggestion}\n"
-                            f"Produce a more specific, complete, and actionable response."
-                        )
-                        # Re-run with feedback
-                        self._transition(ctx, MissionStatus.RUNNING, reason="critique_retry")
-                        _retry_outcome = await asyncio.wait_for(
-                            supervise(
-                                delegate.run,
-                                mission_id=f"{mid}-retry",
-                                goal=_retry_goal,
-                                mode=mode,
-                                session_id=f"{mid}-retry",
-                                risk_level=risk,
-                                requires_approval=needs_approval,
-                                skip_approval=force_approved,
-                                callback=callback,
-                            ),
-                            timeout=_mission_timeout,
-                        )
-                        if _retry_outcome.success and _retry_outcome.result:
-                            _retry_len = len(_retry_outcome.result.strip())
-                            _orig_len = len((ctx.result or "").strip())
-                            # Accept retry if it produced more content
-                            if _retry_len > _orig_len * 0.5:
-                                ctx.result = _retry_outcome.result
-                                result_confidence = min(0.8, result_confidence + 0.2)
-                                ctx.metadata["critique_retry_used"] = True
-                                log.info("mission.critique_retry_accepted",
-                                         mission_id=mid,
-                                         orig_len=_orig_len,
-                                         retry_len=_retry_len)
-                                trace.record("retry", "critique_accepted",
-                                             improvement=f"{_orig_len}→{_retry_len}")
-                        # Re-enter REVIEW for the retry
-                        self._transition(ctx, MissionStatus.REVIEW, reason="post_retry")
-                    except Exception as _retry_err:
-                        log.warning("mission.critique_retry_failed",
-                                    mission_id=mid, err=str(_retry_err)[:80])
-                        # Stay with original result
-                        self._transition(ctx, MissionStatus.REVIEW, reason="retry_failed")
-
-                # REVIEW -> DONE
-                self._transition(ctx, MissionStatus.DONE,
-                                 result_len=len(ctx.result),
-                                 retries=outcome.retries,
-                                 duration_ms=outcome.duration_ms,
-                                 confidence=result_confidence)
-                # ── UnifiedMemory : store result after mission ─────────────────────────
-                try:
-                    from core.orchestration.memory_system import UnifiedMemory
-                    _um2 = UnifiedMemory()
-                    await _um2.store(
-                        content=f"Mission: {enriched_goal[:200]}\nResult: {(ctx.result or '')[:300]}",
-                        memory_type="episode",
-                        metadata={"mission_id": mid, "mode": mode}
-                    )
-                    log.info("unified_memory.stored", mission_id=mid)
-                except Exception as _um2_err:
-                    log.debug("unified_memory.store_skipped", err=str(_um2_err)[:80])
-                # ── ContinualMemory : store experience ─────────────────────────────────
-                try:
-                    from core.orchestration.continual_memory import ContinualMemory
-                    _cm2 = ContinualMemory()
-                    _surprise = _cm2.compute_surprise(enriched_goal, ctx.result or "")
-                    await _cm2.store_experience(
-                        mission_id=mid,
-                        goal=enriched_goal[:300],
-                        result=(ctx.result or "")[:300],
-                        surprise_score=_surprise,
-                        success=True,
-                        tags=[ctx.metadata.get("task_type", "general")]
-                    )
-                    log.info("continual_memory.stored", mission_id=mid, surprise=round(_surprise, 3))
-                except Exception as _cm2_err:
-                    log.debug("continual_memory.store_skipped", err=str(_cm2_err)[:80])
-                # ── ArtificialCuriosity : detect and log surprising results ───────────────────
-                try:
-                    from core.orchestration.creative_engine import ArtificialCuriosity
-                    _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
-                    _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
-                    if _surprise_ac > 0.6:
-                        _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
-                        if _questions:
-                            ctx.metadata["curiosity_questions"] = _questions[:3]
-                            log.info("curiosity.triggered", mission_id=mid, surprise=round(_surprise_ac, 2), questions=len(_questions))
-                except Exception as _ac_err:
-                    log.debug("curiosity.skipped", err=str(_ac_err)[:80])
-                # ── Skill Store: persist successful mission pattern (Voyager pattern) ──
-                # Store if confidence >= threshold (default 0.70).
-                # Fail-open: any exception is silently swallowed.
-                try:
-                    from core.skill_store import get_skill_store
-                    _plan_to_store = ctx.metadata.get("context", {})
-                    if not _plan_to_store:
-                        _plan_to_store = {"steps": ["direct_execution"], "result_len": len(ctx.result)}
-                    _mission_type_for_skill = str(
-                        ctx.metadata.get("classification", {}).get("task_type", "general") or "general"
-                    )
-                    asyncio.ensure_future(get_skill_store().store(
-                        mission_id=mid,
-                        goal=goal,
-                        plan=_plan_to_store,
-                        confidence=result_confidence,
-                        mission_type=_mission_type_for_skill,
-                        tags=[mode, _mission_type_for_skill],
-                    ))
-                    log.info("skill_store_triggered", mission_id=mid, confidence=result_confidence)
-                except Exception as _ss_err:
-                    log.debug("skill_store_skip", err=str(_ss_err)[:80])
-                # Journal: mission completed
-                try:
-                    from core.cognitive_events.emitter import emit_mission_completed
-                    emit_mission_completed(
-                        mission_id=mid, duration_ms=outcome.duration_ms,
-                        confidence=result_confidence,
-                    )
-                except Exception:
-                    pass
-                # Metrics store counter (admin panel)
-                try:
-                    from core.metrics_store import emit_mission_completed as _ms_completed
-                    _ms_completed("canonical", duration_ms=outcome.duration_ms)
-                except Exception:
-                    pass
-                # Kernel event: mission completed (dual emission)
-                try:
-                    from kernel.convergence.event_bridge import emit_kernel_event
-                    emit_kernel_event("mission.completed", mission_id=mid,
-                                      duration_ms=outcome.duration_ms,
-                                      confidence=result_confidence)
-                except Exception:
-                    pass
-                # Kernel working memory: clear mission slot (it is done)
-                try:
-                    from kernel.runtime.boot import get_runtime as _get_kernel_rt
-                    _get_kernel_rt().memory.clear_working(mission_id=mid)
-                except Exception:
-                    pass
-                # AI OS skill discovery (fail-open)
-                try:
-                    from core.skills.skill_discovery import get_skill_discovery
-                    sd = get_skill_discovery()
-                    # outcome.actions doesn't exist on ExecutionOutcome — use getattr guard
-                    tools_used = [a.tool_name for a in getattr(outcome, "actions", [])
-                                  if hasattr(a, "tool_name")]
-                    sd.discover_from_mission(mid, goal, tools_used, success=True)
-                except Exception as _sd_err:
-                    log.debug("skill_discovery_failed", err=str(_sd_err)[:60])
-                trace.record("complete", "done",
-                             reason=f"duration={outcome.duration_ms}ms retries={outcome.retries} confidence={result_confidence}")
-
-                # ── Phase 3a: Output formatting ───────────────
-                try:
-                    from core.orchestration.output_formatter import format_output
-                    task_type = ctx.metadata.get("classification", {}).get("task_type", "other")
-                    ctx.result = format_output(ctx.result, task_type=task_type, goal=goal)
-                except Exception as _exc:
-                    log.debug("phase_failed", phase="output_format", err=str(_exc)[:100])
-
-                # ── Phase 3b: Learning loop (kernel-authoritative — R5 / Pass 23) ──
-                # R5: structured learning via kernel.learn() — JarvisKernel is the
-                # single authority. Uses KernelScore fields (verdict, confidence,
-                # weaknesses, improvement_suggestion) from kernel.evaluator (Pass 8).
-                # Falls back to core extract_lesson if kernel unavailable.
-                _kernel_lesson = None
-                try:
-                    from kernel.runtime.kernel import get_kernel as _get_jk_learn
-                    _kscore_meta = ctx.metadata.get("kernel_score", {})
-                    _k_verdict = str(
-                        _kscore_meta.get("verdict")
-                        or ctx.metadata.get("reflection", {}).get("verdict", "accept")
-                        or "accept"
-                    )
-                    _k_confidence = float(
-                        _kscore_meta.get("confidence", result_confidence) or result_confidence
-                    )
-                    _k_weaknesses = list(_kscore_meta.get("weaknesses") or [])
-                    _k_suggestion = str(_kscore_meta.get("improvement_suggestion") or "")
-                    _kernel_lesson = _get_jk_learn().learn(  # R5: via kernel.learn()
-                        goal=goal,
-                        result=ctx.result or "",
-                        mission_id=mid,
-                        verdict=_k_verdict,
-                        confidence=_k_confidence,
-                        weaknesses=_k_weaknesses,
-                        improvement_suggestion=_k_suggestion,
-                        retries=outcome.retries,
-                        error_class="",
-                    )
-                    if _kernel_lesson:
-                        ctx.metadata["kernel_lesson"] = _kernel_lesson.to_dict()
-                        trace.record("learn", "kernel_lesson_extracted",
-                                     verdict=_k_verdict,
-                                     confidence=round(_k_confidence, 3),
-                                     reason=_kernel_lesson.what_to_do_differently[:60])
-                except Exception as _klearn_err:
-                    # BLOC 2 — R5: kernel.learn() is the SOLE learning authority.
-                    # The core.orchestration.learning_loop fallback has been removed.
-                    # If kernel.learn() fails, we log and continue — no side-channel store.
-                    # This enforces R5: structured learning only via kernel.learn().
-                    log.debug("kernel_learning_skipped_r5", err=str(_klearn_err)[:100])
-
-                # ── Phase 4: Record skill + refine prior ─────────
-                try:
-                    from core.skills import get_skill_service
-                    svc = get_skill_service()
-                    svc.record_outcome(
-                        mission_id=mid,
-                        goal=goal,
-                        result=ctx.result,
-                        status="DONE",
-                        risk_level=risk,
-                        confidence=result_confidence,
-                    )
-                    # Refine any prior skill that was retrieved
-                    for ps in ctx.metadata.get("prior_skills", []):
-                        sid = ps.get("skill_id", "")
-                        if sid:
-                            svc.refine_skill(sid, ctx.result, success=True)
-                    trace.record("store", "skill_evaluated")
-                except Exception as _exc:
-                    log.warning("phase_failed", phase="skill_store", err=str(_exc)[:100])
-
-                # ── Phase 5: Store to memory ──────────────────────
-                try:
-                    from core.memory_facade import get_memory_facade
-                    get_memory_facade().store_outcome(
-                        content=f"Mission {mid}: {goal[:100]} -> {ctx.result[:200]}",
-                        mission_id=mid,
-                        status="DONE",
-                    )
-                    trace.record("store", "memory_stored")
-                except Exception as _exc:
-                    log.debug("phase_failed", phase="memory_store", err=str(_exc)[:100])
 
             elif outcome.error_class == "awaiting_approval":
-                # Execution paused — waiting for human approval
-                ctx.error = "Awaiting human approval"
-                ctx.metadata["approval_item_id"] = next(
-                    (d.get("item_id", "") for d in outcome.decision_trace
-                     if d.get("step") == "approval_gate"), ""
+                # Delegate to awaiting approval handler
+                self._handle_awaiting_approval(
+                    outcome=outcome,
+                    ctx=ctx,
+                    mid=mid,
+                    risk=ctx.metadata.get("_exec_risk", "low"),
+                    trace=trace,
                 )
-                ctx.metadata["approval_status"] = "pending"
-                ctx.metadata["approval_paused_at"] = time.time()
-                # Transition to explicit AWAITING_APPROVAL status
-                self._transition(ctx, MissionStatus.AWAITING_APPROVAL,
-                                 reason=f"risk={risk}")
-                trace.record("complete", "awaiting_approval",
-                             reason=f"risk={risk}, item_id={ctx.metadata.get('approval_item_id', '')[:8]}")
-                log.info("mission.awaiting_approval",
-                         mission_id=mid, risk_level=risk)
 
             else:
-                # Execution failed after retries — record for circuit breaker
-                self._circuit_breaker.record_failure()
-                ctx.error = outcome.error
-                self._transition(ctx, MissionStatus.FAILED,
-                                 reason=outcome.error_class,
-                                 retries=outcome.retries)
-                trace.record("complete", "failed",
-                             reason=f"{outcome.error_class}: {outcome.error[:60]}")
-
-                # Journal: mission failed
-                try:
-                    from core.cognitive_events.emitter import emit_mission_failed
-                    emit_mission_failed(
-                        mission_id=mid, error=outcome.error[:200],
-                        error_class=outcome.error_class,
-                    )
-                except Exception:
-                    pass
-                # Metrics store counter (admin panel)
-                try:
-                    from core.metrics_store import emit_mission_failed as _ms_failed
-                    _ms_failed("canonical", reason=outcome.error_class)
-                except Exception:
-                    pass
-                # Kernel event: mission failed (dual emission)
-                try:
-                    from kernel.convergence.event_bridge import emit_kernel_event
-                    emit_kernel_event("mission.failed", mission_id=mid,
-                                      error=outcome.error[:200],
-                                      error_class=outcome.error_class)
-                except Exception:
-                    pass
-
-                # Store failure in memory
-                try:
-                    from core.memory_facade import get_memory_facade
-                    get_memory_facade().store_failure(
-                        content=f"Mission {mid} FAILED: {goal[:80]} -> {outcome.error[:200]}",
-                        error_class=outcome.error_class,
-                        mission_id=mid,
-                    )
-                except Exception as _exc:
-                    log.debug("phase_failed", phase="memory_store_fail", err=str(_exc)[:100])
+                # Delegate to failed outcome handler
+                self._handle_failed_outcome(
+                    outcome=outcome,
+                    ctx=ctx,
+                    mid=mid,
+                    goal=goal,
+                    trace=trace,
+                )
 
         except asyncio.TimeoutError as e:
             ctx.error = f"Timeout : {e}"
@@ -2147,6 +2345,27 @@ class MetaOrchestrator:
 
         return ctx
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TESTS REMOVED - now using manual checks
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def check():
+    """Simple check - MetaOrchestrator can be instantiated."""
+    try:
+        mo = MetaOrchestrator()
+        print(f"✓ MetaOrchestrator instantiated: {type(mo)}")
+        return True
+    except Exception as e:
+        print(f"✗ MetaOrchestrator failed: {e}")
+        return False
+
+
+if __name__ == "__main__":
+    import sys
+    success = check()
+    sys.exit(0 if success else 1)
     def get_status(self) -> dict:
         """
         État observable de MetaOrchestrator.
