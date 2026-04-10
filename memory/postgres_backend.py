@@ -26,6 +26,14 @@ except ImportError:
     _PSYCOPG2_AVAILABLE = False
     log.warning("postgres_backend.psycopg2_unavailable", hint="pip install psycopg2-binary")
 
+# Redis cache layer (optional L1 cache)
+try:
+    from memory.redis_cache import get_redis_cache
+    _REDIS_CACHE_AVAILABLE = True
+except ImportError:
+    _REDIS_CACHE_AVAILABLE = False
+    log.debug("postgres_backend.redis_cache_unavailable")
+
 
 class PostgresMemoryBackend:
     """
@@ -43,16 +51,28 @@ class PostgresMemoryBackend:
         result = backend.retrieve("mission", "mission_123")
     """
     
-    def __init__(self, database_url: str | None = None):
+    def __init__(self, database_url: str | None = None, use_cache: bool = True):
         """
         Initialize PostgreSQL backend.
         
         Args:
             database_url: PostgreSQL connection string (postgresql://user:pass@host:port/db)
                          Falls back to DATABASE_URL env var
+            use_cache: Enable Redis L1 cache (default True if Redis available)
         """
         self.database_url = database_url or os.getenv("DATABASE_URL", "")
         self._connection = None
+        self._cache = None
+        
+        # Initialize Redis cache if available and requested
+        if use_cache and _REDIS_CACHE_AVAILABLE:
+            try:
+                self._cache = get_redis_cache()
+                if self._cache.is_available():
+                    log.info("postgres_backend.cache_enabled", type="redis")
+            except Exception as e:
+                log.warning("postgres_backend.cache_init_failed", error=str(e))
+                self._cache = None
         
         if not _PSYCOPG2_AVAILABLE:
             log.warning("postgres_backend.init_skipped", reason="psycopg2 not installed")
@@ -137,6 +157,12 @@ class PostgresMemoryBackend:
                 )
                 self._connection.commit()
                 log.debug("postgres_backend.stored", type=memory_type, key=key, tags=tags)
+                
+                # Invalidate cache on write
+                if self._cache:
+                    cache_key = f"vault:{memory_type}:{key}"
+                    self._cache.delete(cache_key)
+                
                 return True
         except Exception as e:
             log.error("postgres_backend.store_failed", type=memory_type, key=key, error=str(e))
@@ -146,7 +172,12 @@ class PostgresMemoryBackend:
     
     def retrieve(self, memory_type: str, key: str) -> dict[str, Any] | None:
         """
-        Retrieve memory entry from PostgreSQL.
+        Retrieve memory entry from PostgreSQL with Redis L1 cache.
+        
+        Cache-aside pattern:
+        1. Check Redis cache
+        2. On miss, fetch from PostgreSQL
+        3. Update cache with result
         
         Args:
             memory_type: Memory category
@@ -155,6 +186,14 @@ class PostgresMemoryBackend:
         Returns:
             Memory value dict or None if not found
         """
+        # L1 cache check
+        cache_key = f"vault:{memory_type}:{key}"
+        if self._cache and self._cache.is_available():
+            cached = self._cache.get(cache_key)
+            if cached:
+                return cached
+        
+        # L2 database fetch
         if not self.is_available():
             return None
         
@@ -172,8 +211,14 @@ class PostgresMemoryBackend:
                 self._connection.commit()
                 
                 if result:
-                    log.debug("postgres_backend.retrieved", type=memory_type, key=key)
-                    return json.loads(result["value"]) if isinstance(result["value"], str) else result["value"]
+                    value = json.loads(result["value"]) if isinstance(result["value"], str) else result["value"]
+                    log.debug("postgres_backend.retrieved", type=memory_type, key=key, source="database")
+                    
+                    # Update cache
+                    if self._cache:
+                        self._cache.set(cache_key, value, ttl=3600)  # 1 hour TTL
+                    
+                    return value
                 return None
         except Exception as e:
             log.error("postgres_backend.retrieve_failed", type=memory_type, key=key, error=str(e))
@@ -238,6 +283,12 @@ class PostgresMemoryBackend:
                 )
                 self._connection.commit()
                 log.debug("postgres_backend.deleted", type=memory_type, key=key)
+                
+                # Invalidate cache
+                if self._cache:
+                    cache_key = f"vault:{memory_type}:{key}"
+                    self._cache.delete(cache_key)
+                
                 return True
         except Exception as e:
             log.error("postgres_backend.delete_failed", type=memory_type, key=key, error=str(e))
