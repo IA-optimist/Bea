@@ -319,6 +319,164 @@ class MetaOrchestrator:
             log.debug("kernel_cognitive_cycle_skipped", err=str(_kcc_err)[:100])
             return {}, None, None
 
+    # ── Private helper methods (run_mission refactoring) ─────────────────────
+
+    def _setup_event_stream(self, mid: str, ctx) -> None:
+        """Setup EventStream for WebSocket consumers (lines 356-365)."""
+        try:
+            from core.event_stream import EventStream, register_mission_stream
+            from api.ws import register_stream
+            _event_stream = EventStream(mid)
+            register_mission_stream(mid, _event_stream)  # for agents/supervisor lookup
+            register_stream(mid, _event_stream)           # for api/ws WebSocket endpoint
+            ctx.metadata["event_stream"] = _event_stream
+        except Exception as _es_err:
+            log.debug("event_stream_register_skipped", err=str(_es_err)[:60])
+
+    def _check_circuit_breaker(self, mid: str, ctx) -> bool:
+        """
+        Check circuit breaker guard (lines 367-373).
+        Returns True if circuit is open (mission should fail), False otherwise.
+        """
+        if self._circuit_breaker.is_open:
+            ctx.error = "Circuit breaker open: too many consecutive delegate failures. Retry later."
+            self._transition(ctx, MissionStatus.FAILED, reason="circuit_breaker_open")
+            log.warning("mission.circuit_breaker_rejected",
+                        mission_id=mid, cb_status=self._circuit_breaker.status())
+            return True
+        return False
+
+    def _initialize_decision_trace(self, mid: str) -> tuple:
+        """
+        Initialize decision trace (lines 375-378).
+        Returns (trace, needs_approval).
+        """
+        from core.orchestration.decision_trace import DecisionTrace
+        trace = DecisionTrace(mission_id=mid)
+        needs_approval = False  # initialized early; may be set True by confidence_policy or kernel
+        return trace, needs_approval
+
+    def _emit_mission_events(self, mid: str, goal: str, mode: str) -> None:
+        """Emit mission created events to cognitive journal and kernel (lines 382-393)."""
+        # Cognitive journal: mission created
+        try:
+            from core.cognitive_events.emitter import emit_mission_created
+            emit_mission_created(mission_id=mid, goal=goal, mode=mode)
+        except Exception:
+            pass
+        # Kernel event: mission created (dual emission)
+        try:
+            from kernel.convergence.event_bridge import emit_kernel_event
+            emit_kernel_event("mission.created", mission_id=mid, goal=goal, mode=mode)
+        except Exception:
+            pass
+
+    def _register_mission_guards(self, mid: str) -> None:
+        """Register mission guards for iteration limit + budget (lines 395-400)."""
+        try:
+            from core.mission_guards import get_guardian
+            get_guardian().register_mission(mid, max_steps=50)
+        except Exception as _mg_err:
+            log.debug("mission_guard_init_skipped", err=str(_mg_err)[:60])
+
+    def _run_cognitive_analysis(self, goal: str, mode: str, ctx) -> None:
+        """Run cognitive pre-mission analysis (lines 417-424)."""
+        try:
+            from core.cognitive_bridge import get_bridge
+            _cognitive = get_bridge().pre_mission(goal, agent_id=mode)
+            if _cognitive:
+                ctx.metadata["cognitive"] = _cognitive
+        except Exception as _cb_err:
+            log.debug("cognitive_pre_mission_skipped", err=str(_cb_err)[:60])
+
+    def _execute_reasoning_prepass(
+        self, goal: str, mid: str, ctx, trace
+    ) -> tuple:
+        """
+        Execute reasoning pre-pass for intelligence upgrade (lines 514-544).
+        Returns (_is_chat_mode, _reasoning_result).
+        """
+        # NOTE: skip reasoning prepass for CHAT mode (short messages / greetings)
+        _task_mode_str = ctx.metadata.get("task_mode", "")
+        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 30)
+        _reasoning_result = None
+        
+        if _is_chat_mode:
+            log.debug("reasoning_prepass_skipped_chat_mode",
+                      mission_id=mid, goal_len=len(goal))
+        else:
+            try:
+                from core.orchestration.reasoning_engine import reason as reasoning_prepass
+                _reasoning_result = reasoning_prepass(
+                    goal=goal,
+                    classification=ctx.metadata.get("classification"),
+                )
+                ctx.metadata["reasoning"] = _reasoning_result.to_dict()
+                trace.record("reason", _reasoning_result.frame.complexity_class,
+                             bottleneck=_reasoning_result.frame.likely_bottleneck[:60],
+                             shape=_reasoning_result.output_shape.value,
+                             ms=_reasoning_result.reasoning_ms)
+                log.info("reasoning_prepass_complete",
+                         mission_id=mid,
+                         complexity=_reasoning_result.frame.complexity_class,
+                         shape=_reasoning_result.output_shape.value)
+            except Exception as _rp_err:
+                log.debug("reasoning_prepass_skipped", err=str(_rp_err)[:60])
+        
+        return _is_chat_mode, _reasoning_result
+
+    def _cleanup_event_stream(self, mid: str) -> None:
+        """Deregister EventStream after mission completion (lines 1938-1945)."""
+        try:
+            from api.ws import deregister_stream
+            from core.event_stream import deregister_mission_stream
+            deregister_stream(mid)
+            deregister_mission_stream(mid)
+        except Exception:
+            pass
+
+    def _post_mission_learning(self, mid: str, goal: str, mode: str, ctx) -> None:
+        """Post-mission cognitive learning + guardian cleanup (lines 1900-1936)."""
+        # Cognitive learning
+        try:
+            from core.cognitive_bridge import get_bridge
+            bridge = get_bridge()
+            _success = ctx.status == MissionStatus.DONE
+            bridge.post_mission(
+                mission_id=mid, goal=goal, success=_success,
+                agent_id=mode, error=ctx.error or "",
+            )
+            # Enrich capability graph with mission usage
+            if bridge.capability_graph and mode:
+                agent_cap = f"cap-{mode}" if mode.startswith("jarvis-") else None
+                caps_used = [c for c in [agent_cap] if c]
+                if caps_used:
+                    bridge.capability_graph.record_mission_usage(mid, caps_used)
+        except Exception:
+            pass  # Fail-open
+        
+        # Guardian cleanup
+        try:
+            from core.mission_guards import get_guardian
+            get_guardian().release_mission(mid)
+        except Exception:
+            pass
+
+        # Record routing outcome for learning
+        try:
+            from core.capability_routing.feedback import get_routing_history
+            _rh = get_routing_history()
+            _success = ctx.status == MissionStatus.DONE
+            _duration = (ctx.updated_at - ctx.created_at) * 1000
+            _rh.record_outcome(
+                mission_id=mid,
+                success=_success,
+                error=ctx.error or "",
+                duration_ms=_duration,
+            )
+        except Exception:
+            pass  # Fail-open
+
     # ── Public API ───────────────────────────────────────────────────────────
 
     async def run_mission(
@@ -353,51 +511,23 @@ class MetaOrchestrator:
         with self._lock:
             self._missions[mid] = ctx
 
-        # ── EventStream: create and register for WebSocket consumers ──
-        try:
-            from core.event_stream import EventStream, register_mission_stream
-            from api.ws import register_stream
-            _event_stream = EventStream(mid)
-            register_mission_stream(mid, _event_stream)  # for agents/supervisor lookup
-            register_stream(mid, _event_stream)           # for api/ws WebSocket endpoint
-            ctx.metadata["event_stream"] = _event_stream
-        except Exception as _es_err:
-            log.debug("event_stream_register_skipped", err=str(_es_err)[:60])
+        # ── Setup event stream ────────────────────────────────────────
+        self._setup_event_stream(mid, ctx)
 
-        # ── Circuit breaker guard ─────────────────────────────────
-        if self._circuit_breaker.is_open:
-            ctx.error = "Circuit breaker open: too many consecutive delegate failures. Retry later."
-            self._transition(ctx, MissionStatus.FAILED, reason="circuit_breaker_open")
-            log.warning("mission.circuit_breaker_rejected",
-                        mission_id=mid, cb_status=self._circuit_breaker.status())
+        # ── Circuit breaker guard ─────────────────────────────────────
+        if self._check_circuit_breaker(mid, ctx):
             return ctx
 
-        # ── Decision trace ────────────────────────────────────────
-        from core.orchestration.decision_trace import DecisionTrace
-        trace = DecisionTrace(mission_id=mid)
-        needs_approval = False  # initialized early; may be set True by confidence_policy or kernel
+        # ── Decision trace ────────────────────────────────────────────
+        trace, needs_approval = self._initialize_decision_trace(mid)
 
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 
-        # ── Cognitive journal: mission created ────────────────────
-        try:
-            from core.cognitive_events.emitter import emit_mission_created
-            emit_mission_created(mission_id=mid, goal=goal, mode=mode)
-        except Exception:
-            pass
-        # ── Kernel event: mission created (dual emission) ─────────
-        try:
-            from kernel.convergence.event_bridge import emit_kernel_event
-            emit_kernel_event("mission.created", mission_id=mid, goal=goal, mode=mode)
-        except Exception:
-            pass
+        # ── Emit mission events ───────────────────────────────────────
+        self._emit_mission_events(mid, goal, mode)
 
-        # ── Mission guards: iteration limit + budget (P10+P5) ────
-        try:
-            from core.mission_guards import get_guardian
-            get_guardian().register_mission(mid, max_steps=50)
-        except Exception as _mg_err:
-            log.debug("mission_guard_init_skipped", err=str(_mg_err)[:60])
+        # ── Mission guards: iteration limit + budget ──────────────────
+        self._register_mission_guards(mid)
 
         # ══ KERNEL COGNITIVE PRE-COMPUTATION (BLOC 2 — kernel-first authority) ═
         # kernel.run_cognitive_cycle() is the SINGLE authority for:
@@ -414,46 +544,13 @@ class MetaOrchestrator:
         _kernel_precomp_ok = bool(_kernel_context)
         # ═════════════════════════════════════════════════════════════════════
 
-        # ── Cognitive pre-mission analysis ────────────────────────
-        try:
-            from core.cognitive_bridge import get_bridge
-            _cognitive = get_bridge().pre_mission(goal, agent_id=mode)
-            if _cognitive:
-                ctx.metadata["cognitive"] = _cognitive
-        except Exception as _cb_err:
-            log.debug("cognitive_pre_mission_skipped", err=str(_cb_err)[:60])
+        # ── Cognitive pre-mission analysis ────────────────────────────
+        self._run_cognitive_analysis(goal, mode, ctx)
 
-        # ── Reasoning pre-pass (intelligence upgrade) ─────────
-        # NOTE (2026-04-04): skip reasoning prepass for CHAT mode (short messages /
-        # greetings). Calling reason() on "bonjour presente toi" produced
-        # shape=patch (default small_fix fallback, English-only patterns) which
-        # caused forge-builder to be selected and LensReviewer to score 3/10.
-        # The task_mode is available in ctx.metadata["task_mode"] when set by
-        # the missions router; we also guard on raw goal length as a safety net.
-        _task_mode_str = ctx.metadata.get("task_mode", "")
-        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 30)
-        _reasoning_result = None
-        if _is_chat_mode:
-            log.debug("reasoning_prepass_skipped_chat_mode",
-                      mission_id=mid, goal_len=len(goal))
-        else:
-            try:
-                from core.orchestration.reasoning_engine import reason as reasoning_prepass
-                _reasoning_result = reasoning_prepass(
-                    goal=goal,
-                    classification=ctx.metadata.get("classification"),
-                )
-                ctx.metadata["reasoning"] = _reasoning_result.to_dict()
-                trace.record("reason", _reasoning_result.frame.complexity_class,
-                             bottleneck=_reasoning_result.frame.likely_bottleneck[:60],
-                             shape=_reasoning_result.output_shape.value,
-                             ms=_reasoning_result.reasoning_ms)
-                log.info("reasoning_prepass_complete",
-                         mission_id=mid,
-                         complexity=_reasoning_result.frame.complexity_class,
-                         shape=_reasoning_result.output_shape.value)
-            except Exception as _rp_err:
-                log.debug("reasoning_prepass_skipped", err=str(_rp_err)[:60])
+        # ── Reasoning pre-pass (intelligence upgrade) ─────────────────
+        _is_chat_mode, _reasoning_result = self._execute_reasoning_prepass(
+            goal, mid, ctx, trace
+        )
 
         try:
             # ── Phase 1: Classify ─────────────────────────────────
@@ -1898,51 +1995,10 @@ class MetaOrchestrator:
         trace.save()
 
         # ── Post-mission: cognitive learning + guardian cleanup ────
-        try:
-            from core.cognitive_bridge import get_bridge
-            bridge = get_bridge()
-            _success = ctx.status == MissionStatus.DONE
-            bridge.post_mission(
-                mission_id=mid, goal=goal, success=_success,
-                agent_id=mode, error=ctx.error or "",
-            )
-            # Enrich capability graph with mission usage
-            if bridge.capability_graph and mode:
-                agent_cap = f"cap-{mode}" if mode.startswith("jarvis-") else None
-                caps_used = [c for c in [agent_cap] if c]
-                if caps_used:
-                    bridge.capability_graph.record_mission_usage(mid, caps_used)
-        except Exception:
-            pass  # Fail-open
-        try:
-            from core.mission_guards import get_guardian
-            get_guardian().release_mission(mid)
-        except Exception:
-            pass
+        self._post_mission_learning(mid, goal, mode, ctx)
 
-        # ── Post-mission: record routing outcome for learning ─────
-        try:
-            from core.capability_routing.feedback import get_routing_history
-            _rh = get_routing_history()
-            _success = ctx.status == MissionStatus.DONE
-            _duration = (ctx.updated_at - ctx.created_at) * 1000
-            _rh.record_outcome(
-                mission_id=mid,
-                success=_success,
-                error=ctx.error or "",
-                duration_ms=_duration,
-            )
-        except Exception:
-            pass  # Fail-open
-
-        # ── Deregister EventStream (mission complete or failed) ────────
-        try:
-            from api.ws import deregister_stream
-            from core.event_stream import deregister_mission_stream
-            deregister_stream(mid)
-            deregister_mission_stream(mid)
-        except Exception:
-            pass
+        # ── Deregister EventStream (mission complete or failed) ────
+        self._cleanup_event_stream(mid)
 
         return ctx
 
