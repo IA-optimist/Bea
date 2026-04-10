@@ -438,12 +438,15 @@ class JarvisMaxCausalIntegration:
             text = f"{cause} causes {effect}"
             uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
+            # FIXME: Using null embeddings ([0.0] * 384) until Phase 2.2 embeddings integration
+            # Options: sentence-transformers (torch), OpenAI embeddings API, or Qdrant dense vectors
+            # Impact: Causal graph search will work but without semantic similarity
             points.append(PointStruct(
                 id=uid,
-                vector=[0.0] * 384,  # TODO: replace with real sentence embedding
-                payload={"text": text, "cause": cause, "effect": effect,
-                         "strength": edge_data.get("strength", 1.0),
-                         "mechanism": edge_data.get("mechanism", "")},
+                vector=[0.0] * 384,  # Null embedding — semantic search disabled
+                payload={\"text\": text, \"cause\": cause, \"effect\": effect,
+                         \"strength\": edge_data.get(\"strength\", 1.0),
+                         \"mechanism\": edge_data.get(\"mechanism\", \"\")},
             ))
         if points:
             client.upsert(collection_name=self.qdrant_collection, points=points)
