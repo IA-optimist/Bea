@@ -2351,21 +2351,6 @@ class MetaOrchestrator:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-def check():
-    """Simple check - MetaOrchestrator can be instantiated."""
-    try:
-        mo = MetaOrchestrator()
-        print(f"✓ MetaOrchestrator instantiated: {type(mo)}")
-        return True
-    except Exception as e:
-        print(f"✗ MetaOrchestrator failed: {e}")
-        return False
-
-
-if __name__ == "__main__":
-    import sys
-    success = check()
-    sys.exit(0 if success else 1)
     def get_status(self) -> dict:
         """
         État observable de MetaOrchestrator.
@@ -2616,6 +2601,21 @@ if __name__ == "__main__":
             callback=callback,
         )
         return ctx
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Module-level test helpers
+# ══════════════════════════════════════════════════════════════════════════════
+
+def check():
+    """Simple check - MetaOrchestrator can be instantiated."""
+    try:
+        mo = MetaOrchestrator()
+        print(f"✓ MetaOrchestrator instantiated: {type(mo)}")
+        return True
+    except Exception as e:
+        print(f"✗ MetaOrchestrator failed: {e}")
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
