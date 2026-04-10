@@ -1436,9 +1436,22 @@ class MetaOrchestrator:
                     "classification": ctx.metadata.get("classification", {}),
                 }
                 
+                # FIXED: Use correct signature (mission dict, not kwargs)
+                # CognitionOrchestrator.execute_mission_with_cognition expects:
+                #   mission: Dict[str, Any], enable_tot, enable_confidence, enable_learning
+                # 
+                # TODO(ARCHITECTURE): CognitionOrchestrator currently uses a toy LLM executor
+                # (_execute_with_llm) instead of wrapping the real delegate executor.
+                # This means ToT/confidence/correction run but don't integrate with
+                # actual agent execution. Requires refactoring to pass delegate/supervise_fn
+                # through the cognition layer.
+                # 
+                # For now: signature fixed so it can be called without error.
                 outcome = await _cog.execute_mission_with_cognition(
-                    delegate=delegate, supervise_fn=supervise,
-                    mission_payload=_payload, timeout=_mission_timeout,
+                    mission=_payload,
+                    enable_tot=True,
+                    enable_confidence=True,
+                    enable_learning=True
                 )
                 trace.record("cognition", "success", conf=pre_assess_local.estimated_confidence)
             except Exception as _cog_err:

@@ -35,11 +35,12 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
         system_prompt = load_agent_prompt(agent_name)
         try:
             # Call LLM with agent system prompt
+            # FIXED: LangChain BaseChatModel uses .ainvoke(), not .achat()
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": context}
             ]
-            response = await llm_client.achat(messages)
+            response = await llm_client.ainvoke(messages)
             result = response.content if hasattr(response, "content") else str(response)
             chain_results.append({"agent": agent_name, "output": result[:500], "success": True})
             # Pass result to next agent as context

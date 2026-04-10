@@ -27,7 +27,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api._deps import require_auth
+from api._deps import require_auth, require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ def vault_status():
 
 
 @router.post("/create")
-def create_secret(req: CreateSecretRequest):
+def create_secret(req: CreateSecretRequest, user: dict = Depends(require_admin)):
     vault = get_vault()
     try:
         meta = vault.create_secret(
@@ -132,7 +132,7 @@ def create_secret(req: CreateSecretRequest):
 
 
 @router.post("/update")
-def update_secret(req: UpdateSecretRequest):
+def update_secret(req: UpdateSecretRequest, user: dict = Depends(require_admin)):
     vault = get_vault()
     try:
         ok = vault.update_secret(req.secret_id, req.new_value, reason=req.reason)
@@ -156,7 +156,7 @@ def use_secret(req: UseSecretRequest):
 
 
 @router.post("/reveal")
-def reveal_secret(req: RevealSecretRequest):
+def reveal_secret(req: RevealSecretRequest, user: dict = Depends(require_admin)):
     vault = get_vault()
     try:
         plaintext = vault.reveal_secret(req.secret_id, reason=req.reason)
@@ -166,7 +166,7 @@ def reveal_secret(req: RevealSecretRequest):
 
 
 @router.post("/delete")
-def delete_secret(req: DeleteSecretRequest):
+def delete_secret(req: DeleteSecretRequest, user: dict = Depends(require_admin)):
     vault = get_vault()
     try:
         ok = vault.delete_secret(req.secret_id)

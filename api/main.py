@@ -592,6 +592,17 @@ async def prometheus_metrics():
 # ── Startup : workspace cleanup ────────────────────────────────
 @app.on_event("startup")
 async def _on_startup():
+    # SECURITY: Enforce production secrets (JWT, admin password, API token)
+    # Raises RuntimeError if JARVIS_PRODUCTION=true and secrets are insecure
+    try:
+        from config.settings import get_settings
+        settings = get_settings()
+        settings.enforce_production_secrets()
+        log.info("production_secrets_validated", production_mode=settings.production_mode)
+    except RuntimeError as e:
+        log.critical("PRODUCTION_STARTUP_BLOCKED", error=str(e))
+        raise
+    
     try:
         from core.workspace_cleaner import run_cleanup
         metrics = run_cleanup()

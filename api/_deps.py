@@ -65,6 +65,20 @@ def require_auth(
     raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 
 
+def require_admin(user: dict = Depends(require_auth)) -> dict:
+    """Admin-only auth dependency for FastAPI handlers.
+    
+    Requires user to have 'admin' role. Raises 403 if not admin.
+    Used as: Depends(require_admin)
+    """
+    if user.get("role") != "admin":
+        raise HTTPException(
+            status_code=403, 
+            detail="Admin access required for this endpoint"
+        )
+    return user
+
+
 def get_start_time() -> float:
     return _start_time
 
