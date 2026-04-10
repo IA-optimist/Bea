@@ -1,341 +1,313 @@
-"""
-PostgreSQL Backend for Vault Memory
-====================================
-Implements persistent storage for memory/vault_memory.py using PostgreSQL.
+"""PostgreSQL backend for VaultMemory with Redis L1 cache.
 
-Migration: 002_memory_tables.sql (vault_memory table)
+Provides persistent storage for VaultEntry objects with:
+- PostgreSQL as durable L2 storage
+- Redis as fast L1 cache (optional)
+- Tag-based search capabilities
+- JSON serialization for complex objects
 """
-from __future__ import annotations
 
 import json
-import os
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-import structlog
-
-log = structlog.get_logger()
-
-# Optional dependencies
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
-    _PSYCOPG2_AVAILABLE = True
+    POSTGRES_AVAILABLE = True
 except ImportError:
-    _PSYCOPG2_AVAILABLE = False
-    log.warning("postgres_backend.psycopg2_unavailable", hint="pip install psycopg2-binary")
+    POSTGRES_AVAILABLE = False
 
-# Redis cache layer (optional L1 cache)
 try:
-    from memory.redis_cache import get_redis_cache
-    _REDIS_CACHE_AVAILABLE = True
+    import redis
+    REDIS_AVAILABLE = True
 except ImportError:
-    _REDIS_CACHE_AVAILABLE = False
-    log.debug("postgres_backend.redis_cache_unavailable")
+    REDIS_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
-class PostgresMemoryBackend:
-    """
-    PostgreSQL-backed memory store for vault_memory.
-    
-    Features:
-    - Persistent storage in vault_memory table
-    - Type-based partitioning (mission, knowledge, improvement)
-    - Tag-based search
-    - Optional vector embeddings (requires pgvector extension)
-    
-    Usage:
-        backend = PostgresMemoryBackend()
-        backend.store("mission", "mission_123", {"status": "completed"}, tags=["success"])
-        result = backend.retrieve("mission", "mission_123")
-    """
-    
-    def __init__(self, database_url: str | None = None, use_cache: bool = True):
-        """
-        Initialize PostgreSQL backend.
+class PostgresBackend:
+    """PostgreSQL backend with Redis L1 cache for VaultMemory."""
+
+    def __init__(self, 
+                 connection_string: Optional[str] = None,
+                 redis_url: Optional[str] = None,
+                 table_name: str = "vault_entries"):
+        """Initialize PostgreSQL backend with optional Redis cache.
         
         Args:
-            database_url: PostgreSQL connection string (postgresql://user:pass@host:port/db)
-                         Falls back to DATABASE_URL env var
-            use_cache: Enable Redis L1 cache (default True if Redis available)
+            connection_string: PostgreSQL connection string (postgresql://user:pass@host:port/db)
+            redis_url: Redis connection URL (redis://host:port/db)
+            table_name: Name of the PostgreSQL table
         """
-        self.database_url = database_url or os.getenv("DATABASE_URL", "")
-        self._connection = None
-        self._cache = None
-        
-        # Initialize Redis cache if available and requested
-        if use_cache and _REDIS_CACHE_AVAILABLE:
-            try:
-                self._cache = get_redis_cache()
-                if self._cache.is_available():
-                    log.info("postgres_backend.cache_enabled", type="redis")
-            except Exception as e:
-                log.warning("postgres_backend.cache_init_failed", error=str(e))
-                self._cache = None
-        
-        if not _PSYCOPG2_AVAILABLE:
-            log.warning("postgres_backend.init_skipped", reason="psycopg2 not installed")
-            return
-        
-        if not self.database_url:
-            log.warning("postgres_backend.init_skipped", reason="DATABASE_URL not set")
-            return
-        
-        try:
-            self._connection = psycopg2.connect(self.database_url)
-            log.info("postgres_backend.connected", host=self._get_host())
-        except Exception as e:
-            log.error("postgres_backend.connection_failed", error=str(e))
-            self._connection = None
-    
-    def _get_host(self) -> str:
-        """Extract hostname from database_url for logging."""
-        if not self.database_url:
-            return "none"
-        try:
-            # Format: postgresql://user:pass@host:port/db
-            parts = self.database_url.split("@")
-            if len(parts) < 2:
-                return "localhost"
-            host_part = parts[1].split("/")[0].split(":")[0]
-            return host_part
-        except Exception:
-            return "unknown"
-    
-    def is_available(self) -> bool:
-        """Check if backend is available."""
-        return _PSYCOPG2_AVAILABLE and self._connection is not None
-    
-    def store(
-        self,
-        memory_type: str,
-        key: str,
-        value: dict[str, Any],
-        tags: list[str] | None = None,
-        embedding: list[float] | None = None,
-    ) -> bool:
-        """
-        Store memory entry in PostgreSQL.
-        
-        Args:
-            memory_type: Memory category (mission, knowledge, improvement, etc.)
-            key: Unique identifier within memory_type namespace
-            value: Memory payload (arbitrary dict)
-            tags: Optional searchable tags
-            embedding: Optional vector embedding (requires pgvector)
+        self.connection_string = connection_string
+        self.redis_url = redis_url
+        self.table_name = table_name
+        self.conn = None
+        self.redis_client = None
+        self._initialized = False
+
+    def initialize(self) -> bool:
+        """Initialize database connection and create table if needed.
         
         Returns:
-            True if stored successfully, False otherwise
+            True if initialization successful, False otherwise
         """
-        if not self.is_available():
+        if not POSTGRES_AVAILABLE:
+            logger.warning("psycopg2 not available, PostgreSQL backend disabled")
             return False
-        
+
+        if not self.connection_string:
+            logger.info("No PostgreSQL connection string provided, backend disabled")
+            return False
+
         try:
-            with self._connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO vault_memory (memory_type, key, value, tags, embedding, created_at, updated_at, accessed_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (memory_type, key) DO UPDATE SET
+            # Connect to PostgreSQL
+            self.conn = psycopg2.connect(self.connection_string)
+            self._create_table()
+            
+            # Connect to Redis if available and configured
+            if REDIS_AVAILABLE and self.redis_url:
+                try:
+                    self.redis_client = redis.from_url(self.redis_url, decode_responses=True)
+                    self.redis_client.ping()
+                    logger.info("Redis L1 cache initialized")
+                except Exception as e:
+                    logger.warning(f"Redis connection failed, continuing without cache: {e}")
+                    self.redis_client = None
+            
+            self._initialized = True
+            logger.info(f"PostgreSQL backend initialized (table: {self.table_name})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize PostgreSQL backend: {e}")
+            self.conn = None
+            return False
+
+    def _create_table(self):
+        """Create the vault entries table if it doesn't exist."""
+        with self.conn.cursor() as cur:
+            cur.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    key TEXT PRIMARY KEY,
+                    value JSONB NOT NULL,
+                    tags TEXT[] DEFAULT '{{}}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Create indexes for performance
+            cur.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_tags 
+                ON {self.table_name} USING GIN(tags)
+            """)
+            cur.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_{self.table_name}_created 
+                ON {self.table_name}(created_at DESC)
+            """)
+            
+            self.conn.commit()
+
+    def store(self, key: str, value: Dict[str, Any], tags: Optional[List[str]] = None) -> bool:
+        """Store an entry in PostgreSQL and Redis cache.
+        
+        Args:
+            key: Unique identifier for the entry
+            value: Dictionary to store (will be JSON serialized)
+            tags: Optional list of tags for search
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._initialized:
+            return False
+
+        try:
+            tags = tags or []
+            value_json = json.dumps(value)
+            
+            with self.conn.cursor() as cur:
+                cur.execute(f"""
+                    INSERT INTO {self.table_name} (key, value, tags, updated_at)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (key) 
+                    DO UPDATE SET 
                         value = EXCLUDED.value,
                         tags = EXCLUDED.tags,
-                        embedding = EXCLUDED.embedding,
-                        updated_at = EXCLUDED.updated_at,
-                        accessed_at = EXCLUDED.accessed_at
-                    """,
-                    (
-                        memory_type,
-                        key,
-                        json.dumps(value),
-                        tags or [],
-                        embedding,  # TODO: Convert to pgvector format
-                        datetime.now(timezone.utc),
-                        datetime.now(timezone.utc),
-                        datetime.now(timezone.utc),
-                    ),
-                )
-                self._connection.commit()
-                log.debug("postgres_backend.stored", type=memory_type, key=key, tags=tags)
+                        updated_at = EXCLUDED.updated_at
+                """, (key, value_json, tags, datetime.now()))
                 
-                # Invalidate cache on write
-                if self._cache:
-                    cache_key = f"vault:{memory_type}:{key}"
-                    self._cache.delete(cache_key)
-                
-                return True
-        except Exception as e:
-            log.error("postgres_backend.store_failed", type=memory_type, key=key, error=str(e))
-            if self._connection:
-                self._connection.rollback()
-            return False
-    
-    def retrieve(self, memory_type: str, key: str) -> dict[str, Any] | None:
-        """
-        Retrieve memory entry from PostgreSQL with Redis L1 cache.
-        
-        Cache-aside pattern:
-        1. Check Redis cache
-        2. On miss, fetch from PostgreSQL
-        3. Update cache with result
-        
-        Args:
-            memory_type: Memory category
-            key: Entry identifier
-        
-        Returns:
-            Memory value dict or None if not found
-        """
-        # L1 cache check
-        cache_key = f"vault:{memory_type}:{key}"
-        if self._cache and self._cache.is_available():
-            cached = self._cache.get(cache_key)
-            if cached:
-                return cached
-        
-        # L2 database fetch
-        if not self.is_available():
-            return None
-        
-        try:
-            with self._connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    """
-                    UPDATE vault_memory SET accessed_at = %s
-                    WHERE memory_type = %s AND key = %s
-                    RETURNING value
-                    """,
-                    (datetime.now(timezone.utc), memory_type, key),
-                )
-                result = cursor.fetchone()
-                self._connection.commit()
-                
-                if result:
-                    value = json.loads(result["value"]) if isinstance(result["value"], str) else result["value"]
-                    log.debug("postgres_backend.retrieved", type=memory_type, key=key, source="database")
-                    
-                    # Update cache
-                    if self._cache:
-                        self._cache.set(cache_key, value, ttl=3600)  # 1 hour TTL
-                    
-                    return value
-                return None
-        except Exception as e:
-            log.error("postgres_backend.retrieve_failed", type=memory_type, key=key, error=str(e))
-            if self._connection:
-                self._connection.rollback()
-            return None
-    
-    def search_by_tags(self, memory_type: str, tags: list[str], limit: int = 10) -> list[dict[str, Any]]:
-        """
-        Search memory entries by tags.
-        
-        Args:
-            memory_type: Memory category filter
-            tags: Tags to search for (ANY match)
-            limit: Maximum results
-        
-        Returns:
-            List of matching memory entries
-        """
-        if not self.is_available():
-            return []
-        
-        try:
-            with self._connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    """
-                    SELECT key, value, tags, created_at, updated_at
-                    FROM vault_memory
-                    WHERE memory_type = %s AND tags && %s
-                    ORDER BY updated_at DESC
-                    LIMIT %s
-                    """,
-                    (memory_type, tags, limit),
-                )
-                results = cursor.fetchall()
-                
-                log.debug("postgres_backend.search", type=memory_type, tags=tags, found=len(results))
-                return [
-                    {
-                        "key": row["key"],
-                        "value": json.loads(row["value"]) if isinstance(row["value"], str) else row["value"],
-                        "tags": row["tags"],
-                        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            self.conn.commit()
+            
+            # Update Redis cache
+            if self.redis_client:
+                try:
+                    cache_key = f"vault:{key}"
+                    cache_value = {
+                        'key': key,
+                        'value': value,
+                        'tags': tags,
+                        'created_at': datetime.now().isoformat()
                     }
-                    for row in results
-                ]
+                    self.redis_client.setex(
+                        cache_key, 
+                        3600,  # 1 hour TTL
+                        json.dumps(cache_value)
+                    )
+                except Exception as e:
+                    logger.warning(f"Redis cache update failed: {e}")
+            
+            return True
+            
         except Exception as e:
-            log.error("postgres_backend.search_failed", type=memory_type, tags=tags, error=str(e))
+            logger.error(f"Failed to store entry {key}: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False
+
+    def retrieve(self, key: str) -> Optional[Dict[str, Any]]:
+        """Retrieve a single entry by key.
+        
+        Args:
+            key: The entry key
+            
+        Returns:
+            Dictionary with keys: key, value, tags, created_at, or None
+        """
+        if not self._initialized:
+            return None
+
+        # Try Redis cache first
+        if self.redis_client:
+            try:
+                cache_key = f"vault:{key}"
+                cached = self.redis_client.get(cache_key)
+                if cached:
+                    logger.debug(f"Cache hit for key: {key}")
+                    return json.loads(cached)
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+
+        # Fallback to PostgreSQL
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(f"""
+                    SELECT key, value, tags, created_at
+                    FROM {self.table_name}
+                    WHERE key = %s
+                """, (key,))
+                
+                row = cur.fetchone()
+                if row:
+                    result = {
+                        'key': row['key'],
+                        'value': row['value'],  # Already deserialized by JSONB
+                        'tags': row['tags'],
+                        'created_at': row['created_at'].isoformat()
+                    }
+                    
+                    # Warm Redis cache
+                    if self.redis_client:
+                        try:
+                            cache_key = f"vault:{key}"
+                            self.redis_client.setex(cache_key, 3600, json.dumps(result))
+                        except Exception as e:
+                            logger.warning(f"Redis cache write failed: {e}")
+                    
+                    return result
+                
+        except Exception as e:
+            logger.error(f"Failed to retrieve entry {key}: {e}")
+        
+        return None
+
+    def search_by_tags(self, tags: List[str], limit: int = 100) -> List[Dict[str, Any]]:
+        """Search entries by tags.
+        
+        Args:
+            tags: List of tags to search for (OR logic)
+            limit: Maximum number of results
+            
+        Returns:
+            List of dictionaries with keys: key, value, tags, created_at
+        """
+        if not self._initialized or not tags:
             return []
-    
-    def delete(self, memory_type: str, key: str) -> bool:
-        """Delete memory entry."""
-        if not self.is_available():
-            return False
-        
+
         try:
-            with self._connection.cursor() as cursor:
-                cursor.execute(
-                    "DELETE FROM vault_memory WHERE memory_type = %s AND key = %s",
-                    (memory_type, key),
-                )
-                self._connection.commit()
-                log.debug("postgres_backend.deleted", type=memory_type, key=key)
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Search for entries with ANY of the provided tags
+                cur.execute(f"""
+                    SELECT key, value, tags, created_at
+                    FROM {self.table_name}
+                    WHERE tags && %s
+                    ORDER BY created_at DESC
+                    LIMIT %s
+                """, (tags, limit))
                 
-                # Invalidate cache
-                if self._cache:
-                    cache_key = f"vault:{memory_type}:{key}"
-                    self._cache.delete(cache_key)
+                results = []
+                for row in cur.fetchall():
+                    results.append({
+                        'key': row['key'],
+                        'value': row['value'],  # Already deserialized by JSONB
+                        'tags': row['tags'],
+                        'created_at': row['created_at'].isoformat()
+                    })
                 
-                return True
+                return results
+                
         except Exception as e:
-            log.error("postgres_backend.delete_failed", type=memory_type, key=key, error=str(e))
-            if self._connection:
-                self._connection.rollback()
-            return False
-    
-    def count(self, memory_type: str | None = None) -> int:
-        """Count memory entries."""
-        if not self.is_available():
-            return 0
+            logger.error(f"Failed to search by tags {tags}: {e}")
+            return []
+
+    def delete(self, key: str) -> bool:
+        """Delete an entry.
         
+        Args:
+            key: The entry key
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self._initialized:
+            return False
+
         try:
-            with self._connection.cursor() as cursor:
-                if memory_type:
-                    cursor.execute("SELECT COUNT(*) FROM vault_memory WHERE memory_type = %s", (memory_type,))
-                else:
-                    cursor.execute("SELECT COUNT(*) FROM vault_memory")
-                result = cursor.fetchone()
-                return result[0] if result else 0
+            with self.conn.cursor() as cur:
+                cur.execute(f"""
+                    DELETE FROM {self.table_name}
+                    WHERE key = %s
+                """, (key,))
+                
+            self.conn.commit()
+            
+            # Invalidate Redis cache
+            if self.redis_client:
+                try:
+                    cache_key = f"vault:{key}"
+                    self.redis_client.delete(cache_key)
+                except Exception as e:
+                    logger.warning(f"Redis cache invalidation failed: {e}")
+            
+            return True
+            
         except Exception as e:
-            log.error("postgres_backend.count_failed", type=memory_type, error=str(e))
-            return 0
-    
+            logger.error(f"Failed to delete entry {key}: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False
+
     def close(self):
-        """Close database connection."""
-        if self._connection:
-            self._connection.close()
-            self._connection = None
-            log.info("postgres_backend.closed")
-
-
-# Singleton instance
-_backend: PostgresMemoryBackend | None = None
-
-
-def get_postgres_backend() -> PostgresMemoryBackend:
-    """Get shared PostgreSQL backend instance."""
-    global _backend
-    if _backend is None:
-        _backend = PostgresMemoryBackend()
-    return _backend
-
-
-def reset_postgres_backend():
-    """Reset backend (for testing)."""
-    global _backend
-    if _backend:
-        _backend.close()
-    _backend = None
+        """Close database connections."""
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+        if self.redis_client:
+            self.redis_client.close()
+            self.redis_client = None
+        self._initialized = False
+        logger.info("PostgreSQL backend closed")
