@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /root/Jarvismax-master
+configfile: pytest.ini
+plugins: anyio-4.13.0, asyncio-0.23.3, langsmith-0.7.26
+asyncio: mode=Mode.AUTO
+collecting ... collected 350 items / 1 error
+
+=========================== short test summary info ============================
+ERROR tests/test_openrouter_routing.py - RecursionError: maximum recursion de...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.32s ===============================
