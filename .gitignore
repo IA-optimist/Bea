@@ -20,6 +20,11 @@ workspace/patches/
 workspace/.backups/
 workspace/sandboxes/
 workspace/builds/
+workspace/*.db
+workspace/*.jsonl
+*.db
+*.db-shm
+*.db-wal
 
 # ── Python ───────────────────────────────────────────────────
 __pycache__/
@@ -38,6 +43,16 @@ build/
 
 # ── Docker ───────────────────────────────────────────────────
 .docker/
+
+# ── Frontend / Node.js ───────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+package-lock.json
+yarn.lock
 
 # ── OS ───────────────────────────────────────────────────────
 .DS_Store
