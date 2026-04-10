@@ -433,17 +433,28 @@ class JarvisMaxCausalIntegration:
                 collection_name=self.qdrant_collection,
                 vectors_config=VectorParams(size=384, distance=Distance.COSINE),
             )
+        # Import embedder (lazy to avoid circular imports)
+        import asyncio
+        from core.orchestration.embedding_utils import embed_text
+        
         points = []
         for cause, effect in edges:
             text = f"{cause} causes {effect}"
             uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
-            # FIXME: Using null embeddings ([0.0] * 384) until Phase 2.2 embeddings integration
-            # Options: sentence-transformers (torch), OpenAI embeddings API, or Qdrant dense vectors
-            # Impact: Causal graph search will work but without semantic similarity
+            
+            # Generate real embeddings (384-dim) for semantic search
+            # Fallback chain: OpenAI → memory.embeddings → null vector
+            try:
+                # Run async embed in sync context (embedding is I/O bound, safe)
+                vector = asyncio.run(embed_text(text))
+            except Exception as e:
+                logger.warning("embed_failed_fallback_null", text=text[:50], error=str(e))
+                vector = [0.0] * 384  # Fallback to null
+            
             points.append(PointStruct(
                 id=uid,
-                vector=[0.0] * 384,  # Null embedding — semantic search disabled
+                vector=vector,
                 payload={"text": text, "cause": cause, "effect": effect,
                          "strength": edge_data.get("strength", 1.0),
                          "mechanism": edge_data.get("mechanism", "")},
