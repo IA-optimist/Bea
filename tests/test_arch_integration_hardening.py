@@ -325,6 +325,7 @@ class TestSupervisorTimeoutCoherence(unittest.IsolatedAsyncioTestCase):
         async def fast_success(user_input, mode, session_id, callback):
             session = MagicMock()
             session.final_report = "done"
+            session.error = None  # Required for outcome validation
             return session
 
         outcome = await supervise(
