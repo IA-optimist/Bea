@@ -14,10 +14,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
 
-try:
-    from api._deps import require_auth
-except ImportError:
-    require_auth = None
+# Fail-hard on auth import: a None fallback would make Depends(None) a
+# pass-through, creating a silent auth bypass.
+from api._deps import require_auth
 
 router = APIRouter(prefix="/api/v3/connectors", tags=["connectors"])
 

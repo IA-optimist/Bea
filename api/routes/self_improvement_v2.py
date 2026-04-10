@@ -23,11 +23,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query
 
 logger = logging.getLogger("jarvis.api.self_improvement_v2")
 
-try:
-    from api._deps import require_auth
-    _auth = Depends(require_auth)
-except Exception:
-    _auth = None
+# Fail-hard on auth import: silent fail-open (_auth = None) would make
+# every route parameter default to None, bypassing Depends entirely.
+from api._deps import require_auth
+_auth = Depends(require_auth)
 
 router = APIRouter(tags=["self-improvement"])
 

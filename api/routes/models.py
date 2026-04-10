@@ -16,16 +16,15 @@ from fastapi import APIRouter, Depends, Query
 
 logger = logging.getLogger("jarvis.api.models")
 
-try:
-    from api.auth import _check_auth
-    _auth = Depends(_check_auth)
-except Exception:
-    _auth = None
+# Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
+# Canonical auth helper lives in api._deps, not api.auth.
+from api._deps import _check_auth
+_auth = Depends(_check_auth)
 
 router = APIRouter(
     prefix="/api/v3/models",
     tags=["models"],
-    dependencies=[_auth] if _auth else [],
+    dependencies=[_auth],
 )
 
 

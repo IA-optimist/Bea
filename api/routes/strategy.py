@@ -13,10 +13,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-try:
-    from api._deps import require_auth
-except ImportError:
-    require_auth = None
+# Fail-hard on auth import: a None fallback would make Depends(None) a
+# pass-through, creating a silent auth bypass.
+from api._deps import require_auth
 
 router = APIRouter(prefix="/api/v3/strategy", tags=["strategy"])
 
