@@ -137,6 +137,11 @@ def verify_token(token_str: str) -> Optional[dict]:
                 }
         except Exception:
             pass
+        # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
+        import os as _os, hmac as _hmac
+        _static = _os.environ.get('JARVIS_API_TOKEN', '')
+        if _static and _hmac.compare_digest(token_str.encode(), _static.encode()):
+            return {'username': 'api', 'role': 'admin', 'auth_type': 'static'}
         return None
 
     # Path 2: JWT token
