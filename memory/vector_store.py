@@ -21,7 +21,7 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-TARGET_DIM = 1536
+TARGET_DIM = 768
 
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS embeddings (

@@ -83,8 +83,8 @@ class ContinualMemory:
         except Exception:
             return self._hash_embed(text)
 
-    def _hash_embed(self, text: str, dim: int = 384) -> list[float]:
-        """Deterministic hash-based fallback embedding (dim-dimensional)."""
+    def _hash_embed(self, text: str, dim: int = 768) -> list[float]:
+        """Deterministic hash-based fallback embedding (768-dimensional)."""
         h = hashlib.sha256(text.encode()).digest()
         vec = [(b / 255.0) * 2 - 1 for b in h]  # 32 values
         # Tile to requested dim

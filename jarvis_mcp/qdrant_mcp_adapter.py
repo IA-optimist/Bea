@@ -53,7 +53,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
         requires_approval=False,
         metadata={
             "provider": "qdrant/mcp-server-qdrant",
-            "collection": "jarvis_memory",
+            "collection": "jarvis_unified_memory",
             "docs": "https://github.com/qdrant/mcp-server-qdrant",
         },
     )
@@ -78,7 +78,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
                 "collection": {
                     "type": "string",
                     "description": "Qdrant collection name",
-                    "default": "jarvis_memory",
+                    "default": "jarvis_unified_memory",
                 },
                 "top_k": {
                     "type": "integer",
@@ -119,7 +119,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
                 "collection": {
                     "type": "string",
                     "description": "Qdrant collection name",
-                    "default": "jarvis_memory",
+                    "default": "jarvis_unified_memory",
                 },
             },
             "required": ["text"],

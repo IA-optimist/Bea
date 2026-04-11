@@ -1,15 +1,14 @@
 """
 JARVIS MAX — EmbeddingProvider
-Génération d'embeddings multi-fournisseurs avec fallback automatique.
+Génération d'embeddings via nomic-embed-text (768 dimensions).
 
 Cascade :
-    1. OpenAI  text-embedding-3-small (1536 dims)
-    2. Ollama  nomic-embed-text       (768 dims  → paddé à 1536)
-    3. Local   all-MiniLM-L6-v2      (384 dims  → paddé à 1536)
+    1. Ollama  nomic-embed-text       (768 dims native)
+    2. Local   all-MiniLM-L6-v2      (384 dims → paddé à 768)
 
 Usage :
     ep = EmbeddingProvider(settings)
-    vec   = await ep.embed("Du texte ici")           # list[float] taille 1536
+    vec   = await ep.embed("Du texte ici")           # list[float] taille 768
     vecs  = await ep.embed_batch(["a", "b", "c"])    # list[list[float]]
     chunks = ep.chunk_text(code, strategy="ast_aware")
 """
@@ -23,14 +22,14 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-TARGET_DIM = 1536
+TARGET_DIM = 768
 ChunkStrategy = Literal["fixed_size", "sentence", "ast_aware"]
 
 
 class EmbeddingProvider:
     """
     Multi-provider embedding facade.
-    Always returns TARGET_DIM (1536) dimensional vectors.
+    Always returns TARGET_DIM (768) dimensional vectors via nomic-embed-text.
     """
 
     def __init__(self, settings, provider: str = "auto"):
@@ -41,14 +40,14 @@ class EmbeddingProvider:
     # ── Public API ────────────────────────────────────────────
 
     async def embed(self, text: str) -> list[float]:
-        """Embed a single text string. Returns 1536-dim vector."""
+        """Embed a single text string. Returns 768-dim vector."""
         if not text or not text.strip():
             return [0.0] * TARGET_DIM
         results = await self.embed_batch([text])
         return results[0]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Embed multiple texts. Returns list of 1536-dim vectors."""
+        """Embed multiple texts. Returns list of 768-dim vectors."""
         if not texts:
             return []
 

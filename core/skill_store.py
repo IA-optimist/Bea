@@ -42,7 +42,7 @@ _QDRANT_URL  = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 _QDRANT_KEY  = os.environ.get("QDRANT_API_KEY", "")
 _OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 _COLLECTION  = "jarvis_skills"
-_VECTOR_SIZE = 384   # nomic-embed-text / all-MiniLM-L6-v2
+_VECTOR_SIZE = 768   # nomic-embed-text standard dimension
 _MIN_CONFIDENCE_TO_STORE = float(os.environ.get("SKILL_MIN_CONFIDENCE", "0.70"))
 _MAX_SKILLS  = int(os.environ.get("SKILL_MAX_STORE", "500"))
 

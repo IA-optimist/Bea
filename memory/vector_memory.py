@@ -165,7 +165,13 @@ class VectorMemory:
         try:
             import numpy as np
             vec = enc.encode(text, normalize_embeddings=True)
-            return vec.tolist()
+            vec_list = vec.tolist()
+            # Pad to 768 if using 384-dim model
+            if len(vec_list) < self.VECTOR_DIM:
+                vec_list = vec_list + [0.0] * (self.VECTOR_DIM - len(vec_list))
+            elif len(vec_list) > self.VECTOR_DIM:
+                vec_list = vec_list[:self.VECTOR_DIM]
+            return vec_list
         except Exception as e:
             log.warning("vector_memory_encode_error", err=str(e)[:80])
             return None
@@ -362,12 +368,12 @@ class QdrantVectorMemory:
     Activate: QDRANT_MEMORY_ENABLED=true
     Falls back to local VectorMemory on any Qdrant error — never raises.
 
-    Collection: QDRANT_COLLECTION (default: jarvis_memory)
-    Vector dim:  QDRANT_VECTOR_DIM (default: 384, matches all-MiniLM-L6-v2)
+    Collection: QDRANT_COLLECTION (default: jarvis_unified_memory)
+    Vector dim:  QDRANT_VECTOR_DIM (default: 768, matches nomic-embed-text)
     """
 
-    COLLECTION = "jarvis_memory"
-    VECTOR_DIM = 384
+    COLLECTION = "jarvis_unified_memory"
+    VECTOR_DIM = 768
 
     def __init__(self, settings, fallback: "VectorMemory | None" = None):
         self.s = settings
@@ -428,7 +434,13 @@ class QdrantVectorMemory:
         try:
             import numpy as np
             vec = enc.encode(text, normalize_embeddings=True)
-            return vec.tolist()
+            vec_list = vec.tolist()
+            # Pad to 768 if using 384-dim model
+            if len(vec_list) < self.VECTOR_DIM:
+                vec_list = vec_list + [0.0] * (self.VECTOR_DIM - len(vec_list))
+            elif len(vec_list) > self.VECTOR_DIM:
+                vec_list = vec_list[:self.VECTOR_DIM]
+            return vec_list
         except Exception as e:
             log.warning("qdrant_memory_encode_error", err=str(e)[:60])
             return None

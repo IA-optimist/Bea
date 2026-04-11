@@ -431,7 +431,7 @@ class JarvisMaxCausalIntegration:
         except Exception:
             client.create_collection(
                 collection_name=self.qdrant_collection,
-                vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
         
         # Initialize sentence-transformers model for real embeddings
@@ -443,21 +443,29 @@ class JarvisMaxCausalIntegration:
             uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
             
-            # Generate real embeddings (384-dim) using sentence-transformers
+            # Generate real embeddings (768-dim) using nomic-embed-text via Ollama
             try:
-                if embedder:
-                    vector = embedder.encode(text, convert_to_numpy=True).tolist()
-                    logger.debug("embedding_generated", text=text[:50], dim=len(vector))
-                else:
-                    # Fallback: try async embed_text from embedding_utils
-                    import asyncio
-                    from core.orchestration.embedding_utils import embed_text
-                    vector = asyncio.run(embed_text(text))
-                    logger.debug("embedding_fallback_used", text=text[:50])
+                import httpx
+                response = httpx.post(
+                    f"{self.wrapper.ollama_url}/api/embeddings",
+                    json={"model": "nomic-embed-text", "prompt": text},
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                vector = response.json()["embedding"]
+                logger.debug("embedding_generated", text=text[:50], dim=len(vector))
             except Exception as e:
-                logger.error("embedding_failed", text=text[:50], error=str(e))
-                # Last resort: null vector (but log as error, not warning)
-                vector = [0.0] * 384
+                logger.warning("ollama_embed_failed_trying_local", error=str(e)[:80])
+                # Fallback: sentence-transformers (384-dim padded to 768)
+                try:
+                    if embedder:
+                        vec_384 = embedder.encode(text, convert_to_numpy=True).tolist()
+                        vector = vec_384 + [0.0] * (768 - len(vec_384))  # Pad to 768
+                        logger.debug("embedding_fallback_padded", text=text[:50], dim=len(vector))
+                    else:
+                        vector = [0.0] * 768
+                except Exception:
+                    vector = [0.0] * 768
             
             points.append(PointStruct(
                 id=uid,
