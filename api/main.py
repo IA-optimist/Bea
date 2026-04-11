@@ -892,6 +892,38 @@ async def ws_stream_alias(websocket: WebSocket):
             pass
 
 
+# ── v2 Chat Alias (frontend compatibility) ────────────────────
+
+@app.post("/api/v2/chat", include_in_schema=False)
+async def chat_v2_alias(request: Request):
+    """Alias for /api/v3/chat to maintain frontend compatibility."""
+    try:
+        from api.routes.chat import chat
+        body = await request.json()
+        from pydantic import BaseModel
+        from typing import List, Dict, Any
+        
+        class ChatMessage(BaseModel):
+            role: str
+            content: str
+            timestamp: str = None
+        
+        class ChatRequest(BaseModel):
+            message: str
+            project_id: int = 1
+            conversation_history: List[ChatMessage] = []
+            enable_tot: bool = True
+            enable_self_correction: bool = True
+        
+        req = ChatRequest(**body)
+        x_jarvis_token = request.headers.get("x-jarvis-token")
+        authorization = request.headers.get("authorization")
+        return await chat(req, x_jarvis_token, authorization)
+    except Exception as e:
+        log.error("chat_v2_alias_error", err=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── Router Registry Status ────────────────────────────────────
 
 @app.get("/api/v3/system/registry", tags=["system"])
