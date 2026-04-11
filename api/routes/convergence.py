@@ -182,6 +182,59 @@ async def list_missions(
         return _err(str(e)[:200], status=500)
 
 
+
+
+@router.get("/missions/history")
+async def mission_history(
+    limit: int = 50,
+    offset: int = 0,
+    status: Optional[str] = None,
+    domain: Optional[str] = None,
+):
+    """
+    GET /api/v3/missions/history — Paginated mission history with filters.
+    
+    Query params:
+      limit  (int, default=50)   — max results
+      offset (int, default=0)    — pagination offset
+      status (str, optional)     — filter by status (DONE, FAILED, ...)
+      domain (str, optional)     — filter by domain (software_dev, saas_builder, ...)
+    
+    Returns missions sorted by created_at DESC (most recent first).
+    """
+    try:
+        from core.mission_system import get_mission_system
+        ms = get_mission_system()
+        
+        # Get all missions then filter + paginate
+        all_missions = ms.list_missions(limit=1000)  # practical upper bound
+        
+        # Filter
+        filtered = all_missions
+        if status:
+            filtered = [m for m in filtered if (m.status.value if hasattr(m.status, "value") else str(m.status)).upper() == status.upper()]
+        if domain:
+            filtered = [m for m in filtered if getattr(m, "domain", "") == domain]
+        
+        # Sort DESC by created_at
+        filtered.sort(key=lambda m: getattr(m, "created_at", 0) or 0, reverse=True)
+        
+        # Paginate
+        total = len(filtered)
+        page = filtered[offset:offset + limit]
+        
+        return _ok({
+            "missions": [m.to_dict() for m in page],
+            "total":    total,
+            "offset":   offset,
+            "limit":    limit,
+            "has_more": (offset + limit) < total,
+            "filters":  {"status": status, "domain": domain},
+        })
+
+    except Exception as e:
+        return _err(str(e)[:200], status=500)
+
 @router.get("/missions/{mission_id}")
 async def get_mission(mission_id: str):
     """Get mission with canonical status."""
