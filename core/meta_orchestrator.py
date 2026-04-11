@@ -892,8 +892,8 @@ class MetaOrchestrator:
             return None
         
         try:
-            from core.orchestration.creative_engine import JarvisCreativePipeline
-            _creative = JarvisCreativePipeline(ollama_url="http://localhost:11434")
+            from core.orchestration.creative_engine import JarvisCreativePipeline, JarvisLLMClient, JarvisMissionStore
+            _creative = JarvisCreativePipeline(llm_client=JarvisLLMClient(role="fast"), mission_store=JarvisMissionStore())
             _creative_result = await _creative.run(goal, n_solutions=3)
             if _creative_result.get("best"):
                 ctx.result = _creative_result["best"]
@@ -1821,8 +1821,8 @@ class MetaOrchestrator:
         
         # ── ArtificialCuriosity : detect and log surprising results ───────────────────
         try:
-            from core.orchestration.creative_engine import ArtificialCuriosity
-            _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
+            from core.orchestration.creative_engine import ArtificialCuriosity, JarvisLLMClient
+            _ac = ArtificialCuriosity(llm_client=JarvisLLMClient(role="fast"))
             _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
             if _surprise_ac > 0.6:
                 _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
