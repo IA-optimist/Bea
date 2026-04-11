@@ -1315,7 +1315,7 @@ class MetaOrchestrator:
             _SL_ACTION_MAP = {
                 "deployment":   "deployment",
                 "improvement":  "self_improvement",
-                "business":     "payment",
+                # "business": removed - business missions are not payment actions
             }
             _sl_action = _SL_ACTION_MAP.get(_task_type_sl, "mission_execution")
             from security import get_security_layer as _get_sl
