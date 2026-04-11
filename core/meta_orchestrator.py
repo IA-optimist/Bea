@@ -2378,6 +2378,37 @@ class MetaOrchestrator:
         # ── Post-mission: cognitive learning + guardian cleanup ────
         self._post_mission_learning(mid, goal, mode, ctx)
 
+        # ── Training data collection (fire-and-forget) ────────────
+        try:
+            from core.training_data_collector import collect_training_example
+            # Extract mission data for training
+            _score = ctx.metadata.get("confidence", 0.0)
+            _model = ctx.metadata.get("routed_provider") or ctx.metadata.get("model_used") or "unknown"
+            _duration = (ctx.updated_at - ctx.created_at) if ctx.updated_at and ctx.created_at else None
+            _plan = ctx.metadata.get("kernel_plan") or ctx.metadata.get("context", {})
+            _lessons = ctx.metadata.get("kernel_lesson")
+            _score_predicted = ctx.metadata.get("score_predicted", 0.5)
+            
+            # Fire-and-forget: collect in background without blocking mission completion
+            asyncio.create_task(collect_training_example(
+                mission_id=mid,
+                goal=goal,
+                result=ctx.result or "",
+                score=_score,
+                model_used=_model,
+                duration_s=_duration,
+                plan=_plan,
+                lessons=_lessons,
+                metadata={
+                    "mode": mode,
+                    "status": ctx.status.value,
+                    "task_type": ctx.metadata.get("task_type", "general"),
+                },
+                score_predicted=_score_predicted,
+            ))
+        except Exception as _tdc_err:
+            log.debug("training_data_collection_skipped", err=str(_tdc_err)[:80])
+
         # ── Deregister EventStream (mission complete or failed) ────
         self._cleanup_event_stream(mid)
 

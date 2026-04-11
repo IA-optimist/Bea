@@ -169,6 +169,13 @@ try:
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
+# ── Import du routeur Training (Phase 3 — Bio-inspired AGI) ────
+try:
+    from api.routes.training import router as training_router
+    app.include_router(training_router)
+except Exception as _e:
+    log.warning("training_router_unavailable", err=str(_e)[:120])
+
 # ── Import du routeur Multimodal ───────────────────────────────
 try:
     from api.routes.multimodal import router as multimodal_router
