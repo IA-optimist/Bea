@@ -202,7 +202,7 @@ async def audit_log(limit: int = 50):
 # WEBHOOK
 # ═══════════════════════════════════════════════════════════════
 
-WEBHOOK_SECRET = ""  # Set from env at startup
+WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")  # Load from env at startup
 
 # Webhook uses a separate router — no auth (Stripe calls this externally).
 # Signature verification replaces token auth for webhooks.

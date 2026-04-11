@@ -173,3 +173,7 @@ playwright-report/
 tests/e2e/reports/
 tests/e2e/results.json
 *.webm
+
+# Runtime databases
+workspace/*.db
+workspace/*.db-*
