@@ -266,7 +266,7 @@ class BusinessActionExecutor:
                         action=f"Execute business action: {action.name}",
                     )
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='business_actions.py')
                 # For now, approval-gated actions produce a spec file
                 # instead of executing. Real execution requires explicit
                 # API call with approval_override=True.
@@ -319,7 +319,7 @@ class BusinessActionExecutor:
                             details=f"Used by action {action_id}",
                         ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='business_actions.py')
 
             files = handler(action, agent_output, project_dir)
 
@@ -337,7 +337,7 @@ class BusinessActionExecutor:
                     )
                     files.append("skills-used.json")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='business_actions.py')
 
             # Emit cognitive event: action completed
             self._emit_event(action, mission_id, "completed",
@@ -746,7 +746,7 @@ class BusinessActionExecutor:
                 tags=["business", action.agent],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='business_actions.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

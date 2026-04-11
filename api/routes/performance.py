@@ -195,7 +195,7 @@ if router:
             td = get_tool_performance_tracker().get_dashboard_data()
             overview["tool_health"] = td.get("summary", {})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         # Mission health
         try:
@@ -203,7 +203,7 @@ if router:
             md = get_mission_performance_tracker().get_dashboard_data()
             overview["mission_health"] = md.get("summary", {})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         # Agent health
         try:
@@ -218,7 +218,7 @@ if router:
                 ],
             }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         # Mission memory
         try:
@@ -230,7 +230,7 @@ if router:
                 "failing_patterns": mm.get("failing_patterns", 0),
             }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         # Tool gaps
         try:
@@ -238,7 +238,7 @@ if router:
             gaps = analyze_tool_gaps()
             overview["tool_gaps"] = len(gaps)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         # Improvement proposals
         try:
@@ -246,7 +246,7 @@ if router:
             proposals = get_proposal_store().list_pending()
             overview["improvement_proposals"] = proposals[:10]
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='performance.py')
 
         return _ok(overview)
 

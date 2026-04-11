@@ -75,7 +75,7 @@ def aggregate_mission_result(
         # Add capability stats to decision trace
         decision_trace_raw["capability_stats"] = cap_reg.stats()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='result_aggregator.py')
 
     # 2. Collect decision trace from mission
     try:
@@ -131,7 +131,7 @@ def aggregate_mission_result(
             from core.observability.event_envelope import get_trace_id
             trace_id = get_trace_id() or ""
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='result_aggregator.py')
 
     return FinalOutput(
         mission_id=mission_id,

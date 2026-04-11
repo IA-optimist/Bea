@@ -58,7 +58,7 @@ class ProactiveGoal:
                     deadline_ts = float(note.split(":", 1)[1])
                     return (deadline_ts - time.time()) / 3600
                 except ValueError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='goal_registry.py')
         return None
 
     def set_deadline(self, epoch: float) -> None:

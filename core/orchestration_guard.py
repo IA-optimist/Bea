@@ -247,7 +247,7 @@ class OrchestrationGuard:
                     if entry.get("status") in ("failed", "timeout"):
                         failures.append(entry)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='orchestration_guard.py')
 
             return failures[-n:]
         except Exception:

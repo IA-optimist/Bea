@@ -63,7 +63,7 @@ async def get_mission_trace(mission_id: str):
             if mission:
                 trace_id = getattr(mission, "decision_trace", {}).get("trace_id", "")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='trace.py')
 
         return {
             "ok": True,

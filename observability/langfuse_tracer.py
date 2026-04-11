@@ -208,7 +208,7 @@ class LangfuseTracer:
                 try:
                     self._client.flush()
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
 
     def score_trace(
         self,
@@ -236,7 +236,7 @@ class LangfuseTracer:
             try:
                 self._client.flush()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
 
     @staticmethod
     def _serialize_messages(messages: list) -> list[dict]:

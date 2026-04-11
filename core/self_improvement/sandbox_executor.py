@@ -482,7 +482,7 @@ class SandboxExecutor:
                 try:
                     Path(tmp_file).unlink()
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='sandbox_executor.py')
 
     @staticmethod
     def _is_allowed_command(command: str) -> bool:

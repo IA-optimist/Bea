@@ -41,7 +41,7 @@ async def get_recent_events(
         try:
             kwargs["event_type"] = EventType(event_type)
         except ValueError:
-            pass
+            _silent_log.debug("suppressed_exception", src='cognitive_events.py')
     if mission_id:
         kwargs["mission_id"] = mission_id
     if severity:

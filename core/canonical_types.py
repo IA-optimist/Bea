@@ -371,4 +371,4 @@ class CanonicalMissionContext:
                 to_status=target.value,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='canonical_types.py')

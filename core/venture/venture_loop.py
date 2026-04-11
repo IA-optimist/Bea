@@ -663,4 +663,4 @@ def _record_loop_outcome(result: VentureLoopResult, hypothesis: VentureHypothesi
             },
         )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='venture_loop.py')

@@ -215,7 +215,7 @@ class RoutingHistory:
                         else:
                             bridge.agent_reputation.record_failure(agent_id, outcome.capability_id, error[:100])
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='feedback.py')
 
         except Exception as e:
             log.debug("routing_feedback.cognitive_failed", err=str(e)[:60])

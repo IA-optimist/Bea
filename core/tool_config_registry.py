@@ -175,7 +175,7 @@ class ToolConfigRegistry:
                 if hasattr(self._vault, "list_secrets"):
                     return secret_name in self._vault.list_secrets()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_config_registry.py')
         # Fallback: check environment variable
         env_key = secret_name.upper().replace("-", "_").replace(".", "_")
         return bool(os.environ.get(env_key))

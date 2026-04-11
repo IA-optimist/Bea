@@ -180,7 +180,7 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
             """, (migration_name, error_msg))
             conn.commit()
         except:
-            pass
+            _silent_log.debug("suppressed_exception", src='migrate.py')
         
         return False, error_msg
 

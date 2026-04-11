@@ -59,7 +59,7 @@ def emit_kernel_event(event_type: str, **kwargs) -> bool:
         try:
             _update_performance(event_type, kwargs)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='event_bridge.py')
 
         return True
     except Exception as e:
@@ -84,7 +84,7 @@ def _update_performance(event_type: str, kwargs: dict) -> None:
     try:
         duration_ms = float(kwargs.get("duration_ms", 0))
     except (ValueError, TypeError):
-        pass
+        _silent_log.debug("suppressed_exception", src='event_bridge.py')
 
     # Resolve missing identity via lookup (fail-open)
     if tool_id and (not capability_id or not provider_id):
@@ -96,7 +96,7 @@ def _update_performance(event_type: str, kwargs: dict) -> None:
             if not provider_id and resolution["provider_id"]:
                 provider_id = resolution["provider_id"]
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='event_bridge.py')
 
     if event_type == "tool.completed":
         store.record_tool_outcome(

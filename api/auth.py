@@ -136,7 +136,7 @@ def verify_token(token_str: str) -> Optional[dict]:
                     "auth_type": "access_token",
                 }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auth.py')
         # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
         import os as _os, hmac as _hmac
         _static = _os.environ.get('JARVIS_API_TOKEN', '')
@@ -154,7 +154,7 @@ def verify_token(token_str: str) -> Optional[dict]:
                 "auth_type": "jwt",
             }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auth.py')
 
     # Path 3: Static API token fallback
     from config.settings import get_settings

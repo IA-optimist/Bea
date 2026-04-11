@@ -426,7 +426,7 @@ def register_tool_in_executor(
                 with open(executor_path, "r", encoding="utf-8") as f:
                     old_content = f.read()
             except FileNotFoundError:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_builder_tool.py')
             with RollbackContext(executor_path) as ctx:
                 with open(executor_path, "w", encoding="utf-8") as f:
                     f.write(content)

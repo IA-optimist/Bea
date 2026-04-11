@@ -96,7 +96,7 @@ class StripeTool:
                 if isinstance(result, dict):
                     return result.get("value", "")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='stripe_tool.py')
         return ""
 
     # ═══════════════════════════════════════════════════════════════

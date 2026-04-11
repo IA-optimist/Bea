@@ -307,7 +307,7 @@ class ActionQueue:
                         )
                         self._actions[a.id] = a
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='action_queue.py')
                 self._use_sqlite = True
                 log.debug("action_queue_loaded_sqlite", count=len(self._actions))
                 return
@@ -325,7 +325,7 @@ class ActionQueue:
                     a = Action.from_dict(item)
                     self._actions[a.id] = a
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='action_queue.py')
         except Exception as exc:
             log.warning("action_queue_load_failed", err=str(exc))
 

@@ -581,7 +581,7 @@ class ExtensionRegistry:
                 json.dumps([a.to_dict() for a in self._audit[-500:]], indent=2, default=str),
                 encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='extension_registry.py')
 
     def _load_all(self) -> None:
         for ext_type, cls in _TYPE_MAP.items():
@@ -606,7 +606,7 @@ class ExtensionRegistry:
                 for d in data:
                     self._audit.append(AuditEntry(**d))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='extension_registry.py')
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -667,7 +667,7 @@ class RuntimeExtensionLoader:
                 if hasattr(creg, "register_external"):
                     creg.register_external(ext_dict)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='extension_registry.py')
 
         elif ext_type == "skill":
             # Register skill
@@ -677,7 +677,7 @@ class RuntimeExtensionLoader:
                 if hasattr(sreg, "register_external"):
                     sreg.register_external(ext_dict)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='extension_registry.py')
 
         elif ext_type == "tool":
             # Register tool config
@@ -687,7 +687,7 @@ class RuntimeExtensionLoader:
                 if hasattr(treg, "register_external"):
                     treg.register_external(ext_dict)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='extension_registry.py')
 
     def get_loaded(self) -> dict:
         return dict(self._loaded)

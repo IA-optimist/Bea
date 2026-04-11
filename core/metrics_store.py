@@ -275,7 +275,7 @@ class MetricsRegistry:
         try:
             self._counters[name].inc(self._labels_key(labels), value)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_counter(self, name: str, labels: dict[str, str] | None = None) -> float:
         return self._counters[name].get(self._labels_key(labels))
@@ -290,7 +290,7 @@ class MetricsRegistry:
         try:
             self._histograms[name].observe(value, self._labels_key(labels))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_histogram(self, name: str,
                       labels: dict[str, str] | None = None) -> dict[str, float]:
@@ -303,7 +303,7 @@ class MetricsRegistry:
         try:
             self._gauges[name].set(value, self._labels_key(labels))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_gauge(self, name: str,
                   labels: dict[str, str] | None = None) -> float:
@@ -320,7 +320,7 @@ class MetricsRegistry:
                 mission_id=mission_id, model_id=model_id, tool_name=tool_name))
             self.inc("failures_total", labels={"category": category, "component": component})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     # ── Cost tracking ─────────────────────────────────────────
 
@@ -330,7 +330,7 @@ class MetricsRegistry:
             self.costs.record(model_id, tokens, cost_tier, mission_id, actual_cost)
             self.inc("estimated_cost_total", labels={"model_id": model_id})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     # ── Snapshot ──────────────────────────────────────────────
 

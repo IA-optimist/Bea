@@ -55,7 +55,7 @@ class SystemObserver:
             try:
                 result.append(json.loads(line))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='watcher.py')
         return result
 
     async def detect_changes(self, since_minutes: int = 60) -> list[str]:
@@ -80,7 +80,7 @@ class SystemObserver:
             try:
                 entries.append(json.loads(line))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='watcher.py')
 
         if not entries:
             return "Logs vides."

@@ -300,7 +300,7 @@ class ModelPerformanceMemory:
                         last_used=v.get("last_used", 0),
                     )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='selector.py')
 
     def _save(self) -> None:
         try:
@@ -323,7 +323,7 @@ class ModelPerformanceMemory:
                 }, f)
             tmp.rename(self._path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='selector.py')
 
     def record(
         self,

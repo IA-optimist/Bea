@@ -98,7 +98,7 @@ class ConnectorBase(ABC):
                 },
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='base.py')
 
     def safe_execute(self, action: str, params: dict) -> ConnectorResult:
         """Execute with policy check, tracing, and error handling."""

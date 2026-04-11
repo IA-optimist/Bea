@@ -249,7 +249,7 @@ class CodebaseAwareness:
                     content = sibling.read_text(errors="replace")
                     sibling_patterns.append(self._detect_patterns(content))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='codebase_awareness.py')
 
         if not sibling_patterns:
             return warnings
@@ -342,7 +342,7 @@ class CodebaseAwareness:
                 imports = self._extract_imports(tree)
                 self._import_cache[rel] = imports
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='codebase_awareness.py')
 
     def _iter_python_files(self):
         """Iterate all Python files in repo, excluding venv/cache."""

@@ -221,7 +221,7 @@ class ModelSelector:
             from core.escalation_engine import EscalationEngine
             return EscalationEngine(self.s)._compute_complexity(task)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='model_selector.py')
         # Heuristique fallback
         if not task:
             return 0.0
@@ -309,7 +309,7 @@ class ModelSelector:
                         reason=f"LLMPerf: avg_latency={avg_lat_ms:.0f}ms > 90s",
                     )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='model_selector.py')
 
         # 2. Fallback sur LearningEngine
         engine = self._get_learning()

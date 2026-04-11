@@ -188,7 +188,7 @@ def browser_close(**kwargs) -> dict:
         try:
             _run_async(_browser_tool.close())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='browser_bridge.py')
         _browser_tool = None
     return {"ok": True, "result": "browser_closed", "error": ""}
 

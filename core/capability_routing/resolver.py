@@ -202,13 +202,13 @@ def resolve_capabilities(
         try:
             requirements.extend(_from_classification(classification))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='resolver.py')
 
     # 4. Keyword matching (always, complements semantic/AIOS)
     try:
         requirements.extend(_from_keywords(goal))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='resolver.py')
 
     # 5. Ultimate fallback
     if not requirements:

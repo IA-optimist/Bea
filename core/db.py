@@ -220,5 +220,5 @@ def reset_singleton():
             try:
                 _conn.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='db.py')
             _conn = None

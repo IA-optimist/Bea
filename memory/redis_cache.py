@@ -237,7 +237,7 @@ class RedisMemoryCache:
             try:
                 self._client.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='redis_cache.py')
             self._client = None
             log.info("redis_cache.closed")
 

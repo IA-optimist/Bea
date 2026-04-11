@@ -186,7 +186,7 @@ class ModelCatalog:
                 import os
                 api_key = os.environ.get("OPENROUTER_API_KEY", "")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='catalog.py')
 
         if not api_key:
             log.debug("catalog_refresh_skipped", reason="no_api_key")

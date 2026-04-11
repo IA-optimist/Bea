@@ -222,7 +222,7 @@ async def system_status_v1():
                 if callable(count):
                     memory_usage["episodic"] = count()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Tool performance (fail-open)
         tool_performance: dict = {}
@@ -231,7 +231,7 @@ async def system_status_v1():
             tracker = ToolPerformanceTracker.get()
             tool_performance = tracker.summary() if hasattr(tracker, "summary") else {}
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Queue length (fail-open)
         queue_length = 0
@@ -241,7 +241,7 @@ async def system_status_v1():
             queue_length = len([a for a in aq._actions.values()
                                  if getattr(a, "status", "") == "PENDING"])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Memory facade health (fail-open, P5)
         memory_health: dict = {}
@@ -250,7 +250,7 @@ async def system_status_v1():
             facade = get_memory_facade()
             memory_health = facade.health()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         return JSONResponse(ok({
             "active_agents":        active_agents,
@@ -369,7 +369,7 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                             yield f"data: {json.dumps({'event': 'timeout', 'mission_id': mission_id, 'message': 'Mission found in workspace store'})}\n\n"
                         return
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
         yield f"data: {json.dumps({'event': 'error', 'message': 'not found'})}\n\n"
         return
 
@@ -407,7 +407,7 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                                 yield f"data: {json.dumps({'event': 'status', 'mission_id': mission_id, 'status': ws_status, 'source': 'workspace', 'ts': time.time()})}\n\n"
                             break
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Stop on terminal status
         if _cs in _TERMINAL_STATUSES or str(mission.status).upper() in _TERMINAL_STATUSES:

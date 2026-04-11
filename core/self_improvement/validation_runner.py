@@ -225,7 +225,7 @@ class ValidationRunner:
                 if status in ("REJECTED", "BLOCKED"):
                     return ""
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='validation_runner.py')
             time.sleep(2)
         return ""
 
@@ -242,13 +242,13 @@ class ValidationRunner:
             store = MissionStateStore.get()
             metrics["events_in_store"] = sum(len(v) for v in store._logs.values())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='validation_runner.py')
         try:
             from core.self_improvement.improvement_planner import ImprovementPlanner
             proposals = ImprovementPlanner().load_proposals()
             metrics["proposals_count"] = len(proposals)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='validation_runner.py')
         try:
             from core.self_improvement.failure_collector import _FAILURE_LOG
             if _FAILURE_LOG.exists():
@@ -257,5 +257,5 @@ class ValidationRunner:
             else:
                 metrics["failure_log_lines"] = 0
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='validation_runner.py')
         return metrics

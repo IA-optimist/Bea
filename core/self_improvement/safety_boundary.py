@@ -73,7 +73,7 @@ def is_path_protected(path: str) -> bool:
         if _canonical_check(path):
             return True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='safety_boundary.py')
     # Local fallback (subset of canonical — kept for safety during import errors)
     for protected in PROTECTED_RUNTIME:
         if path == protected or path.endswith("/" + protected):

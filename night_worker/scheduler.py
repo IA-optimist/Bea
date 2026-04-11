@@ -66,7 +66,7 @@ class NightScheduler:
             if reports:
                 return json.loads(reports[0].read_text("utf-8"))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='scheduler.py')
         return None
 
     def get_next_run(self) -> str | None:
@@ -119,7 +119,7 @@ class NightScheduler:
                     context=f"target:{action.get('target', '')}",
                     success=False,
                 )
-                learning_count += lr.stored
+                learning_count += getattr(lr, 'stored', 0)  # defensive
                 report["failed_actions_processed"] += 1
             except Exception as exc:
                 report["errors"].append(f"learning_loop: {exc}")
@@ -174,7 +174,7 @@ class NightScheduler:
                 if entry.usage_count > 5 and entry.is_active():
                     entry.boost(success=True)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='scheduler.py')
 
     def _save_report(self, report: dict) -> None:
         """Sauvegarde le rapport JSON dans workspace/night_reports/."""

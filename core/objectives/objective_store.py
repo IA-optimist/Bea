@@ -32,7 +32,7 @@ def _get_store_path() -> Path:
     try:
         path.mkdir(parents=True, exist_ok=True)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='objective_store.py')
     return path / "objectives.json"
 
 

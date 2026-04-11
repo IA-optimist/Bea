@@ -77,13 +77,7 @@ _KW_IMPROVE  = re.compile(r"\b(improv|amélio|optim|patch|fix|correct|refactor|u
 
 _executor_instance: ActionExecutor | None = None
 
-def get_executor() -> "ActionExecutor":
-    global _executor_instance
-    if _executor_instance is None:
-        _executor_instance = ActionExecutor()
-    return _executor_instance
-
-
+# get_executor() defined after ActionExecutor class (see below)
 # ── ActionExecutor ────────────────────────────────────────────────────────────
 
 class ActionExecutor:
@@ -657,7 +651,7 @@ class ActionExecutor:
                         dt["action_executor_completed"] = True
                         r_action.decision_trace = dt
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='action_executor.py')
 
                 log.info("action_executor_results_stored",
                          mission_id=mission_id,

@@ -150,7 +150,7 @@ class DomainSkill:
             try:
                 skill.examples = json.loads(examples_json.read_text("utf-8"))
             except json.JSONDecodeError:
-                pass
+                _silent_log.debug("suppressed_exception", src='domain_schema.py')
 
         eval_md = p / "evaluation.md"
         if eval_md.is_file():

@@ -158,7 +158,7 @@ class GraphRepository:
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_repository.py')
 
     def _load_index(self) -> None:
         try:
@@ -177,7 +177,7 @@ class GraphRepository:
                     created_at=gd.get("created_at", 0),
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_repository.py')
 
 
 # ── Singleton ──────────────────────────────────────────────────

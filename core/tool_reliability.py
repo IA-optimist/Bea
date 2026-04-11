@@ -390,7 +390,7 @@ def diagnose_tools() -> list[ToolDiagnosis]:
                 timeout_count = int(m.get_counter("tool_timeout_total",
                                                    {"tool": tool_name}))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_reliability.py')
 
             diagnoses.append(ToolDiagnosis(
                 tool_name=tool_name,

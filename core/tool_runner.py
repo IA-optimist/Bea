@@ -66,7 +66,7 @@ def run_tools_for_mission(
             if not is_execution_engine_enabled():
                 _use_engine = False
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_runner.py')
         if _use_engine:
             try:
                 from core.execution_engine import (
@@ -181,7 +181,7 @@ def _run_with_engine(
             from core.lifecycle_tracker import get_lifecycle_tracker
             get_lifecycle_tracker().record(mission_id, "tools_executed")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_runner.py')
 
     context_prefix = "\n".join(context_parts) + "\n[FIN CONTEXT]\n\n"
     return context_prefix, results

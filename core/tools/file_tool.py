@@ -353,7 +353,7 @@ def workspace_snapshot(**kw) -> str:
                 try:
                     dirs.add(str(f.relative_to(_WORKSPACE)).split("/")[0])
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='file_tool.py')
 
         return (
             f"Workspace: {_WORKSPACE}\n"

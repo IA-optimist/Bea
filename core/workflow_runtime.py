@@ -128,7 +128,7 @@ class ScheduledTask:
                     if (now - self.last_run) > 120:  # 2-minute dedup
                         return True
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='workflow_runtime.py')
             return False
 
         return False

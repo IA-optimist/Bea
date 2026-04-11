@@ -73,7 +73,7 @@ class FailureCollector:
             for m in ms.list_missions(limit=200):
                 missions_by_id[m.mission_id] = m
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='failure_collector.py')
 
         for mission_id, mission in missions_by_id.items():
             events = mission_store.get_log(mission_id)
@@ -104,9 +104,9 @@ class FailureCollector:
                 try:
                     entries.append(FailureEntry.from_dict(json.loads(line)))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='failure_collector.py')
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='failure_collector.py')
         return entries
 
     # ── Analyse ───────────────────────────────────────────────────────────────

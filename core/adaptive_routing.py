@@ -571,7 +571,7 @@ def install_adaptive_routing() -> dict[str, bool]:
                 if tracker.should_calibrate():
                     calibrate_profiles()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='adaptive_routing.py')
 
         policy.record_decision = _calibrating_record
         results["auto_calibration"] = True

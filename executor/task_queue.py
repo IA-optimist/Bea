@@ -342,7 +342,7 @@ class TaskQueue:
                         await self._pq.put(qt)
                         count += 1
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='task_queue.py')
             log.info("task_queue_loaded", count=count)
             return count
         except Exception as e:

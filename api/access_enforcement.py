@@ -208,7 +208,7 @@ def record_mission_usage(token: AccessToken | None) -> None:
             manager = get_token_manager()
             manager._save()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='access_enforcement.py')
 
 
 def get_user_friendly_error(status_code: int, detail: str = "") -> str:

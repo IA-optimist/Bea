@@ -102,7 +102,7 @@ def _classify_error(error_str) -> str:
             classified = JarvisExecutionError.from_exception(error_str)
             return classified.error_type
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_executor.py')
     # String-based fallback using canonical types
     e = str(error_str).lower()
     if "timeout" in e or "timed out" in e:
@@ -476,7 +476,7 @@ class ToolExecutor:
         _tools.update(BROWSER_TOOLS)
         _TOOL_TIMEOUTS.update(BROWSER_TOOL_TIMEOUTS)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
     # Paramètres requis par tool (validation avant exécution)
     _TOOL_REQUIRED_PARAMS: dict = {
@@ -539,7 +539,7 @@ class ToolExecutor:
         from core.tools.browser_bridge import BROWSER_TOOL_REQUIRED_PARAMS
         _TOOL_REQUIRED_PARAMS.update(BROWSER_TOOL_REQUIRED_PARAMS)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
     # Tools qui acceptent un kwarg timeout
     _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet"}
@@ -597,7 +597,7 @@ class ToolExecutor:
         from core.tools.browser_bridge import BROWSER_ACTION_TYPES
         _action_types.update(BROWSER_ACTION_TYPES)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
     # Niveaux de risque par tool
     _TOOL_RISK_LEVELS: dict[str, str] = {
@@ -829,7 +829,7 @@ class ToolExecutor:
                               risk_level=self._TOOL_RISK_LEVELS.get(tool_name, "unknown"),
                               param_keys=list(params.keys())[:8] if params else [])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
         # Exécution réelle avec retry automatique
         _t0 = _time.time()
@@ -885,7 +885,7 @@ class ToolExecutor:
                     error=result.get("error", "")[:100] if not _tool_ok else "",
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
             return result
         except Exception as e:
@@ -925,7 +925,7 @@ class ToolExecutor:
                                   error=str(e)[:100],
                                   error_class=error_class)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
             logger.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} error={e}")
             return _err(str(e), error_class=error_class, tool=tool_name, blocked_by_policy=False)

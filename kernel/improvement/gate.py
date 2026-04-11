@@ -182,7 +182,7 @@ class ImprovementGate:
             if p.exists():
                 return json.loads(p.read_text("utf-8")) or []
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='gate.py')
         return []
 
     def record(self, outcome: str, metadata: dict | None = None) -> None:

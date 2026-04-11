@@ -143,7 +143,7 @@ class MissionStateStore:
                             timestamp=e.get("timestamp", time.time()),
                         ))
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='mission_store.py')
                 if loaded:
                     self._logs[mid] = loaded
             for mid, s in data.get("summaries", {}).items():
@@ -164,6 +164,6 @@ class MissionStateStore:
                         metadata=s.get("metadata", {}),
                     )
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='mission_store.py')
         except Exception:
             pass  # fresh start on any load error

@@ -181,7 +181,7 @@ async def ingest_file(path: str | Path) -> Document:
     try:
         stat = os.stat(path_str)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ingestion.py')
 
     metadata: dict[str, Any] = {
         "source":    path_str,

@@ -353,7 +353,7 @@ class KnowledgeMemory:
                     self._entries[entry.id] = entry
                     self._fingerprints.add(entry.fingerprint)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='legacy_knowledge_memory.py')
             log.debug("knowledge_memory_loaded", count=len(self._entries))
         except Exception as e:
             log.warning("knowledge_memory_load_failed", err=str(e))

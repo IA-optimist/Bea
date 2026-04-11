@@ -955,7 +955,7 @@ def tool_search_patterns(query: str, limit: int = 5) -> ToolResult:
                 if len(matches) >= limit:
                     break
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tools.py')
         return ToolResult(success=True, tool="search_patterns", data=matches)
 
 

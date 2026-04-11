@@ -201,7 +201,7 @@ class CanonicalAction:
                 },
             ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='action_model.py')
 
 
 # ── Facade for legacy queue access ────────────────────────────────────────────
@@ -217,7 +217,7 @@ def get_canonical_actions(mission_id: str) -> list[CanonicalAction]:
         for a in aq.for_mission(mission_id):
             actions.append(CanonicalAction.from_legacy_action(a))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='action_model.py')
 
     # From task_queue (if different tasks exist)
     try:
@@ -228,7 +228,7 @@ def get_canonical_actions(mission_id: str) -> list[CanonicalAction]:
             if getattr(t, "mission_id", "") == mission_id and t.id not in existing_ids:
                 actions.append(CanonicalAction.from_legacy_task(t))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='action_model.py')
 
     actions.sort(key=lambda a: a.created_at)
     return actions

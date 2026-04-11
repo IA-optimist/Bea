@@ -225,7 +225,7 @@ class OutputEnforcer:
                 if isinstance(parsed, dict):
                     return parsed
             except (json.JSONDecodeError, ValueError):
-                pass
+                _silent_log.debug("suppressed_exception", src='output_enforcer.py')
 
         if expected == "string" and not isinstance(value, str):
             return str(value)

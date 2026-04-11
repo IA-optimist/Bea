@@ -297,7 +297,7 @@ class DeploymentPipeline:
                     from core.execution.artifacts import ArtifactStatus
                     artifact.status = ArtifactStatus.DEPLOYED
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='deployment.py')
             else:
                 result.status = DeploymentStatus.DEPLOYED  # Deployed but not verified
 
@@ -403,7 +403,7 @@ class DeploymentPipeline:
                 failures={"error": result.error} if result.error else {},
             ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='deployment.py')
 
         try:
             # Kernel performance
@@ -416,7 +416,7 @@ class DeploymentPipeline:
                     duration_ms=result.duration_ms,
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='deployment.py')
 
         try:
             # Cognitive journal
@@ -433,4 +433,4 @@ class DeploymentPipeline:
                 },
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='deployment.py')

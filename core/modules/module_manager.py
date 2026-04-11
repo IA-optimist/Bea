@@ -295,21 +295,21 @@ class ModuleManager:
                     self.create_agent(a)
                     changed = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='module_manager.py')
         for s in _KNOWN_SKILLS:
             if s["id"] not in self._skills:
                 try:
                     self.create_skill(s)
                     changed = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='module_manager.py')
         for m in _KNOWN_MCP:
             if m["id"] not in self._mcp:
                 try:
                     self.create_mcp(m)
                     changed = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='module_manager.py')
 
     # ── Agent CRUD ──
 
@@ -702,7 +702,7 @@ class ModuleManager:
             from core.tool_config_registry import get_config_registry
             result["dependency_health"] = get_config_registry().stats()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='module_manager.py')
         return result
 
     # ── Counts ──

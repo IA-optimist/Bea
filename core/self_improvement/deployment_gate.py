@@ -145,7 +145,7 @@ class DeploymentGate:
             try:
                 return float(m.group(1))
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='deployment_gate.py')
         return 0.5
 
     def _extract_risk(self, justification: str) -> str:

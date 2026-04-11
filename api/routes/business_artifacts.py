@@ -53,7 +53,7 @@ async def list_runs(_user: dict = Depends(require_auth)):
             try:
                 timestamp = f"{parts[-2][:4]}-{parts[-2][4:6]}-{parts[-2][6:8]} {parts[-1][:2]}:{parts[-1][2:]}"
             except (IndexError, ValueError):
-                pass
+                _silent_log.debug("suppressed_exception", src='business_artifacts.py')
 
         # Detect action_id from files
         action_id = ""

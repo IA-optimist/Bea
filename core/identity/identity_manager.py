@@ -378,7 +378,7 @@ class IdentityManager:
                 try:
                     self._vault.revoke_secret(secret_id, role="admin")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
 
         self._persist()
         self._audit.record(IdentityAction.REVOKE, identity_id, role)
@@ -401,7 +401,7 @@ class IdentityManager:
                 try:
                     self._vault.delete_secret(secret_id, role="admin")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
 
         del self._identities[identity_id]
         self._policies.pop(identity_id, None)

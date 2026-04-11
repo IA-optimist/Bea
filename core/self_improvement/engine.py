@@ -193,4 +193,4 @@ class SelfImprovementEngine:
                 "rejects": rejects,
             })
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')

@@ -160,7 +160,7 @@ async def websocket_stream(
                     if isinstance(_p, dict) and _p.get('type') == 'ping':
                         _is_ping = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='ws.py')
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
             else:
@@ -231,7 +231,7 @@ async def ws_handler(websocket: WebSocket):
             "active_streams": len(ACTIVE_STREAMS),
         })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ws.py')
 
     # Keep alive — relay events or wait for disconnect
     try:
@@ -250,7 +250,7 @@ async def ws_handler(websocket: WebSocket):
                     if isinstance(_parsed, dict) and _parsed.get('type') == 'ping':
                         _is_ping = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='ws.py')
 
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
@@ -259,7 +259,7 @@ async def ws_handler(websocket: WebSocket):
     except WebSocketDisconnect:
         log.info("ws_handler_disconnected")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ws.py')
 
 
 class RewindRequest(BaseModel):

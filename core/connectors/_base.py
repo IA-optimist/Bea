@@ -349,7 +349,7 @@ def structured_extractor(params: dict) -> ConnectorResult:
                 try:
                     extracted.append(json.loads(m))
                 except json.JSONDecodeError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='_base.py')
             return ConnectorResult(success=True, data=extracted,
                                    latency_ms=(time.time()-start)*1000, connector="structured_extractor")
 
@@ -1618,7 +1618,7 @@ def _audit_connector_execution(
             detail=detail[:500],
         )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
 
 def execute_connector(name: str, params: dict) -> ConnectorResult:
@@ -1663,7 +1663,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                     log_approval_event(name, "execute", True, "supervised_execution")
                     logger.info("connector_approval_required: %s (%s)", name, spec.risk_level)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Rate limit check ──────────────────────────────────────────────────
     try:
@@ -1675,7 +1675,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                                        (time.time() - _exec_start) * 1000)
             return result
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Budget guard (for spending connectors) ────────────────────────────
     if spec.category in ("communication", "integration") and spec.risk_level in ("medium", "high"):
@@ -1688,7 +1688,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                                            (time.time() - _exec_start) * 1000)
                 return result
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Execute ───────────────────────────────────────────────────────────
     result = connector["execute"](clean_params)
@@ -1703,7 +1703,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
             error_type=result.error[:50] if result.error else None,
         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Audit trail ───────────────────────────────────────────────────────
     _audit_connector_execution(

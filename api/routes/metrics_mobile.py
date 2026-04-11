@@ -52,7 +52,7 @@ if APIRouter:
                 if _verify_jwt(jwt_token):
                     return
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
         # Always require valid auth — no silent bypass
         raise HTTPException(401, "Unauthorized")
 
@@ -151,7 +151,7 @@ if APIRouter:
                 from core.adaptive_routing import get_enhanced_tracker
                 live_health = get_enhanced_tracker().get_all()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
 
             costs = m.costs.snapshot()
 
@@ -236,7 +236,7 @@ if APIRouter:
                 from core.improvement_daemon import get_daemon_status
                 daemon_status = get_daemon_status()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
 
             return JSONResponse(content={"ok": True, "data": {
                 "experiments": {

@@ -344,7 +344,7 @@ class ImprovementLoop:
                 "pass_rate": experiment.candidate_pass_rate,
             })
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='improvement_loop.py')
 
         log.info("improvement_evaluated",
                 candidate_id=candidate_id,

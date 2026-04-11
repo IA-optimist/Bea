@@ -314,7 +314,7 @@ def build_self_model() -> SelfModel:
         runtime = get_canonical_runtime()
         model.metadata = runtime.enrich_self_model(getattr(model, "metadata", {}) or {})
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='updater.py')
 
     log.info(
         "self_model.built",

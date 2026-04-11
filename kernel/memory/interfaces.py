@@ -302,7 +302,7 @@ class MemoryInterface:
                     success=record.content.get("success", False),
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='interfaces.py')
 
     def _emit_write(self, record: MemoryRecord) -> None:
         """

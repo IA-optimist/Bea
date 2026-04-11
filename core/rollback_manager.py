@@ -49,7 +49,7 @@ def _cleanup_old_backups(filepath: str) -> None:
         for old in backups[:-_MAX_BACKUPS_PER_FILE]:
             old.unlink(missing_ok=True)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='rollback_manager.py')
 
 
 class RollbackContext:

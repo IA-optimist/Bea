@@ -402,7 +402,7 @@ class OperationalToolExecutor:
                 tags=["operational_tool", tool.category],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

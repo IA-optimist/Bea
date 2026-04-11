@@ -92,7 +92,7 @@ class WsHub:
         try:
             self._sse_sessions[session_id].remove(q)
         except (ValueError, KeyError):
-            pass
+            _silent_log.debug("suppressed_exception", src='ws_hub.py')
 
     def subscribe_task_sse(self, task_id: str) -> asyncio.Queue:
         q: asyncio.Queue = asyncio.Queue(maxsize=256)
@@ -103,7 +103,7 @@ class WsHub:
         try:
             self._sse_tasks[task_id].remove(q)
         except (ValueError, KeyError):
-            pass
+            _silent_log.debug("suppressed_exception", src='ws_hub.py')
 
     def get_session_history(self, session_id: str) -> list[dict]:
         return list(self._session_buf.get(session_id, []))

@@ -459,7 +459,7 @@ def execute_playbook(
         )
         result["review"] = review.to_dict()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='playbook.py')
 
     return result
 

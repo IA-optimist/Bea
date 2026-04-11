@@ -88,7 +88,7 @@ def execute_step(step: PlanStep, context: StepContext) -> StepResult:
             issues=output.get("retry_trace", {}).get("issues_per_attempt", [[]])[0] if output.get("retry_trace") else [],
         )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='step_executor.py')
 
     return result
 

@@ -229,7 +229,7 @@ def _extract_final_output(text: str) -> str:
             )
             return str(readable)  # no truncation — full response preserved for the user
         except (_json.JSONDecodeError, Exception):
-            pass
+            _silent_log.debug("suppressed_exception", src='_deps.py')
     return text
 
 

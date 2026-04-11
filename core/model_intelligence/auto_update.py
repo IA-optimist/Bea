@@ -243,7 +243,7 @@ class ModelAutoUpdate:
                             "samples_b": ranked[1].get("samples", 0),
                         })
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auto_update.py')
         return candidates
 
     def get_real_cost_stats(self) -> dict:

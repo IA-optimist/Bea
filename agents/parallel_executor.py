@@ -66,7 +66,7 @@ def _rotate_trace_log_if_needed() -> None:
                  kept_lines=len(keep),
                  dropped_lines=len(lines) - len(keep))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
 
 # Seuil d'output vide — déclenche un retry automatique
@@ -97,7 +97,7 @@ def _append_trace_log(mission_id: str, trace: AgentTrace) -> None:
         with _TRACE_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
 
 class AgentResult:
@@ -531,7 +531,7 @@ class ParallelExecutor:
                 try:
                     _guard.release_slot(agent_name)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
     # ── Utilitaires ───────────────────────────────────────────
 

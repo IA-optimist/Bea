@@ -226,7 +226,7 @@ class PolicyEngine:
                     requires_approval=True,
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='policy_engine_v2.py')
         cost = self._estimate_cost(tool_name, params or {})
         estimate = ActionCostEstimate(
             estimated_cost=cost,

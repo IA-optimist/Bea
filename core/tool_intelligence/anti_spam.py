@@ -67,4 +67,4 @@ def reset_task(task_id: str) -> None:
     try:
         _task_tool_history.pop(task_id, None)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='anti_spam.py')

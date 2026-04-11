@@ -136,7 +136,7 @@ class ApprovalGate:
                 action=f"{action.action_type}: {action.target}",
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')
         return request_id
 
     def decide(self, request_id: str, approved: bool,

@@ -338,13 +338,13 @@ def collect_metrics() -> BaselineMetrics:
                         try:
                             m.test_count += int(parts[i - 1])
                         except ValueError:
-                            pass
+                            _silent_log.debug("suppressed_exception", src='research_loop.py')
                     if p == "failed" and i > 0:
                         try:
                             m.test_failures += int(parts[i - 1])
                             m.test_count += int(parts[i - 1])
                         except ValueError:
-                            pass
+                            _silent_log.debug("suppressed_exception", src='research_loop.py')
         m.test_pass_rate = (m.test_count - m.test_failures) / m.test_count if m.test_count else 1.0
     except Exception as e:
         log.debug("metrics_test_failed", err=str(e)[:60])

@@ -389,7 +389,7 @@ class OpportunityScanner:
                                 try:
                                     upvotes = int(score_text)
                                 except ValueError:
-                                    pass
+                                    _silent_log.debug("suppressed_exception", src='opportunity_scanner.py')
                         
                         # Extract comments
                         comments = 0

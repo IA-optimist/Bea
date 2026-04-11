@@ -313,7 +313,7 @@ class RiskEngine:
             Path(target).resolve().relative_to(WORKSPACE.resolve())
             return True
         except ValueError:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')
         # Chemins relatifs commencant par workspace/
         return target.startswith(("workspace/", "./workspace/"))
 

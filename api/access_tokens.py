@@ -311,7 +311,7 @@ class TokenManager:
             self._path.write_text(
                 json.dumps(data, indent=2, default=str), encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='access_tokens.py')
 
     def _load(self) -> None:
         if not self._path.exists():
@@ -340,7 +340,7 @@ class TokenManager:
                 if token.token_hash:
                     self._hash_index[token.token_hash] = tid
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='access_tokens.py')
 
 
 # ── Singleton ──

@@ -328,7 +328,7 @@ class PlanRunner:
                 tags=["plan_runner", event],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='plan_runner.py')
 
         # ── Kernel event emission (dual, fail-open) ──────────────
         try:
@@ -368,7 +368,7 @@ class PlanRunner:
                     kwargs["action"] = f"Step '{step.name}' requires approval"
                 emit_kernel_event(kernel_type, **kwargs)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='plan_runner.py')
 
     # ── Error helper ──────────────────────────────────────────
 

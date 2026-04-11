@@ -190,7 +190,7 @@ async def agent_metadata():
                 tools = [t.name if hasattr(t, 'name') else str(t)
                          for t in getattr(agent, "tools", []) or []]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='agent_builder.py')
 
             agents.append({
                 "name": name,

@@ -50,7 +50,7 @@ def _default_db_path() -> Path:
         s = get_settings()
         candidates.append(Path(s.workspace_dir))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='canonical_mission_store.py')
     candidates.append(Path("workspace"))
 
     for db_dir in candidates:

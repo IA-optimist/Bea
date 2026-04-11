@@ -72,7 +72,7 @@ class BaseTool(ABC):
         try:
             idem_key = idempotency_key(self.name, params)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_template.py')
 
         try:
             result = self.execute(**params)

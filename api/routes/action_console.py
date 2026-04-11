@@ -49,7 +49,7 @@ async def list_pending(
             notifier = ApprovalNotifier()
             # Module tickets are separate — include if available
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='action_console.py')
         return {"pending": pending, "count": len(pending)}
     except Exception as e:
         logger.warning(f"pending_list_failed: {e}")

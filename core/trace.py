@@ -61,7 +61,7 @@ class MissionTrace:
                     except json.JSONDecodeError:
                         continue
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='trace.py')
         return events[-limit:]
 
     def summary(self) -> dict:

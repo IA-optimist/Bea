@@ -180,7 +180,7 @@ def _route_single(
         if kp and kp.get("adjustment", 0) != 0:
             reason += f" | {kp['explanation']}"
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='router.py')
 
     return RoutingDecision(
         capability_id=cap_id,

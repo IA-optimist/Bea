@@ -403,7 +403,7 @@ def execute_tool_intelligently(
         if error_hint:
             _recovery_hint = get_best_recovery(tool_name, error_hint.split(":")[0] if ":" in error_hint else error_hint[:30])
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='execution_engine.py')
 
     # Execute with adaptive retry
     try:

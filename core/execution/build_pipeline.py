@@ -576,7 +576,7 @@ Generate a production-quality {artifact.artifact_type.value} artifact.
                 failure_reasons=result.validation_failed[:5] if not result.success else [],
             ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='build_pipeline.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

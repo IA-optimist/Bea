@@ -272,7 +272,7 @@ class StrategyRegistry:
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(self._path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_registry.py')
 
     def _load(self) -> None:
         if not self._path or not self._path.exists():
@@ -299,7 +299,7 @@ class StrategyRegistry:
                 ))
             self._last_promotion = data.get("last_promotion", {})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_registry.py')
 
 
 # ── Singleton ──────────────────────────────────────────────────

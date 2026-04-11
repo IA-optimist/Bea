@@ -65,7 +65,7 @@ def detect_improvements(dry_run: bool = True) -> list[dict]:
             logger.info("improvement_detection_disabled_by_safety")
             return []
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
 
     proposals = []
 
@@ -202,7 +202,7 @@ def _detect_tool_issues() -> list[dict]:
                 })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
     except Exception as e:
         logger.debug("tool_issue_detection_err", err=str(e)[:60])
 
@@ -241,7 +241,7 @@ def _detect_mission_issues() -> list[dict]:
                 })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
     except Exception as e:
         logger.debug("mission_issue_detection_err", err=str(e)[:60])
 
@@ -308,7 +308,7 @@ def _detect_agent_issues() -> list[dict]:
                         })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
     except Exception as e:
         logger.debug("agent_issue_detection_err", err=str(e)[:60])
 
@@ -342,7 +342,7 @@ def _detect_tool_gaps() -> list[dict]:
                 })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
     except Exception as e:
         logger.debug("tool_gap_detection_err", err=str(e)[:60])
 

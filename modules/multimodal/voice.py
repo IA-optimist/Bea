@@ -424,13 +424,13 @@ def voice_capabilities() -> dict:
         import whisper  # noqa: F401
         has_whisper_local = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='voice.py')
     has_coqui = False
     try:
         import TTS  # noqa: F401
         has_coqui = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='voice.py')
 
     return {
         "stt_whisper_api":   has_openai,

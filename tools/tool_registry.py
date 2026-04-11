@@ -106,7 +106,7 @@ class ToolRegistry:
             try:
                 risk = tool.risk.value if hasattr(tool, "risk") else "safe"
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_registry.py')
 
             if isinstance(raw, dict):
                 success = raw.get("success", True)
@@ -153,7 +153,7 @@ class ToolRegistry:
             for td in defs.list_tools():
                 live_names.add(td.name)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_registry.py')
         return sorted(live_names)
 
     def get_tool_stats(self) -> dict[str, dict]:

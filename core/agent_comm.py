@@ -254,7 +254,7 @@ class AgentComm:
             try:
                 q.put_nowait(msg)
             except asyncio.QueueFull:
-                pass
+                _silent_log.debug("suppressed_exception", src='agent_comm.py')
 
         log.debug("agent_comm_message_sent",
                   session=session_id, frm=from_agent, to=to_agent)
@@ -279,7 +279,7 @@ class AgentComm:
             try:
                 self._mailboxes[(session_id, agent_name)].remove(q)
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='agent_comm.py')
 
     # ── Cleanup ───────────────────────────────────────────────
 

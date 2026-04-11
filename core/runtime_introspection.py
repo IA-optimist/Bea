@@ -262,7 +262,7 @@ def _detect_optional_modules() -> Capability:
             importlib.import_module(mod)
             modules[mod] = True
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
     available_count = sum(1 for v in modules.values() if v)
     return Capability(
         name="optional_modules",
@@ -340,7 +340,7 @@ def get_runtime_capabilities() -> dict:
         log.info("runtime_capabilities_detected",
                  available=available, total=total)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
 
     return result
 

@@ -89,7 +89,7 @@ class MemoryStore:
                     await self.store(f"file:{p.name}", text, tags=["workspace", p.suffix])
                     indexed += 1
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='store_legacy.py')
         log.info("workspace_indexed", count=indexed)
         return indexed
 

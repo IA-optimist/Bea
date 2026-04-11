@@ -342,7 +342,7 @@ class LLMFactory:
                 try:
                     result._jarvis_provider = provider  # type: ignore[attr-defined]
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
 
             return result
 
@@ -689,7 +689,7 @@ class LLMFactory:
                     if m:
                         m.record_llm_call(role, latency_s=ms / 1000.0, error=False)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
                 # ── Langfuse : clôturer la generation ─────────
                 if gen_ctx is not None:
                     try:
@@ -702,7 +702,7 @@ class LLMFactory:
                             output_tokens=usage.get("completion_tokens", 0),
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
                 return resp
 
             except Exception as first_err:
@@ -721,14 +721,14 @@ class LLMFactory:
                     try:
                         gen_ctx.finish(error=str(first_err)[:200])
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
             # ── Métriques erreur ──────────────────────────────
             try:
                 m = _get_metrics(self.s)
                 if m:
                     m.record_llm_call(role, latency_s=ms / 1000.0, error=True)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='llm_factory.py')
 
         # ── Fallback cloud (uniquement pour rôles non-LOCAL_ONLY) ─
         if role not in LOCAL_ONLY_ROLES:
@@ -767,7 +767,7 @@ class LLMFactory:
                                 error=False,
                             )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
                     return resp2
 
                 except Exception as fb_err:

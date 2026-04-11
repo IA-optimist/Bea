@@ -108,7 +108,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
         if isinstance(parsed, dict):
             return parsed
     except (json.JSONDecodeError, ValueError):
-        pass
+        _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 2: extract from markdown fences
     fence_match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
@@ -118,7 +118,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 3: balanced brace extraction (find outermost { ... })
     json_text = _extract_outermost_json(text)
@@ -128,7 +128,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 4: repair truncated JSON (common with long outputs)
     repaired = _repair_truncated_json(text)
@@ -138,7 +138,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 5: per-field extraction from text
     # Instead of assigning the entire blob to every field, try to find
@@ -265,7 +265,7 @@ def _extract_field_from_text(text: str, field_name: str) -> object | None:
             try:
                 return json.loads(extracted)
             except (json.JSONDecodeError, ValueError):
-                pass
+                _silent_log.debug("suppressed_exception", src='skill_llm.py')
     elif remainder.startswith("["):
         # Find matching ]
         depth = 0
@@ -380,7 +380,7 @@ async def _invoke_async(
                 if revalidation.overall_score < 0.5:
                     needs_requery = True
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
         duration_ms = round((time.time() - t0) * 1000)
 
@@ -406,7 +406,7 @@ async def _invoke_async(
                     or 0
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='skill_llm.py')
             get_model_performance().record(
                 model_id=str(model),
                 task_class=task_class,

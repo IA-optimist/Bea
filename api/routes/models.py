@@ -147,7 +147,7 @@ async def model_status():
             from core.model_intelligence.auto_update import get_model_auto_update
             auto_status = get_model_auto_update().get_status()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='models.py')
         return {
             "catalog": catalog.status(),
             "performance_records": len(perf.get_all()),

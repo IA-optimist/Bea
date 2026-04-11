@@ -407,7 +407,7 @@ class LearningMemory:
                 self._lessons = [Lesson(**d) for d in json.loads(
                     self._path.read_text(encoding="utf-8"))]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='improvement_loop.py')
 
 
 # ═══════════════════════════════════════════════════════════════

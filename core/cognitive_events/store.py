@@ -73,14 +73,14 @@ class CognitiveJournal:
             try:
                 self._persist_event(event)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='store.py')
 
         # Notify subscribers (fail-open, non-blocking)
         for sub in self._subscribers:
             try:
                 sub(event)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='store.py')
 
         return event
 

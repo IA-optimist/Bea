@@ -198,7 +198,7 @@ def handle_improve(task: "ExecutionTask") -> str:
                     if any(kw in line.upper() for kw in ["TODO", "FIXME", "HACK", "XXX"]):
                         todos.append(f"{f.name}:{i} → {line.strip()[:70]}")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='handlers.py')
 
         if todos:
             lines.append(f"\nPoints à améliorer ({len(todos)}) :")

@@ -284,7 +284,7 @@ class SkillStore:
                         points=[hit.id],
                     )
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='skill_store.py')
                 skills.append(p)
 
             if skills:

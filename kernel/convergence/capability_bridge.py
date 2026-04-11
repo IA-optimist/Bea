@@ -86,7 +86,7 @@ def resolve_provider(capability_id: str) -> dict | None:
                 "requires_approval": cap.requires_approval,
             }
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
 
     # Fallback to core capability routing
     try:
@@ -101,7 +101,7 @@ def resolve_provider(capability_id: str) -> dict | None:
                 "score": result.get("score", 0),
             }
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
 
     return None
 
@@ -115,7 +115,7 @@ def get_registry_stats() -> dict:
         from kernel.capabilities.registry import get_capability_registry
         stats["kernel"] = get_capability_registry().stats()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
 
     try:
         from core.capability_routing.registry import ProviderRegistry
@@ -123,6 +123,6 @@ def get_registry_stats() -> dict:
         counts = pr.populate()
         stats["core"] = counts
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
 
     return stats

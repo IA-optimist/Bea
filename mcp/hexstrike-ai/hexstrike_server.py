@@ -874,7 +874,7 @@ class IntelligentDecisionEngine:
                 ip = socket.gethostbyname(hostname)
                 return [ip]
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
         return []
 
     def _detect_technologies(self, target: str) -> List[TechnologyStack]:
@@ -8447,8 +8447,8 @@ class BufferOverflowExploit:
             try:
                 response = sock.recv(1024)
                 print(f"[+] Response: {{response}}")
-            except:
-                pass
+            except Exception:
+                _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
                 
             sock.close()
             print("[+] Exploit sent successfully")
@@ -9099,7 +9099,7 @@ def health_check():
         try:
             result = execute_command(f"which {tool}", use_cache=True)
             tools_status[tool] = result["success"]
-        except:
+        except Exception:
             tools_status[tool] = False
 
     all_essential_tools_available = all(tools_status[tool] for tool in essential_tools)
@@ -10694,8 +10694,8 @@ def pacu():
         # Cleanup
         try:
             os.remove(command_file)
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 Pacu exploitation completed")
         return jsonify(result)
@@ -11995,8 +11995,8 @@ def gdb():
         if commands and os.path.exists("/tmp/gdb_commands.txt"):
             try:
                 os.remove("/tmp/gdb_commands.txt")
-            except:
-                pass
+            except Exception:
+                _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 GDB analysis completed for {binary}")
         return jsonify(result)
@@ -12038,8 +12038,8 @@ def radare2():
         if commands and os.path.exists("/tmp/r2_commands.txt"):
             try:
                 os.remove("/tmp/r2_commands.txt")
-            except:
-                pass
+            except Exception:
+                _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 Radare2 analysis completed for {binary}")
         return jsonify(result)
@@ -12357,8 +12357,8 @@ p.interactive()
         # Cleanup
         try:
             os.remove(script_file)
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 Pwntools exploit completed")
         return jsonify(result)
@@ -12486,8 +12486,8 @@ quit
         if commands and os.path.exists("/tmp/gdb_peda_commands.txt"):
             try:
                 os.remove("/tmp/gdb_peda_commands.txt")
-            except:
-                pass
+            except Exception:
+                _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 GDB-PEDA analysis completed")
         return jsonify(result)
@@ -12577,8 +12577,8 @@ for func_addr, func in cfg.functions.items():
         # Cleanup
         try:
             os.remove(script_file)
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         logger.info(f"📊 angr analysis completed")
         return jsonify(result)
@@ -13780,7 +13780,7 @@ class BrowserAgent:
             if csp and "unsafe-inline" in csp:
                 issues.append({'type':'weak_csp','severity':'low','description':'CSP allows unsafe-inline scripts'})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
         return issues
 
     def _detect_mixed_content(self, page_info: dict) -> list:
@@ -13793,7 +13793,7 @@ class BrowserAgent:
                     if u.startswith('http://'):
                         issues.append({'type':'mixed_content','severity':'medium','description':f'HTTP resource loaded over HTTPS page: {u[:100]}'})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
         return issues
 
     def _extended_passive_analysis(self, page_info: dict, page_source: str) -> dict:
@@ -13838,7 +13838,7 @@ class BrowserAgent:
                     from urllib.parse import urljoin
                     action = urljoin(base, action)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
             test_url = action + ('&' if '?' in action else '?') + '&'.join(params)
             try:
                 r = requests.get(test_url, timeout=8, verify=False)
@@ -13862,7 +13862,7 @@ class BrowserAgent:
                 }
                 return storage;
             """)
-        except:
+        except Exception:
             return {}
 
     def _get_session_storage(self) -> dict:
@@ -13876,7 +13876,7 @@ class BrowserAgent:
                 }
                 return storage;
             """)
-        except:
+        except Exception:
             return {}
 
     def _extract_forms(self) -> list:
@@ -13900,8 +13900,8 @@ class BrowserAgent:
                     })
 
                 forms.append(form_data)
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         return forms
 
@@ -13917,8 +13917,8 @@ class BrowserAgent:
                         'href': href,
                         'text': link.text[:100]  # Limit text length
                     })
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         return links
 
@@ -13934,8 +13934,8 @@ class BrowserAgent:
                     'id': input_elem.get_attribute('id') or '',
                     'placeholder': input_elem.get_attribute('placeholder') or ''
                 })
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         return inputs
 
@@ -13955,8 +13955,8 @@ class BrowserAgent:
                             'type': 'inline',
                             'content': content[:1000]  # Limit content
                         })
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
         return scripts
 
@@ -13978,7 +13978,7 @@ class BrowserAgent:
                     })
 
             return network_requests
-        except:
+        except Exception:
             return []
 
     def _analyze_page_security(self, page_source: str, page_info: dict) -> dict:
@@ -15666,7 +15666,7 @@ def discover_attack_chains():
 
                             if exploit_result.get("success"):
                                 enhanced_stage["exploit_code"] = exploit_result.get("exploit_code", "")[:500] + "..."
-                        except:
+                        except Exception:
                             enhanced_stage["exploit_available"] = False
 
                     enhanced_stages.append(enhanced_stage)
@@ -16253,7 +16253,7 @@ def suggest_ctf_tools():
         for tool in suggested_tools:
             try:
                 tool_commands[tool] = ctf_tools.get_tool_command(tool, "TARGET")
-            except:
+            except Exception:
                 tool_commands[tool] = f"{tool} TARGET"
 
         logger.info(f"🔧 CTF tools suggested | Category: {category} | Tools: {len(suggested_tools)}")

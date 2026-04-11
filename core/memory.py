@@ -18,7 +18,7 @@ class MemoryBank:
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory.py')
         self.memories = self._load()
 
     def _load(self) -> list[dict]:

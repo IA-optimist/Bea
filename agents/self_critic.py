@@ -148,7 +148,7 @@ class SelfCriticMixin:
                         from api.event_emitter import emit_agent_result
                         emit_agent_result(session.session_id, agent_name, output)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='self_critic.py')
             except Exception as e:
                 log.warning("self_critic_revision_failed",
                             round=round_n, err=str(e))

@@ -187,7 +187,7 @@ class StrategyMemory:
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(self._path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_memory.py')
 
     def load(self) -> None:
         """Load from disk (fail-open)."""
@@ -210,7 +210,7 @@ class StrategyMemory:
                     feedback_score=rd.get("feedback_score", 0),
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_memory.py')
 
 
 # Singleton

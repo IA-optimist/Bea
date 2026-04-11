@@ -139,7 +139,7 @@ class MetricsCollector:
             if m.missions_total > 0:
                 m.approval_rate = min(1.0, approvals / max(m.missions_total, 1))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
     def _collect_tools(self, m: EvaluationMetrics) -> None:
         try:
@@ -159,7 +159,7 @@ class MetricsCollector:
             if m.missions_total > 0:
                 m.timeout_rate = min(1.0, m.tool_timeout_count / max(m.missions_total, 1))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
     def _collect_performance(self, m: EvaluationMetrics) -> None:
         try:
@@ -174,7 +174,7 @@ class MetricsCollector:
             if cost_hist and cost_hist.get("count", 0) > 0:
                 m.avg_cost_usd = cost_hist.get("mean", 0)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
     def _collect_exceptions(self, m: EvaluationMetrics) -> None:
         try:
@@ -184,7 +184,7 @@ class MetricsCollector:
             m.exception_count = sum(f.get("count", 0) for f in failures)
             m.unique_error_types = len(failures)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
     def _collect_improvement(self, m: EvaluationMetrics) -> None:
         try:
@@ -196,7 +196,7 @@ class MetricsCollector:
                 successes = sum(1 for l in all_lessons if l.get("result") == "success")
                 m.patch_success_rate = successes / len(all_lessons)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -619,7 +619,7 @@ class EvaluationMemory:
                 })
             self._path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
     def _load(self) -> None:
         if self._path.exists():
@@ -635,7 +635,7 @@ class EvaluationMemory:
                         timestamp=d.get("timestamp", 0),
                     ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
 
 
 # ═══════════════════════════════════════════════════════════════

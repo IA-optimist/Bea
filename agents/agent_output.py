@@ -136,7 +136,7 @@ class AgentOutput:
                     success=True,
                 )
         except (json.JSONDecodeError, Exception):
-            pass
+            _silent_log.debug("suppressed_exception", src='agent_output.py')
 
         # Fallback brut
         action_fb = ""

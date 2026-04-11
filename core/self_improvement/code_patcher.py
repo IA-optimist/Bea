@@ -583,5 +583,5 @@ class CodePatcher:
                 if count > 1:
                     duplicates.append(f"{name} (defined {count}x)")
         except SyntaxError:
-            pass
+            _silent_log.debug("suppressed_exception", src='code_patcher.py')
         return duplicates

@@ -137,5 +137,5 @@ class PersistentTerminal:
             try:
                 self._process.kill()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='terminal.py')
             self._process = None

@@ -100,7 +100,7 @@ def try_extract_json(text: str) -> dict | list | None:
     try:
         return json.loads(text)
     except (json.JSONDecodeError, ValueError):
-        pass
+        _silent_log.debug("suppressed_exception", src='output_formatter.py')
 
     # Try to find JSON block in markdown
     m = re.search(r'```(?:json)?\s*\n(.*?)\n```', text, re.DOTALL)
@@ -108,6 +108,6 @@ def try_extract_json(text: str) -> dict | list | None:
         try:
             return json.loads(m.group(1))
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='output_formatter.py')
 
     return None

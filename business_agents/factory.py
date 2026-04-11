@@ -259,7 +259,7 @@ class AgentFactory:
                 data["test_scenarios"] = test_scenarios
             path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='factory.py')
 
     def _load(self) -> None:
         if not self._persist_dir.exists():
@@ -284,7 +284,7 @@ class AgentFactory:
                 )
                 self._agents[agent.id] = agent
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='factory.py')
 
     def get_registry_summary(self) -> dict:
         """Summary for the operator view."""

@@ -13,7 +13,7 @@ try:
         SubObjectiveStatus,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_engine import (
@@ -22,7 +22,7 @@ try:
         reset_engine,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_store import (
@@ -31,12 +31,12 @@ try:
         reset_store,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_cleanup import run_cleanup
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 __all__ = [
     "Objective",

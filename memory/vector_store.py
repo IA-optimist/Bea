@@ -247,5 +247,5 @@ class VectorStore:
             try:
                 await self._pool.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='vector_store.py')
             self._pool = None
