@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from api._deps import require_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 router = APIRouter(prefix="/api/v3/business-artifacts", tags=["business-artifacts"])
 

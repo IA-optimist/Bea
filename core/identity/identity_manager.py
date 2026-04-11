@@ -30,6 +30,7 @@ from core.identity.identity_policy import (
 )
 from core.identity.identity_graph import IdentityGraph, EdgeType
 from core.identity.identity_audit import IdentityAuditLog, IdentityAction
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 

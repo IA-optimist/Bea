@@ -1,6 +1,7 @@
 """Tests for core/observability_helpers.py — timing, error categorization, retry."""
 import time
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Skip all tests - core/observability_helpers.py not yet implemented
 pytestmark = pytest.mark.skip(reason="core/observability_helpers module not implemented")

@@ -19,6 +19,7 @@ import subprocess
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.tools.file")
 

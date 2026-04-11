@@ -11,6 +11,7 @@ import uuid
 from typing import List, Optional
 
 from core.objectives.objective_models import Objective, SubObjective, SubObjectiveStatus
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_breakdown")
 

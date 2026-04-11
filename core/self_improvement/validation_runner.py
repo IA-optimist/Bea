@@ -13,6 +13,7 @@ import urllib.error
 import urllib.request
 import uuid
 from dataclasses import asdict, dataclass, field
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass

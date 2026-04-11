@@ -18,6 +18,7 @@ import types
 import unittest
 import shutil
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 pytestmark = pytest.mark.integration
 
 

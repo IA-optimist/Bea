@@ -10,6 +10,7 @@ import structlog
 from typing import Any, Dict, Optional
 
 from core.memory_graph.graph_schema import Edge, EdgeType, Node, NodeType
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

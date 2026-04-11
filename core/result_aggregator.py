@@ -16,6 +16,7 @@ from core.schemas.final_output import (
     FinalOutput, AgentOutput, AgentError, DecisionStep, OutputMetrics,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = logging.getLogger("jarvis.result_aggregator")
 
 

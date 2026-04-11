@@ -41,6 +41,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 from core.resilience import JarvisExecutionError
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # ===== LLM AGENT SUPPORT (2026-04-08) =====
 try:

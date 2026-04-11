@@ -19,6 +19,7 @@ from core.cognitive_events.types import (
     CognitiveEvent, EventType, EventSeverity, EventDomain,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("cognitive_events.store")
 
 _DEFAULT_MAX_SIZE = 5000

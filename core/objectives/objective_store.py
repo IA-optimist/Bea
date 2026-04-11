@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_store")
 

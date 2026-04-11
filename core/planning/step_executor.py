@@ -12,6 +12,7 @@ import structlog
 
 from core.planning.execution_plan import PlanStep, StepType
 from core.planning.step_context import StepContext
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.step_executor")
 

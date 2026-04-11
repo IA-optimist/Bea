@@ -493,6 +493,7 @@ EMAIL_SPEC = ConnectorSpec(
 
 # Email validation patterns
 import re as _re
+_silent_log = __import__("structlog").get_logger(__name__)
 _EMAIL_RE = _re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 _MAX_SUBJECT_LEN = 200
 _MAX_BODY_LEN = 50_000

@@ -128,6 +128,7 @@ def validate_proposal(proposal: ImprovementProposal) -> tuple[bool, str]:
 
 import os as _os
 import tempfile as _tempfile
+_silent_log = __import__("structlog").get_logger(__name__)
 # Use JARVIS_STAGING_DIR env var if set, fall back to a writable temp dir.
 # workspace/dev/ is the logical staging area but may not allow deletions in
 # sandboxed/container environments; /tmp is always writable+deletable.

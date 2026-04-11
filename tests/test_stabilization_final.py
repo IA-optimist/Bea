@@ -4,6 +4,7 @@ Covers: entrypoints, API routes, imports, dead code removal, app-first architect
 """
 import pytest
 import sys, os, types, unittest, re
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Ensure project root is on path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

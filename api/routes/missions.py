@@ -22,11 +22,13 @@ from api._deps import (
     _get_orchestrator,
     _get_task_queue,
     # BLOC E: _get_kernel removed — dead import, never called.
+    # Use _get_kernel_adapter()
     # Use _get_kernel_adapter() (R8 canonical boundary) for all kernel access.
     _get_kernel_adapter,
 )
 
 log = structlog.get_logger()
+_silent_log = log
 logger = log
 
 router = APIRouter(tags=["missions"])

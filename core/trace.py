@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class MissionTrace:

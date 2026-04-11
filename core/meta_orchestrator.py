@@ -102,6 +102,7 @@ class _CircuitBreaker:
 # MetaOrchestrator imports them and owns the side-effect layer
 # (event emission, persistence) on top of kernel state transitions.
 from core.state import MissionStatus  # noqa: F811  — single source of truth enum
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from kernel.state.mission_state import (

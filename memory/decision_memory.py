@@ -12,6 +12,7 @@ from collections import deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 _WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
 _PERSIST_PATH  = _WORKSPACE_DIR / "decision_memory.jsonl"

@@ -15,6 +15,7 @@ except ImportError:
     APIRouter = None
 
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger(__name__)
 

@@ -18,6 +18,7 @@ import structlog
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("connectors")
 

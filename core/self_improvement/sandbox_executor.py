@@ -60,6 +60,7 @@ class FailureCategory:
 # ── Secret scrubbing ─────────────────────────────────────────────────────────
 
 import re as _re
+_silent_log = __import__("structlog").get_logger(__name__)
 
 _SECRET_PATTERNS = [
     _re.compile(r"(sk-[a-zA-Z0-9]{20,})"),           # OpenAI-style

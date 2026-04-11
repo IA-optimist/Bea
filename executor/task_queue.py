@@ -22,6 +22,7 @@ from typing import Any
 import structlog
 
 from core.contracts import TaskContract, TaskState
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

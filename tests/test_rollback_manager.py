@@ -2,6 +2,7 @@
 import os
 import tempfile
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def test_import():

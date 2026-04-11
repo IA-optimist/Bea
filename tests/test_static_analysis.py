@@ -51,6 +51,7 @@ def test_analyze_valid_file():
 """Module docstring."""
 import os
 import json
+_silent_log = __import__("structlog").get_logger(__name__)
 
 def public_function(x: int) -> str:
     """Has docstring."""

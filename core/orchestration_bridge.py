@@ -45,6 +45,7 @@ try:
 except ImportError:
     import logging
     log = logging.getLogger(__name__)
+_silent_log = log
 
 from core.canonical_types import (
     CanonicalMissionStatus,

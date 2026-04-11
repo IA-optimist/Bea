@@ -18,6 +18,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.tools")
 

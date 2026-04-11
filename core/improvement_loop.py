@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

@@ -34,6 +34,7 @@ import asyncio
 
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

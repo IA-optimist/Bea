@@ -18,6 +18,7 @@ import types
 import unittest
 import subprocess
 import re
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if 'structlog' not in sys.modules:
     _sl = types.ModuleType('structlog')

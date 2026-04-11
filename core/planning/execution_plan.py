@@ -18,6 +18,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class StepType(str, Enum):

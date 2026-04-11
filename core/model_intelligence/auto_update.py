@@ -15,6 +15,7 @@ import random
 import structlog
 from dataclasses import dataclass, field
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.auto_update")
 

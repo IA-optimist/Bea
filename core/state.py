@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════

@@ -312,6 +312,7 @@ def generate_tool_tests(tool_name: str, tool_code: str) -> dict:
 
         test_code = f'''"""Tests unitaires pour {tool_name}."""
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def test_{tool_name}_import():

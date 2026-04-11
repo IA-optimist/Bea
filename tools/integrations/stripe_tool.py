@@ -31,6 +31,7 @@ import urllib.error
 import urllib.parse
 from dataclasses import dataclass, field
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 

@@ -11,6 +11,7 @@ import datetime as _dt
 from datetime import datetime, timezone as _timezone
 UTC = _timezone.utc  # Python 3.10 compat: datetime.UTC added in 3.11
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

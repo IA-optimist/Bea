@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # Schema type normalization

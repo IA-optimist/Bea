@@ -25,6 +25,7 @@ from typing import Callable, Optional
 import structlog
 
 from kernel.contracts.types import MemoryRecord
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("kernel.memory")
 

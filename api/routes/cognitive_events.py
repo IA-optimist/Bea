@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from api._deps import require_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 router = APIRouter(prefix="/api/v3/cognitive-events", tags=["cognitive-events"])
 

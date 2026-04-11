@@ -12,6 +12,7 @@ import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from api.models import MissionLogEvent, MissionSummary

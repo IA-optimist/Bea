@@ -7,6 +7,7 @@ import json
 import os
 import structlog
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

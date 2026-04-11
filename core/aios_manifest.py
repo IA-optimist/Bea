@@ -6,6 +6,7 @@ Provides consistency checks and architecture overview.
 """
 from __future__ import annotations
 import logging
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.aios")
 

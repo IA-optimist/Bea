@@ -20,6 +20,7 @@ import copy
 import logging
 from typing import Any, Optional
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import networkx as nx

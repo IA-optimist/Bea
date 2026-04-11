@@ -6,6 +6,7 @@ Fail-open: if check fails, always returns (allowed=True).
 import logging
 from collections import defaultdict
 from typing import Dict, List
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 

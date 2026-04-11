@@ -13,6 +13,7 @@ import uuid
 import logging
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.improvement.loop")
 

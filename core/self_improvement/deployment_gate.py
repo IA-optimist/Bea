@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 
 from core.self_improvement.patch_builder import PatchCandidate
 from core.self_improvement.protected_paths import is_protected
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass

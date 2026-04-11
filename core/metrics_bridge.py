@@ -34,6 +34,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog

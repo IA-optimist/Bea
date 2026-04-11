@@ -19,6 +19,7 @@ from core.capability_routing.spec import (
 from core.capability_routing.registry import get_provider_registry
 from core.capability_routing.scorer import rank_providers, ScoredProvider
 from core.capability_routing.resolver import resolve_capabilities
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("capability_routing.router")
 

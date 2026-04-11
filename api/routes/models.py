@@ -19,6 +19,7 @@ logger = logging.getLogger("jarvis.api.models")
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 _auth = Depends(_check_auth)
 
 router = APIRouter(

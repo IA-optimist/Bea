@@ -39,6 +39,7 @@ import hashlib
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.workflow_runtime")
 

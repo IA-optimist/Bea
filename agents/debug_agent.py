@@ -296,7 +296,7 @@ class DebugMonitor:
                         continue
                     traces.append(record)
                 except Exception:
-                    _silent_log.debug("suppressed_exception", src='debug_agent.py')
+                    log.debug("suppressed_exception", src='debug_agent.py')
         except Exception:
-            _silent_log.debug("suppressed_exception", src='debug_agent.py')
+            log.debug("suppressed_exception", src='debug_agent.py')
         return traces

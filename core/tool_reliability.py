@@ -21,6 +21,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog

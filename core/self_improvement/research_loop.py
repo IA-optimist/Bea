@@ -32,6 +32,7 @@ import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.research_loop")
 

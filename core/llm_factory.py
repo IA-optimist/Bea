@@ -17,6 +17,7 @@ import contextvars
 import os
 import time
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 try:
     from langchain_core.language_models import BaseChatModel
 except ImportError:

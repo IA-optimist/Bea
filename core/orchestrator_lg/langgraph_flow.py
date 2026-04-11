@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any, Dict, List, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 

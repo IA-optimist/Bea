@@ -30,6 +30,7 @@ from core.execution.artifacts import (
     ExecutionArtifact, ArtifactStatus, ArtifactType, ValidationRequirement,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("execution.build_pipeline")
 
 _WORKSPACE = Path(os.environ.get("WORKSPACE_DIR", "workspace"))

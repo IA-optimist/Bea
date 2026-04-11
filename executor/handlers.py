@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from executor.task_model import ExecutionTask

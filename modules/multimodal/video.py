@@ -298,3 +298,4 @@ def video_capabilities() -> dict:
 
 # ── Missing import fix for PIL branch ────────────────────────
 import io  # noqa: E402  (needed by _extract_frames_pil)
+_silent_log = __import__("structlog").get_logger(__name__)

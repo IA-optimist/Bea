@@ -17,6 +17,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Ensure project root on path
 sys.path.insert(0, str(Path(__file__).parent.parent))

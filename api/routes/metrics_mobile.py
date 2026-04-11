@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import time
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from fastapi import APIRouter, Header, HTTPException

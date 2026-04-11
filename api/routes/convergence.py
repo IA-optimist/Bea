@@ -28,6 +28,7 @@ import os
 import time
 from typing import Optional
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect

@@ -35,6 +35,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.skill_store")
 

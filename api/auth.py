@@ -192,6 +192,7 @@ def require_permission(user: dict, permission: str) -> bool:
 # ========================================
 
 from fastapi import Header, HTTPException, status
+_silent_log = __import__("structlog").get_logger(__name__)
 
 async def get_current_user(
     authorization: str = Header(None)

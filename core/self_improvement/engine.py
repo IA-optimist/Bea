@@ -21,6 +21,7 @@ logger = logging.getLogger("jarvis.self_improvement.engine")
 from core.self_improvement.failure_collector import FailureCollector
 from core.self_improvement.improvement_planner import ImprovementPlanner
 from core.self_improvement.candidate_generator import CandidateGenerator
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class SelfImprovementEngine:

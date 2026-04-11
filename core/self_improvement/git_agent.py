@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

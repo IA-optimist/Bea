@@ -15,6 +15,7 @@ from pathlib import Path
 
 # SOURCE UNIQUE - ne pas redefinir RiskLevel ici
 from core.state import RiskLevel
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════

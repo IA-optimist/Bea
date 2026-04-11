@@ -29,6 +29,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from api.schemas import ok, error as err_resp
 from api._deps import _check_auth
 from typing import Optional as _Opt
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):

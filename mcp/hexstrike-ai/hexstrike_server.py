@@ -12522,6 +12522,7 @@ def angr():
             template = f"""#!/usr/bin/env python3
 import angr
 import sys
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Load binary
 project = angr.Project('{binary}', auto_load_libs=False)

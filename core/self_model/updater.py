@@ -21,6 +21,7 @@ from core.self_model.model import (
     AutonomyEnvelope, AutonomyMode,
 )
 from core.self_model import sources
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

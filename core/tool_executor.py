@@ -78,6 +78,7 @@ ERROR_CLASSES: dict[str, list[str]] = {
 # ── Résultat standard ─────────────────────────────────────────────────────────
 
 import time as _time
+_silent_log = __import__("structlog").get_logger(__name__)
 
 def _ok(result: str, **meta) -> dict:
     """Structured success result with optional metadata."""

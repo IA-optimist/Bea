@@ -12,6 +12,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from core.state import JarvisSession
 from agents.self_critic import SelfCriticMixin
 from core.reasoning_framework import INJECT_SCOUT, INJECT_PLANNER, INJECT_BUILDER, INJECT_REVIEWER, INJECT_ADVISOR
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 

@@ -4,6 +4,7 @@ Exporte les interfaces principales.
 Fail-open : si un sous-module manque, les autres restent disponibles.
 """
 from __future__ import annotations
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from core.objectives.objective_models import (

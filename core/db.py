@@ -11,6 +11,7 @@ import sqlite3
 import threading
 import time
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 _DB_PATH = Path("workspace/jarvismax.db")
 _lock = threading.Lock()

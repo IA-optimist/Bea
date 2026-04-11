@@ -22,6 +22,7 @@ from core.execution.strategy_memory import (
     StrategyMemory, StrategyRecord, get_strategy_memory,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("execution.strategy_registry")
 
 # ── Promotion thresholds ───────────────────────────────────────

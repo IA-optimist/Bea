@@ -42,6 +42,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog

@@ -14,6 +14,7 @@ import structlog
 from fastapi import Depends, APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 

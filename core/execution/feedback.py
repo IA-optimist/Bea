@@ -16,6 +16,7 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.feedback")
 

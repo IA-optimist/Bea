@@ -25,6 +25,7 @@ from typing import Any
 
 from business_agents.template_schema import BusinessAgentTemplate, FieldSchema
 from business_agents.template_registry import get_template, list_templates
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass

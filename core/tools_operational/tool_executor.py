@@ -27,6 +27,7 @@ from core.tools_operational.tool_schema import (
 )
 from core.tools_operational.tool_registry import get_tool_registry
 from core.tools_operational.tool_readiness import check_readiness
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("tools_operational.executor")
 

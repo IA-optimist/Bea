@@ -22,6 +22,7 @@ import logging
 import os
 import time
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.improvement_detector")
 

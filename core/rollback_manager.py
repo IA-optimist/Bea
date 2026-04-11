@@ -20,6 +20,7 @@ logger = logging.getLogger("jarvis.rollback")
 
 # Dossier de sauvegarde (relatif au cwd du container)
 import os as _os, tempfile as _tempfile
+_silent_log = __import__("structlog").get_logger(__name__)
 _BACKUP_DIR = Path(_os.environ.get("JARVIS_ROLLBACK_DIR",
     _os.path.join(_tempfile.gettempdir(), "jarvismax_rollbacks")))
 _MAX_BACKUPS_PER_FILE = 5  # évite accumulation infinie

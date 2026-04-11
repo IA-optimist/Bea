@@ -309,6 +309,7 @@ def test_workflow_bounded_concurrency():
 
 
 from core.workflow_runtime import WorkflowEngine
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════

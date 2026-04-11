@@ -3,6 +3,7 @@ Tests étendus pour les tools L4 — tous graceful (SKIP si tool indisponible).
 """
 import os
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 pytestmark = pytest.mark.integration
 
 

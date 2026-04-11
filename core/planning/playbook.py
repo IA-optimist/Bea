@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus, StepType
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.playbook")
 

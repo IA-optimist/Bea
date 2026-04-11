@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 from core.execution.execution_graph import ExecutionGraph
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.graph_repository")
 

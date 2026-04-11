@@ -58,6 +58,7 @@ _PUBLIC_PATHS = {
 
 import os
 import sys
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Paths that match by prefix (static files)
 _PUBLIC_PREFIXES = (

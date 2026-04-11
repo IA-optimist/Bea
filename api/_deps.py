@@ -239,6 +239,7 @@ def _extract_final_output(text: str) -> str:
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Lazy init database engine
 _db_engine = None
