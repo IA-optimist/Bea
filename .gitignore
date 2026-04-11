@@ -177,3 +177,4 @@ tests/e2e/results.json
 # Runtime databases
 workspace/*.db
 workspace/*.db-*
+core/causal_graph.json

@@ -51,7 +51,7 @@ class ApiConfig extends ChangeNotifier {
     final bool isLegacyEmulator =
         host == '10.0.2.2' || host == '127.0.0.1' || host == 'localhost';
     // Also migrate the old raw-IP production entry (plain HTTP port 8000).
-    final bool isOldRawIp = host == '77.42.40.146' && port == 8000;
+    final bool isOldRawIp = host == const String.fromEnvironment('VPS_HOST', defaultValue: '77.42.40.146') && port == 8000;
     if (isLegacyEmulator || isOldRawIp) {
       host = defaultProductionHost;
       port = defaultPort;
