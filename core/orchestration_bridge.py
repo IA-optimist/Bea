@@ -364,7 +364,7 @@ class OrchestrationBridge:
                 # Schedule the coroutine on the running event loop (non-blocking)
                 try:
                     _loop = asyncio.get_running_loop()
-                    asyncio.ensure_future(_coro, loop=_loop)
+                    asyncio.get_event_loop().create_task(_coro)
                 except RuntimeError:
                     # No running loop — create one in a thread
                     import threading
@@ -423,7 +423,7 @@ class OrchestrationBridge:
                                        reason=note or "Rejected via bridge")
                 try:
                     _loop = asyncio.get_running_loop()
-                    asyncio.ensure_future(_coro, loop=_loop)
+                    asyncio.get_event_loop().create_task(_coro)
                 except RuntimeError:
                     import threading
                     def _run():

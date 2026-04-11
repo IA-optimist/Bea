@@ -118,7 +118,7 @@ class MonitoringAgent:
             if self.s:
                 from core.llm_factory import LLMFactory
                 factory = LLMFactory(self.s)
-                llm     = factory.get("fast")
+                llm     = factory.get("uncensored")  # health ping: local ollama (tinyllama)
                 # Ping léger
                 from langchain_core.messages import HumanMessage
                 resp = await llm.ainvoke([HumanMessage(content="ping")])

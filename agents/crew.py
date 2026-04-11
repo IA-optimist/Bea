@@ -47,7 +47,7 @@ class BaseAgent(ABC):
             from core.events import Action
             _es = get_mission_stream(session.session_id)
             if _es:
-                asyncio.ensure_future(_es.append(Action(
+                asyncio.get_event_loop().create_task(_es.append(Action(
                     source="agent",
                     action_type="agent_start",
                     reasoning=f"Starting {self.name}",

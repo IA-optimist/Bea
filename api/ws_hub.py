@@ -220,7 +220,7 @@ class WsHub:
             except Exception:
                 dead.append(ws)
         if dead:
-            asyncio.ensure_future(self._cleanup_dead(dead))
+            asyncio.get_event_loop().create_task(self._cleanup_dead(dead))
         return sent
 
     async def _cleanup_dead(self, dead: list[WebSocket]) -> None:
