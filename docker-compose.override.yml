@@ -44,6 +44,8 @@ services:
       - ./api:/app/api
       # Fichiers racine
       - ./main.py:/app/main.py
+      # Docker socket — permet à DockerSandbox de lancer des containers isolés
+      - /var/run/docker.sock:/var/run/docker.sock
 
   # ── MCP Qdrant sidecar ──────────────────────────────────────
   # Activate: docker compose --profile mcp up -d

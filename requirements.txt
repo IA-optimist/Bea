@@ -61,3 +61,4 @@ httpx==0.27.2
 aiohttp==3.13.5
 slowapi==0.1.9
 sentence-transformers>=2.7.0
+docker>=7.0.0

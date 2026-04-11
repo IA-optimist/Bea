@@ -31,7 +31,7 @@ class DockerSandbox(DesktopEnvironment):
 
     def _check_docker(self) -> bool:
         try:
-            import docker
+            from docker_sdk import docker
             self._client = docker.from_env()
             self._client.ping()
             return True
@@ -46,7 +46,7 @@ class DockerSandbox(DesktopEnvironment):
         if not self.is_available():
             raise RuntimeError("Docker non disponible (daemon ou librairie manquante).")
 
-        import docker
+        from docker_sdk import docker
         log.info("sandbox_starting", container=self.container_id, image=self.image)
         try:
             # Phase 12 : SÉCURITÉ COPY-ON-WRITE
@@ -66,7 +66,9 @@ class DockerSandbox(DesktopEnvironment):
                 network_mode="bridge"
             )
             log.info("sandbox_started", container=self.container_id, secure_cow=True)
-        except docker.errors.ImageNotFound:
+        except Exception as _img_e:
+            if "ImageNotFound" not in type(_img_e).__name__: raise
+            _dummy = None  # noqa
             log.info("sandbox_pulling_image", image=self.image)
             self._client.images.pull(self.image)
             self.start()  # Ré-essaie après pull
