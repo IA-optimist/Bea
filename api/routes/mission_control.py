@@ -434,6 +434,22 @@ async def stream_mission(mission_id: str):
 
 # ── 3g — Create & run mission (v1 compat for Android) ───────────────────────
 
+
+class RunMissionRequest:
+    """Validated mission run request."""
+    def __init__(self, goal: str = "", priority: str = "normal",
+                 max_steps: int = 10, risk_tolerance: str = "low", **kwargs):
+        if not goal or not isinstance(goal, str):
+            raise ValueError("goal is required and must be a string")
+        if len(goal) > 10000:
+            raise ValueError("goal exceeds 10000 characters")
+        if priority not in ("low", "normal", "high", "critical"):
+            raise ValueError("priority must be low/normal/high/critical")
+        self.goal = goal.strip()
+        self.priority = priority
+        self.max_steps = max(1, min(100, int(max_steps or 10)))
+        self.risk_tolerance = risk_tolerance
+
 @router.post("/mission/run")
 async def run_mission_v1(body: dict = Body(...)):
     """
@@ -441,7 +457,12 @@ async def run_mission_v1(body: dict = Body(...)):
     Accepts {goal, priority, max_steps, risk_tolerance} and maps to MissionSystem.submit().
     """
     try:
-        goal = body.get("goal") or body.get("input", "")
+        try:
+            req = RunMissionRequest(**body)
+            goal = req.goal
+        except (ValueError, TypeError) as _ve:
+            return JSONResponse({"status": "error", "message": str(_ve)}, status_code=422)
+        goal = goal or body.get("input", "")
         if not goal:
             return JSONResponse({"status": "error", "message": "goal is required"}, status_code=400)
         ms = _mission_system()

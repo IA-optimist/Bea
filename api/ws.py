@@ -52,9 +52,14 @@ def _verify_ws_token(token: Optional[str]) -> bool:
     if not token:
         return False
     try:
+        # Unified auth: use same verify_token as REST endpoints
+        from api.auth import verify_token as _api_verify_token
+        user = _api_verify_token(token)
+        if user:
+            return True
+        # Fallback: try RBAC resolver (returns CurrentUser instead of dict)
         from core.security.rbac import _resolve_user_from_token
-        user = _resolve_user_from_token(token)
-        return user is not None
+        return _resolve_user_from_token(token) is not None
     except Exception:
         return False
 
