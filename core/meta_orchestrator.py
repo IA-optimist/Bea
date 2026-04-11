@@ -1460,9 +1460,12 @@ class MetaOrchestrator:
                         return result.get("output", str(result))
                     return str(result)
                 
+                # Only activate ToT for genuinely complex goals
+                from core.cognition.tot_wrapper import should_use_tot as _should_tot
+                _use_tot = _should_tot(goal)
                 cognition_result = await _cog.execute_mission_with_cognition(
                     mission=_payload,
-                    enable_tot=True,
+                    enable_tot=_use_tot,
                     enable_confidence=True,
                     enable_learning=True,
                     executor_fn=_real_executor  # Pass real executor
@@ -1561,7 +1564,11 @@ class MetaOrchestrator:
         self._circuit_breaker.record_success()
         # RUNNING -> REVIEW
         self._transition(ctx, MissionStatus.REVIEW)
-        ctx.result = outcome.result
+        # Unwrap nested ExecutionOutcome — outcome.result may itself be an ExecutionOutcome
+        _raw_outcome_result = getattr(outcome, "result", outcome) if outcome is not None else ""
+        if hasattr(_raw_outcome_result, "result"):  # nested ExecutionOutcome
+            _raw_outcome_result = getattr(_raw_outcome_result, "result", "") or ""
+        ctx.result = _raw_outcome_result if isinstance(_raw_outcome_result, str) else str(_raw_outcome_result or "")
 
         # ── KERNEL EVALUATION (authoritative — Phase 8) ───────
         # Single call replaces reflect() + critique_output().

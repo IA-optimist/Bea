@@ -39,15 +39,24 @@ class ConfidenceScorer:
         prompt = self._build_scoring_prompt(task, output, context)
         
         try:
-            response = self.llm.chat.completions.create(
-                model="anthropic/claude-3.7-sonnet",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-                temperature=0.3  # Lower temp for consistent scoring
-            )
-            
-            content = response.choices[0].message.content
-            result = self._parse_score_response(content)
+            # Compat: use LangChain invoke (sync) if available; fallback to heuristic
+            content = None
+            if hasattr(self.llm, 'invoke'):
+                from langchain_core.messages import HumanMessage
+                resp = self.llm.invoke([HumanMessage(content=prompt)])
+                content = resp.content if hasattr(resp, 'content') else str(resp)
+            elif hasattr(self.llm, 'chat'):
+                response = self.llm.chat.completions.create(
+                    model="google/gemini-2.0-flash-001",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=300,
+                    temperature=0.3,
+                )
+                content = response.choices[0].message.content
+            result = self._parse_score_response(content) if content else {
+                "confidence": 0.6, "reasoning": "heuristic",
+                "issues": [], "should_retry": False
+            }
             
             log.info(
                 "confidence_scored",
