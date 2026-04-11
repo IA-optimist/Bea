@@ -49,7 +49,7 @@ class ContinualMemory:
 
     def __init__(
         self,
-        qdrant_url: str = "http://localhost:6333",
+        qdrant_url: str = "http://qdrant:6333",
         ollama_url: str = "http://localhost:11434",
         ollama_model: str = "nomic-embed-text",
         llm_model: str = "llama3",

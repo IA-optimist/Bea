@@ -52,7 +52,7 @@ except ImportError:
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-QDRANT_URL        = "http://localhost:6333"
+QDRANT_URL        = "http://qdrant:6333"
 OLLAMA_URL        = "http://localhost:11434"
 EMBED_MODEL       = "nomic-embed-text"
 EMBED_DIM         = 768          # nomic-embed-text output dim
