@@ -65,7 +65,7 @@ services:
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
       JARVIS_API_TOKEN: ""
-      JARVIS_REQUIRE_AUTH: "false"
+      JARVIS_REQUIRE_AUTH: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}

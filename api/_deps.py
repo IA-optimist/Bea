@@ -77,61 +77,58 @@ def get_start_time() -> float:
     return _start_time
 
 
-_REQUIRE_AUTH: bool = os.getenv("JARVIS_REQUIRE_AUTH", "").lower() in ("1", "true", "yes")
+# SECURITY: Auth REQUIRED by default (fail-closed)
+# Set JARVIS_REQUIRE_AUTH=false ONLY in local development (never in production)
+_REQUIRE_AUTH: bool = os.getenv("JARVIS_REQUIRE_AUTH", "true").lower() in ("1", "true", "yes")
 
 
 def _check_auth(token: str | None, authorization: str | None = None) -> None:
     """Validate API token or JWT. Accepts X-Jarvis-Token or Authorization: Bearer.
 
+    SECURITY: Fail-closed by default.
     Auth enforcement matrix:
-      JARVIS_API_TOKEN set   → token validation enforced (normal path)
-      JARVIS_API_TOKEN unset + JARVIS_REQUIRE_AUTH=true  → 503 "Auth not configured"
-      JARVIS_API_TOKEN unset + JARVIS_REQUIRE_AUTH unset → auth disabled (dev only)
+      - Access tokens (jv-*) ALWAYS validated (from TokenManager)
+      - JARVIS_API_TOKEN (static) validated if set
+      - JWT tokens validated if set
+      - If NO tokens configured AND _REQUIRE_AUTH=false → allow (dev only)
+      - If NO tokens configured AND _REQUIRE_AUTH=true → refuse (503)
     """
-    if not _API_TOKEN:
-        if _REQUIRE_AUTH:
-            # JARVIS_REQUIRE_AUTH=true but no token configured — operator error,
-            # refuse all requests rather than silently allowing unauthenticated access.
-            raise HTTPException(
-                status_code=503,
-                detail=(
-                    "Authentication is required (JARVIS_REQUIRE_AUTH=true) "
-                    "but JARVIS_API_TOKEN is not configured. "
-                    "Set JARVIS_API_TOKEN in your environment."
-                ),
-            )
-        return  # No token configured and require_auth not set — auth disabled (dev mode)
-
     # Extract bearer token from Authorization header (centralized)
     from api.token_utils import strip_bearer
     bearer = strip_bearer(authorization) if authorization else None
 
-    # 1. Check static API token (X-Jarvis-Token or Bearer)
-    # Use hmac.compare_digest for constant-time comparison (prevents timing attacks)
-    _api_bytes = _API_TOKEN.encode()
-    if token and hmac.compare_digest(token.encode(), _api_bytes):
-        return
-    if bearer and hmac.compare_digest(bearer.encode(), _api_bytes):
-        return
-
-    # 1.5. Check access token (jv-* tokens from TokenManager)
-    candidate = token or bearer  # Extract candidate from token/bearer
+    # 1. Check access token (jv-* tokens from TokenManager) — ALWAYS first
+    candidate = token or bearer
     if candidate and candidate.startswith('jv-'):
         try:
             from api.auth import verify_token
             token_data = verify_token(candidate)
             if token_data:
-                return
+                return  # Valid access token
         except Exception as e:
             log.warning(f"access_token_verification_failed token={candidate[:10]}... error={e}")
-
-    # 2. Check JWT token (issued by /auth/token)
-    candidate = bearer or token
-    if candidate:
-        if _verify_jwt(candidate):
+    
+    # 2. Check static API token (X-Jarvis-Token or Bearer) if configured
+    if _API_TOKEN:
+        _api_bytes = _API_TOKEN.encode()
+        if token and hmac.compare_digest(token.encode(), _api_bytes):
+            return
+        if bearer and hmac.compare_digest(bearer.encode(), _api_bytes):
             return
 
-    raise HTTPException(status_code=401, detail="Unauthorized")
+    # 4. Check JWT token (issued by /auth/token)
+    candidate = bearer or token
+    if candidate and not candidate.startswith('jv-'):  # Skip if already checked as access token
+        if _verify_jwt(candidate):
+            return
+    
+    # 5. Final fallback: if _REQUIRE_AUTH=false, allow unauthenticated (dev only)
+    if not _REQUIRE_AUTH:
+        log.warning("auth_disabled", reason="JARVIS_REQUIRE_AUTH=false — dev mode active")
+        return
+    
+    # No valid token found and auth required → reject
+    raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 
 
 def _verify_jwt(token_str: str) -> bool:
