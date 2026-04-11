@@ -420,7 +420,7 @@ class LLMFactory:
         from langchain_openai import ChatOpenAI
 
         # Role → model mapping (stability-first: expensive only when necessary)
-        _FAST = getattr(self.s, "fast_model", "openai/gpt-4o-mini")
+        _FAST = getattr(self.s, "openrouter_model_fast", None) or getattr(self.s, "fast_model", "openai/gpt-4o-mini")
         _ORCH = getattr(self.s, "orchestrator_model", "anthropic/claude-sonnet-4.5")
         _ARCH = getattr(self.s, "architect_model", _ORCH)
         _CODE = getattr(self.s, "coder_model", _ORCH)
