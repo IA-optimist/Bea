@@ -179,7 +179,7 @@ class TestNoMockExecution(unittest.TestCase):
                 with open(p) as fh:
                     combined += fh.read()
             except (IOError, OSError):
-                pass
+                _silent_log.debug("suppressed_exception", src='test_beta_architecture.py')
         self.assertIn("_get_orchestrator", combined)
         self.assertIn("orch.run", combined)
 

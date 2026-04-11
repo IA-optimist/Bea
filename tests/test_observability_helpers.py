@@ -29,7 +29,7 @@ def test_timer_on_error():
         with Timer("error_test") as t:
             raise ValueError("boom")
     except ValueError:
-        pass
+        _silent_log.debug("suppressed_exception", src='test_observability_helpers.py')
     assert t.ms >= 0
 
 

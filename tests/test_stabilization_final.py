@@ -62,7 +62,7 @@ class TestAPICoherence(unittest.TestCase):
                 with open(path) as fh:
                     parts.append(fh.read())
             except (IOError, OSError):
-                pass
+                _silent_log.debug("suppressed_exception", src='test_stabilization_final.py')
         return "\n".join(parts)
 
     def test_v1_stream_route_exists(self):

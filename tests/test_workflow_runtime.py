@@ -139,7 +139,7 @@ def test_task_bounded():
             mgr.schedule(ScheduledTask(name="overflow", schedule_type="manual"))
             assert False, "Should have raised"
         except ValueError:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_SCHEDULED_TASKS = old
 
@@ -303,7 +303,7 @@ def test_workflow_bounded_concurrency():
             engine.create_workflow("wf3", [{"name": "s1", "action": "noop"}])
             assert False, "Should have raised"
         except ValueError:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_CONCURRENT_WORKFLOWS = old
 
@@ -381,7 +381,7 @@ def test_event_trigger_invalid_type():
         mgr.register_trigger(EventTrigger(name="bad", event_type="invalid_type"))
         assert False, "Should have raised"
     except ValueError:
-        pass
+        _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
 
 
 def test_event_trigger_no_infinite_loops():
@@ -552,7 +552,7 @@ def test_max_workflow_depth_enforced():
         engine.create_workflow("deep", [{"name": f"s{i}", "action": "noop"} for i in range(10)])
         assert False, "Should have raised"
     except ValueError:
-        pass
+        _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_WORKFLOW_DEPTH = old
 

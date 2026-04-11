@@ -86,7 +86,7 @@ class TestOpenRouterBuild(unittest.TestCase):
                 model_name = getattr(llm, "model_name", getattr(llm, "model", ""))
                 self.assertIn("nano", model_name)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_openrouter_routing.py')
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "sk-or-test-key-1234567890abcdef"})
     def test_build_openrouter_builder(self):
@@ -100,7 +100,7 @@ class TestOpenRouterBuild(unittest.TestCase):
                 model_name = getattr(llm, "model_name", getattr(llm, "model", ""))
                 self.assertIn("codex", model_name)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_openrouter_routing.py')
 
     def test_build_openrouter_no_key_returns_none(self):
         """Without API key, _build_openrouter must return None."""

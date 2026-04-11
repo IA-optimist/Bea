@@ -50,7 +50,7 @@ def test_file_write_rollback():
         try:
             os.unlink(test_path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_tools_extended.py')
 
 
 @pytest.mark.skip(reason="phantom: import changed")
@@ -67,7 +67,7 @@ def test_file_create():
         try:
             os.unlink(test_path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_tools_extended.py')
 
 
 # ── github_tool ────────────────────────────────────────────────────────────────

@@ -203,7 +203,7 @@ class TestMissionCompletionFlow(unittest.TestCase):
             dashboard = tracker.get_dashboard_data()
             self.assertIsInstance(dashboard, dict)
         except (ImportError, AttributeError):
-            pass
+            _silent_log.debug("suppressed_exception", src='test_e2e_mission_lifecycle.py')
 
     def test_complete_stores_in_memory_facade(self):
         """MemoryFacade should receive the outcome (P5 wiring)."""
@@ -219,7 +219,7 @@ class TestMissionCompletionFlow(unittest.TestCase):
             health = facade.health()
             self.assertIsInstance(health, dict)
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_e2e_mission_lifecycle.py')
 
 
 class TestCanonicalStatusThroughLifecycle(unittest.TestCase):

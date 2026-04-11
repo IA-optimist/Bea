@@ -86,7 +86,7 @@ def test_rollback_context_on_error():
                 Path(path).write_text("broken")
                 raise RuntimeError("simulated failure")
         except RuntimeError:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_rollback_manager.py')
         # Exception → file should be restored
         assert Path(path).read_text() == "original"
     finally:

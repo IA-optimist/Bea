@@ -99,7 +99,7 @@ def test_analyze_detect_bare_except():
 try:
     x = 1
 except:
-    pass
+    _silent_log.debug("suppressed_exception", src='test_static_analysis.py')
 '''
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(code)

@@ -75,7 +75,7 @@ def _k1_scan_directory(directory: str) -> list[str]:
                         if any(alias.name.startswith(p) for p in ["core.", "api.", "agents.", "tools."]):
                             violations.append(f"{py_file}:{node.lineno} → {alias.name}")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_integration_kernel_security_business.py')
     return violations
 
 
