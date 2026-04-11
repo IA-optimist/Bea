@@ -114,7 +114,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                         from core.metrics_store import emit_mission_submitted
                         emit_mission_submitted("canonical")
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='convergence.py')
                 # Trigger real execution in background — without this, mission stays READY forever
                 if background_tasks and mission_id and result.get("ok"):
                     _goal_capture = goal
@@ -145,7 +145,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
             if enrichment:
                 data["intelligence"] = enrichment
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='convergence.py')
 
         return _ok(data, status=201)
 
@@ -363,16 +363,16 @@ async def system_status():
     except ImportError:
         status_data["components"]["capability_expansion"] = {"status": "not_available"}
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     # Intelligence hooks
     try:
         from core.intelligence_hooks import periodic_health
         status_data["components"]["intelligence"] = periodic_health()
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     # Legacy compatibility info
     try:
@@ -380,7 +380,7 @@ async def system_status():
         status_data["authority_map"] = get_authority_map()
         status_data["deprecations"] = len(get_deprecations())
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     return _ok(status_data)
 

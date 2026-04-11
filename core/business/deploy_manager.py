@@ -35,7 +35,7 @@ class DeployManager:
             deploy_base_dir: Base directory for deployments on VPS
             domain: Base domain for subdomains
         """
-        self.vps_host = vps_host or os.getenv("VPS_DEPLOY_HOST", "77.42.40.146")
+        self.vps_host = vps_host or os.getenv("VPS_DEPLOY_HOST", "jarvis.jarvismaxapp.co.uk")
         self.vps_user = vps_user or os.getenv("VPS_DEPLOY_USER", "root")
         self.vps_ssh_key = vps_ssh_key or os.getenv("VPS_SSH_KEY", "/root/.ssh/id_rsa")
         self.deploy_base_dir = deploy_base_dir

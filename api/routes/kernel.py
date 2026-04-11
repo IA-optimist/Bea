@@ -281,26 +281,26 @@ async def convergence_status(user=Depends(_auth())):
         runtime = get_runtime()
         status["kernel_booted"] = runtime.booted_at > 0
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.convergence.event_bridge import emit_kernel_event
         status["events_dual_emission"] = True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.convergence.capability_bridge import ensure_synced
         ensure_synced()
         status["capabilities_synced"] = True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.convergence.policy_bridge import check_action_kernel
         status["policy_bridge_active"] = True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.adapters.mission_adapter import mission_context_to_kernel
@@ -308,27 +308,27 @@ async def convergence_status(user=Depends(_auth())):
         from kernel.adapters.result_adapter import tool_result_to_kernel
         status["adapters_available"] = True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.capabilities.performance import get_performance_store
         summary = get_performance_store().get_summary()
         status["performance_tracking"] = summary.get("total_entities", 0) > 0 or True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.capabilities.identity import get_identity_map
         stats = get_identity_map().stats()
         status["identity_mapping"] = stats.get("tools_mapped", 0) > 0
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
         from kernel.convergence.performance_routing import enrich_providers
         status["performance_routing"] = True
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='kernel.py')
 
     status["convergence_phase"] = "progressive"
     status["convergence_level"] = sum(1 for v in status.values() if v is True)

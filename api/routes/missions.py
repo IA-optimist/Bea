@@ -134,7 +134,7 @@ async def submit_task(
                         error_type="",
                     ))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
                 return
             # ── Knowledge Memory lookup (fail-open) ──────────────────────────
             _km_bonus_confidence = 0.0
@@ -164,7 +164,7 @@ async def submit_task(
                     if _ms_km2 is not None:
                         _ms_km2.decision_trace["knowledge_match"] = False
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end knowledge lookup ──────────────────────────────────────────
 
             # ── Mission Planning (fail-open) ──────────────────────────────────
@@ -254,7 +254,7 @@ async def submit_task(
                         _ms_tt2.decision_trace["available_tools"] = []
                         _ms_tt2.decision_trace["tool_executor_ready"] = False
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool trace ────────────────────────────────────────────────
 
             # ── Tool pre-execution (fail-open) ────────────────────────────────
@@ -276,7 +276,7 @@ async def submit_task(
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool pre-execution ────────────────────────────────────────
 
             # ── kernel.execute() via KernelAdapter (Pass 26 — R8) ───────────
@@ -441,14 +441,14 @@ async def submit_task(
                             )
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── Knowledge Memory confidence bonus ──────────────────────────────
                     try:
                         if _km_bonus_confidence > 0:
                             _current_conf = float(_ms_ref.decision_trace.get("confidence_score", 0.5))
                             _ms_ref.decision_trace["confidence_score"] = min(1.0, round(_current_conf + _km_bonus_confidence, 3))
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── end km bonus ───────────────────────────────────────────────────
                     # ── Mission Planning trace ─────────────────────────────────────────
                     try:
@@ -456,10 +456,10 @@ async def submit_task(
                         _ms_ref.decision_trace["plan_steps"] = _plan_steps_count
                         _ms_ref.decision_trace["plan_success_rate"] = _plan_success_rate
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── end plan trace ─────────────────────────────────────────────────
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
             # Ajout ExecutionPolicy dans decision_trace (fail-open)
             try:
@@ -501,7 +501,7 @@ async def submit_task(
                         _ms_ep2.decision_trace["execution_policy_decision"] = "unknown"
                         _ms_ep2.decision_trace["execution_reason"] = str(_ep_err)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # Policy mode
             try:
@@ -515,7 +515,7 @@ async def submit_task(
                     if _ms_pm2 is not None:
                         _ms_pm2.decision_trace["policy_mode_used"] = "BALANCED"
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # ── Tool results dans decision_trace (fail-open) ──────────────────
             try:
@@ -526,7 +526,7 @@ async def submit_task(
                         k for k, v in _tool_run_results.items() if v.get("ok")
                     ]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool results trace ────────────────────────────────────────
 
             ms.set_final_output(result.mission_id, _final)
@@ -564,7 +564,7 @@ async def submit_task(
                         error_type="" if (_final and _final.strip()) else "empty_output",
                     ))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # ── Knowledge Memory store (fail-open) ────────────────────────────
             try:
@@ -583,7 +583,7 @@ async def submit_task(
                     execution_policy_decision=_dt_km_s.get("execution_policy_decision", "unknown"),
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end km store ──────────────────────────────────────────────────
 
             # ── Observability + Self-Improvement trigger (fail-open) ──────────────
@@ -603,7 +603,7 @@ async def submit_task(
                     tools_used=[],  # a enrichir quand les agents utiliseront le tool_registry
                 ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
             try:
                 from core.self_improvement import get_self_improvement_manager
@@ -611,7 +611,7 @@ async def submit_task(
                 # Analyse asynchrone legere — ne bloque pas la reponse
                 _sim.analyze_patterns()  # resultat ignore ici, mis en cache implicitement
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── fin Observability ─────────────────────────────────────────────────
 
         except Exception as e:
@@ -1112,7 +1112,7 @@ async def approve_mission(
             try:
                 ms.complete(mission_id, result_text=f"Resumption error: {str(_re)[:200]}")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
     background_tasks.add_task(_resume_mission)
     return {
@@ -1158,7 +1158,7 @@ async def reject_mission(
                 from core.approval_queue import reject as _aq_reject
                 _aq_reject(_item_id, rejected_by="human")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='missions.py')
 
     ms.set_final_output(mission_id, f"Mission rejected: {note}")
     return {"ok": True, "data": {"mission_id": mission_id, "status": "rejected", "note": note}}

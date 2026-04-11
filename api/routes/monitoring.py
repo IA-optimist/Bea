@@ -64,7 +64,7 @@ def _last_mission_at() -> str | None:
             ts = missions[0].updated_at or missions[0].created_at
             return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='monitoring.py')
     return None
 
 
@@ -159,7 +159,7 @@ async def system_metrics(x_jarvis_token: Optional[str] = Header(None), authoriza
         agent_error_rates = report.get("agent_error_rates", {})
         retry_rate    = report.get("retry_rate", 0.0)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='monitoring.py')
 
     return {
         "total_missions":      total,

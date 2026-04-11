@@ -130,8 +130,8 @@ except ImportError as _enf_err:
 
 # ── Security headers middleware ───────────────────────────────
 try:
-    from api.security_headers import SecurityHeadersMiddleware
-    app.add_middleware(SecurityHeadersMiddleware)
+    # SecurityHeadersMiddleware already mounted above (line 110)
+    pass  # duplicate removed
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
@@ -334,7 +334,7 @@ try:
     if token_mgmt_router:
         app.include_router(token_mgmt_router)
 except Exception:
-    pass
+    _silent_log.debug("suppressed_exception", src='main.py')
 
 # ── Skills & trace routers ──
 try:
@@ -852,6 +852,34 @@ def _get_monitoring_agent():
 
 # ── Auth endpoints ────────────────────────────────────────────
 
+
+@app.post("/api/v2/auth/login", tags=["auth"])
+async def json_login(request: Request):
+    """
+    JSON-compatible login endpoint for frontend React dashboard.
+    Accepts: {"email": "...", "password": "..."} or {"username": "...", "password": "..."}
+    Returns: {"ok": true, "data": {"token": "...", "user": {...}}}
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    username = body.get("username") or body.get("email") or ""
+    password = body.get("password") or ""
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="username/email and password required")
+    from api.auth import _check_auth_password, create_access_token
+    token = _check_auth_password(username, password)
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {
+        "ok": True,
+        "data": {
+            "token": token,
+            "user": {"username": username, "role": "user"},
+        },
+    }
+
 @app.post("/auth/token", tags=["auth"])
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     from api.auth import _check_auth_password
@@ -907,7 +935,7 @@ async def ws_stream_alias(websocket: WebSocket):
         try:
             await websocket.close()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='main.py')
 
 
 # ── v2 Chat Alias (frontend compatibility) ────────────────────

@@ -53,7 +53,7 @@ class BaseAgent(ABC):
                     reasoning=f"Starting {self.name}",
                 )))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='crew.py')
         try:
             from core.llm_factory import LLMFactory
             factory = LLMFactory(self.s)
@@ -91,7 +91,7 @@ class BaseAgent(ABC):
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             # Emit agent_output to EventStream (fail-open)
             try:
                 from core.event_stream import get_mission_stream
@@ -105,7 +105,7 @@ class BaseAgent(ABC):
                         metadata={"agent": self.name, "ms": ms, "chars": len(out)},
                     ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             log.info(f"{self.name}_done", ms=ms, chars=len(out))
             return out
         except asyncio.TimeoutError:
@@ -885,7 +885,7 @@ class ImageAgent(BaseAgent):
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             return out
         except Exception as e:
             log.error("image_agent_error", err=str(e)[:120])
@@ -895,7 +895,7 @@ class ImageAgent(BaseAgent):
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             return out
 
     @staticmethod
@@ -1195,7 +1195,7 @@ class AgentSelector:
                             agents.append(_ma)
                     log.info("multimodal_routing", type=_modal, agents=agents)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             # ── end multimodal routing ───────────────────────────────────
 
             # Capability registry filter (fail-open, ≥10 entries)
@@ -1213,7 +1213,7 @@ class AgentSelector:
                     if _f:
                         agents = _f
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='crew.py')
             log.info(
                 "agent_selector_mission_routing",
                 agents=agents, mission_type=mission_type,
@@ -1308,7 +1308,7 @@ class AgentSelector:
                 classify_mission_type(goal, complexity), complexity, agents,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='crew.py')
 
         # ── Capability registry filter (fail-open, < 1ms) ────────────────────
         try:
@@ -1333,7 +1333,7 @@ class AgentSelector:
                         if _rec not in agents and len(agents) < MAX_AGENTS_PER_MISSION:
                             agents.append(_rec)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='crew.py')
 
         # ── PolicyMode apply ─────────────────────────────────────────────────
         try:
@@ -1351,7 +1351,7 @@ class AgentSelector:
                     if "map-planner" not in agents and len(agents) < 5 and complexity == "high":
                         agents = agents + ["map-planner"]
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='crew.py')
         # ── end PolicyMode apply ─────────────────────────────────────────────
 
         return agents

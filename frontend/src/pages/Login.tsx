@@ -18,7 +18,7 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://77.42.40.146:8000'}/api/v2/auth/login`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk'}/api/v2/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

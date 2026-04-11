@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  VPS_HOST: 77.42.40.146
+  VPS_HOST: ${{ secrets.VPS_HOST }}
   VPS_USER: root
   DEPLOY_PATH: /root/Jarvismax-master
   CONTAINER_NAME: jarvis_core

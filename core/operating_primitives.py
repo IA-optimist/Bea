@@ -230,7 +230,7 @@ def select_strategy(
             result.reasoning = f"Proven strategy: {best.get('successes',0)} successes"
             return result
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 2. Check performance data for best agents/tools
     try:
@@ -246,7 +246,7 @@ def select_strategy(
             result.reasoning = f"Performance data: {strategy['sample_size']} missions, {strategy.get('success_rate',0):.0%} success"
             return result
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 3. Default strategy based on mission type
     defaults = {
@@ -478,7 +478,7 @@ def get_operational_signals() -> dict:
             for t, s in mpt._type_stats.items()
         }
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     try:
         from core.mission_memory import get_mission_memory
@@ -489,7 +489,7 @@ def get_operational_signals() -> dict:
                 "success_rate": s.success_rate,
             }
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     try:
         from core.tool_performance_tracker import get_tool_performance_tracker
@@ -501,7 +501,7 @@ def get_operational_signals() -> dict:
                 "health": stats.health_status,
             }
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     try:
         from core.execution_engine import get_telemetry_summary
@@ -509,7 +509,7 @@ def get_operational_signals() -> dict:
         signals["execution_stability"] = ts.get("avg_stability", 0)
         signals["planning_confidence"] = ts.get("avg_success_rate", 0)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     try:
         tracker = get_objective_tracker()
@@ -517,7 +517,7 @@ def get_operational_signals() -> dict:
         if d["total"] > 0:
             signals["long_horizon_ratio"] = round(d["completed"] / max(d["total"], 1), 3)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     return signals
 
@@ -752,7 +752,7 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                 required_tools=[gap.get("tool", "")],
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 2. Detect repeated failure patterns
     try:
@@ -769,7 +769,7 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                     source="failure_pattern",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 3. Detect automation opportunities (high-frequency mission types)
     try:
@@ -786,7 +786,7 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                     source="repetition",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     return suggestions[:_MAX_SUGGESTIONS]
 
@@ -1073,7 +1073,7 @@ def recommend_focus() -> list[FocusRecommendation]:
                     confidence=0.8,
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 2. Check business pipeline
     try:
@@ -1100,7 +1100,7 @@ def recommend_focus() -> list[FocusRecommendation]:
                 confidence=0.6,
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 3. Check economic trends
     try:
@@ -1113,7 +1113,7 @@ def recommend_focus() -> list[FocusRecommendation]:
                 confidence=0.6,
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # 4. Check workflow templates for automation opportunities
     try:
@@ -1129,7 +1129,7 @@ def recommend_focus() -> list[FocusRecommendation]:
                 confidence=0.7,
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # Sort by priority
     recommendations.sort(key=lambda r: r.priority, reverse=True)
@@ -1162,7 +1162,7 @@ def suggest_playbooks() -> list[dict]:
                 ),
             })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # Also check mission memory for effective sequences
     try:
@@ -1181,7 +1181,7 @@ def suggest_playbooks() -> list[dict]:
                     "suggestion": f"Effective tool sequence for {mission_type}",
                 })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     return playbooks[:15]
 
@@ -1200,7 +1200,7 @@ def get_operating_summary() -> dict:
     try:
         obj_dashboard = get_objective_tracker().get_dashboard()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # Pipeline status
     pipeline = {}
@@ -1208,7 +1208,7 @@ def get_operating_summary() -> dict:
         from core.business_pipeline import get_lead_tracker
         pipeline = get_lead_tracker().get_pipeline_summary()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     # Budget
     budget = {}
@@ -1216,7 +1216,7 @@ def get_operating_summary() -> dict:
         from core.business_pipeline import get_budget_tracker
         budget = get_budget_tracker().get_summary()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
 
     return {
         "objectives": obj_dashboard,

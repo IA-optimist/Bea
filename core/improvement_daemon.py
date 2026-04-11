@@ -108,7 +108,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_fix="Increase retry budget or add fallback strategies",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 2. High tool failure rate per tool
     try:
@@ -133,7 +133,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_fix=f"Deprioritize or add fallback for {tool_name}",
                         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 3. High tool timeout frequency
     try:
@@ -158,7 +158,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_fix="Increase timeout for affected tools or add circuit breaker",
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 4. Retry storm
     try:
@@ -176,7 +176,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_fix="Tune backoff parameters or add jitter",
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 5. Expensive model usage
     try:
@@ -201,7 +201,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_fix=f"Route to cheaper model for non-critical tasks using {top_model}",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 6. High model failure rate
     try:
@@ -226,7 +226,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_fix=f"Deprioritize {model_id} in routing policy health tracker",
                         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 7. Slow model latency
     try:
@@ -248,7 +248,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                         suggested_fix=f"Route time-sensitive tasks away from {model_id}",
                     ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 8. Failure pattern aggregation
     try:
@@ -265,7 +265,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     description=f"Recurring failure pattern: {category} ({count}x in {window_s/3600:.0f}h)",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # Sort by severity
     _severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
@@ -782,7 +782,7 @@ def run_cycle(repo_root: Path | None = None) -> dict:
                             report.evaluation.get("composite", 0)
                             if isinstance(report.evaluation, dict) else 0)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
         # 8. Set cooldown for this category
         _cooldown_tracker.set_cooldown(chosen_weakness.category, COOLDOWN_CYCLES)

@@ -64,7 +64,7 @@ services:
       DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
-      JARVIS_API_TOKEN: "jv-XkhGHldhf9gQwrXw-5D6vTuPB0gjsKuDfKBv3pFqL00"
+      JARVIS_API_TOKEN: ${JARVIS_API_TOKEN}
       JARVIS_REQUIRE_AUTH: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}

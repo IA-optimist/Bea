@@ -395,7 +395,7 @@ class MemoryFacade:
                                     score=item.get("score", 0.4),
                                 ))
                     except _queue_module.Empty:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='memory_facade.py')
                 else:
                     log.debug("memory_bus_search_thread_timeout", query=query[:40])
         except Exception as _exc:
@@ -654,7 +654,7 @@ class MemoryFacade:
                                               tags=["failure", error_class]),
                      mission_id=mission_id, importance=0.8)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         # AI OS vector memory for failure (fail-open)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -664,7 +664,7 @@ class MemoryFacade:
                                importance=0.8, confidence=0.8,
                                tags=["failure", error_class])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         return self.store(
             content=content,
             content_type="failure",
@@ -683,7 +683,7 @@ class MemoryFacade:
                                               scope=f"mission:{mission_id}"),
                      mission_id=mission_id, importance=0.6)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         # AI OS vector memory (fail-open, async-like)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -692,7 +692,7 @@ class MemoryFacade:
                                source="orchestrator", mission_id=mission_id,
                                importance=0.6, confidence=0.7)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         return self.store(
             content=content,
             content_type="mission_outcome",
@@ -726,5 +726,5 @@ def get_memory_facade(settings=None, workspace_dir: str = "workspace") -> Memory
                 try:
                     log.info("memory_facade.singleton_created")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='memory_facade.py')
     return _facade

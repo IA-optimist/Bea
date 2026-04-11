@@ -161,7 +161,7 @@ async def supervise(
                     reasoning=f"Attempt {attempt + 1} of {1 + _MAX_RETRIES}",
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='execution_supervisor.py')
 
         try:
             # Per-attempt timeout: prevents a hung LLM/delegate from blocking the
@@ -246,7 +246,7 @@ async def supervise(
                                   "duration_ms": outcome.duration_ms},
                     ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='execution_supervisor.py')
 
             log.info(
                 "mission_completed",

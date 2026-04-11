@@ -267,7 +267,7 @@ class MetaOrchestrator:
                 # Use create_task for better exception visibility
                 asyncio.create_task(_stream.append(_evt))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         # Persist state to disk (fail-open)
         try:
             from core.mission_persistence import get_mission_persistence
@@ -364,13 +364,13 @@ class MetaOrchestrator:
             from core.cognitive_events.emitter import emit_mission_created
             emit_mission_created(mission_id=mid, goal=goal, mode=mode)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         # Kernel event: mission created (dual emission)
         try:
             from kernel.convergence.event_bridge import emit_kernel_event
             emit_kernel_event("mission.created", mission_id=mid, goal=goal, mode=mode)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _register_mission_guards(self, mid: str) -> None:
         """Register mission guards for iteration limit + budget (lines 395-400)."""
@@ -434,7 +434,7 @@ class MetaOrchestrator:
             deregister_stream(mid)
             deregister_mission_stream(mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _post_mission_learning(self, mid: str, goal: str, mode: str, ctx) -> None:
         """Post-mission cognitive learning + guardian cleanup (lines 1900-1936)."""
@@ -461,7 +461,7 @@ class MetaOrchestrator:
             from core.mission_guards import get_guardian
             get_guardian().release_mission(mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Record routing outcome for learning
         try:
@@ -647,7 +647,7 @@ class MetaOrchestrator:
                             alternatives=_sp0.candidates_evaluated,
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
                 else:
                     trace.record("route", "capability_fallback",
                                  reason="no provider matched, using legacy agent routing")
@@ -1224,7 +1224,7 @@ class MetaOrchestrator:
             try:
                 _causal.update_graph_from_text(enriched_goal[:500])
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         except Exception as _causal_err:
             log.debug("causal_module.skipped", err=str(_causal_err)[:80])
 
@@ -1393,7 +1393,7 @@ class MetaOrchestrator:
                 log.info("phase0c_routing_active",
                          mission_id=mid, provider=_phase0c_provider)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # ── Pass 43: use_safer_model — activate ContextVar before execution ──
         _safer_token = None
@@ -1507,14 +1507,14 @@ class MetaOrchestrator:
                         from core.llm_factory import _provider_override as _pov
                         _pov.reset(_provider_token)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
                 # Pass 43: reset safer_model ContextVar
                 if _safer_token is not None:
                     try:
                         from core.llm_factory import _safer_model_active as _sma
                         _sma.reset(_safer_token)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Store execution context for post-processing helpers
         ctx.metadata["_exec_enriched_goal"] = enriched_goal
@@ -1900,14 +1900,14 @@ class MetaOrchestrator:
                 confidence=result_confidence,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_completed as _ms_completed
             _ms_completed("canonical", duration_ms=outcome.duration_ms)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel event: mission completed (dual emission)
         try:
@@ -1916,14 +1916,14 @@ class MetaOrchestrator:
                               duration_ms=outcome.duration_ms,
                               confidence=result_confidence)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel working memory: clear mission slot (it is done)
         try:
             from kernel.runtime.boot import get_runtime as _get_kernel_rt
             _get_kernel_rt().memory.clear_working(mission_id=mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _execute_kernel_learning(
         self,
@@ -2052,14 +2052,14 @@ class MetaOrchestrator:
                 error_class=outcome.error_class,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_failed as _ms_failed
             _ms_failed("canonical", reason=outcome.error_class)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel event: mission failed (dual emission)
         try:
@@ -2068,7 +2068,7 @@ class MetaOrchestrator:
                               error=outcome.error[:200],
                               error_class=outcome.error_class)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Store failure in memory
         try:
@@ -2521,7 +2521,7 @@ class MetaOrchestrator:
             from core.mission_persistence import get_mission_persistence
             get_mission_persistence().resolve_approval(mission_id, granted, reason)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Journal event
         try:
@@ -2529,7 +2529,7 @@ class MetaOrchestrator:
             emit_approval_resolved(mission_id, granted=granted,
                                     item_id=ctx.metadata.get("approval_item_id", ""))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         if granted:
             # Resume: transition back to RUNNING and re-execute

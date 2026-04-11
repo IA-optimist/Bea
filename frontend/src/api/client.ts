@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://77.42.40.146:8000/api/v2';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk/api/v2';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -151,6 +151,30 @@ class ApiClient {
 
   async updateSettings(settings: Partial<Settings>): Promise<Settings> {
     const { data } = await this.client.patch<ApiResponse<Settings>>('/settings', settings);
+    return data.data;
+  }
+
+
+  // Missions endpoints
+  async getMissions(params?: { limit?: number; status?: string }): Promise<any[]> {
+    const { data } = await this.client.get('/api/v3/missions', {
+      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
+      params,
+    });
+    return data.data?.missions || [];
+  }
+
+  async submitMission(goal: string, mode?: string): Promise<any> {
+    const { data } = await this.client.post('/api/v3/missions', { goal, mode: mode || 'chat' }, {
+      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
+    });
+    return data.data;
+  }
+
+  async getMission(id: string): Promise<any> {
+    const { data } = await this.client.get('/api/v3/missions/' + id, {
+      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
+    });
     return data.data;
   }
 

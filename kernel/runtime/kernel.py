@@ -513,7 +513,7 @@ class JarvisKernel:
                     payload={"mission_id": mid, "mode": mode},
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -592,7 +592,7 @@ class JarvisKernel:
                     payload={"mission_id": mid, "mode": request.mode},
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -646,7 +646,7 @@ class JarvisKernel:
             if self.capabilities:
                 cap_count = len(self.capabilities.list_all())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         return KernelStatus(
             booted=self._booted_at > 0,

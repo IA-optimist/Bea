@@ -671,7 +671,23 @@ Provide a comprehensive response addressing the mission goal."""
             if operation.startswith("business_"):
                 mission["operation"] = operation.replace("business_", "")
             
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                    return ex.submit(asyncio.run, self.execute_business_mission(mission)).result()
             return asyncio.run(self.execute_business_mission(mission))
         
         # Default to standard cognition pipeline
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop and loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(asyncio.run, self.execute_mission_with_cognition(mission)).result()
         return asyncio.run(self.execute_mission_with_cognition(mission))
