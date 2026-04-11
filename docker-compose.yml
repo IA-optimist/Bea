@@ -91,6 +91,7 @@ services:
       start_period: 30s
     networks:
       - jarvismax-network
+      - jarvis_net
     restart: unless-stopped
 
   nginx-lb:
@@ -163,3 +164,6 @@ volumes:
 networks:
   jarvismax-network:
     driver: bridge
+  jarvis_net:
+    external: true
+    name: jarvismax-app_jarvis_net
