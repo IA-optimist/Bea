@@ -58,6 +58,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: jarvismax-api
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
       REDIS_URL: redis://redis:6379
