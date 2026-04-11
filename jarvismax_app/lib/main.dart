@@ -146,7 +146,7 @@ class _AppEntryState extends State<_AppEntry> {
         onLoginSuccess: () => setState(() => _loggedIn = true),
       );
     }
-    return _AppShell(key: _AppShell.globalKey);
+    return const _AppShell();
   }
 }
 

@@ -389,7 +389,7 @@ class _JSkeletonState extends State<JSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
+    return JAnimatedBuilder(
       listenable: _controller,
       builder: (_, __) {
         final opacity = 0.08 + 0.06 * (0.5 + 0.5 * math.cos(_controller.value * 2 * math.pi));
@@ -407,9 +407,9 @@ class _JSkeletonState extends State<JSkeleton>
 }
 
 /// Animated builder helper for skeleton.
-class AnimatedBuilder extends AnimatedWidget {
+class JAnimatedBuilder extends AnimatedWidget {
   final Widget Function(BuildContext, Widget?) builder;
-  const AnimatedBuilder({super.key, required super.listenable, required this.builder});
+  const JAnimatedBuilder({super.key, required super.listenable, required this.builder});
 
   @override
   Widget build(BuildContext context) => builder(context, null);
