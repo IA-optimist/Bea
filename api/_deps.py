@@ -246,10 +246,19 @@ _SessionLocal = None
 
 
 def _init_db():
-    """Initialize database engine and session maker (lazy)"""
+    """Initialize database engine and session maker (lazy).
+
+    DATABASE_URL MUST be set via env. We refuse to start with a hardcoded
+    fallback because that would leak credentials into the source tree.
+    """
     global _db_engine, _SessionLocal
     if _db_engine is None:
-        database_url = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvismax2025@jarvis_postgres:5432/jarvismax")
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is required. "
+                "Set it to postgresql://user:pass@host:port/db in your .env."
+            )
         _db_engine = create_engine(database_url, pool_pre_ping=True)
         _SessionLocal = sessionmaker(bind=_db_engine, autocommit=False, autoflush=False)
     return _SessionLocal

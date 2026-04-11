@@ -1735,7 +1735,11 @@ class MetaOrchestrator:
                     f"Produce a more specific, complete, and actionable response."
                 )
                 # Re-run with feedback
-                from core.supervisor import supervise
+                # Canonical supervise lives in core.orchestration.execution_supervisor.
+                # The previous import (`from core.supervisor import supervise`) pointed
+                # to a module that does not exist — ImportError would be swallowed by
+                # the outer try/except and silently skip the retry path.
+                from core.orchestration.execution_supervisor import supervise
                 import asyncio
                 self._transition(ctx, MissionStatus.RUNNING, reason="critique_retry")
                 _retry_outcome = await asyncio.wait_for(

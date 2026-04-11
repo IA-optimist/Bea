@@ -110,21 +110,23 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Global access enforcement middleware (fail-closed) ────────
-# TEMPORAIRE: Désactivé pour debug frontend
-# try:
-#     from api.middleware import AccessEnforcementMiddleware
-#     app.add_middleware(AccessEnforcementMiddleware)
-# except ImportError as _enf_err:
-#     log.error("access_enforcement_MISSING", err=str(_enf_err),
-#               note="Security middleware unavailable — API will rely on per-route auth only")
-#     # Fail-hard in production: a missing security middleware is a block-startup
-#     # condition. In dev we fall through to per-route auth only (logged error).
-#     if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
-#         raise RuntimeError(
-#             "PRODUCTION STARTUP BLOCKED — AccessEnforcementMiddleware failed "
-#             f"to import: {_enf_err}. Fix the import or unset JARVIS_PRODUCTION "
-#             "to run in dev mode with per-route auth only."
-#         ) from _enf_err
+# CRITICAL: This middleware enforces auth on every request.
+# It MUST NOT be commented out — without it, per-route auth is the only
+# line of defense and any route without Depends(require_auth) becomes public.
+try:
+    from api.middleware import AccessEnforcementMiddleware
+    app.add_middleware(AccessEnforcementMiddleware)
+except ImportError as _enf_err:
+    log.error("access_enforcement_MISSING", err=str(_enf_err),
+              note="Security middleware unavailable — API will rely on per-route auth only")
+    # Fail-hard in production: a missing security middleware is a block-startup
+    # condition. In dev we fall through to per-route auth only (logged error).
+    if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+        raise RuntimeError(
+            "PRODUCTION STARTUP BLOCKED — AccessEnforcementMiddleware failed "
+            f"to import: {_enf_err}. Fix the import or unset JARVIS_PRODUCTION "
+            "to run in dev mode with per-route auth only."
+        ) from _enf_err
 
 # ── Security headers middleware ───────────────────────────────
 try:
@@ -134,12 +136,18 @@ except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
 # ── Rate limiting middleware (sliding window per IP+path) ─────
-# TEMP: Skip rate limiter middleware to fix startup
-# try:
-#     from api.rate_limiter import RateLimitMiddleware
-#     app.add_middleware(RateLimitMiddleware, redis_client=redis_client)
-# except ImportError as _rl_err:
-#     log.error("rate_limiter_MISSING", err=str(_rl_err))
+# CRITICAL: MUST be enabled. Without rate limiting, the API is vulnerable
+# to brute-force attacks on /auth/* endpoints and DoS via mission spam.
+try:
+    from api.rate_limiter import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware)
+except ImportError as _rl_err:
+    log.error("rate_limiter_MISSING", err=str(_rl_err))
+    if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+        raise RuntimeError(
+            "PRODUCTION STARTUP BLOCKED — RateLimitMiddleware failed to import. "
+            "Fix the import or unset JARVIS_PRODUCTION."
+        ) from _rl_err
 
 # ── Router Registry ───────────────────────────────────────────
 try:
@@ -716,9 +724,12 @@ async def _on_startup():
     try:
         import os
         from core.db.project_crud import init_pool
-        dsn = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvis123@postgres:5432/jarvis")
-        await init_pool(dsn)
-        log.info("project_crud_pool_initialized")
+        dsn = os.getenv("DATABASE_URL")
+        if not dsn:
+            log.warning("project_crud_pool_skipped", reason="DATABASE_URL not set")
+        else:
+            await init_pool(dsn)
+            log.info("project_crud_pool_initialized")
     except Exception as exc:
         log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
 

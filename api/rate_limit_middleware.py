@@ -35,14 +35,47 @@ def get_rate_limit_key(request: Request) -> str:
     return f"ip:{ip}"
 
 
-# Initialize limiter with Redis backend (distributed across API replicas)
+# Initialize limiter with Redis backend (distributed across API replicas).
+# Falls back to in-memory storage in dev when the `redis` Python package is
+# not installed or REDIS_URL is unset. Production MUST set REDIS_URL and
+# install redis>=3.0 for distributed rate limiting across workers.
 import os
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+import logging as _logging
+
+_rl_log = _logging.getLogger(__name__)
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+_STORAGE_URI = "memory://"
+
+if REDIS_URL:
+    try:
+        import redis as _redis_pkg  # noqa: F401 — probe availability
+        _STORAGE_URI = REDIS_URL
+    except ImportError:
+        _rl_log.warning(
+            "rate_limit.redis_package_missing — falling back to memory:// "
+            "(non-distributed). Install redis>=3.0 and set REDIS_URL to use "
+            "distributed rate limiting."
+        )
+else:
+    _rl_log.info(
+        "rate_limit.memory_storage — REDIS_URL not set, using in-memory "
+        "rate limiting (single-worker only)."
+    )
+
+# Production safety: if JARVIS_PRODUCTION is set, refuse to start with
+# memory:// storage (silently allows bypassing rate limits by adding workers).
+if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes") \
+        and _STORAGE_URI == "memory://":
+    raise RuntimeError(
+        "PRODUCTION STARTUP BLOCKED — rate limiter falling back to memory:// "
+        "storage. Set REDIS_URL and install redis>=3.0, or unset "
+        "JARVIS_PRODUCTION to run in dev mode."
+    )
 
 limiter = Limiter(
     key_func=get_rate_limit_key,
     default_limits=["100/minute"],  # Global default
-    storage_uri=REDIS_URL,  # Redis for distributed rate limiting
+    storage_uri=_STORAGE_URI,
 )
 
 

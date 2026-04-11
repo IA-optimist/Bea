@@ -29,8 +29,13 @@ logging.basicConfig(
 )
 logger = structlog.get_logger()
 
-# Database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://jarvis:jarvismax2025@jarvis_postgres:5432/jarvis")
+# Database connection — DATABASE_URL is required.
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required for daily_opportunity_scan. "
+        "Set it in the cron environment."
+    )
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
