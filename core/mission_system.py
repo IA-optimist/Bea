@@ -1363,6 +1363,15 @@ class MissionSystem:
                             requires_validation=bool(row["requires_validation"]),
                             created_at=row["created_at"] or time.time(),
                             updated_at=row["updated_at"] or time.time(),
+                            final_output=row.get("final_output") or "",
+                            summary=row.get("summary") or "",
+                            agents_selected=_db_mod.loads(row.get("agents_selected"), []),
+                            domain=row.get("domain") or "general",
+                            execution_trace=_db_mod.loads(row.get("execution_trace"), []),
+                            decision_trace=_db_mod.loads(row.get("decision_trace"), {}),
+                            risk_score=row.get("risk_score") or 0,
+                            complexity=row.get("complexity") or "medium",
+                            error=row.get("error") or "",
                         )
                         self._missions[m.mission_id] = m
                     except Exception as _exc:
@@ -1415,8 +1424,9 @@ class MissionSystem:
                    (id, user_input, intent, status, plan_summary, plan_steps,
                     advisory_score, advisory_decision, advisory_issues, advisory_risks,
                     action_ids, requires_validation, auto_approved, created_at,
-                    updated_at, completed_at, note)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    updated_at, completed_at, note, final_output, summary, agents_selected,
+                    domain, execution_trace, decision_trace, risk_score, complexity, error)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     result.mission_id, result.user_input, result.intent, result.status,
                     result.plan_summary,
@@ -1429,7 +1439,16 @@ class MissionSystem:
                     0,  # auto_approved
                     result.created_at, result.updated_at,
                     None,  # completed_at
-                    "",
+                    "",  # note
+                    result.final_output,
+                    result.summary,
+                    _db_mod.dumps(result.agents_selected),
+                    result.domain,
+                    _db_mod.dumps(result.execution_trace),
+                    _db_mod.dumps(result.decision_trace),
+                    result.risk_score,
+                    result.complexity,
+                    result.error,
                 )
             )
         except Exception as exc:

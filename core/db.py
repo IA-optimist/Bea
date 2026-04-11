@@ -103,7 +103,16 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         created_at REAL,
         updated_at REAL,
         completed_at REAL,
-        note TEXT DEFAULT ''
+        note TEXT DEFAULT '',
+        final_output TEXT DEFAULT '',
+        summary TEXT DEFAULT '',
+        agents_selected TEXT DEFAULT '[]',
+        domain TEXT DEFAULT 'general',
+        execution_trace TEXT DEFAULT '[]',
+        decision_trace TEXT DEFAULT '{}',
+        risk_score INTEGER DEFAULT 0,
+        complexity TEXT DEFAULT 'medium',
+        error TEXT DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS goals (
