@@ -74,7 +74,7 @@ export default function Missions() {
       setActiveMission(newMission);
 
       // Call API
-      const response = await apiClient.post('/api/v3/chat', {
+      const response = await apiClient.post('/api/v2/chat', {
         message,
         project_id: 1,
       });
