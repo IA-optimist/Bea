@@ -433,9 +433,9 @@ class JarvisMaxCausalIntegration:
                 collection_name=self.qdrant_collection,
                 vectors_config=VectorParams(size=384, distance=Distance.COSINE),
             )
-        # Import embedder (lazy to avoid circular imports)
-        import asyncio
-        from core.orchestration.embedding_utils import embed_text
+        
+        # Initialize sentence-transformers model for real embeddings
+        embedder = self._get_sentence_embedder()
         
         points = []
         for cause, effect in edges:
@@ -443,14 +443,21 @@ class JarvisMaxCausalIntegration:
             uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
             
-            # Generate real embeddings (384-dim) for semantic search
-            # Fallback chain: OpenAI → memory.embeddings → null vector
+            # Generate real embeddings (384-dim) using sentence-transformers
             try:
-                # Run async embed in sync context (embedding is I/O bound, safe)
-                vector = asyncio.run(embed_text(text))
+                if embedder:
+                    vector = embedder.encode(text, convert_to_numpy=True).tolist()
+                    logger.debug("embedding_generated", text=text[:50], dim=len(vector))
+                else:
+                    # Fallback: try async embed_text from embedding_utils
+                    import asyncio
+                    from core.orchestration.embedding_utils import embed_text
+                    vector = asyncio.run(embed_text(text))
+                    logger.debug("embedding_fallback_used", text=text[:50])
             except Exception as e:
-                logger.warning("embed_failed_fallback_null", text=text[:50], error=str(e))
-                vector = [0.0] * 384  # Fallback to null
+                logger.error("embedding_failed", text=text[:50], error=str(e))
+                # Last resort: null vector (but log as error, not warning)
+                vector = [0.0] * 384
             
             points.append(PointStruct(
                 id=uid,
@@ -462,6 +469,25 @@ class JarvisMaxCausalIntegration:
         if points:
             client.upsert(collection_name=self.qdrant_collection, points=points)
             logger.info("Indexed %d causal edges to Qdrant", len(points))
+    
+    def _get_sentence_embedder(self):
+        """
+        Initialize and cache sentence-transformers model.
+        Returns model or None if initialization fails.
+        """
+        if not hasattr(self, '_sentence_model'):
+            try:
+                from sentence_transformers import SentenceTransformer
+                logger.info("loading_sentence_transformer", model="all-MiniLM-L6-v2")
+                self._sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
+                logger.info("sentence_transformer_loaded", model="all-MiniLM-L6-v2")
+            except ImportError as e:
+                logger.error("sentence_transformers_not_installed", error=str(e))
+                self._sentence_model = None
+            except Exception as e:
+                logger.error("sentence_transformer_load_failed", error=str(e))
+                self._sentence_model = None
+        return self._sentence_model
 
 
 # ─────────────────────────────────────────────────────────────────────────────
