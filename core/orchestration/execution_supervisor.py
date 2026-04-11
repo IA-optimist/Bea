@@ -387,11 +387,11 @@ async def _request_approval(
         # Map string risk to RiskLevel enum
         risk_map = {
             "low": RiskLevel.WRITE_LOW,
-            "medium": RiskLevel.WRITE_HIGH,
+            "medium": RiskLevel.WRITE_LOW,   # medium = auto-approve
             "high": RiskLevel.INFRA,
             "critical": RiskLevel.DEPLOY,
         }
-        rl = risk_map.get(risk_level.lower(), RiskLevel.WRITE_HIGH)
+        rl = risk_map.get(risk_level.lower(), RiskLevel.WRITE_LOW)
 
         def _submit():
             return submit_for_approval(

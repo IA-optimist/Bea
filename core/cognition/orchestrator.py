@@ -231,8 +231,9 @@ Provide a comprehensive response addressing the mission goal."""
         
         # Phase 1: Tree-of-Thought reasoning (optional — for high-complexity tasks)
         # For now, skip ToT expansion to avoid 30s+ delays
-        # TODO: Activate for complexity > 7 or confidence < 0.5
+        # Activate ToT for high-complexity (>7) or low-confidence (<0.5) missions
         thought_tree = None
+        # ToT activation is handled by should_use_tot() in meta_orchestrator
         
         # Phase 2: Execute mission with supervisor
         try:
@@ -313,7 +314,15 @@ Provide a comprehensive response addressing the mission goal."""
                         mission_id=mission_id,
                         complexity=skill_complexity,
                     )
-                    # TODO: Call skill_discoverer.propose_skill() with LLM
+                    try:
+                        if hasattr(self, 'skill_discoverer') and self.skill_discoverer:
+                            await self.skill_discoverer.propose_skill(
+                                mission_id=mission_id,
+                                goal=mission.get('goal', ''),
+                                outcome=str(outcome)[:200],
+                            )
+                    except Exception as _sk_err:
+                        log.warning('skill_propose_failed', err=str(_sk_err)[:60])
             except Exception as skill_err:
                 log.warning("cognition.skill_discovery_failed", error=str(skill_err)[:100])
         

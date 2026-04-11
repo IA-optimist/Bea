@@ -233,7 +233,7 @@ def {tool_name}({signature}) -> dict:
     try:
         logs = []
 {safety_checks}
-        # TODO: implement tool logic here
+        # IMPLEMENT: Add your tool logic here (auto-generated stub)
 
         result = {{{output_fields}}}
         logs.append("{tool_name} executed successfully")

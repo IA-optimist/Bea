@@ -17,6 +17,7 @@ Usage :
 """
 
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import asyncio
 import hashlib
@@ -74,14 +75,16 @@ class Surprise:
 # LLM Client interface (adaptateur)
 # ─────────────────────────────────────────────
 
-class LLMClient:
+class LLMClient(ABC):
     """
     Interface minimale. Implémentez pour votre backend (OpenRouter, Ollama, etc.)
     Exemple d'implémentation pour OpenRouter disponible dans jarvis_core/llm/openrouter.py
     """
+    @abstractmethod
     async def complete(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
         raise NotImplementedError
 
+    @abstractmethod
     async def embed(self, text: str) -> list[float]:
         raise NotImplementedError
 
@@ -352,19 +355,22 @@ class CreativeEngine:
 # 2. CROSS-MISSION CONNECTOR
 # ─────────────────────────────────────────────
 
-class MissionStore:
+class MissionStore(ABC):
     """
     Interface vers le store de missions (à implémenter avec Qdrant/pgvector).
     Contrat minimal pour CrossMissionConnector.
     """
+    @abstractmethod
     def get_mission(self, mission_id: str) -> dict | None:
         raise NotImplementedError
 
+    @abstractmethod
     def search_by_embedding(
         self, embedding: list[float], top_k: int
     ) -> list[dict]:
         raise NotImplementedError
 
+    @abstractmethod
     def get_all_missions(self) -> list[dict]:
         raise NotImplementedError
 

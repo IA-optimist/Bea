@@ -49,52 +49,42 @@ def get_system_metrics() -> dict:
 
 
 def get_missions_metrics() -> dict:
-    """Get missions statistics from database or cache."""
+    """Get missions statistics from MissionSystem (live data)."""
     try:
-        # Try to get missions stats from database
-        # For now, return mock data that simulates real metrics
-        # TODO: Replace with actual DB queries
-        import random
-        
-        # Simulate realistic mission counts with some variation
-        base_total = 450
-        base_approved = 320
-        base_done = 280
-        base_pending = 150
-        
-        return {
-            "total": base_total + random.randint(-5, 5),
-            "approved": base_approved + random.randint(-3, 3),
-            "done": base_done + random.randint(-2, 2),
-            "pending": base_pending + random.randint(-4, 4),
-        }
+        from core.mission_system import get_mission_system, MissionStatus
+        ms = get_mission_system()
+        all_missions = ms.list_missions(limit=10000)
+        total = len(all_missions)
+        done = sum(1 for m in all_missions if getattr(m.status, 'value', str(m.status)) in ('DONE', 'COMPLETED'))
+        approved = sum(1 for m in all_missions if getattr(m.status, 'value', str(m.status)) == 'APPROVED')
+        pending = sum(1 for m in all_missions if getattr(m.status, 'value', str(m.status)) in ('PENDING', 'AWAITING_APPROVAL', 'READY'))
+        return {"total": total, "approved": approved, "done": done, "pending": pending}
     except Exception as e:
-        log.error("missions_metrics_error", error=str(e))
-        return {
-            "total": 0,
-            "approved": 0,
-            "done": 0,
-            "pending": 0,
-        }
+        log.warning("missions_metrics_error", error=str(e)[:80])
+        return {"total": 0, "approved": 0, "done": 0, "pending": 0}
 
 
 def get_revenue_metrics() -> dict:
-    """Get revenue metrics."""
+    """Get revenue metrics from PostgreSQL revenue_streams table."""
     try:
-        # TODO: Replace with actual DB queries from finance module
-        import random
-        
-        # Simulate realistic revenue with small variations
-        base_mrr = 12500
-        base_arr = base_mrr * 12
-        
+        from sqlalchemy import text, create_engine
+        import os
+        db_url = os.environ.get("DATABASE_URL", "")
+        if not db_url:
+            raise ValueError("DATABASE_URL not set")
+        engine = create_engine(db_url, pool_pre_ping=True)
+        with engine.connect() as conn:
+            result = conn.execute(text(
+                "SELECT COALESCE(SUM(monthly_amount), 0) as mrr FROM revenue_streams WHERE status='active'"
+            )).fetchone()
+            mrr = float(result[0]) if result else 0.0
         return {
-            "mrr": round(base_mrr + random.uniform(-100, 100), 2),
-            "arr": round(base_arr + random.uniform(-1000, 1000), 2),
-            "daily_revenue": round(base_mrr / 30 + random.uniform(-20, 20), 2),
+            "mrr": round(mrr, 2),
+            "arr": round(mrr * 12, 2),
+            "daily_revenue": round(mrr / 30, 2),
         }
     except Exception as e:
-        log.error("revenue_metrics_error", error=str(e))
+        log.warning("revenue_metrics_error", error=str(e)[:80])
         return {
             "mrr": 0,
             "arr": 0,

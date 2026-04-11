@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiResponse, Opportunity, Product, RevenueData, User } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api/v2';
+const API_BASE_URL = process.env['REACT_NATIVE_API_URL'] || 'https://jarvis.jarvismaxapp.co.uk/api/v2';
 
 class ApiClient {
   private client: AxiosInstance;
