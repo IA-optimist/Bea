@@ -117,15 +117,6 @@ def verify_token(token_str: str) -> Optional[dict]:
 
     Returns: {"username": ..., "role": ...} or None.
     """
-    # SECURITY: Fail-closed by default — only bypass if JARVIS_DEV_MODE explicitly set
-    import os
-    _DEV_MODE = os.environ.get("JARVIS_DEV_MODE", "").lower() in ("1", "true", "yes")
-    if _DEV_MODE:
-        import structlog
-        log = structlog.get_logger()
-        log.warning("auth.dev_bypass_active", reason="JARVIS_DEV_MODE=true")
-        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
-    
     from api.token_utils import strip_bearer
     token_str = strip_bearer(token_str)
     if not token_str:
@@ -214,15 +205,6 @@ async def get_current_user(
     Raises:
         HTTPException: 401 if token invalid or missing
     """
-    # SECURITY: Fail-closed by default — only bypass if JARVIS_DEV_MODE explicitly set
-    import os
-    _DEV_MODE = os.environ.get("JARVIS_DEV_MODE", "").lower() in ("1", "true", "yes")
-    if _DEV_MODE:
-        import structlog
-        log = structlog.get_logger()
-        log.warning("auth.get_current_user.dev_bypass_active", reason="JARVIS_DEV_MODE=true")
-        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
-    
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

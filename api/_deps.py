@@ -34,12 +34,6 @@ def require_auth(
     trust it.
     """
     # SECURITY: Fail-closed auth by default
-    # Only bypass if JARVIS_DEV_MODE is explicitly set (never use in production)
-    if os.environ.get("JARVIS_DEV_MODE", "").lower() in ("1", "true", "yes"):
-        log.warning("dev_mode_auth_bypass_active", 
-                   warning="JARVIS_DEV_MODE bypasses auth — NEVER use in production")
-        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
-    
     # Fast path: middleware already authenticated
     if hasattr(request.state, "user") and request.state.user:
         return request.state.user
@@ -47,15 +41,6 @@ def require_auth(
     # Fallback: verify ourselves
     from api.token_utils import strip_bearer
     from api.auth import verify_token
-    import os
-
-    # Dev mode bypass (before token check)
-    _DEV_MODE = os.environ.get("JARVIS_DEV_MODE", "").lower() in ("1", "true", "yes")
-    if _DEV_MODE:
-        import structlog
-        log = structlog.get_logger()
-        log.warning("auth.dev_bypass_active_require_auth", reason="JARVIS_DEV_MODE=true")
-        return {"username": "dev", "role": "admin", "auth_type": "dev_bypass"}
 
     token = x_jarvis_token or (strip_bearer(authorization) if authorization else None)
 

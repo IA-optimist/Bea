@@ -56,41 +56,8 @@ _PUBLIC_PATHS = {
     "/redoc",
 }
 
-# SECURITY: Fail-closed by default — only bypass if JARVIS_DEV_MODE explicitly set
 import os
 import sys
-
-_DEV_MODE = os.environ.get("JARVIS_DEV_MODE", "").lower() in ("1", "true", "yes")
-
-# PRODUCTION SAFETY CHECK: Prevent accidental dev mode in production
-if _DEV_MODE:
-    import structlog
-    log = structlog.get_logger(__name__)
-    
-    # Check if we're in production environment
-    is_production = any([
-        os.environ.get("JARVIS_PRODUCTION") == "true",
-        os.environ.get("JARVIS_ENV") == "production",
-        os.environ.get("ENV") == "production",
-    ])
-    
-    if is_production:
-        # FATAL: Dev mode enabled in production
-        log.critical(
-            "SECURITY_VIOLATION",
-            error="JARVIS_DEV_MODE=true in production environment",
-            action="TERMINATING_STARTUP",
-            fix="Remove JARVIS_DEV_MODE or set JARVIS_PRODUCTION=false"
-        )
-        sys.exit(1)
-    else:
-        # Development mode active (acceptable in dev/staging)
-        log.warning(
-            "DEV_MODE_ACTIVE",
-            warning="Authentication bypassed for all endpoints",
-            env="development",
-            security="DISABLED"
-        )
 
 # Paths that match by prefix (static files)
 _PUBLIC_PREFIXES = (
@@ -102,10 +69,6 @@ _PUBLIC_PREFIXES = (
 
 def is_public_path(path: str) -> bool:
     """Check if a path is publicly accessible without auth."""
-    # SECURITY: Only bypass auth if JARVIS_DEV_MODE explicitly set
-    if _DEV_MODE:
-        return True
-    
     if path in _PUBLIC_PATHS:
         return True
     for prefix in _PUBLIC_PREFIXES:
