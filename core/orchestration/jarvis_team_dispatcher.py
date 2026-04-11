@@ -49,7 +49,7 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
         except Exception as e:
             log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
             chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
-            break
+            continue
 
     final = chain_results[-1]["output"] if chain_results and chain_results[-1]["success"] else ""
     return {
