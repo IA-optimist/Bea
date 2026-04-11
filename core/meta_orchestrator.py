@@ -2319,7 +2319,16 @@ class MetaOrchestrator:
                     log.warning("phase_failed", phase="mission_state_observe",
                                 err=str(_mso_err)[:80])
 
-            if outcome.success:
+            # Guard: cognition may return a plain str instead of ExecutionOutcome
+            if isinstance(outcome, str):
+                from core.orchestration.execution_supervisor import ExecutionOutcome
+                _raw_str = outcome
+                outcome = ExecutionOutcome(
+                    success=bool(_raw_str and _raw_str.strip()),
+                    result=_raw_str,
+                )
+
+            if outcome is not None and outcome.success:
                 # Delegate to success outcome handler (evaluation, retry, memory, learning)
                 result_confidence = await self._handle_success_outcome(
                     outcome=outcome,

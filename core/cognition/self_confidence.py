@@ -67,6 +67,25 @@ class ConfidenceScorer:
                 "should_retry": False
             }
     
+    async def _llm_call(self, prompt: str, max_tokens: int = 300, temperature: float = 0.3) -> str:
+        """Compat helper: works with both LangChain ChatOpenAI and raw OpenAI client."""
+        try:
+            if hasattr(self.llm, 'ainvoke'):
+                from langchain_core.messages import HumanMessage
+                resp = await self.llm.ainvoke([HumanMessage(content=prompt)])
+                return resp.content if hasattr(resp, 'content') else str(resp)
+            else:
+                resp = self.llm.chat.completions.create(
+                    model="google/gemini-2.0-flash-001",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,
+                    temperature=temperature
+                )
+                return resp.choices[0].message.content
+        except Exception as e:
+            log.error(self_confidence_llm_failed, error=str(e))
+            return 
+
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
         """Build prompt for self-evaluation."""
         
