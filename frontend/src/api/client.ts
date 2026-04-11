@@ -27,8 +27,8 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        // Add auth token if available
-        const token = localStorage.getItem('auth_token');
+        // Add auth token if available (consistent with Login.tsx storage key)
+        const token = localStorage.getItem('jarvis_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -42,8 +42,9 @@ class ApiClient {
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Handle unauthorized
-          localStorage.removeItem('auth_token');
+          // Handle unauthorized (consistent with Login.tsx storage key)
+          localStorage.removeItem('jarvis_token');
+          localStorage.removeItem('jarvis_user');
           window.location.href = '/login';
         }
         return Promise.reject(error);
