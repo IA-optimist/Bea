@@ -156,24 +156,34 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _strip_execution_outcome(text: str) -> str:
+def _strip_execution_outcome(text):
     """Strip ExecutionOutcome(...) wrapper from result text."""
-    if not text or not text.startswith("ExecutionOutcome("):
+    if not text:
         return text
-    # Try to extract result= value
-    m = re.search(r'result=["\'](.*?)["\'](,\s*\w|\))', text, re.DOTALL)
-    if m:
-        return m.group(1).replace('\\n', '\n')
-    # Fallback: extract everything after result=
-    idx = text.find('result=')
-    if idx != -1:
-        out = text[idx + 7:]
-        if out and out[0] in ('"', "'"):
-            out = out[1:]
-        if out.endswith('")') or out.endswith("')"):
-            out = out[:-2]
-        return out
-    return text
+    t = text.strip()
+    if not t.startswith("ExecutionOutcome("):
+        return text
+    idx = t.find("result=")
+    if idx == -1:
+        return text
+    rest = t[idx + 7:]
+    extracted = ""
+    if rest and rest[0] in ("'", '"'):
+        q = rest[0]
+        rest = rest[1:]
+        i = 0
+        while i < len(rest):
+            if rest[i] == q and (i == 0 or rest[i-1] != "\\"):
+                extracted = rest[:i]
+                break
+            i += 1
+        else:
+            extracted = rest.rstrip(")")
+    else:
+        paren = rest.find(")")
+        extracted = rest[:paren] if paren != -1 else rest
+    extracted = extracted.replace("\\n", "\n").replace("\\t", "\t")
+    return extracted.strip() or text
 
 
 class MetaOrchestrator:
@@ -1662,7 +1672,9 @@ class MetaOrchestrator:
         _raw_outcome_result = getattr(outcome, "result", outcome) if outcome is not None else ""
         if hasattr(_raw_outcome_result, "result"):  # nested ExecutionOutcome
             _raw_outcome_result = getattr(_raw_outcome_result, "result", "") or ""
-        ctx.result = _raw_outcome_result if isinstance(_raw_outcome_result, str) else str(_raw_outcome_result or "")
+        ctx.result = _strip_execution_outcome(
+            _raw_outcome_result if isinstance(_raw_outcome_result, str) else str(_raw_outcome_result or "")
+        )
 
         # ── KERNEL EVALUATION (authoritative — Phase 8) ───────
         # Single call replaces reflect() + critique_output().
