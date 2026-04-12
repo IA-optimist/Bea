@@ -1467,6 +1467,26 @@ class MetaOrchestrator:
             or ctx.metadata.get("classification", {}).get("risk_level", "low") in ("high", "write_high", "HIGH")
             or any(kw in _goal_for_risk for kw in _DESTRUCTIVE_KW)
         )
+        # Refus immédiat pour commandes destructives en mode chat
+        # Évite le crew complet (3-5min) pour une réponse de refus simple
+        if _is_chat_mode and _fp_skip_risk and not needs_approval:
+            _refusal = (
+                "Je ne peux pas exécuter cette action directement. "
+                "Les actions pouvant affecter le système ou les données "
+                "(suppression, modification, envoi) nécessitent une validation. "
+                "Si tu veux vraiment faire ça, soumets-la comme mission formelle."
+            )
+            ctx.result = _refusal
+            ctx.status = MissionStatus.DONE
+            ctx.completed_at = time.time()
+            log.info("chat_destructive_refused", mission_id=mid, goal=goal[:60])
+            try:
+                from core.mission_persistence import get_mission_persistence
+                get_mission_persistence().persist(ctx)
+            except Exception:
+                pass
+            return
+
         if _is_chat_mode and not _fp_skip_risk:
             try:
                 from core.orchestration.creative_engine import JarvisLLMClient
