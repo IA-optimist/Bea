@@ -400,10 +400,14 @@ class MetaOrchestrator:
         """
         # NOTE: skip reasoning prepass for CHAT mode (short messages / greetings)
         _task_mode_str = ctx.metadata.get("task_mode", "")
-        _CHAT_KEYWORDS = ("salut","bonjour","hello","hi","hey","présente","qui es","recommence","répète","repete","présente-toi","aide moi")
+        _CHAT_KEYWORDS = ("salut","bonjour","hello","hi","hey","présente","qui es","recommence","répète","repete","présente-toi","aide moi","merci","ok cool","super","parfait")
+        _TASK_KEYWORDS = ("analyse","analyz","compare","comparison","architecture","implement","code","develop","build","create","list all","detailed","complet","rapport","report","research","explain","diagram","roadmap","strategy","plan","design","review","audit","optimize","migrate","database","deploy","docker","api","test","debug","fix","refactor","swagger","openapi","benchmark","security","vulnerability")
         _goal_lower = goal.strip().lower()
         _is_conversational = any(kw in _goal_lower for kw in _CHAT_KEYWORDS)
-        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 120) or _is_conversational
+        _is_complex_task = any(kw in _goal_lower for kw in _TASK_KEYWORDS) or len(goal.strip()) > 120
+        _is_chat_mode  = _task_mode_str == "chat" or (
+            not _is_complex_task and (_is_conversational or len(goal.strip()) <= 60)
+        )
         _reasoning_result = None
         
         if _is_chat_mode:
@@ -2381,6 +2385,20 @@ class MetaOrchestrator:
                     success=bool(_raw_str and _raw_str.strip()),
                     result=_raw_str,
                 )
+
+            # Guard: outcome can be None if fast-path already handled the mission
+            if outcome is None:
+                if ctx.status in (MissionStatus.DONE, MissionStatus.REVIEW):
+                    from core.orchestration.execution_supervisor import ExecutionOutcome
+                    outcome = ExecutionOutcome(success=True, result=ctx.result or "")
+                else:
+                    from core.orchestration.execution_supervisor import ExecutionOutcome
+                    outcome = ExecutionOutcome(success=False, result="")
+
+            # Skip success handler if mission already in terminal state (fast-path)
+            if ctx.status in (MissionStatus.DONE, MissionStatus.FAILED, MissionStatus.CANCELLED):
+                log.info("mission.already_terminal", mission_id=mid, status=ctx.status.value)
+                return ctx
 
             if outcome is not None and outcome.success:
                 # Delegate to success outcome handler (evaluation, retry, memory, learning)
