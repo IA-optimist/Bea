@@ -1492,21 +1492,45 @@ class MetaOrchestrator:
                 from core.orchestration.creative_engine import JarvisLLMClient
                 _fp_llm = JarvisLLMClient(role="fast")
                 _fp_sys = (
-                    "Tu es Jarvis, assistant IA. Personnalite : direct, intelligent, un peu ironique.\n"
-                    "REGLES ABSOLUES :\n"
-                    "1. Tu ne simules JAMAIS une action reelle (suppression, envoi, modification). "
-                    "Si quelqu'un demande une action potentiellement destructive, tu REFUSES calmement "
-                    "et expliques pourquoi tu ne peux pas l'executer directement.\n"
-                    "2. Tu reponds naturellement en francais, de maniere conversationnelle.\n"
-                    "3. Pour les salutations : court et naturel.\n"
-                    "4. Pour les questions sur tes capacites : concis et honnete.\n"
-                    "5. Longueur adaptee au message (court si message court)."
+                    "Tu es Jarvis, lorchestrateurIA de JarvisMax. "
+                    "Tu es lassistant personnel dUnity, fondateur du projet.\n"
+                    "\n"
+                    "TES CAPACITES REELLES :\n"
+                    "- Analyser du code, de larchitecture, des documents\n"
+                    "- Rechercher et synthétiser de linformation\n"
+                    "- Planifier et décomposer des projets complexes\n"
+                    "- Gérer des missions via ton pipeline dagents spécialisés\n"
+                    "- Te souvenir des échanges passés via ta mémoire persistante\n"
+                    "- Proposer des améliorations et apprendre de lexperience\n"
+                    "\n"
+                    "PERSONNALITE : direct, confiant, légèrement ironique. "
+                    "Pas de fioritures, pas de faux enthousiasme.\n"
+                    "\n"
+                    "REGLES :\n"
+                    "1. JAMAIS simuler une action réelle (suppression, modification, envoi).\n"
+                    "2. Répondre en français, de manière naturelle et conversationnelle.\n"
+                    "3. Longueur proportionnelle au message (court = réponse courte).\n"
+                    "4. Si tu ne sais pas → dire honnêtement, ne pas inventer."
                 )
                 _fp_ctx = str(ctx.metadata.get("context", "") or "")
+                # Inject semantic memory into fast-path
+                _fp_mem = ""
+                try:
+                    from core.orchestration.memory_system import UnifiedMemory
+                    _um_fp = UnifiedMemory()
+                    _mems = await asyncio.wait_for(_um_fp.recall(goal, top_k=3), timeout=3)
+                    if _mems:
+                        _fp_mem = "\n".join(f"- {m['content'][:150]}" for m in _mems if m.get("content"))
+                except Exception:
+                    pass
+                # Build prompt with all context
+                _fp_parts = [_fp_sys]
+                if _fp_mem:
+                    _fp_parts.append("\n\nMémoire pertinente:\n" + _fp_mem)
                 if _fp_ctx:
-                    _fp_prompt = _fp_sys + "\n\nContexte: " + _fp_ctx + "\n\nMessage: " + goal
-                else:
-                    _fp_prompt = _fp_sys + "\n\n" + goal
+                    _fp_parts.append("\n\nConversation récente:\n" + _fp_ctx)
+                _fp_parts.append("\n\nMessage: " + goal)
+                _fp_prompt = "".join(_fp_parts)
                 _fp_text = await asyncio.wait_for(
                     _fp_llm.complete(_fp_prompt, max_tokens=2000),
                     timeout=45
@@ -1517,6 +1541,22 @@ class MetaOrchestrator:
                 ctx.status = MissionStatus.DONE
                 ctx.completed_at = time.time()
                 log.info("chat_fast_path_ok", mission_id=mid, chars=len(str(_fp_text)))
+                # Store fast-path exchange in knowledge memory for future recall
+                try:
+                    from core.knowledge_memory import get_knowledge_memory
+                    _km = get_knowledge_memory()
+                    _km.store_if_useful(
+                        goal=goal,
+                        mission_type="chat",
+                        solution_summary=str(_fp_text)[:500],
+                        tools_used=[],
+                        agents_used=["fast-path"],
+                        confidence_score=0.8,
+                        fallback_level=0,
+                        execution_policy_decision="fast_path",
+                    )
+                except Exception:
+                    pass
                 # Persist to both stores so UI sees consistent status
                 try:
                     from core.mission_persistence import get_mission_persistence
