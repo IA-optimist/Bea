@@ -349,7 +349,7 @@ class CanonicalMissionContext:
             "plan_summary": self.plan_summary[:500],
             "agents": self.agents,
             "error": self.error,
-            "result": self.result[:500],
+            "result": self.result,
             "source_system": self.source_system,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
