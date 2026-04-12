@@ -1563,6 +1563,24 @@ class MetaOrchestrator:
                     get_mission_persistence().persist(ctx)
                 except Exception:
                     pass
+                # Post-mission learning: extract lesson if needed
+                try:
+                    from core.orchestration.learning_loop import extract_lesson, store_lesson
+                    _lesson = extract_lesson(
+                        mission_id=mid,
+                        goal=goal[:200],
+                        result=str(ctx.result)[:300],
+                        reflection_verdict=ctx.metadata.get("reflection_verdict", "accept"),
+                        reflection_confidence=float(ctx.metadata.get("confidence_score", 0.8)),
+                        error_class=ctx.metadata.get("error_class", ""),
+                        retries=ctx.metadata.get("retries", 0),
+                    )
+                    if _lesson:
+                        store_lesson(_lesson)
+                        log.info("learning_loop.lesson_stored", mission_id=mid,
+                                 confidence=_lesson.confidence)
+                except Exception:
+                    pass
                 try:
                     # Sync mission_system store to avoid READY/DONE mismatch
                     from core.mission_system import get_mission_system

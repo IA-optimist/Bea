@@ -680,6 +680,16 @@ def run_cycle(repo_root: Path | None = None) -> dict:
         weaknesses = detect_weaknesses()
         result["weaknesses_found"] = len(weaknesses)
 
+        # Run improvement detector to generate real proposals
+        try:
+            from core.improvement_detector import detect_improvements
+            new_proposals = detect_improvements(dry_run=False)
+            result["proposals_generated"] = len(new_proposals)
+            log.info("daemon.proposals_generated", count=len(new_proposals))
+        except Exception as _det_err:
+            log.debug("daemon.detector_error", err=str(_det_err)[:80])
+
+
         if not weaknesses:
             log.debug("daemon.no_weaknesses")
             _state.cycles_completed += 1
