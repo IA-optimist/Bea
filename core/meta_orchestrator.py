@@ -306,6 +306,18 @@ class MetaOrchestrator:
             get_mission_persistence().persist(ctx)
         except Exception as _pe:
             log.debug("mission_persist_failed", err=str(_pe)[:80])
+        # Sync mission_system legacy store on terminal states (fixes RUNNING never updating)
+        if target in (MissionStatus.DONE, MissionStatus.FAILED, MissionStatus.CANCELLED):
+            try:
+                from core.mission_system import get_mission_system
+                _ms = get_mission_system()
+                _ms_rec = _ms.get_mission(ctx.mission_id)
+                if _ms_rec is not None:
+                    _ms_rec.status = target.value
+                    _ms_rec.final_output = str(ctx.result or "")[:5000]
+                    _ms._save_mission(_ms_rec)
+            except Exception:
+                pass
 
     # ── Kernel cognitive pre-computation (Pass 18) ───────────────────────────
 
