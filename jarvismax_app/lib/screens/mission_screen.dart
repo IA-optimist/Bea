@@ -228,7 +228,15 @@ class _MissionScreenState extends State<MissionScreen> {
     _scrollToBottom();
 
     final api = context.read<ApiService>();
-    final result = await api.submitMission(goal);
+    // Build conversation context from recent messages
+    String _convCtx = '';
+    final _recentMsgs = _messages.where((m) => m.type != _MsgType.working).toList();
+    if (_recentMsgs.length > 1) {
+      _convCtx = _recentMsgs.reversed.take(6).toList().reversed
+        .map((m) => m.type == _MsgType.user ? 'User: \${m.text}' : 'Jarvis: \${m.text.length > 200 ? m.text.substring(0, 200) : m.text}')
+        .join('\n');
+    }
+    final result = await api.submitMission(goal, conversationContext: _convCtx.isNotEmpty ? _convCtx : null);
     if (!mounted) return;
 
     if (result.ok && result.data != null) {

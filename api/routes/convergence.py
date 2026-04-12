@@ -120,11 +120,16 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                 if background_tasks and mission_id and result.get("ok"):
                     _goal_capture = goal
                     _mid_capture = mission_id
+                    _ctx_capture = str(body.get("context", "") or "")
                     async def _execute_canonical():
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
                             mo = get_meta_orchestrator()
-                            await mo.run_mission(_goal_capture, mission_id=_mid_capture)
+                            await mo.run_mission(
+                                _goal_capture,
+                                mission_id=_mid_capture,
+                                extra_metadata={"context": _ctx_capture} if _ctx_capture else None,
+                            )
                         except Exception as _exc:
                             log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120])
                     background_tasks.add_task(_execute_canonical)

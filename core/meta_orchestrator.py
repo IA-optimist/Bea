@@ -400,7 +400,10 @@ class MetaOrchestrator:
         """
         # NOTE: skip reasoning prepass for CHAT mode (short messages / greetings)
         _task_mode_str = ctx.metadata.get("task_mode", "")
-        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 30)
+        _CHAT_KEYWORDS = ("salut","bonjour","hello","hi","hey","présente","qui es","recommence","répète","repete","présente-toi","aide moi")
+        _goal_lower = goal.strip().lower()
+        _is_conversational = any(kw in _goal_lower for kw in _CHAT_KEYWORDS)
+        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 120) or _is_conversational
         _reasoning_result = None
         
         if _is_chat_mode:
@@ -1410,6 +1413,31 @@ class MetaOrchestrator:
             except Exception as _sme:
                 log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
+        # FAST PATH: chat direct via LLM (no crew)
+        if _is_chat_mode:
+            try:
+                _llm = getattr(delegate, "llm", None) or getattr(delegate, "_llm", None)
+                if _llm:
+                    _sys = "Tu es Jarvis, assistant IA de JarvisMax. Tu geres des missions complexes, tu orchestres des agents, tu fais du code, de lanalyse, de la recherche. Reponds directement et naturellement en francais."
+                    _conv_ctx = ctx.metadata.get("context", "")
+                    _messages = [{"role": "system", "content": _sys}]
+                    if _conv_ctx:
+                        _messages.append({"role": "user", "content": f"Contexte de la conversation:\n{_conv_ctx}"})
+                        _messages.append({"role": "assistant", "content": "Compris, je prends en compte notre conversation."})
+                    _messages.append({"role": "user", "content": goal})
+                    _usr = goal
+                    if hasattr(_llm, "ainvoke"):
+                        _r = await asyncio.wait_for(_llm.ainvoke(_messages), timeout=30)
+                    else:
+                        _r = await asyncio.get_event_loop().run_in_executor(None, _llm.invoke, _usr)
+                    _chat_text = getattr(_r, "content", str(_r))
+                    ctx.result = _chat_text
+                    ctx.status = MissionStatus.COMPLETED
+                    log.info("chat_fast_path_ok", mission_id=mid)
+                    return
+            except Exception as _fe:
+                log.debug("chat_fast_path_fail", err=str(_fe)[:80])
+
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # PHASE 4: AGI COGNITION WRAPPER
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2118,6 +2146,7 @@ class MetaOrchestrator:
         use_budget: bool = False,
         force_approved: bool = False,
         project_id: str | None = None,  # Phase 2.1: Project isolation
+        extra_metadata: dict | None = None,  # Extra context (e.g. conversation history)
     ) -> MissionContext:
         """
         Enhanced mission lifecycle with classification, context assembly,
@@ -2128,6 +2157,7 @@ class MetaOrchestrator:
         """
         mid = mission_id or uuid.uuid4().hex[:16]
         now = time.time()
+        _extra_meta = extra_metadata or {}
 
         ctx = MissionContext(
             mission_id=mid,

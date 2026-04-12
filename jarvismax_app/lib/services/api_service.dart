@@ -359,10 +359,14 @@ class ApiService extends ChangeNotifier {
 
   // ── Public API calls ──────────────────────────────────────────────────────
 
-  Future<ApiResult<Mission>> submitMission(String input) async {
+  Future<ApiResult<Mission>> submitMission(String input, {String? conversationContext}) async {
     _setLoading(true);
     try {
-      final raw = await _post('/api/v3/missions', {'goal': input});
+      final body = <String, dynamic>{'goal': input};
+      if (conversationContext != null && conversationContext.isNotEmpty) {
+        body['context'] = conversationContext;
+      }
+      final raw = await _post('/api/v3/missions', body);
       final data = raw['data'];
       final Map<String, dynamic> missionJson = data is Map<String, dynamic>
           ? data
