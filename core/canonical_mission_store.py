@@ -328,10 +328,11 @@ class CanonicalMissionStore:
 # ── Deserialization helper ──────────────────────────────────────────────────
 
 
-def _row_to_ctx(json_str: str) -> Optional[CanonicalMissionContext]:
+def _row_to_ctx(json_str) -> Optional[CanonicalMissionContext]:
     """Reconstruct CanonicalMissionContext from stored JSON."""
     try:
-        d = json.loads(json_str)
+        # Handle both str (SQLite) and dict (PostgreSQL jsonb) inputs
+        d = json_str if isinstance(json_str, dict) else json.loads(json_str)
         return CanonicalMissionContext(
             mission_id=d["mission_id"],
             goal=d.get("goal", ""),

@@ -2245,6 +2245,9 @@ class MetaOrchestrator:
             updated_at=now,
             project_id=project_id,  # Phase 2.1: Project isolation
         )
+        # Inject extra_metadata (conversation context, etc.) into ctx
+        if _extra_meta:
+            ctx.metadata.update(_extra_meta)
         with self._lock:
             self._missions[mid] = ctx
 

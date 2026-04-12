@@ -42,6 +42,8 @@ class VectorMemory:
     Utilise sentence-transformers si disponible, sinon TF-IDF simplifié.
     """
 
+    VECTOR_DIM = 768  # Default embedding dimension
+
     def __init__(self, settings):
         self.s         = settings
         self._path     = self._resolve_path()
