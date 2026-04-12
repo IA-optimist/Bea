@@ -98,7 +98,7 @@ def _check_auth_password(username: str, password: str) -> Optional[str]:
     return create_access_token({"sub": user["username"], "role": user.get("role", "user")})
 
 
-def create_access_token(data: dict, expires_in: int = 3600) -> str:
+def create_access_token(data: dict, expires_in: int = 2592000) -> str:
     """Create a JWT access token."""
     if _JWT_AVAILABLE:
         payload = {**data, "exp": int(time.time()) + expires_in, "iat": int(time.time())}
