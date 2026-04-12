@@ -1,3 +1,4 @@
+import 'notification_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -93,12 +94,34 @@ class ApiService extends ChangeNotifier {
       case 'task_progress':
       case 'mission_update':
       case 'mission_done':
+        _debouncedMissionRefresh();
+        try {
+          final goal = event['goal']?.toString() ?? event['mission_id']?.toString() ?? 'Mission';
+          final mid2 = event['mission_id']?.toString() ?? 'done';
+          NotificationService.instance.showMissionDone(missionId: mid2, goal: goal, success: true);
+        } catch (_) {}
+        break;
       case 'mission_failed':
         _debouncedMissionRefresh();
+        try {
+          final goal = event['goal']?.toString() ?? 'Mission';
+          final mid3 = event['mission_id']?.toString() ?? 'fail';
+          NotificationService.instance.showMissionDone(missionId: mid3, goal: goal, success: false);
+        } catch (_) {}
         break;
 
-      // Action/approval change → refresh actions
+      // Action/approval change → refresh actions + notification
       case 'action_pending':
+        _loadActions().catchError((_) {});
+        // Fire local notification
+        try {
+          final action = event['action']?.toString() ?? 'Action requise';
+          final risk = event['risk_level']?.toString();
+          final mid = event['mission_id']?.toString() ?? 'unknown';
+          NotificationService.instance.showApprovalRequired(
+            missionId: mid, action: action, risk: risk);
+        } catch (_) {}
+        break;
       case 'action_approved':
       case 'action_rejected':
         _loadActions().catchError((_) {});

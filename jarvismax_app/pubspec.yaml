@@ -1,7 +1,7 @@
 name: jarvismax_app
 description: JarvisMax — Application de contrôle Android
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -16,11 +16,8 @@ dependencies:
   web_socket_channel: ^2.4.0
   flutter_secure_storage: ^9.0.0
   connectivity_plus: ^6.0.0
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_local_notifications: ^17.2.4   # Notifications locales (approval alerts)
+  flutter_markdown: ^0.7.6                # Rendu markdown dans les réponses
 
 flutter:
   uses-material-design: true
