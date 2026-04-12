@@ -92,6 +92,18 @@ async def supervise(
     t0 = time.monotonic()
     last_error = ""
 
+    # Skip crew if already completed by fast-path
+    try:
+        from core.mission_persistence import get_mission_persistence
+        _ex = get_mission_persistence().get(mission_id)
+        if _ex and str(getattr(_ex, "status", "")).upper() in ("COMPLETED", "DONE"):
+            log.info("supervisor.skip_completed", mission_id=mission_id)
+            outcome.final_report = str(getattr(_ex, "result", "") or "")
+            outcome.success = True
+            return outcome
+    except Exception:
+        pass
+
     log.info(
         "mission_started",
         mission_id=mission_id,

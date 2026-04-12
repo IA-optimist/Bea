@@ -1413,30 +1413,46 @@ class MetaOrchestrator:
             except Exception as _sme:
                 log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
-        # FAST PATH: chat direct via LLM (no crew)
+        # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
         if _is_chat_mode:
             try:
-                _llm = getattr(delegate, "llm", None) or getattr(delegate, "_llm", None)
-                if _llm:
-                    _sys = "Tu es Jarvis, assistant IA de JarvisMax. Tu geres des missions complexes, tu orchestres des agents, tu fais du code, de lanalyse, de la recherche. Reponds directement et naturellement en francais."
-                    _conv_ctx = ctx.metadata.get("context", "")
-                    _messages = [{"role": "system", "content": _sys}]
-                    if _conv_ctx:
-                        _messages.append({"role": "user", "content": f"Contexte de la conversation:\n{_conv_ctx}"})
-                        _messages.append({"role": "assistant", "content": "Compris, je prends en compte notre conversation."})
-                    _messages.append({"role": "user", "content": goal})
-                    _usr = goal
-                    if hasattr(_llm, "ainvoke"):
-                        _r = await asyncio.wait_for(_llm.ainvoke(_messages), timeout=30)
-                    else:
-                        _r = await asyncio.get_event_loop().run_in_executor(None, _llm.invoke, _usr)
-                    _chat_text = getattr(_r, "content", str(_r))
-                    ctx.result = _chat_text
-                    ctx.status = MissionStatus.COMPLETED
-                    log.info("chat_fast_path_ok", mission_id=mid)
-                    return
+                from core.orchestration.creative_engine import JarvisLLMClient
+                _fp_llm = JarvisLLMClient(role="fast")
+                _fp_sys = (
+                    "Tu es Jarvis, assistant IA et orchestrateur de JarvisMax. "
+                    "Tu geres des missions complexes, tu orchestres des agents, tu fais du code, "
+                    "de lanalyse, de la recherche, et bien plus. "
+                    "Reponds directement et naturellement en francais. "
+                    "Sois concis, utile, et montre ta personnalite."
+                )
+                _fp_ctx = str(ctx.metadata.get("context", "") or "")
+                if _fp_ctx:
+                    _fp_prompt = _fp_sys + "\n\nContexte: " + _fp_ctx + "\n\nMessage: " + goal
+                else:
+                    _fp_prompt = _fp_sys + "\n\n" + goal
+                _fp_text = await asyncio.wait_for(
+                    _fp_llm.complete(_fp_prompt, max_tokens=2000),
+                    timeout=45
+                )
+                if not _fp_text or len(str(_fp_text).strip()) < 3:
+                    raise ValueError("empty_response")
+                ctx.result = str(_fp_text)
+                ctx.status = MissionStatus.DONE
+                ctx.completed_at = time.time()
+                log.info("chat_fast_path_ok", mission_id=mid, chars=len(str(_fp_text)))
+                try:
+                    from core.mission_persistence import get_mission_persistence
+                    get_mission_persistence().persist(ctx)
+                except Exception:
+                    pass
+                try:
+                    self._cleanup_event_stream(mid)
+                except Exception:
+                    pass
+                return
             except Exception as _fe:
-                log.debug("chat_fast_path_fail", err=str(_fe)[:80])
+                log.warning("chat_fast_path_fail", err=str(_fe)[:120])
+                # Fall through to full crew
 
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # PHASE 4: AGI COGNITION WRAPPER

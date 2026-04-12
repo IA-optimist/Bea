@@ -134,7 +134,7 @@ class ProposalStore:
         if not p or p.status != "approved":
             return False
         p.status = "executed"
-        p.execution_result = result[:500]
+        p.execution_result = result[:5000]
         self.save()
         return True
 
