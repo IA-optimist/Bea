@@ -1,33 +1,21 @@
 {
-    # Enable HTTP (port 80) and HTTPS (port 443)
-    # auto_https disabled — use manual SSL or HTTP only for now
-    auto_https off
+    email admin@jarvismaxapp.co.uk
 }
 
-# Main domain — HTTPS/HTTP
 jarvis.jarvismaxapp.co.uk {
-    # API routes → jarvismax-api container
     handle /api/* {
         reverse_proxy jarvismax-api:8000
     }
-    
-    # WebSocket routes → jarvismax-api container
     handle /ws/* {
         reverse_proxy jarvismax-api:8000
     }
-    
-    # Frontend (SPA) → jarvismax-frontend container on port 80
     handle {
-        reverse_proxy jarvismax-frontend:80
+        reverse_proxy jarvismax-api:8000
     }
 }
 
-# Fallback HTTP server on port 8080 (for direct IP access)
 :8080 {
-    handle /api/* {
-        reverse_proxy jarvismax-api:8000
-    }
     handle {
-        reverse_proxy jarvismax-frontend:80
+        reverse_proxy jarvismax-api:8000
     }
 }

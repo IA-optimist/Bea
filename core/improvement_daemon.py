@@ -652,6 +652,15 @@ def run_cycle(repo_root: Path | None = None) -> dict:
         "error": "",
     }
 
+    # -- Detect improvements (read-only, before gate)
+    try:
+        from core.improvement_detector import detect_improvements
+        _new_props = detect_improvements(dry_run=False)
+        if _new_props:
+            log.info("daemon.proposals_generated", count=len(_new_props))
+            result["proposals_generated"] = len(_new_props)
+    except Exception as _de:
+        log.debug("daemon.detector_error", err=str(_de)[:80])
     # ── KERNEL GATE: must pass before any work ───────────────────────────────
     # kernel/ never imports core/ — gate reads workspace/self_improvement/history.json
     # directly when no history_provider is registered.
