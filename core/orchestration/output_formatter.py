@@ -33,6 +33,8 @@ def format_output(
 
     # Remove common LLM artifacts
     output = _clean_artifacts(output)
+    # Remove 'Mission: ✅ SUCCESS' / 'Mission : SUCCESS' LLM prefix artefacts
+    output = re.sub(r'^Mission\s*:\s*[✅⚠️❌🔄]*\s*\*{0,2}\w+\*{0,2}\s*\n+', '', output, flags=re.IGNORECASE).strip()
 
     # Task-type-specific formatting
     if task_type in ("research", "analysis"):

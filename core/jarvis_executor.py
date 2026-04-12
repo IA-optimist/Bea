@@ -1173,18 +1173,20 @@ class JarvisOrchestrator:
             messages = [
                 SystemMessage(content=(
                     f"Tu es {self.s.jarvis_name}. "
-                    "Redige un rapport final concis pour Max.\n"
-                    "1) Statut honnête (SUCCESS/PARTIAL/FAILURE) avec justification. "
-                    "2) Synthese (2 phrases). "
-                    "3) Points cles. "
-                    "4) Prochaines etapes.\n"
-                    "RÈGLE ABSOLUE : le statut dans ton rapport DOIT correspondre "
-                    "au statut réel ci-dessous. Ne déclare jamais SUCCESS si des agents ont échoué."
+                    "Redige un rapport final concis en francais.\n"
+                    "FORMAT STRICT — commence directement par le chiffre 1), sans préfixe:\n"
+                    "1) Statut : [SUCCESS/PARTIAL/FAILURE] + justification courte.\n"
+                    "2) Synthese : 2 phrases max.\n"
+                    "3) Points cles : liste courte.\n"
+                    "4) Prochaines etapes : 1 phrase.\n"
+                    "INTERDITS : ne commence PAS par Mission:, ne repete PAS le badge ✅, "
+                    "ne liste PAS les resultats bruts des agents. "
+                    "REGLE : le statut DOIT correspondre au statut reel fourni."
                 )),
                 HumanMessage(content=(
                     f"Mission : {session.mission_summary}\n\n"
                     f"{status_note}\n\n"
-                    f"Resultats agents :\n{snippets}{actions_note}"
+                    f"Contexte agents (résumé) :\n{snippets[:800]}{actions_note}"
                 )),
             ]
             resp = await factory.safe_invoke(messages, role="fast", timeout=60.0)
