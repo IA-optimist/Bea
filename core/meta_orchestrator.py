@@ -1450,7 +1450,17 @@ class MetaOrchestrator:
 
         # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
         # Skip fast-path if mission needs approval or contains destructive keywords
-        _DESTRUCTIVE_KW = ("delete","drop","remove","truncat","wipe","format","kill","destroy","purge","email all","send.*all","broadcast","sudo","chmod","rm -","mkfs","shutdown","reboot","restart.*server")
+        _DESTRUCTIVE_KW = (
+            # English
+            "delete","drop","remove","truncat","wipe","format","kill","destroy",
+            "purge","email all","send.*all","broadcast","sudo","chmod","rm -",
+            "mkfs","shutdown","reboot","restart server","drop table","drop database",
+            # French — commands that could cause real damage
+            "supprim","efface","effa\u00e7","suppression","vide la base",
+            "formate","arr\u00eate le serveur","red\u00e9marre","\u00e9teins",
+            "\u00e9crire dans","modifie la base","alter table","truncate",
+            "envoie un mail \u00e0 tous","envoie un email \u00e0 tous",
+        )
         _goal_for_risk = goal.lower()
         _fp_skip_risk = (
             needs_approval
@@ -1462,12 +1472,15 @@ class MetaOrchestrator:
                 from core.orchestration.creative_engine import JarvisLLMClient
                 _fp_llm = JarvisLLMClient(role="fast")
                 _fp_sys = (
-                    "Tu es Jarvis. Tu as une personnalite directe, intelligente et un peu ironique. "
-                    "Tu reponds aux messages de ton utilisateur Unity comme un assistant personnel de confiance. "
-                    "Pour les salutations et questions simples : reponds de facon naturelle et conversationnelle, "
-                    "comme dans une vraie conversation. Pas de jargon mission/orchestration. "
-                    "Pour les questions sur tes capacites : reponds avec confiance et concision. "
-                    "Langue : francais. Longueur : adapte au message (court si message court)."
+                    "Tu es Jarvis, assistant IA. Personnalite : direct, intelligent, un peu ironique.\n"
+                    "REGLES ABSOLUES :\n"
+                    "1. Tu ne simules JAMAIS une action reelle (suppression, envoi, modification). "
+                    "Si quelqu'un demande une action potentiellement destructive, tu REFUSES calmement "
+                    "et expliques pourquoi tu ne peux pas l'executer directement.\n"
+                    "2. Tu reponds naturellement en francais, de maniere conversationnelle.\n"
+                    "3. Pour les salutations : court et naturel.\n"
+                    "4. Pour les questions sur tes capacites : concis et honnete.\n"
+                    "5. Longueur adaptee au message (court si message court)."
                 )
                 _fp_ctx = str(ctx.metadata.get("context", "") or "")
                 if _fp_ctx:
