@@ -155,6 +155,27 @@ except ImportError:
 # MetaOrchestrator
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+def _strip_execution_outcome(text: str) -> str:
+    """Strip ExecutionOutcome(...) wrapper from result text."""
+    if not text or not text.startswith("ExecutionOutcome("):
+        return text
+    # Try to extract result= value
+    m = re.search(r'result=["\'](.*?)["\'](,\s*\w|\))', text, re.DOTALL)
+    if m:
+        return m.group(1).replace('\\n', '\n')
+    # Fallback: extract everything after result=
+    idx = text.find('result=')
+    if idx != -1:
+        out = text[idx + 7:]
+        if out and out[0] in ('"', "'"):
+            out = out[1:]
+        if out.endswith('")') or out.endswith("')"):
+            out = out[:-2]
+        return out
+    return text
+
+
 class MetaOrchestrator:
     """
     Cerveau unique de JarvisMax.
@@ -1418,16 +1439,25 @@ class MetaOrchestrator:
                 log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
         # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
-        if _is_chat_mode:
+        # Skip fast-path if mission needs approval or contains destructive keywords
+        _DESTRUCTIVE_KW = ("delete","drop","remove","truncat","wipe","format","kill","destroy","purge","email all","send.*all","broadcast","sudo","chmod","rm -","mkfs","shutdown","reboot","restart.*server")
+        _goal_for_risk = goal.lower()
+        _fp_skip_risk = (
+            needs_approval
+            or ctx.metadata.get("classification", {}).get("risk_level", "low") in ("high", "write_high", "HIGH")
+            or any(kw in _goal_for_risk for kw in _DESTRUCTIVE_KW)
+        )
+        if _is_chat_mode and not _fp_skip_risk:
             try:
                 from core.orchestration.creative_engine import JarvisLLMClient
                 _fp_llm = JarvisLLMClient(role="fast")
                 _fp_sys = (
-                    "Tu es Jarvis, assistant IA et orchestrateur de JarvisMax. "
-                    "Tu geres des missions complexes, tu orchestres des agents, tu fais du code, "
-                    "de lanalyse, de la recherche, et bien plus. "
-                    "Reponds directement et naturellement en francais. "
-                    "Sois concis, utile, et montre ta personnalite."
+                    "Tu es Jarvis. Tu as une personnalite directe, intelligente et un peu ironique. "
+                    "Tu reponds aux messages de ton utilisateur Unity comme un assistant personnel de confiance. "
+                    "Pour les salutations et questions simples : reponds de facon naturelle et conversationnelle, "
+                    "comme dans une vraie conversation. Pas de jargon mission/orchestration. "
+                    "Pour les questions sur tes capacites : reponds avec confiance et concision. "
+                    "Langue : francais. Longueur : adapte au message (court si message court)."
                 )
                 _fp_ctx = str(ctx.metadata.get("context", "") or "")
                 if _fp_ctx:
@@ -1444,9 +1474,21 @@ class MetaOrchestrator:
                 ctx.status = MissionStatus.DONE
                 ctx.completed_at = time.time()
                 log.info("chat_fast_path_ok", mission_id=mid, chars=len(str(_fp_text)))
+                # Persist to both stores so UI sees consistent status
                 try:
                     from core.mission_persistence import get_mission_persistence
                     get_mission_persistence().persist(ctx)
+                except Exception:
+                    pass
+                try:
+                    # Sync mission_system store to avoid READY/DONE mismatch
+                    from core.mission_system import get_mission_system
+                    _ms = get_mission_system()
+                    _ms_rec = _ms.get_mission(mid)
+                    if _ms_rec is not None:
+                        _ms_rec.status = "DONE"
+                        _ms_rec.final_output = ctx.result
+                        _ms._save_mission(_ms_rec)
                 except Exception:
                     pass
                 try:
@@ -1512,12 +1554,15 @@ class MetaOrchestrator:
                 # Only activate ToT for genuinely complex goals
                 from core.cognition.tot_wrapper import should_use_tot as _should_tot
                 _use_tot = _should_tot(goal)
-                cognition_result = await _cog.execute_mission_with_cognition(
-                    mission=_payload,
-                    enable_tot=_use_tot,
-                    enable_confidence=True,
-                    enable_learning=True,
-                    executor_fn=_real_executor  # Pass real executor
+                cognition_result = await asyncio.wait_for(
+                    _cog.execute_mission_with_cognition(
+                        mission=_payload,
+                        enable_tot=_use_tot,
+                        enable_confidence=True,
+                        enable_learning=True,
+                        executor_fn=_real_executor,
+                    ),
+                    timeout=180,  # 3 min max for cognition (incl. ToT)
                 )
                 # Extract outcome from cognition result
                 # CognitionOrchestrator returns augmented mission dict with "result" key

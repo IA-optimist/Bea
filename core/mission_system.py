@@ -593,19 +593,19 @@ class MissionSystem:
         if _trace_id:
             result.decision_trace["trace_id"] = _trace_id
 
-        # HIGH (7-10) → BLOCKED immédiat en mode SUPERVISED
+        # HIGH (7-10) → AWAITING_APPROVAL en mode SUPERVISED (pas BLOCKED)
         mode_sys = self._get_mode_system()
         if (
             mode_sys.get_mode().value == "SUPERVISED"
             and numeric_level == "HIGH"
         ):
-            result.status = MissionStatus.BLOCKED
+            result.status = MissionStatus.AWAITING_APPROVAL
             result.error  = (
-                f"Mission bloquée automatiquement — risk_score={num_score}/10 (HIGH). "
-                "Trop risqué pour exécution automatique en mode SUPERVISED."
+                f"Mission en attente d'approbation — risk_score={num_score}/10 (HIGH). "
+                "Action risquée : validation humaine requise."
             )
             log.warning(
-                "mission_high_risk_blocked",
+                "mission_awaiting_approval_high_risk",
                 id=mission_id, risk_score=num_score, level=numeric_level,
             )
             self._save_mission(result)
@@ -625,9 +625,9 @@ class MissionSystem:
         gate_result = gate.check_advisory(advisory_data)
 
         if gate_result.is_blocked():
-            result.status = MissionStatus.BLOCKED
+            result.status = MissionStatus.AWAITING_APPROVAL
             result.error  = gate_result.reason
-            log.warning("mission_blocked", id=mission_id, reason=gate_result.reason[:100])
+            log.warning("mission_needs_approval", id=mission_id, reason=gate_result.reason[:100])
             self._save_mission(result)
             return result
 

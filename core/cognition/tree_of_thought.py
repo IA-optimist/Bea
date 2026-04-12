@@ -37,7 +37,7 @@ class TreeOfThought:
     def __init__(
         self,
         llm_function: Callable,
-        max_depth: int = 3,
+        max_depth: int = 2,
         branching_factor: int = 3,
         pruning_threshold: float = 0.3,
         mode: str = "bfs"  # bfs, dfs, beam
@@ -119,7 +119,7 @@ class TreeOfThought:
         
         await dfs(root)
     
-    async def _explore_beam(self, root: ThoughtNode, problem: str, beam_width: int = 5):
+    async def _explore_beam(self, root: ThoughtNode, problem: str, beam_width: int = 3):
         """Beam search exploration (keeps top-k nodes at each level)."""
         current_beam = [root]
         
