@@ -1,3 +1,4 @@
+import '../config/hardcoded_config.dart';
 import 'notification_service.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -155,8 +156,11 @@ class ApiService extends ChangeNotifier {
     } catch (_) {
       _jwtToken = '';
     }
-    // NOTE: No auto-login with hardcoded credentials.
-    // If JWT is absent, user must configure credentials via Settings.
+    // Auto-login: if JWT empty, use static API token (always valid)
+    if (_jwtToken.isEmpty) {
+      _jwtToken = HardcodedConfig.apiToken;
+      _isAdmin = true;
+    }
     // Restore admin role from persisted session (loginMode == 'admin').
     try {
       final session = await SessionManager.instance.restoreSession();
@@ -232,7 +236,7 @@ class ApiService extends ChangeNotifier {
 
   /// Attempt silent token refresh.
   Future<void> _doTokenRefresh() async {
-    if (_jwtToken.isEmpty) return;
+
     debugPrint('[JWT] Attempting token refresh...');
     
     try {
@@ -240,7 +244,7 @@ class ApiService extends ChangeNotifier {
       final resp = await http.post(
         Uri.parse('\$_base/auth/refresh'),
         headers: {
-          'Authorization': 'Bearer \$_jwtToken',
+          'Authorization': 'Bearer ${_jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken}',
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));
@@ -289,7 +293,7 @@ class ApiService extends ChangeNotifier {
 
   /// Validate stored JWT on startup. If valid, use it. If not, clear it.
   Future<void> autoLogin() async {
-    if (_jwtToken.isEmpty) return;
+
     try {
       final resp = await http.get(
         Uri.parse('\$_base/api/v2/agents'),
@@ -320,8 +324,9 @@ class ApiService extends ChangeNotifier {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    if (_jwtToken.isNotEmpty) {
-      h['Authorization'] = 'Bearer $_jwtToken';
+    final _effectiveToken = _jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken;
+    if (_effectiveToken.isNotEmpty) {
+      h['Authorization'] = 'Bearer $_effectiveToken';
     }
     return h;
   }
@@ -674,7 +679,7 @@ class ApiService extends ChangeNotifier {
         req.headers['Accept'] = 'text/event-stream';
         req.headers['Cache-Control'] = 'no-cache';
         if (_jwtToken.isNotEmpty) {
-          req.headers['Authorization'] = 'Bearer $_jwtToken';
+          req.headers['Authorization'] = 'Bearer ${_jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken}';
         }
         final resp = await client.send(req);
         String buf = '';
