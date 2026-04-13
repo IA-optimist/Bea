@@ -433,7 +433,7 @@ class LLMFactory:
         model_map = {
             # ── Heavy roles → Sonnet ──────────────────────────────────────
             "director":            _ORCH,
-            "planner":             _ORCH,
+            "planner":             _STD,    # planner -> STANDARD (haiku, suffisant pour plans)
             "ops":                 _ORCH,
             "research":            _STD,    # scout-research -> STANDARD (haiku, 4x plus rapide)
             "default":             _STD,    # default -> STANDARD (haiku) pour actions generiques

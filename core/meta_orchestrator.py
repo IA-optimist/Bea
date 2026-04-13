@@ -1884,6 +1884,33 @@ class MetaOrchestrator:
         except Exception as _exc:
             log.debug("phase_failed", phase="output_format", err=str(_exc)[:100])
 
+        # ── Phase 3c: Livrable export (auto-generate client deliverable) ──
+        try:
+            from core.livrable_export import LivrableExport
+            from core.client_profile import ClientProfile
+            # Detect client from goal keywords
+            _gl = goal.lower()
+            _sm = {'jardin': '2f190993', 'chauffage': 'a08c93ad',
+                   'pompe': 'a08c93ad', 'ecommerce': '9ac01d10', 'piece': '9ac01d10'}
+            _client_name = ''
+            for _kw, _pid in _sm.items():
+                if _kw in _gl:
+                    _p = ClientProfile.load(_pid)
+                    if _p:
+                        _client_name = _p.name
+                        _p.add_mission(goal, 'COMPLETED', str(ctx.result)[:200])
+                        _p.save()
+                    break
+            if ctx.result and len(ctx.result) > 100:
+                _exp = LivrableExport()
+                _paths = _exp.save(ctx.result, _client_name or 'JarvisMax', goal, mid)
+                ctx.metadata['livrable_md'] = _paths['markdown']
+                ctx.metadata['livrable_html'] = _paths['html']
+                log.info('livrable_exported', mission_id=mid, client=_client_name,
+                         md=_paths['markdown'].split('/')[-1])
+        except Exception as _lv_err:
+            log.debug('livrable_export_skipped', err=str(_lv_err)[:80])
+
         # ── Phase 3b: Learning loop (kernel-authoritative — R5 / Pass 23) ──
         self._execute_kernel_learning(goal, ctx, mid, outcome, result_confidence, trace)
 
