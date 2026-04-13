@@ -1283,7 +1283,7 @@ class MetaOrchestrator:
         try:
             from core.orchestration.comprehension_checker import ComprehensionChecker
             _cc = ComprehensionChecker()
-            _cc_report = await _cc.check(enriched_goal)
+            _cc_report = await asyncio.wait_for(_cc.check(enriched_goal), timeout=5.0)
             if _cc_report and not _cc_report.get("understood", True):
                 _clarification = _cc_report.get("clarification_needed", "")
                 if _clarification:
@@ -1296,7 +1296,7 @@ class MetaOrchestrator:
         try:
             from core.orchestration.memory_system import UnifiedMemory
             _um = UnifiedMemory()
-            _memories = await _um.recall(enriched_goal, top_k=3)
+            _memories = await asyncio.wait_for(_um.recall(enriched_goal, top_k=3), timeout=3.0)
             if _memories:
                 _mem_block = "\n".join(f"- {m['content'][:200]}" for m in _memories if m.get('content'))
                 if _mem_block:
@@ -1305,6 +1305,24 @@ class MetaOrchestrator:
         except Exception as _um_err:
             log.debug("unified_memory.skipped", err=str(_um_err)[:80])
 
+        # Inject client profile context if sector matches goal
+        try:
+            from core.client_profile import ClientProfile as _CP
+            _gl = goal.lower()
+            _sm = {'jardin': '2f190993', 'chauffage': 'a08c93ad',
+                   'pompe': 'a08c93ad', 'ecommerce': '9ac01d10', 'piece': '9ac01d10'}
+            for _kw, _pid in _sm.items():
+                if _kw in _gl:
+                    _p = _CP.load(_pid)
+                    if _p:
+                        enriched_goal = _p.inject_context(enriched_goal)
+                    break
+        except Exception:
+            pass
+        # Cap enriched_goal to avoid overwhelming agents with huge context
+        if len(enriched_goal) > 2000:
+            enriched_goal = enriched_goal[:2000] + "\n[...context truncated for performance...]"
+            log.debug("enriched_goal_capped", mission_id=mid, original_len=len(enriched_goal))
         from core.orchestration.execution_supervisor import supervise
         delegate = self.v2 if use_budget else self.jarvis
         
@@ -1616,7 +1634,7 @@ class MetaOrchestrator:
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # PHASE 4: AGI COGNITION WRAPPER
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        _mission_timeout = getattr(self.s, "mission_timeout_s", 600)
+        _mission_timeout = getattr(self.s, "mission_timeout_s", 120)
         
         _use_cognition = (
             not _is_chat_mode
