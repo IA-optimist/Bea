@@ -1203,8 +1203,8 @@ class JarvisOrchestrator:
             ]
             resp = await factory.safe_invoke(messages, role="fast", timeout=60.0)
             report_text = resp.content if resp else snippets[:2000]
-            session.final_report = f"{status_badge} **{status_label}**\n\n{report_text}"
-            await emit(f"Rapport final {status_badge}\n\n{report_text[:3500]}")
+            session.final_report = report_text
+            await emit(f"Rapport final\n\n{report_text[:3500]}")
         except asyncio.TimeoutError:
             session.final_report = f"{status_badge} **{status_label}** (timeout LLM)\n\n{snippets[:2000]}"
             await emit(f"Rapport (timeout LLM)\n\n{snippets[:2000]}")
