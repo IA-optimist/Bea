@@ -1177,16 +1177,23 @@ class JarvisOrchestrator:
             factory  = LLMFactory(self.s)
             messages = [
                 SystemMessage(content=(
-                    f"Tu es {self.s.jarvis_name}. "
-                    "Redige un rapport final concis en francais.\n"
-                    "FORMAT STRICT — commence directement par le chiffre 1), sans préfixe:\n"
-                    "1) Statut : [SUCCESS/PARTIAL/FAILURE] + justification courte.\n"
-                    "2) Synthese : 2 phrases max.\n"
-                    "3) Points cles : liste courte.\n"
-                    "4) Prochaines etapes : 1 phrase.\n"
-                    "INTERDITS : ne commence PAS par Mission:, ne repete PAS le badge ✅, "
-                    "ne liste PAS les resultats bruts des agents. "
-                    "REGLE : le statut DOIT correspondre au statut reel fourni."
+                    f"Tu es {self.s.jarvis_name}, assistant business expert. "
+                    "Redige un rapport final professionnel en francais, directement presentable a un client.\n\n"
+                    "FORMAT OBLIGATOIRE (Markdown):\n"
+                    "## Résumé\n"
+                    "(2-3 phrases synthétisant les résultats principaux)\n\n"
+                    "## Points clés\n"
+                    "- Point 1 concret\n"
+                    "- Point 2 concret\n"
+                    "- ...\n\n"
+                    "## Recommandations\n"
+                    "(1-2 actions concrètes et prioritaires)\n\n"
+                    "REGLES: "
+                    "NE PAS commencer par 1) Statut / 2) Synthese. "
+                    "NE PAS mettre de prefixe SUCCESS/FAILED. "
+                    "NE PAS lister les resultats bruts des agents. "
+                    "Ecrire comme si tu presentais a un dirigeant: concis, factuel, actionnable. "
+                    "Max 250 mots."
                 )),
                 HumanMessage(content=(
                     f"Mission : {session.mission_summary}\n\n"
