@@ -1309,8 +1309,9 @@ class MetaOrchestrator:
         try:
             from core.client_profile import ClientProfile as _CP
             _gl = goal.lower()
-            _sm = {'jardin': '2f190993', 'chauffage': 'a08c93ad',
-                   'pompe': 'a08c93ad', 'ecommerce': '9ac01d10', 'piece': '9ac01d10'}
+            _sm = {'jardin': '2f190993', 'tonte': '2f190993', 'tondeuse': '2f190993',
+                   'chauffage': 'a08c93ad', 'pompe': 'a08c93ad', 'pac': 'a08c93ad',
+                   'ecommerce': '9ac01d10', 'piece': '9ac01d10', 'radiateur': '9ac01d10'}
             for _kw, _pid in _sm.items():
                 if _kw in _gl:
                     _p = _CP.load(_pid)
@@ -1890,8 +1891,9 @@ class MetaOrchestrator:
             from core.client_profile import ClientProfile
             # Detect client from goal keywords
             _gl = goal.lower()
-            _sm = {'jardin': '2f190993', 'chauffage': 'a08c93ad',
-                   'pompe': 'a08c93ad', 'ecommerce': '9ac01d10', 'piece': '9ac01d10'}
+            _sm = {'jardin': '2f190993', 'tonte': '2f190993', 'tondeuse': '2f190993',
+                   'chauffage': 'a08c93ad', 'pompe': 'a08c93ad', 'pac': 'a08c93ad',
+                   'ecommerce': '9ac01d10', 'piece': '9ac01d10', 'radiateur': '9ac01d10'}
             _client_name = ''
             for _kw, _pid in _sm.items():
                 if _kw in _gl:
