@@ -76,10 +76,26 @@ class FailureCollector:
         except Exception:
             _silent_log.debug("suppressed_exception", src='failure_collector.py')
 
+        # Build set of already-logged (mission_id, category) to avoid duplicates
+        already_seen: set = set()
+        try:
+            existing = self.load_from_disk(limit=500)
+            for e in existing:
+                already_seen.add(f"{e.mission_id}:{e.category}")
+        except Exception:
+            pass
+
         for mission_id, mission in missions_by_id.items():
             events = mission_store.get_log(mission_id)
             entries = self._analyze_mission(mission_id, mission, events)
-            new_entries.extend(entries)
+            # Filter out already-logged failures
+            new_filtered = [
+                e for e in entries
+                if f"{e.mission_id}:{e.category}" not in already_seen
+            ]
+            new_entries.extend(new_filtered)
+            for e in new_filtered:
+                already_seen.add(f"{e.mission_id}:{e.category}")
 
         # Mise à jour mémoire (max 100)
         self._entries = (self._entries + new_entries)[-_MAX_IN_MEMORY:]
