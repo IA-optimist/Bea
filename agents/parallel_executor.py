@@ -39,7 +39,7 @@ CB = Callable[[str], Awaitable[None]]
 
 # Timeouts par défaut
 _DEFAULT_AGENT_TIMEOUT = 40      # secondes par agent
-_DEFAULT_GLOBAL_TIMEOUT = 90     # secondes pour tout le batch
+_DEFAULT_GLOBAL_TIMEOUT = 120    # secondes pour tout le batch
 
 _TRACE_LOG = Path("workspace/execution_trace.jsonl")
 # Rotation: keep max 50 MB of trace history.

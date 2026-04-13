@@ -465,13 +465,14 @@ class JarvisOrchestrator:
         # Missions simples/standard → plan statique TaskRouter (rapide, déterministe)
         complexity   = self._compute_mission_complexity(session.user_input)
         use_director = (
-            complexity > 0.60
-            and decision.mode not in (TaskMode.CHAT,)
+            complexity > 0.80  # 0.60->0.80: evite atlas sur research/analyse simples
+            and decision.mode not in (TaskMode.CHAT, TaskMode.RESEARCH, TaskMode.PLAN)
         )
 
         # 3a. Hierarchical decomposition (strategic layer) — fires before AtlasDirector
-        # for high-complexity missions. Fail-open: if it fails, planning continues normally.
-        if use_director:
+        # Only for CODE/WORKFLOW — skip on RESEARCH/PLAN to avoid extra LLM call.
+        _hplan_modes = (TaskMode.CODE, TaskMode.WORKFLOW) if hasattr(TaskMode, 'WORKFLOW') else (TaskMode.CODE,)
+        if use_director and decision.mode in _hplan_modes:
             try:
                 from core.hierarchical_planner import get_mission_decomposer
                 _h_plan = get_mission_decomposer().decompose(
@@ -499,7 +500,8 @@ class JarvisOrchestrator:
         if use_director:
             await emit(f"Mission complexe (score={complexity:.2f}) — AtlasDirector planifie...")
             try:
-                await self.agents.run("atlas-director", session)
+                import asyncio as _aio
+                await _aio.wait_for(self.agents.run("atlas-director", session), timeout=30.0)
                 if not session.agents_plan:
                     raise ValueError("atlas-director a retourné un plan vide")
                 log.info("auto_atlas_director_used",
@@ -943,7 +945,10 @@ class JarvisOrchestrator:
 
             # Replan dynamique uniquement sur les vagues non-P3 en mode non-chat
             has_critical = any(t.get("priority", 2) <= 2 for t in wave_tasks)
-            use_replan   = (mode_val != "chat") and has_critical
+            # Replan only for complex modes (CODE, WORKFLOW) — skip for RESEARCH/PLAN
+            # to avoid double parallel wave that doubles execution time
+            _replan_modes = {"code", "workflow"}
+            use_replan   = (mode_val in _replan_modes) and has_critical
 
             if use_replan:
                 wave_results = await pex.run_with_replan(

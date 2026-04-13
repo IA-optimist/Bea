@@ -362,3 +362,13 @@ class VaultMemory:
             self._pg_backend.close()
         
         logger.info("VaultMemory closed")
+
+
+# ── Singleton helper ───────────────────────────────────────────────────────────
+_vault_instance = None
+
+def get_vault_memory() -> VaultMemory:
+    global _vault_instance
+    if _vault_instance is None:
+        _vault_instance = VaultMemory()
+    return _vault_instance

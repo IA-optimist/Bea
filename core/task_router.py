@@ -158,17 +158,17 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
 
     TaskMode.RESEARCH: [
         {"agent": "vault-memory",   "task": "Rappel contexte pertinent",   "priority": 1},
-        {"agent": "scout-research", "task": "Recherche et synthese",        "priority": 2, "timeout": 35},
-        {"agent": "shadow-advisor", "task": "Angles alternatifs",           "priority": 2, "timeout": 20},
-        {"agent": "lens-reviewer",  "task": "Validation qualite",           "priority": 3, "timeout": 25},
+        {"agent": "scout-research", "task": "Recherche et synthese",        "priority": 2, "timeout": 45},
+        {"agent": "shadow-advisor", "task": "Angles alternatifs",           "priority": 2, "timeout": 35},
+        {"agent": "lens-reviewer",  "task": "Validation qualite",           "priority": 3, "timeout": 30},
     ],
 
     TaskMode.PLAN: [
         {"agent": "vault-memory",   "task": "Rappel contexte pertinent",   "priority": 1},
-        {"agent": "scout-research", "task": "Contexte et contraintes",      "priority": 2, "timeout": 35},
-        {"agent": "map-planner",    "task": "Plan detaille",                "priority": 2, "timeout": 30},
-        {"agent": "shadow-advisor", "task": "Risques et angles oublies",    "priority": 2, "timeout": 20},
-        {"agent": "lens-reviewer",  "task": "Validation du plan",           "priority": 3, "timeout": 25},
+        {"agent": "scout-research", "task": "Contexte et contraintes",      "priority": 2, "timeout": 45},
+        {"agent": "map-planner",    "task": "Plan detaille",                "priority": 2, "timeout": 35},
+        {"agent": "shadow-advisor", "task": "Risques et angles oublies",    "priority": 2, "timeout": 35},
+        {"agent": "lens-reviewer",  "task": "Validation du plan",           "priority": 3, "timeout": 30},
     ],
 
     TaskMode.CODE: [
