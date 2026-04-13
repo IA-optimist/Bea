@@ -1213,3 +1213,58 @@ async def stream_mission_compat(mission_id: str):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
+
+# ── Livrable export endpoint ───────────────────────────────────────────────────
+
+@router.get("/api/v3/missions/{mission_id}/livrable")
+async def get_mission_livrable(
+    mission_id: str,
+    fmt: str = "markdown",  # "markdown" ou "html"
+    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    authorization: Annotated[Optional[str], Header()] = None,
+):
+    """
+    Retourne le livrable client generé pour cette mission.
+    fmt=markdown -> texte .md
+    fmt=html     -> HTML complet pour impression/PDF
+    """
+    _check_auth(x_jarvis_token, authorization)
+    try:
+        from pathlib import Path
+        livrable_dir = Path('/opt/jarvismax-app/workspace/livrables')
+        # Chercher un fichier contenant le mission_id court
+        mid_short = mission_id[:8]
+        candidates = list(livrable_dir.glob(f'*{mid_short}*.md'))
+
+        if not candidates:
+            # Générer à la demande si la mission est COMPLETED
+            ms = get_mission_system()
+            m = ms.get(mission_id)
+            if not m:
+                raise HTTPException(status_code=404, detail="Mission not found")
+            result = m.get('result', '') or m.get('output', '')
+            if not result:
+                raise HTTPException(status_code=404, detail="No result available")
+            goal = m.get('goal', '')
+            from core.livrable_export import LivrableExport
+            exp = LivrableExport()
+            paths = exp.save(result, '', goal, mission_id)
+            md_path = Path(paths['markdown'])
+            html_path = Path(paths['html'])
+        else:
+            md_path = candidates[0]
+            html_path = md_path.with_suffix('.html')
+
+        if fmt == 'html' and html_path.exists():
+            from fastapi.responses import HTMLResponse
+            return HTMLResponse(content=html_path.read_text(encoding='utf-8'))
+        elif md_path.exists():
+            content = md_path.read_text(encoding='utf-8')
+            return {"ok": True, "data": {"content": content, "filename": md_path.name, "format": "markdown"}}
+        else:
+            raise HTTPException(status_code=404, detail="Livrable not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
