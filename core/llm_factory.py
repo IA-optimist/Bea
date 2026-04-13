@@ -426,6 +426,7 @@ class LLMFactory:
         _ARCH = getattr(self.s, "architect_model", _ORCH)
         _CODE = getattr(self.s, "coder_model", _ORCH)
         _SELF = getattr(self.s, "self_improvement_model", _ORCH)
+        _STD  = getattr(self.s, "openrouter_model_standard", None) or getattr(self.s, "standard_model", _FAST)
         _FALL = getattr(self.s, "fallback_model", _FAST)
         _VIS  = getattr(self.s, "vision_model_or", _FAST)
 
@@ -434,14 +435,14 @@ class LLMFactory:
             "director":            _ORCH,
             "planner":             _ORCH,
             "ops":                 _ORCH,
-            "research":            _ORCH,
-            "default":             _ORCH,
+            "research":            _STD,    # scout-research -> STANDARD (haiku, 4x plus rapide)
+            "default":             _STD,    # default -> STANDARD (haiku) pour actions generiques
             "builder":             _CODE,
             "improve":             _SELF,
-            "reviewer":            _CODE,
+            "reviewer":            _STD,    # Lens-reviewer -> STANDARD (haiku, rapport final complet)
             "context":             _ARCH,
             "analyst":             _ORCH,   # Business analysis, strategy
-            "advisor":             _ORCH,   # Shadow-advisor — security/audit
+            "advisor":             _FAST,   # Shadow-advisor validation -> FAST (gemini-flash, ~3s)
             "memory":              _FAST,   # Vault-memory — context/retrieval
             # ── Light roles → GPT-4o-mini ─────────────────────────────────
             "fast":                _FAST,
