@@ -441,7 +441,7 @@ class LLMFactory:
             "improve":             _SELF,
             "reviewer":            _STD,    # Lens-reviewer -> STANDARD (haiku, rapport final complet)
             "context":             _ARCH,
-            "analyst":             _ORCH,   # Business analysis, strategy
+            "analyst":             _STD,    # Business analysis, strategy — haiku suffisant
             "advisor":             _FAST,   # Shadow-advisor validation -> FAST (gemini-flash, ~3s)
             "memory":              _FAST,   # Vault-memory — context/retrieval
             # ── Light roles → GPT-4o-mini ─────────────────────────────────
