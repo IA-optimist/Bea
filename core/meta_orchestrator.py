@@ -2411,6 +2411,11 @@ class MetaOrchestrator:
         # ── Decision trace ────────────────────────────────────────────
         trace, needs_approval = self._initialize_decision_trace(mid)
 
+        # Override needs_approval from extra_metadata (API request)
+        if _extra_meta.get("requires_validation"):
+            needs_approval = True
+            log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in request")
+
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 
         # ── Emit mission events ───────────────────────────────────────

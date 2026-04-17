@@ -121,20 +121,26 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                     _goal_capture = goal
                     _mid_capture = mission_id
                     _ctx_capture = str(body.get("context", "") or "")
+                    _risk_capture = str(body.get("risk_level", "low") or "low")
+                    _requires_capture = bool(body.get("requires_validation", False))
                     async def _execute_canonical():
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
                             mo = get_meta_orchestrator()
                             import inspect
                             _sig = inspect.signature(mo.run_mission)
-                            if "extra_metadata" in _sig.parameters and _ctx_capture:
-                                await mo.run_mission(
-                                    _goal_capture,
-                                    mission_id=_mid_capture,
-                                    extra_metadata={"context": _ctx_capture},
-                                )
-                            else:
-                                await mo.run_mission(_goal_capture, mission_id=_mid_capture)
+                            _kwargs = {"mission_id": _mid_capture}
+                            if "extra_metadata" in _sig.parameters:
+                                _kwargs["extra_metadata"] = {
+                                    "context": _ctx_capture,
+                                    "risk_level": _risk_capture,
+                                    "requires_validation": _requires_capture,
+                                }
+                            if "risk_level" in _sig.parameters:
+                                _kwargs["risk_level"] = _risk_capture
+                            if "requires_validation" in _sig.parameters:
+                                _kwargs["requires_validation"] = _requires_capture
+                            await mo.run_mission(_goal_capture, **_kwargs)
                         except Exception as _exc:
                             log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120])
                     background_tasks.add_task(_execute_canonical)
