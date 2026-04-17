@@ -127,22 +127,23 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
                             mo = get_meta_orchestrator()
-                            import inspect
-                            _sig = inspect.signature(mo.run_mission)
                             _kwargs = {"mission_id": _mid_capture}
-                            if "extra_metadata" in _sig.parameters:
+                            if _requires_capture:
                                 _kwargs["extra_metadata"] = {
                                     "context": _ctx_capture,
+                                    "requires_validation": True,
                                     "risk_level": _risk_capture,
-                                    "requires_validation": _requires_capture,
                                 }
-                            if "risk_level" in _sig.parameters:
-                                _kwargs["risk_level"] = _risk_capture
-                            if "requires_validation" in _sig.parameters:
-                                _kwargs["requires_validation"] = _requires_capture
-                            await mo.run_mission(_goal_capture, **_kwargs)
+                            elif _ctx_capture:
+                                _kwargs["extra_metadata"] = {"context": _ctx_capture}
+                            try:
+                                await mo.run_mission(_goal_capture, **_kwargs)
+                            except TypeError:
+                                # Fallback: call without extra_metadata
+                                await mo.run_mission(_goal_capture, mission_id=_mid_capture)
                         except Exception as _exc:
-                            log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120])
+                            import traceback
+                            log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120], tb=traceback.format_exc()[-300:])
                     background_tasks.add_task(_execute_canonical)
                 return _ok(result, status=201)
             except Exception as e:
