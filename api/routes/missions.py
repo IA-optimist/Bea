@@ -690,6 +690,19 @@ async def list_tasks(
         }}
     ms       = _get_mission_system()
     missions = ms.list_missions(status=status, limit=limit)
+
+    # Inject PENDING_VALIDATION missions as PENDING for approval flow
+    pending_val = ms.list_missions(status="PENDING_VALIDATION", limit=50)
+    pending_ids = {m.mission_id for m in missions}
+    for m in pending_val:
+        if m.mission_id not in pending_ids:
+            d = m.to_dict()
+            d["status"] = "PENDING"
+            d["approvalRequired"] = True
+            d["approvalReason"] = d.get("note", "Approbation humaine requise")
+            missions = list(missions) + [type("M", (), {"to_dict": lambda self, _d=d: _d})()]
+            pending_ids.add(m.mission_id)
+
     return {"ok": True, "data": {
         "tasks": [m.to_dict() for m in missions],
         "total": len(missions),
