@@ -125,6 +125,14 @@ def submit_for_approval(
         if risk_level in AUTO_APPROVE_LEVELS:
             return {"approved": True, "item_id": None, "pending": False, "auto": True}
 
+        # Deduplication: skip if same action+risk already pending
+        existing = _load()
+        action_key = action[:120]
+        for e in existing:
+            if e.get("action", "")[:120] == action_key and e.get("risk_level") == str(risk_level) and e.get("status") == "pending":
+                logger.debug(f"[ApprovalQueue] duplicate skipped: {action_key[:60]}")
+                return {"approved": False, "item_id": e["id"], "pending": True, "auto": False}
+
         item = {
             "id": str(uuid.uuid4()),
             "action": action,
