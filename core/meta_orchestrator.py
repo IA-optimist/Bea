@@ -2362,6 +2362,19 @@ class MetaOrchestrator:
         log.info("mission.awaiting_approval",
                  mission_id=mid, risk_level=risk)
 
+        # Sync PENDING_VALIDATION into legacy MissionSystem so /api/v2/tasks sees it
+        try:
+            from core.mission_system import get_mission_system as _gms, MissionStatus as _LMS
+            _ms_sync = _gms()
+            _m_sync = _ms_sync.get(mid)
+            if _m_sync:
+                _m_sync.status = _LMS.PENDING_VALIDATION
+                _m_sync.decision_trace["awaiting_approval"] = True
+                _m_sync.decision_trace["approval_item_id"] = ctx.metadata.get("approval_item_id", "")
+                log.info("mission.pending_validation_synced", mission_id=mid)
+        except Exception as _sync_err:
+            log.debug("awaiting_approval_sync_failed", err=str(_sync_err)[:60])
+
     # ── Public API ───────────────────────────────────────────────────────────
 
     async def run_mission(
