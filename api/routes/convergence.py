@@ -127,20 +127,21 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
                             mo = get_meta_orchestrator()
-                            _kwargs = {"mission_id": _mid_capture}
+
+                            # Tag mission as requiring validation in mission store
                             if _requires_capture:
-                                _kwargs["extra_metadata"] = {
-                                    "context": _ctx_capture,
-                                    "requires_validation": True,
-                                    "risk_level": _risk_capture,
-                                }
-                            elif _ctx_capture:
-                                _kwargs["extra_metadata"] = {"context": _ctx_capture}
-                            try:
-                                await mo.run_mission(_goal_capture, **_kwargs)
-                            except TypeError:
-                                # Fallback: call without extra_metadata
-                                await mo.run_mission(_goal_capture, mission_id=_mid_capture)
+                                try:
+                                    from core.mission_system import get_mission_system
+                                    _ms_inner = get_mission_system()
+                                    _m = _ms_inner.get(_mid_capture)
+                                    if _m:
+                                        _m.decision_trace["requires_validation"] = True
+                                        _m.decision_trace["requested_risk_level"] = _risk_capture
+                                        log.info("mission.validation_flagged", mission_id=_mid_capture)
+                                except Exception:
+                                    pass
+
+                            await mo.run_mission(_goal_capture, mission_id=_mid_capture)
                         except Exception as _exc:
                             import traceback
                             log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120], tb=traceback.format_exc()[-300:])

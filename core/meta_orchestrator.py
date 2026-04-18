@@ -2414,7 +2414,18 @@ class MetaOrchestrator:
         # Override needs_approval from extra_metadata (API request)
         if _extra_meta.get("requires_validation"):
             needs_approval = True
-            log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in request")
+            log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in extra_metadata")
+
+        # Also check mission decision_trace (set by convergence.py before run_mission)
+        try:
+            from core.mission_system import get_mission_system as _get_ms
+            _ms_check = _get_ms()
+            _m_check = _ms_check.get(mid)
+            if _m_check and _m_check.decision_trace.get("requires_validation"):
+                needs_approval = True
+                log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in decision_trace")
+        except Exception:
+            pass
 
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 
