@@ -1719,7 +1719,7 @@ class MetaOrchestrator:
                         goal=enriched_goal,
                         mode=mode,
                         session_id=mid,
-                        risk_level=risk,
+                        risk_level="high" if needs_approval and not force_approved else risk,
                         requires_approval=needs_approval,
                         skip_approval=force_approved,
                         callback=callback,
