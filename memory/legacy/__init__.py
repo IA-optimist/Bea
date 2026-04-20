@@ -1,9 +1,23 @@
 """memory.legacy — modules historiques conservés pour compatibilité.
 
-DEPRECATED: utilisez memory.store / memory.memory_bus pour le nouveau code.
-Ces modules (failure_memory, patch_memory, project_memory, store_legacy) sont
-réexportés par leurs façades dans memory/ et seront supprimés dans une
-version ultérieure.
+DEPRECATED. Le nouveau code doit utiliser ``memory.store`` / ``memory.memory_bus``.
+
+Modules encore référencés :
+
+- ``memory.legacy.store_legacy``     → ré-exporté par ``memory.store``
+- ``memory.legacy.failure_memory``   → utilisé uniquement par ``tests/test_memory.py``
+- ``memory.legacy.patch_memory``     → utilisé uniquement par ``tests/test_memory.py``
+- ``memory.legacy.project_memory``   → wrapper DB dépassé (PostgreSQL via env)
+
+Roadmap de suppression :
+
+1. Faire de ``memory.store`` une implémentation native (drop du ``import *``).
+2. Migrer ``test_memory.py`` vers l'API canonique de ``memory.store``.
+3. Supprimer ``project_memory`` (remplacé par la couche modèles moderne).
+4. Supprimer ``failure_memory`` et ``patch_memory`` (remplacés par
+   ``core.improvement_memory`` / kernel memory).
+
+Aucun nouveau code ne doit importer directement depuis ``memory.legacy``.
 """
 import warnings
 
