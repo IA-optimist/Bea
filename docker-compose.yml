@@ -72,6 +72,8 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       OLLAMA_HOST: "http://172.20.0.4:11434"
       PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
     volumes:
       - ./:/app
       - ~/.jarvismax:/root/.jarvismax
@@ -92,19 +94,6 @@ services:
     networks:
       - jarvismax-network
       - jarvis_net
-    restart: unless-stopped
-
-  nginx-lb:
-    image: nginx:alpine
-    container_name: jarvismax-nginx-lb
-    ports:
-      - "8000:80"
-    volumes:
-      - ./nginx-lb.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api
-    networks:
-      - jarvismax-network
     restart: unless-stopped
 
   frontend:

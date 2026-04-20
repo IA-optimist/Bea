@@ -369,11 +369,14 @@ class MetaOrchestrator:
     def _setup_event_stream(self, mid: str, ctx) -> None:
         """Setup EventStream for WebSocket consumers (lines 356-365)."""
         try:
-            from core.event_stream import EventStream, register_mission_stream
-            from api.ws import register_stream
+            from core.event_stream import (
+                EventStream,
+                register_mission_stream,
+                register_ws_stream,
+            )
             _event_stream = EventStream(mid)
             register_mission_stream(mid, _event_stream)  # for agents/supervisor lookup
-            register_stream(mid, _event_stream)           # for api/ws WebSocket endpoint
+            register_ws_stream(mid, _event_stream)       # for api/ws WebSocket endpoint
             ctx.metadata["event_stream"] = _event_stream
         except Exception as _es_err:
             log.debug("event_stream_register_skipped", err=str(_es_err)[:60])
@@ -480,9 +483,11 @@ class MetaOrchestrator:
     def _cleanup_event_stream(self, mid: str) -> None:
         """Deregister EventStream after mission completion (lines 1938-1945)."""
         try:
-            from api.ws import deregister_stream
-            from core.event_stream import deregister_mission_stream
-            deregister_stream(mid)
+            from core.event_stream import (
+                deregister_mission_stream,
+                deregister_ws_stream,
+            )
+            deregister_ws_stream(mid)
             deregister_mission_stream(mid)
         except Exception:
             _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')

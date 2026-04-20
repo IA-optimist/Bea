@@ -15,6 +15,9 @@ from kernel.contracts.agent import (
     KernelAgentStatus, AgentHealthStatus,
     KernelAgentRegistry, get_agent_registry,
 )
+from kernel.contracts.mission_runner import (
+    MissionRunner, MissionCallback,
+)
 
 __all__ = [
     # types.py
@@ -26,4 +29,6 @@ __all__ = [
     "KernelAgentContract", "KernelAgentResult", "KernelAgentTask",
     "KernelAgentStatus", "AgentHealthStatus",
     "KernelAgentRegistry", "get_agent_registry",
+    # mission_runner.py (Phase 2 — contract unification)
+    "MissionRunner", "MissionCallback",
 ]

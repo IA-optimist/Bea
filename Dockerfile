@@ -1,5 +1,12 @@
 FROM python:3.11-slim
 
+# TODO(security): passer en USER non-root. Nécessite une migration coordonnée :
+#   1. useradd -m jarvis && chown -R jarvis /app /home/jarvis/.jarvismax
+#   2. Adapter le volume mount (docker-compose.yml: ~/.jarvismax:/root/.jarvismax
+#      → ~/.jarvismax:/home/jarvis/.jarvismax)
+#   3. Adapter les scripts qui assument /root (start_with_deps.sh, etc.)
+# Laisser en root pour l'instant afin de ne pas casser les déploiements existants.
+
 WORKDIR /app
 
 # Install system dependencies

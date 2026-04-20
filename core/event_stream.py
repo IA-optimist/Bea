@@ -78,10 +78,16 @@ class EventStream:
 
 
 # ── Global mission stream registry ────────────────────────────────────────────
-# Separate from api/ws.ACTIVE_STREAMS to avoid circular imports.
-# Allows agents and supervisor to emit events without carrying ctx references.
+# Canonical registry vit ici (core). L'API (api/ws.py) y réfère via ce module
+# plutôt que d'avoir sa propre copie — évite le cycle core <-> api.
+
+import time as _time
 
 _MISSION_STREAMS: dict[str, "EventStream"] = {}
+
+# Registre pour l'endpoint WebSocket (TTL-based), ex-api.ws.ACTIVE_STREAMS.
+ACTIVE_WS_STREAMS: dict[str, dict] = {}
+_WS_STREAM_TTL_S = 3_600  # 1 hour
 
 
 def register_mission_stream(mission_id: str, stream: "EventStream") -> None:
@@ -97,6 +103,24 @@ def deregister_mission_stream(mission_id: str) -> None:
 def get_mission_stream(mission_id: str) -> "EventStream | None":
     """Retrieve the active EventStream for a mission (returns None if not found)."""
     return _MISSION_STREAMS.get(mission_id)
+
+
+def _cleanup_stale_ws_streams() -> None:
+    cutoff = _time.time() - _WS_STREAM_TTL_S
+    stale = [k for k, v in ACTIVE_WS_STREAMS.items() if v["ts"] < cutoff]
+    for k in stale:
+        log.debug("ws_stream_ttl_evicted", mission_id=k)
+        ACTIVE_WS_STREAMS.pop(k, None)
+
+
+def register_ws_stream(mission_id: str, stream: "EventStream") -> None:
+    """Register stream for the WebSocket endpoint lookup."""
+    ACTIVE_WS_STREAMS[mission_id] = {"stream": stream, "ts": _time.time()}
+    _cleanup_stale_ws_streams()
+
+
+def deregister_ws_stream(mission_id: str) -> None:
+    ACTIVE_WS_STREAMS.pop(mission_id, None)
 
     # ── Persistance Basique ─────────────────────────────────────
 

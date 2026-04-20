@@ -22,26 +22,13 @@ _silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger()
 router = APIRouter()
 
-# Registre global des EventStreams actifs.
-ACTIVE_STREAMS: dict[str, dict] = {}
-_STREAM_TTL_S = 3_600   # 1 hour
-
-
-def register_stream(mission_id: str, stream: Any) -> None:
-    ACTIVE_STREAMS[mission_id] = {"stream": stream, "ts": _time.time()}
-    _cleanup_stale_streams()
-
-
-def deregister_stream(mission_id: str) -> None:
-    ACTIVE_STREAMS.pop(mission_id, None)
-
-
-def _cleanup_stale_streams() -> None:
-    cutoff = _time.time() - _STREAM_TTL_S
-    stale = [k for k, v in ACTIVE_STREAMS.items() if v["ts"] < cutoff]
-    for k in stale:
-        log.debug("ws_stream_ttl_evicted", mission_id=k)
-        ACTIVE_STREAMS.pop(k, None)
+# Registre canonique dans core.event_stream — ce module ré-exporte pour
+# compatibilité (meta_orchestrator importe désormais directement depuis core).
+from core.event_stream import (
+    ACTIVE_WS_STREAMS as ACTIVE_STREAMS,
+    register_ws_stream as register_stream,
+    deregister_ws_stream as deregister_stream,
+)
 
 
 def _verify_ws_token(token: Optional[str]) -> bool:

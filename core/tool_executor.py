@@ -233,8 +233,9 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
         if banned in cmd:
             return _err(f"blocked_command: '{banned}' interdit")
 
-    # Allowlist check (if enabled)
-    if _os.environ.get("JARVIS_SHELL_ALLOWLIST", "").lower() in ("1", "true", "yes"):
+    # Allowlist enforced by default — opt-out uniquement via
+    # JARVIS_SHELL_ALLOWLIST=0 dans un contexte explicitement trusté.
+    if _os.environ.get("JARVIS_SHELL_ALLOWLIST", "1").lower() not in ("0", "false", "no"):
         cmd_stripped = cmd.strip()
         if not any(cmd_stripped.startswith(prefix) for prefix in _SHELL_ALLOWED_PREFIXES):
             return _err(f"shell_not_allowed: command not in allowlist")

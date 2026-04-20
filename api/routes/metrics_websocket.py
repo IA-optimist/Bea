@@ -12,8 +12,10 @@ from datetime import datetime
 from typing import Optional
 
 import structlog
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import JSONResponse
+
+from api._deps import require_auth
 
 log = structlog.get_logger()
 
@@ -160,7 +162,7 @@ async def metrics_websocket(
 
 
 @router.get("/metrics/websocket/status")
-async def websocket_status():
+async def websocket_status(_user: dict = Depends(require_auth)):
     """Get WebSocket metrics status."""
     return JSONResponse({
         "active_connections": len(active_connections),
@@ -171,9 +173,10 @@ async def websocket_status():
 
 
 @router.get("/metrics/snapshot")
-async def metrics_snapshot():
+async def metrics_snapshot(_user: dict = Depends(require_auth)):
     """
     Get a one-time snapshot of current metrics.
     Useful for testing or initial page load before WebSocket connection.
+    Auth required — leaks system/revenue data.
     """
     return JSONResponse(get_realtime_metrics())

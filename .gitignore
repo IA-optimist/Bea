@@ -10,6 +10,14 @@ sqlite_mcp_server.db
 *.key
 *.pem
 secrets/
+.tokens.json
+tokens.json
+
+# ── Coverage artefacts ───────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
 
 # ── Données runtime ──────────────────────────────────────────
 logs/

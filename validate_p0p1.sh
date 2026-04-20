@@ -21,7 +21,7 @@ echo ""
 
 # Test 2: Run validation suite
 echo "2. Running validation test suite..."
-python3 test_p0p1_fixes.py
+python3 tests/test_p0p1_fixes.py
 if [ $? -eq 0 ]; then
   echo "   ✓ All tests passed"
 else
