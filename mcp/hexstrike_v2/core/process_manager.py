@@ -4,6 +4,7 @@ Process Manager — Manage background processes and long-running scans
 from __future__ import annotations
 
 import logging
+import os
 import psutil
 import signal
 import subprocess
@@ -101,7 +102,13 @@ class ProcessManager:
             Process ID (PID)
         """
         logger.info(f"Starting process: {command[:100]}...")
-        
+
+        # Kill switch — hexstrike_v2 exécute des commandes arbitraires, opt-in requis.
+        if os.environ.get("HEXSTRIKE_EXEC_ENABLED", "0") != "1":
+            raise PermissionError(
+                "HEXSTRIKE_EXEC_ENABLED!=1, exécution shell désactivée"
+            )
+
         try:
             # Start process
             process = subprocess.Popen(

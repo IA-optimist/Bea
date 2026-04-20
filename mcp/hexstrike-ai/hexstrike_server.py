@@ -6877,6 +6877,15 @@ class EnhancedCommandExecutor:
         """Execute the command with enhanced monitoring and output"""
         self.start_time = time.time()
 
+        # Kill switch — opt-in explicite pour exécution shell (RCE par design).
+        if os.environ.get("HEXSTRIKE_EXEC_ENABLED", "0") != "1":
+            return {
+                "success": False,
+                "status": "refused",
+                "error": "HEXSTRIKE_EXEC_ENABLED!=1, exécution shell désactivée",
+                "command": self.command[:120],
+            }
+
         logger.info(f"🚀 EXECUTING: {self.command}")
         logger.info(f"⏱️  TIMEOUT: {self.timeout}s | PID: Starting...")
 
