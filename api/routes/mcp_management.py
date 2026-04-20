@@ -35,6 +35,7 @@ def _get_registry():
 @router.get("/servers")
 async def list_servers(
     category: str = "", trust: str = "",
+    x_jarvis_token: str | None = Header(None),
     authorization: str | None = Header(None),
 ):
     """List all registered MCP servers."""

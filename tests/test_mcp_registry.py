@@ -260,11 +260,15 @@ class TestMCPSecurity:
 class TestMCPAPI:
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self, monkeypatch):
         import core.mcp.mcp_registry as mcpr
         # Reset singleton with writable temp dir
         mcpr._instance = mcpr.MCPRegistry(data_dir=os.path.join(tempfile.mkdtemp(), "mcp"))
         mcpr._instance.seed_core_stack()
+        # Tests use Bearer "t" — align _API_TOKEN for match.
+        monkeypatch.setenv("JARVIS_API_TOKEN", "t")
+        import api._deps as _deps_mod
+        monkeypatch.setattr(_deps_mod, "_API_TOKEN", "t", raising=False)
 
     def _get_client(self):
         from fastapi.testclient import TestClient
