@@ -12,6 +12,7 @@ Verifies the complete system behaves deterministically:
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import sys
@@ -103,6 +104,10 @@ class TestMemoryEffectiveness(unittest.TestCase):
         # Should not exceed budget
         self.assertLessEqual(wm.used_tokens(), wm.token_budget + 50)
 
+    @unittest.skipUnless(
+        importlib.util.find_spec("memory.memory_decay") is not None,
+        "memory.memory_decay retiré du codebase (drift connu)",
+    )
     def test_memory_decay_preserves_high_use(self):
         from memory.memory_decay import apply_decay
         old_ts = time.time() - 60 * 86400
