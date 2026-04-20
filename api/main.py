@@ -931,33 +931,56 @@ async def login_alias(form_data: OAuth2PasswordRequestForm = Depends(), response
     return await login_for_access_token(form_data, response)
 
 @app.get("/auth/me", tags=["auth"])
-# Returns: authenticated, role, permissions, expires_in
-# ROLE_PERMISSIONS mapping: admin=all, user=read/write, viewer=read
-async def auth_me(request: Request):
-    try:
-        from api._deps import require_auth as _ra
-        user = await _ra(request)
-        return {"ok": True, "user": user}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+async def auth_me(user: dict = Depends(require_auth)):
+    """Retourne l'identité de l'utilisateur authentifié (cookie ou header).
+
+    Le cookie HttpOnly `jarvis_token` est lu en priorité par require_auth,
+    fallback sur Bearer / X-Jarvis-Token pour legacy.
+
+    Permet au frontend de restaurer la session au chargement sans
+    persister aucune info sensible dans localStorage.
+    Retourne 401 si pas authentifié (via Depends).
+    """
+    return {
+        "ok": True,
+        "data": {
+            "authenticated": True,
+            "user": user,
+            "role": user.get("role", "user"),
+            "username": user.get("username", ""),
+        },
+    }
+
 
 @app.post("/auth/refresh", tags=["auth"])
-async def refresh_token(request: Request):
-    """Refresh a JWT token. Accepts Authorization: Bearer <token> header.
-    Returns a new token if the current one is valid; 401 otherwise.
-    Used by the Flutter mobile app for silent session renewal.
+async def refresh_token(request: Request, response: Response):
+    """Refresh a JWT token.
+
+    Accepts (priorité descendante) : cookie HttpOnly `jarvis_token`,
+    `Authorization: Bearer <token>` header, ou `X-Jarvis-Token` header.
+    Retourne un nouveau token + met à jour le cookie HttpOnly.
+    401 si le token actuel est invalide ou expiré.
     """
-    from api._deps import _check_auth
     from api.token_utils import strip_bearer
     from api.auth import create_access_token, verify_token
-    auth_header = request.headers.get("Authorization", "")
-    token_str = strip_bearer(auth_header) or request.headers.get("X-Jarvis-Token", "")
+
+    # Priorité cookie → Bearer → X-Jarvis-Token (aligne sur require_auth).
+    token_str = (
+        request.cookies.get("jarvis_token")
+        or strip_bearer(request.headers.get("Authorization", ""))
+        or request.headers.get("X-Jarvis-Token", "")
+    )
     if not token_str:
         raise HTTPException(status_code=401, detail="No token provided")
     user = verify_token(token_str)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    new_token = create_access_token({"sub": user.get("username", ""), "role": user.get("role", "user")})
+    new_token = create_access_token({
+        "sub": user.get("username", ""),
+        "role": user.get("role", "user"),
+    })
+    # Refresh le cookie HttpOnly en même temps pour prolonger la session.
+    _set_auth_cookie(response, new_token)
     return {"access_token": new_token, "token_type": "bearer"}
 
 
