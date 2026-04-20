@@ -39,60 +39,9 @@ CB = Callable[[str], Awaitable[None]]
 # Circuit breaker — prevents cascade failures when the delegate is broken
 # ─────────────────────────────────────────────────────────────────────────────
 
-class _CircuitBreaker:
-    """
-    Simple two-state circuit breaker (CLOSED / OPEN).
-
-    CLOSED → normal operation.
-    OPEN   → fast-fail for `_reset_s` seconds after `_threshold` consecutive
-             failures, then auto-reset to CLOSED for the next probe.
-
-    Thread-safe. Never raises.
-    """
-
-    def __init__(self, failure_threshold: int = 5, reset_s: float = 60.0):
-        self._threshold = failure_threshold
-        self._reset_s   = reset_s
-        self._failures  = 0
-        self._open_until = 0.0
-        self._lock = threading.Lock()
-
-    @property
-    def is_open(self) -> bool:
-        """Return True if the circuit is open (fast-fail mode)."""
-        with self._lock:
-            if self._open_until == 0.0:
-                return False
-            if time.time() >= self._open_until:
-                # Auto-reset: allow one probe through
-                self._open_until = 0.0
-                self._failures   = 0
-                return False
-            return True
-
-    def record_success(self) -> None:
-        with self._lock:
-            self._failures   = 0
-            self._open_until = 0.0
-
-    def record_failure(self) -> None:
-        with self._lock:
-            self._failures += 1
-            if self._failures >= self._threshold:
-                self._open_until = time.time() + self._reset_s
-                log.warning(
-                    "meta_orchestrator.circuit_open",
-                    failures=self._failures,
-                    open_for_s=self._reset_s,
-                )
-
-    def status(self) -> dict:
-        with self._lock:
-            return {
-                "open": self._open_until > time.time(),
-                "failures": self._failures,
-                "open_until": self._open_until,
-            }
+# ── _CircuitBreaker déplacé dans core/orchestration/mission_circuit_breaker.py ──
+# Alias conservé pour compatibilité avec les tests qui inspectent self._circuit_breaker.
+from core.orchestration.mission_circuit_breaker import MissionCircuitBreaker as _CircuitBreaker  # noqa: E402,F401
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -156,34 +105,9 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _strip_execution_outcome(text):
-    """Strip ExecutionOutcome(...) wrapper from result text."""
-    if not text:
-        return text
-    t = text.strip()
-    if not t.startswith("ExecutionOutcome("):
-        return text
-    idx = t.find("result=")
-    if idx == -1:
-        return text
-    rest = t[idx + 7:]
-    extracted = ""
-    if rest and rest[0] in ("'", '"'):
-        q = rest[0]
-        rest = rest[1:]
-        i = 0
-        while i < len(rest):
-            if rest[i] == q and (i == 0 or rest[i-1] != "\\"):
-                extracted = rest[:i]
-                break
-            i += 1
-        else:
-            extracted = rest.rstrip(")")
-    else:
-        paren = rest.find(")")
-        extracted = rest[:paren] if paren != -1 else rest
-    extracted = extracted.replace("\\n", "\n").replace("\\t", "\t")
-    return extracted.strip() or text
+# ── _strip_execution_outcome déplacé dans core/orchestration/mission_text_utils.py ──
+# Alias conservé (wrapper qui appelle la fonction publique).
+from core.orchestration.mission_text_utils import strip_execution_outcome as _strip_execution_outcome  # noqa: E402,F401
 
 
 class MetaOrchestrator:
