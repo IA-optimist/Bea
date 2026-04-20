@@ -136,7 +136,30 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if not _REQUIRE_AUTH:
         log.warning("auth_disabled", reason="JARVIS_REQUIRE_AUTH=false — dev mode active")
         return
-    
+
+    # 6. Auth required mais AUCUN système configuré → 503 (config error).
+    # Signale qu'on ne peut pas authentifier, plutôt que 401 qui suggère un
+    # mauvais token. Fail-closed + observability claire.
+    if not _API_TOKEN:
+        try:
+            from config.settings import get_settings
+            _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
+            _jwt_configured = _jwt_secret and _jwt_secret != "change-me-in-production"
+        except Exception:
+            _jwt_configured = False
+        if not _jwt_configured:
+            log.critical(
+                "auth_misconfigured",
+                reason="JARVIS_REQUIRE_AUTH=true but no JARVIS_API_TOKEN nor JARVIS_SECRET_KEY",
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Authentication system not configured: set JARVIS_API_TOKEN "
+                    "or JARVIS_SECRET_KEY (JWT) in the environment."
+                ),
+            )
+
     # No valid token found and auth required → reject
     raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 

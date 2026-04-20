@@ -668,12 +668,12 @@ class ToolExecutor:
             _cap_reg = get_capability_registry()
             _perm = _cap_reg.check_permission(tool_name)
             if not _perm["allowed"]:
-                logger.warning("tool_blocked_by_capability", tool=tool_name, reason=_perm["reason"])
+                log.warning("tool_blocked_by_capability", tool=tool_name, reason=_perm["reason"])
                 return {"ok": False, "result": "", "error": f"capability_denied: {_perm['reason']}", "blocked_by_policy": True}
             if _perm["requires_approval"] and approval_mode == "SUPERVISED":
-                logger.info("tool_requires_approval", tool=tool_name, risk=_perm["capability"]["risk_level"])
+                log.info("tool_requires_approval", tool=tool_name, risk=_perm["capability"]["risk_level"])
         except Exception as _cap_err:
-            logger.debug("capability_check_skipped", error=str(_cap_err))
+            log.debug("capability_check_skipped", error=str(_cap_err))
 
         # Per-tool permission gate (P1) — requires approval for dangerous tools
         try:
@@ -685,7 +685,7 @@ class ToolExecutor:
             )
             if not _tp_check["allowed"]:
                 _req = _tp_check["request"]
-                logger.info("tool_permission_gated", tool=tool_name,
+                log.info("tool_permission_gated", tool=tool_name,
                            request_id=_req.request_id, risk=_req.risk_level)
                 return {
                     "ok": False, "result": "",
@@ -694,14 +694,14 @@ class ToolExecutor:
                     "approval_request_id": _req.request_id,
                 }
         except Exception as _tp_err:
-            logger.debug("tool_permission_check_skipped", error=str(_tp_err)[:100])
+            log.debug("tool_permission_check_skipped", error=str(_tp_err)[:100])
 
         # Circuit breaker check (fail-closed for broken tools)
         try:
             from core.resilience import get_circuit_breaker
             _cb = get_circuit_breaker()
             if not _cb.can_execute(tool_name):
-                logger.warning("tool_circuit_open", tool=tool_name)
+                log.warning("tool_circuit_open", tool=tool_name)
                 return {"ok": False, "result": "", "error": f"circuit_open: {tool_name} temporarily disabled", "blocked_by_policy": True}
         except Exception as _exc:
             log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
@@ -716,7 +716,7 @@ class ToolExecutor:
                 params=params,
             )
             if not _policy_decision.allowed:
-                logger.warning("tool_blocked_by_policy",
+                log.warning("tool_blocked_by_policy",
                              tool=tool_name,
                              reason=_policy_decision.reason,
                              score=_policy_decision.score)
@@ -727,17 +727,17 @@ class ToolExecutor:
                     "policy_decision": _policy_decision.to_dict(),
                 }
             if _policy_decision.requires_approval:
-                logger.info("policy_requires_approval",
+                log.info("policy_requires_approval",
                            tool=tool_name, score=_policy_decision.score)
         except Exception as _pol_err:
-            logger.warning("policy_check_failed", error=str(_pol_err)[:200])
+            log.warning("policy_check_failed", error=str(_pol_err)[:200])
             # Fail-CLOSED for HIGH risk tools; fail-open for LOW risk
             try:
                 from core.resilience import JarvisError
                 from core.policy.policy_engine import PolicyEngine
                 _high_risk = {"shell_execute", "code_execute"}
                 if tool_name in _high_risk:
-                    logger.warning("policy_fail_closed_high_risk", tool=tool_name)
+                    log.warning("policy_fail_closed_high_risk", tool=tool_name)
                     return {
                         "ok": False, "result": "",
                         "error": f"policy_unavailable_high_risk: {tool_name}",
@@ -771,7 +771,7 @@ class ToolExecutor:
                         detail=f"tool={tool_name} action={_action_type} danger={danger['level']}",
                         danger_level=danger["level"],
                     )
-                    logger.info("tool_approval_required", tool=tool_name, action=_action_type,
+                    log.info("tool_approval_required", tool=tool_name, action=_action_type,
                                 danger=danger["level"])
             except Exception as _exc:
                 log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
@@ -789,14 +789,14 @@ class ToolExecutor:
             )
             _decision = get_execution_policy().evaluate(_ctx)
             if _decision.decision in ("BLOCK", "REQUIRE_APPROVAL"):
-                logger.warning("tool_blocked_by_policy", tool=tool_name, decision=_decision.decision)
+                log.warning("tool_blocked_by_policy", tool=tool_name, decision=_decision.decision)
                 return {
                     "ok": False, "result": "",
                     "error": f"blocked_by_policy: {_decision.reason}",
                     "blocked_by_policy": True,
                 }
         except Exception as _pol_err:
-            logger.debug("policy_check_failed_open", err=str(_pol_err))
+            log.debug("policy_check_failed_open", err=str(_pol_err))
 
         # Validation des paramètres requis
         missing = self._validate_params(tool_name, params)
@@ -843,7 +843,7 @@ class ToolExecutor:
             # Validation output
             valid, reason = self._validate_output(tool_name, result)
             if not valid:
-                logger.warning(f"[OUTPUT_INVALID] tool={tool_name} reason={reason}")
+                log.warning(f"[OUTPUT_INVALID] tool={tool_name} reason={reason}")
                 result["output_valid"] = False
                 result["output_reason"] = reason
             else:
@@ -929,7 +929,7 @@ class ToolExecutor:
             except Exception:
                 _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
-            logger.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} error={e}")
+            log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} error={e}")
             return _err(str(e), error_class=error_class, tool=tool_name, blocked_by_policy=False)
 
     def _validate_params(self, tool_name: str, params: dict) -> Optional[str]:
@@ -1003,7 +1003,7 @@ class ToolExecutor:
             _t.start()
             _t.join(timeout=_max_timeout)
             if _t.is_alive():
-                logger.warning("tool_timeout_guard", tool=tool_name, timeout_s=_max_timeout)
+                log.warning("tool_timeout_guard", tool=tool_name, timeout_s=_max_timeout)
                 result = _err(
                     f"timeout_guard: {tool_name} exceeded {_max_timeout}s",
                     error_class="TIMEOUT", tool=tool_name
@@ -1018,7 +1018,7 @@ class ToolExecutor:
                 break
             if attempt < max_retries:
                 _retried = True
-                logger.info(f"[RETRY] tool={tool_name} attempt={attempt + 2}")
+                log.info(f"[RETRY] tool={tool_name} attempt={attempt + 2}")
                 time.sleep(0.3)
 
         # ── Circuit breaker feedback ───────────────────────────────────
@@ -1047,7 +1047,7 @@ class ToolExecutor:
                 blocked_by_policy=bool(result.get("blocked_by_policy")),
             ))
         except Exception as _perf_err:
-            logger.debug("tool_perf_track_failed: %s", str(_perf_err)[:60])
+            log.debug("tool_perf_track_failed: %s", str(_perf_err)[:60])
         # ── end performance tracking ──────────────────────────────────────
 
         return result
