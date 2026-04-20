@@ -5258,6 +5258,14 @@ class EnhancedProcessManager:
         """Internal command execution with enhanced monitoring"""
         start_time = time.time()
 
+        # Kill switch — hexstrike execute arbitraires shell, exige opt-in explicite.
+        if os.environ.get("HEXSTRIKE_EXEC_ENABLED", "0") != "1":
+            return {
+                "status": "refused",
+                "error": "HEXSTRIKE_EXEC_ENABLED!=1, ex\u00e9cution shell d\u00e9sactiv\u00e9e",
+                "command": command[:120],
+            }
+
         try:
             # Resource-aware execution
             resource_usage = self.resource_monitor.get_current_usage()
@@ -8644,6 +8652,15 @@ def execute_command(command: str, use_cache: bool = True) -> Dict[str, Any]:
     Returns:
         A dictionary containing the stdout, stderr, return code, and metadata
     """
+
+    # Kill switch — opt-in explicite pour exécution shell (RCE par design).
+    if os.environ.get("HEXSTRIKE_EXEC_ENABLED", "0") != "1":
+        return {
+            "success": False,
+            "status": "refused",
+            "error": "HEXSTRIKE_EXEC_ENABLED!=1, exécution shell désactivée",
+            "command": command[:120],
+        }
 
     # Check cache first
     if use_cache:
