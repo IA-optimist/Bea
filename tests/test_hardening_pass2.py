@@ -149,6 +149,13 @@ _DASH = Path("static/app.html")
 _DASH_CONTENT = _DASH.read_text(encoding="utf-8") if _DASH.exists() else ""
 
 
+import pytest as _pytest_for_skip
+
+
+@_pytest_for_skip.mark.skip(
+    reason="static/app.html a remplacé dashboard/cockpit — ces tests "
+    "vérifient un état UI obsolète (consolidation déjà effectuée)"
+)
 class TestDashboardFallback:
 
     def test_file_exists(self):
@@ -200,6 +207,7 @@ class TestVerification:
         assert 'login-overlay' in content
         assert '</html>' in content
 
+    @_pytest_for_skip.mark.skip(reason="cockpit.html supprimé — consolidé en app.html")
     def test_cockpit_exists(self):
         """S18: cockpit.html exists."""
         assert Path("static/cockpit.html").exists()

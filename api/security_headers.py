@@ -16,6 +16,15 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 
+# Paths qui doivent bypasser la CSP stricte (Swagger/redoc ont besoin d'inline).
+_CSP_EXEMPT_PREFIXES = ("/docs", "/redoc", "/openapi.json")
+
+
+def _is_csp_exempt(path: str) -> bool:
+    """True si le path doit bypasser la CSP stricte (Swagger UI, ReDoc, OpenAPI)."""
+    return any(path.startswith(p) for p in _CSP_EXEMPT_PREFIXES)
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
     Adds security headers to all responses.
@@ -31,15 +40,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         # CSP: Content Security Policy (strict but functional)
         # Allows self + inline scripts/styles + Google Fonts
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' data: https://fonts.gstatic.com; "
-            "connect-src 'self' https:; "
-            "frame-ancestors 'none'"
-        )
+        # Exempt Swagger/ReDoc/OpenAPI paths (need inline scripts).
+        if not _is_csp_exempt(request.url.path):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data: https://fonts.gstatic.com; "
+                "connect-src 'self' https:; "
+                "frame-ancestors 'none'"
+            )
         
         # X-Frame-Options: Prevent clickjacking
         response.headers["X-Frame-Options"] = "DENY"
