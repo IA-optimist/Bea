@@ -319,9 +319,13 @@ input,textarea,select{font-family:inherit;color:var(--t1)}
 let TOKEN='',ROLE='user',MISSIONS=[],CURRENT_MOD_TAB='agents';
 
 // ── Auth ────────────────────────────────────────────────────────────────────
+// XSS-hardening : le token n'est PLUS persisté en localStorage. Le backend
+// set un cookie HttpOnly `jarvis_token` (Secure, SameSite=Lax, 7 jours).
+// Tous les fetch() utilisent credentials:'include' pour envoyer le cookie.
+// Le token reste en mémoire uniquement pour le fallback header (legacy).
 
-function getToken(){return localStorage.getItem('j_token')||''}
-function setToken(t,r){TOKEN=t;ROLE...,r)}
+function getToken(){return TOKEN||''}
+function setToken(t,r){TOKEN=t;ROLE=r||'user';}
 
 // ── Token Refresh ───────────────────────────────────────────────────────────
 
@@ -409,29 +413,45 @@ async function doLogin(){
   errEl.classList.add('hidden');
 
   if(tok){
-    // Static token login — test against real endpoint
+    // Static token login — test against real endpoint (+ cookie auto si supported)
     try{
-      const r=await fetch('/api/v3/system/status',{headers:{'X-Jarvis-Token':tok}});
+      const r=await fetch('/api/v3/system/status',{headers:{'X-Jarvis-Token':tok},credentials:'include'});
       if(r.ok){setToken(tok,'admin');enterApp();return}
     }catch(e){}
     errEl.textContent='Token invalide';errEl.classList.remove('hidden');return;
   }
   if(!user||!pass){errEl.textContent='Remplissez les champs';errEl.classList.remove('hidden');return}
   try{
-    // Backend uses OAuth2 form-data, NOT JSON
-    const body=new URLSearchParams();body.append('username',user);body.append('password',pass);
-    const r=await fetch('/auth/login',{method:'POST',body:body});
+    // JSON endpoint qui set aussi le cookie HttpOnly jarvis_token.
+    // credentials:'include' pour stocker le cookie dans le navigateur.
+    const r=await fetch('/api/v2/auth/login',{
+      method:'POST',
+      credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:user,password:pass})
+    });
     const d=await r.json();
-    if(d.access_token){
+    if(r.ok && d.ok && d.data && d.data.token){
       // JWT login: decode role from token payload
       let role='user';
-      try{const p=JSON.parse(atob(d.access_token.split('.')[1]));role=p.role||'user'}catch(e){}
-      setToken(d.access_token,role);enterApp();
+      try{const p=JSON.parse(atob(d.data.token.split('.')[1]));role=p.role||'user'}catch(e){}
+      // Token gardé en mémoire (fallback header pour WebSocket qui ne supporte
+      // pas les cookies). Pas de localStorage — le cookie HttpOnly gère la session.
+      setToken(d.data.token,role);enterApp();
     }else{errEl.textContent=d.detail||d.error||'Identifiants incorrects';errEl.classList.remove('hidden')}
   }catch(e){errEl.textContent='Erreur de connexion au serveur';errEl.classList.remove('hidden')}
 }
 
-function logout(){stopTokenRefresh();localStorage.clear();TOKEN='***';location.reload()}
+async function logout(){
+  stopTokenRefresh();
+  try{
+    // Serveur clear le cookie HttpOnly.
+    await fetch('/api/v2/auth/logout',{method:'POST',credentials:'include'});
+  }catch(e){}
+  localStorage.clear();
+  TOKEN='***';
+  location.reload();
+}
 
 function enterApp(){
   document.getElementById('login-page').classList.add('hidden');
@@ -445,18 +465,37 @@ function enterApp(){
   initHome();
 }
 
-// Check saved session
-(function(){
-  const t=localStorage.getItem('j_token');
-  const r=localStorage.getItem('j_role');
-  if(t){TOKEN=t;ROLE=r||'user';enterApp()}
+// Check saved session — via cookie HttpOnly (plus de localStorage).
+// On pingue un endpoint auth-gated ; si 200, la session est encore valide
+// et on entre directement dans l'app sans token en mémoire. Les requêtes
+// futures partent avec credentials:'include' → cookie fait l'auth.
+(async function(){
+  try{
+    const r=await fetch('/api/v2/status',{credentials:'include'});
+    if(r.ok){
+      // Session valide via cookie. On déduit le role depuis un endpoint
+      // dédié (fallback user si indispo).
+      let role='user';
+      try{
+        const me=await fetch('/auth/me',{credentials:'include'});
+        if(me.ok){const d=await me.json();role=d.role||d.data?.role||'user';}
+      }catch(e){}
+      TOKEN='';
+      ROLE=role;
+      enterApp();
+    }
+  }catch(e){/* no session, show login */}
 })();
 
 // ── API helper ──────────────────────────────────────────────────────────────
 
 async function api(path,opts={}){
-  const h={'X-Jarvis-Token':TOKEN,'Authorization':'Bearer '+TOKEN};
+  // credentials:'include' → envoie le cookie HttpOnly jarvis_token.
+  // Headers maintenus comme fallback legacy (WebSocket, tests).
+  const h={};
+  if(TOKEN){h['X-Jarvis-Token']=TOKEN;h['Authorization']='Bearer '+TOKEN;}
   if(opts.body)h['Content-Type']='application/json';
+  opts.credentials=opts.credentials||'include';
   try{
     const r=await fetch(path,{...opts,headers:{...h,...(opts.headers||{})}});
     if(r.status===401){toast('Session expirée','err');logout();return null}
