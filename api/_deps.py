@@ -25,7 +25,11 @@ def require_auth(
 ) -> dict:
     """Canonical auth dependency for FastAPI handlers.
 
-    Reads token from X-Jarvis-Token or Authorization: Bearer.
+    Reads token (priorité descendante) :
+      1. cookie `jarvis_token` (HttpOnly — XSS-safe)
+      2. header `X-Jarvis-Token`
+      3. header `Authorization: Bearer`
+
     Returns user dict on success, raises 401 on failure.
     Used as: Depends(require_auth)
 
@@ -42,7 +46,13 @@ def require_auth(
     from api.token_utils import strip_bearer
     from api.auth import verify_token
 
-    token = x_jarvis_token or (strip_bearer(authorization) if authorization else None)
+    # Cookie first (XSS-safe HttpOnly), then headers.
+    cookie_token = request.cookies.get("jarvis_token") if request else None
+    token = (
+        cookie_token
+        or x_jarvis_token
+        or (strip_bearer(authorization) if authorization else None)
+    )
 
     if not token:
         raise HTTPException(status_code=401, detail="Token invalide ou manquant.")

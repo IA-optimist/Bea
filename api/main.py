@@ -33,7 +33,7 @@ _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
 from typing import Any, Optional
 
 import structlog
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, WebSocket
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, Response, WebSocket
 from api._deps import require_auth, get_start_time, _check_auth
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
@@ -854,12 +854,36 @@ def _get_monitoring_agent():
 # ── Auth endpoints ────────────────────────────────────────────
 
 
+# HttpOnly cookie config — XSS-safe token storage (CVSS 9.1 mitigation).
+# Secure flag activé uniquement hors dev pour permettre le test en HTTP local.
+_COOKIE_NAME = "jarvis_token"
+_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
+_COOKIE_SECURE = os.environ.get("JARVIS_COOKIE_SECURE", "1") != "0"
+
+
+def _set_auth_cookie(response: Response, token: str) -> None:
+    """Set HttpOnly token cookie (XSS-safe). Additive — token reste aussi en body."""
+    response.set_cookie(
+        key=_COOKIE_NAME,
+        value=token,
+        max_age=_COOKIE_MAX_AGE,
+        httponly=True,
+        secure=_COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
+
 @app.post("/api/v2/auth/login", tags=["auth"])
-async def json_login(request: Request):
+async def json_login(request: Request, response: Response):
     """
     JSON-compatible login endpoint for frontend React dashboard.
     Accepts: {"email": "...", "password": "..."} or {"username": "...", "password": "..."}
     Returns: {"ok": true, "data": {"token": "...", "user": {...}}}
+
+    Set aussi un cookie HttpOnly `jarvis_token` — prioritaire sur les
+    headers côté serveur. Les frontends legacy qui utilisent le token du
+    body continuent de fonctionner (backward-compat).
     """
     try:
         body = await request.json()
@@ -873,6 +897,7 @@ async def json_login(request: Request):
     token = _check_auth_password(username, password)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    _set_auth_cookie(response, token)
     return {
         "ok": True,
         "data": {
@@ -881,18 +906,29 @@ async def json_login(request: Request):
         },
     }
 
+
+@app.post("/api/v2/auth/logout", tags=["auth"])
+async def json_logout(response: Response):
+    """Clear le cookie HttpOnly. Les headers Bearer/X-Jarvis-Token sont la
+    responsabilité du client (drop côté frontend)."""
+    response.delete_cookie(_COOKIE_NAME, path="/")
+    return {"ok": True, "data": {"message": "logged_out"}}
+
+
 @app.post("/auth/token", tags=["auth"])
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
     from api.auth import _check_auth_password
     token = _check_auth_password(form_data.username, form_data.password)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if response is not None:
+        _set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/auth/login", tags=["auth"])
 # Returns: token, role, expires_in, authenticated, permissions
-async def login_alias(form_data: OAuth2PasswordRequestForm = Depends()):
-    return await login_for_access_token(form_data)
+async def login_alias(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
+    return await login_for_access_token(form_data, response)
 
 @app.get("/auth/me", tags=["auth"])
 # Returns: authenticated, role, permissions, expires_in
