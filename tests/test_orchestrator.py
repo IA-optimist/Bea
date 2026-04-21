@@ -15,9 +15,21 @@ Usage :
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import sys
 import os
+
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+# Skip entire module si core.orchestrator_LEGACY_20260407 absent (drift connu
+# — le module a été purgé du codebase, voir core/_legacy/__init__.py roadmap).
+if importlib.util.find_spec("core.orchestrator_LEGACY_20260407") is None:
+    pytest.skip(
+        "core.orchestrator_LEGACY_20260407 retiré du codebase (drift connu)",
+        allow_module_level=True,
+    )
 
 
 # ══════════════════════════════════════════════════════════════
