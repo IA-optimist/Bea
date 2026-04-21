@@ -41,7 +41,7 @@ on:
           - debug
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
