@@ -468,11 +468,13 @@ class TestSecurity:
 
     def test_check_auth_missing_token(self):
         """CS36."""
-        from api.main import _check_auth, _API_TOKEN
-        if _API_TOKEN:
+        # _check_auth moved from api.main to api._deps (single source).
+        from api._deps import _check_auth
+        import os
+        if os.environ.get("JARVIS_API_TOKEN"):
             from fastapi import HTTPException
             with pytest.raises(HTTPException):
-                _check_auth(None)
+                _check_auth(None, None)
 
     def test_access_enforcement_loaded(self):
         """CS37."""
