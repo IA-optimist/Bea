@@ -52,19 +52,15 @@ Part 8: Runtime Integration
 Part 9: Full Lifecycle
   X33. Create → test → enable → disable → delete
 """
-import json
 import os
 import sys
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.extension_registry import (
     CustomAgent, CustomMCPConnector, CustomSkill, CustomToolConfig,
-    ExtensionRegistry, ExtensionSource, HealthStatus,
-    RuntimeExtensionLoader,
-    _validate_id, _check_dangerous, _mask_secret,
-    _hash_secret, reset_registry,
+    ExtensionRegistry, ExtensionSource, RuntimeExtensionLoader,
+    _validate_id, _mask_secret,
 )
 
 

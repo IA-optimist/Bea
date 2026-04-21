@@ -36,7 +36,6 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass, field
 from typing import Any, Optional
 
 try:
@@ -50,10 +49,8 @@ _silent_log = log
 from core.canonical_types import (
     CanonicalMissionStatus,
     CanonicalMissionContext,
-    CanonicalRiskLevel,
     map_legacy_mission_status,
     map_legacy_risk_level,
-    validate_transition,
     TransitionError,
 )
 

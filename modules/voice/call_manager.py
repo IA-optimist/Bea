@@ -13,7 +13,6 @@ returns a graceful stub dict instead of raising.
 from __future__ import annotations
 
 import os
-import xml.etree.ElementTree as ET
 from typing import Any
 
 import structlog

@@ -40,7 +40,6 @@ import inspect
 import sys
 import os
 import time
-import threading
 
 import pytest
 
@@ -195,7 +194,7 @@ class TestExecutionEngineQueueCap:
     def test_submit_raises_when_queue_full(self):
         """submit() must raise RuntimeError if queue exceeds _MAX_QUEUE_SIZE."""
         from executor.execution_engine import ExecutionEngine, _MAX_QUEUE_SIZE
-        from executor.task_model import ExecutionTask, STATUS_PENDING
+        from executor.task_model import ExecutionTask
         import heapq
 
         engine = ExecutionEngine()

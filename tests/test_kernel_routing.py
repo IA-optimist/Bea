@@ -382,7 +382,6 @@ class TestRoutingAPI:
         assert any("identity/stats" in p for p in paths)
 
     def test_KR25_convergence_shows_performance(self):
-        from api.routes.kernel import router
         source = inspect.getsource(
             __import__("api.routes.kernel", fromlist=["convergence_status"]).convergence_status
         )
@@ -571,7 +570,7 @@ class TestPriorityInvariants:
 
     def test_KR35_readiness_dominates_performance(self):
         """A provider with readiness=0 is blocked regardless of performance."""
-        from core.capability_routing.scorer import score_provider, ScoringWeights
+        from core.capability_routing.scorer import score_provider
         from core.capability_routing.spec import (
             ProviderSpec, CapabilityRequirement, ProviderType, ProviderStatus,
         )

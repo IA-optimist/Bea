@@ -24,7 +24,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from agents.crew import BaseAgent
 from core.contracts import (
-    AgentResult, ErrorReport, RootCauseType
+    ErrorReport
 )
 from core.state import JarvisSession
 

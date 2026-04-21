@@ -5,7 +5,6 @@ Injecte les résultats dans le contexte comme préfixe de prompt.
 from __future__ import annotations
 import logging
 import time
-from typing import Optional
 _silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.tool_runner")

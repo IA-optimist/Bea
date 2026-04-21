@@ -24,7 +24,6 @@ import json
 import os
 import sys
 import threading
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -183,7 +182,7 @@ class TestEmitters:
     def test_mission_lifecycle(self):
         from core.metrics_store import (
             reset_metrics, emit_mission_submitted, emit_mission_completed,
-            emit_mission_failed, emit_mission_timeout, get_metrics
+            emit_mission_failed, emit_mission_timeout
         )
         m = reset_metrics()
         emit_mission_submitted("code_review")
@@ -199,7 +198,7 @@ class TestEmitters:
         assert m.get_histogram("mission_duration_ms", {"type": "code_review"})["count"] == 1
 
     def test_tool_emitters(self):
-        from core.metrics_store import reset_metrics, emit_tool_invocation, emit_tool_timeout, get_metrics
+        from core.metrics_store import reset_metrics, emit_tool_invocation, emit_tool_timeout
         m = reset_metrics()
         emit_tool_invocation("shell_command", success=True, duration_ms=150)
         emit_tool_invocation("shell_command", success=False, duration_ms=5000)
@@ -212,7 +211,7 @@ class TestEmitters:
     def test_model_emitters(self):
         from core.metrics_store import (
             reset_metrics, emit_model_selected, emit_model_failure,
-            emit_model_latency, emit_fallback_used, get_metrics
+            emit_model_latency, emit_fallback_used
         )
         m = reset_metrics()
         emit_model_selected("claude-sonnet", locality="cloud")
@@ -228,7 +227,7 @@ class TestEmitters:
         assert m.get_counter_total("fallback_used_total") >= 1
 
     def test_memory_emitters(self):
-        from core.metrics_store import reset_metrics, emit_memory_search, get_metrics
+        from core.metrics_store import reset_metrics, emit_memory_search
         m = reset_metrics()
         emit_memory_search(hit=True, latency_ms=45)
         emit_memory_search(hit=False, latency_ms=120)
@@ -237,7 +236,7 @@ class TestEmitters:
         assert m.get_counter("memory_search_hits") == 1
 
     def test_experiment_emitters(self):
-        from core.metrics_store import reset_metrics, emit_experiment, get_metrics
+        from core.metrics_store import reset_metrics, emit_experiment
         m = reset_metrics()
         emit_experiment("promoted", score_delta=0.15)
         emit_experiment("rejected", score_delta=-0.05)
@@ -250,7 +249,7 @@ class TestEmitters:
         assert m.get_counter("lessons_learned_total") == 3
 
     def test_multimodal_emitters(self):
-        from core.metrics_store import reset_metrics, emit_multimodal_task, get_metrics
+        from core.metrics_store import reset_metrics, emit_multimodal_task
         m = reset_metrics()
         emit_multimodal_task("vision", success=True, latency_ms=800)
         emit_multimodal_task("vision", success=False, latency_ms=0)
@@ -259,14 +258,14 @@ class TestEmitters:
         assert m.get_counter("multimodal_failures_total", {"modality": "vision"}) == 1
 
     def test_circuit_breaker_emitters(self):
-        from core.metrics_store import reset_metrics, emit_circuit_breaker, get_metrics
+        from core.metrics_store import reset_metrics, emit_circuit_breaker
         m = reset_metrics()
         emit_circuit_breaker("open")
         assert m.get_counter("circuit_breaker_open_total") == 1
         assert m.get_gauge("circuit_breaker_state") == 2  # open=2
 
     def test_orchestrator_timing(self):
-        from core.metrics_store import reset_metrics, emit_orchestrator_timing, get_metrics
+        from core.metrics_store import reset_metrics, emit_orchestrator_timing
         m = reset_metrics()
         emit_orchestrator_timing("classify", 150)
         emit_orchestrator_timing("planning", 2400)
@@ -276,7 +275,7 @@ class TestEmitters:
         assert m.get_histogram("planning_latency_ms")["avg"] == 2400
 
     def test_retry_emitter(self):
-        from core.metrics_store import reset_metrics, emit_retry, get_metrics
+        from core.metrics_store import reset_metrics, emit_retry
         m = reset_metrics()
         emit_retry("executor")
         emit_retry("executor")

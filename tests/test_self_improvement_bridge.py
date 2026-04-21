@@ -45,21 +45,17 @@ Full Cycle
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from pathlib import Path
-from unittest.mock import patch as mock_patch, MagicMock
+from unittest.mock import MagicMock
 
 from core.self_improvement_loop import (
     JarvisImprovementLoop,
-    ImprovementTask, PatchProposal, PatchGenerator,
-    SignalCollector, ImprovementSignal, SignalType,
-    CriticAgent, SandboxRunner, PatchValidator,
-    LessonMemory, PromptOptimizer, PromotionPolicy,
-    PatchDecision, CycleReport, Lesson,
+    ImprovementTask, PatchProposal, ImprovementSignal, SignalType,
+    PromotionPolicy,
+    CycleReport,
 )
 
 
@@ -131,8 +127,6 @@ class TestBridgeConversion:
 
     def test_intents_carry_original(self, tmp_repo):
         """SB2."""
-        from core.self_improvement.promotion_pipeline import CandidatePatch
-        from core.self_improvement.code_patcher import PatchIntent
 
         original = (tmp_repo / "core" / "tool_runner.py").read_text()
         # Verify original content is non-empty

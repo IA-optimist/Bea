@@ -5,10 +5,8 @@ Verifies all 10 priority objectives through simulation.
 """
 import pytest
 import ast
-import json
 import os
 import sys
-import time
 import types
 
 if 'structlog' not in sys.modules:
@@ -349,8 +347,6 @@ def test_e2e_multistep_mission():
     """Simulate a 5-step mission flowing through all layers."""
     from core.lifecycle_tracker import LifecycleTracker
     from core.tool_performance_tracker import ToolPerformanceTracker, ToolExecution
-    from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
-    from core.mission_memory import MissionMemory
     import core.execution_engine as ee
 
     lt = LifecycleTracker()

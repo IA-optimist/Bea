@@ -9,11 +9,11 @@ All routes preserve exact same behavior as when inline in main.py.
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 from api._deps import require_auth
 
 import structlog
-from fastapi import Depends, APIRouter, Header, HTTPException, Query
+from fastapi import Depends, APIRouter, Query
 
 log = structlog.get_logger()
 router = APIRouter()

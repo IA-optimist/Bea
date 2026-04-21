@@ -10,8 +10,6 @@ Classes dépendances (singletons locaux) :
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Dict, Optional
 
 from flask import Blueprint, request, jsonify
 

@@ -20,7 +20,6 @@ Coverage:
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -217,7 +216,7 @@ class TestAdaptiveScoring:
     def test_live_blending_with_data(self):
         """R8: With enough calls, blend kicks in."""
         from core.adaptive_routing import (
-            adaptive_score_model, reset_enhanced_tracker, get_enhanced_tracker,
+            adaptive_score_model, reset_enhanced_tracker,
         )
         from core.llm_routing_policy import RoutingDimension
         tracker = reset_enhanced_tracker()
@@ -238,7 +237,7 @@ class TestAdaptiveScoring:
     def test_error_spike_penalty_in_score(self):
         """R9: Error spike halves the score."""
         from core.adaptive_routing import (
-            adaptive_score_model, reset_enhanced_tracker, get_enhanced_tracker,
+            adaptive_score_model, reset_enhanced_tracker,
         )
         from core.llm_routing_policy import RoutingDimension
         tracker = reset_enhanced_tracker()
@@ -263,7 +262,7 @@ class TestAdaptiveScoring:
     def test_consecutive_failure_penalty(self):
         """R10: Consecutive failures reduce score."""
         from core.adaptive_routing import (
-            adaptive_score_model, reset_enhanced_tracker, get_enhanced_tracker,
+            adaptive_score_model, reset_enhanced_tracker,
         )
         from core.llm_routing_policy import RoutingDimension
         tracker = reset_enhanced_tracker()
@@ -286,7 +285,7 @@ class TestAdaptiveScoring:
     def test_failure_rate_penalty(self):
         """R11: High failure rate reduces score."""
         from core.adaptive_routing import (
-            adaptive_score_model, reset_enhanced_tracker, get_enhanced_tracker,
+            adaptive_score_model, reset_enhanced_tracker,
         )
         from core.llm_routing_policy import RoutingDimension
         tracker = reset_enhanced_tracker()
@@ -307,7 +306,7 @@ class TestAdaptiveScoring:
     def test_blend_ramp(self):
         """R12: Blend factor increases with call count."""
         from core.adaptive_routing import (
-            reset_enhanced_tracker, get_enhanced_tracker,
+            reset_enhanced_tracker,
         )
         tracker = reset_enhanced_tracker()
 

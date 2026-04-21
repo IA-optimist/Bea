@@ -19,8 +19,6 @@ Coverage:
 import os
 import sys
 import time
-import threading
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -93,7 +91,7 @@ class TestWeaknessDetection:
 
     def test_failure_patterns(self):
         """D1: Detect recurring failure patterns."""
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.improvement_daemon import detect_weaknesses
         m = reset_metrics()
 

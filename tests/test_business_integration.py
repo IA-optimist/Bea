@@ -6,8 +6,7 @@ Phase 7: Validates bridge between cognition and business automation.
 import pytest
 import sys
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
+from unittest.mock import Mock, patch
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

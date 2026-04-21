@@ -5,7 +5,6 @@ Integrates notification system with mission lifecycle events
 from __future__ import annotations
 import asyncio
 import structlog
-from typing import Optional
 from .notification_service import send_notification
 
 log = structlog.get_logger()

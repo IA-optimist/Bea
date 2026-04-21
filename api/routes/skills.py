@@ -5,14 +5,13 @@ Minimal introspection API for the skill system.
 """
 from __future__ import annotations
 
-from typing import Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Header
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)

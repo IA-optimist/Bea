@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import mimetypes
 import os
-import time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -116,7 +115,7 @@ async def read_artifact(
 
     if file_path.suffix.lower() not in _TEXT_EXTENSIONS:
         raise HTTPException(
-            400, f"Cannot read binary file. Use /download endpoint."
+            400, "Cannot read binary file. Use /download endpoint."
         )
 
     try:

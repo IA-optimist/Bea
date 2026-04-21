@@ -1,0 +1,73 @@
+# ──────────────────────────────────────────────────────────────
+# Dependabot — automated dependency updates
+#
+# Monitors:
+#   - Python (pip)       : requirements.txt
+#   - GitHub Actions     : .github/workflows/*.yml
+#   - Flutter/Dart (pub) : jarvismax_app/pubspec.yaml
+#
+# PRs are rate-limited and grouped to avoid noise.
+# Review + merge manually; CI must pass before merge.
+# ──────────────────────────────────────────────────────────────
+version: 2
+updates:
+  # ── Python backend ─────────────────────────────────────────
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps(py)"
+      include: "scope"
+    groups:
+      # Group dev/test tooling separately from runtime deps
+      test-tooling:
+        patterns:
+          - "pytest*"
+          - "mypy*"
+          - "ruff*"
+          - "coverage*"
+      runtime:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+          - "sqlalchemy*"
+          - "structlog*"
+
+  # ── GitHub Actions ─────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(ci)"
+
+  # ── Flutter / Dart ─────────────────────────────────────────
+  - package-ecosystem: "pub"
+    directory: "/jarvismax_app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "flutter"
+    commit-message:
+      prefix: "deps(flutter)"

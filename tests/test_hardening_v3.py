@@ -2,7 +2,11 @@
 Tests for hardening improvements: executor, memory, trace, self-improvement safety.
 """
 import pytest
-import sys, os, types, unittest, json, tempfile, time
+import sys
+import os
+import types
+import unittest
+import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -120,7 +124,7 @@ class TestMemoryFacadeEnhancements(unittest.TestCase):
         self.assertIn("backend_count", stats)
 
     def test_search_relevant_filters(self):
-        from core.memory_facade import MemoryFacade, MemoryEntry
+        from core.memory_facade import MemoryFacade
         facade = MemoryFacade(workspace_dir=tempfile.mkdtemp())
         # search_relevant should return a list (empty if no backends)
         results = facade.search_relevant("test query", min_score=0.5)

@@ -2,8 +2,9 @@
 Computes effectiveness score 0-1 for each tool based on observation history.
 Reuses capability_scorer structure where possible.
 """
-import logging, time
-from typing import Dict, Any
+import logging
+import time
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 

@@ -63,7 +63,6 @@ class ExecutionTask:
     # ── Méthodes ──────────────────────────────────────────────────────────────
 
     def to_dict(self) -> dict:
-        from executor.retry_policy import RetryPolicy
         rp = None
         if self.retry_policy is not None:
             rp = {

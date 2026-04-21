@@ -24,8 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from core.improvement_daemon import (
     Weakness, compute_expected_value, rank_candidates,
     CooldownTracker, PRIORITY_TIER, IMPACT_SCORE,
-    MIN_EXPECTED_VALUE, COOLDOWN_CYCLES,
-    detect_weaknesses, run_cycle, reset_daemon_state,
+    MIN_EXPECTED_VALUE, run_cycle, reset_daemon_state,
     get_cooldown_tracker,
 )
 
@@ -265,7 +264,7 @@ class TestCycleIntegration:
     def test_cycle_uses_ranked_candidates(self, tmp_path):
         """V10: Cycle selects highest-value candidate, not arbitrary first."""
         from core.metrics_store import (
-            reset_metrics, emit_tool_timeout, emit_retry,
+            reset_metrics, emit_retry,
             emit_mission_submitted, emit_mission_failed,
         )
         reset_daemon_state()

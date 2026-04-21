@@ -15,8 +15,6 @@ from __future__ import annotations
 from agents.crew import (
     AtlasDirector,
     ScoutResearch,
-    MapPlanner,
-    ForgeBuilder,
     LensReviewer,
     VaultMemory,
     ShadowAdvisor,

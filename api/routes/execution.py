@@ -226,7 +226,7 @@ async def deploy_artifact(req: DeployRequest):
     import os
     from pathlib import Path
     from core.execution.artifacts import ArtifactType, ArtifactStatus, ExecutionArtifact
-    from core.execution.deployment import DeploymentPipeline, get_deployment_target, DEPLOYMENT_TARGETS
+    from core.execution.deployment import DeploymentPipeline, DEPLOYMENT_TARGETS
 
     builds_dir = Path(os.environ.get("WORKSPACE_DIR", "workspace")) / "builds"
     build_dir = builds_dir / req.artifact_id

@@ -10,13 +10,15 @@ Tests for all 5 SuperAGI-inspired patterns:
 
 Total: 60 tests
 """
-import sys, os, json, tempfile, time
+import sys
+import os
+import json
+import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ADMIN_PASSWORD_HASH", "test-hash")
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -527,7 +529,7 @@ class TestActionConsoleAPI:
 
     def test_AC10_approve_flow(self):
         """Create approval via registry, then approve via API."""
-        from core.tool_permissions import get_tool_permissions, ToolPermissionRegistry
+        from core.tool_permissions import ToolPermissionRegistry
         # Reset singleton for test isolation
         import core.tool_permissions as tp_mod
         tp_mod._registry = ToolPermissionRegistry()

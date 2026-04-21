@@ -124,7 +124,7 @@ async def task_progress_stream(
     Auto-closes when task reaches a terminal state.
     """
     from api.ws_hub import get_hub
-    from core.task_queue import get_core_task_queue, TaskState
+    from core.task_queue import get_core_task_queue
 
     hub   = get_hub()
     queue = get_core_task_queue()

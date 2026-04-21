@@ -4,7 +4,6 @@ Modélise des workflows business avec étapes, outils, automatisations et ROI.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional
 import json
 
 

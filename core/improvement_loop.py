@@ -22,7 +22,6 @@ Safety zones:
 from __future__ import annotations
 
 import difflib
-import hashlib
 import json
 import os
 import re
@@ -32,7 +31,6 @@ import time
 import uuid
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any
 
 import structlog
 _silent_log = __import__("structlog").get_logger(__name__)

@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Optional
 
 # Fail-hard on auth import: a None fallback would make Depends(None) a
 # pass-through, creating a silent auth bypass.

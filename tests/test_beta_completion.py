@@ -5,11 +5,9 @@ End-to-end lifecycle validation, execution reliability,
 tool ecosystem intelligence, cockpit wiring, confidence.
 """
 import ast
-import json
 import os
 import sys
 import pytest
-import time
 import types
 
 if 'structlog' not in sys.modules:

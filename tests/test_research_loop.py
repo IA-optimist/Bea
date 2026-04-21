@@ -1,7 +1,7 @@
 """tests/test_research_loop.py — Research loop self-improvement tests."""
-import os, sys, json, time
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-import pytest
 
 
 class TestExperimentSpec:

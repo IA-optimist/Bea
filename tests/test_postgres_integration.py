@@ -97,12 +97,12 @@ def test_with_postgres():
     vm = VaultMemory()
     
     if not bool(vm._pg_backend):
-        print(f"⚠️  PostgreSQL configured but not available")
-        print(f"   Connection may have failed - check credentials")
+        print("⚠️  PostgreSQL configured but not available")
+        print("   Connection may have failed - check credentials")
         print(f"   Backend available: {vm._pg_backend is not None}")
         return
     
-    print(f"✓ PostgreSQL backend initialized and available")
+    print("✓ PostgreSQL backend initialized and available")
     
     # Store entry (should dual-write to PostgreSQL)
     import time
@@ -116,8 +116,8 @@ def test_with_postgres():
     
     if entry:
         print(f"✓ Entry stored with dual-write: {entry.id}")
-        print(f"  - JSON/SQLite: OK")
-        print(f"  - PostgreSQL: OK (if backend available)")
+        print("  - JSON/SQLite: OK")
+        print("  - PostgreSQL: OK (if backend available)")
     
     # Test sync
     stats = vm.sync_to_postgres()

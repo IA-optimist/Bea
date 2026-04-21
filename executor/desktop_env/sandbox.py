@@ -46,7 +46,6 @@ class DockerSandbox(DesktopEnvironment):
         if not self.is_available():
             raise RuntimeError("Docker non disponible (daemon ou librairie manquante).")
 
-        from docker_sdk import docker
         log.info("sandbox_starting", container=self.container_id, image=self.image)
         try:
             # Phase 12 : SÉCURITÉ COPY-ON-WRITE

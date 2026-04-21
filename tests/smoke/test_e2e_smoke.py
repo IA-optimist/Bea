@@ -210,7 +210,7 @@ def test_S3_mission_reaches_terminal_state():
 
     # Log the result for inspection (visible with pytest -v -s)
     print(f"\n✓ Mission {mission_id} completed.")
-    print(f"  Goal: 'What is 7 multiplied by 6?'")
+    print("  Goal: 'What is 7 multiplied by 6?'")
     print(f"  Result: {result[:200]}")
 
 

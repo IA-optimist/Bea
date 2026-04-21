@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
 
 import structlog
 _silent_log = __import__("structlog").get_logger(__name__)
@@ -142,7 +141,6 @@ def assemble(
     # 6. Business reasoning override
     if classification.get("task_type") == "business":
         try:
-            from core.skills.business_reasoning import OpportunityType
             ctx.suggested_approach = "business_structured_analysis"
             ctx.estimated_steps = 4
         except Exception:

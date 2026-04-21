@@ -271,7 +271,7 @@ def test_approval_status():
 def test_scenario_multi_objective_prioritization():
     """Multiple objectives compete for execution slots."""
     from core.operating_primitives import (
-        ObjectiveTracker, ObjectivePortfolio, compute_economics
+        ObjectiveTracker, ObjectivePortfolio
     )
     ot = ObjectiveTracker(persist_path=f"/tmp/sc_multi_{time.time()}.json")
     # Create objectives with different profiles

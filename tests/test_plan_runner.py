@@ -4,10 +4,8 @@ tests/test_plan_runner.py — Plan Runner tests.
 Covers: step context, run state, step execution, plan runner lifecycle,
 pause/resume/cancel, approval flow, execution memory, API routes.
 """
-import json
 import os
 import tempfile
-import time
 import pytest
 
 
@@ -148,7 +146,7 @@ class TestStepExecutor:
         assert result.needs_approval is True
 
     def test_PR15_unknown_step_type(self):
-        from core.planning.step_executor import execute_step, StepResult
+        from core.planning.step_executor import execute_step
         from core.planning.execution_plan import PlanStep
         from core.planning.step_context import StepContext
         step = PlanStep(target_id="test")

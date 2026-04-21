@@ -15,7 +15,6 @@ Fallback :
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 import structlog
 _silent_log = __import__("structlog").get_logger(__name__)

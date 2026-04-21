@@ -12,9 +12,9 @@ from __future__ import annotations
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header
 
 from api._deps import require_auth
 
@@ -513,7 +513,7 @@ async def aios_status(
 
     # 1. Capabilities
     try:
-        from core.capabilities.ai_os_capabilities import AIOS_CAPABILITIES, capability_summary
+        from core.capabilities.ai_os_capabilities import capability_summary
         d["capabilities"] = capability_summary()
     except Exception as e:
         d["capabilities"] = {"error": str(e)[:100]}

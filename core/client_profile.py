@@ -1,6 +1,7 @@
 """ClientProfile — Contexte client persistant pour JarvisMax."""
 from __future__ import annotations
-import json, time
+import json
+import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 

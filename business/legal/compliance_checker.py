@@ -19,7 +19,6 @@ This is NOT legal advice. Always consult a lawyer for real legal questions.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
@@ -377,7 +376,7 @@ class ComplianceChecker:
         md_path = output_dir / f"{product_name}_legal_checklist.md"
         md_path.write_text(checklist)
         
-        logger.info(f"💾 Compliance report saved:")
+        logger.info("💾 Compliance report saved:")
         logger.info(f"   JSON: {json_path}")
         logger.info(f"   Checklist: {md_path}")
         
@@ -401,7 +400,7 @@ def main():
     report = checker.check_idea(spec)
     
     # Print issues
-    print(f"\n⚖️  COMPLIANCE REPORT\n")
+    print("\n⚖️  COMPLIANCE REPORT\n")
     print(f"Overall Risk: {report.overall_risk.value.upper()}")
     print(f"Safe to Proceed: {'✅ YES' if report.is_safe else '❌ NO'}\n")
     

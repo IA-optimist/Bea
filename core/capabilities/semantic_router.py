@@ -14,7 +14,6 @@ Architecture:
 from __future__ import annotations
 
 import hashlib
-import logging
 import structlog
 import os
 import time

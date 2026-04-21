@@ -11,10 +11,8 @@ Validates:
   - End-to-end: plan execution → performance records
 """
 import inspect
-import time
-import pytest
 
-from kernel.capabilities.performance import PerformanceStore, get_performance_store
+from kernel.capabilities.performance import PerformanceStore
 import kernel.capabilities.performance as _perf_mod
 
 
@@ -129,7 +127,7 @@ class TestEndToEndPerformanceFeedback:
 
     def _run_plan(self, goal: str, steps: list) -> object:
         """Helper to run a plan and return the run result."""
-        from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus, StepType
+        from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus
         from core.planning.plan_serializer import PlanStore
         from core.planning.plan_runner import PlanRunner
         import core.planning.plan_serializer as _mod

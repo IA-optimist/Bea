@@ -17,7 +17,6 @@ import sys
 import types
 import unittest
 import subprocess
-import re
 _silent_log = __import__("structlog").get_logger(__name__)
 
 if 'structlog' not in sys.modules:
@@ -120,7 +119,7 @@ class TestNoShellTrueInAgents(unittest.TestCase):
         lines = [l for l in result.stdout.strip().split("\n")
                  if l and "__pycache__" not in l]
         self.assertEqual(len(lines), 0,
-                         f"shell=True found in agents/:\n" + "\n".join(lines))
+                         "shell=True found in agents/:\n" + "\n".join(lines))
 
 
 class TestApprovalEnforced(unittest.TestCase):
@@ -139,7 +138,6 @@ class TestApprovalEnforced(unittest.TestCase):
         """ToolExecutor respects JARVIS_EXECUTION_DISABLED."""
         os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
         try:
-            from core.tool_executor import ToolExecutor
             # The kill switch is checked at execution time
             blocked = os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
             self.assertTrue(blocked, "Kill switch env var not set properly")

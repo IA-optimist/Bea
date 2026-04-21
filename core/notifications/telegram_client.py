@@ -6,7 +6,6 @@ from __future__ import annotations
 import os
 import aiohttp
 import structlog
-from typing import Optional
 from .models import NotificationPayload
 
 log = structlog.get_logger()

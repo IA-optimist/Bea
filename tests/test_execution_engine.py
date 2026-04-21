@@ -3,8 +3,6 @@ Tests for execution engine: health gate, adaptive retry, fallback chains,
 telemetry, evaluation, recovery memory, tool runner wiring.
 """
 import ast
-import json
-import os
 import sys
 import pytest
 import time

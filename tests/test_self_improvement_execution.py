@@ -78,32 +78,27 @@ Integration
 import os
 import sys
 import shutil
-import tempfile
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
 from core.self_improvement.protected_paths import (
-    is_protected, PROTECTED_FILES, PROTECTED_DIRS, PROTECTED_PATTERNS,
+    is_protected,
 )
 from core.self_improvement.code_patcher import (
-    CodePatcher, CodePatch, PatchDiff, PatchIntent, FileAnalysis,
-    PatchMode, BINARY_EXTENSIONS,
-    MAX_FILES_PER_PATCH, MAX_LINES_CHANGED,
+    CodePatcher, CodePatch, PatchDiff, PatchIntent, PatchMode, BINARY_EXTENSIONS,
 )
 from core.self_improvement.git_agent import (
     GitAgent, WorkspaceSnapshot, PatchResult, CommitSuggestion,
     PROTECTED_BRANCHES,
 )
 from core.self_improvement.sandbox_executor import (
-    SandboxExecutor, SandboxConfig, SandboxResult, ALLOWED_COMMANDS,
-    FailureCategory, _scrub_secrets,
+    SandboxExecutor, SandboxConfig, SandboxResult, FailureCategory, _scrub_secrets,
 )
 from core.self_improvement.test_runner import (
     PatchRunner as TestRunner, SuiteResult as TestSuiteResult,
-    RegressionReport, ValidationReport, ExperimentReport,
+    ValidationReport, ExperimentReport,
 )
 from core.self_improvement.promotion_pipeline import (
     PromotionPipeline, CandidatePatch, PromotionDecision, PatchIntent as PPIntent,

@@ -14,9 +14,8 @@ from __future__ import annotations
 
 import logging
 import os
-import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 from error_handling import IntelligentErrorHandler, GracefulDegradation
 

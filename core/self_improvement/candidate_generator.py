@@ -13,7 +13,7 @@ Candidate types:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 
 logger = logging.getLogger("jarvis.self_improvement.candidate_generator")
@@ -144,8 +144,8 @@ class CandidateGenerator:
                 ImprovementCandidate(
                     type="RETRY_STRATEGY",
                     description=(
-                        f"Add retry strategy for automation: "
-                        f"max_retries=2, delay=5s for slow operations"
+                        "Add retry strategy for automation: "
+                        "max_retries=2, delay=5s for slow operations"
                     ),
                     expected_gain=base_gain * 0.6,
                     risk="LOW",

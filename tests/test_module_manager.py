@@ -67,10 +67,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import pytest
 from core.modules.module_manager import (
-    ModuleManager, AgentConfig, SkillConfig, MCPConfig, ConnectorConfig,
-    CatalogEntry,
+    ModuleManager,
 )
 
 

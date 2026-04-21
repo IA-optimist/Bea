@@ -25,7 +25,7 @@ from typing import Callable, Awaitable
 
 from core.state import (
     JarvisSession, SessionStatus, ActionSpec,
-    RiskLevel, TaskMode
+    TaskMode
 )
 from core.task_router import TaskRouter
 from config.settings import get_settings

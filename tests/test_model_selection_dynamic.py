@@ -4,7 +4,6 @@ tests/test_model_selection_dynamic.py — Dynamic model selection + A/B testing.
 MD01-MD25: A/B tests, cost tracking, dynamic quality/cost, catalog refresh.
 """
 import pytest
-import time
 
 
 class TestABTest:

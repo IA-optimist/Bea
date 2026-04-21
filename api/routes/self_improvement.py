@@ -14,8 +14,7 @@ import logging
 from fastapi import APIRouter
 
 from core.security.rbac import require_role, CurrentUser
-from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Depends
 
 logger = logging.getLogger("jarvis.api.self_improvement")
 

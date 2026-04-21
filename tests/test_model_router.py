@@ -127,7 +127,7 @@ class TestToolTemplate(unittest.TestCase):
         self.assertEqual(schema["risk_level"], "LOW")
 
     def test_safe_execute_catches_errors(self):
-        from core.tools.tool_template import BaseTool, ToolResult
+        from core.tools.tool_template import BaseTool
         class FailTool(BaseTool):
             name = "fail_tool"
             risk_level = "LOW"

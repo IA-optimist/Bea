@@ -170,7 +170,7 @@ class TestFailuresEndpoint:
     """M6: Failures returns aggregated patterns."""
 
     def test_failures_structure(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         m = reset_metrics()
 
         m.record_failure("timeout", "executor", "timed out")

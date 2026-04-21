@@ -4,13 +4,12 @@ Stockage append-only immuable de tous les événements d'une mission.
 Permet Time-Travel, sauvegarde JSON et subscriptions asynchrones (ex: pour WebSockets).
 """
 import json
-import uuid
 import structlog
 from collections import deque
-from typing import Any, Callable, Awaitable
+from typing import Callable, Awaitable
 from pydantic import TypeAdapter
 
-from core.events import Event, Action, Observation, AnyAction, AnyObservation
+from core.events import Event
 
 log = structlog.get_logger()
 

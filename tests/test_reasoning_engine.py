@@ -258,7 +258,7 @@ class TestSelfCritique(unittest.TestCase):
     def test_RE29_bottleneck_coverage_check(self):
         """Output should address the identified bottleneck."""
         from core.orchestration.reasoning_engine import (
-            critique_output, ProblemFrame, OutputShape,
+            critique_output, ProblemFrame,
         )
         frame = ProblemFrame(
             real_problem="Auth failure",

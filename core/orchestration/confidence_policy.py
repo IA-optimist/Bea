@@ -249,7 +249,7 @@ class ConfidencePolicy:
                     f"approval required regardless of tier"
                 )
                 policy_log.append(
-                    f"critical_risk_approval: CONTEXT + critical → require_approval"
+                    "critical_risk_approval: CONTEXT + critical → require_approval"
                 )
             policy_log.append(
                 f"add_context: queries={decision.context_queries[:2]}"
@@ -278,7 +278,7 @@ class ConfidencePolicy:
                 )
             else:
                 policy_log.append(
-                    f"cautious_no_approval: low/no risk — proceed without gate"
+                    "cautious_no_approval: low/no risk — proceed without gate"
                 )
 
         elif tier == PolicyTier.DECOMPOSE:

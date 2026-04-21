@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import time
 import structlog
-from dataclasses import dataclass, field
 
 from kernel.contracts.types import (
     Action, PolicyDecision, Decision, DecisionType, RiskLevel,

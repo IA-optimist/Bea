@@ -37,11 +37,11 @@ class TelegramAlertManager:
         # Build message
         message_parts = [
             f"{emoji} ALERT: {status}",
-            f"",
+            "",
             f"📋 Alert: {labels.get('alertname', 'Unknown')}",
             f"🏷️ Severity: {severity.upper()}",
             f"🔧 Component: {labels.get('component', 'Unknown')}",
-            f"",
+            "",
         ]
         
         # Add summary and description

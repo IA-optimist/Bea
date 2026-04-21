@@ -1,0 +1,74 @@
+# ──────────────────────────────────────────────────────────────
+# ruff configuration — JarvisMax
+#
+# Strategy : block on safe rules that are already clean,
+# with a roadmap to expand coverage as the codebase is cleaned up.
+#
+# Gradually expand `select` as more categories reach 0 errors.
+# See .github/workflows/ci.yml for CI gating.
+# ──────────────────────────────────────────────────────────────
+target-version = "py311"
+line-length = 120
+
+# Directories that must never be linted : generated, legacy, vendored.
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "__pycache__",
+  "build",
+  "dist",
+  "node_modules",
+  "frontend/node_modules",
+  "jarvismax_app",           # Dart/Flutter, not Python
+  "core/_legacy",            # explicitly deprecated shims
+  "mcp/hexstrike-ai/_archive_legacy",
+  "docs",
+  "archive",
+  "workspace",
+]
+
+[lint]
+# ── Blocking rules (must be clean) ─────────────────────────
+# Expand this list as categories are fixed. See `ruff check --statistics`.
+select = [
+  # Currently clean (blocking) :
+  "F403",  # undefined-local-with-import-star (0 outside compat shims)
+  "F823",  # undefined-local (0)
+  "W605",  # invalid escape sequence (0)
+]
+# TODO as these reach 0 errors, move them from this list into `select` above :
+#   F401 (16) unused-import
+#   F811 (2)  redefined-while-unused
+#   F841 (144) unused-variable (many dead assignments to clean)
+#   E701 (78), E702 (37) one-line-multi-statements
+#   E712 (15) true-false-comparison
+#   E722 (6)  bare-except
+#   E731 (6)  lambda-assignment
+#   E741 (78) ambiguous-variable-name (l/I/O renames)
+#   F821 (539) undefined-name (biggest debt, requires surgical fixes per file)
+
+# ── Non-blocking (known debt, fix later) ───────────────────
+# These are TRACKED but don't fail CI yet. Gate on them once cleanup PRs
+# have zeroed them out :
+#   F821  — 539 undefined-name (imports missing after hexstrike split +
+#           real bugs in api/routes/*, core/mission_system.py, etc.)
+#   E402  — 127 module-import-not-at-top-of-file (many intentional for
+#           lazy imports to break circular deps ; audit case-by-case)
+ignore = [
+  # Style choices
+  "E501",  # line-too-long (enforced elsewhere if needed)
+]
+
+[lint.per-file-ignores]
+# Tests : allow common patterns
+"tests/**" = [
+  "F401",  # fixtures often imported but used via pytest magic
+  "E402",  # test-order imports are sometimes intentional
+]
+# __init__.py re-exports
+"**/__init__.py" = ["F401"]
+# Compat shims : star imports are the whole point
+"core/orchestrator.py" = ["F403", "F401"]
+"core/orchestrator_v2.py" = ["F403", "F401"]
+"core/mission_persistence.py" = ["F403", "F401"]

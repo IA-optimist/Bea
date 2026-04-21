@@ -13,8 +13,6 @@ V3 changes vs V1:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("jarvis.self_improvement.engine")
 

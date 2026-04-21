@@ -26,11 +26,9 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.tool_reliability import (
-    ToolDiagnosis, ToolProblem, ToolFix,
-    _detect_problems, _propose_fixes,
+    ToolDiagnosis, ToolProblem, _detect_problems, _propose_fixes,
     _get_safe_target, _is_safe_target,
     diagnose_tools, get_tool_fixes, get_reliability_summary,
-    THRESHOLDS,
 )
 
 

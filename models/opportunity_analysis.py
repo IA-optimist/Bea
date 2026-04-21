@@ -10,7 +10,6 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 from sqlalchemy import Column, Integer, String, Text, Float, Boolean, TIMESTAMP, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
 
 from models.base import Base
 

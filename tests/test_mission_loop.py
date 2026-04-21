@@ -7,13 +7,10 @@ classify → context → execute → result → writeback → skill learning.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import sys
 import tempfile
-import time
 import unittest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -172,7 +169,6 @@ class TestSkillReuse(unittest.TestCase):
 
     def test_skill_reused(self):
         from core.skills.skill_service import SkillService
-        from core.skills.skill_models import Skill, SkillStep
 
         tmp = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
         tmp.close()

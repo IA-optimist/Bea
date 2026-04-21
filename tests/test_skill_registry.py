@@ -1,7 +1,7 @@
 """tests/test_skill_registry.py — Skill discovery and performance tracking tests."""
-import os, sys, time
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-import pytest
 
 
 class TestSkillPerformance:

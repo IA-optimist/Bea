@@ -5,13 +5,9 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(cache_bp).
 """
 from __future__ import annotations
 
-import json
 import logging
-import re
-import time
-from typing import Any, Dict, List, Optional
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 
 from hex_cache import cache
 

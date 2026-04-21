@@ -47,7 +47,6 @@ import os
 import tempfile
 import time
 import uuid
-from typing import Any
 
 import structlog
 

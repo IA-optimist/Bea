@@ -227,7 +227,7 @@ class MissionReasoningState:
         Keeps it short — agents don't need the full model, just the key frame.
         """
         lines = [
-            f"[STATE_MODEL]",
+            "[STATE_MODEL]",
             f"INITIAL: {self.initial_state}",
             f"TARGET: {self.target_state}",
         ]

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Test cache-through pattern for VaultMemory retrieve() method."""
 
-import json
 import logging
 from memory.vault_memory import VaultEntry, VaultMemory
 
@@ -32,7 +31,7 @@ for i in range(10):
     )
     vm.store(entry)
 
-print(f"✓ Stored 10 entries")
+print("✓ Stored 10 entries")
 print(f"  L1 cache size: {len(vm._entries)}")
 
 # Retrieve all

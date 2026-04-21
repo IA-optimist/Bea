@@ -40,14 +40,13 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agents.business_agents_suite import (
-    ApprovalCategory, ApprovalRequest, requires_approval,
+    ApprovalCategory, requires_approval,
     TechBuilderAgent, ContentMarketingAgent, LegalAgent,
     FinanceAgent, GrowthAgent, CustomerSuccessAgent,
-    MVPSpec, ContentAssets, LegalDocSet,
-    FinancialDashboard, GrowthMetrics, SupportMetrics,
+    MVPSpec,
 )
 from business.business_orchestrator import (
-    BusinessOrchestrator, Business, PhaseResult, BusinessPhase,
+    BusinessOrchestrator,
 )
 
 

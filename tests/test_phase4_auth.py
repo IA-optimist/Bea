@@ -5,11 +5,11 @@ Tests auth enforcement, route registration, WebSocket auth, session guards.
 
 Total: 35 tests
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-import re
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -44,7 +44,7 @@ class TestRouteAuth:
             source = f.read()
         assert "AccessEnforcementMiddleware" in source, "Middleware not in main.py"
         # Verify check_access exists and works
-        from api.access_enforcement import check_access, is_public_path
+        from api.access_enforcement import is_public_path
         # Public paths bypass
         assert is_public_path("/health")
         assert is_public_path("/auth/login")

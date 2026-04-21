@@ -132,8 +132,8 @@ def test_is_valid_key_too_short():
 
 def test_is_valid_key_valid():
     from core.llm_factory import _is_valid_key
-    assert _is_valid_key(_VALID_OPENAI_KEY),    f"clé valide OpenAI → True"
-    assert _is_valid_key(_VALID_ANTHROPIC_KEY), f"clé valide Anthropic → True"
+    assert _is_valid_key(_VALID_OPENAI_KEY),    "clé valide OpenAI → True"
+    assert _is_valid_key(_VALID_ANTHROPIC_KEY), "clé valide Anthropic → True"
     print("[OK] test_is_valid_key_valid")
 
 
@@ -182,7 +182,7 @@ def test_llm_factory_builder_role_uses_ollama_no_keys():
     s   = _Settings(openai_key="", anthropic_key="")
     fac = LLMFactory(s)
     llm = fac.get("builder")
-    assert not hasattr(llm, "openai_api_key"), f"Ne doit PAS être ChatOpenAI"
+    assert not hasattr(llm, "openai_api_key"), "Ne doit PAS être ChatOpenAI"
     print(f"[OK] test_llm_factory_builder_role_uses_ollama_no_keys ({type(llm).__name__})")
 
 

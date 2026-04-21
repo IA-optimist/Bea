@@ -1,7 +1,6 @@
 """tests/test_reliability_obs.py — Reliability + observability tests."""
 import os
 import sys
-import time
 import unittest
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

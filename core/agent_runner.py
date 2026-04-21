@@ -29,7 +29,8 @@ def _normalize_agent_output(raw: Any, agent_name: str) -> Any:
 
 def _log_pipeline_event(event: str, agent_name: str = "", reason: str = "", **kwargs):
     """Log structuré pipeline."""
-    import logging, json
+    import logging
+    import json
     logger = logging.getLogger("pipeline")
     extra = {"agent": agent_name, "reason": reason, **kwargs}
     logger.info("[PIPELINE] event=%s %s", event, json.dumps(extra, default=str))

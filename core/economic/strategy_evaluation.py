@@ -201,7 +201,6 @@ class StrategyEvaluator:
     def _get_capability_health(self, strategy_type: str) -> dict:
         try:
             from kernel.capabilities.registry import get_capability_registry
-            from core.economic.economic_output import PLAYBOOK_SCHEMA_MAP
 
             # Map strategy → primary capability
             _STRATEGY_CAPS = {

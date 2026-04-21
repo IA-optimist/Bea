@@ -9,7 +9,7 @@ Provides multiple output formats:
 """
 from __future__ import annotations
 
-from core.self_model.model import SelfModel, CapabilityStatus, ComponentStatus, HealthStatus
+from core.self_model.model import SelfModel
 from core.self_model import queries
 
 

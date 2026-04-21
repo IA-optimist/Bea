@@ -15,10 +15,8 @@ from __future__ import annotations
 import ast
 import json
 import os
-import shutil
 import subprocess
 import time
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -328,7 +326,6 @@ def _mark_proposal_status(proposal_id: str, status: str) -> None:
 
 def _git_commit(branch: str, proposal: dict, changes: list[dict]) -> None:
     """Create branch, stage changes, commit."""
-    from core.self_improvement.protected_paths import is_protected
 
     changed_files = [c["file"] for c in changes]
 

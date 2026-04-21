@@ -4,7 +4,6 @@ integrations/mcp/mcp_models.py — MCP data models.
 from __future__ import annotations
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Optional
 
 
 @dataclass

@@ -383,7 +383,8 @@ class SupervisedExecutor:
         Enregistre une tâche planifiée (MEDIUM).
         Persistance : workspace/scheduled_tasks.json
         """
-        import json, time
+        import json
+        import time
         task_name = task_def.get("name", "task")
         action    = ActionSpec(
             id="sched",

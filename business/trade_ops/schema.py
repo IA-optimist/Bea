@@ -4,7 +4,6 @@ Modélise un agent IA métier spécialisé pour les métiers de terrain / TPE.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional
 import json
 
 

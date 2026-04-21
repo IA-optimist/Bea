@@ -24,7 +24,7 @@ from __future__ import annotations
 import os
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import structlog
 _silent_log = __import__("structlog").get_logger(__name__)

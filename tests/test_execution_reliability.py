@@ -4,7 +4,6 @@ tests/test_execution_reliability.py — Tests for execution reliability upgrades
 ER01-ER70: Step retry, output enforcement, model fallback, quality gate,
 execution memory, self-review, mission trace.
 """
-import pytest
 import json
 import os
 import tempfile

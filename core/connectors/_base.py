@@ -25,7 +25,6 @@ import json
 import logging
 import os
 import time
-import hashlib
 from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
@@ -110,7 +109,7 @@ def http_request(params: dict) -> ConnectorResult:
     # Safety: block internal IPs
     for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
         if blocked in url:
-            return ConnectorResult(error=f"blocked: internal address", connector="http_request")
+            return ConnectorResult(error="blocked: internal address", connector="http_request")
 
     try:
         import urllib.request

@@ -40,7 +40,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
-from core.resilience import JarvisExecutionError
 _silent_log = __import__("structlog").get_logger(__name__)
 
 # ===== LLM AGENT SUPPORT (2026-04-08) =====
@@ -345,7 +344,7 @@ class ActionExecutor:
             from core.mission_system import get_mission_system
             ms    = get_mission_system()
             stats = ms.stats()
-            lines.append(f"Contexte actuel :")
+            lines.append("Contexte actuel :")
             lines.append(f"  Missions totales  : {stats.get('total', 0)}")
             lines.append(f"  Missions terminées: {stats.get('done', 0)}")
         except Exception as e:
@@ -557,7 +556,7 @@ class ActionExecutor:
             all_acts = q.all(limit=500)
             executed = sum(1 for a in all_acts if a.status == "EXECUTED")
             pending  = sum(1 for a in all_acts if a.status == "PENDING")
-            lines.append(f"Snapshot système :")
+            lines.append("Snapshot système :")
             lines.append(f"  Actions exécutées : {executed}")
             lines.append(f"  Actions en attente: {pending}")
         except Exception as e:
@@ -624,7 +623,6 @@ class ActionExecutor:
                         full_output = envelope.summary or f"{executed}/{len(all_acts)} actions exécutées."
                     # Store envelope JSON separately via mission decision_trace
                     try:
-                        import json
                         r_mission = ms.get(mission_id)
                         if r_mission:
                             dt = getattr(r_mission, "decision_trace", {}) or {}

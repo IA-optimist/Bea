@@ -70,7 +70,7 @@ async def test_telegram_client():
         print("⚠ Telegram client not configured (missing TELEGRAM_BOT_TOKEN)")
         return False
     
-    print(f"✓ Telegram client initialized")
+    print("✓ Telegram client initialized")
     print(f"  Bot token: {client.bot_token[:20]}...")
     
     # Create test payload
@@ -107,7 +107,7 @@ async def test_email_client():
         print("⚠ Email client not configured (missing SMTP credentials)")
         return False
     
-    print(f"✓ Email client initialized")
+    print("✓ Email client initialized")
     print(f"  SMTP Host: {client.smtp_host}")
     print(f"  SMTP Port: {client.smtp_port}")
     print(f"  From: {client.email_from}")
@@ -163,9 +163,9 @@ async def test_notification_dispatch():
         result="This is a test notification to verify dispatch logic.",
     )
     
-    print(f"Dispatching notification to subscribed channels...")
+    print("Dispatching notification to subscribed channels...")
     await service.send_notification(payload)
-    print(f"✓ Notification dispatched (check logs for delivery status)")
+    print("✓ Notification dispatched (check logs for delivery status)")
     
     # Clean up
     service.unsubscribe("test_dispatch", NotificationChannel.TELEGRAM)

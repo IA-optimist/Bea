@@ -13,17 +13,14 @@ from __future__ import annotations
 
 import gc
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
-import pytest
 
 from core.canonical_mission_store import CanonicalMissionStore, _row_to_ctx
 from core.canonical_types import (
     CanonicalMissionContext,
     CanonicalMissionStatus,
-    CanonicalRiskLevel,
 )
 
 # These are pure unit tests — all I/O uses tempfile (tmpdir fixture).
@@ -139,7 +136,8 @@ class TestCanonicalMissionStore(unittest.TestCase):
         # Use a path with an invalid character that no privilege can create.
         # Previous /nonexistent/path/ approach was flaky : a test running as
         # root could create it, and it persisted across runs.
-        import os, shutil
+        import os
+        import shutil
         bad_root = Path("/tmp/jarvis_bad_path_test.XXXXXX")
         # Create a read-only parent directory so the probe inside the store fails.
         ro_parent = Path("/tmp/jarvis_bad_path_ro")

@@ -145,7 +145,7 @@ class KnowledgeValidator:
         # 1. Dangerosité (veto absolu)
         is_dangerous = bool(_DANGEROUS_PATTERNS.search(content))
         if is_dangerous:
-            reasons.append(f"Contenu dangereux détecté — rejeté")
+            reasons.append("Contenu dangereux détecté — rejeté")
             return ValidationResult(
                 verdict=Verdict.DISCARD,
                 knowledge_type=knowledge_type,

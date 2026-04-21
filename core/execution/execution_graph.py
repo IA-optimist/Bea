@@ -19,7 +19,7 @@ import structlog
 from dataclasses import dataclass, field
 
 from core.execution.artifacts import (
-    ArtifactType, ExecutionArtifact, create_artifact_from_template,
+    ExecutionArtifact, create_artifact_from_template,
 )
 
 log = structlog.get_logger("execution.graph")

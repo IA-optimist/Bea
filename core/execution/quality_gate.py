@@ -14,7 +14,6 @@ Design:
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -221,7 +220,7 @@ class ArtifactQualityGate:
         if fixes:
             try:
                 path.write_text(content)
-            except Exception as e:
+            except Exception:
                 return CorrectionResult(
                     corrected=False,
                     fixes_applied=[],

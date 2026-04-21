@@ -8,7 +8,6 @@ real-mission scenarios.
 import pytest
 import ast
 import json
-import os
 import sys
 import time
 import types

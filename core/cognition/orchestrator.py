@@ -5,11 +5,10 @@ Coordinates ToT, self-confidence, and active learning.
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Callable
 import structlog
-from pathlib import Path
 from core.cognition.tot_wrapper import plan_with_tot, should_use_tot
 from core.cognition.self_confidence import ConfidenceScorer, SelfCorrector
 from core.cognition.active_learning import SkillDiscoverer, PerformanceTracker
-from core.cognition.project_context import ProjectContextManager, ProjectContext
+from core.cognition.project_context import ProjectContextManager
 from core.cognition.lifelong_learning import LifelongLearningEngine
 from business.business_engine import BusinessEngine
 

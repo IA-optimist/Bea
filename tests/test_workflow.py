@@ -205,7 +205,7 @@ def test_workflow_agent_sanitize():
     agents = [s_["agent"] for s_ in cleaned["steps"]]
     assert "invalid-agent-xyz" not in agents, f"Agent invalide non remplacé : {agents}"
     assert "scout-research" in agents, f"scout-research attendu : {agents}"
-    print(f"[OK] test_workflow_agent_sanitize")
+    print("[OK] test_workflow_agent_sanitize")
 
 
 def test_workflow_agent_extract_name():
@@ -257,7 +257,7 @@ def test_supervised_create_workflow_dry_run():
 
     assert result.success, f"create_workflow dry_run doit réussir : {result.error}"
     assert "DRY_RUN" in result.output, f"Output dry_run attendu : {result.output}"
-    print(f"[OK] test_supervised_create_workflow_dry_run")
+    print("[OK] test_supervised_create_workflow_dry_run")
 
 
 # ════════════════════════════════════════════════════════════════

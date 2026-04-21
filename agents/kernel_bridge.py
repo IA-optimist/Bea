@@ -16,7 +16,6 @@ Boot wiring is performed in main.py using the registration pattern.
 """
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Any, Optional
 

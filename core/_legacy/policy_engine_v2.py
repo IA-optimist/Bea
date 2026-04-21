@@ -9,12 +9,11 @@ NOT a replacement for the orchestrator — a decision filter.
 """
 from __future__ import annotations
 
-import os
 import time
 import logging
 import threading
-from dataclasses import dataclass, field, asdict
-from typing import Optional, Literal
+from dataclasses import dataclass, asdict
+from typing import Optional
 
 log = logging.getLogger("jarvis.policy")
 

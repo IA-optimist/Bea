@@ -34,9 +34,8 @@ from __future__ import annotations
 import os
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 _silent_log = __import__("structlog").get_logger(__name__)
 
 try:
@@ -479,7 +478,7 @@ def _propose_experiment(weakness: Weakness, repo_root: Path) -> dict | None:
     Returns dict with ExperimentSpec fields, or None if weakness
     targets a CRITICAL file or has no actionable suggestion.
     """
-    from core.improvement_loop import ExperimentSpec, classify_file_safety, SafetyZone
+    from core.improvement_loop import classify_file_safety, SafetyZone
 
     target = weakness.suggested_target
     if not target:

@@ -11,20 +11,17 @@ Validates:
   - Safety (no uncontrolled actions, workspace-scoped)
 """
 import json
-import pytest
-import tempfile
 import shutil
 from pathlib import Path
 from core.execution.artifacts import (
-    ArtifactType, ArtifactStatus, ExecutionArtifact, ValidationRequirement,
-    ToolDependency, ARTIFACT_TEMPLATES, create_artifact_from_template,
+    ArtifactType, ArtifactStatus, ExecutionArtifact, ARTIFACT_TEMPLATES, create_artifact_from_template,
 )
 from core.execution.execution_graph import (
-    ExecutionGraph, GraphNode, build_execution_graph,
+    ExecutionGraph, build_execution_graph,
     CAPABILITY_ARTIFACT_MAP, SCHEMA_ARTIFACT_SEQUENCES,
 )
 from core.execution.build_pipeline import (
-    BuildPipeline, BuildResult, TOOL_CONTRACTS, ToolContract,
+    BuildPipeline, BuildResult, TOOL_CONTRACTS,
 )
 
 
@@ -366,7 +363,8 @@ class TestAPI:
         assert any("artifacts" in p for p in paths)
 
     def test_EX36_router_mounted(self):
-        import inspect, importlib
+        import inspect
+        import importlib
         main_mod = importlib.import_module("api.main")
         source = inspect.getsource(main_mod)
         assert "execution_router" in source

@@ -31,8 +31,6 @@ Mobile Session Manager (contract tests)
 """
 import os
 import sys
-import time
-from pathlib import Path
 
 import pytest
 

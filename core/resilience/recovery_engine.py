@@ -12,7 +12,6 @@ review phase (Phase 6).
 """
 from __future__ import annotations
 
-import logging
 import structlog
 import time
 from dataclasses import dataclass, field

@@ -158,7 +158,7 @@ class ValidationRunner:
             final  = (mission_data.get("data") or {}).get("final_output", "")
 
             if final and len(agents) == 0:
-                return TestResult("test_capability_query", True, f"agents_selected=[], final_output ok", ms)
+                return TestResult("test_capability_query", True, "agents_selected=[], final_output ok", ms)
             elif final:
                 return TestResult("test_capability_query", True, f"final_output ok (agents={len(agents)})", ms)
             return TestResult("test_capability_query", False, f"final_output vide, agents={agents}", ms)

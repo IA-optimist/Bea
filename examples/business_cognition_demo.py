@@ -187,8 +187,8 @@ def demo_error_handling():
     for scenario in scenarios:
         print(f"\n❌ Scenario: {scenario['name']}")
         print(f"  Expected: {scenario['expected']}")
-        print(f"  Status: FAILED (as expected)")
-        print(f"  ✅ Error logged, mission marked FAILED")
+        print("  Status: FAILED (as expected)")
+        print("  ✅ Error logged, mission marked FAILED")
 
 
 def main():

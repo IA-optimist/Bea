@@ -3,7 +3,6 @@ tests/test_debug_api.py — Tests for debug and inspection endpoints.
 
 DB01-DB15: Learning memory, model selection, fallback chain, pipeline health.
 """
-import pytest
 
 
 class TestDebugAPI:

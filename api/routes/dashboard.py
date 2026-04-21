@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Header
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)

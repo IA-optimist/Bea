@@ -4,7 +4,6 @@ Clone/duplique des configurations multi-agents pour un nouveau contexte métier.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Optional
 import json
 
 

@@ -14,10 +14,10 @@ import structlog
 
 from core.capability_routing.spec import (
     RoutingDecision, CapabilityRequirement, ProviderSpec,
-    ProviderStatus, ProviderType,
+    ProviderType,
 )
 from core.capability_routing.registry import get_provider_registry
-from core.capability_routing.scorer import rank_providers, ScoredProvider
+from core.capability_routing.scorer import rank_providers
 from core.capability_routing.resolver import resolve_capabilities
 _silent_log = __import__("structlog").get_logger(__name__)
 

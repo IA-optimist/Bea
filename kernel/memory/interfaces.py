@@ -19,7 +19,6 @@ Registration slots (Pass 13):
 """
 from __future__ import annotations
 
-import time
 import threading
 from typing import Callable, Optional
 import structlog

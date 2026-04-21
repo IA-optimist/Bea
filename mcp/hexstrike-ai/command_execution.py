@@ -3,21 +3,14 @@ HexStrike Command Execution — enhanced executor + AI exploit gen + vuln correl
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import logging
 import os
 import re
-import socket
 import subprocess
 import threading
 import time
-from collections import defaultdict, deque
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from datetime import datetime
+from typing import Any, Dict
 
 import os as _os
 # HEXSTRIKE_EXEC_ENABLED gate inherited from parent (runtime opt-in).
@@ -526,7 +519,6 @@ exec(base64.b64decode('{base64.b64encode(code.encode()).decode()}'))
 
     def _analyze_vulnerability_details(self, description, cve_data):
         """Analyze CVE data to extract specific vulnerability details"""
-        import re  # Import at the top of the method
         
         vuln_type = "generic"
         specific_details = {
@@ -1163,7 +1155,7 @@ python3 exploit.py <target_url>"""
 - Test for filter bypasses"""
 
         elif vuln_type == "file_read":
-            return base_instructions + f"""
+            return base_instructions + """
 
 ## File Read/Directory Traversal:
 - Test with: python3 exploit.py http://target.com file_parameter
@@ -1175,7 +1167,7 @@ python3 exploit.py <target_url>"""
 - Test Windows paths: ..\\..\\..\\windows\\system32\\drivers\\etc\\hosts
 - Use URL encoding for bypasses"""
 
-        return base_instructions + f"""
+        return base_instructions + """
 
 ## General Testing:
 - Run: python3 exploit.py <target_url>

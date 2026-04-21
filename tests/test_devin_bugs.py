@@ -7,7 +7,8 @@ BUG C: Bearer token parsing consistency
 
 Total: 30 tests
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
@@ -43,7 +44,6 @@ class TestAntiDuplicateMission:
 
     def test_DA04_orchestrator_single_entrypoint(self):
         """DA04: Only one orch.run() call exists in the API layer."""
-        import ast
         api_main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
         with open(api_main_path) as f:
             source = f.read()

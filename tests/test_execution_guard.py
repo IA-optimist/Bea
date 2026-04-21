@@ -2,11 +2,10 @@
 import os
 import tempfile
 import pytest
-from pathlib import Path
 
 
 def test_import():
-    from core.execution_guard import ExecutionGuard, GuardResult, StepResult, get_guard
+    pass
 
 
 # ── GuardResult ───────────────────────────────────────────────

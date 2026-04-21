@@ -7,7 +7,6 @@ Tests Phases 1-10:
   VL21-VL30: Loop engine + memory
   VL31-VL40: Safety + API + integration
 """
-import pytest
 
 
 # ── Phase 1: Venture Hypothesis ───────────────────────────────

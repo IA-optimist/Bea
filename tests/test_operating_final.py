@@ -5,7 +5,6 @@ New connectors, business loop, mission slicing, operating summary.
 """
 import pytest
 import ast
-import json
 import os
 import sys
 import time

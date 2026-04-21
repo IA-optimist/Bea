@@ -554,7 +554,7 @@ def test_intervention() -> bool:
         print(f"  {var} = {g.get_value(var)}")
 
     do_result = g.do("university_access", 1.0)
-    print(f"\nAfter do(university_access=1.0):")
+    print("\nAfter do(university_access=1.0):")
     for var, val in do_result.items():
         print(f"  {var} = {val}")
 
@@ -609,7 +609,7 @@ def test_counterfactual() -> bool:
     for var, val in result["counterfactual_world"].items():
         print(f"  {var} = {val}")
 
-    print(f"\nDifferences:")
+    print("\nDifferences:")
     if result["differences"]:
         for var, diff in result["differences"].items():
             print(f"  {var}: {diff['observed']} -> {diff['counterfactual']}")

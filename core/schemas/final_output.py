@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 
 @dataclass

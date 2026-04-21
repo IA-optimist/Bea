@@ -13,7 +13,7 @@ Every tool invocation and artifact build must pass policy checks.
 from __future__ import annotations
 
 import structlog
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 log = structlog.get_logger("execution.policy")
 

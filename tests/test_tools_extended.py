@@ -29,7 +29,8 @@ def test_file_read():
 
 def test_file_write_rollback():
     """Écrit un fichier de test, vérifie backup, nettoie."""
-    import tempfile, os
+    import tempfile
+    import os
     from core.tool_executor import write_file_safe
     from core.rollback_manager import get_rollback_manager
 
@@ -56,7 +57,7 @@ def test_file_write_rollback():
 
 @pytest.mark.skip(reason="phantom: import changed")
 def test_file_create():
-    import tempfile, os
+    import os
     from core.tools.file_tool import file_create
 
     test_path = f"/tmp/jarvis_test_create_{os.getpid()}.txt"

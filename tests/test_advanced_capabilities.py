@@ -7,10 +7,8 @@ Tests for advanced capability integration:
 - Cockpit updates
 """
 import ast
-import json
 import os
 import sys
-import time
 import types
 
 if 'structlog' not in sys.modules:

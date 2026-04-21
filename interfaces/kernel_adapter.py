@@ -23,7 +23,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Callable, Awaitable, Optional
+from typing import Callable, Optional
 
 import structlog
 

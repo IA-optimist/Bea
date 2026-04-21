@@ -1,6 +1,7 @@
 # Re-export SQLite helpers from core/db.py for backward compatibility
 # (core/db/ directory shadows core/db.py — this bridges the gap)
-import importlib.util, os
+import importlib.util
+import os
 
 _db_py = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'db.py')
 if os.path.exists(_db_py):

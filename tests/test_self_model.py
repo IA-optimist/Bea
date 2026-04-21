@@ -641,7 +641,6 @@ class TestExtendedQueries:
             SelfModel, CapabilityEntry, CapabilityStatus,
             ComponentEntry, ComponentStatus,
             HealthSignal, HealthStatus,
-            ModificationBoundary, ModificationZone,
         )
         m = SelfModel()
         m.capabilities = {

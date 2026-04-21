@@ -15,11 +15,8 @@ Monté via app.register_blueprint(tools_bp).
 """
 from __future__ import annotations
 
-import json
 import logging
-import re
 import time
-from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, request, jsonify
 
@@ -232,7 +229,7 @@ def prowler():
         logger.info(f"☁️  Starting Prowler {provider} security assessment")
         result = execute_command(command)
         result["output_directory"] = output_dir
-        logger.info(f"📊 Prowler assessment completed")
+        logger.info("📊 Prowler assessment completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in prowler endpoint: {str(e)}")
@@ -320,7 +317,7 @@ def scout_suite():
         logger.info(f"☁️  Starting Scout Suite {provider} assessment")
         result = execute_command(command)
         result["report_directory"] = report_dir
-        logger.info(f"📊 Scout Suite assessment completed")
+        logger.info("📊 Scout Suite assessment completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in scout-suite endpoint: {str(e)}")
@@ -398,7 +395,7 @@ def pacu():
         if additional_args:
             command += f" {additional_args}"
 
-        logger.info(f"☁️  Starting Pacu AWS exploitation")
+        logger.info("☁️  Starting Pacu AWS exploitation")
         result = execute_command(command)
 
         # Cleanup
@@ -407,7 +404,7 @@ def pacu():
         except Exception:
             _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
-        logger.info(f"📊 Pacu exploitation completed")
+        logger.info("📊 Pacu exploitation completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in pacu endpoint: {str(e)}")
@@ -450,9 +447,9 @@ def kube_hunter():
         if additional_args:
             command += f" {additional_args}"
 
-        logger.info(f"☁️  Starting kube-hunter Kubernetes scan")
+        logger.info("☁️  Starting kube-hunter Kubernetes scan")
         result = execute_command(command)
-        logger.info(f"📊 kube-hunter scan completed")
+        logger.info("📊 kube-hunter scan completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in kube-hunter endpoint: {str(e)}")
@@ -487,9 +484,9 @@ def kube_bench():
         if additional_args:
             command += f" {additional_args}"
 
-        logger.info(f"☁️  Starting kube-bench CIS benchmark")
+        logger.info("☁️  Starting kube-bench CIS benchmark")
         result = execute_command(command)
-        logger.info(f"📊 kube-bench benchmark completed")
+        logger.info("📊 kube-bench benchmark completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in kube-bench endpoint: {str(e)}")
@@ -520,10 +517,10 @@ def docker_bench_security():
         if additional_args:
             command += f" {additional_args}"
 
-        logger.info(f"🐳 Starting Docker Bench Security assessment")
+        logger.info("🐳 Starting Docker Bench Security assessment")
         result = execute_command(command)
         result["output_file"] = output_file
-        logger.info(f"📊 Docker Bench Security completed")
+        logger.info("📊 Docker Bench Security completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in docker-bench-security endpoint: {str(e)}")
@@ -592,7 +589,7 @@ def falco():
 
         logger.info(f"🛡️  Starting Falco runtime monitoring for {duration}s")
         result = execute_command(command)
-        logger.info(f"📊 Falco monitoring completed")
+        logger.info("📊 Falco monitoring completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in falco endpoint: {str(e)}")
@@ -630,7 +627,7 @@ def checkov():
 
         logger.info(f"🔍 Starting Checkov IaC scan: {directory}")
         result = execute_command(command)
-        logger.info(f"📊 Checkov scan completed")
+        logger.info("📊 Checkov scan completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in checkov endpoint: {str(e)}")
@@ -665,7 +662,7 @@ def terrascan():
 
         logger.info(f"🔍 Starting Terrascan IaC scan: {iac_dir}")
         result = execute_command(command)
-        logger.info(f"📊 Terrascan scan completed")
+        logger.info("📊 Terrascan scan completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in terrascan endpoint: {str(e)}")
@@ -837,7 +834,7 @@ def hydra():
                 "error": "Username/username_file and password/password_file are required"
             }), 400
 
-        command = f"hydra -t 4"
+        command = "hydra -t 4"
 
         if username:
             command += f" -l {username}"
@@ -881,7 +878,7 @@ def john():
                 "error": "Hash file parameter is required"
             }), 400
 
-        command = f"john"
+        command = "john"
 
         if format_type:
             command += f" --format={format_type}"
@@ -896,7 +893,7 @@ def john():
 
         logger.info(f"🔐 Starting John the Ripper: {hash_file}")
         result = execute_command(command)
-        logger.info(f"📊 John the Ripper completed")
+        logger.info("📊 John the Ripper completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in john endpoint: {str(e)}")
@@ -979,7 +976,7 @@ def ffuf():
                 "error": "URL parameter is required"
             }), 400
 
-        command = f"ffuf"
+        command = "ffuf"
 
         if mode == "directory":
             command += f" -u {url}/FUZZ -w {wordlist}"
@@ -1125,7 +1122,7 @@ def hashcat():
 
         logger.info(f"🔐 Starting Hashcat attack: mode {attack_mode}")
         result = execute_command(command)
-        logger.info(f"📊 Hashcat attack completed")
+        logger.info("📊 Hashcat attack completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in hashcat endpoint: {str(e)}")
@@ -1237,7 +1234,7 @@ def rustscan():
             command += f" -p {ports}"
 
         if scripts:
-            command += f" -- -sC -sV"
+            command += " -- -sC -sV"
 
         if additional_args:
             command += f" {additional_args}"
@@ -1553,7 +1550,7 @@ def arp_scan():
 
         logger.info(f"🔍 Starting arp-scan: {target if target else 'local network'}")
         result = execute_command(command)
-        logger.info(f"📊 arp-scan completed")
+        logger.info("📊 arp-scan completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in arp-scan endpoint: {str(e)}")
@@ -1596,7 +1593,7 @@ def responder():
 
         logger.info(f"🔍 Starting Responder on interface: {interface}")
         result = execute_command(command)
-        logger.info(f"📊 Responder completed")
+        logger.info("📊 Responder completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in responder endpoint: {str(e)}")
@@ -1637,7 +1634,7 @@ def volatility():
 
         logger.info(f"🧠 Starting Volatility analysis: {plugin}")
         result = execute_command(command)
-        logger.info(f"📊 Volatility analysis completed")
+        logger.info("📊 Volatility analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in volatility endpoint: {str(e)}")
@@ -1683,7 +1680,7 @@ def msfvenom():
 
         logger.info(f"🚀 Starting MSFVenom payload generation: {payload}")
         result = execute_command(command)
-        logger.info(f"📊 MSFVenom payload generated")
+        logger.info("📊 MSFVenom payload generated")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in msfvenom endpoint: {str(e)}")
@@ -1801,7 +1798,7 @@ def binwalk():
                 "error": "File path parameter is required"
             }), 400
 
-        command = f"binwalk"
+        command = "binwalk"
 
         if extract:
             command += " -e"
@@ -1967,7 +1964,7 @@ def objdump():
                 "error": "Binary parameter is required"
             }), 400
 
-        command = f"objdump"
+        command = "objdump"
 
         if disassemble:
             command += " -d"
@@ -2100,7 +2097,7 @@ p.interactive()
         except Exception:
             _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
-        logger.info(f"📊 Pwntools exploit completed")
+        logger.info("📊 Pwntools exploit completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in pwntools endpoint: {str(e)}")
@@ -2127,7 +2124,7 @@ def one_gadget():
 
         logger.info(f"🔧 Starting one_gadget analysis: {libc_path}")
         result = execute_command(command)
-        logger.info(f"📊 one_gadget analysis completed")
+        logger.info("📊 one_gadget analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in one_gadget endpoint: {str(e)}")
@@ -2232,7 +2229,7 @@ quit
             except Exception:
                 _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
-        logger.info(f"📊 GDB-PEDA analysis completed")
+        logger.info("📊 GDB-PEDA analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in gdb-peda endpoint: {str(e)}")
@@ -2325,7 +2322,7 @@ for func_addr, func in cfg.functions.items():
         except Exception:
             _silent_log.debug("suppressed_exception", src='hexstrike_server.py')
 
-        logger.info(f"📊 angr analysis completed")
+        logger.info("📊 angr analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in angr endpoint: {str(e)}")
@@ -2373,7 +2370,7 @@ def ropper():
 
         logger.info(f"🔧 Starting ropper analysis: {binary}")
         result = execute_command(command)
-        logger.info(f"📊 ropper analysis completed")
+        logger.info("📊 ropper analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in ropper endpoint: {str(e)}")
@@ -2411,7 +2408,7 @@ def pwninit():
 
         logger.info(f"🔧 Starting pwninit setup: {binary}")
         result = execute_command(command)
-        logger.info(f"📊 pwninit setup completed")
+        logger.info("📊 pwninit setup completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in pwninit endpoint: {str(e)}")
@@ -2878,7 +2875,7 @@ def dalfox():
 
         logger.info(f"🎯 Starting Dalfox XSS scan: {url if url else 'pipe mode'}")
         result = execute_command(command)
-        logger.info(f"📊 Dalfox XSS scan completed")
+        logger.info("📊 Dalfox XSS scan completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in dalfox endpoint: {str(e)}")
@@ -3505,7 +3502,7 @@ def api_fuzzer():
 
             logger.info(f"🔍 Starting API endpoint discovery: {base_url}")
             result = execute_command(command)
-            logger.info(f"📊 API endpoint discovery completed")
+            logger.info("📊 API endpoint discovery completed")
 
             return jsonify({
                 "success": True,
@@ -3642,7 +3639,7 @@ def jwt_analyzer():
                 "error": "JWT token parameter is required"
             }), 400
 
-        logger.info(f"🔍 Starting JWT security analysis")
+        logger.info("🔍 Starting JWT security analysis")
 
         results = {
             "token": jwt_token[:50] + "..." if len(jwt_token) > 50 else jwt_token,
@@ -3707,7 +3704,7 @@ def jwt_analyzer():
                         "description": f"Token decoding failed: {str(decode_error)}"
                     })
 
-        except Exception as e:
+        except Exception:
             results["vulnerabilities"].append({
                 "type": "invalid_format",
                 "severity": "HIGH",
@@ -3888,7 +3885,7 @@ def volatility3():
 
         logger.info(f"🧠 Starting Volatility3 analysis: {plugin}")
         result = execute_command(command)
-        logger.info(f"📊 Volatility3 analysis completed")
+        logger.info("📊 Volatility3 analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in volatility3 endpoint: {str(e)}")
@@ -3929,7 +3926,7 @@ def foremost():
         logger.info(f"📁 Starting Foremost file carving: {input_file}")
         result = execute_command(command)
         result["output_directory"] = output_dir
-        logger.info(f"📊 Foremost carving completed")
+        logger.info("📊 Foremost carving completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in foremost endpoint: {str(e)}")
@@ -4004,7 +4001,7 @@ def exiftool():
                 "error": "File path parameter is required"
             }), 400
 
-        command = f"exiftool"
+        command = "exiftool"
 
         if output_format:
             command += f" -{output_format}"
@@ -4019,7 +4016,7 @@ def exiftool():
 
         logger.info(f"📷 Starting ExifTool analysis: {file_path}")
         result = execute_command(command)
-        logger.info(f"📊 ExifTool analysis completed")
+        logger.info("📊 ExifTool analysis completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in exiftool endpoint: {str(e)}")
@@ -4050,9 +4047,9 @@ def hashpump():
         if additional_args:
             command += f" {additional_args}"
 
-        logger.info(f"🔐 Starting HashPump attack")
+        logger.info("🔐 Starting HashPump attack")
         result = execute_command(command)
-        logger.info(f"📊 HashPump attack completed")
+        logger.info("📊 HashPump attack completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in hashpump endpoint: {str(e)}")
@@ -4106,7 +4103,7 @@ def hakrawler():
 
         logger.info(f"🕷️ Starting Hakrawler crawling: {url}")
         result = execute_command(command)
-        logger.info(f"📊 Hakrawler crawling completed")
+        logger.info("📊 Hakrawler crawling completed")
         return jsonify(result)
     except Exception as e:
         logger.error(f"💥 Error in hakrawler endpoint: {str(e)}")

@@ -3,9 +3,7 @@ tests/test_self_improvement_loop_v2.py — Strategy v2 promotion tests.
 
 SV01-SV25: Strategy registry, auto-promotion, progressive selection.
 """
-import pytest
 import time
-from pathlib import Path
 
 
 class TestStrategyProfile:

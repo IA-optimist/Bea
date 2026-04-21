@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from core.capability_routing.spec import (
-    ProviderSpec, ProviderStatus, ProviderType, CapabilityRequirement,
+    ProviderSpec, CapabilityRequirement,
 )
 
 

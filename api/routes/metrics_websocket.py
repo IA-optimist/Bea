@@ -6,10 +6,7 @@ Streams: CPU, memory, missions count, revenue data every 2 seconds.
 from __future__ import annotations
 
 import asyncio
-import json
-import time
 from datetime import datetime, timezone
-from typing import Optional
 
 import structlog
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query
@@ -53,7 +50,7 @@ def get_system_metrics() -> dict:
 def get_missions_metrics() -> dict:
     """Get missions statistics from MissionSystem (live data)."""
     try:
-        from core.mission_system import get_mission_system, MissionStatus
+        from core.mission_system import get_mission_system
         ms = get_mission_system()
         all_missions = ms.list_missions(limit=10000)
         total = len(all_missions)

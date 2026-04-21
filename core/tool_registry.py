@@ -24,7 +24,7 @@ Additional utilities exported:
     list_all_tools() → full tool catalog as list of dicts
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 import logging
 

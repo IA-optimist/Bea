@@ -62,21 +62,15 @@ Integration
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import pytest
 from unittest.mock import MagicMock
 
 from core.modules.module_manager import ModuleManager
 from core.modules.module_governance import (
-    check_module_permission, check_rbac, RBACResult,
-    ModuleAuditLog, ModuleAuditEntry,
-    DependencyValidator, DependencyIssue,
-    HealthEngine, HealthStatus, STATUS_LABELS,
+    check_module_permission, check_rbac, ModuleAuditLog, DependencyValidator, HealthEngine, STATUS_LABELS,
     get_wizard_steps, MODEL_TIER_MAP,
-    ModuleRole,
 )
 
 

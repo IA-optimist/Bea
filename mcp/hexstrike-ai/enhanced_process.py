@@ -3,23 +3,14 @@ HexStrike Enhanced Process Manager — high-level process pool + perf dashboard.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import logging
 import os
-import re
-import socket
 import subprocess
 import threading
 import time
-from collections import defaultdict, deque
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict
 
-from monitoring import ResourceMonitor, PerformanceMonitor
+from monitoring import ResourceMonitor
 from process_management import ProcessPool, AdvancedCache
 
 logger = logging.getLogger("hexstrike_server")
@@ -286,7 +277,7 @@ class EnhancedProcessManager:
 
             if current_workers < self.process_pool.max_workers:
                 self.process_pool._scale_up(1)
-                logger.info(f"📈 Auto-scaled up due to available resources and demand")
+                logger.info("📈 Auto-scaled up due to available resources and demand")
 
     def get_comprehensive_stats(self) -> Dict[str, Any]:
         """Get comprehensive system and process statistics"""

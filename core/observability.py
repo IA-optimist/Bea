@@ -5,7 +5,7 @@ Observability — stocke les métriques des 100 dernières missions en mémoire 
 from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import List, Optional
 import time
 import logging
 

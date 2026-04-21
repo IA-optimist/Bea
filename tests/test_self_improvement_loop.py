@@ -55,7 +55,6 @@ Part 10: Full Loop
 import os
 import sys
 import pytest
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -64,12 +63,12 @@ from core.self_improvement_loop import (
     ImprovementTask, CriticAgent,
     PatchProposal, PatchGenerator,
     SandboxResult, SandboxRunner,
-    ValidationResult, PatchValidator, PatchDecision, PromotionPolicy,
+    PatchValidator, PatchDecision, PromotionPolicy,
     Lesson, LessonMemory,
-    PromptVersion, PromptOptimizer,
+    PromptOptimizer,
     JarvisImprovementLoop, CycleReport,
 )
-from core.self_improvement.code_patch_generator import _is_protected, PROTECTED_FILES
+from core.self_improvement.code_patch_generator import _is_protected
 
 
 # ═══════════════════════════════════════════════════════════════

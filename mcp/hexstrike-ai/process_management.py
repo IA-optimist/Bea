@@ -13,22 +13,15 @@ traiter dans une Phase D dédiée avec découplage du dashboard.
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 import queue
-import shutil
 import signal
 import subprocess
-import sys
 import threading
 import time
-from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 import psutil
 

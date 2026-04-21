@@ -12,7 +12,6 @@ Each project has:
 """
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
@@ -112,7 +111,6 @@ class ProjectContextManager:
             for m in missions:
                 pid = abs(hash(getattr(m, 'mission_id', ''))) % 100000
                 if pid not in self.contexts:
-                    from core.cognition.project_context import ProjectContext
                     self.contexts[pid] = ProjectContext(
                         project_id=pid,
                         name=str(getattr(m, 'goal', ''))[:50],

@@ -7,7 +7,6 @@ Verifies:
 4. Retry only on retryable errors
 5. No silent except blocks in hot-path files
 """
-import pytest
 import sys
 import os
 import re

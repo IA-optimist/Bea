@@ -6,10 +6,8 @@ error pattern detection, and capability reliability scoring.
 """
 from __future__ import annotations
 import json
-import os
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 from pathlib import Path
 
 log = logging.getLogger("jarvis.trace_intel")

@@ -509,7 +509,7 @@ class SOCService:
         else:
             dashboard += "✅ No active critical alerts\n\n---\n\n"
         
-        dashboard += f"""
+        dashboard += """
 ## 👥 Clients
 
 """

@@ -9,7 +9,6 @@ Validates:
   - API endpoints
   - Fail-open behavior
 """
-import time
 import pytest
 
 
@@ -258,7 +257,7 @@ class TestEventBridgePerformance:
 
     def test_KP25_tool_completed_updates_performance(self):
         """emit_kernel_event('tool.completed') updates performance store."""
-        from kernel.capabilities.performance import PerformanceStore, get_performance_store
+        from kernel.capabilities.performance import PerformanceStore
         import kernel.capabilities.performance as _mod
 
         old_store = _mod._store

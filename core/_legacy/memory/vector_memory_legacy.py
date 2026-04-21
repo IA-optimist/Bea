@@ -12,13 +12,11 @@ Architecture:
 """
 from __future__ import annotations
 
-import logging
 import structlog
 import os
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
 
 import httpx
 

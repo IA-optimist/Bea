@@ -3,9 +3,10 @@ Observes every tool call and persists usage data.
 Fail-open: any error → silent log, no crash.
 Storage: JSON fallback (workspace/tool_intelligence/observations.json)
 """
-import json, logging, time, os
+import json
+import logging
+import time
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 _OBS_PATH = Path("workspace/tool_intelligence/observations.json")

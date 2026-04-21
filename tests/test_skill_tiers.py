@@ -12,7 +12,6 @@ Validates:
   - New skills are in identity map for performance tracking
   - Plan execution works with new skills
 """
-import pytest
 
 
 class TestSkillLoading:

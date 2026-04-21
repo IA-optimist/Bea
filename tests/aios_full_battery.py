@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """AI OS FULL VERIFICATION BATTERY — Phase 8.
 Tests A-H: Auth, API, WS, Orchestrator, Executor, Memory, Policy, Infra."""
-import os, sys, json, time, asyncio
+import os
+import sys
+import json
+import time
+import asyncio
 os.chdir('/app')
 sys.path.insert(0, '/app')
 
@@ -90,7 +94,7 @@ except Exception as e:
 
 async def ws_test_invalid():
     try:
-        async with websockets.connect(f"ws://localhost:8000/ws/stream?token=bad", open_timeout=5) as ws:
+        async with websockets.connect("ws://localhost:8000/ws/stream?token=bad", open_timeout=5) as ws:
             m = await asyncio.wait_for(ws.recv(), timeout=3)
             return False  # Should have been rejected
     except Exception:
@@ -206,7 +210,7 @@ print()
 
 # ══ G. POLICY ════════════════════════════════════════════════════════════════
 print("━━━ G. POLICY ━━━")
-from core.policy.control_profiles import get_active_profile, set_active_profile, PROFILES
+from core.policy.control_profiles import get_active_profile, PROFILES
 
 active = get_active_profile()
 test("G", "Active profile is balanced", active.name == "balanced")
@@ -248,7 +252,6 @@ test("H", "HTTPS reachable", True, "verified via curl in previous tests")
 test("H", "WSS path registered", True, "verified via ws_test_valid")
 
 # Docker services
-import subprocess
 docker_check = None  # Docker CLI not available inside container
 services = []  # Checked via host
 test("H", "Docker services healthy", True, "verified via host docker ps (8 services)")
@@ -285,9 +288,9 @@ for s in sorted(sections.keys()):
     name = section_names.get(s, s)
     print(f"║  {status} {name:15s}: {info['pass']}/{info['total']} pass" + " " * (28 - len(name)) + "║")
 
-print(f"╠══════════════════════════════════════════════════════════════╣")
+print("╠══════════════════════════════════════════════════════════════╣")
 print(f"║  TOTAL: {total_pass}/{total_pass+total_fail} PASS, {total_fail} FAIL" + " " * 30 + "║")
-print(f"╚══════════════════════════════════════════════════════════════╝")
+print("╚══════════════════════════════════════════════════════════════╝")
 
 # Failures detail
 if total_fail > 0:

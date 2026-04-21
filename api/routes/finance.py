@@ -23,7 +23,6 @@ from api._deps import require_auth
 from tools.integrations.stripe_tool import StripeTool
 from agents.finance_agent import FinanceAgent
 from core.finance.finance_memory import FinanceMemory
-from core.finance.revenue_tracker import RevenueTracker
 
 logger = logging.getLogger(__name__)
 

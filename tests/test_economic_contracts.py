@@ -10,7 +10,6 @@ Validates:
   - Safety constraints (advisory-only)
   - Fail-open behavior
 """
-import pytest
 from kernel.contracts.economic import (
     OpportunityReport, BusinessConcept, VenturePlan, Milestone,
     FinancialModel, ComplianceChecklist, ComplianceItem,

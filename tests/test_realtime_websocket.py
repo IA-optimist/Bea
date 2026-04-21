@@ -74,7 +74,7 @@ async def test_http_endpoints():
             async with session.get(f"{base_url}/metrics/websocket/status") as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    print(f"\n✅ WebSocket Status:")
+                    print("\n✅ WebSocket Status:")
                     print(f"  Active connections: {data.get('active_connections')}")
                     print(f"  Endpoint: {data.get('endpoint')}")
                     print(f"  Status: {data.get('status')}")
@@ -88,7 +88,7 @@ async def test_http_endpoints():
             async with session.get(f"{base_url}/metrics/snapshot") as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    print(f"\n✅ Metrics Snapshot:")
+                    print("\n✅ Metrics Snapshot:")
                     print(f"  Timestamp: {data.get('timestamp')}")
                     print(f"  System CPU: {data.get('system', {}).get('cpu')}%")
                     print(f"  System Memory: {data.get('system', {}).get('memory')}%")

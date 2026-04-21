@@ -6,7 +6,6 @@ Automates VPS deployment with Docker and Caddy reverse proxy.
 import os
 import subprocess
 import logging
-from pathlib import Path
 from typing import Dict, Any, Optional
 
 from models.opportunity import Opportunity

@@ -72,7 +72,7 @@ async def test_cognition_pipeline():
             print(f"Issues: {', '.join(result['confidence_issues']) if result['confidence_issues'] else 'None'}")
         
         if result['cognition']['was_corrected']:
-            print(f"\n✏️ Output was auto-corrected")
+            print("\n✏️ Output was auto-corrected")
             print(f"Improvement: {result.get('correction_improved', False)}")
         
         if "discovered_skill" in result:

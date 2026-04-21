@@ -7,7 +7,7 @@ import hmac
 import json as _json
 import os
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import structlog
 from fastapi import Depends, Header, HTTPException, Request

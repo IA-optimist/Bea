@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 import logging
 from dataclasses import dataclass, field, asdict
-from typing import Literal, Optional, Callable
+from typing import Optional
 
 log = logging.getLogger("jarvis.improvement.benchmark")
 

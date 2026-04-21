@@ -3,18 +3,10 @@ HexStrike CTF Subsystem — 5 classes for CTF workflows.
 """
 from __future__ import annotations
 
-import json
-import os
 import re
-import subprocess
-import threading
 import time
-import random
-from collections import defaultdict
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from dataclasses import field
+from typing import Any, Dict, List
 
 import logging
 logger = logging.getLogger("hexstrike_server")
@@ -1208,7 +1200,7 @@ class CTFChallengeAutomator:
                     step_result["output"] += f"[MANUAL] {step['description']}\n"
                     step_result["success"] = True
                 elif tool == "custom":
-                    step_result["output"] += f"[CUSTOM] Custom implementation required\n"
+                    step_result["output"] += "[CUSTOM] Custom implementation required\n"
                     step_result["success"] = True
                 else:
                     command = ctf_tools.get_tool_command(tool, challenge.target or challenge.name)

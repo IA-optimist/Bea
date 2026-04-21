@@ -7,11 +7,9 @@ from __future__ import annotations
 import pytest
 
 import asyncio
-import json
 import os
 import sys
 import tempfile
-import time
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +25,7 @@ class TestExecutorContractUnification(unittest.TestCase):
         self.assertIs(CR, TR)
 
     def test_init_re_exports_canonical(self):
-        from executor import ExecutionResult, ErrorClass, classify_error
+        from executor import ExecutionResult
         from executor.contracts import ExecutionResult as CR
         self.assertIs(ExecutionResult, CR)
 
@@ -135,7 +133,6 @@ class TestEndToEndFlow(unittest.TestCase):
     def test_skill_creation_after_success(self):
         """Verify skills are created from successful outcomes."""
         from core.skills.skill_service import SkillService
-        import tempfile
 
         tmp = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
         tmp.close()

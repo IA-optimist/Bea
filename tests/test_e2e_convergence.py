@@ -7,12 +7,12 @@ without requiring FastAPI server (tests the logic, not HTTP transport).
 import pytest
 import os
 import ast
-import json
 
 
 def test_full_module_chain_imports():
     """All convergence modules import without circular dependencies."""
-    import sys, types
+    import sys
+    import types
     # Ensure structlog stub
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
@@ -25,17 +25,13 @@ def test_full_module_chain_imports():
     sys.path.insert(0, '.')
 
     # Import chain: all convergence modules must load
-    from core.canonical_types import CanonicalMissionStatus, CanonicalRiskLevel
-    from core.orchestration_bridge import OrchestrationBridge
-    from core.memory_facade import MemoryFacade
-    from core.legacy_compat import get_authority_map, get_deprecations
-    from core.intelligence_hooks import post_mission_submit, periodic_health
 
 
 @pytest.mark.skip(reason="stale: types changed")
 def test_canonical_types_complete():
     """CanonicalMissionStatus covers all legacy states."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:
@@ -57,7 +53,8 @@ def test_canonical_types_complete():
 
 def test_legacy_compat_mapping_complete():
     """All MissionSystem statuses have a MetaOrchestrator mapping."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:
@@ -78,7 +75,8 @@ def test_legacy_compat_mapping_complete():
 
 def test_intelligence_hooks_fail_open():
     """Hooks return gracefully when intelligence modules aren't available."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:
@@ -104,7 +102,8 @@ def test_intelligence_hooks_fail_open():
 
 def test_intelligence_hooks_enabled():
     """Hooks produce data when enabled and modules available."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:
@@ -127,7 +126,8 @@ def test_intelligence_hooks_enabled():
 
 def test_authority_map_structure():
     """Authority map covers all key systems."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:
@@ -146,7 +146,8 @@ def test_authority_map_structure():
 
 def test_deprecations_documented():
     """All deprecations have required fields."""
-    import sys, types
+    import sys
+    import types
     if 'structlog' not in sys.modules:
         sl = types.ModuleType('structlog')
         class ML:

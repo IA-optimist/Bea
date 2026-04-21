@@ -12,7 +12,6 @@ absent (planning is local) or short-circuited by missing API keys.
 """
 import os
 import sys
-import time
 import json
 import types
 import unittest
@@ -255,7 +254,6 @@ class TestCanonicalStatusThroughLifecycle(unittest.TestCase):
         self.assertIn(s3, {"COMPLETED"})
 
     def test_blocked_mission_maps_to_failed(self):
-        from core.mission_system import MissionStatus
         self.assertEqual(_canonical("BLOCKED"), "FAILED")
 
     def test_plan_only_maps_to_completed(self):
@@ -500,7 +498,7 @@ class TestCanonicalLegacyRoundTrip(unittest.TestCase):
 
     def test_all_mission_system_statuses_roundtrip(self):
         from core.canonical_types import (
-            map_legacy_mission_status, CanonicalMissionStatus,
+            map_legacy_mission_status,
         )
         legacy_terminal = {"DONE", "REJECTED", "BLOCKED", "PLAN_ONLY"}
         legacy_active = {"EXECUTING"}

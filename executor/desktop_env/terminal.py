@@ -7,7 +7,6 @@ import os
 import re
 import uuid
 import structlog
-from typing import Optional
 
 from executor.desktop_env.sandbox import DesktopEnvironment, DockerSandbox
 _silent_log = __import__("structlog").get_logger(__name__)

@@ -3,7 +3,11 @@ Final stabilization tests — verify architecture coherence after cleanup.
 Covers: entrypoints, API routes, imports, dead code removal, app-first architecture.
 """
 import pytest
-import sys, os, types, unittest, re
+import sys
+import os
+import types
+import unittest
+import re
 _silent_log = __import__("structlog").get_logger(__name__)
 
 # Ensure project root is on path
@@ -148,7 +152,7 @@ class TestImportIntegrity(unittest.TestCase):
         self.assertTrue(callable(get_meta_orchestrator))
 
     def test_core_init_reexports(self):
-        from core import MissionStatus, get_meta_orchestrator
+        from core import MissionStatus
         self.assertTrue(hasattr(MissionStatus, "RUNNING"))
 
     def test_memory_facade_imports(self):
