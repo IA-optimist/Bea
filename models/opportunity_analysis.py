@@ -3,7 +3,11 @@ OpportunityAnalysis SQLAlchemy model — P3.2 Feasibility Analysis
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 from sqlalchemy import Column, Integer, String, Text, Float, Boolean, TIMESTAMP, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -24,7 +28,7 @@ class OpportunityAnalysis(Base):
     # opportunity = relationship("Opportunity", back_populates="analyses")
     
     # Analysis metadata
-    analyzed_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
+    analyzed_at = Column(TIMESTAMP, nullable=False, default=_utc_now)
     analysis_duration_seconds = Column(Integer)
     
     # Cognition metadata
@@ -62,8 +66,8 @@ class OpportunityAnalysis(Base):
     approved_at = Column(TIMESTAMP)
     
     # Timestamps
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(TIMESTAMP, default=_utc_now)
+    updated_at = Column(TIMESTAMP, default=_utc_now, onupdate=_utc_now)
     
     def to_dict(self) -> dict:
         """Serialize to JSON-compatible dict"""

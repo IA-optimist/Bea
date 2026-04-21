@@ -7,7 +7,7 @@ Enables cross-project skill transfer and portfolio-wide analytics.
 from __future__ import annotations
 import structlog
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from models.opportunity import Opportunity
@@ -154,7 +154,7 @@ class PortfolioManager:
                 }
                 for opp in top_opps
             ],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
     
     def transfer_skills(

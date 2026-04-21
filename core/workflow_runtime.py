@@ -122,7 +122,7 @@ class ScheduledTask:
             # Check if current UTC HH:MM matches
             try:
                 import datetime
-                utc_now = datetime.datetime.utcfromtimestamp(now)
+                utc_now = datetime.datetime.fromtimestamp(now, tz=datetime.timezone.utc)
                 target_h, target_m = map(int, self.fixed_time.split(":"))
                 if utc_now.hour == target_h and utc_now.minute == target_m:
                     # Only run once per fixed window (check last_run)

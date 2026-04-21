@@ -143,7 +143,7 @@ def submit_for_approval(
             "source": source,
             "payload": payload or {},
             "status": "pending",
-            "submitted_at": datetime.datetime.utcnow().isoformat(),
+            "submitted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "approved_at": None,
             "approved_by": None,
         }
@@ -172,7 +172,7 @@ def approve(item_id: str, approved_by: str = "human") -> bool:
         for item in items:
             if item["id"] == item_id:
                 item["status"] = "approved"
-                item["approved_at"] = datetime.datetime.utcnow().isoformat()
+                item["approved_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 item["approved_by"] = approved_by
                 _save(items)
                 logger.info(f"[ApprovalQueue] approved {item_id[:8]}… by {approved_by}")
@@ -190,7 +190,7 @@ def reject(item_id: str, rejected_by: str = "human") -> bool:
         for item in items:
             if item["id"] == item_id:
                 item["status"] = "rejected"
-                item["rejected_at"] = datetime.datetime.utcnow().isoformat()
+                item["rejected_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 item["rejected_by"] = rejected_by
                 _save(items)
                 return True

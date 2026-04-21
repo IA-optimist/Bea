@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import structlog
@@ -97,7 +97,7 @@ def get_revenue_metrics() -> dict:
 def get_realtime_metrics() -> dict:
     """Aggregate all real-time metrics."""
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "system": get_system_metrics(),
         "missions": get_missions_metrics(),
         "revenue": get_revenue_metrics(),
@@ -168,7 +168,7 @@ async def websocket_status(_user: dict = Depends(require_auth)):
         "active_connections": len(active_connections),
         "endpoint": "/ws/metrics",
         "status": "operational",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 
 

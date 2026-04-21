@@ -9,7 +9,7 @@ End-to-end test of autonomous MVP generation:
 """
 import pytest
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from models.opportunity import Opportunity
 from core.business.feasibility_analyzer import FeasibilityAnalyzer
 from core.business.portfolio_manager import PortfolioManager
@@ -41,7 +41,7 @@ async def test_autonomous_mvp_pipeline():
             "Reddit: 500+ upvotes on prioritization struggle",
             "Twitter: viral thread on task overload",
         ],
-        discovered_at=datetime.utcnow(),
+        discovered_at=datetime.now(timezone.utc),
         total_score=85.5,
         analyzed=False,
     )

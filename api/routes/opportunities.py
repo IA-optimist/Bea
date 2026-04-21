@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
@@ -390,7 +390,7 @@ async def analyze_feasibility(
             # Store in database
             analysis = OpportunityAnalysis(
                 opportunity_id=opportunity_id,
-                analyzed_at=datetime.utcnow(),
+                analyzed_at=datetime.now(timezone.utc),
                 analysis_duration_seconds=analysis_result.get("duration_seconds"),
                 mission_id=analysis_result.get("mission_id"),
                 confidence_score=analysis_result.get("confidence_score"),
@@ -916,8 +916,8 @@ async def undeploy_mvp(
     from models.opportunity import Opportunity
     from models.opportunity_deployment import OpportunityDeployment
     from core.business.deploy_manager import DeployManager
-    from datetime import datetime
-    
+    from datetime import datetime, timezone
+
     # Check opportunity exists
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
@@ -955,7 +955,7 @@ async def undeploy_mvp(
     
     # Update status
     deployment.status = "removed"
-    deployment.removed_at = datetime.utcnow()
+    deployment.removed_at = datetime.now(timezone.utc)
     opportunity.deployed = False
     db.commit()
     

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import structlog
 
@@ -46,19 +46,19 @@ class ProjectContext:
     avg_confidence: float = 0.0
     
     # Metadata
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_active: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_active: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def add_message(self, role: str, content: str):
         """Add message to recent history (keep last 20)."""
         self.recent_messages.append({
             "role": role,
             "content": content,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
         if len(self.recent_messages) > 20:
             self.recent_messages = self.recent_messages[-20:]
-        self.last_active = datetime.utcnow()
+        self.last_active = datetime.now(timezone.utc)
     
     def record_mission_result(self, success: bool, confidence: float):
         """Update performance metrics."""

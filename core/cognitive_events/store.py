@@ -324,7 +324,7 @@ class CognitiveJournal:
     def _persist_event(self, event: CognitiveEvent) -> None:
         """Append event to daily JSONL file."""
         import datetime
-        day = datetime.datetime.utcfromtimestamp(event.timestamp).strftime("%Y-%m-%d")
+        day = datetime.datetime.fromtimestamp(event.timestamp, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
         path = os.path.join(self._persist_dir, f"journal-{day}.jsonl")
         line = json.dumps(event.to_dict(), default=str) + "\n"
         with open(path, "a") as f:
@@ -338,7 +338,7 @@ class CognitiveJournal:
         import datetime
         loaded = 0
         for i in range(days):
-            day = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+            day = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
             path = os.path.join(self._persist_dir, f"journal-{day}.jsonl")
             if not os.path.isfile(path):
                 continue
