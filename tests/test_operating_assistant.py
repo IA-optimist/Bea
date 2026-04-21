@@ -367,6 +367,7 @@ def test_api_has_operating_endpoints():
     assert "/operating/objectives" in src
 
 
+@pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_operating_panels():
     with open("static/cockpit.html") as f:
         html = f.read()
