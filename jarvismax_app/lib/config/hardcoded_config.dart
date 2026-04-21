@@ -7,7 +7,7 @@
 ///   2. Remplacer les placeholders CHANGE_ME par les vraies valeurs.
 ///   3. Ou utiliser --dart-define au moment du build :
 ///        flutter build apk --dart-define=JARVIS_API_TOKEN=jv-xxxxx \
-///                           --dart-define=JARVIS_API_HOST=77.42.40.146
+///                           --dart-define=JARVIS_API_HOST=<YOUR_VPS_IP>
 ///
 /// Si un vrai token a été commité historiquement (cf commit e63a5c5 +
 /// docs/SECURITY_AUDIT.md), il DOIT être révoqué côté serveur via l'API

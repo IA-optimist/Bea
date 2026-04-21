@@ -5,6 +5,7 @@ Tests: low/medium/high risk paths, approval required/denied/granted,
 MetaOrchestrator integration with approval status.
 """
 from __future__ import annotations
+import pytest
 
 import asyncio
 import os
