@@ -5,6 +5,12 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(processes_
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+from process_management import ProcessManager
+from datetime import datetime
+import psutil
+
 import logging
 import time
 

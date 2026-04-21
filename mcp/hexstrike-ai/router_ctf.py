@@ -9,6 +9,12 @@ Classes dépendances (singletons locaux) :
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from ctf import CTFChallenge
+from datetime import datetime
+import re
+import subprocess
+
 import logging
 
 from flask import Blueprint, request, jsonify

@@ -23,12 +23,6 @@ exclude = [
   "jarvismax_app",           # Dart/Flutter, not Python
   "core/_legacy",            # explicitly deprecated shims
   "mcp/hexstrike-ai/_archive_legacy",
-  # The hexstrike-ai tree is post-split with 472 F821 cross-module refs to
-  # fix. Excluded from lint until a dedicated refactor PR imports the
-  # missing classes (ModernVisualEngine, ProcessManager, ErrorType, etc.)
-  # from their sister modules. Python still imports it at runtime where
-  # those paths are guarded, so runtime is unaffected by the debt.
-  "mcp/hexstrike-ai",
   "docs",
   "archive",
   "workspace",
@@ -40,6 +34,7 @@ exclude = [
 select = [
   # Currently clean (blocking) :
   "F403",  # undefined-local-with-import-star (0 outside compat shims)
+  "F821",  # undefined-name (now 0 — phase 3 cleaned all 539 real bugs)
   "F823",  # undefined-local (0)
   "W605",  # invalid escape sequence (0)
 ]
@@ -52,13 +47,10 @@ select = [
 #   E722 (6)  bare-except
 #   E731 (6)  lambda-assignment
 #   E741 (78) ambiguous-variable-name (l/I/O renames)
-#   F821 (539) undefined-name (biggest debt, requires surgical fixes per file)
 
 # ── Non-blocking (known debt, fix later) ───────────────────
 # These are TRACKED but don't fail CI yet. Gate on them once cleanup PRs
 # have zeroed them out :
-#   F821  — 539 undefined-name (imports missing after hexstrike split +
-#           real bugs in api/routes/*, core/mission_system.py, etc.)
 #   E402  — 127 module-import-not-at-top-of-file (many intentional for
 #           lazy imports to break circular deps ; audit case-by-case)
 ignore = [

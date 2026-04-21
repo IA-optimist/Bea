@@ -12,6 +12,16 @@ Ces helpers sont appelés par 150+ tool endpoints dans hexstrike_server.py.
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from command_execution import EnhancedCommandExecutor
+from error_handling import ErrorContext
+from error_handling import ErrorType
+from visual_engine import ModernVisualEngine
+from error_handling import RecoveryAction
+from hex_cache import cache
+from datetime import datetime
+import traceback
+
 import logging
 import os
 import time

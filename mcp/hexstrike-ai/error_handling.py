@@ -3,6 +3,12 @@ HexStrike Error Handling — intelligent error classification + recovery.
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+import psutil
+import requests
+import traceback
+
 import json
 import logging
 import os

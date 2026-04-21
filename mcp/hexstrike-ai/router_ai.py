@@ -5,6 +5,10 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(ai_bp).
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from datetime import datetime
+from execution_framework import execute_command
+
 import logging
 
 from flask import Blueprint, request, jsonify

@@ -5,6 +5,10 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(python_bp)
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from process_management import env_manager
+from execution_framework import execute_command
+
 import logging
 import time
 

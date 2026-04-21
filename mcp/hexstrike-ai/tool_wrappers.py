@@ -16,6 +16,9 @@ from __future__ import annotations
 
 
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from execution_framework import execute_command
+
 def execute_nmap_scan(target, params):
     """Execute nmap scan with optimized parameters"""
     try:

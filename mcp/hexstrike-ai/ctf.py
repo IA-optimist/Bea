@@ -3,6 +3,10 @@ HexStrike CTF Subsystem — 5 classes for CTF workflows.
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from router_ctf import ctf_manager
+from router_ctf import ctf_tools
+
 import re
 import time
 from dataclasses import field

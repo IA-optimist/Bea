@@ -13,6 +13,12 @@ traiter dans une Phase D dédiée avec découplage du dashboard.
 """
 from __future__ import annotations
 
+import venv
+
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from hexstrike_server import active_processes
+from hexstrike_server import process_lock
+
 import logging
 import os
 import queue

@@ -82,6 +82,9 @@ class ModernVisualEngine:
     def create_banner() -> str:
         """Create the enhanced HexStrike banner"""
         # Build a blood-red themed border using primary/gradient alternation
+        import os as _os
+        _api_port = int(_os.environ.get('HEXSTRIKE_PORT', 8888))
+        _api_host = _os.environ.get('HEXSTRIKE_HOST', '127.0.0.1')
         border_color = ModernVisualEngine.COLORS['PRIMARY_BORDER']
         accent = ModernVisualEngine.COLORS['ACCENT_LINE']
         gradient = ModernVisualEngine.COLORS['ACCENT_GRADIENT']
@@ -103,7 +106,7 @@ class ModernVisualEngine:
 │  {gradient}🎯 Bug Bounty | CTF | Red Team | Zero-Day Research{border_color}              │
 └─────────────────────────────────────────────────────────────────────┘{RESET}
 
-{ModernVisualEngine.COLORS['TERMINAL_GRAY']}[INFO] Server starting on {API_HOST}:{API_PORT}
+{ModernVisualEngine.COLORS['TERMINAL_GRAY']}[INFO] Server starting on {_api_host}:{_api_port}
 [INFO] 150+ integrated modules | Adaptive AI decision engine active
 [INFO] Blood-red theme engaged – unified offensive operations UI{RESET}
 """

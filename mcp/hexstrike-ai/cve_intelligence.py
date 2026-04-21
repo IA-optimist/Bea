@@ -10,6 +10,9 @@ Backward-compat :
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict

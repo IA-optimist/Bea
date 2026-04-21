@@ -15,6 +15,13 @@ Monté via app.register_blueprint(tools_bp).
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
+from datetime import datetime
+import os
+
 import logging
 import time
 
