@@ -7,6 +7,8 @@ import json
 import websockets
 from datetime import datetime
 
+import pytest
+
 
 async def test_websocket_connection():
     """Test WebSocket connection and receive metrics."""
@@ -57,7 +59,7 @@ async def test_websocket_connection():
         print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: {e}")
 
 
-async @pytest.mark.xfail(reason="module ModuleNotFoundError (drift)", strict=False)
+@pytest.mark.xfail(reason="module ModuleNotFoundError (drift)", strict=False)
 async def test_http_endpoints():
     """Test HTTP endpoints for WebSocket status and snapshot."""
     import aiohttp
