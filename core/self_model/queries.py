@@ -6,6 +6,9 @@ All operate on a SelfModel snapshot — no side effects.
 """
 from __future__ import annotations
 
+import structlog
+_silent_log = structlog.get_logger(__name__)
+
 from core.self_model.model import (
     SelfModel, CapabilityStatus, ComponentStatus, HealthStatus,
     ModificationZone,

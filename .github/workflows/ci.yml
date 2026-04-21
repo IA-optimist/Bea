@@ -48,7 +48,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest pytest-cov pytest-asyncio pytest-xdist
       
       - name: Run linting (ruff, blocking on curated rule set)
         run: |
@@ -69,8 +69,11 @@ jobs:
         run: |
           # Coverage threshold = conservative baseline ; raise gradually as
           # cleanup PRs land. Fails CI if core/ coverage drops below.
-          pytest tests/ -v --cov=core --cov-report=xml --cov-report=term \
-            --cov-fail-under=45
+          # -n auto runs one worker per CPU core (pytest-xdist) — local suite
+          # time drops from ~6.5min single-threaded to ~2min on a 4-core runner.
+          pytest tests/ -v -n auto --dist=loadfile \
+            --cov=core --cov-report=xml --cov-report=term \
+            --cov-fail-under=48
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

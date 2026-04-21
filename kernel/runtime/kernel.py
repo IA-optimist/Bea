@@ -40,7 +40,10 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
+if TYPE_CHECKING:
+    from kernel.execution.contracts import ExecutionRequest, ExecutionResult  # noqa: F401
 _silent_log = __import__("structlog").get_logger(__name__)
 
 try:

@@ -5,6 +5,7 @@ Single source for all /api/v2/task, /api/v2/tasks, /api/v2/missions, /api/v2/age
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import time
 from typing import Annotated, Optional
@@ -1251,7 +1252,7 @@ async def get_mission_livrable(
 
         if not candidates:
             # Générer à la demande si la mission est COMPLETED
-            ms = get_mission_system()
+            ms = _get_mission_system()
             m = ms.get(mission_id)
             if not m:
                 raise HTTPException(status_code=404, detail="Mission not found")

@@ -93,8 +93,8 @@ class ConfidenceScorer:
                 )
                 return resp.choices[0].message.content
         except Exception as e:
-            log.error(self_confidence_llm_failed, error=str(e))
-            return 
+            log.error("self_confidence_llm_failed", error=str(e))
+            return None
 
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
         """Build prompt for self-evaluation."""

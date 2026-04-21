@@ -6,10 +6,14 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from typing import TYPE_CHECKING
 import structlog
 from abc import ABC, abstractmethod
 from langchain_core.messages import SystemMessage, HumanMessage
 from core.state import JarvisSession
+
+if TYPE_CHECKING:
+    from agents.contracts import AgentContract
 from agents.self_critic import SelfCriticMixin
 from core.reasoning_framework import INJECT_SCOUT, INJECT_PLANNER, INJECT_BUILDER, INJECT_REVIEWER, INJECT_ADVISOR
 _silent_log = __import__("structlog").get_logger(__name__)

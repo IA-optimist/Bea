@@ -177,7 +177,7 @@ class ProjectContextManager:
             q.upsert(collection, point_id, vec, {
                 "content": content[:500],
                 "project_id": project_id,
-                "memory_type": memory_type,
+                "memory_type": metadata.get("memory_type", "generic"),
                 "timestamp": time.time(),
             })
             log.info("long_term_memory_stored", project_id=project_id, content_length=len(content))

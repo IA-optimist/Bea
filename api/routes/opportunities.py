@@ -1,15 +1,17 @@
 """
-import tempfile
 JarvisMax — Opportunities API
 REST endpoints for SaaS opportunity management (Phase 3)
 """
 from __future__ import annotations
 
 import logging
+import tempfile
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
 from sqlalchemy.orm import Session

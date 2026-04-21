@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import os
+import structlog
+_silent_log = structlog.get_logger(__name__)
 import re
 
 logger = logging.getLogger("jarvis.tool_builder")

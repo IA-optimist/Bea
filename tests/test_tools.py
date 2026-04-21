@@ -33,9 +33,9 @@ def test_tool_read_file():
     print(f"✅ read_file OK: {result['result'][:100]}")
 
 
+@pytest.mark.skip(reason="execute_http_get removed (LEGACY désactivé in core.tool_executor)")
 def test_tool_http():
-    result = execute_http_get("https://httpbin.org/json", timeout=8)
-    print(f"{'✅' if result['ok'] else '⚠️'} http_get: {result['result'][:100] if result['ok'] else result['error']}")
+    pass
 
 
 def test_tool_python():
@@ -45,29 +45,9 @@ def test_tool_python():
     print(f"✅ python_snippet OK: {result['result'][:100]}")
 
 
+@pytest.mark.skip(reason="_ensure_collection / query_vector_db removed (LEGACY désactivé in core.tool_executor)")
 def test_tool_vector_search():
-    # Test 1 : création collection
-    ok = _ensure_collection("default_memory")
-    print(f"{'✅' if ok else '⚠️'} collection ensure: {'created/ready' if ok else 'qdrant offline'}")
-
-    # Test 2 : insertion d'un point de test
-    try:
-        import requests
-        point = {
-            "points": [{
-                "id": 1,
-                "vector": [0.1] * 768,
-                "payload": {"test": "jarvis_vector_test", "source": "test_suite"}
-            }]
-        }
-        r = requests.put("http://qdrant:6333/collections/default_memory/points", json=point, timeout=5)
-        print(f"{'✅' if r.status_code in (200,201) else '⚠️'} insert test point: status={r.status_code}")
-    except Exception as e:
-        print(f"⚠️ insert skipped: {e}")
-
-    # Test 3 : recherche
-    result = query_vector_db("test query", collection="default_memory", top_k=1)
-    print(f"{'✅' if result['ok'] else '⚠️'} vector_search: {result.get('result','')[:150] or result.get('error','')}")
+    pass
 
 
 def test_executor_singleton():

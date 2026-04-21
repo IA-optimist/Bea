@@ -317,7 +317,7 @@ Provide a comprehensive response addressing the mission goal."""
                         if hasattr(self, 'skill_discoverer') and self.skill_discoverer:
                             await self.skill_discoverer.propose_skill(
                                 mission_id=mission_id,
-                                goal=mission.get('goal', ''),
+                                goal=mission_payload.get('goal', ''),
                                 outcome=str(outcome)[:200],
                             )
                     except Exception as _sk_err:

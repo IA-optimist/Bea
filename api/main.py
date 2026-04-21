@@ -17,6 +17,9 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """
 from __future__ import annotations
 
+import structlog
+_silent_log = structlog.get_logger(__name__)
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -605,7 +608,6 @@ async def root_redirect():
 # ── Prometheus Metrics Endpoint ────────────────────────────────
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, REGISTRY
 from fastapi.responses import Response
-_silent_log = __import__("structlog").get_logger(__name__)
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():

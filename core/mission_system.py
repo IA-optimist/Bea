@@ -915,18 +915,17 @@ class MissionSystem:
             from core.operating_primitives import compute_economics, get_workflow_store
             _econ = compute_economics(
                 goal=r.user_input[:200],
-                mission_type=_mission_type,
+                mission_type=_mission_type_str,
                 complexity=_complexity_str,
                 plan_steps=len(getattr(r, 'agents_selected', []) or []),
                 risk_score=getattr(r, 'risk_score', 0) or 0,
             )
             r.decision_trace["economics"] = _econ.to_dict()
-            # Record successful workflow template
-            if success:
-                _phases = ["research", "execution", "verification"]
-                get_workflow_store().record_successful_workflow(
-                    _mission_type, _tools_used, _phases
-                )
+            # Record successful workflow template (this block is on the success path)
+            _phases = ["research", "execution", "verification"]
+            get_workflow_store().record_successful_workflow(
+                _mission_type_str, _tools, _phases
+            )
         except Exception as _exc:
             log.debug("silent_exception_caught", err=str(_exc)[:120], location="mission_system:930")
 
