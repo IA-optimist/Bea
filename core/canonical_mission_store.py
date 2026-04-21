@@ -161,8 +161,26 @@ class CanonicalMissionStore:
 
         # SQLite fallback
         try:
+            explicit = db_path is not None
             path = db_path or _default_db_path()
             self._db_path = Path(path)
+            # Pre-check : ensure parent directory exists AND is writable before
+            # attempting sqlite3.connect (qui crée le fichier paresseusement et
+            # ne lève pas jusqu'à la première écriture SQL). Pour les chemins
+            # explicites, on NE crée PAS le parent — c'est une erreur utilisateur
+            # (ex. chemin mal-configuré). Pour les défauts, mkdir est OK.
+            parent = self._db_path.parent
+            if not parent.exists():
+                if explicit:
+                    raise OSError(
+                        f"parent directory does not exist: {parent} "
+                        f"(explicit db_path must have writable parent)"
+                    )
+                parent.mkdir(parents=True, exist_ok=True)
+            # Quick write-test (même pattern que _default_db_path).
+            _probe = parent / ".canonical_write_test"
+            _probe.touch()
+            _probe.unlink()
             self._init_db()
             self._ok = True
             log.info("canonical_mission_store.ready", db_path=str(self._db_path))
