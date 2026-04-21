@@ -8,7 +8,7 @@ POST /api/v3/chat - Conversational interaction with context
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Annotated
@@ -114,7 +114,7 @@ async def chat(
     
     # Build mission dict
     mission = {
-        "mission_id": f"chat-{datetime.utcnow().timestamp()}",
+        "mission_id": f"chat-{datetime.now(timezone.utc).timestamp()}",
         "goal": req.message,
         "context": {
             "conversation_history": [
@@ -164,7 +164,7 @@ async def chat(
             confidence_score=confidence,
             reasoning_used=reasoning,
             project_id=req.project_id,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             metadata={
                 "complexity": complexity,
                 "tot_used": use_tot or reasoning == "corrected",

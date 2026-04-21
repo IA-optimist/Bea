@@ -11,7 +11,7 @@ import sys
 import os
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add parent dir to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -101,7 +101,7 @@ _Discovered: {datetime.fromisoformat(opportunity['discovered_at']).strftime('%Y-
 
 def main():
     """Main cron job execution"""
-    logger.info("opportunity_scan_started", timestamp=datetime.utcnow().isoformat())
+    logger.info("opportunity_scan_started", timestamp=datetime.now(timezone.utc).isoformat())
     
     db = SessionLocal()
     try:

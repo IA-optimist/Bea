@@ -433,7 +433,8 @@ Provide a comprehensive response addressing the mission goal."""
         )
         
         # Record for learning
-        mission_id = mission.get("mission_id", f"mission-{datetime.utcnow().timestamp()}")
+        from datetime import datetime, timezone
+        mission_id = mission.get("mission_id", f"mission-{datetime.now(timezone.utc).timestamp()}")
         
         await self.learning_engine.record_mission(
             mission_id=mission_id,

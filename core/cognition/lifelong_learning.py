@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import structlog
 
@@ -35,8 +35,8 @@ class Skill:
     avg_confidence: float = 0.0
     tags: List[str] = field(default_factory=list)
     learned_from: List[str] = field(default_factory=list)  # Mission IDs
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_used: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_used: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     @property
     def success_rate(self) -> float:
@@ -120,7 +120,7 @@ class LifelongLearningEngine:
             "confidence": confidence,
             "tools_used": tools_used,
             "execution_trace": execution_trace,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         self.mission_history.append(mission_record)
@@ -165,7 +165,7 @@ class LifelongLearningEngine:
             # Update existing skill stats
             skill = self.skills[skill_id]
             skill.success_count += 1
-            skill.last_used = datetime.utcnow()
+            skill.last_used = datetime.now(timezone.utc)
             skill.learned_from.append(mission["mission_id"])
             
             # Update confidence (rolling average)

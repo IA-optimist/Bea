@@ -59,8 +59,8 @@ async def get_status(_user: CurrentUser = Depends(require_role("viewer"))):
         last = report.get("last_improvement")
         last_str: str | None = None
         if last and last.get("timestamp"):
-            last_str = datetime.datetime.utcfromtimestamp(
-                last["timestamp"]
+            last_str = datetime.datetime.fromtimestamp(
+                last["timestamp"], tz=datetime.timezone.utc
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         return {

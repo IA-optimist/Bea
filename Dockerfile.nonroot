@@ -1,0 +1,45 @@
+FROM python:3.11-slim
+
+# ── Non-root user for security ─────────────────────────────
+# UID 1000 aligned with most Linux hosts + compatible with `chown -R 1000:1000`
+# on the VPS volume mount. Avoids running the whole framework as root.
+ARG JARVIS_UID=1000
+ARG JARVIS_GID=1000
+RUN groupadd --gid "${JARVIS_GID}" jarvis \
+ && useradd --uid "${JARVIS_UID}" --gid "${JARVIS_GID}" --create-home --shell /bin/bash jarvis
+
+WORKDIR /app
+
+# ── System dependencies ────────────────────────────────────
+# Installed as root THEN we drop privileges.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+# ── Python dependencies ────────────────────────────────────
+COPY requirements.txt .
+RUN pip install --upgrade "pip>=26.0" \
+ && pip install --no-cache-dir -r requirements.txt
+
+# ── Application code ──────────────────────────────────────
+COPY . .
+
+# ── Writable directories (owned by jarvis) ─────────────────
+# Data dir aligned with docker-compose volume mount :
+#   host:~/.jarvismax  →  container:/home/jarvis/.jarvismax
+RUN mkdir -p /home/jarvis/.jarvismax/logs /app/workspace \
+ && chown -R jarvis:jarvis /home/jarvis /app
+
+# ── Drop privileges ────────────────────────────────────────
+USER jarvis
+ENV HOME=/home/jarvis
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/api/v2/health || exit 1
+
+CMD ["python", "main.py"]

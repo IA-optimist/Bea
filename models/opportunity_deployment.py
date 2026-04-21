@@ -4,7 +4,11 @@ Tracks deployed MVPs on VPS.
 """
 
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, Boolean, DECIMAL
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 from models.base import Base
 
@@ -22,7 +26,7 @@ class OpportunityDeployment(Base):
     html_url = Column(Text)
     
     # Deployment
-    deployed_at = Column(TIMESTAMP, default=datetime.utcnow)
+    deployed_at = Column(TIMESTAMP, default=_utc_now)
     deploy_path = Column(Text, nullable=False)
     subdomain = Column(String(255), nullable=False, unique=True, index=True)
     url = Column(Text, nullable=False)
@@ -37,8 +41,8 @@ class OpportunityDeployment(Base):
     docker_image_tag = Column(String(100))
     
     # Timestamps
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(TIMESTAMP, default=_utc_now)
+    updated_at = Column(TIMESTAMP, default=_utc_now, onupdate=_utc_now)
     removed_at = Column(TIMESTAMP)
     
     def to_dict(self):

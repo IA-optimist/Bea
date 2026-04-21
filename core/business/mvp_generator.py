@@ -9,7 +9,7 @@ import shutil
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from jinja2 import Environment, FileSystemLoader
 
 from models.opportunity import Opportunity
@@ -149,7 +149,7 @@ class MVPGenerator:
             "project_name": opportunity.title,
             "project_slug": project_slug,
             "description": opportunity.description or "No description provided",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "opportunity_id": opportunity.id,
             
             # Opportunity data
