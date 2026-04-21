@@ -26,7 +26,7 @@ logger = logging.getLogger("jarvis.knowledge.patterns")
 # ── Imports fail-open ──────────────────────────────────────────────────────────
 
 try:
-    from core.knowledge.knowledge_index import search_similar_tasks, get_task_stats
+    from core.knowledge.knowledge_index import search_similar_tasks, get_task_stats  # noqa: F401
     _INDEX_AVAILABLE = True
 except ImportError:
     _INDEX_AVAILABLE = False

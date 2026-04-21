@@ -401,7 +401,7 @@ class TestBridgeIntegration:
 
     def test_observability_events_end_to_end(self, tmp_repo):
         """VI23. Observability events emitted during real pipeline execution."""
-        obs = SIObservability()
+        SIObservability()
         # Run a real pipeline (not mocked)
         pipeline = PromotionPipeline(repo_root=tmp_repo)
         candidate = CandidatePatch(
@@ -821,7 +821,7 @@ class TestDecisionContract:
             mock_pipe = _mock_pipeline_result(decision_type)
             loop._pipeline = mock_pipe
             details = []
-            result = loop._execute_via_pipeline(_task(), _patch(), details)
+            loop._execute_via_pipeline(_task(), _patch(), details)
             # No detail step should say "applied_production"
             for d in details:
                 assert d.get("action") != "applied_production"

@@ -142,7 +142,7 @@ SHOULD_RETRY: NO"""
                 try:
                     score = float(line.split(":", 1)[1].strip())
                     result["confidence"] = max(0.0, min(1.0, score))
-                except:
+                except Exception:
                     _silent_log.debug("suppressed_exception", src='self_confidence.py')
             
             elif line.startswith("REASONING:"):

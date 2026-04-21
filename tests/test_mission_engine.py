@@ -463,7 +463,7 @@ class TestRunner:
         runner.plan(m)
         runner.start(m)
         # First call fails, retry set
-        result = runner.execute_next_step(m)
+        runner.execute_next_step(m)
         assert m.steps[0].retry_count == 1
         assert m.steps[0].status == StepStatus.PENDING.value  # Ready for retry
 

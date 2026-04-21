@@ -72,7 +72,7 @@ async def test_autonomous_mvp_pipeline():
     # Step 3: Check if skills were discovered
     print("\n⏳ Step 3: Checking learning...")
     
-    learning = LifelongLearningEngine()
+    LifelongLearningEngine()
     
     # Get mission from learning history
     # (In real flow, this would be auto-recorded by orchestrator)

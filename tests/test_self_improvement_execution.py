@@ -511,7 +511,7 @@ class TestTestRunner:
 
     def test_blocked_reject(self):
         """SE46."""
-        runner = TestRunner()
+        TestRunner()
         # Build a blocked test result
         blocked = TestSuiteResult(validation_level="blocked")
         report = ValidationReport(patch_id="x")

@@ -206,7 +206,7 @@ class ModernVisualEngine:
         for pid, proc_info in processes.items():
             status = proc_info.get('status', 'unknown')
             command = proc_info.get('command', 'unknown')[:50] + "..." if len(proc_info.get('command', '')) > 50 else proc_info.get('command', 'unknown')
-            duration = proc_info.get('duration', 0)
+            proc_info.get('duration', 0)
 
             status_color = ModernVisualEngine.COLORS['ACCENT_LINE'] if status == 'running' else ModernVisualEngine.COLORS['HACKER_RED']
 

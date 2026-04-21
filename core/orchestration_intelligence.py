@@ -163,7 +163,7 @@ class OrchestrationBrain:
         cap = self.dispatcher.dispatch(mission)
         plan = self.planner.create_plan(mission, cap.capability)
         val = self.planner.validate_plan(plan)
-        mem = self.memory.inject(mission)
+        self.memory.inject(mission)
         tid = self.tracer.start_trace(mission)
         result = {"status": "completed", "capability": cap.capability.value,
                   "plan_steps": len(plan), "plan_valid": val.valid,

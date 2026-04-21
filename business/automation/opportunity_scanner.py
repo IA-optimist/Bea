@@ -271,7 +271,7 @@ class OpportunityScanner:
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
             
-            cutoff_date = datetime.now() - timedelta(days=days_back)
+            datetime.now() - timedelta(days=days_back)
             
             # Parse posts - Product Hunt structure (adapt selectors as needed)
             posts = soup.find_all(['article', 'div'], class_=lambda x: x and ('post' in str(x).lower() or 'item' in str(x).lower()))
@@ -362,7 +362,7 @@ class OpportunityScanner:
                 content = await page.content()
                 soup = BeautifulSoup(content, 'html.parser')
                 
-                cutoff_timestamp = (datetime.now() - timedelta(days=days_back)).timestamp()
+                (datetime.now() - timedelta(days=days_back)).timestamp()
                 
                 # Parse posts
                 posts = soup.find_all('div', class_='thing')
@@ -460,7 +460,7 @@ class OpportunityScanner:
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
             
-            cutoff_date = datetime.now() - timedelta(days=days_back)
+            datetime.now() - timedelta(days=days_back)
             
             # Parse items
             items = soup.find_all('tr', class_='athing')
@@ -507,7 +507,7 @@ class OpportunityScanner:
                             comments = int(match.group(1))
                     
                     # Extract time (for filtering)
-                    age_span = subtext_td.find('span', class_='age')
+                    subtext_td.find('span', class_='age')
                     # Basic time filtering (HN shows relative times)
                     
                     pain_points = self._extract_pain_points(title)

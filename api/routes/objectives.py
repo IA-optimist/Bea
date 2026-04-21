@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v2/objectives", tags=["objectives"], dependencie
 _ENGINE_AVAILABLE = False
 try:
     from core.objectives.objective_engine import get_objective_engine
-    from core.objectives.objective_cleanup import run_cleanup
+    from core.objectives.objective_cleanup import run_cleanup  # noqa: F401
     _ENGINE_AVAILABLE = True
 except ImportError as _e:
     logger.warning(f"[API_OBJECTIVES] engine not available: {_e}")

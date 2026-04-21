@@ -3388,7 +3388,7 @@ def setup_mcp_server(hexstrike_client: HexStrikeClient) -> FastMCP:
         return result
 
     @mcp.tool()
-    def httpx_probe(targets: str = "", target_file: str = "", ports: str = "", methods: str = "GET", status_code: str = "", content_length: bool = False, output_file: str = "", additional_args: str = "") -> Dict[str, Any]:
+    def httpx_probe_advanced(targets: str = "", target_file: str = "", ports: str = "", methods: str = "GET", status_code: str = "", content_length: bool = False, output_file: str = "", additional_args: str = "") -> Dict[str, Any]:
         """
         Execute HTTPx for HTTP probing with enhanced logging.
 
@@ -4264,7 +4264,7 @@ def setup_mcp_server(hexstrike_client: HexStrikeClient) -> FastMCP:
         })
 
         # Get trending attack types
-        trending_research = hexstrike_client.safe_post("api/vuln-intel/zero-day-research", {
+        hexstrike_client.safe_post("api/vuln-intel/zero-day-research", {
             "target_software": "web applications",
             "analysis_depth": "quick"
         })
@@ -4662,7 +4662,7 @@ def setup_mcp_server(hexstrike_client: HexStrikeClient) -> FastMCP:
 
         try:
             context_dict = json.loads(context) if context != "{}" else {}
-        except:
+        except Exception:
             context_dict = {}
 
         data = {

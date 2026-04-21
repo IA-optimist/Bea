@@ -193,7 +193,7 @@ def test_workflow_agent_create_from_text_fallback():
 def test_workflow_agent_sanitize():
     """_sanitize doit remplacer les agents invalides par scout-research."""
     from agents.workflow_agent import WorkflowAgent
-    s  = _make_settings()
+    _make_settings()
     wf_def = {
         "name":  "test",
         "steps": [

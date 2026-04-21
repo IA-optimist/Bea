@@ -93,7 +93,7 @@ class OfferDesignerAgent(BaseAgent):
         if best_opp:
             import json as _json
             opp_json = _json.dumps(best_opp, ensure_ascii=False, indent=2)
-            source   = best_opp.get("title", "opportunité")
+            best_opp.get("title", "opportunité")
             return (
                 f"Opportunité à transformer en offre commerciale :\n\n{opp_json}\n\n"
                 "Conçois 1 à 3 offres commerciales pour cette opportunité. "

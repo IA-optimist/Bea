@@ -620,7 +620,7 @@ class TestRetryPolicy:
         from executor.retry_policy import compute_delay, RetryPolicy
         policy = RetryPolicy(base_delay=1.0, max_delay=60.0, backoff_factor=2.0)
         # Average over many samples to smooth jitter
-        delays = [compute_delay(a, policy) for a in range(1, 6) for _ in range(20)]
+        [compute_delay(a, policy) for a in range(1, 6) for _ in range(20)]
         # Group by attempt
         by_attempt = {}
         for a in range(1, 6):

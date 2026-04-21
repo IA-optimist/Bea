@@ -46,7 +46,7 @@ async def list_pending(
         # Also include module approval tickets
         try:
             from core.modules.approval_notifier import ApprovalNotifier
-            notifier = ApprovalNotifier()
+            ApprovalNotifier()
             # Module tickets are separate — include if available
         except Exception:
             _silent_log.debug("suppressed_exception", src='action_console.py')

@@ -138,7 +138,7 @@ class TestCanonicalMissionStore(unittest.TestCase):
         # root could create it, and it persisted across runs.
         import os
         import shutil
-        bad_root = Path("/tmp/jarvis_bad_path_test.XXXXXX")
+        Path("/tmp/jarvis_bad_path_test.XXXXXX")
         # Create a read-only parent directory so the probe inside the store fails.
         ro_parent = Path("/tmp/jarvis_bad_path_ro")
         if ro_parent.exists():

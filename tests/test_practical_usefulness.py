@@ -106,7 +106,7 @@ class TestPriorFailureReuse(unittest.TestCase):
             prior_skills=[], relevant_memories=[],
         )
         # With simulated failures (would come from memory in real use)
-        a2 = assess_before_execution(
+        assess_before_execution(
             goal="Deploy app",
             classification={"complexity": "simple"},
             prior_skills=[], relevant_memories=[],

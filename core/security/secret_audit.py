@@ -152,7 +152,6 @@ class SecretAuditLog:
         if not self._entries:
             return True, 0
 
-        prev_hash = "GENESIS"
         verified = 0
         for entry in self._entries:
             if entry.chain_hash:

@@ -70,8 +70,8 @@ def run_tools_for_mission(
         if _use_engine:
             try:
                 from core.execution_engine import (
-                    execute_tool_intelligently, ExecutionTelemetry,
-                    record_telemetry, record_recovery,
+                    execute_tool_intelligently, ExecutionTelemetry,  # noqa: F401
+                    record_telemetry, record_recovery,  # noqa: F401
                 )
             except ImportError:
                 _use_engine = False

@@ -234,7 +234,7 @@ class TestCooldown:
         """V11: run_cycle sets cooldown for the experimented category."""
         from core.metrics_store import reset_metrics, emit_tool_timeout
         reset_daemon_state()
-        m = reset_metrics()
+        reset_metrics()
 
         # Create repo + target
         (tmp_path / "executor").mkdir()
@@ -268,7 +268,7 @@ class TestCycleIntegration:
             emit_mission_submitted, emit_mission_failed,
         )
         reset_daemon_state()
-        m = reset_metrics()
+        reset_metrics()
 
         # Create two weaknesses: low_success (tier 100) and retry (tier 70)
         for _ in range(10):

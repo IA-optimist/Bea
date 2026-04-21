@@ -1172,7 +1172,7 @@ class CTFChallengeAutomator:
         for tool in tools:
             try:
                 if tool != "manual":
-                    command = ctf_tools.get_tool_command(tool, challenge.target or challenge.name)
+                    ctf_tools.get_tool_command(tool, challenge.target or challenge.name)
                     # In a real implementation, this would execute the command
                     step_result["tools_used"].append(tool)
                     step_result["output"] += f"[{tool}] Executed successfully\n"

@@ -63,9 +63,8 @@ class BaseTool(ABC):
 
         # Timeout guard
         try:
-            from core.resilience import timeout_guard, idempotency_key, JarvisError
+            from core.resilience import timeout_guard, idempotency_key, JarvisError  # noqa: F401
         except ImportError:
-            timeout_guard = lambda **kw: None
             idempotency_key = lambda *a: ""
 
         idem_key = ""

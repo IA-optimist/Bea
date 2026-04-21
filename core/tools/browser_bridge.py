@@ -41,7 +41,7 @@ def _run_async(coro):
     Uses get_running_loop() to detect an active loop; falls back to asyncio.run().
     """
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # Already in async context — run in a dedicated thread to avoid nesting
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:

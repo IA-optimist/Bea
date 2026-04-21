@@ -200,9 +200,8 @@ class ShadowGate:
         try:
             from memory.vault_memory import get_vault_memory
             vm = get_vault_memory()
-            mission = ""
             if session is not None:
-                mission = (
+                (
                     getattr(session, "mission_summary", "")
                     or getattr(session, "user_input", "")
                 )

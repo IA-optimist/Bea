@@ -522,7 +522,6 @@ class JarvisOrchestrator:
                 a for a in decision.agents if a["agent"] != "vault-memory"
             ]
 
-        plan = session.agents_plan
 
         if session.agents_plan:
             planner    = "AtlasDirector" if use_director else "TaskRouter"

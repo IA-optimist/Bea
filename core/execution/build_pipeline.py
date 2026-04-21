@@ -472,7 +472,6 @@ Generate a production-quality {artifact.artifact_type.value} artifact.
 
     def _scaffold_content(self, artifact: ExecutionArtifact) -> dict[str, str]:
         """Generate minimal scaffold when LLM is unavailable."""
-        files: dict[str, str] = {}
         scaffold = {
             ArtifactType.LANDING_PAGE: {"index.html": f"<!DOCTYPE html><html><head><title>{artifact.name}</title></head><body><h1>{artifact.name}</h1><p>{artifact.description}</p></body></html>"},
             ArtifactType.API_SERVICE: {"main.py": f'"""API Service: {artifact.name}"""\nfrom fastapi import FastAPI\napp = FastAPI(title="{artifact.name}")\n\n@app.get("/health")\ndef health():\n    return {{"status": "ok"}}\n', "requirements.txt": "fastapi\nuvicorn\n"},

@@ -232,7 +232,7 @@ class TestSkillBuilder(unittest.TestCase):
             confidence=0.8,
         )
         # Try to create near-duplicate with same words
-        skill2 = self.builder.maybe_create(
+        self.builder.maybe_create(
             mission_id="m006",
             goal="Fix the FastAPI authentication endpoint JWT validation",
             result="Added JWT token validation middleware to the FastAPI auth route endpoint. " * 5,

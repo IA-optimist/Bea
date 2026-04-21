@@ -306,7 +306,7 @@ def generate_tool_tests(tool_name: str, tool_code: str) -> dict:
 
         valid_call = f"{tool_name}({', '.join(test_args_valid)})"
         none_call = f"{tool_name}({', '.join(test_args_none)})" if test_args_none else f"{tool_name}()"
-        empty_call = f"{tool_name}()" if not any("=" not in a for a in test_args_valid) else f"{tool_name}()"
+        f"{tool_name}()" if not any("=" not in a for a in test_args_valid) else f"{tool_name}()"
 
         # Détecter le module
         module_path = f"core.tools.{tool_name}"

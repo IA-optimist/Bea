@@ -381,7 +381,7 @@ def execute_playbook(
 
         # Only record if we have meaningful output (at least 1 field)
         if validation.get("field_count", 0) >= 1 or status == "failed":
-            trace = build_trace_from_output(
+            build_trace_from_output(
                 assembled.get("schema", ""),
                 assembled.get("data", {}),
                 validation,

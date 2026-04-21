@@ -165,7 +165,7 @@ class TestBackoff:
     def test_backoff_increases(self):
         from core.resilience.recovery_engine import _calculate_backoff
         w0 = _calculate_backoff(0, base=1.0)
-        w1 = _calculate_backoff(1, base=1.0)
+        _calculate_backoff(1, base=1.0)
         w2 = _calculate_backoff(2, base=1.0)
         # Average should increase (with ±20% jitter)
         assert w0 < 3  # ~1s ± jitter

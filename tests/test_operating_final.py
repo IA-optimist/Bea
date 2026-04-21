@@ -70,7 +70,7 @@ def test_scheduler_connector():
         "schedule_type": "manual", "task_action": "noop",
     })
     assert r.success
-    tid = r.data["task_id"]
+    r.data["task_id"]
 
     r2 = execute_connector("scheduler", {"action": "list"})
     assert r2.success

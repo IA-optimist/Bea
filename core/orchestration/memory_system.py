@@ -32,7 +32,7 @@ try:
         Distance,
         FieldCondition,
         Filter,
-        MatchRange,
+        MatchRange,  # noqa: F401
         MatchValue,
         PointStruct,
         Range,

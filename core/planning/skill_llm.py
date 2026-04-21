@@ -334,7 +334,6 @@ async def _invoke_async(
 
         # Model intelligence: select optimal model for this skill
         selected_role = _LLM_ROLE
-        selection_info = ""
         _valid_modes = ("budget", "normal", "critical")
         if budget_mode not in _valid_modes:
             budget_mode = "normal"
@@ -356,7 +355,6 @@ async def _invoke_async(
                     "fallback_only": "fallback",
                 }
                 selected_role = _TASK_TO_ROLE.get(task_class, _LLM_ROLE)
-                selection_info = f" [model_intel: {task_class}→{selected_role}]"
         except Exception:
             pass  # fail-open: use default role
 
@@ -370,7 +368,6 @@ async def _invoke_async(
         content = _parse_llm_output(raw, output_schema)
 
         # Schema validation + auto-repair (fail-open)
-        needs_requery = False
         try:
             from core.planning.output_enforcer import OutputEnforcer
             enforcer = OutputEnforcer()
@@ -379,7 +376,7 @@ async def _invoke_async(
                 content = enforcer.auto_repair(content, output_schema)
                 revalidation = enforcer.validate_against_schema(content, output_schema)
                 if revalidation.overall_score < 0.5:
-                    needs_requery = True
+                    pass
         except Exception:
             _silent_log.debug("suppressed_exception", src='skill_llm.py')
 

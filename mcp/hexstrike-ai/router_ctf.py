@@ -201,8 +201,8 @@ def ctf_cryptography_solver():
         params = request.json
         cipher_text = params.get("cipher_text", "")
         cipher_type = params.get("cipher_type", "unknown")
-        key_hint = params.get("key_hint", "")
-        known_plaintext = params.get("known_plaintext", "")
+        params.get("key_hint", "")
+        params.get("known_plaintext", "")
         additional_info = params.get("additional_info", "")
 
         if not cipher_text:

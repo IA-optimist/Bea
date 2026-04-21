@@ -169,7 +169,7 @@ def _detect_network() -> Capability:
     try:
         # Try DNS resolution — lightweight, no actual connection
         socket.setdefaulttimeout(2)
-        addr = socket.getaddrinfo("dns.google", 443, socket.AF_INET)
+        socket.getaddrinfo("dns.google", 443, socket.AF_INET)
         hostname = socket.gethostname()
         return Capability(
             name="network",

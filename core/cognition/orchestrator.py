@@ -231,7 +231,6 @@ Provide a comprehensive response addressing the mission goal."""
         # Phase 1: Tree-of-Thought reasoning (optional — for high-complexity tasks)
         # For now, skip ToT expansion to avoid 30s+ delays
         # Activate ToT for high-complexity (>7) or low-confidence (<0.5) missions
-        thought_tree = None
         # ToT activation is handled by should_use_tot() in meta_orchestrator
         
         # Phase 2: Execute mission with supervisor

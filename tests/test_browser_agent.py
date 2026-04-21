@@ -107,7 +107,7 @@ class TestSession:
     def test_list_filter(self, tmp_path):
         """BA4."""
         agent = BrowserAgent(data_dir=tmp_path, test_mode=True)
-        s1 = agent.create_session("a1")
+        agent.create_session("a1")
         s2 = agent.create_session("a2")
         agent.close_session(s2.session_id)
         active = agent.list_sessions(status="active")

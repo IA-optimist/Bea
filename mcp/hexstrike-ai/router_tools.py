@@ -3532,7 +3532,7 @@ def graphql_scanner():
         endpoint = params.get("endpoint", "")
         introspection = params.get("introspection", True)
         query_depth = params.get("query_depth", 10)
-        mutations = params.get("test_mutations", True)
+        params.get("test_mutations", True)
 
         if not endpoint:
             logger.warning("🌐 GraphQL Scanner called without endpoint parameter")

@@ -83,7 +83,7 @@ def trigger_mission_notification_sync(
     try:
         # Try to get current event loop
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # If we're in an async context, schedule as task
             asyncio.create_task(
                 on_mission_status_change(

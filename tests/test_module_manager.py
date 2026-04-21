@@ -139,7 +139,7 @@ class TestAgentCRUD:
     def test_list_filtered(self, tmp_path):
         """MM8."""
         mgr = self._mgr(tmp_path)
-        a1 = mgr.create_agent({"name": "Active"})
+        mgr.create_agent({"name": "Active"})
         a2 = mgr.create_agent({"name": "Inactive"})
         mgr.toggle_agent(a2.id)
         enabled = mgr.list_agents(status="enabled")

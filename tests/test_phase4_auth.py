@@ -37,7 +37,7 @@ class TestRouteAuth:
         # The middleware is the PRIMARY auth enforcement layer.
         # Individual route _check_auth() is defense-in-depth.
         from api.main import app
-        middleware_classes = [type(m).__name__ for m in app.user_middleware]
+        [type(m).__name__ for m in app.user_middleware]
         # Check that AccessEnforcementMiddleware was attempted
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
         with open(main_path) as f:

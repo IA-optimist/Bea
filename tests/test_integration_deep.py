@@ -53,8 +53,6 @@ def test_p1_convergence_router_is_separate():
 
 def test_p2_all_7_stages_wired():
     """All 7 lifecycle stages are recorded in the actual execution flow."""
-    stages_in_mission_system = set()
-    stages_in_tool_runner = set()
     with open("core/mission_system.py") as f:
         ms_src = f.read()
     with open("core/tool_runner.py") as f:

@@ -86,7 +86,6 @@ class KernelPolicyEngine:
             )
 
         if risk == RiskLevel.MEDIUM:
-            needs_approval = not action.requires_approval  # if already approved, don't re-ask
             return PolicyDecision(
                 allowed=True,
                 action_id=action.action_id,

@@ -473,7 +473,7 @@ def get_operational_signals() -> dict:
     try:
         from core.mission_performance_tracker import get_mission_performance_tracker
         mpt = get_mission_performance_tracker()
-        dashboard = mpt.get_dashboard_data()
+        mpt.get_dashboard_data()
         signals["mission_success_distribution"] = {
             t: {"success_rate": s.success_rate, "total": s.total}
             for t, s in mpt._type_stats.items()

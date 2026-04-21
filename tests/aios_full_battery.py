@@ -95,7 +95,7 @@ except Exception as e:
 async def ws_test_invalid():
     try:
         async with websockets.connect("ws://localhost:8000/ws/stream?token=bad", open_timeout=5) as ws:
-            m = await asyncio.wait_for(ws.recv(), timeout=3)
+            await asyncio.wait_for(ws.recv(), timeout=3)
             return False  # Should have been rejected
     except Exception:
         return True

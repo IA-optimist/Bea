@@ -25,7 +25,7 @@ def test_tool_selection_accuracy():
 def test_no_useless_tool_creation():
     """Pour une tâche simple (read file), should_create_tool doit retourner False."""
     result = should_create_tool("read a file from disk")
-    assert result["should_create"] == False, (
+    assert not result["should_create"], (
         f"Should NOT create tool for 'read file': {result}"
     )
     print(f"PASS test_no_useless_tool_creation: {result['reason']}")

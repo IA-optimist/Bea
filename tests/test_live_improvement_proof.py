@@ -54,7 +54,6 @@ class TestLiveProof:
             return "Changed + to - in add()"
 
         # Override run_tests to simulate real pytest results
-        original_run = engine.guard.run_tests
 
         call_count = [0]
         def mock_run_tests(test_path, timeout=120):

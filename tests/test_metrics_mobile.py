@@ -44,7 +44,7 @@ class TestSummaryEndpoint:
             reset_metrics, emit_mission_submitted, emit_mission_completed,
             emit_mission_failed, emit_tool_invocation, emit_model_selected,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_mission_submitted("code_review")
         emit_mission_submitted("code_review")
@@ -94,7 +94,7 @@ class TestRoutingEndpoint:
             reset_metrics, emit_model_selected, emit_model_failure,
             emit_model_latency, emit_fallback_used,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_model_selected("claude-sonnet", "cloud")
         emit_model_selected("claude-sonnet", "cloud")
@@ -123,7 +123,7 @@ class TestToolsEndpoint:
         from core.metrics_store import (
             reset_metrics, emit_tool_invocation, emit_tool_timeout,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_tool_invocation("shell_command", True, 150)
         emit_tool_invocation("shell_command", True, 200)
@@ -148,7 +148,7 @@ class TestImprovementEndpoint:
 
     def test_improvement_structure(self):
         from core.metrics_store import reset_metrics, emit_experiment
-        m = reset_metrics()
+        reset_metrics()
 
         emit_experiment("promoted", 0.15)
         emit_experiment("rejected", -0.05)
