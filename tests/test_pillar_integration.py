@@ -75,20 +75,20 @@ class TestMetaOrchestratorUsesUnifiedContracts(unittest.TestCase):
     def test_uses_facade_convenience(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
         self.assertIn("store_outcome", src)
         self.assertIn("store_failure", src)
 
     def test_uses_supervisor(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
         self.assertIn("execution_supervisor", src)
 
     def test_uses_classifier(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
         self.assertIn("mission_classifier", src)
 
 
