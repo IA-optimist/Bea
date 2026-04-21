@@ -347,7 +347,7 @@ class TestMetaOrchestratorIntegration:
         """MetaOrchestrator emits kernel events (dual emission wired)."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator.run_mission)
+        source = inspect.getsource(MetaOrchestrator)  # class source — features in helpers
         assert "emit_kernel_event" in source
         assert "mission.created" in source
         assert "mission.completed" in source
@@ -357,7 +357,7 @@ class TestMetaOrchestratorIntegration:
         """MetaOrchestrator has kernel capability enrichment phase."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator.run_mission)
+        source = inspect.getsource(MetaOrchestrator)  # class source — features in helpers
         assert "kernel_capabilities_count" in source
         assert "kernel_provider" in source
         assert "Phase 0d" in source
@@ -431,7 +431,7 @@ class TestConvergenceInvariants:
         """All kernel emissions in MetaOrchestrator are wrapped in try/except."""
         import re, inspect
         from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator.run_mission)
+        source = inspect.getsource(MetaOrchestrator)  # class source — features in helpers
         # Find all emit_kernel_event calls
         calls = [m.start() for m in re.finditer("emit_kernel_event", source)]
         assert len(calls) >= 3, f"Expected 3+ kernel emit calls, found {len(calls)}"
