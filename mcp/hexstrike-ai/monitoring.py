@@ -10,10 +10,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections import defaultdict, deque
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import psutil
 

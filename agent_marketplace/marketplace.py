@@ -421,7 +421,7 @@ class AgentMarketplace:
         for i, agent in enumerate(stats['top_agents'], 1):
             dashboard += f"{i}. **{agent['name']}** — €{agent['revenue']:,.2f} ({agent['installs']} installs)\n"
         
-        dashboard += f"""
+        dashboard += """
 ---
 
 ## 👥 Top Creators (by Revenue)
@@ -431,7 +431,7 @@ class AgentMarketplace:
         for i, creator in enumerate(stats['top_creators'], 1):
             dashboard += f"{i}. **{creator['name']}** — €{creator['revenue']:,.2f} ({creator['agents']} agents)\n"
         
-        dashboard += f"""
+        dashboard += """
 ---
 
 ## 📈 Agent Categories

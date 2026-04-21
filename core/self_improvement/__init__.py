@@ -156,7 +156,8 @@ class SelfImprovementManager:
         try:
             # The flat file core/self_improvement.py is shadowed, so we must
             # import it via importlib to bypass the package resolution.
-            import importlib.util, os
+            import importlib.util
+            import os
             flat_path = os.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
                 "self_improvement.py"

@@ -48,7 +48,7 @@ def test_failure_with_rollback():
     """
     Mission échouée + rollback → score faible (< 0.4).
     """
-    from core.knowledge.memory_quality import compute_memory_quality, classify_memory, should_store
+    from core.knowledge.memory_quality import compute_memory_quality, classify_memory
 
     mission_data = {
         "success": False,

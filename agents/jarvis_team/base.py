@@ -14,10 +14,8 @@ from __future__ import annotations
 import subprocess
 import structlog
 from pathlib import Path
-from abc import abstractmethod
 
 from agents.crew import BaseAgent
-from core.state import JarvisSession
 
 log = structlog.get_logger(__name__)
 

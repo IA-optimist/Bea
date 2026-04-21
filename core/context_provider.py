@@ -5,7 +5,6 @@ Fail-open: if any source is unavailable, returns partial context.
 from __future__ import annotations
 
 import json
-import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -265,7 +264,6 @@ class ContextProvider:
         block = self.get_context("map-planner", mission_id=mission_id, max_entries=10)
         # Inject known agent list
         try:
-            from core.task_router import TaskRouter
             block.relevant_files.append("core/task_router.py")
         except Exception:
             _silent_log.debug("suppressed_exception", src='context_provider.py')

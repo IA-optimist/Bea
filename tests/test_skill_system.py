@@ -9,7 +9,6 @@ import pytest
 
 import os
 import sys
-import json
 import tempfile
 import unittest
 
@@ -18,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.skills.skill_models import Skill, SkillStep
 from core.skills.skill_registry import SkillRegistry
-from core.skills.skill_retriever import SkillRetriever, _tokenize, _cosine_similarity
+from core.skills.skill_retriever import SkillRetriever, _tokenize
 from core.skills.skill_builder import SkillBuilder
 from core.skills.skill_service import SkillService
 
@@ -337,7 +336,7 @@ class TestMetaOrchestratorIntegration(unittest.TestCase):
 
     def test_skill_system_importable(self):
         """Verify clean import chain."""
-        from core.skills import Skill, SkillStep, SkillService, get_skill_service
+        from core.skills import get_skill_service
         svc = get_skill_service()
         self.assertIsNotNone(svc)
         stats = svc.stats()

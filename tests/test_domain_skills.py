@@ -1,7 +1,6 @@
 """
 tests/test_domain_skills.py — Domain skill system tests.
 """
-import json
 import os
 import tempfile
 import pytest

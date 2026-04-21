@@ -3,9 +3,8 @@ Tree-of-Thought Reasoning for JarvisMax
 Multi-path exploration with pruning and evaluation.
 """
 from __future__ import annotations
-import asyncio
 from dataclasses import dataclass
-from typing import List, Optional, Callable, Any
+from typing import List, Optional, Callable
 import structlog
 
 log = structlog.get_logger(__name__)

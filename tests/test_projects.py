@@ -8,7 +8,6 @@ and skipped by default. Run with --run-infra-tests to include them.
 """
 import os
 import pytest
-from uuid import UUID
 
 # Mark all tests in this module as requiring infrastructure
 pytestmark = pytest.mark.infra

@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Optional
 
 import structlog
-from fastapi import Depends, APIRouter, Header, HTTPException, Query
+from fastapi import Depends, APIRouter, Header, Query
 from api._deps import _check_auth
 
 log = structlog.get_logger(__name__)

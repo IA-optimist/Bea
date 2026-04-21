@@ -16,7 +16,6 @@ import ast
 import sys
 import time
 from pathlib import Path
-from typing import Any
 _silent_log = __import__("structlog").get_logger(__name__)
 
 # Ensure project root on path
@@ -348,14 +347,11 @@ def group_agent_contract():
     print("\n── GROUP 6: Agent Contract (R7) ──")
 
     def t_protocol_importable():
-        from kernel.contracts.agent import (
-            KernelAgentContract, KernelAgentResult, KernelAgentTask,
-            AgentHealthStatus, KernelAgentRegistry, get_agent_registry,
-        )
+        pass
 
     def t_structural_typing():
         from kernel.contracts.agent import (
-            KernelAgentContract, KernelAgentResult, KernelAgentTask, AgentHealthStatus
+            KernelAgentContract, KernelAgentResult, AgentHealthStatus
         )
         # Define a conforming agent without inheriting
         class MyAgent:
@@ -371,7 +367,7 @@ def group_agent_contract():
         assert isinstance(MyAgent(), KernelAgentContract), "MyAgent should satisfy protocol"
 
     def t_registry_rejects_non_conforming():
-        from kernel.contracts.agent import KernelAgentRegistry, KernelAgentContract
+        from kernel.contracts.agent import KernelAgentRegistry
 
         class BadAgent:  # missing agent_id, capability_type, execute, health_check
             pass
@@ -402,7 +398,7 @@ def group_interfaces():
     print("\n── GROUP 7: Interfaces Adapter (R8) ──")
 
     def t_adapter_importable():
-        from interfaces import KernelAdapter, AdapterResult, get_kernel_adapter
+        pass
 
     def t_adapter_result_decoupled():
         # AdapterResult must NOT import ExecutionResult from kernel

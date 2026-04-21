@@ -11,7 +11,6 @@ Standalone functions (used by tool_executor.py):
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import logging
@@ -178,7 +177,7 @@ def _search_in_files_python(root: Path, pattern: str) -> str:
                     rel = fpath.relative_to(_WORKSPACE)
                     matches.append(f"{rel}:{i}:{line.rstrip()}")
                     if len(matches) >= 200:
-                        matches.append(f"\n[truncated at 200 matches]")
+                        matches.append("\n[truncated at 200 matches]")
                         return "\n".join(matches)
         except Exception:
             continue

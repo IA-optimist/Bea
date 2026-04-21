@@ -14,7 +14,6 @@ Usage :
 """
 from __future__ import annotations
 
-import asyncio
 import importlib.util
 import sys
 import os

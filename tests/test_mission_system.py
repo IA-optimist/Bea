@@ -15,7 +15,6 @@ import os
 import tempfile
 import types
 import pytest
-import json
 from pathlib import Path
 
 # Bootstrap path & mock structlog

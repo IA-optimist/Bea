@@ -153,7 +153,7 @@ def handle_plan(task: "ExecutionTask") -> str:
         from core.mission_system import get_mission_system
         ms    = get_mission_system()
         stats = ms.stats()
-        lines.append(f"Contexte actuel :")
+        lines.append("Contexte actuel :")
         lines.append(f"  Missions totales  : {stats.get('total', 0)}")
     except Exception as exc:
         lines.append(f"Contexte : {exc}")
@@ -235,7 +235,7 @@ def handle_generic(task: "ExecutionTask") -> str:
         all_acts = q.all(limit=500)
         executed = sum(1 for a in all_acts if a.status == "EXECUTED")
         pending  = sum(1 for a in all_acts if a.status == "PENDING")
-        lines.append(f"Snapshot système :")
+        lines.append("Snapshot système :")
         lines.append(f"  Actions exécutées : {executed}")
         lines.append(f"  Actions en attente: {pending}")
     except Exception as exc:

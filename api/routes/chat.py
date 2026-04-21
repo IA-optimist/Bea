@@ -7,7 +7,6 @@ POST /api/v3/chat - Conversational interaction with context
 """
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field

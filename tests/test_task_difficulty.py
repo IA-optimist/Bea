@@ -72,7 +72,7 @@ def test_deploy_task_is_high():
     Déployer + rebuild + restart docker → HIGH ou VERY_HIGH.
     """
     from core.knowledge.difficulty_estimator import (
-        estimate_difficulty, LABEL_HIGH, LABEL_VERY_HIGH, LABEL_LOW, LABEL_MEDIUM
+        estimate_difficulty, LABEL_HIGH, LABEL_VERY_HIGH
     )
 
     result = estimate_difficulty(

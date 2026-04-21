@@ -3,7 +3,6 @@ Tree-of-Thought wrapper for mission planning.
 Integrates ToT with JarvisMax LLM client.
 """
 import os
-from typing import Optional
 import structlog
 from core.cognition.tree_of_thought import TreeOfThought
 

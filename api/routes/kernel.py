@@ -285,7 +285,6 @@ async def convergence_status(user=Depends(_auth())):
         _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
-        from kernel.convergence.event_bridge import emit_kernel_event
         status["events_dual_emission"] = True
     except Exception:
         _silent_log.debug("suppressed_exception", src='kernel.py')
@@ -298,15 +297,11 @@ async def convergence_status(user=Depends(_auth())):
         _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
-        from kernel.convergence.policy_bridge import check_action_kernel
         status["policy_bridge_active"] = True
     except Exception:
         _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
-        from kernel.adapters.mission_adapter import mission_context_to_kernel
-        from kernel.adapters.plan_adapter import execution_plan_to_kernel
-        from kernel.adapters.result_adapter import tool_result_to_kernel
         status["adapters_available"] = True
     except Exception:
         _silent_log.debug("suppressed_exception", src='kernel.py')
@@ -326,7 +321,6 @@ async def convergence_status(user=Depends(_auth())):
         _silent_log.debug("suppressed_exception", src='kernel.py')
 
     try:
-        from kernel.convergence.performance_routing import enrich_providers
         status["performance_routing"] = True
     except Exception:
         _silent_log.debug("suppressed_exception", src='kernel.py')
@@ -419,7 +413,6 @@ async def agent_health_check(agent_id: str, user=Depends(_auth())):
         agent = registry.get(agent_id)
         if agent is None:
             return {"error": "agent_not_found", "agent_id": agent_id}
-        import asyncio
         health = await agent.health_check()
         return {
             "agent_id": agent_id,

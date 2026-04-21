@@ -16,8 +16,7 @@ import tempfile
 import types
 import pytest
 import time
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
+from unittest.mock import Mock, patch
 
 # Bootstrap path & mock structlog
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

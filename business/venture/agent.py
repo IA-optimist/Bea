@@ -3,11 +3,10 @@ JARVIS BUSINESS LAYER — Venture Builder : Agent
 Analyse un secteur ou une idée et retourne des opportunités business scorées.
 """
 from __future__ import annotations
-import json
 import structlog
 from agents.crew import BaseAgent
 from core.state import JarvisSession
-from business.venture.schema import VentureReport, parse_venture_report
+from business.venture.schema import parse_venture_report
 
 log = structlog.get_logger()
 

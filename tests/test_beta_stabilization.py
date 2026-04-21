@@ -6,7 +6,6 @@ proposal prioritization, tool validation, recovery wiring,
 and integration tests for beta stability.
 """
 import ast
-import json
 import os
 import sys
 import time

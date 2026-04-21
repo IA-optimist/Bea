@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -88,7 +87,7 @@ class ProductBuilder:
         Returns:
             ProductSpec
         """
-        logger.info(f"📝 Generating product spec...")
+        logger.info("📝 Generating product spec...")
         
         # Extract info
         title = opportunity_data.get('title', 'Untitled')
@@ -496,7 +495,7 @@ BACKEND_URL=https://yourapp.railway.app
         env_path = project_dir / ".env.example"
         env_path.write_text(env_example)
         
-        logger.info(f"    ✅ Deployment configs: vercel.json, railway.json")
+        logger.info("    ✅ Deployment configs: vercel.json, railway.json")
     
     def _generate_readme(self, project_dir: Path, spec: ProductSpec):
         """Generate README"""
@@ -725,13 +724,13 @@ def main():
     spec = builder.generate_spec(opportunity)
     project_dir = builder.build_product(spec)
     
-    print(f"\n✅ Product built successfully!")
+    print("\n✅ Product built successfully!")
     print(f"📁 Location: {project_dir}")
-    print(f"\n📝 Next steps:")
+    print("\n📝 Next steps:")
     print(f"   1. cd {project_dir}")
-    print(f"   2. Review generated files")
-    print(f"   3. Configure .env (see .env.example)")
-    print(f"   4. Deploy: vercel deploy && railway up")
+    print("   2. Review generated files")
+    print("   3. Configure .env (see .env.example)")
+    print("   4. Deploy: vercel deploy && railway up")
 
 
 if __name__ == '__main__':

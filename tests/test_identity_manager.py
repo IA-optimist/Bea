@@ -60,7 +60,6 @@ Manager Integration
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -68,7 +67,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from core.identity.identity_schema import (
-    Identity, IdentityType, IdentityStatus, Environment, SessionState, SecretLink,
+    Identity, IdentityType, SecretLink,
 )
 from core.identity.identity_templates import (
     get_template, list_templates, register_template, template_providers,
@@ -77,9 +76,9 @@ from core.identity.identity_templates import (
 from core.identity.identity_policy import (
     IdentityPolicy, IdentityPolicyEngine, check_identity_permission,
 )
-from core.identity.identity_graph import IdentityGraph, EdgeType, GraphEdge
+from core.identity.identity_graph import IdentityGraph
 from core.identity.identity_audit import IdentityAuditLog, IdentityAction
-from core.identity.identity_manager import IdentityManager, IdentityUseResult
+from core.identity.identity_manager import IdentityManager
 
 
 # ═══════════════════════════════════════════════════════════════

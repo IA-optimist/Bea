@@ -36,11 +36,10 @@ Phase 7 when the kernel becomes the primary executor.
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Optional
 _silent_log = __import__("structlog").get_logger(__name__)
 

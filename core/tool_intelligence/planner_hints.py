@@ -2,7 +2,8 @@
 Injects tool intelligence hints into planner context.
 Fail-open: if disabled or error, returns empty hints dict.
 """
-import logging, os
+import logging
+import os
 
 logger = logging.getLogger(__name__)
 _ENABLED = os.getenv("USE_TOOL_INTELLIGENCE", "false").lower() == "true"

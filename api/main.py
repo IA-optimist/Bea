@@ -20,7 +20,6 @@ from __future__ import annotations
 from dotenv import load_dotenv
 load_dotenv()
 
-import asyncio
 import os
 import time
 from pathlib import Path
@@ -30,17 +29,17 @@ from pathlib import Path
 # (finance, venture, playbooks, browser, voice). Default: false.
 # When false, these endpoints return 404 instead of fake 200 with empty data.
 _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
-from typing import Any, Optional
+from typing import Any
 
 import structlog
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, Response, WebSocket
-from api._deps import require_auth, get_start_time, _check_auth
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket
+from api._deps import require_auth, get_start_time
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
 from api.security_headers import SecurityHeadersMiddleware
 from api.token_utils import strip_bearer
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -893,7 +892,7 @@ async def json_login(request: Request, response: Response):
     password = body.get("password") or ""
     if not username or not password:
         raise HTTPException(status_code=400, detail="username/email and password required")
-    from api.auth import _check_auth_password, create_access_token
+    from api.auth import _check_auth_password
     token = _check_auth_password(username, password)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -961,7 +960,6 @@ async def refresh_token(request: Request, response: Response):
     Retourne un nouveau token + met à jour le cookie HttpOnly.
     401 si le token actuel est invalide ou expiré.
     """
-    from api.token_utils import strip_bearer
     from api.auth import create_access_token, verify_token
 
     # Priorité cookie → Bearer → X-Jarvis-Token (aligne sur require_auth).
@@ -1007,7 +1005,7 @@ async def chat_v2_alias(request: Request):
         from api.routes.chat import chat
         body = await request.json()
         from pydantic import BaseModel
-        from typing import List, Dict, Any
+        from typing import List
         
         class ChatMessage(BaseModel):
             role: str

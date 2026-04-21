@@ -4,7 +4,6 @@ Permet à l'agent de ne pas répéter les mêmes erreurs de syntaxe, ou de se so
 des configurations systèmes spécifiques utiles à sa survie.
 """
 import json
-import os
 import structlog
 from pathlib import Path
 _silent_log = __import__("structlog").get_logger(__name__)

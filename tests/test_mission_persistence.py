@@ -337,7 +337,6 @@ class TestMetaOrchestratorIntegration:
 
     def test_MP28_transition_persists(self):
         """MetaOrchestrator._transition calls persistence."""
-        from core.meta_orchestrator import MetaOrchestrator
         src = open(os.path.join(os.path.dirname(__file__), "..", "core", "meta_orchestrator.py")).read()
         assert "mission_persistence" in src
         assert "get_mission_persistence" in src
@@ -385,7 +384,6 @@ class TestAPI:
 
     def test_MP35_routes_auth_protected(self):
         """All mission persistence routes require auth."""
-        import inspect
         from api.routes.mission_persistence import router
         for route in router.routes:
             if hasattr(route, "dependant"):

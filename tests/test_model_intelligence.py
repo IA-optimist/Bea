@@ -16,8 +16,7 @@ import tempfile
 from pathlib import Path
 from core.model_intelligence.catalog import ModelEntry, ModelCatalog
 from core.model_intelligence.selector import (
-    ModelProfile, ModelPerformanceMemory, ModelPerformanceRecord,
-    ModelSelector, SelectionResult, build_profile,
+    ModelPerformanceMemory, ModelSelector, SelectionResult, build_profile,
     TASK_CLASSES, SKILL_TASK_MAP, ROLE_TASK_MAP,
 )
 
@@ -361,7 +360,8 @@ class TestAPI:
         assert any("recommendations" in p for p in paths)
 
     def test_MI29_router_mounted(self):
-        import inspect, importlib
+        import inspect
+        import importlib
         main_mod = importlib.import_module("api.main")
         source = inspect.getsource(main_mod)
         assert "models_router" in source

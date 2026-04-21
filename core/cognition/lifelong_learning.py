@@ -16,7 +16,7 @@ import json
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 import structlog
 
 log = structlog.get_logger(__name__)

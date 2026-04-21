@@ -10,7 +10,7 @@ Validates:
 import os
 import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 _silent_log = __import__("structlog").get_logger(__name__)
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

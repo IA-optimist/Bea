@@ -908,7 +908,7 @@ def tool_store_pattern(pattern_type: str, problem: str, solution: str,
             data={"confidence": confidence, "type": pattern_type},
             error=result.get("error", ""),
         )
-    except Exception as e:
+    except Exception:
         # Fail-open: store to local JSON file
         import json as _json
         store_path = REPO_ROOT / "workspace" / "knowledge_store.jsonl"
@@ -991,7 +991,6 @@ def tool_store_decision(decision: str, rationale: str, impact: str,
 def tool_create_task(agent: str, description: str, priority: int = 2,
                      depends_on: list[str] | None = None) -> ToolResult:
     """Create a task description for an agent."""
-    import json as _json
     task = {
         "agent": agent,
         "description": description[:500],

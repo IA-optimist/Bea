@@ -121,10 +121,10 @@ class AdvisoryScorer:
                 steps.append((f"MALUS blocage HIGH: {issue.description[:30]}", -self.MALUS_BLOCK_HIGH))
             elif sev == IssueSeverity.MEDIUM.value:    # "medium"
                 score -= self.MALUS_BLOCK_MEDIUM
-                steps.append((f"MALUS blocage MEDIUM", -self.MALUS_BLOCK_MEDIUM))
+                steps.append(("MALUS blocage MEDIUM", -self.MALUS_BLOCK_MEDIUM))
             else:                                      # "low" + tout autre cas
                 score -= self.MALUS_BLOCK_LOW
-                steps.append((f"MALUS blocage LOW", -self.MALUS_BLOCK_LOW))
+                steps.append(("MALUS blocage LOW", -self.MALUS_BLOCK_LOW))
 
         if report.inconsistencies:
             malus = min(len(report.inconsistencies) * self.MALUS_INCONSISTENCY, 2.0)

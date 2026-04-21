@@ -11,7 +11,6 @@ Ils testent que:
 """
 import os
 import pytest
-from pathlib import Path
 
 
 # ── Skip si module security.improvement_gate retiré (drift connu) ─────────

@@ -405,7 +405,7 @@ class TestCapabilityDispatcherTimeouts:
     def test_dispatch_never_raises(self):
         """dispatch() must never raise, regardless of input."""
         from executor.capability_dispatch import CapabilityDispatcher
-        from executor.capability_contracts import CapabilityRequest, CapabilityType
+        from executor.capability_contracts import CapabilityRequest
 
         dispatcher = CapabilityDispatcher()
 

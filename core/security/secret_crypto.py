@@ -14,13 +14,9 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
 import logging
 import os
-import secrets
-import time
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +170,7 @@ def decrypt(payload: EncryptedPayload, master_key: bytes) -> str:
 
     except ImportError:
         raise CryptoError("cryptography library required for AES-256-GCM")
-    except Exception as e:
+    except Exception:
         # Never include key material in error messages
         raise DecryptionError("Decryption failed — wrong key or corrupted data")
 

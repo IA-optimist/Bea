@@ -109,7 +109,8 @@ class TestAPIEndpoints:
 
     def test_EW06_router_mounted(self):
         """Economic router is mounted in main app."""
-        import inspect, importlib
+        import inspect
+        import importlib
         main_mod = importlib.import_module("api.main")
         source = inspect.getsource(main_mod)
         assert "economic_router" in source
@@ -400,7 +401,8 @@ class TestNoSecretLeakage:
 
     def test_EW30_api_no_env_vars(self):
         """Economic API responses don't contain environment variables."""
-        import asyncio, json, os
+        import asyncio
+        import json
         from api.routes.economic import list_strategic_records, get_recommendations
 
         mem_result = asyncio.get_event_loop().run_until_complete(

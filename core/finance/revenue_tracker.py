@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any
 
 from core.finance.finance_memory import FinanceMemory
 
@@ -106,7 +105,6 @@ class RevenueTracker:
 
     def monthly_revenue(self, months: int = 6) -> list[dict]:
         """Get revenue by month (from events)."""
-        import calendar
         from collections import defaultdict
 
         by_month: dict[str, int] = defaultdict(int)

@@ -7,7 +7,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import JarvisSession
-from business.meta_builder.schema import MetaBuildPlan, parse_meta_build_plan
+from business.meta_builder.schema import parse_meta_build_plan
 
 log = structlog.get_logger()
 

@@ -2,7 +2,9 @@
 Wrapper to import the real docker SDK, bypassing /app/docker/ directory shadowing.
 Use: from docker_sdk import docker
 """
-import sys, importlib.util, os
+import sys
+import importlib.util
+import os
 
 def _load_real_docker():
     for path in sys.path:

@@ -10,14 +10,12 @@ Validates:
   - API endpoints
   - Extensibility (save/version)
 """
-import json
 import pytest
 pytestmark = pytest.mark.integration
 
 from core.planning.playbook import (
     Playbook, PlaybookStep, PlaybookRegistry,
     PlaybookPerformanceTracker, execute_playbook,
-    get_playbook_registry,
 )
 
 
@@ -234,7 +232,8 @@ class TestExtensibility:
 
     def test_PB23_save_and_reload(self):
         """Custom playbook can be saved and reloaded."""
-        import tempfile, os
+        import tempfile
+        import os
         from pathlib import Path
         import core.planning.playbook as _mod
 

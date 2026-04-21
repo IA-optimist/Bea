@@ -197,7 +197,7 @@ class FailureCollector:
                     symptom=f"Agent {agent_id or 'inconnu'} a échoué",
                     cause="Exception non gérée dans BaseAgent.run() ou timeout",
                     evidence=message[:200],
-                    affected_files=[f"agents/crew.py"],
+                    affected_files=["agents/crew.py"],
                 ))
 
             # json_parse_error : tentative de parse JSON échouée (heuristique)

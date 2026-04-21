@@ -103,7 +103,7 @@ def create_access_token(data: dict, expires_in: int = 2592000) -> str:
     if _JWT_AVAILABLE:
         payload = {**data, "exp": int(time.time()) + expires_in, "iat": int(time.time())}
         return _jwt.encode(payload, _secret(), algorithm="HS256")
-    import hashlib, json
+    import json
     payload_str = json.dumps(data, sort_keys=True)
     sig = hashlib.sha256((payload_str + _secret()).encode()).hexdigest()[:16]
     return f"token.{sig}"
@@ -138,7 +138,8 @@ def verify_token(token_str: str) -> Optional[dict]:
         except Exception:
             _silent_log.debug("suppressed_exception", src='auth.py')
         # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
-        import os as _os, hmac as _hmac
+        import os as _os
+        import hmac as _hmac
         _static = _os.environ.get('JARVIS_API_TOKEN', '')
         if _static and _hmac.compare_digest(token_str.encode(), _static.encode()):
             return {'username': 'api', 'role': 'admin', 'auth_type': 'static'}

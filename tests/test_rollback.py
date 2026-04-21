@@ -1,5 +1,6 @@
 """Test complet du système de rollback."""
-import sys, os, time
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.rollback_manager import (

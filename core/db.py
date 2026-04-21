@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-import time
 from pathlib import Path
 _silent_log = __import__("structlog").get_logger(__name__)
 

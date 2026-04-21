@@ -17,10 +17,7 @@ import os
 import types
 import unittest
 from dataclasses import dataclass, field
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 # These are pure unit tests — no live infra required (no Qdrant, no server, no LLM key).
 # Do NOT add pytest.mark.integration here; that would cause them to be skipped in CI.
@@ -131,7 +128,7 @@ class TestCheckSessionOutcome(unittest.TestCase):
             content_map={"a": "meaningful output"},
         )
         ok, reason, cls = self._check(s)
-        self.assertTrue(ok, f"20% success = exactly at threshold, should be ok=True")
+        self.assertTrue(ok, "20% success = exactly at threshold, should be ok=True")
 
     # ── 2. Invalid key / provider auth failure ────────────────────────────────
 
@@ -387,7 +384,6 @@ class TestMetaOrchestratorTerminalState(unittest.TestCase):
         When supervise() returns outcome.success=False, the mission must reach
         FAILED (not DONE/COMPLETED). Tests the critical else-branch in MetaOrchestrator.
         """
-        from core.state import MissionStatus
         # The else-branch in meta_orchestrator.py line 1326:
         # else:
         #     self._circuit_breaker.record_failure()

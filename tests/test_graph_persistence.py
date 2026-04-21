@@ -3,8 +3,6 @@ tests/test_graph_persistence.py — Execution graph persistence tests.
 
 GP01-GP20: Save, load, resume, list, index, history, stats.
 """
-import pytest
-from pathlib import Path
 
 
 class TestGraphRepository:

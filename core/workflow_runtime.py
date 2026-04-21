@@ -35,8 +35,6 @@ import logging
 import os
 import time
 import uuid
-import hashlib
-from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Optional
 _silent_log = __import__("structlog").get_logger(__name__)

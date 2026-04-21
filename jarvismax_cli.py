@@ -11,7 +11,6 @@ Commands:
     jarvismax logs [n]          Show last N log entries
 """
 import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -103,7 +102,7 @@ async def cmd_build(args):
         product = result["product"]
         artifacts = result["artifacts"]
         
-        print(f"✅ Product built successfully!\n")
+        print("✅ Product built successfully!\n")
         print(f"Name: {product['name']}")
         print(f"Stack: {product['stack']}")
         print(f"Output: {product['output_dir']}\n")
@@ -144,7 +143,7 @@ async def cmd_deploy(args):
     
     if result["status"] == "success":
         deployment = result["deployment"]
-        print(f"✅ Deployed successfully!")
+        print("✅ Deployed successfully!")
         print(f"URL: {deployment['url']}")
         print(f"Platform: {deployment['platform']}")
     else:
@@ -170,7 +169,7 @@ async def cmd_status(args):
         print(f"Kernel:        ERROR ({str(e)[:50]})")
     
     # Get orchestrator status
-    print(f"Orchestrator:  READY")
+    print("Orchestrator:  READY")
     print(f"Custom handlers: {len(orchestrator._custom_handlers)}")
     
     # Get active missions

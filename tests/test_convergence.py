@@ -11,8 +11,6 @@ Tests:
 7. Feature flag isolation
 """
 import ast
-import os
-import json
 from pathlib import Path
 
 import pytest

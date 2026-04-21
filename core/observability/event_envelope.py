@@ -11,7 +11,7 @@ import uuid
 import threading
 import logging
 from dataclasses import dataclass, field, asdict
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 log = logging.getLogger("jarvis.observability")
 

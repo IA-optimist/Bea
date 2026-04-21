@@ -54,29 +54,25 @@ Vault Integration
 import os
 import sys
 import time
-import tempfile
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.security.secret_crypto import (
     derive_master_key, encrypt, decrypt,
-    EncryptedPayload, CryptoError, DecryptionError, VaultLockedError,
-    key_fingerprint, NONCE_SIZE,
+    EncryptedPayload, CryptoError, DecryptionError,
 )
 from core.security.secret_policy import (
     SecretMetadata, SecretPolicy, PolicyEngine,
-    check_permission, Role, RiskLevel, RevealPolicy, SecretType,
-    PolicyViolation,
+    check_permission,
 )
 from core.security.secret_audit import (
-    SecretAuditLog, AuditAction, AuditEntry,
+    SecretAuditLog, AuditAction,
 )
 from core.security.totp_manager import (
-    generate_totp, verify_totp, decode_seed, generate_seed,
-    time_remaining, TOTPConfig, build_otpauth_uri,
+    generate_totp, verify_totp, generate_seed,
+    time_remaining,
 )
-from core.security.secret_vault import SecretVault, UseResult
+from core.security.secret_vault import SecretVault
 
 import pytest
 

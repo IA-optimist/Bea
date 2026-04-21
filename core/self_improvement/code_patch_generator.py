@@ -20,8 +20,6 @@ import structlog
 import re
 import textwrap
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
 
 log = structlog.get_logger()
 

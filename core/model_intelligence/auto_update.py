@@ -11,7 +11,6 @@ Design:
 from __future__ import annotations
 
 import time
-import random
 import structlog
 from dataclasses import dataclass, field
 from typing import Optional
@@ -225,7 +224,7 @@ class ModelAutoUpdate:
         candidates = []
         try:
             from core.model_intelligence.selector import (
-                get_model_performance, get_model_selector, TASK_CLASSES,
+                get_model_performance, TASK_CLASSES,
             )
             perf = get_model_performance()
             for tc in TASK_CLASSES:

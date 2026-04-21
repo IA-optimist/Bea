@@ -5,14 +5,11 @@ Extended Real-Mission Validation
 Observes: retry, fallback, tool selection, memory, proposals,
 determinism, latency, failure clustering.
 """
-import ast
-import json
 import os
 import sys
 import tempfile
 import time
 import types
-from collections import Counter
 import pytest
 pytestmark = pytest.mark.integration
 
@@ -492,7 +489,6 @@ def test_mission9_degraded_model():
         assert proposals == []
 
         # Dynamic routing should fall through to static
-        from core.dynamic_agent_router import is_enabled as dr_enabled
         # Dynamic routing is a separate flag — should still be independently controllable
         # But intelligence being disabled doesn't necessarily disable routing
         # This is by design: routing uses its own JARVIS_DYNAMIC_ROUTING flag

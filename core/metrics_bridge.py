@@ -26,7 +26,6 @@ Design:
 """
 from __future__ import annotations
 
-import asyncio
 import functools
 import json
 import os
@@ -64,7 +63,7 @@ def _patch_meta_orchestrator() -> bool:
             from core.metrics_store import (
                 emit_mission_submitted, emit_mission_completed,
                 emit_mission_failed, emit_mission_timeout,
-                emit_orchestrator_timing, get_metrics,
+                get_metrics,
             )
 
             # Classify mission type from mode/goal
@@ -188,7 +187,6 @@ def _patch_llm_factory() -> bool:
                                        session_id="", agent_name="", **kwargs):
             from core.metrics_store import (
                 emit_model_latency, emit_model_failure,
-                emit_fallback_used, get_metrics,
             )
 
             t0 = time.monotonic()

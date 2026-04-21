@@ -5,7 +5,6 @@ Thread-safe singleton. Tools can be registered programmatically or loaded from J
 """
 from __future__ import annotations
 
-import json
 import os
 import threading
 import structlog

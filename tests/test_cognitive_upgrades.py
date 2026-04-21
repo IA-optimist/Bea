@@ -13,7 +13,10 @@ Tests for all 8 cognitive/agentic upgrades:
 
 Total: 80 tests
 """
-import sys, os, json, tempfile, time
+import sys
+import os
+import json
+import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
@@ -780,7 +783,6 @@ class TestCapabilityGraphAutoPopulation:
     def test_CG06_no_secrets_in_graph(self):
         """Capability graph must not contain secrets or tokens."""
         from core.capability_graph import CapabilityGraph
-        import json
         g = CapabilityGraph()
         g.populate_from_runtime()
         dump = json.dumps([c.to_dict() for c in g._capabilities.values()])

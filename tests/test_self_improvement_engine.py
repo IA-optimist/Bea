@@ -17,8 +17,6 @@ Coverage:
 import json
 import os
 import sys
-import shutil
-import time
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

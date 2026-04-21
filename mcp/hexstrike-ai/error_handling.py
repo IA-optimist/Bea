@@ -3,21 +3,15 @@ HexStrike Error Handling — intelligent error classification + recovery.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
 import re
 import socket
-import subprocess
-import threading
-import time
-from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 
 logger = logging.getLogger("hexstrike_server")

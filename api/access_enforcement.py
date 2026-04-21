@@ -15,7 +15,6 @@ Messages are user-friendly (no raw error codes).
 """
 from __future__ import annotations
 
-from typing import Optional
 from api.auth import verify_token, has_permission
 from api.access_tokens import get_token_manager, AccessToken
 
@@ -56,8 +55,6 @@ _PUBLIC_PATHS = {
     "/redoc",
 }
 
-import os
-import sys
 _silent_log = __import__("structlog").get_logger(__name__)
 
 # Paths that match by prefix (static files)

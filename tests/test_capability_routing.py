@@ -24,7 +24,6 @@ Integration
 """
 import os
 import sys
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -46,7 +45,7 @@ class TestSpec:
         assert {s.value for s in ProviderStatus} == expected
 
     def test_CR03_provider_spec_fields(self):
-        from core.capability_routing.spec import ProviderSpec, ProviderType, ProviderStatus
+        from core.capability_routing.spec import ProviderSpec, ProviderType
         p = ProviderSpec(
             provider_id="agent:coder",
             provider_type=ProviderType.AGENT,
@@ -659,7 +658,7 @@ class TestIntegration:
 
     def test_CR80_backward_compat(self):
         """Existing test suites import MetaOrchestrator without error."""
-        from core.meta_orchestrator import MetaOrchestrator, get_meta_orchestrator
+        from core.meta_orchestrator import MetaOrchestrator
         m = MetaOrchestrator()
         assert hasattr(m, "run_mission")
         assert hasattr(m, "jarvis")
@@ -909,8 +908,6 @@ class TestPhase12Integration:
     def test_CR104_registry_refresh_stable_routing(self):
         """Routing produces consistent results after registry refresh."""
         from core.capability_routing.registry import ProviderRegistry
-        from core.capability_routing.spec import CapabilityRequirement
-        from core.capability_routing.scorer import rank_providers
 
         r = ProviderRegistry()
         r.populate()

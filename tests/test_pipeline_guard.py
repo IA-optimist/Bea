@@ -1,6 +1,6 @@
 """Tests du pipeline guard — garantie final_output non vide."""
 import pytest
-from api.pipeline_guard import build_safe_final_output, synthesize_from_agent_outputs
+from api.pipeline_guard import build_safe_final_output
 
 def _ao(name, result):
     return {"agent_name": name, "result": result}

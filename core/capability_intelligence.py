@@ -27,15 +27,13 @@ Usage:
 """
 from __future__ import annotations
 
-import importlib
 import json
 import os
 import re
 import time
-from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 _silent_log = __import__("structlog").get_logger(__name__)
 
 try:

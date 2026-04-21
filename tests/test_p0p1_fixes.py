@@ -76,7 +76,7 @@ async def test_jarvis_team_dispatcher_continue():
     has_break = any(action == 'break' for _, _, action in except_blocks)
     
     assert has_continue, "Should use 'continue' in exception handler"
-    assert not has_break, f"Should NOT use 'break' in exception handler"
+    assert not has_break, "Should NOT use 'break' in exception handler"
     
     print("✓ Uses 'continue' instead of 'break' (agents don't block each other)")
     return True

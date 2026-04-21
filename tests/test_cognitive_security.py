@@ -11,13 +11,15 @@ Verifies:
 
 Total: 30 tests
 """
-import sys, os, json, tempfile, time
+import sys
+import os
+import json
+import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ADMIN_PASSWORD_HASH", "test-hash")
 os.environ.setdefault("JARVISMAX_DATA_DIR", tempfile.mkdtemp())
 
-import pytest
 
 
 # ═══════════════════════════════════════════════════════════════

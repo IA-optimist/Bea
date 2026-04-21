@@ -10,7 +10,6 @@ Stratégie :
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 import asyncio
 import json
 import hashlib

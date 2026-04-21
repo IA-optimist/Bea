@@ -10,10 +10,8 @@ P8: Shell security
 """
 import pytest
 import ast
-import json
 import os
 import sys
-import time
 import types
 
 if 'structlog' not in sys.modules:

@@ -4,10 +4,6 @@ tests/test_engineering_discipline.py — Tests for engineering discipline module
 ED01-ED40: Codebase awareness, impact analysis, consistency checks,
 change classification, change reporting.
 """
-import pytest
-import os
-import tempfile
-from pathlib import Path
 
 
 # ═══════════════════════════════════════════════════════════════

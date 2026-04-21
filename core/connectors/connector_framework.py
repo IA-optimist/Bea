@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import time
 import structlog
-from dataclasses import dataclass, field
-from typing import Optional, Callable, Any
+from dataclasses import dataclass
+from typing import Optional, Callable
 from enum import Enum
 
 log = structlog.get_logger("jarvis.connector_framework")

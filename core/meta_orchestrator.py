@@ -25,7 +25,6 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Callable, Awaitable
 
 import structlog
@@ -2533,7 +2532,6 @@ class MetaOrchestrator:
             # _mission_state was created in _execute_supervised and stored in ctx.metadata
             if ctx.metadata.get("mission_reasoning_state") is not None:
                 try:
-                    from core.orchestration.mission_reasoning_state import MissionReasoningState
                     _mrs_dict = ctx.metadata.get("mission_reasoning_state", {})
                     # Reconstruct from dict (simple approach - just skip update if complex)
                     # Alternative: return _mission_state from _execute_supervised

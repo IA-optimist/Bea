@@ -171,7 +171,8 @@ def stage_modification(target_file: str, new_content: str) -> str:
 def validate_staged_modification(staging_path: str) -> tuple[bool, str]:
     """Validate a staged modification before promotion.
     Checks: syntax, no imports of protected modules, size reasonable."""
-    import os, py_compile
+    import os
+    import py_compile
 
     # 1. File exists
     if not os.path.exists(staging_path):
@@ -206,7 +207,8 @@ def validate_staged_modification(staging_path: str) -> tuple[bool, str]:
 def promote_to_production(staging_path: str, target_file: str) -> tuple[bool, str]:
     """Promote a validated staging file to its target location.
     Creates backup first."""
-    import os, shutil
+    import os
+    import shutil
 
     # Validate first
     ok, msg = validate_staged_modification(staging_path)
@@ -234,7 +236,8 @@ def promote_to_production(staging_path: str, target_file: str) -> tuple[bool, st
 
 def rollback(target_file: str) -> tuple[bool, str]:
     """Rollback a file to its backup."""
-    import os, shutil
+    import os
+    import shutil
     backup = target_file + ".bak"
     if not os.path.exists(backup):
         return False, f"No backup found: {backup}"

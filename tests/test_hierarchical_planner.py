@@ -12,7 +12,6 @@ Tests guard:
   - Singleton get_mission_decomposer() is idempotent
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 
 

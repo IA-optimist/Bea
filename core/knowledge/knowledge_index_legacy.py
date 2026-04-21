@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from typing import List, Optional
+from typing import List
 
 logger = logging.getLogger("jarvis.knowledge.index")
 

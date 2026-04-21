@@ -13,10 +13,10 @@ Auth: X-Jarvis-Token header (same pattern as other routes).
 from __future__ import annotations
 
 import os
-from typing import Any, Optional
+from typing import Optional
 
 import structlog
-from fastapi import Depends, APIRouter, File, Header, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, APIRouter, File, Header, Query, Request, UploadFile
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from api._deps import _check_auth

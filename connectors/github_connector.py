@@ -8,7 +8,6 @@ Actions:
 """
 from __future__ import annotations
 
-import os
 import subprocess
 from .base import ConnectorBase, ConnectorResult
 

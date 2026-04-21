@@ -21,9 +21,9 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
-from fastapi import APIRouter, Body, Depends, Header, Query, Request
+from fastapi import APIRouter, Body, Depends, Header, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from api.schemas import ok, error as err_resp

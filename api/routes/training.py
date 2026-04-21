@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Optional
 
 import structlog
-from fastapi import Depends, APIRouter, Header, HTTPException, Query
+from fastapi import Depends, APIRouter, Query
 from api._deps import require_auth, require_admin
 
 log = structlog.get_logger(__name__)

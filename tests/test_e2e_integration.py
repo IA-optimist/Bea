@@ -6,8 +6,6 @@ Validates full system coherence: connectors → workflows → business pipeline
 """
 import pytest
 import ast
-import json
-import os
 import sys
 import time
 import types
@@ -137,7 +135,7 @@ def test_e2e_workflow_with_connectors():
 def test_e2e_event_trigger_to_workflow():
     """Event fires → returns workflow to execute → workflow runs."""
     from core.workflow_runtime import (
-        EventTriggerManager, EventTrigger, WorkflowEngine,
+        EventTriggerManager, EventTrigger,
     )
 
     em = EventTriggerManager()

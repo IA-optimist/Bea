@@ -11,12 +11,10 @@ Sécurité :
     si le token est invalide — pas après.
 """
 import asyncio
-import time as _time
 import structlog
-from typing import Any, Optional
+from typing import Optional
 from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
-from config.settings import get_settings
 _silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
@@ -26,8 +24,6 @@ router = APIRouter()
 # compatibilité (meta_orchestrator importe désormais directement depuis core).
 from core.event_stream import (
     ACTIVE_WS_STREAMS as ACTIVE_STREAMS,
-    register_ws_stream as register_stream,
-    deregister_ws_stream as deregister_stream,
 )
 
 

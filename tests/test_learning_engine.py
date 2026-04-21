@@ -222,7 +222,7 @@ def test_model_selector_get_status():
     assert "fast" in status["models"]
     assert "code" in status["models"]
     assert status["models"]["code"] == "deepseek-coder-v2:16b"
-    print(f"[OK] test_model_selector_get_status")
+    print("[OK] test_model_selector_get_status")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -242,7 +242,7 @@ def test_metrics_inc_and_snapshot():
     # Le snapshot lit depuis les events persistés
     assert isinstance(snap, dict)
     assert "runs_total" in snap
-    print(f"[OK] test_metrics_inc_and_snapshot")
+    print("[OK] test_metrics_inc_and_snapshot")
 
 
 def test_metrics_record_run():
@@ -280,7 +280,7 @@ def test_metrics_record_latency():
     lat  = snap["agent_latency_avg_ms"]
     assert "forge-builder"  in lat, f"forge-builder manquant : {lat}"
     assert lat["forge-builder"] == 1000.0, f"Moy attendue 1000ms : {lat}"
-    print(f"[OK] test_metrics_record_latency")
+    print("[OK] test_metrics_record_latency")
 
 
 def test_metrics_get_report():

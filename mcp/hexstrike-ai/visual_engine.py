@@ -7,8 +7,7 @@ Backward-compat : `from .visual_engine import ModernVisualEngine`.
 """
 from __future__ import annotations
 
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 class ModernVisualEngine:
@@ -198,7 +197,7 @@ class ModernVisualEngine:
         dashboard_lines = [
             f"{ModernVisualEngine.COLORS['PRIMARY_BORDER']}╭─────────────────────────────────────────────────────────────────────────────╮",
             f"│ {ModernVisualEngine.COLORS['ACCENT_LINE']}📊 HEXSTRIKE LIVE DASHBOARD{ModernVisualEngine.COLORS['PRIMARY_BORDER']}                                           │",
-            f"├─────────────────────────────────────────────────────────────────────────────┤"
+            "├─────────────────────────────────────────────────────────────────────────────┤"
         ]
 
         for pid, proc_info in processes.items():

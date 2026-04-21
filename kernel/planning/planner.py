@@ -15,13 +15,12 @@ Registration (at app startup):
 """
 from __future__ import annotations
 
-import time
 import uuid
 import logging
 from typing import Callable, Optional
 
 from kernel.planning.goal import (
-    KernelGoal, KernelPlan, KernelPlanStep, PlanComplexity, StepStatus,
+    KernelGoal, KernelPlan, KernelPlanStep, PlanComplexity,
 )
 
 log = logging.getLogger("kernel.planning")

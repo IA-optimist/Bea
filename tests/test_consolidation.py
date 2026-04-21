@@ -58,12 +58,10 @@ Phase 5: Self-improvement completeness
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from pathlib import Path
 from unittest.mock import MagicMock
 
 
@@ -456,7 +454,7 @@ class TestArchitectureCoherence:
 
     def test_tool_executor(self):
         """CS35."""
-        from core.tool_executor import ToolExecutor, get_tool_executor
+        from core.tool_executor import get_tool_executor
         executor = get_tool_executor()
         assert hasattr(executor, 'execute')
         assert hasattr(executor, '_execute_with_retry')
@@ -513,7 +511,7 @@ class TestSecurity:
 
     def test_protected_paths_complete(self):
         """CS42."""
-        from core.self_improvement.protected_paths import is_protected, PROTECTED_FILES
+        from core.self_improvement.protected_paths import is_protected
         critical = [
             "core/meta_orchestrator.py",
             "core/tool_executor.py",

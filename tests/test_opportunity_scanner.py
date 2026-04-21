@@ -3,10 +3,8 @@
 Tests for OpportunityScanner with Playwright mocking.
 """
 import pytest
-import asyncio
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from datetime import datetime
+from unittest.mock import AsyncMock, patch
 import json
 
 from business.automation.opportunity_scanner import (

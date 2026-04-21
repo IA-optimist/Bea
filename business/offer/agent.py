@@ -7,7 +7,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import JarvisSession
-from business.offer.schema import OfferReport, parse_offer_report
+from business.offer.schema import parse_offer_report
 
 log = structlog.get_logger()
 

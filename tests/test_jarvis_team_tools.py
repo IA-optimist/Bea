@@ -9,9 +9,6 @@ Verifies:
     - Branch naming validation
     - Tool catalog consistency
 """
-import os
-import pytest
-from pathlib import Path
 from unittest.mock import patch
 
 
@@ -20,8 +17,7 @@ from unittest.mock import patch
 def test_tools_import():
     """Tool module is importable."""
     from agents.jarvis_team.tools import (
-        ToolResult, ToolRisk, AGENT_TOOL_ACCESS, TOOL_CATALOG,
-        get_tools_for_agent,
+        AGENT_TOOL_ACCESS, TOOL_CATALOG,
     )
     assert len(AGENT_TOOL_ACCESS) == 6
     assert len(TOOL_CATALOG) >= 30

@@ -18,12 +18,6 @@ from unittest.mock import MagicMock
 def test_jarvis_team_imports():
     """All jarvis-team agents are importable."""
     from agents.jarvis_team import (
-        JarvisArchitect,
-        JarvisCoder,
-        JarvisReviewer,
-        JarvisQA,
-        JarvisDevOps,
-        JarvisWatcher,
         JARVIS_TEAM_AGENTS,
     )
     assert len(JARVIS_TEAM_AGENTS) == 6

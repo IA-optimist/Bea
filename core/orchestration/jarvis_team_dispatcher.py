@@ -4,7 +4,6 @@ Activated when mode in ("improve", "lab", "dev").
 Integrates Global Workspace Theory for inter-agent consciousness.
 """
 from __future__ import annotations
-import asyncio
 import structlog
 from pathlib import Path
 from core.global_workspace import get_workspace

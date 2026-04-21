@@ -5,10 +5,9 @@ Single source for all /api/v2/task, /api/v2/tasks, /api/v2/missions, /api/v2/age
 from __future__ import annotations
 
 import asyncio
-import json as _json
 import os
 import time
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query

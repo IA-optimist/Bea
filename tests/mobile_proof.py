@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """MOBILE PROOF MATRIX — verify every claimed behavior server-side + code audit."""
-import sys, os, json, time, asyncio, re
+import sys
+import os
+import json
+import asyncio
 os.chdir('/app')
 sys.path.insert(0, '/app')
 
@@ -253,7 +256,7 @@ test("WsConnectionState enum defined", has_enum)
 
 states = ["disconnected", "connecting", "connected", "reconnecting", "authExpired", "offline"]
 all_states = all(s in ws_code for s in states)
-test(f"All 6 states defined", all_states, f"states={states}")
+test("All 6 states defined", all_states, f"states={states}")
 
 has_set_state = "_setState" in ws_code
 test("_setState() transition method", has_set_state)

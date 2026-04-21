@@ -39,7 +39,7 @@ class LivrableExport:
         content = self._clean_for_client(mission_result)
 
         # En-tête
-        header = f'# Rapport JarvisMax\n\n'
+        header = '# Rapport JarvisMax\n\n'
         if client_name:
             header += f'**Client :** {client_name}  \n'
         header += f'**Date :** {date}  \n'

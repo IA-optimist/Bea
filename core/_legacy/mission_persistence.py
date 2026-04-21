@@ -19,9 +19,8 @@ import os
 import threading
 import time
 import structlog
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 log = structlog.get_logger("mission_persistence")
 

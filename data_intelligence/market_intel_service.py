@@ -321,7 +321,7 @@ class DataIntelligenceService:
 
 """
         
-        report += f"""
+        report += """
 ## 💡 Recommendations
 
 """

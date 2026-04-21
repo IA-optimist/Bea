@@ -12,10 +12,9 @@ Validates:
   - Integration with playbook execution
 """
 import time
-import pytest
 from core.objectives.objective_horizon import (
     EvaluationMetric, TimeHorizon, PlaybookLink,
-    StrategySuggestion, ObjectiveHorizonManager,
+    ObjectiveHorizonManager,
 )
 
 

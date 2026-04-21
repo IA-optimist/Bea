@@ -7,14 +7,14 @@ Aucun breaking change sur les routes existantes.
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Header
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)

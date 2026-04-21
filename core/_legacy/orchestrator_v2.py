@@ -27,7 +27,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import structlog
@@ -350,7 +350,8 @@ class CheckpointStore:
             from core.db import get_sqlite_path
             self._sqlite_path = get_sqlite_path()
         except Exception:
-            import os, tempfile
+            import os
+            import tempfile
             self._sqlite_path = os.path.join(tempfile.gettempdir(), "jarvis_checkpoints.db")
 
         loop = asyncio.get_running_loop()

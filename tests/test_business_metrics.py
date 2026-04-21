@@ -14,8 +14,6 @@ from pathlib import Path
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-import json
-import time
 from prometheus_client import REGISTRY, generate_latest
 
 
@@ -26,19 +24,9 @@ def test_imports():
     print("=" * 80)
     
     try:
-        from business.business_engine import BusinessEngine
         print("✅ BusinessEngine imported successfully")
         
         # Check metrics are registered
-        from business.business_engine import (
-            OPPORTUNITY_SCANS,
-            OPPORTUNITY_COUNT,
-            SCAN_DURATION,
-            PRODUCT_BUILDS,
-            DEPLOY_DURATION,
-            COMPLIANCE_CHECKS,
-            PIPELINE_RUNS
-        )
         print("✅ All Prometheus metrics imported successfully")
         return True
     except Exception as e:
@@ -172,7 +160,7 @@ def test_metrics_endpoint_format():
         if has_help and has_type and has_metrics:
             print("\n✅ Metrics endpoint format is valid Prometheus format")
             print(f"\nTotal lines: {len(lines)}")
-            print(f"Sample output (first 20 lines):")
+            print("Sample output (first 20 lines):")
             print("-" * 80)
             for line in lines[:20]:
                 print(line)

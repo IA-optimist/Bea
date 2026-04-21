@@ -5,11 +5,8 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(python_bp)
 """
 from __future__ import annotations
 
-import json
 import logging
-import re
 import time
-from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, request, jsonify
 
@@ -85,7 +82,7 @@ def execute_python_script():
 
         result["env_name"] = env_name
         result["script_filename"] = filename
-        logger.info(f"📊 Python script execution completed")
+        logger.info("📊 Python script execution completed")
         return jsonify(result)
 
     except Exception as e:

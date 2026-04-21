@@ -3,7 +3,6 @@ JARVIS MAX v3 — File Editor (Surgical Edit)
 Outil métier permettant aux agents de modifier le code sans réécrire le 
 fichier en entier, limitant grandement la consommation de tokens et les erreurs d'indentation.
 """
-import os
 from pathlib import Path
 import structlog
 

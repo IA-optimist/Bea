@@ -6,13 +6,10 @@ Objective Engine — Persistance JSON locale + Qdrant secondaire.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
-import random
 import time
-import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 

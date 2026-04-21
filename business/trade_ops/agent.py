@@ -8,7 +8,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import JarvisSession
-from business.trade_ops.schema import TradeOpsSpec, parse_trade_ops_spec
+from business.trade_ops.schema import parse_trade_ops_spec
 
 log = structlog.get_logger()
 

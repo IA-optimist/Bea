@@ -2,11 +2,9 @@
 Tests for Batch 3: Mission memory, tool gap analysis, router registration, cockpit.
 """
 import ast
-import json
 import os
 import sys
 import pytest
-import time
 import types
 
 if 'structlog' not in sys.modules:

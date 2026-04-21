@@ -16,7 +16,6 @@ Target: €25,000/month in 6 months
 from __future__ import annotations
 
 import json
-import logging
 import sys
 import time
 from datetime import datetime
@@ -30,8 +29,8 @@ import structlog
 from prometheus_client import Counter, Histogram, Gauge
 
 from business.automation.opportunity_scanner import OpportunityScanner, Opportunity
-from business.automation.product_builder import ProductBuilder, ProductSpec
-from business.legal.compliance_checker import ComplianceChecker, ComplianceReport
+from business.automation.product_builder import ProductBuilder
+from business.legal.compliance_checker import ComplianceChecker
 from business.revenue.revenue_engine import RevenueEngine, PortfolioMetrics
 
 # Configure structlog for structured logging
@@ -489,7 +488,7 @@ class BusinessEngine:
                 'dashboard_path': str(dashboard_path),
             }
             
-            logger.info(f"✅ Revenue tracking active")
+            logger.info("✅ Revenue tracking active")
             logger.info(f"   MRR: €{portfolio.total_mrr:.2f}")
             logger.info(f"   Dashboard: {dashboard_path}")
         

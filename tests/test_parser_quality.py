@@ -11,7 +11,6 @@ Validates:
   - Completeness reflects real parsed quality
 """
 import json
-import pytest
 from core.planning.skill_llm import (
     _parse_llm_output,
     _extract_outermost_json,

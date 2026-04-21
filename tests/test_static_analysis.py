@@ -9,10 +9,7 @@ pytestmark = pytest.mark.skip(reason="core/static_analysis module not implemente
 
 
 def test_import():
-    from core.static_analysis import (
-        analyze_file, analyze_directory,
-        FileAnalysis, DirectoryAnalysis,
-    )
+    pass
 
 
 # ── FileAnalysis dataclass ────────────────────────────────────

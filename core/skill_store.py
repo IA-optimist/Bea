@@ -32,7 +32,7 @@ import os
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 _silent_log = __import__("structlog").get_logger(__name__)
@@ -256,7 +256,6 @@ class SkillStore:
                 )
 
             # qdrant-client v1.7+: use query_points (search was removed in v1.13+)
-            from qdrant_client.models import QueryRequest
             qp_kwargs: dict = {
                 "collection_name": _COLLECTION,
                 "query": embedding,
@@ -321,7 +320,6 @@ class SkillStore:
             client = await self._get_client()
             if client is None:
                 return []
-            from qdrant_client.models import ScrollRequest
             results, _ = client.scroll(
                 collection_name=_COLLECTION,
                 limit=min(limit * 5, 200),

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 from core.execution.strategy_memory import (
-    StrategyMemory, StrategyRecord, get_strategy_memory,
+    StrategyMemory, get_strategy_memory,
 )
 
 _silent_log = __import__("structlog").get_logger(__name__)

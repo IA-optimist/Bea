@@ -8,14 +8,12 @@ so unchanged files are skipped on re-index.
 """
 from __future__ import annotations
 
-import asyncio
 import os
 import sqlite3
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import structlog
 

@@ -10,14 +10,9 @@ Backward-compat :
 """
 from __future__ import annotations
 
-import json
 import logging
-import re
-import time
-from collections import defaultdict
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 try:
     import requests
@@ -442,10 +437,9 @@ class CVEIntelligenceManager:
             logger.info(f"🔬 Analyzing exploitability for {cve_id}")
             
             # Fetch detailed CVE data from NVD
-            nvd_url = f"https://services.nvd.nist.gov/rest/json/cves/2.0"
+            nvd_url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
             params = {'cveId': cve_id}
             
-            import time
             
             try:
                 response = requests.get(nvd_url, params=params, timeout=30)
@@ -786,7 +780,7 @@ class CVEIntelligenceManager:
                                         "source": source_name,
                                         "exploit_id": f"{source_name}-ref",
                                         "title": f"Referenced exploit for {cve_id}",
-                                        "description": f"Exploit reference found in CVE data",
+                                        "description": "Exploit reference found in CVE data",
                                         "author": "Various",
                                         "date_published": cve_data.get('published', ''),
                                         "type": "reference",

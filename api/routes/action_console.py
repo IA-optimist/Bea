@@ -17,7 +17,6 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from typing import Optional
 
 from api._deps import _check_auth
 _silent_log = __import__("structlog").get_logger(__name__)
@@ -137,7 +136,7 @@ async def console_stats(
     try:
         from core.mission_guards import get_guardian
         result["active_budgets"] = len(get_guardian().active_missions())
-    except Exception as e:
+    except Exception:
         result["active_budgets"] = 0
     return result
 

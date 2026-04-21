@@ -1,6 +1,7 @@
 """Tests de stabilité Jarvis — tous doivent passer avant tout déploiement."""
 import pytest
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.environ.get("JARVIS_ROOT", "/app"))
 
 

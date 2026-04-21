@@ -7,7 +7,6 @@ One JSONL file = append-friendly, grep-friendly, no DB dependency.
 from __future__ import annotations
 
 import json
-import os
 import threading
 import time
 from pathlib import Path

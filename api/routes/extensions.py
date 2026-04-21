@@ -10,7 +10,6 @@ Admin-only CRUD for Agents, MCP Connectors, Skills, and Tools.
 """
 from __future__ import annotations
 
-from pathlib import Path
 
 try:
     from fastapi import APIRouter, Depends, HTTPException, Request, Body

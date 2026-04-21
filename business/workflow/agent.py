@@ -7,7 +7,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import JarvisSession
-from business.workflow.schema import WorkflowReport, parse_workflow_report
+from business.workflow.schema import parse_workflow_report
 
 log = structlog.get_logger()
 

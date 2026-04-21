@@ -7,7 +7,6 @@ Called by observability hooks — never blocks execution.
 from __future__ import annotations
 
 import structlog
-from typing import Any, Dict, Optional
 
 from core.memory_graph.graph_schema import Edge, EdgeType, Node, NodeType
 _silent_log = __import__("structlog").get_logger(__name__)

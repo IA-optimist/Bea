@@ -3,7 +3,7 @@ JarvisMax P3.4 — Opportunity Deployment Model
 Tracks deployed MVPs on VPS.
 """
 
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, Boolean, DECIMAL
+from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, DECIMAL
 from datetime import datetime, timezone
 
 

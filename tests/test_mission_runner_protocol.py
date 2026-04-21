@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import inspect
 
-import pytest
 
 from kernel.contracts.mission_runner import MissionRunner
 

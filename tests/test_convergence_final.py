@@ -5,7 +5,6 @@ Layer-by-layer validation against target architecture.
 """
 import pytest
 import ast
-import json
 import os
 import sys
 import time
@@ -129,7 +128,6 @@ def test_memory_modules_bounded():
     from core.mission_performance_tracker import MissionPerformanceTracker
     from core.mission_memory import MissionMemory
     from core.lifecycle_tracker import LifecycleTracker
-    import core.execution_engine as ee
 
     # Verify MAX constants exist
     assert hasattr(ToolPerformanceTracker, 'MAX_TOOLS')

@@ -28,7 +28,7 @@ def test_dr02_routing_decision_to_dict_has_metadata():
 # ═══ DR03-DR07: BaseDomainRouter ═══
 
 def test_dr03_base_domain_router_interface():
-    from core.skills.domain_skill_router import BaseDomainRouter, SkillMeta
+    from core.skills.domain_skill_router import BaseDomainRouter
     # Can't instantiate abstract class directly
     with pytest.raises(TypeError):
         BaseDomainRouter()
@@ -203,7 +203,7 @@ def test_dr22_red_team_routing_blocked():
     assert ctx["requires_activation"] is True
 
 def test_dr23_red_team_activation_unblocks():
-    from core.agents.canonical_agents import SPECIALIST_PACKS, get_canonical_runtime
+    from core.agents.canonical_agents import get_canonical_runtime
     runtime = get_canonical_runtime()
     # Activate
     runtime.activate_pack("red_team_ethical")
@@ -300,10 +300,5 @@ def test_dr29_pack_status_report():
 
 def test_dr30_all_previous_tests_pass():
     """Meta-test: verify old test files still import correctly."""
-    from core.capability_routing.resolver import resolve_capabilities
-    from core.capability_routing.router import route_mission
-    from core.skills.security_skill_router import get_security_skill_router
-    from core.skills.domain_skill_router import BaseDomainRouter, get_domain_router
-    from core.agents.canonical_agents import SPECIALIST_PACKS
     # All imports work = no regressions
     assert True

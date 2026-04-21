@@ -196,7 +196,7 @@ class BaseAgent(ABC):
         Does NOT block or replace run() — fully additive.
         """
         import time
-        from agents.contracts import AgentContract, AgentStatus, DELEGATION_MAP
+        from agents.contracts import AgentContract
 
         t0         = time.monotonic()
         mission_id = getattr(session, "session_id", "")
@@ -1151,7 +1151,7 @@ class AgentSelector:
 
         # ── PolicyMode override (fail-open) ─────────────────────────────────
         try:
-            from core.policy_mode import get_policy_mode_store, SAFE_MAX_AGENTS
+            from core.policy_mode import get_policy_mode_store
             _pm = get_policy_mode_store().get().value
         except Exception:
             _pm = "BALANCED"

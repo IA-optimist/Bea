@@ -7,7 +7,6 @@ import asyncio
 import json
 import os
 import structlog
-import datetime as _dt
 from datetime import datetime, timezone as _timezone
 UTC = _timezone.utc  # Python 3.10 compat: datetime.UTC added in 3.11
 from pathlib import Path
@@ -120,7 +119,6 @@ class SystemObserver:
     # ── Internals ─────────────────────────────────────────────
 
     async def _recent_files(self, n: int) -> list[tuple[str, str]]:
-        import time
         files = [
             (p, p.stat().st_mtime)
             for p in WORKSPACE.rglob("*")

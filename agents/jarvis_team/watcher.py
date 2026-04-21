@@ -84,6 +84,6 @@ If everything looks healthy, say so concisely. Don't generate false alarms."""
             report = self.read_file(latest, max_chars=3000)
             mon_ctx += f"\nLatest night report ({latest}):\n```\n{report}\n```\n"
         if metrics_file:
-            mon_ctx += f"\nMetrics module available: monitoring/metrics.py\n"
+            mon_ctx += "\nMetrics module available: monitoring/metrics.py\n"
 
         return f"{ctx}{mon_ctx}\n\nMonitoring task:\n{task}"

@@ -27,11 +27,10 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agents.market_research_agent import (
-    MarketResearchAgent, MarketReport, Competitor, Persona, MarketSize,
+    MarketResearchAgent, MarketReport, Competitor, Persona,
 )
 from agents.business_model_agent import (
-    BusinessModelAgent, BusinessModel, LeanCanvas, UnitEconomics,
-    Projection, ViabilityScore,
+    BusinessModelAgent, BusinessModel, UnitEconomics,
 )
 
 

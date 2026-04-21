@@ -160,7 +160,7 @@ async def update_project(
     if not updates:
         return await get_project(project_id)
     
-    updates.append(f"updated_at = NOW()")
+    updates.append("updated_at = NOW()")
     params.append(UUID(project_id))
     
     query = f"""

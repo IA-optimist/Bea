@@ -11,7 +11,6 @@ import re
 import time
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any
 
 import structlog
 

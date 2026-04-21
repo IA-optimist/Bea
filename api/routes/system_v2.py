@@ -26,8 +26,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, Depends, Query, Request
-from typing import Optional
+from fastapi import APIRouter, Depends, Request
 
 logger = logging.getLogger("jarvis.api.system_v2")
 

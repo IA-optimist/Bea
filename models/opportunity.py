@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, JSON, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from models.base import Base
 

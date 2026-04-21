@@ -238,7 +238,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
     if _os.environ.get("JARVIS_SHELL_ALLOWLIST", "1").lower() not in ("0", "false", "no"):
         cmd_stripped = cmd.strip()
         if not any(cmd_stripped.startswith(prefix) for prefix in _SHELL_ALLOWED_PREFIXES):
-            return _err(f"shell_not_allowed: command not in allowlist")
+            return _err("shell_not_allowed: command not in allowlist")
 
     # Log for audit trail
     try:
@@ -733,8 +733,6 @@ class ToolExecutor:
             log.warning("policy_check_failed", error=str(_pol_err)[:200])
             # Fail-CLOSED for HIGH risk tools; fail-open for LOW risk
             try:
-                from core.resilience import JarvisError
-                from core.policy.policy_engine import PolicyEngine
                 _high_risk = {"shell_execute", "code_execute"}
                 if tool_name in _high_risk:
                     log.warning("policy_fail_closed_high_risk", tool=tool_name)
