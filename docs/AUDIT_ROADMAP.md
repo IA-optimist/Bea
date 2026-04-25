@@ -49,11 +49,35 @@ Added to the blocking select :
 - `E711` / `E712` / `E713` / `E714` comparison variants
 - `E722` bare-except (6 fixes : `except:` → `except Exception:`)
 
-### Phase 5 — Coverage uplift
+### Phase 5 — Coverage uplift (mission_system)
 - `tests/test_mission_system_classifiers.py` (23 tests covering pure
   routing helpers : `is_capability_query`, `detect_intent`,
   `classify_action`, `compute_risk_score`, `risk_score_to_level`,
   `compute_complexity`, `evaluate_approval`)
+
+### Phase 6 — Coverage uplift (event_stream)
+- `tests/test_event_stream.py` (15 tests : append/order/bounded-deque,
+  subscribe/unsubscribe/idempotent, error-isolation, rewind, mission
+  registry, ws registry)
+
+### Phase 7 — Coverage uplift (approval_queue)
+- `tests/test_approval_queue.py` (12 tests : auto-approve READ /
+  WRITE_LOW, require approval for HIGH/INFRA/DELETE/DEPLOY, approve,
+  reject, get_pending, dedup, persistence)
+- `tests/test_canonical_types_transitions.py` (10 tests : terminal
+  state invariants, no self-transition, legacy mappers)
+- 3 test regressions fixed : `test_meta_orchestrator.test_setup_event_
+  stream` (api.ws.register_stream → core.event_stream.register_ws_
+  stream), `test_stabilization_final.test_no_report_files_at_root`
+  (CONTRIBUTING.md allowed at root), `test_consolidation.test_check_
+  auth_missing_token` (_check_auth moved to api._deps)
+
+### Phase 8 — Final ratchet
+- E731 lambda-assignment (5 fixes auto-converted to def)
+- E401 multiple-imports-on-one-line (1 fix)
+- Both rules added to blocking ruff select
+- Coverage threshold bumped 48% → 50%
+- Security review (sub-agent) : 0 vulnerabilities found in the diff
 
 ## Remaining debt (explicitly tracked)
 
