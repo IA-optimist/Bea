@@ -93,7 +93,7 @@ class SettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: (isAdmin ? JDS.blue : JDS.textDim).withOpacity(0.12),
+                      color: (isAdmin ? JDS.blue : JDS.textDim).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(

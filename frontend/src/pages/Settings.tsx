@@ -101,6 +101,9 @@ export const Settings = () => {
             </div>
             <button
               onClick={handleThemeToggle}
+              role="switch"
+              aria-checked={theme === 'dark'}
+              aria-label="Theme : light or dark mode"
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 theme === 'dark' ? 'bg-primary-600' : 'bg-gray-300'
               }`}
@@ -139,6 +142,9 @@ export const Settings = () => {
                   notifications_enabled: !prev.notifications_enabled,
                 }))
               }
+              role="switch"
+              aria-checked={settings.notifications_enabled}
+              aria-label="Notifications"
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 settings.notifications_enabled ? 'bg-primary-600' : 'bg-gray-300'
               }`}
@@ -177,6 +183,9 @@ export const Settings = () => {
                   auto_scan_enabled: !prev.auto_scan_enabled,
                 }))
               }
+              role="switch"
+              aria-checked={settings.auto_scan_enabled}
+              aria-label="Auto scan"
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 settings.auto_scan_enabled ? 'bg-primary-600' : 'bg-gray-300'
               }`}
