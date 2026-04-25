@@ -15,6 +15,13 @@ Monté via app.register_blueprint(tools_bp).
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
+from datetime import datetime
+import os
+
 import logging
 import time
 
@@ -3525,7 +3532,7 @@ def graphql_scanner():
         endpoint = params.get("endpoint", "")
         introspection = params.get("introspection", True)
         query_depth = params.get("query_depth", 10)
-        mutations = params.get("test_mutations", True)
+        params.get("test_mutations", True)
 
         if not endpoint:
             logger.warning("🌐 GraphQL Scanner called without endpoint parameter")

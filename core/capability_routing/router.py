@@ -82,7 +82,7 @@ def route_mission(
         from core.agents.canonical_agents import get_canonical_runtime
         runtime = get_canonical_runtime()
         for d in decisions:
-            d_dict = d.__dict__ if hasattr(d, '__dict__') else {}
+            d.__dict__ if hasattr(d, '__dict__') else {}
             agent_id = runtime.get_agent_for_capability(d.capability_id)
             if agent_id:
                 if not hasattr(d, 'metadata') or d.metadata is None:

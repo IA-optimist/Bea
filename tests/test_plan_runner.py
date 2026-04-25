@@ -396,7 +396,7 @@ class TestPlanRunner:
             try:
                 plan = self._make_plan(ps._store)
                 runner = PlanRunner()
-                run = runner.start(plan.plan_id)
+                runner.start(plan.plan_id)
                 history = em._memory.get_history()
                 assert len(history) >= 1
                 assert history[0]["success"] is True

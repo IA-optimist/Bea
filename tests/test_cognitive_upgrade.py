@@ -840,7 +840,7 @@ class TestStateSatisfiedImproved:
         # success_criteria for deployment: ["health endpoint returns OK", "no error spike"]
         # Result only mentions "healthy" → triggers synonym for "health endpoint" → 1 match
         state.update_observed(result="Service is healthy.", error="")
-        ratio = state.expected_vs_observed.get("coverage_ratio", 0)
+        state.expected_vs_observed.get("coverage_ratio", 0)
         # state_satisfied depends on 0.33 threshold — 1/2 = 0.5 → satisfied
         assert state.state_satisfied is True
 

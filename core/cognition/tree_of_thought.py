@@ -203,7 +203,7 @@ Respond with ONLY a number between 0.0 and 1.0."""
             response = await self.llm(prompt)
             score = float(response.strip())
             return max(0.0, min(1.0, score))
-        except:
+        except Exception:
             return 0.5  # Default neutral score
     
     def _find_best_path(self, root: ThoughtNode) -> List[ThoughtNode]:

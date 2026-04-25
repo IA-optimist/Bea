@@ -141,7 +141,6 @@ async def test_docker_compose_no_reload():
         content = f.read()
     
     # Check for --reload in uvicorn command
-    has_reload = '--reload' in content
     
     # Check the actual command
     lines = content.split('\n')
@@ -175,7 +174,7 @@ async def main():
     results = []
     for test in tests:
         try:
-            result = await test()
+            await test()
             results.append(('PASS', test.__name__))
         except AssertionError as e:
             print(f"✗ FAIL: {e}")

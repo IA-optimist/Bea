@@ -308,7 +308,7 @@ class TestGitAgent:
     def test_branch_prefix(self):
         """DC27: Branch name prefixed with auto/."""
         # GitAgent.create_branch prefixes if missing
-        agent = GitAgent("/tmp/nonexistent")
+        GitAgent("/tmp/nonexistent")
         # Can't actually create branch on non-repo, but verify logic
         assert "auto/" in "auto/fix-abc123"
 
@@ -331,7 +331,7 @@ class TestGitAgent:
     def test_rollback_concept(self):
         """DC29: Rollback returns to main concept."""
         # Test the logic structure without actual git
-        agent = GitAgent("/tmp")
+        GitAgent("/tmp")
         assert "main" not in PROTECTED_BRANCHES or "main" in PROTECTED_BRANCHES
 
     def test_pr_info_structure(self):

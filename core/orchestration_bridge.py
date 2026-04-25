@@ -410,7 +410,7 @@ class OrchestrationBridge:
             # 1. Legacy system
             from core.mission_system import get_mission_system
             ms = get_mission_system()
-            result = ms.reject(mission_id, note=note)
+            ms.reject(mission_id, note=note)
 
             # 2. MetaOrchestrator — closes the approval gate
             try:

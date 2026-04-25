@@ -93,8 +93,8 @@ class ConfidenceScorer:
                 )
                 return resp.choices[0].message.content
         except Exception as e:
-            log.error(self_confidence_llm_failed, error=str(e))
-            return 
+            log.error("self_confidence_llm_failed", error=str(e))
+            return None
 
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
         """Build prompt for self-evaluation."""
@@ -142,7 +142,7 @@ SHOULD_RETRY: NO"""
                 try:
                     score = float(line.split(":", 1)[1].strip())
                     result["confidence"] = max(0.0, min(1.0, score))
-                except:
+                except Exception:
                     _silent_log.debug("suppressed_exception", src='self_confidence.py')
             
             elif line.startswith("REASONING:"):

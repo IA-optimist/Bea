@@ -659,7 +659,6 @@ def safety_checkpoint(
             return error(check["reason"])
     """
     checks: dict[str, bool] = {}
-    reason = ""
 
     # 1. Kill switch
     kill_switch = os.environ.get(

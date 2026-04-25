@@ -25,9 +25,9 @@ log = structlog.get_logger(__name__)
 # Import project model
 try:
     from models.project import (
-        Project,
-        ProjectConfig,
-        ProjectMetadata,
+        Project,  # noqa: F401
+        ProjectConfig,  # noqa: F401
+        ProjectMetadata,  # noqa: F401
         create_project,
         get_project,
         get_project_by_name,

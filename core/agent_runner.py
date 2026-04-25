@@ -49,7 +49,7 @@ class AgentRunner:
         - Loggue [AGENT_DONE] en INFO après avec durée.
         - Retourne le résultat de agent.run() ou dict {ok: False, ...} en cas d'erreur.
         """
-        ts = int(time.time())
+        int(time.time())
         logger.info(json.dumps({
             "event": "AGENT_RUN",
             "task": goal[:80] if goal else "",

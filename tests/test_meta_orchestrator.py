@@ -271,12 +271,12 @@ def test_setup_event_stream(meta_orchestrator):
     
     with patch('core.event_stream.EventStream') as MockEventStream:
         with patch('core.event_stream.register_mission_stream'):
-            with patch('api.ws.register_stream'):
+            with patch('core.event_stream.register_ws_stream'):
                 mock_stream = Mock()
                 MockEventStream.return_value = mock_stream
-                
+
                 meta_orchestrator._setup_event_stream("test-123", ctx)
-                
+
                 assert ctx.metadata.get("event_stream") == mock_stream
     
     print("[OK] test_setup_event_stream")

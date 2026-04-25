@@ -449,7 +449,7 @@ class TestIntegration:
     def test_audit_denial(self):
         """MG45."""
         audit = ModuleAuditLog()
-        result = check_rbac("viewer", "agent", "delete")
+        check_rbac("viewer", "agent", "delete")
         audit.record("viewer", "viewer", "agent", "a1", "delete", result="denied")
         logs = audit.query(module_id="a1")
         assert logs[0]["result"] == "denied"

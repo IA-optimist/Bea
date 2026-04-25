@@ -207,7 +207,7 @@ class TestToolExecutor:
         from core.tools_operational.tool_executor import OperationalToolExecutor
         ex = OperationalToolExecutor()
         # http.webhook.post requires url and payload
-        r = ex.simulate("http.webhook.post", {})
+        ex.simulate("http.webhook.post", {})
         # Simulate skips validation... let's test execute
         r2 = ex.execute("http.webhook.post", {}, approval_override=True)
         # Should fail — missing url or dispatch fails

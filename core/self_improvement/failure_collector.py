@@ -183,7 +183,7 @@ class FailureCollector:
             ev_type = getattr(ev, "event_type", None)
             ev_type_str = ev_type.value if hasattr(ev_type, "value") else str(ev_type)
             agent_id = getattr(ev, "agent_id", "") or ""
-            data = getattr(ev, "data", {}) or {}
+            getattr(ev, "data", {}) or {}
             message = getattr(ev, "message", "") or ""
 
             # agent_failure : event_type ERROR (AGENT_FAILED)

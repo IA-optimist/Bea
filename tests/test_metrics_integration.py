@@ -191,7 +191,7 @@ class TestSnapshotPersistence:
         path = tmp_path / "metrics_snapshot.json"
 
         # Run one iteration of the loop manually
-        stop = threading.Event()
+        threading.Event()
 
         # Just write once directly
         data = m.snapshot()
@@ -226,7 +226,7 @@ class TestAlerts:
         """I10: Alert fires when success rate < 0.7."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_completed, emit_mission_failed
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # 10 submitted, 3 completed, 7 failed → 30% success
         for _ in range(10):
@@ -245,7 +245,7 @@ class TestAlerts:
     def test_high_tool_failure_rate_alert(self):
         from core.metrics_store import reset_metrics, emit_tool_invocation
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # 10 calls, 5 failures → 50% failure rate
         for _ in range(5):
@@ -259,7 +259,7 @@ class TestAlerts:
     def test_retry_storm_alert(self):
         from core.metrics_store import reset_metrics, emit_retry
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(8):
             emit_retry("executor")
@@ -270,7 +270,7 @@ class TestAlerts:
     def test_circuit_breaker_alert(self):
         from core.metrics_store import reset_metrics, emit_circuit_breaker
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(5):
             emit_circuit_breaker("open")
@@ -282,7 +282,7 @@ class TestAlerts:
         """I11: No alerts when data is insufficient."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_completed
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # Only 2 missions — below threshold of 5
         emit_mission_submitted("test")

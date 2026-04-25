@@ -15,6 +15,8 @@
 | [`REALTIME_DASHBOARD.md`](REALTIME_DASHBOARD.md) | WebSocket metrics dashboard |
 | [`ROUTER_USAGE_MAP.md`](ROUTER_USAGE_MAP.md) | LLM router routing map |
 | [`kernel_spec.md`](kernel_spec.md) | Kernel contract spec |
+| [`API_VERSIONING.md`](API_VERSIONING.md) | v1 / v2 / v3 surface map + sunset plan |
+| [`AUDIT_ROADMAP.md`](AUDIT_ROADMAP.md) | Phase-by-phase audit progress + remaining debt |
 
 ## Operational scripts
 

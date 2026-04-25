@@ -440,7 +440,7 @@ class ActionExecutor:
         try:
             import urllib.request
             # Use /health (no auth) instead of /api/health (auth required)
-            req = urllib.request.urlopen("http://localhost:8000/health", timeout=2)
+            urllib.request.urlopen("http://localhost:8000/health", timeout=2)
             checks.append(("✅", "API Control Layer", "accessible (200)"))
         except Exception as e:
             checks.append(("❌", "API Control Layer", f"non accessible ({e})"))

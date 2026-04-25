@@ -205,7 +205,7 @@ class TestPipelineIntegration:
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
         details = []
-        result = loop._execute_via_pipeline(_make_task(), _make_patch(), details)
+        loop._execute_via_pipeline(_make_task(), _make_patch(), details)
         # Should fall through to fallback
         assert any("fallback" in str(d.get("step", "")) for d in details)
 
@@ -318,7 +318,7 @@ class TestLessonRecording:
 
     def test_lesson_includes_strategy(self, tmp_repo):
         """SB19."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task()
         assert task.suggested_strategy == "timeout_tuning"
 

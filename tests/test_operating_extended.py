@@ -158,7 +158,7 @@ def test_opportunity_detection_bounded():
 def test_opportunity_rate_limited():
     import core.operating_primitives as op
     op._last_opportunity_scan = 0
-    r1 = op.detect_opportunities()
+    op.detect_opportunities()
     r2 = op.detect_opportunities()
     # Second call should be rate-limited
     assert r2 == []

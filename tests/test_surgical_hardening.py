@@ -420,7 +420,7 @@ class TestCapabilityDispatcherTimeouts:
         # Should not raise
         loop = asyncio.new_event_loop()
         try:
-            result = loop.run_until_complete(dispatcher.dispatch(req))
+            loop.run_until_complete(dispatcher.dispatch(req))
             # Either returns failure or raises — we just verify no unhandled exception
         except Exception as e:
             pytest.fail(f"dispatch() raised unexpectedly: {e}")

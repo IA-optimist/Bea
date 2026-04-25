@@ -10,9 +10,9 @@ def test_planner_no_loop():
     try:
         from core.planner import _detect_infinite_loop_risk
         # Même tool 3x = boucle
-        assert _detect_infinite_loop_risk(["shell_command", "shell_command", "shell_command"]) == True
+        assert _detect_infinite_loop_risk(["shell_command", "shell_command", "shell_command"])
         # Tools différents = pas de boucle
-        assert _detect_infinite_loop_risk(["read_file", "shell_command", "http_get"]) == False
+        assert not _detect_infinite_loop_risk(["read_file", "shell_command", "http_get"])
         print("PASS test_planner_no_loop")
     except ImportError:
         print("SKIP test_planner_no_loop: _detect_infinite_loop_risk not found")
@@ -54,7 +54,7 @@ def test_tool_creation_logic():
         from core.tool_registry import should_create_tool
         # Tâche simple → pas de création
         result = should_create_tool("read a file from disk")
-        assert result["should_create"] == False, f"Should NOT create tool: {result}"
+        assert not result["should_create"], f"Should NOT create tool: {result}"
         # Tâche inconnue → potentiellement création
         result2 = should_create_tool("parse custom binary protocol format xyz123")
         assert "should_create" in result2
@@ -91,8 +91,8 @@ def my_tool(param: str) -> dict:
         bad_code = "def my_tool(): pass"
         good = validate_tool_structure(good_code, "my_tool")
         bad = validate_tool_structure(bad_code, "my_tool")
-        assert good["valid"] == True, f"Good tool not valid: {good}"
-        assert bad["valid"] == False, f"Bad tool should not be valid: {bad}"
+        assert good["valid"], f"Good tool not valid: {good}"
+        assert not bad["valid"], f"Bad tool should not be valid: {bad}"
         print(f"PASS test_tool_structure_validation: good={good['score']}, bad={bad['score']}")
     except ImportError as e:
         print(f"SKIP test_tool_structure_validation: {e}")

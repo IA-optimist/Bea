@@ -23,7 +23,7 @@ class TestScenarioA_Playbook:
     def test_ST02_playbook_records_strategy(self):
         from core.planning.playbook import execute_playbook
         from core.execution.strategy_memory import StrategyMemory
-        mem = StrategyMemory()  # fresh instance
+        StrategyMemory()  # fresh instance
         # Need to import get_strategy_memory after exec to check
         execute_playbook('market_analysis', 'Test market', {}, budget_mode='budget')
         from core.execution.strategy_memory import get_strategy_memory

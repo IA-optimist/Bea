@@ -30,7 +30,7 @@ from api._deps import _check_auth
 _silent_log = __import__("structlog").get_logger(__name__)
 
 try:
-    from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect
+    from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
     from fastapi.responses import JSONResponse
 except ImportError:
     # Stub for syntax validation without fastapi
@@ -45,7 +45,8 @@ except ImportError:
             def dec(f): return f
             return dec
     APIRouter = _Stub
-    Body = lambda **k: None
+    def Body(**k):
+        return None
     WebSocket = object
     WebSocketDisconnect = Exception
     JSONResponse = dict

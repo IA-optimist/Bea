@@ -18,6 +18,10 @@ Architecture: Two-script system (hexstrike_server.py + hexstrike_mcp.py)
 Framework: FastMCP integration for AI agent communication
 """
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from monitoring import PerformanceMonitor
+from monitoring import telemetry
+
 import argparse
 import logging
 import os

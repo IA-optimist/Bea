@@ -3,6 +3,9 @@ HexStrike Detection & Recovery — tech/rate-limit detection + recovery.
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from attack_intelligence import TargetProfile
+
 import re
 from datetime import datetime
 from typing import Any, Dict, List

@@ -309,7 +309,7 @@ class RegressionGuard:
         return self._parse_pytest_output(output)
 
     def evaluate(self, spec: ExperimentSpec, baseline: dict, candidate: dict) -> EvaluationScore:
-        b_total = baseline.get("passed", 0) + baseline.get("failed", 0)
+        baseline.get("passed", 0) + baseline.get("failed", 0)
         c_total = candidate.get("passed", 0) + candidate.get("failed", 0)
         c_pass_rate = candidate["passed"] / c_total if c_total > 0 else 0
         no_reg = candidate.get("failed", 0) <= baseline.get("failed", 0)

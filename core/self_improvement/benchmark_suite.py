@@ -175,7 +175,7 @@ class BenchmarkSuite:
         envelope = mission_result.get("result_envelope") or {}
         trace_id = envelope.get("trace_id") or mission_result.get("decision_trace", {}).get("trace_id", "")
         duration = (envelope.get("metrics") or {}).get("duration_seconds", 0) or 0
-        agent_outputs = envelope.get("agent_outputs", [])
+        envelope.get("agent_outputs", [])
 
         errors = []
 

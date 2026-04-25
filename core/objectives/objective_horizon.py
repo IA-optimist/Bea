@@ -302,7 +302,7 @@ class ObjectiveHorizonManager:
         suggestions: list[StrategySuggestion] = []
         progress = self.compute_progress(objective_id)
         links = self._links.get(objective_id, [])
-        metrics = self._metrics.get(objective_id, [])
+        self._metrics.get(objective_id, [])
         horizon = self._horizons.get(objective_id, TimeHorizon())
 
         # No executions yet → suggest first playbook

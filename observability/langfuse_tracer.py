@@ -77,7 +77,7 @@ class GenerationContext:
         if not self._active or self._gen is None:
             return
         try:
-            latency_ms = int((time.monotonic() - self._t0) * 1000)
+            int((time.monotonic() - self._t0) * 1000)
             kwargs: dict[str, Any] = {
                 "end_time": None,  # Langfuse calculera depuis start_time
                 "output":   output[:4000] if output else None,

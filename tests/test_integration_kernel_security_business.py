@@ -235,7 +235,6 @@ def group_memory():
         from kernel.memory.interfaces import (
             MemoryInterface, register_facade_store, register_facade_search
         )
-        calls = []
         register_facade_store(lambda c, ct="general", tags=None, m=None: {"ok": True})
         register_facade_search(lambda q, k=5: [{"content": "result", "score": 0.7}])
         mi = MemoryInterface()

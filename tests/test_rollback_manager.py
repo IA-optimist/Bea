@@ -64,7 +64,7 @@ def test_rollback_context_success():
         f.write("content")
         path = f.name
     try:
-        with RollbackContext(path) as ctx:
+        with RollbackContext(path):
             Path(path).write_text("new content")
         # No exception → file keeps new content
         assert Path(path).read_text() == "new content"
@@ -79,7 +79,7 @@ def test_rollback_context_on_error():
         path = f.name
     try:
         try:
-            with RollbackContext(path) as ctx:
+            with RollbackContext(path):
                 Path(path).write_text("broken")
                 raise RuntimeError("simulated failure")
         except RuntimeError:

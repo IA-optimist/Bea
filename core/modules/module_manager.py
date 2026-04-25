@@ -288,26 +288,22 @@ class ModuleManager:
             {"id": "sequential-thinking", "name": "Sequential Thinking", "description": "Raisonnement séquentiel structuré", "trust": "official"},
         ]
 
-        changed = False
         for a in _KNOWN_AGENTS:
             if a["id"] not in self._agents:
                 try:
                     self.create_agent(a)
-                    changed = True
                 except Exception:
                     _silent_log.debug("suppressed_exception", src='module_manager.py')
         for s in _KNOWN_SKILLS:
             if s["id"] not in self._skills:
                 try:
                     self.create_skill(s)
-                    changed = True
                 except Exception:
                     _silent_log.debug("suppressed_exception", src='module_manager.py')
         for m in _KNOWN_MCP:
             if m["id"] not in self._mcp:
                 try:
                     self.create_mcp(m)
-                    changed = True
                 except Exception:
                     _silent_log.debug("suppressed_exception", src='module_manager.py')
 

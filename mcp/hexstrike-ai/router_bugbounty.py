@@ -5,6 +5,12 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(bugbounty_
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from bug_bounty import BugBountyTarget
+from bug_bounty import bugbounty_manager
+from datetime import datetime
+from bug_bounty import fileupload_framework
+
 import logging
 
 from flask import Blueprint, request, jsonify

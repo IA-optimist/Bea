@@ -121,7 +121,7 @@ class MonitoringAgent:
                 llm     = factory.get("uncensored")  # health ping: local ollama (tinyllama)
                 # Ping léger
                 from langchain_core.messages import HumanMessage
-                resp = await llm.ainvoke([HumanMessage(content="ping")])
+                await llm.ainvoke([HumanMessage(content="ping")])
                 ms = int((time.monotonic() - t0) * 1000)
                 return ComponentHealth(
                     name="llm",
@@ -143,7 +143,7 @@ class MonitoringAgent:
         try:
             from memory.store import MemoryStore
             store = MemoryStore(self.s)
-            items = await store.search("health_check_probe", k=1)
+            await store.search("health_check_probe", k=1)
             return ComponentHealth(
                 name="memory",
                 status=HealthStatus.OK,

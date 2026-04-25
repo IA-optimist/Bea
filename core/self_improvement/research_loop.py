@@ -371,7 +371,7 @@ def collect_metrics() -> BaselineMetrics:
     # Tool success from recovery engine
     try:
         from core.resilience.recovery_engine import get_recovery_engine
-        stats = get_recovery_engine().stats()
+        get_recovery_engine().stats()
         m.tool_success_rate = 1.0  # Default if no failures tracked
     except Exception:
         m.tool_success_rate = 0.9
@@ -547,7 +547,7 @@ class ResearchLoop:
             result.rollback_info = rb_info
 
             # 3. Create sandbox
-            sandbox_path = self._sandbox.create(spec.experiment_id, spec.target_files)
+            self._sandbox.create(spec.experiment_id, spec.target_files)
 
             # 4. Apply change via safe executor
             try:

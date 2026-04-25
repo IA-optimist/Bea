@@ -5,6 +5,10 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(visual_bp)
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+from datetime import datetime
+
 import logging
 
 from flask import Blueprint, request, jsonify

@@ -14,6 +14,12 @@ Backward-compat : re-export au site original.
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from bs4 import BeautifulSoup
+_silent_log = __import__("structlog").get_logger(__name__)
+from urllib.parse import urljoin
+from urllib.parse import urlparse
+
 import json
 import logging
 import re
@@ -523,7 +529,7 @@ class BrowserAgent:
     def setup_browser(self, headless: bool = True, proxy_port: int = None):
         """Setup Chrome browser with security testing options"""
         try:
-            chrome_options = Options()
+            chrome_options = ChromeOptions()
 
             if headless:
                 chrome_options.add_argument('--headless')

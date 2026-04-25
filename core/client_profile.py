@@ -59,7 +59,7 @@ class ClientProfile:
                 if d.get('profile_id') == profile_id:
                     flds = ClientProfile.__dataclass_fields__
                     return ClientProfile(**{k: v for k, v in d.items() if k in flds})
-            except:
+            except Exception:
                 pass
         return None
 
@@ -76,7 +76,7 @@ class ClientProfile:
                     seen.add(pid)
                     flds = ClientProfile.__dataclass_fields__
                     profiles.append(ClientProfile(**{k: v for k, v in d.items() if k in flds}))
-            except:
+            except Exception:
                 pass
         return profiles
 

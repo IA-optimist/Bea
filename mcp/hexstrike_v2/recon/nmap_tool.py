@@ -49,7 +49,7 @@ def nmap_handler(params: Dict[str, Any]) -> Dict[str, Any]:
     result = execute_command(command, timeout=300)
     
     if not result.success:
-        raise RuntimeError(f"{tool_name} failed: {result.stderr or result.error}")
+        raise RuntimeError(f"nmap failed: {result.stderr or result.error}")
     
     return {
         "target": target,

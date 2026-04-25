@@ -149,7 +149,7 @@ def tool_git_branch_create(branch_name: str) -> ToolResult:
             success=False, tool="git_branch_create",
             error=f"Invalid branch name: {branch_name}. Must match jarvis/<agent>/<task>",
         )
-    out = _git(f"checkout -b {branch_name}")
+    _git(f"checkout -b {branch_name}")
     current = _git("rev-parse --abbrev-ref HEAD")
     ok = current == branch_name
     return ToolResult(

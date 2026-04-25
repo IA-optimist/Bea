@@ -118,7 +118,7 @@ def test_parallel_run_with_mock_agents():
     # Monkey-patch AgentCrew pour éviter les vrais agents
     import agents.parallel_executor as pex_mod
 
-    original_crew = pex_mod.__dict__.get("AgentCrew")
+    pex_mod.__dict__.get("AgentCrew")
 
     class _MockCrew:
         def __init__(self, *a, **k): pass
@@ -131,7 +131,6 @@ def test_parallel_run_with_mock_agents():
     pex = ParallelExecutor(s)
 
     # Patcher la création du crew dans run()
-    original_run = pex.run
 
     async def _patched_run(tasks, session, emit=None):
         from agents.parallel_executor import AgentResult

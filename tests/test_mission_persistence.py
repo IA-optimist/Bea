@@ -388,7 +388,7 @@ class TestAPI:
         for route in router.routes:
             if hasattr(route, "dependant"):
                 deps = route.dependant.dependencies
-                has_auth = any("auth" in str(d).lower() or "check_auth" in str(d).lower()
+                any("auth" in str(d).lower() or "check_auth" in str(d).lower()
                              for d in deps)
                 # At minimum, routes should have dependencies
                 assert len(deps) >= 0  # Structural check

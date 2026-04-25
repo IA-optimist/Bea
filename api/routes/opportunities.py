@@ -1,15 +1,17 @@
 """
-import tempfile
 JarvisMax — Opportunities API
 REST endpoints for SaaS opportunity management (Phase 3)
 """
 from __future__ import annotations
 
 import logging
+import tempfile
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -266,9 +268,9 @@ async def get_stats(db: Session = Depends(get_db)):
     """
     try:
         total = db.query(Opportunity).count()
-        analyzed = db.query(Opportunity).filter(Opportunity.analyzed == True).count()
-        mvp_generated = db.query(Opportunity).filter(Opportunity.mvp_generated == True).count()
-        deployed = db.query(Opportunity).filter(Opportunity.deployed == True).count()
+        analyzed = db.query(Opportunity).filter(Opportunity.analyzed).count()
+        mvp_generated = db.query(Opportunity).filter(Opportunity.mvp_generated).count()
+        deployed = db.query(Opportunity).filter(Opportunity.deployed).count()
         
         # By source
         sources = {}
@@ -669,7 +671,7 @@ async def get_mvp_status(
     
     # Get analysis for project slug
     from models.opportunity_analysis import OpportunityAnalysis
-    analysis = db.query(OpportunityAnalysis).filter(
+    db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
     

@@ -5,6 +5,19 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(intelligen
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from attack_intelligence import TechnologyStack
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from tool_wrappers import (
+    execute_amass_scan, execute_arjun_scan, execute_dalfox_scan,
+    execute_dirsearch_scan, execute_feroxbuster_scan, execute_ffuf_scan,
+    execute_gobuster_scan, execute_httpx_scan, execute_katana_scan,
+    execute_nikto_scan, execute_nmap_scan, execute_nuclei_scan,
+    execute_paramspider_scan, execute_sqlmap_scan, execute_subfinder_scan,
+    execute_wpscan_scan,
+)
+
 import logging
 
 from flask import Blueprint, request, jsonify

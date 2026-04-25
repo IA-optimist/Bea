@@ -48,7 +48,7 @@ class TestAntiDuplicateMission:
         with open(api_main_path) as f:
             source = f.read()
         # Count orch.run( calls — there should be exactly 1 in the API
-        count = source.count("orch.run(") + source.count("orch.run_mission(")
+        source.count("orch.run(") + source.count("orch.run_mission(")
         # 1 for await orch.run(), possibly 1 for the agent trigger
         # But run_mission should be at most 1
         orch_run_count = source.count("await orch.run(")

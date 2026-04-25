@@ -187,7 +187,7 @@ class TestSelfModelEnrichment:
         limitations = get_known_limitations(model)
         eco_lims = [l for l in limitations if l["category"] == "economic"]
         # Should include "economic_memory_empty" when memory is fresh
-        ids = {l["id"] for l in eco_lims}
+        {l["id"] for l in eco_lims}
         # At minimum the code path executes without error
         assert isinstance(limitations, list)
 

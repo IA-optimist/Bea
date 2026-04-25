@@ -111,7 +111,7 @@ class TestModelAutoUpdate:
             e.record_invocation("coding", "m1", True, 0.9, 0.01)
             e.record_invocation("coding", "m2", True, 0.4, 0.02)
         # Should conclude with m1 winning
-        result = e.record_invocation("coding", "m1", True, 0.9, 0.01)
+        e.record_invocation("coding", "m1", True, 0.9, 0.01)
         # Test may or may not conclude depending on threshold
         # But active test should have data
         test = e.get_active_test("coding")

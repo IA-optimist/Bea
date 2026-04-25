@@ -135,7 +135,8 @@ class TestDocumentation(unittest.TestCase):
     def test_no_report_files_at_root(self):
         """Reports should be in docs/, not cluttering root."""
         root_mds = [f for f in os.listdir(".") if f.endswith(".md")]
-        allowed = {"README.md", "ARCHITECTURE.md", "CHANGELOG.md"}
+        # CONTRIBUTING.md is conventional at repo root (GitHub picks it up)
+        allowed = {"README.md", "ARCHITECTURE.md", "CHANGELOG.md", "CONTRIBUTING.md"}
         extra = set(root_mds) - allowed
         self.assertEqual(extra, set(), f"Found non-essential .md files at root: {extra}")
 

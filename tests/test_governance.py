@@ -156,7 +156,7 @@ def test_validate_missing_file():
 def test_validate_empty_file():
     from core.governance import validate_persistence_file
     path = f"/tmp/jarvis_empty_{int(time.time()*1000)}.json"
-    with open(path, "w") as f:
+    with open(path, "w"):
         pass
     r = validate_persistence_file(path)
     assert not r["valid"]
@@ -354,7 +354,7 @@ def test_scenario_connector_with_rate_limit():
     from core.connectors import execute_connector
     try:
         for i in range(5):
-            r = execute_connector("structured_extractor", {
+            execute_connector("structured_extractor", {
                 "text": f"data {i}", "extract_type": "list",
             })
         # After rate limit, should get rate_limited error

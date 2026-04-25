@@ -197,8 +197,6 @@ def _apply_patch_python(unified_diff: str, work_dir: Path) -> tuple[bool, str]:
 
     current_file: Optional[Path] = None
     current_lines: list[str] = []
-    hunk_old_start = 0
-    hunk_new_start = 0
     output_lines: list[str] = []
 
     def flush_file():
@@ -224,8 +222,8 @@ def _apply_patch_python(unified_diff: str, work_dir: Path) -> tuple[bool, str]:
 
         hm = hunk_re.match(line)
         if hm:
-            hunk_old_start = int(hm.group(1)) - 1
-            hunk_new_start = int(hm.group(2)) - 1
+            int(hm.group(1)) - 1
+            int(hm.group(2)) - 1
             output_lines = list(current_lines)  # reset to original for each hunk (simplification)
             continue
 

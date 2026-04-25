@@ -26,7 +26,10 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
+
+if TYPE_CHECKING:
+    from core.self_improvement.test_runner import ExperimentReport
 _silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()

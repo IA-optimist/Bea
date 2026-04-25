@@ -118,12 +118,12 @@ def test_terminal_no_outgoing():
 def test_risk_levels():
     from core.canonical_types import CanonicalRiskLevel as R
     assert len(R) == 6
-    assert R.READ.requires_approval == False
-    assert R.WRITE_LOW.requires_approval == False
-    assert R.WRITE_HIGH.requires_approval == True
-    assert R.INFRA.requires_approval == True
-    assert R.DELETE.requires_approval == True
-    assert R.DEPLOY.requires_approval == True
+    assert not R.READ.requires_approval
+    assert not R.WRITE_LOW.requires_approval
+    assert R.WRITE_HIGH.requires_approval
+    assert R.INFRA.requires_approval
+    assert R.DELETE.requires_approval
+    assert R.DEPLOY.requires_approval
 
 
 def test_risk_severity_ordering():

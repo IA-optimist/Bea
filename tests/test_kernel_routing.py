@@ -96,7 +96,7 @@ class TestPerformanceIngestion:
             types = [r["entity_type"] for r in all_records]
             assert "tool" in types
             # provider_id should also be populated
-            provider_records = [r for r in all_records if r["entity_type"] == "provider"]
+            [r for r in all_records if r["entity_type"] == "provider"]
             # May or may not have resolved depending on identity map
         finally:
             _mod._store = old_store

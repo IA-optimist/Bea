@@ -5,6 +5,11 @@ Extrait depuis hexstrike_server.py. Monté via app.register_blueprint(error_hand
 """
 from __future__ import annotations
 
+# ── Auto-patched imports (F821 cleanup) ─────────────────────
+from error_handling import ErrorType
+from datetime import datetime
+from execution_framework import execute_command_with_recovery
+
 import logging
 
 from flask import Blueprint, request, jsonify

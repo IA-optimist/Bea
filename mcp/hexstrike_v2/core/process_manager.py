@@ -195,7 +195,7 @@ class ProcessManager:
                 
                 # Check if process still exists
                 try:
-                    process = psutil.Process(pid)
+                    psutil.Process(pid)
                     
                     # Check timeout
                     if managed.timeout_seconds:

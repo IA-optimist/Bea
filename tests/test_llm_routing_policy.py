@@ -133,8 +133,8 @@ class TestBudgetRouting:
 
     def test_balanced_is_middle_ground(self):
         from core.llm_routing_policy import resolve_role
-        d_cheap = resolve_role("builder", budget="cheap")
-        d_prem = resolve_role("builder", budget="premium")
+        resolve_role("builder", budget="cheap")
+        resolve_role("builder", budget="premium")
         d_bal = resolve_role("builder", budget="balanced")
         # Balanced score should be between cheap and premium (approximately)
         # At minimum, it should differ from at least one

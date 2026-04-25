@@ -25,7 +25,7 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable, Dict
 
 import structlog
 
@@ -2401,12 +2401,12 @@ class MetaOrchestrator:
 
         try:
             # ── Phase 1: Classify (extracted method) ──────────────
-            classification = self._classify_mission(
+            self._classify_mission(
                 goal, mode, ctx, trace, _k_classification_obj
             )
 
             # ── Phase 0b: Match AI OS capabilities (extracted method) ────
-            matched_capabilities = self._match_ai_os_capabilities(
+            self._match_ai_os_capabilities(
                 goal, ctx, trace, _kernel_precomp_ok
             )
 
@@ -2568,7 +2568,7 @@ class MetaOrchestrator:
 
             if outcome is not None and outcome.success:
                 # Delegate to success outcome handler (evaluation, retry, memory, learning)
-                result_confidence = await self._handle_success_outcome(
+                await self._handle_success_outcome(
                     outcome=outcome,
                     ctx=ctx,
                     mid=mid,

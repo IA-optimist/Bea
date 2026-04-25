@@ -81,7 +81,7 @@ def _extract_from_goal(goal: str) -> dict[str, str]:
         return {}
 
     extracted: dict[str, str] = {}
-    goal_lower = goal.lower().strip()
+    goal.lower().strip()
 
     # Extract sector/domain
     for pattern in _SECTOR_PATTERNS:

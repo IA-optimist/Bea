@@ -588,7 +588,7 @@ def critique_output(
         )
 
     output_lower = output.lower()
-    goal_lower = goal.lower()
+    goal.lower()
 
     # ── 1. Generic detection ──────────────────────────
     specificity = _score_specificity(output, goal)

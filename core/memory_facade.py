@@ -530,19 +530,19 @@ class MemoryFacade:
             status.last_check = now
             try:
                 if name == "memory_toolkit":
-                    from core.tools.memory_toolkit import memory_search_similar
+                    from core.tools.memory_toolkit import memory_search_similar  # noqa: F401
                     status.available = True
                 elif name == "memory_bus":
-                    from memory.memory_bus import MemoryBus
+                    from memory.memory_bus import MemoryBus  # noqa: F401
                     status.available = True
                 elif name == "knowledge_memory":
-                    from core.knowledge_memory import get_knowledge_memory
+                    from core.knowledge_memory import get_knowledge_memory  # noqa: F401
                     status.available = True
                 elif name == "decision_memory":
-                    from memory.decision_memory import get_decision_memory
+                    from memory.decision_memory import get_decision_memory  # noqa: F401
                     status.available = True
                 elif name == "improvement_memory":
-                    from core.improvement_memory import get_improvement_memory
+                    from core.improvement_memory import get_improvement_memory  # noqa: F401
                     status.available = True
                 elif name == "knowledge_jsonl":
                     status.available = True

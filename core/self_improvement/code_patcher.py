@@ -548,7 +548,7 @@ class CodePatcher:
         Falls back to text replacement if AST manipulation fails.
         """
         try:
-            tree = ast.parse(source)
+            ast.parse(source)
         except SyntaxError:
             return None
 
