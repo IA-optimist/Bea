@@ -205,9 +205,9 @@ class _HealthScreenState extends State<HealthScreen> {
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: rate >= 0.9 ? JvColors.green.withOpacity(0.15) :
-                         rate >= 0.7 ? JvColors.orange.withOpacity(0.15) :
-                                       JvColors.red.withOpacity(0.15),
+                  color: rate >= 0.9 ? JvColors.green.withValues(alpha: 0.15) :
+                         rate >= 0.7 ? JvColors.orange.withValues(alpha: 0.15) :
+                                       JvColors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text('${(rate * 100).toStringAsFixed(0)}%',

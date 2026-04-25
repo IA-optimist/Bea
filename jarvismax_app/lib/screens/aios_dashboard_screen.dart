@@ -186,9 +186,9 @@ class _AIOSDashboardScreenState extends State<AIOSDashboardScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: profileColor.withOpacity(0.15),
+            color: profileColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: profileColor.withOpacity(0.4)),
+            border: Border.all(color: profileColor.withValues(alpha: 0.4)),
           ),
           child: Text('Active: $active',
               style: TextStyle(color: profileColor, fontWeight: FontWeight.bold)),

@@ -1536,7 +1536,7 @@ class _HistoryItem extends StatelessWidget {
               color: dotColor,
               shape: BoxShape.circle,
               boxShadow: mission.isActive
-                  ? [BoxShadow(color: dotColor.withOpacity(0.4), blurRadius: 4)]
+                  ? [BoxShadow(color: dotColor.withValues(alpha: 0.4), blurRadius: 4)]
                   : null,
             ),
           ),
