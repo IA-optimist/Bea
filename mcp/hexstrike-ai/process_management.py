@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import venv
 
-# ── Auto-patched imports (F821 cleanup) ─────────────────────
-from hexstrike_server import active_processes
-from hexstrike_server import process_lock
+# NOTE: active_processes and process_lock are module-level state declared in
+# hexstrike_server.py (the entry-point script). hexstrike_server imports this
+# module transitively via attack_intelligence → command_execution, so a
+# top-level `from hexstrike_server import ...` would create a circular
+# import. The references at lines 376-397 use lazy imports inside the
+# methods that need them.
 
 import logging
 import os
@@ -373,6 +376,7 @@ class ProcessManager:
     @staticmethod
     def register_process(pid, command, process_obj):
         """Register a new active process"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             active_processes[pid] = {
                 "pid": pid,
@@ -389,6 +393,7 @@ class ProcessManager:
     @staticmethod
     def update_process_progress(pid, progress, last_output="", bytes_processed=0):
         """Update process progress and stats"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             if pid in active_processes:
                 active_processes[pid]["progress"] = progress
@@ -407,6 +412,7 @@ class ProcessManager:
     @staticmethod
     def terminate_process(pid):
         """Terminate a specific process"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             if pid in active_processes:
                 process_info = active_processes[pid]
@@ -429,6 +435,7 @@ class ProcessManager:
     @staticmethod
     def cleanup_process(pid):
         """Remove process from active registry"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             if pid in active_processes:
                 process_info = active_processes.pop(pid)
@@ -439,18 +446,21 @@ class ProcessManager:
     @staticmethod
     def get_process_status(pid):
         """Get status of a specific process"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             return active_processes.get(pid, None)
 
     @staticmethod
     def list_active_processes():
         """List all active processes"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             return dict(active_processes)
 
     @staticmethod
     def pause_process(pid):
         """Pause a specific process (SIGSTOP)"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             if pid in active_processes:
                 try:
@@ -467,6 +477,7 @@ class ProcessManager:
     @staticmethod
     def resume_process(pid):
         """Resume a paused process (SIGCONT)"""
+        from hexstrike_server import active_processes, process_lock  # lazy
         with process_lock:
             if pid in active_processes:
                 try:

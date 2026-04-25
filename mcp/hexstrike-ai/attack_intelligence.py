@@ -18,10 +18,13 @@ Backward-compat :
 """
 from __future__ import annotations
 
-# ── Auto-patched imports (F821 cleanup) ─────────────────────
-_silent_log = __import__("structlog").get_logger(__name__)
+# NOTE: parameter_optimizer is a module-level singleton in hexstrike_server.py.
+# That module imports attack_intelligence transitively, so a top-level import
+# would create a circular dependency. The two call sites (~lines 610, 658)
+# use lazy imports inside the methods.
+import structlog
+_silent_log = structlog.get_logger(__name__)
 import os
-from hexstrike_server import parameter_optimizer
 import socket
 import urllib.request
 import urllib.parse
@@ -607,6 +610,7 @@ class IntelligentDecisionEngine:
 
         # Use advanced parameter optimizer if available
         if hasattr(self, '_use_advanced_optimizer') and self._use_advanced_optimizer:
+            from hexstrike_server import parameter_optimizer  # lazy
             return parameter_optimizer.optimize_parameters_advanced(tool, profile, context)
 
         # Fallback to legacy optimization for compatibility
@@ -655,6 +659,7 @@ class IntelligentDecisionEngine:
             optimized_params = self._optimize_checkov_params(profile, context)
         else:
             # Use advanced optimizer for unknown tools
+            from hexstrike_server import parameter_optimizer  # lazy
             return parameter_optimizer.optimize_parameters_advanced(tool, profile, context)
 
         return optimized_params

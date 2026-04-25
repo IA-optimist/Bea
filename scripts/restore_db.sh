@@ -77,8 +77,15 @@ confirm "Proceed ?"
 
 # ── Pre-restore snapshot ─────────────────────────────────────
 PRE_TS="$(date +%Y%m%d-%H%M%S)-pre-restore"
-blue "[0/5] Taking pre-restore snapshot tagged $PRE_TS..."
-bash "$(dirname "$0")/backup_db.sh" >/dev/null 2>&1 || yellow "  ⚠ pre-restore snapshot had warnings"
+PRE_LOG="/tmp/jarvis-pre-restore-${PRE_TS}.log"
+blue "[0/5] Taking pre-restore snapshot tagged $PRE_TS (log: $PRE_LOG)..."
+# Capture stderr to a log so the operator can inspect a failed pre-snapshot
+# without losing the rollback safety net silently.
+if ! bash "$(dirname "$0")/backup_db.sh" >"$PRE_LOG" 2>&1; then
+  yellow "  ⚠ pre-restore snapshot exited non-zero — see $PRE_LOG"
+  yellow "  ⚠ Without a valid snapshot, rollback after this restore will not be possible."
+  confirm "  Continue anyway WITHOUT a guaranteed pre-snapshot ?"
+fi
 
 # ── Stop core container ──────────────────────────────────────
 blue "[1/5] Stopping $CONTAINER_CORE..."

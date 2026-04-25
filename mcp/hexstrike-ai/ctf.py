@@ -3,9 +3,10 @@ HexStrike CTF Subsystem — 5 classes for CTF workflows.
 """
 from __future__ import annotations
 
-# ── Auto-patched imports (F821 cleanup) ─────────────────────
-from router_ctf import ctf_manager
-from router_ctf import ctf_tools
+# NOTE: ctf_manager and ctf_tools are imported lazily inside the methods
+# that use them (lines ~1117, ~1175, ~1210, ~1266) to break the
+# ctf.py ↔ router_ctf.py circular import — both modules need each
+# other at import time, but only at call time at runtime.
 
 import re
 import time
@@ -1113,6 +1114,7 @@ class CTFChallengeAutomator:
         }
 
         try:
+            from router_ctf import ctf_manager  # lazy: avoid circular import
             # Create workflow
             workflow = ctf_manager.create_ctf_challenge_workflow(challenge)
 
@@ -1169,6 +1171,7 @@ class CTFChallengeAutomator:
         tools = step.get("tools", [])
 
         # Execute tools in parallel (simulated for now)
+        from router_ctf import ctf_tools  # lazy: avoid circular import
         for tool in tools:
             try:
                 if tool != "manual":
@@ -1185,6 +1188,7 @@ class CTFChallengeAutomator:
 
     def _execute_sequential_step(self, step: Dict[str, Any], challenge: CTFChallenge) -> Dict[str, Any]:
         """Execute a step sequentially"""
+        from router_ctf import ctf_tools  # lazy: avoid circular import
         step_result = {
             "step": step["step"],
             "action": step["action"],
@@ -1263,6 +1267,7 @@ class CTFChallengeAutomator:
             attempted_tools.extend(step.get("tools_used", []))
 
         # Suggest alternative approaches
+        from router_ctf import ctf_tools  # lazy: avoid circular import
         all_category_tools = ctf_tools.get_category_tools(f"{challenge.category}_recon")
         unused_tools = [tool for tool in all_category_tools if tool not in attempted_tools]
 
