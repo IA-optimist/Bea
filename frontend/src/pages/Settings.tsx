@@ -234,7 +234,7 @@ export const Settings = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">API Endpoint</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                http://localhost:8000/api/v2
+                {(import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v2'}
               </p>
             </div>
             <div>

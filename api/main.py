@@ -116,8 +116,11 @@ app.add_middleware(SecurityHeadersMiddleware)
 # It MUST NOT be commented out — without it, per-route auth is the only
 # line of defense and any route without Depends(require_auth) becomes public.
 try:
-    from api.middleware import AccessEnforcementMiddleware
+    from api.middleware import AccessEnforcementMiddleware, V1DeprecationMiddleware
     app.add_middleware(AccessEnforcementMiddleware)
+    # Tags every /api/v1/* response with RFC 8594 Deprecation + Sunset headers
+    # and emits a structlog warning. Sunset target : 2026-10-01.
+    app.add_middleware(V1DeprecationMiddleware)
 except ImportError as _enf_err:
     log.error("access_enforcement_MISSING", err=str(_enf_err),
               note="Security middleware unavailable — API will rely on per-route auth only")
@@ -345,11 +348,8 @@ try:
 except Exception as _e:
     log.warning("skills_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.trace import router as trace_router
-    app.include_router(trace_router)
-except Exception as _e:
-    log.warning("trace_router_unavailable", err=str(_e))
+# Trace router removed in audit phase-11 (2026-04-25). Both /api/v1/trace/* endpoints
+# had zero callers in code, tests, frontend, or docs. Restore from git history if needed.
 
 # ── V3 feature routes (finance, missions, vault, identity, modules_v3) ──
 try:

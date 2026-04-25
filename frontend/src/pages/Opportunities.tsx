@@ -17,9 +17,13 @@ export const Opportunities = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOpportunities();
+    // Debounce keystrokes : avoid an API call + full-page spinner on every char.
+    const t = setTimeout(loadOpportunities, 300);
+    return () => clearTimeout(t);
   }, [page, statusFilter, typeFilter, searchTerm]);
 
   const loadOpportunities = async () => {
@@ -34,8 +38,10 @@ export const Opportunities = () => {
       const data = await apiClient.getOpportunities(params);
       setOpportunities(data.items);
       setTotalPages(data.total_pages);
+      setError(null);
     } catch (err) {
       console.error('Failed to load opportunities:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load opportunities');
     } finally {
       setLoading(false);
     }
@@ -45,14 +51,13 @@ export const Opportunities = () => {
     try {
       setScanning(true);
       const result = await apiClient.scanOpportunities();
-      alert(`Scan started! Job ID: ${result.job_id}`);
-      // Wait a bit then reload
-      setTimeout(() => {
-        loadOpportunities();
-      }, 2000);
+      setMessage({ type: 'success', text: `Scan started ! Job ID : ${result.job_id}` });
+      setTimeout(() => setMessage(null), 5000);
+      setTimeout(loadOpportunities, 2000);
     } catch (err) {
       console.error('Failed to start scan:', err);
-      alert('Failed to start scan');
+      setMessage({ type: 'error', text: 'Failed to start scan' });
+      setTimeout(() => setMessage(null), 5000);
     } finally {
       setScanning(false);
     }
@@ -97,6 +102,17 @@ export const Opportunities = () => {
           Scan for Opportunities
         </Button>
       </div>
+
+      {message && (
+        <div role="status" className={`p-3 rounded border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-200' : 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200'}`}>
+          {message.text}
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="p-3 rounded border bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+          Failed to load : {error}
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
