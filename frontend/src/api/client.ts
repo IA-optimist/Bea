@@ -185,19 +185,9 @@ class ApiClient {
     return data.data?.missions || [];
   }
 
-  async submitMission(goal: string, mode?: string): Promise<any> {
-    const { data } = await this.client.post('/api/v3/missions', { goal, mode: mode || 'chat' }, {
-      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
-    });
-    return data.data;
-  }
-
-  async getMission(id: string): Promise<any> {
-    const { data } = await this.client.get('/api/v3/missions/' + id, {
-      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
-    });
-    return data.data;
-  }
+  // submitMission / getMission removed in audit phase-11 — Missions.tsx
+  // posts directly to /api/v2/chat. Re-add via git history if a future
+  // page needs the v3/missions wrapper.
 
   // Generic request method for chat API
   async post<T = any>(url: string, data: any): Promise<{ data: T }> {

@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Body, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from api.schemas import ok, error as err_resp
@@ -35,6 +35,14 @@ _silent_log = __import__("structlog").get_logger(__name__)
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     """Auth dependency for mission control routes."""
     _check_auth(x_jarvis_token, authorization)
+
+
+# ── v1 deprecation contract ───────────────────────────────────────────────
+# All endpoints in this router are deprecated as of 2026-04-25 with a
+# planned sunset of 2026-10-01 (≥ 5 months notice). RFC 8594 Deprecation +
+# Sunset headers and the structlog warning are injected by
+# api.middleware.V1DeprecationMiddleware (mounted in api/main.py) so
+# nothing here needs per-route plumbing.
 
 # ── Canonical status bridge (P4) ─────────────────────────────────────────────
 
@@ -297,22 +305,6 @@ def _apply_mission_action(mission_id: str, action: str) -> tuple[dict | None, st
     return {"mission_id": mission_id, "action": action, "status": _cs, "legacy_status": str(result.status)}, ""
 
 
-@router.post("/missions/{mission_id}/approve")
-async def approve_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "approve")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
-
-
-@router.post("/missions/{mission_id}/reject")
-async def reject_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "reject")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
-
-
 @router.post("/missions/{mission_id}/pause")
 async def pause_mission(mission_id: str):
     data, err = _apply_mission_action(mission_id, "pause")
@@ -329,12 +321,16 @@ async def resume_mission(mission_id: str):
     return JSONResponse(ok(data))
 
 
-@router.post("/missions/{mission_id}/cancel")
-async def cancel_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "cancel")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
+# ── REMOVED v1 endpoints (Sunset 2026-04-25) ──────────────────────────
+# The following endpoints were removed in audit phase-11 because static
+# audit found 0 callers and v2/v3 equivalents existed :
+#   POST /api/v1/missions/{id}/approve  → POST /api/v2/missions/{id}/approve
+#   POST /api/v1/missions/{id}/reject   → POST /api/v2/missions/{id}/reject
+#   POST /api/v1/missions/{id}/cancel   → POST /api/v2/missions/{id}/abort
+#   POST /api/v1/mission/run            → POST /api/v2/missions/submit
+#   GET  /api/v1/missions/{id}/summary  → GET  /api/v2/missions/{id}
+# Restore from git history (commit 230b630^) if a stale client surfaces
+# and migration is not yet possible.
 
 
 # ── 3e — SSE Streaming ────────────────────────────────────────────────────────
@@ -433,68 +429,8 @@ async def stream_mission(mission_id: str):
     )
 
 
-# ── 3g — Create & run mission (v1 compat for Android) ───────────────────────
-
-
-class RunMissionRequest:
-    """Validated mission run request."""
-    def __init__(self, goal: str = "", priority: str = "normal",
-                 max_steps: int = 10, risk_tolerance: str = "low", **kwargs):
-        if not goal or not isinstance(goal, str):
-            raise ValueError("goal is required and must be a string")
-        if len(goal) > 10000:
-            raise ValueError("goal exceeds 10000 characters")
-        if priority not in ("low", "normal", "high", "critical"):
-            raise ValueError("priority must be low/normal/high/critical")
-        self.goal = goal.strip()
-        self.priority = priority
-        self.max_steps = max(1, min(100, int(max_steps or 10)))
-        self.risk_tolerance = risk_tolerance
-
-@router.post("/mission/run")
-async def run_mission_v1(body: dict = Body(...)):
-    """
-    Phase 9 v1 mission creation endpoint — Android compatibility.
-    Accepts {goal, priority, max_steps, risk_tolerance} and maps to MissionSystem.submit().
-    """
-    try:
-        try:
-            req = RunMissionRequest(**body)
-            goal = req.goal
-        except (ValueError, TypeError) as _ve:
-            return JSONResponse({"status": "error", "message": str(_ve)}, status_code=422)
-        goal = goal or body.get("input", "")
-        if not goal:
-            return JSONResponse({"status": "error", "message": "goal is required"}, status_code=400)
-        ms = _mission_system()
-        result = ms.submit(goal)
-        _cs = _canonical_status(str(result.status))
-        return JSONResponse({"status": "ok", "data": {
-            "mission_id": result.mission_id,
-            "status":     _cs,
-            "legacy_status": str(result.status),
-            "goal":       goal,
-            "agents_involved":   [],
-            "tools_used":        [],
-            "risk_level":        "write_low",
-            "requires_approval": _cs == "WAITING_APPROVAL",
-            "progress":          0.0,
-            "start_time":        result.created_at,
-        }})
-    except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-
-
-# ── 3f — Mission summary ──────────────────────────────────────────────────────
-
-@router.get("/missions/{mission_id}/summary")
-async def get_mission_summary(mission_id: str):
-    store = _store()
-    summary = store.get_summary(mission_id)
-    if not summary:
-        ms = _mission_system()
-        mission = ms.get(mission_id)
-        if not mission:
-            return JSONResponse(err_resp(f"Mission '{mission_id}' not found"), status_code=404)
-        return JSONResponse(err_resp(f"No summary available for mission '{mission_id}'"), status_code=404)
-    return JSONResponse(ok(summary.to_dict()))
+# ── REMOVED v1 endpoints (Sunset 2026-04-25) ──────────────────────────
+# Both endpoints had zero static callers and direct v2 equivalents :
+#   POST /api/v1/mission/run            → POST /api/v2/missions/submit
+#   GET  /api/v1/missions/{id}/summary  → GET  /api/v2/missions/{id}
+# Restore from git history if a stale client surfaces.

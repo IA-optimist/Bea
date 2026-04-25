@@ -53,13 +53,13 @@ export default function Missions() {
     try {
       // Create new mission
       const newMission: Mission = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
         date: new Date().toISOString(),
         status: 'running',
       };
-      
-      setMissions([newMission, ...missions]);
+
+      setMissions(prev => [newMission, ...prev]);
       setActiveMission(newMission);
 
       // Call API
@@ -100,7 +100,7 @@ export default function Missions() {
       };
 
       setActiveMission(updatedMission);
-      setMissions([updatedMission, ...missions.filter(m => m.id !== newMission.id)]);
+      setMissions(prev => [updatedMission, ...prev.filter(m => m.id !== newMission.id)]);
       
     } catch (error) {
       console.error('Mission failed:', error);
