@@ -39,17 +39,19 @@ select = [
   "F821",  # undefined-name (cleaned phase 3, 539 bugs fixed)
   "F823",  # undefined-local (cleaned phase 1)
   "F841",  # unused-variable (cleaned phase 4)
+  "E401",  # multiple-imports-on-one-line (cleaned phase 8)
   "E711",  # comparison-to-none
   "E712",  # true-false-comparison (cleaned phase 4)
   "E713",  # not-in test
   "E714",  # not-is test
   "E722",  # bare-except (cleaned phase 4)
+  "E731",  # lambda-assignment (cleaned phase 8 — 5 lambdas converted to def)
   "W605",  # invalid escape sequence (0)
 ]
 # TODO as these reach 0 errors, move them into `select` above :
-#   E701 (~78), E702 (~37) one-line-multi-statements (auto-fixable via --unsafe-fixes)
-#   E731 (5)  lambda-assignment
-#   E741 (~78) ambiguous-variable-name (needs l/I/O renames, manual)
+#   E701 (~78), E702 (~37) one-line multi-statements (intentional in stub
+#       classes; would need manual case-by-case refactor)
+#   E741 (~78) ambiguous-variable-name (manual l/I/O renames)
 
 # ── Non-blocking (known debt, fix later) ───────────────────
 # These are TRACKED but don't fail CI yet. Gate on them once cleanup PRs

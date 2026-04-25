@@ -45,7 +45,8 @@ except ImportError:
             def dec(f): return f
             return dec
     APIRouter = _Stub
-    Body = lambda **k: None
+    def Body(**k):
+        return None
     WebSocket = object
     WebSocketDisconnect = Exception
     JSONResponse = dict

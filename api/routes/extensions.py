@@ -23,8 +23,10 @@ except ImportError:
     APIRouter = _Stub  # type: ignore
     HTTPException = Exception  # type: ignore
     Request = object  # type: ignore
-    Body = lambda *a, **kw: None  # type: ignore
-    Depends = lambda *a, **kw: None  # type: ignore
+    def Body(*a, **kw):
+        return None  # type: ignore
+    def Depends(*a, **kw):
+        return None  # type: ignore
     require_auth = None  # type: ignore
     class JSONResponse:  # type: ignore
         def __init__(self, *a, **kw): pass

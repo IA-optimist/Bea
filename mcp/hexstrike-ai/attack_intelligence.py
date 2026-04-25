@@ -23,7 +23,8 @@ _silent_log = __import__("structlog").get_logger(__name__)
 import os
 from hexstrike_server import parameter_optimizer
 import socket
-import urllib.request, urllib.parse
+import urllib.request
+import urllib.parse
 
 import logging
 import re
