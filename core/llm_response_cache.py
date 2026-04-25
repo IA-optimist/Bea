@@ -177,30 +177,31 @@ def cached_llm_call(
 
     key = _compute_cache_key(model, temperature, messages, tools)
 
-    # Try Redis first, then memory
-    redis = _get_redis()
-    cached_bytes: Optional[bytes] = None
-    if redis is not None:
-        try:
-            cached_bytes = redis.get(key)
-        except Exception as e:
-            log.debug("llm_cache.redis_get_failed", err=str(e)[:60])
-
-    if cached_bytes is not None:
-        try:
-            result = json.loads(cached_bytes.decode("utf-8"))
-            with _stats_lock:
-                _stats["hits"] += 1
-            return result
-        except Exception:
-            pass  # fall through to regeneration
-
-    # Memory fallback
+    # 2-tier lookup : in-memory LRU first (no network), then Redis on miss.
     mem_hit = _memory_cache.get(key)
     if mem_hit is not None:
         with _stats_lock:
             _stats["hits"] += 1
         return mem_hit
+
+    redis = _get_redis()
+    if redis is not None:
+        try:
+            cached_bytes = redis.get(key)
+        except Exception as e:
+            log.debug("llm_cache.redis_get_failed", err=str(e)[:60])
+            cached_bytes = None
+        if cached_bytes is not None:
+            try:
+                result = json.loads(cached_bytes.decode("utf-8"))
+                # Backfill memory tier so subsequent same-process calls skip
+                # the Redis round-trip.
+                _memory_cache.set(key, result, ttl_seconds)
+                with _stats_lock:
+                    _stats["hits"] += 1
+                return result
+            except Exception:
+                pass  # corrupted entry → fall through to regeneration
 
     # Miss → execute
     with _stats_lock:

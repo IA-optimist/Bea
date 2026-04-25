@@ -129,8 +129,8 @@ for i in {1..30}; do
     green "  ✓ health OK after ${i}×2s"
     break
   fi
-  sleep 2
   [[ $i -eq 30 ]] && die "health check timeout after restore — inspect container logs"
+  sleep 2
 done
 
 echo

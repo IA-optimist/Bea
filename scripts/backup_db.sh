@@ -41,10 +41,13 @@ command -v docker >/dev/null || die "docker not found"
 mkdir -p "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly" "$BACKUP_DIR/monthly"
 chmod 700 "$BACKUP_DIR"
 
+# Snapshot running containers once — saves a Docker API round-trip per check.
+RUNNING_CONTAINERS="$(docker ps --format '{{.Names}}')"
+
 # ── 1. PostgreSQL ────────────────────────────────────────────
 log "Backing up PostgreSQL..."
 PG_DUMP="$BACKUP_DIR/daily/pg_${TS}.sql.gz"
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_PG}$"; then
+if grep -q "^${CONTAINER_PG}$" <<< "$RUNNING_CONTAINERS"; then
   docker exec "$CONTAINER_PG" pg_dump -U jarvis jarvismax 2>/dev/null | gzip > "$PG_DUMP" \
     && log "  ✓ $PG_DUMP ($(du -h "$PG_DUMP" | cut -f1))" \
     || die "pg_dump failed"
@@ -56,7 +59,7 @@ fi
 # ── 2. Redis ────────────────────────────────────────────────
 log "Backing up Redis..."
 REDIS_DUMP="$BACKUP_DIR/daily/redis_${TS}.rdb"
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_REDIS}$"; then
+if grep -q "^${CONTAINER_REDIS}$" <<< "$RUNNING_CONTAINERS"; then
   docker exec "$CONTAINER_REDIS" redis-cli --rdb /tmp/dump.rdb >/dev/null 2>&1 || true
   if docker exec "$CONTAINER_REDIS" test -f /tmp/dump.rdb; then
     docker cp "${CONTAINER_REDIS}:/tmp/dump.rdb" "$REDIS_DUMP" \
