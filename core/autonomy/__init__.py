@@ -67,6 +67,25 @@ from core.autonomy.stop_conditions import (
     timeout_condition,
 )
 
+# Wiring helpers (added in autonomy-wiring branch)
+from core.autonomy.runners import (
+    composite_runner,
+    meta_orchestrator_runner,
+    static_response_runner,
+)
+from core.autonomy.planners import (
+    chain_planner,
+    learner_aware_planner,
+    objective_engine_planner,
+    static_planner,
+)
+from core.autonomy.approval_bridge import (
+    StrategyChoice,
+    cancel_pending_choices_older_than,
+    request_strategy_choice,
+    wait_for_strategy_choice,
+)
+
 __all__ = [
     # event_bus
     "Event", "EventBus", "get_event_bus", "reset_event_bus",
@@ -87,4 +106,11 @@ __all__ = [
     # multi_choice
     "Choice", "Decision", "MultiChoiceStore", "ask",
     "get_multi_choice_store", "reset_multi_choice_store",
+    # runners
+    "composite_runner", "meta_orchestrator_runner", "static_response_runner",
+    # planners
+    "chain_planner", "learner_aware_planner", "objective_engine_planner", "static_planner",
+    # approval bridge
+    "StrategyChoice", "cancel_pending_choices_older_than",
+    "request_strategy_choice", "wait_for_strategy_choice",
 ]

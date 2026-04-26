@@ -189,6 +189,13 @@ try:
 except Exception as _e:
     log.warning("training_router_unavailable", err=str(_e)[:120])
 
+# ── Import du routeur Autonomy (daemon control plane) ─────────
+try:
+    from api.routes.autonomy import router as autonomy_router
+    app.include_router(autonomy_router)
+except Exception as _e:
+    log.warning("autonomy_router_unavailable", err=str(_e)[:120])
+
 # ── Import du routeur Multimodal ───────────────────────────────
 try:
     from api.routes.multimodal import router as multimodal_router
