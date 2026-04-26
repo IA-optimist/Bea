@@ -1,0 +1,68 @@
+# systemd unit — auto-start the autonomy daemon at boot.
+#
+# Install (on VPS1, as root):
+#   1. cp deploy/jarvis-autonomy.service /etc/systemd/system/
+#   2. Edit /etc/systemd/system/jarvis-autonomy.service to set the
+#      correct OBJECTIVE_FILE path (default /etc/jarvismax/autonomy_objective.txt)
+#      and JARVIS_API_TOKEN (from /root/Jarvismax-master/.env)
+#   3. systemctl daemon-reload
+#   4. systemctl enable --now jarvis-autonomy
+#
+# Or use the helper :  bash scripts/install_autonomy.sh
+#
+# This unit assumes the JarvisMax API container is up on
+# http://localhost:8000 and the autonomy router is mounted. The unit
+# does NOT run the daemon itself — it POSTs to /api/v3/autonomy/start
+# at boot, and lets the API process own the daemon thread.
+#
+# Safety :
+# - Restart=on-failure with a 30 s back-off (avoid restart loops)
+# - DefaultLimitNOFILE=4096 keeps file descriptors bounded
+# - Operator can disable via : systemctl stop jarvis-autonomy
+# - Or pause via env : echo 'JARVIS_AUTONOMY_PAUSED=1' >> .env (then docker restart)
+
+[Unit]
+Description=JarvisMax autonomy daemon bootstrap
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/jarvismax/autonomy.env
+# Defaults (overridable via /etc/jarvismax/autonomy.env) :
+Environment=JARVIS_API_URL=http://localhost:8000
+Environment=OBJECTIVE_FILE=/etc/jarvismax/autonomy_objective.txt
+Environment=MAX_ITERS=20
+Environment=SLEEP_S=30
+Environment=MAX_SECONDS=1800
+Environment=MAX_TOKENS=200000
+Environment=MAX_USD=1.0
+ExecStart=/usr/bin/env bash -c '\
+  set -e ; \
+  if [[ -z "$JARVIS_API_TOKEN" ]] ; then \
+    echo "JARVIS_API_TOKEN unset — refusing to start" >&2 ; exit 1 ; \
+  fi ; \
+  OBJECTIVE="$(cat \"$OBJECTIVE_FILE\" 2>/dev/null || echo \"daily-monitor\")" ; \
+  curl -fsS -X POST "$JARVIS_API_URL/api/v3/autonomy/start" \
+    -H "Authorization: Bearer $JARVIS_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\
+      \"objective\": \"$OBJECTIVE\", \
+      \"max_iters\": $MAX_ITERS, \
+      \"sleep_s\": $SLEEP_S, \
+      \"max_seconds\": $MAX_SECONDS, \
+      \"max_tokens\": $MAX_TOKENS, \
+      \"max_usd\": $MAX_USD, \
+      \"force\": true \
+    }" \
+'
+
+# Restart strategy : the bootstrap is idempotent thanks to force=true,
+# but we don't restart on success (Type=oneshot) — only on failure.
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target

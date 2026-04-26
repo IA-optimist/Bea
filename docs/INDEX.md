@@ -17,6 +17,7 @@
 | [`kernel_spec.md`](kernel_spec.md) | Kernel contract spec |
 | [`API_VERSIONING.md`](API_VERSIONING.md) | v1 / v2 / v3 surface map + sunset plan |
 | [`AUDIT_ROADMAP.md`](AUDIT_ROADMAP.md) | Phase-by-phase audit progress + remaining debt |
+| [`AUTONOMY.md`](AUTONOMY.md) | Autonomy daemon + skills + REST API operator guide |
 
 ## Operational scripts
 

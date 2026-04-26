@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/mission.dart';
 import '../models/action_model.dart';
+import '../models/autonomy_decision.dart';
 import '../models/system_status.dart';
 import 'websocket_service.dart';
 import 'session_manager.dart';
@@ -363,6 +364,51 @@ class ApiService extends ChangeNotifier {
       headers: _authHeaders,
     ).timeout(const Duration(seconds: 8));
     return _parse(resp);
+  }
+
+  // ── Autonomy : multi-choice decisions ───────────────────────────────────
+  // Mirror of /api/v3/autonomy/decisions and .../{id}/answer.
+
+  /// Fetch the list of pending autonomy decisions awaiting operator input.
+  Future<List<AutonomyDecision>> fetchPendingDecisions() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('$_base/api/v3/autonomy/decisions'),
+        headers: _authHeaders,
+      ).timeout(const Duration(seconds: 8));
+      if (resp.statusCode != 200) return const [];
+      final raw = jsonDecode(resp.body);
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(AutonomyDecision.fromJson)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Answer a pending decision. Returns true on success.
+  Future<bool> answerDecision(String decisionId, int selectedIndex) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('$_base/api/v3/autonomy/decisions/$decisionId/answer'),
+        headers: {..._authHeaders, 'Content-Type': 'application/json'},
+        body: jsonEncode({'selected_index': selectedIndex}),
+      ).timeout(const Duration(seconds: 8));
+      return resp.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Read-only autonomy daemon status.
+  Future<Map<String, dynamic>> fetchAutonomyStatus() async {
+    try {
+      return await getJson('/api/v3/autonomy/status');
+    } catch (_) {
+      return {'running': false};
+    }
   }
 
   Map<String, dynamic> _parse(http.Response resp) {
