@@ -22,7 +22,9 @@ from core.autonomy.budget import (
     reset_budget_tracker,
 )
 from core.autonomy.daemon import (
+    ActionPlanner,
     ActionResult,
+    ActionRunner,
     AutonomyDaemon,
     PlannedAction,
     event_bus_runner,
@@ -93,7 +95,8 @@ __all__ = [
     "Budget", "BudgetExceeded", "BudgetTracker",
     "get_budget_tracker", "reset_budget_tracker",
     # daemon
-    "ActionResult", "AutonomyDaemon", "PlannedAction", "event_bus_runner",
+    "ActionPlanner", "ActionResult", "ActionRunner",
+    "AutonomyDaemon", "PlannedAction", "event_bus_runner",
     # stop_conditions
     "StopCheck", "StopContext",
     "all_of", "any_of", "confidence_condition", "consecutive_failures_condition",

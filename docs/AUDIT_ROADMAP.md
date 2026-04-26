@@ -79,6 +79,32 @@ Added to the blocking select :
 - Coverage threshold bumped 48% → 50%
 - Security review (sub-agent) : 0 vulnerabilities found in the diff
 
+### Autonomy Foundation (5 layered modules, 99 tests)
+- `core/autonomy/event_bus.py` (12 tests) — in-process pub/sub
+- `core/autonomy/budget.py` (11 tests) — per-mission + daily caps
+- `core/autonomy/daemon.py` (17 tests) — goal-driven loop with stop conditions
+- `core/autonomy/skills.py` + builtin_skills.py (11 tests) — registry + 5 defaults
+- `core/autonomy/learning.py` (9 tests) — EWMA outcome aggregator
+- `core/autonomy/multi_choice.py` (17 tests) — HITL beyond approve/reject
+
+### Autonomy Wiring (real-orchestrator integration)
+- `core/autonomy/runners.py` — meta_orchestrator_runner, composite_runner
+- `core/autonomy/planners.py` — objective_engine_planner, learner_aware_planner, chain_planner
+- `core/autonomy/approval_bridge.py` — StrategyChoice + request_strategy_choice
+- `api/routes/autonomy.py` — /api/v3/autonomy/{start, stop, status, decisions}
+  with feature flag `JARVIS_AUTONOMY_USE_REAL=1` to switch from safe to real mode
+- `tests/test_autonomy_api.py` (11 tests) — FastAPI TestClient
+- 22 wiring tests in `tests/test_autonomy_wiring.py`
+
+### Autonomy Production Wiring
+- `jarvismax_app/lib/models/autonomy_decision.dart` + `screens/decisions_screen.dart`
+  Mobile UI : list pending decisions, tap to choose, with risk badges
+- ApiService.fetchPendingDecisions / answerDecision / fetchAutonomyStatus
+- Approvals screen → tap icon → DecisionsScreen
+- `deploy/jarvis-autonomy.service` — systemd unit that POSTs /start at boot
+- `scripts/install_autonomy.sh` — interactive installer with smoke test
+- `docs/AUTONOMY.md` — operator guide
+
 ## Remaining debt (explicitly tracked)
 
 | Rule / Area         | Count  | Severity | Recommended fix |

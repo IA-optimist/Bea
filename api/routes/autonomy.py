@@ -25,6 +25,7 @@ the process.
 """
 from __future__ import annotations
 
+import os
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -35,14 +36,21 @@ from pydantic import BaseModel, Field
 
 from api._deps import require_auth
 from core.autonomy import (
+    ActionPlanner,
+    ActionRunner,
     AutonomyDaemon,
     Budget,
+    chain_planner,
     get_budget_tracker,
     get_event_bus,
     get_multi_choice_store,
+    get_outcome_learner,
+    learner_aware_planner,
+    objective_engine_planner,
     reset_budget_tracker,
 )
 from core.autonomy.daemon import default_planner, event_bus_runner
+from core.autonomy.runners import composite_runner, meta_orchestrator_runner
 from core.autonomy.stop_conditions import default_mission_policy
 
 log = structlog.get_logger(__name__)
@@ -59,6 +67,49 @@ _daemon_lock = threading.Lock()
 _daemon: Optional[AutonomyDaemon] = None
 _daemon_thread: Optional[threading.Thread] = None
 _daemon_meta: Dict[str, Any] = {}
+
+
+# ── Runner / planner factories ──────────────────────────────
+# By default the daemon uses safe stubs (event_bus_runner +
+# default_planner). Setting JARVIS_AUTONOMY_USE_REAL=1 swaps in the
+# real MetaOrchestrator runner + ObjectiveEngine-aware planner with
+# learner downgrade. Operators flip this flag in pre-prod first ; CI
+# stays on the safe defaults so tests don't accidentally execute
+# real missions.
+def _build_runner_and_planner() -> tuple[ActionRunner, ActionPlanner]:
+    use_real = os.getenv("JARVIS_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
+    if not use_real:
+        return event_bus_runner(get_event_bus()), default_planner
+
+    # Lazy imports : avoid pulling MetaOrchestrator at module load
+    # time (keeps the api/main.py startup fast even when autonomy
+    # is disabled).
+    try:
+        from core.meta_orchestrator import get_meta_orchestrator
+        orchestrator = get_meta_orchestrator()
+    except Exception as exc:
+        log.warning("autonomy.real_runner_unavailable", err=str(exc)[:160])
+        return event_bus_runner(get_event_bus()), default_planner
+
+    real_runner = meta_orchestrator_runner(orchestrator)
+    safe_runner = event_bus_runner(get_event_bus())
+    runner = composite_runner(real_runner, safe_runner)
+
+    planner: ActionPlanner = default_planner
+    try:
+        from core.objectives.objective_engine import get_objective_engine
+        engine = get_objective_engine()
+        learner = get_outcome_learner()
+        planner = chain_planner(
+            learner_aware_planner(objective_engine_planner(engine), learner),
+            default_planner,
+        )
+    except Exception as exc:
+        log.debug("autonomy.objective_planner_unavailable", err=str(exc)[:120])
+
+    log.info("autonomy.real_runner_active",
+             objective_engine=("yes" if planner is not default_planner else "no"))
+    return runner, planner
 
 
 # ── Schemas ──────────────────────────────────────────────────
@@ -120,16 +171,15 @@ async def start_daemon(req: StartRequest) -> Dict[str, Any]:
             max_seconds=req.max_seconds,
             max_iterations=req.max_iters,
         )
+        runner, planner = _build_runner_and_planner()
+        use_real = os.getenv("JARVIS_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
         _daemon = AutonomyDaemon(
             objective=req.objective,
             mission_id=mission_id,
             mission_budget=budget,
             stop_policy=policy,
-            # Default planner + event_bus_runner are safe : no side effects
-            # beyond bus events. Operators wire real planner/runner via
-            # the autonomy module imports in their startup hook.
-            planner=default_planner,
-            action_runner=event_bus_runner(get_event_bus()),
+            planner=planner,
+            action_runner=runner,
         )
 
         def _run():
@@ -145,6 +195,7 @@ async def start_daemon(req: StartRequest) -> Dict[str, Any]:
             "started_at": time.time(),
             "max_iters": req.max_iters,
             "max_seconds": req.max_seconds,
+            "mode": "real" if use_real else "safe",
         }
         _daemon_thread.start()
         return {"status": "started", **_daemon_meta}
