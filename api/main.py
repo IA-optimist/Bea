@@ -154,6 +154,15 @@ except ImportError as _rl_err:
             "Fix the import or unset JARVIS_PRODUCTION."
         ) from _rl_err
 
+# ── Training-data collector hook (opt-in via JARVIS_TRAINING_COLLECT=1) ──
+# Wraps LLMFactory.safe_invoke so every successful LLM call is captured
+# in data/training/raw/*.jsonl. No-op if the env var is unset.
+try:
+    from core.llm_wrapper import patch_llm_factory
+    patch_llm_factory()
+except Exception as _tc_err:
+    log.debug("training_collector_hook_skipped", err=str(_tc_err)[:120])
+
 # ── Router Registry ───────────────────────────────────────────
 try:
     from api.router_registry import register_router as _reg_fn, register_failure as _fail_fn
