@@ -1,187 +1,213 @@
-# JarvisMax
+# Orchestrate - Plateforme d'Orchestration d'Agents IA Multi-framework
 
-> Autonomous AI orchestration system — cognitive core + business automation scaffolding.
+[English](README_EN.md) | [Español](README_ES.md) | [中文](README_ZH.md) | [日本語](README_JA.md) | [Deutsch](README_DE.md)
 
-**Version**: 1.0.0 · **Status**: Internal beta (Jarvis cognitive core PROVEN, business layer WIP) · **License**: MIT
+## 🎯 Présentation
 
----
+Orchestrate est une plateforme complète d'orchestration d'agents IA qui combine un CLI puissant pour la gestion multi-framework et une application mobile native pour le suivi en temps réel et la visualisation 3D des workflows.
 
-## What this is
+### 🚀 Caractéristiques Principales
 
-JarvisMax has two layers with very different maturity:
+- **Multi-framework Support**: LangChain, AutoGen, CrewAI, LlamaIndex, Haystack
+- **5 Agents CLI Intégrés**: Gemini AI CLI, Codex CLI, Claude Code, GitHub Copilot CLI, OpenCode CLI
+- **Application Mobile Native**: Flutter avec visualisation 3D en temps réel
+- **WebSocket Integration**: Communication temps réel avec Kimi Agent SDK
+- **Dashboard 3D**: Visualisation interactive des workflows avec Three.js
+- **Monitoring en Temps Réel**: Suivi des agents et des workflows
+- **Architecture Modulaire**: Conception extensible et maintenable
 
-### 🟢 Jarvis Cognitive Core — PROVEN
+## 📁 Structure du Projet
 
-A mission orchestration system with real cognitive features:
+```
+Jarvismax-master/
+├── orchestrate-cli/          # CLI d'orchestration
+│   ├── src/
+│   │   ├── agents/          # 5 agents CLI intégrés
+│   │   ├── orchestrators/   # Frameworks d'orchestration
+│   │   ├── tools/          # Registre d'outils
+│   │   └── monitoring/     # Surveillance performance
+│   ├── main.py             # Point d'entrée CLI
+│   └── requirements.txt   # Dépendances
+├── orchestrate-mobile/      # Application mobile Flutter
+│   ├── lib/
+│   │   ├── screens/        # Écrans de l'application
+│   │   ├── widgets/       # Composants UI
+│   │   ├── services/      # Services (WebSocket, API)
+│   │   ├── models/        # Modèles de données
+│   │   └── utils/         # Utilitaires
+│   ├── assets/             # Ressources (3D, images, etc.)
+│   ├── pubspec.yaml       # Configuration Flutter
+│   └── backend/           # Serveur backend
+└── README.md              # Documentation principale
+```
 
-- **MetaOrchestrator** — 12-phase mission lifecycle (classify → plan → route → retrieve memory → reason → execute → learn)
-- **ConfidencePolicy** — 5 tiers (PROCEED / CONTEXT / CAUTIOUS / DECOMPOSE / ABORT) that actually gate execution
-- **MemoryRetrieval** — pre-planning lesson injection from past failures and successes
-- **MissionReasoningState** — build initial/target state, track expected vs observed post-execution
-- **LLM Factory** — provider routing (OpenAI / Anthropic / OpenRouter / Ollama) with circuit breaker
-- **Self-improvement** — sandbox-validated patch promotion pipeline
-- **Kernel layer** — 19 capabilities, 5 memory types, contracts, policy, learning
-- **Auth** — layered middleware + per-route `Depends(require_auth)`, `hmac.compare_digest`, JWT HS256, access tokens
+## 🛠️ Installation
 
-**Proof**: 802/802 gate tests pass. 557 routes load at boot.
+### Prérequis
 
-### 🚧 Business Automation Layer — WIP
+- Python 3.8+
+- Flutter 3.13.0+
+- Node.js 16+
+- Git
 
-Scaffolding being progressively wired into the orchestrator:
-
-- **Business Engine** — opportunity scanner (Product Hunt / Reddit / HN) wired; product builder generates HTML templates; deploy is TODO
-- **Tax Optimizer** — France compliance calculation, wired via `business.optimize_taxes` handler
-- **HexStrike v1** — 150+ pentest tools (legacy monolith, registered but not orchestrated)
-- **HexStrike v2** — modular refactor in progress (17 tool files, currently template stubs)
-- **SOC Service** — standalone class, orchestration WIP
-- **Data Intelligence** — service class ready, scanning logic WIP
-- **Agent Marketplace** — schema defined, marketplace WIP
-- **React Frontend** — UI complete, backend integration WIP (some endpoints mismatched)
-- **React Native Mobile** — scaffolding, secondary to the Flutter canonical app
-
-See [docs/STATUS.md](docs/STATUS.md) for honest per-component maturity.
-
----
-
-## Quick start
+### Installation du CLI
 
 ```bash
-# 1. Clone and configure
-git clone https://github.com/UniTy01/Jarvismax-master.git
-cd Jarvismax-master
-cp .env.example .env
-# Edit .env: set at least ANTHROPIC_API_KEY (or another LLM key) + JARVIS_SECRET_KEY
-
-# 2. Start Qdrant (required for memory)
-docker run -d -p 6333:6333 qdrant/qdrant:v1.9.7
-
-# 3. Install and run
+cd orchestrate-cli
 pip install -r requirements.txt
-pip install langchain-anthropic   # or langchain-openai if using OpenRouter
-python main.py
-
-# 4. Verify
-curl http://localhost:8000/api/v3/system/readiness
 ```
 
-Full guide: [docs/QUICKSTART.md](docs/QUICKSTART.md)
-
-Docker stack: `docker-compose up -d`
-
----
-
-## Repository layout
-
-```
-main.py                    # Canonical entrypoint (kernel boot + FastAPI startup)
-api/                       # FastAPI app (55+ routers, 548 endpoints)
-  main.py                  # App init, middleware stack, router mounts
-  routes/                  # 53 route modules
-  _deps.py, auth.py        # Auth dependencies, JWT, constant-time compare
-  access_enforcement.py    # Middleware token validation
-  middleware.py            # Auth middleware, rate limiting, security headers
-
-core/                      # Cognitive core (346 files)
-  meta_orchestrator.py     # Mission lifecycle (1973 lines, 12 phases)
-  orchestration/           # Confidence policy, memory retrieval, reasoning state
-  llm_factory.py           # Provider routing, Ollama circuit breaker
-  self_improvement/        # Patch promotion pipeline (sandbox + tests)
-  mcp/                     # MCP registry
-
-kernel/                    # Kernel layer (50 files)
-  runtime/                 # boot.py, kernel.py — JarvisKernel singleton
-  memory/                  # 5-type memory interface + registration slots
-  capabilities/            # 19 registered capabilities
-  evaluation/, learning/, planning/   # Wired to core via registration slots
-  contracts/               # Type definitions
-
-executor/                  # Execution layer
-  execution_engine.py      # Task queue (heapq, retry, timeout)
-  runner.py                # ActionExecutor (10 action types, whitelist/blacklist)
-  supervised_executor.py   # Approval gate wrapping
-  capability_dispatch.py   # Native / plugin / MCP routing
-
-agents/                    # Agent crew (36 files)
-  crew.py                  # BaseAgent + 9 core agents
-  registry.py              # AGENT_CLASSES
-  jarvis_team/             # Architect, Coder, Reviewer
-  autonomous/              # Devin-like agent
-
-business/                  # Business layer (35 files, scaffolding WIP)
-  automation/              # Opportunity scanner (WIRED), product builder (STUB)
-  legal/                   # Compliance checker
-  revenue/                 # Revenue engine (dataclasses)
-  fiscal/                  # Tax optimizer (WIRED)
-
-mcp/                       # MCP sidecars
-  hexstrike-ai/            # Legacy monolith (734KB)
-  hexstrike_v2/            # Modular refactor WIP (17 stubs)
-
-static/
-  app.html                 # Canonical web SPA (French, 973 lines)
-
-jarvismax_app/             # Flutter mobile app (CANONICAL per docs)
-mobile/                    # React Native mobile (secondary, WIP)
-frontend/                  # React web dashboard (WIP, API mismatch)
-
-tests/                     # 216 test files (802 gate tests pass)
-docker/, docker-compose*.yml  # Docker deployment
-```
-
----
-
-## Documentation
-
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — install + first mission
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — real architecture (single source of truth)
-- **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** — all endpoints documented
-- **[docs/STATUS.md](docs/STATUS.md)** — honest per-component maturity
-- **[docs/CODE_REVIEW.md](docs/CODE_REVIEW.md)** — 2026-04-08 full code audit
-- **[CHANGELOG.md](CHANGELOG.md)** — release history
-
----
-
-## Testing
+### Installation de l'Application Mobile
 
 ```bash
-# Gate tests (must pass — 802 tests)
-python -m pytest tests/test_terminal_state_truth.py \
-                 tests/test_canonical_mission_persistence.py \
-                 tests/test_hierarchical_planner.py \
-                 tests/test_production_hardening_p34.py \
-                 tests/test_mission_engine.py \
-                 tests/test_capability_routing.py \
-                 tests/test_kernel.py \
-                 tests/test_self_improvement_engine.py \
-                 tests/test_secret_vault.py \
-                 tests/test_identity_manager.py \
-                 tests/test_evaluation_engine.py \
-                 tests/test_economic_cognition.py \
-                 tests/test_surgical_hardening.py \
-                 tests/test_self_improvement_execution.py \
-                 tests/test_cognitive_upgrade.py \
-                 tests/test_readiness_endpoint.py \
-                 tests/test_access_enforcement.py \
-                 tests/test_api_structure.py
-
-# Full suite (non-gated)
-python -m pytest tests/ --ignore=tests/smoke
+cd orchestrate-mobile
+flutter pub get
 ```
 
-Current state: **802/802 gate tests pass**, full suite 4700+ passing with ~170 stale UI test failures (documented in CODE_REVIEW.md).
+## 🚀 Utilisation
+
+### Démarrer le CLI
+
+```bash
+cd orchestrate-cli
+python main.py --help
+```
+
+### Démarrer le Backend
+
+```bash
+cd orchestrate-mobile/backend
+python websocket_server.py
+```
+
+### Démarrer l'Application Mobile
+
+```bash
+cd orchestrate-mobile
+flutter run
+```
+
+## 🔧 Configuration
+
+### Configuration des Agents
+
+Éditez `src/agents/agent_config.py` pour configurer les paramètres de chaque agent :
+
+```python
+{
+    "gemini_cli": {
+        "api_key": "votre_cle_api",
+        "model": "gemini-pro"
+    },
+    "claude_code": {
+        "api_key": "votre_cle_api",
+        "model": "claude-3-sonnet"
+    }
+}
+```
+
+### Configuration WebSocket
+
+Modifiez `websocket_server.py` pour ajuster les paramètres du serveur :
+
+```python
+HOST = "0.0.0.0"
+PORT = 8002
+```
+
+## 📊 Fonctionnalités Avancées
+
+### Multi-framework Orchestration
+
+Le CLI supporte plusieurs frameworks d'orchestration :
+
+- **LangChain**: Standard de l'industrie pour les applications IA
+- **AutoGen**: Multi-agents natif avec collaboration
+- **CrewAI**: Orchestration simple et logique claire
+- **LlamaIndex**: Spécialisé dans le RAG et les documents
+- **Haystack**: Robuste et orienté recherche
+
+### Visualisation 3D
+
+L'application mobile offre une visualisation 3D interactive des workflows :
+
+- Représentation graphique des agents
+- Suivi en temps réel des états
+- Navigation 3D intuitive
+- Exportation de scènes
+
+### Monitoring en Temps Réel
+
+- Tableau de bord avec métriques en temps réel
+- Alertes et notifications
+- Historique des exécutions
+- Analyse de performance
+
+## 🔄 API Endpoints
+
+### WebSocket
+
+- `ws://localhost:8002/ws` - Canal principal de communication
+- `ws://localhost:8002/ws/agents` - Informations sur les agents
+- `ws://localhost:8002/ws/workflows` - État des workflows
+
+### REST API
+
+- `GET /api/agents` - Liste des agents
+- `POST /api/workflows` - Créer un workflow
+- `GET /api/workflows/{id}` - Détails d'un workflow
+- `DELETE /api/workflows/{id}` - Supprimer un workflow
+
+## 🧪 Développement
+
+### Tests
+
+```bash
+# Tests unitaires
+pytest tests/
+
+# Tests d'intégration
+pytest tests/integration/
+```
+
+### Linting
+
+```bash
+# Python
+flake8 src/
+black src/
+
+# Dart
+dart analyze lib/
+dart format lib/
+```
+
+## 📝 Documentation
+
+- [Documentation Complète](docs/)
+- [API Reference](docs/api.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Changelog](docs/CHANGELOG.md)
+
+## 🤝 Contribuer
+
+1. Fork le projet
+2. Créez une branche (`git checkout -b feature/amazing-feature`)
+3. Commitez vos changements (`git commit -m 'Add amazing feature'`)
+4. Poussez la branche (`git push origin feature/amazing-feature`)
+5. Ouvrez un Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 🙏 Remerciements
+
+- [Flutter](https://flutter.dev/) - Framework mobile
+- [FastAPI](https://fastapi.tiangolo.com/) - Framework web
+- [LangChain](https://langchain.com/) - Framework d'orchestration
+- [Three.js](https://threejs.org/) - 3D graphics library
 
 ---
 
-## Contributing
-
-1. Read [docs/STATUS.md](docs/STATUS.md) to understand what is PROVEN vs WIP.
-2. Don't delete files marked `# WIP — scaffolding awaiting orchestrator integration`.
-3. Gate tests must stay green.
-4. New routes need per-route auth (`Depends(require_auth)` or `dependencies=[Depends(require_auth)]` at the router level).
-5. No `except Exception: pass` without logging.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+**Pour plus d'informations, visitez notre [site web](https://orchestrate-ai.com) ou contactez-nous à [info@orchestrate-ai.com](mailto:info@orchestrate-ai.com).**
