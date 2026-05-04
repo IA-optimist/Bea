@@ -1,0 +1,417 @@
+version: '1.0.0'
+
+frameworks:
+  langchain:
+    enabled: true
+    providers:
+      openrouter:
+        api_key: ${OPENROUTER_API_KEY}
+        models: ['deepseek/deepseek-v4-pro', 'gpt-4o']
+        temperature: 0.7
+        max_tokens: 4000
+      anthropic:
+        api_key: ${ANTHROPIC_API_KEY}
+        models: ['claude-3-sonnet-20240229']
+        temperature: 0.7
+        max_tokens: 4000
+    agents:
+      general_agent:
+        role: 'General Purpose AI'
+        goal: 'Handle a wide variety of tasks'
+        tools: ['web_search', 'file_operations', 'code_execution']
+      research_agent:
+        role: 'Research Specialist'
+        goal: 'Gather and analyze information'
+        tools: ['web_search', 'data_analysis']
+      coding_agent:
+        role: 'Code Specialist'
+        goal: 'Write, review, and optimize code'
+        tools: ['code_execution', 'file_operations']
+      planning_agent:
+        role: 'Planning Specialist'
+        goal: 'Create plans and strategies'
+        tools: ['web_search', 'data_analysis']
+
+  autogen:
+    enabled: true
+    agents:
+      assistant:
+        model: 'deepseek/deepseek-v4-pro'
+        temperature: 0.7
+        max_tokens: 4000
+        system_message: 'You are a helpful AI assistant. Provide detailed and accurate responses.'
+        human_input_mode: 'NEVER'
+        max_consecutive_auto_reply: 10
+        code_execution_config:
+          work_dir: './autogen_workspace'
+          use_docker: false
+      user_proxy:
+        model: 'deepseek/deepseek-v4-pro'
+        temperature: 0.0
+        max_tokens: 4000
+        human_input_mode: 'NEVER'
+        max_consecutive_auto_reply: 10
+        code_execution_config:
+          work_dir: './autogen_workspace'
+          use_docker: false
+
+  crewai:
+    enabled: true
+    agents:
+      research_agent:
+        role: 'Research Specialist'
+        goal: 'Gather and analyze information from multiple sources'
+        backstory: 'Expert researcher with access to multiple data sources and advanced research techniques'
+        verbose: true
+        allow_delegation: true
+      code_agent:
+        role: 'Code Specialist'
+        goal: 'Write, review, and optimize high-quality code'
+        backstory: 'Experienced developer with expertise in multiple programming languages and best practices'
+        verbose: true
+        allow_delegation: true
+      planning_agent:
+        role: 'Planning Specialist'
+        goal: 'Create detailed plans and strategies'
+        backstory: 'Strategic planner with excellent organizational skills and foresight'
+        verbose: true
+        allow_delegation: true
+      analysis_agent:
+        role: 'Data Analyst'
+        goal: 'Analyze data and generate insights'
+        backstory: 'Data scientist with strong analytical skills and statistical expertise'
+        verbose: true
+        allow_delegation: true
+
+  llamaindex:
+    enabled: true
+    storage:
+      path: './data/documents'
+      vector_store: 'qdrant'
+      qdrant_url: ${QDRANT_URL}
+      qdrant_api_key: ${QDRANT_API_KEY}
+    embeddings:
+      type: 'openai'
+      model: 'text-embedding-3-small'
+      openai_api_key: ${OPENAI_API_KEY}
+    query_engines:
+      default:
+        type: 'vector'
+        top_k: 5
+        similarity_threshold: 0.7
+
+  haystack:
+    enabled: true
+    retrievers:
+      bm25:
+        type: 'bm25'
+        top_k: 5
+        document_store:
+          type: 'memory'
+      vector:
+        type: 'vector'
+        top_k: 5
+        document_store:
+          type: 'memory'
+    pipelines:
+      search:
+        retrievers: ['bm25', 'vector']
+        ranker:
+          type: 'transformers'
+          model: 'cross-encoder/ms-marco-MiniLM-L-6-v2'
+
+# CLI Agents Configuration
+agents:
+  gemini:
+    enabled: true
+    api_key: ${GOOGLE_GEMINI_API_KEY}
+    model: 'gemini-pro'
+    max_tokens: 4000
+    temperature: 0.7
+    role: 'Google AI Specialist'
+    capabilities: [
+      'content_generation',
+      'code_analysis',
+      'web_search',
+      'multilingual_support',
+      'creative_writing'
+    ]
+    ideal_for: [
+      'Content creation',
+      'Code generation and analysis',
+      'Multilingual tasks',
+      'Creative projects',
+      'Google ecosystem integration'
+    ]
+
+  codex:
+    enabled: true
+    api_key: ${OPENAI_API_KEY}
+    model: 'gpt-4'
+    max_tokens: 4000
+    temperature: 0.7
+    role: 'OpenAI Code Specialist'
+    capabilities: [
+      'code_generation',
+      'code_completion',
+      'code_analysis',
+      'test_generation',
+      'framework_optimization'
+    ]
+    ideal_for: [
+      'Code generation',
+      'Programming assistance',
+      'Framework-specific development',
+      'Automated testing',
+      'Code optimization'
+    ]
+
+  claude:
+    enabled: true
+    api_key: ${ANTHROPIC_API_KEY}
+    model: 'claude-3-sonnet-20240229'
+    max_tokens: 4000
+    temperature: 0.7
+    role: 'Anthropic Coding Assistant'
+    capabilities: [
+      'code_analysis',
+      'refactoring',
+      'documentation',
+      'architecture_review',
+      'security_analysis'
+    ]
+    ideal_for: [
+      'Code review',
+      'Refactoring',
+      'Documentation generation',
+      'Architecture analysis',
+      'Security assessment'
+    ]
+
+  github_copilot:
+    enabled: true
+    token: ${GITHUB_TOKEN}
+    role: 'GitHub Copilot Assistant'
+    capabilities: [
+      'inline_code_completion',
+      'pr_review',
+      'commit_message_generation',
+      'repository_analysis',
+      'pair_programming'
+    ]
+    ideal_for: [
+      'Development with GitHub',
+      'Code completion',
+      'Pull request review',
+      'Repository maintenance',
+      'Team collaboration'
+    ]
+
+  aider:
+    enabled: true
+    api_key: ${OPENAI_API_KEY}
+    role: 'Pair Programming Assistant'
+    capabilities: [
+      'collaborative_editing',
+      'multi_file_operations',
+      'code_review',
+      'automated_refactoring',
+      'git_integration'
+    ]
+    ideal_for: [
+      'Pair programming',
+      'Collaborative development',
+      'Code refactoring',
+      'Multi-file projects',
+      'Git workflows'
+    ]
+
+  opencode:
+    enabled: true
+    api_key: ${OPENCODE_API_KEY}
+    role: 'Collaborative Coding Platform'
+    capabilities: [
+      'real_time_collaboration',
+      'team_programming',
+      'session_management',
+      'project_management',
+      'feedback_system'
+    ]
+    ideal_for: [
+      'Team development',
+      'Real-time collaboration',
+      'Project sharing',
+      'Code review',
+      'Remote pair programming'
+    ]
+
+  openhands:
+    enabled: true
+    role: 'Development Tools Specialist'
+    capabilities: [
+      'interactive_debugging',
+      'automated_testing',
+      'code_generation',
+      'performance_profiling',
+      'session_management'
+    ]
+    ideal_for: [
+      'Interactive development',
+      'Debugging sessions',
+      'Automated testing',
+      'Performance analysis',
+      'Code generation'
+    ]
+
+  cursor:
+    enabled: true
+    api_key: ${CURSOR_API_KEY}
+    role: 'AI Code Review Assistant'
+    capabilities: [
+      'ai_code_review',
+      'automated_refactoring',
+      'bug_detection',
+      'security_analysis',
+      'documentation_generation'
+    ]
+    ideal_for: [
+      'Code review',
+      'Refactoring assistance',
+      'Bug fixing',
+      'Security analysis',
+      'Documentation creation'
+    ]
+
+# LLM Configuration
+llm:
+  default_provider: 'openrouter'
+  default_model: 'deepseek/deepseek-v4-pro'
+  temperature: 0.7
+  max_tokens: 4000
+  timeout: 30
+
+# Logging Configuration
+logging:
+  level: 'INFO'
+  file: './logs/orchestrate.log'
+  format: '{time:YYYY-MM-DD HH:mm:ss} | {level} | {name} | {message}'
+  max_file_size: '10MB'
+  backup_count: 5
+
+# Tools Configuration
+tools:
+  enabled: [
+    'web_search',
+    'file_operations',
+    'code_execution',
+    'data_analysis',
+    'api_integration'
+  ]
+  custom_tools: []
+  tool_timeout: 30
+
+# Storage Configuration
+storage:
+  type: 'local'
+  path: './data'
+  vector_store: 'qdrant'
+  document_store: 'haystack'
+
+# API Configuration
+api:
+  host: 'localhost'
+  port: 8000
+  debug: false
+  cors_enabled: true
+  rate_limit: 100
+
+# Webhook Configuration
+webhooks:
+  enabled: false
+  endpoints: []
+  secret_key: ''
+
+# Development Configuration
+development:
+  enabled: false
+  debug_mode: false
+  auto_reload: true
+  test_on_startup: true
+  performance_monitoring: true
+
+# Production Configuration
+production:
+  enabled: true
+  debug_mode: false
+  auto_reload: false
+  test_on_startup: false
+  performance_monitoring: true
+  monitoring:
+    enabled: true
+    metrics: ['response_time', 'error_rate', 'throughput']
+    alerts: []
+    log_level: 'INFO'
+
+# Security Configuration
+security:
+  authentication:
+    enabled: false
+    method: 'api_key'
+    api_key_header: 'X-API-Key'
+  authorization:
+    enabled: false
+    role_based_access: false
+  encryption:
+    enabled: false
+    algorithm: 'AES-256'
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 100
+    requests_per_hour: 1000
+
+# Performance Configuration
+performance:
+  caching:
+    enabled: true
+    ttl: 3600
+    max_size: 1000
+  optimization:
+    enabled: true
+    max_workers: 4
+    timeout: 30
+    retries: 3
+  monitoring:
+    enabled: true
+    metrics: ['cpu', 'memory', 'response_time']
+    alert_thresholds:
+      cpu_usage: 80
+      memory_usage: 80
+      response_time: 5000
+
+# Backup Configuration
+backup:
+  enabled: true
+  interval: 'daily'
+  retention: 7
+  location: './backups'
+  compression: true
+
+# Notification Configuration
+notifications:
+  enabled: false
+  channels: ['email', 'slack', 'telegram']
+  email:
+    enabled: false
+    smtp_server: ''
+    smtp_port: 587
+    username: ''
+    password: ''
+    recipients: []
+  slack:
+    enabled: false
+    webhook_url: ''
+    channel: '#general'
+  telegram:
+    enabled: false
+    bot_token: ''
+    chat_id: ''

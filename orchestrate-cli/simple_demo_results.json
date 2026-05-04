@@ -1,0 +1,46 @@
+{
+  "demo_type": "simple",
+  "frameworks": [
+    "LangChain",
+    "AutoGen",
+    "CrewAI",
+    "LlamaIndex",
+    "Haystack"
+  ],
+  "agents": [
+    "Gemini CLI - Google AI specialist",
+    "Codex CLI - OpenAI code specialist",
+    "Claude Code - Anthropic coding assistant",
+    "GitHub Copilot CLI - AI-powered coding assistance",
+    "Aider CLI - Pair programming assistant",
+    "OpenCode CLI - Collaborative coding",
+    "OpenHands CLI - Development tools",
+    "Cursor CLI - AI code review"
+  ],
+  "config_example": {
+    "frameworks": {
+      "langchain": {
+        "enabled": true,
+        "providers": {
+          "openrouter": {
+            "models": [
+              "deepseek/deepseek-v4-pro"
+            ],
+            "temperature": 0.7
+          }
+        }
+      }
+    },
+    "agents": {
+      "gemini": {
+        "enabled": true,
+        "model": "gemini-pro"
+      },
+      "claude": {
+        "enabled": true,
+        "model": "claude-3-sonnet"
+      }
+    }
+  },
+  "timestamp": 2464185.055654776
+}

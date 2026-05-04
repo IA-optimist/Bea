@@ -1,0 +1,121 @@
+# Core dependencies
+typer>=0.9.0
+rich>=13.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+loguru>=0.7.0
+python-dotenv>=1.0.0
+PyYAML>=6.0
+
+# LangChain dependencies
+langchain>=0.1.0
+langchain-openai>=0.0.2
+langchain-community>=0.0.2
+langchain-core>=0.1.0
+
+# AutoGen dependencies
+autogen>=0.2.0
+
+# CrewAI dependencies
+crewai>=0.28.0
+crewai-tools>=0.3.0
+
+# LlamaIndex dependencies
+llama-index>=0.9.0
+llama-index-core>=0.9.0
+llama-index-embeddings-openai>=0.1.0
+llama-index-llms-openai>=0.1.0
+llama-index-llms-anthropic>=0.1.0
+llama-index-vector-stores-qdrant>=0.1.0
+qdrant-client>=1.6.0
+
+# Haystack dependencies
+haystack-ai>=2.0.0
+tiktoken>=0.5.0
+sentence-transformers>=2.2.0
+transformers>=4.35.0
+torch>=2.0.0
+
+# Gemini CLI dependencies
+google-generativeai>=0.3.0
+google-api-python-client>=2.0.0
+
+# OpenAI dependencies
+openai>=1.3.0
+
+# Anthropic dependencies
+anthropic>=0.8.0
+
+# GitHub dependencies
+PyGithub>=1.59.0
+
+# Aider CLI dependencies
+aider-chat>=0.36.0
+
+# OpenCode CLI dependencies
+opencode-ai>=0.1.0
+
+# Cursor CLI dependencies
+codium>=0.1.0
+
+# OpenHands CLI dependencies
+openhands>=0.2.0
+
+# Tool dependencies
+duckduckgo-search>=3.8.0
+tavily>=0.2.0
+wikipedia>=1.4.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+playwright>=1.39.0
+browserless>=0.4.0
+
+# Data processing dependencies
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Code execution dependencies
+subprocess-run>=0.1.0
+jupyter>=1.0.0
+nbformat>=5.7.0
+
+# File operations dependencies
+python-magic>=0.4.27
+watchdog>=3.0.0
+
+# Authentication dependencies
+cryptography>=41.0.0
+python-jose>=3.3.0
+authlib>=1.2.0
+
+# Monitoring dependencies
+psutil>=5.9.0
+prometheus-client>=0.17.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# Development dependencies
+black>=23.7.0
+flake8>=6.0.0
+mypy>=1.5.0
+pre-commit>=3.3.0
+
+# Optional dependencies
+# Uncomment if needed for specific features
+# docker>=6.1.0
+# kubernetes>=28.0.0
+# redis>=4.6.0
+# celery>=5.3.0
+# fastapi>=0.104.0
+# uvicorn>=0.24.0
+# sqlalchemy>=2.0.0
+# alembic>=1.12.0
+# celery[redis]>=5.3.0
