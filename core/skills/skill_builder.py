@@ -132,7 +132,7 @@ class SkillBuilder:
         return None
 
     def _merge_into(
-        self, skill: Skill, new_result: str,
+        self, skill: Skill,
         tools: list[str], confidence: float
     ) -> None:
         """Merge new information into an existing skill."""

@@ -152,7 +152,7 @@ def breakdown_objective(
                 sequence_order      = i,
                 difficulty          = round(min(1.0, difficulty_score * (0.8 + i * 0.05)), 3),
                 recommended_tools   = tools,
-                recommended_agents  = _suggest_agents(category, i),
+                recommended_agents  = _suggest_agents(category),
                 completion_signal   = step.get("signal", ""),
                 last_updated        = time.time(),
             )
@@ -182,7 +182,7 @@ def breakdown_objective(
         )]
 
 
-def _suggest_agents(category: str, step_index: int) -> List[str]:
+def _suggest_agents(category: str) -> List[str]:
     """Suggère des agents selon la catégorie et l'étape."""
     mapping = {
         "deploy":       ["devops-agent", "docker-agent"],

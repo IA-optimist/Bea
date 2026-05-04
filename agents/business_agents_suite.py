@@ -200,7 +200,7 @@ class LegalAgent:
             rgpd_compliant=country in ("FR", "DE", "ES", "IT", "NL"),
         )
 
-    def review_contract(self, contract_text: str) -> dict:
+    def review_contract(self) -> dict:
         """Review a contract. Always requires human approval."""
         return {
             "status": "requires_approval",

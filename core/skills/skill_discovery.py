@@ -191,8 +191,7 @@ class SkillDiscovery:
         }
 
     def discover_from_mission(self, mission_id: str, goal: str,
-                              tools_used: list[str], success: bool,
-                              steps_summary: str = "") -> Optional[str]:
+                              tools_used: list[str], success: bool) -> Optional[str]:
         """Discover a new skill from a successful mission."""
         if not success:
             return None

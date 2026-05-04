@@ -165,10 +165,10 @@ except Exception as _tc_err:
 
 # ── Router Registry ───────────────────────────────────────────
 try:
-    from api.router_registry import register_router as _reg_fn, register_failure as _fail_fn
+    from api.router_registry import register_router, register_failure
 except Exception:
-    def _reg_fn(*a, **kw): pass
-    def _fail_fn(*a, **kw): pass
+    def register_router(*a, **kw): pass
+    def register_failure(*a, **kw): pass
 
 # ── Import du routeur WebSockets v3 ───────────────────────────
 try:

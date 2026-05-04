@@ -48,7 +48,7 @@ _MAX_CUSTOM_AGENTS  = 20
 # installé dans l'environnement de test.
 try:
     from agents.crew import BaseAgent
-    from core.state import JarvisSession as _JarvisSession
+
 except ImportError:
     class BaseAgent:                   # type: ignore[no-redef]
         name = "base"; role = "default"; timeout_s = 120
@@ -59,8 +59,7 @@ except ImportError:
         def _ctx(self, session, **kw) -> str: return ""
         async def run(self, session) -> str: return ""
 
-    class _JarvisSession:              # type: ignore[no-redef]
-        pass
+
 
 
 # ══════════════════════════════════════════════════════════════
@@ -92,7 +91,7 @@ class DynamicAgent(BaseAgent):
     def system_prompt(self) -> str:
         return self._system
 
-    def user_message(self, session: "_JarvisSession") -> str:
+    def user_message(self, session) -> str:
         task = self._task(session)
         ctx  = self._ctx(session)
         return (
