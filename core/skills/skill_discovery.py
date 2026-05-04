@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 import structlog
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from core.skills.skill_registry import SkillRegistry

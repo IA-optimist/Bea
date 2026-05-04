@@ -5,7 +5,6 @@ Validates the 6-layer architecture, agent roles, skill completeness,
 tool ecosystem, planning integration, and system readiness.
 """
 import os
-import json
 import tempfile
 import pytest
 pytestmark = pytest.mark.integration

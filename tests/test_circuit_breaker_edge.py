@@ -1,8 +1,6 @@
 """Edge case tests for core/circuit_breaker.py."""
 import asyncio
-import time
 import pytest
-from unittest.mock import AsyncMock, patch
 
 
 @pytest.mark.asyncio

@@ -4,11 +4,9 @@ Real-World Readiness Tests
 Verifies Jarvis can handle actual usage scenarios.
 """
 import ast
-import json
 import os
 import sys
 import tempfile
-import time
 import types
 import pytest
 pytestmark = pytest.mark.integration
@@ -38,8 +36,6 @@ def test_scenario_coding_mission():
     """
     from core.lifecycle_tracker import LifecycleTracker
     from core.tool_performance_tracker import ToolPerformanceTracker, ToolExecution
-    from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
-    from core.mission_memory import MissionMemory
     import core.execution_engine as ee
 
     lt = LifecycleTracker()

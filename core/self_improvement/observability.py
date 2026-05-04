@@ -20,7 +20,7 @@ Reuses existing metrics_store and observability_helpers when available.
 from __future__ import annotations
 
 import time
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -70,7 +70,7 @@ class SIObservability:
             from core.metrics_store import get_metrics
             self._metrics = get_metrics()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='observability.py')
 
     # ── Event emitters ──
 
@@ -190,7 +190,7 @@ class SIObservability:
             # Structured log
             log.info(event, **{k: v for k, v in data.items() if not isinstance(v, (list, dict))})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='observability.py')
 
     def _inc(self, metric: str, labels: dict | None = None) -> None:
         """Increment a counter — fail-open."""
@@ -198,7 +198,7 @@ class SIObservability:
             if self._metrics:
                 self._metrics.inc(metric, labels=labels)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='observability.py')
 
     def _observe(self, metric: str, value: float, labels: dict | None = None) -> None:
         """Observe a histogram value — fail-open."""
@@ -206,7 +206,7 @@ class SIObservability:
             if self._metrics:
                 self._metrics.observe(metric, value, labels=labels)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='observability.py')
 
 
 # ── Singleton ──

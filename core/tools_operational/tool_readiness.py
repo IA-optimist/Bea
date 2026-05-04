@@ -8,7 +8,6 @@ from __future__ import annotations
 import os
 import structlog
 
-from core.tools_operational.tool_schema import OperationalTool
 from core.tools_operational.tool_registry import get_tool_registry
 
 log = structlog.get_logger("tools_operational.readiness")

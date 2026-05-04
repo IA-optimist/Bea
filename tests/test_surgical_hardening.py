@@ -405,7 +405,7 @@ class TestCapabilityDispatcherTimeouts:
     def test_dispatch_never_raises(self):
         """dispatch() must never raise, regardless of input."""
         from executor.capability_dispatch import CapabilityDispatcher
-        from executor.capability_contracts import CapabilityRequest, CapabilityType
+        from executor.capability_contracts import CapabilityRequest
 
         dispatcher = CapabilityDispatcher()
 
@@ -420,7 +420,7 @@ class TestCapabilityDispatcherTimeouts:
         # Should not raise
         loop = asyncio.new_event_loop()
         try:
-            result = loop.run_until_complete(dispatcher.dispatch(req))
+            loop.run_until_complete(dispatcher.dispatch(req))
             # Either returns failure or raises — we just verify no unhandled exception
         except Exception as e:
             pytest.fail(f"dispatch() raised unexpectedly: {e}")

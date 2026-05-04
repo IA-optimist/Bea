@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import os
-import time
 from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -33,7 +32,7 @@ def _get_db_connection():
             host=os.getenv("POSTGRES_HOST", "postgres"),
             database=os.getenv("POSTGRES_DB", "jarvis"),
             user=os.getenv("POSTGRES_USER", "jarvis"),
-            password=os.getenv("POSTGRES_PASSWORD", "testpass123"),
+            password=os.getenv("POSTGRES_PASSWORD", ""),
             cursor_factory=RealDictCursor
         )
         return conn

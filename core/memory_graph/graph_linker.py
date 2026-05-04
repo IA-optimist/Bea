@@ -7,9 +7,9 @@ Called by observability hooks — never blocks execution.
 from __future__ import annotations
 
 import structlog
-from typing import Any, Dict, Optional
 
 from core.memory_graph.graph_schema import Edge, EdgeType, Node, NodeType
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -77,7 +77,7 @@ class GraphLinker:
                     weight=1.0 if success else 0.5, metadata=meta,
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_linker.py')
 
     # ── Patches / bugs ──
 
@@ -107,7 +107,7 @@ class GraphLinker:
             self._ensure_node(tgt, NodeType.MODULE, target_module)
             self._graph.add_edge(Edge(source=src, target=tgt, type=EdgeType.DEPENDS_ON, metadata=meta))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_linker.py')
 
     def link_secret_requirement(self, connector_id: str, secret_key: str) -> None:
         try:
@@ -117,7 +117,7 @@ class GraphLinker:
             self._ensure_node(sec_nid, NodeType.SECRET, secret_key)
             self._graph.add_edge(Edge(source=conn_nid, target=sec_nid, type=EdgeType.REQUIRES_SECRET))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_linker.py')
 
     # ── Lessons ──
 
@@ -130,7 +130,7 @@ class GraphLinker:
                 if mission_nid in self._graph._nodes:
                     self._graph.add_edge(Edge(source=lesson_nid, target=mission_nid, type=EdgeType.LEARNED_FROM))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_linker.py')
 
     # ── Intent ──
 
@@ -146,7 +146,7 @@ class GraphLinker:
                 self._ensure_node(wf_nid, NodeType.WORKFLOW, workflow_id)
                 self._graph.add_edge(Edge(source=int_nid, target=wf_nid, type=EdgeType.RESOLVED_VIA))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_linker.py')
 
     # ── Helpers ──
 

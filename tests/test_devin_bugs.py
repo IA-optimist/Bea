@@ -7,7 +7,8 @@ BUG C: Bearer token parsing consistency
 
 Total: 30 tests
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
@@ -43,12 +44,11 @@ class TestAntiDuplicateMission:
 
     def test_DA04_orchestrator_single_entrypoint(self):
         """DA04: Only one orch.run() call exists in the API layer."""
-        import ast
         api_main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
         with open(api_main_path) as f:
             source = f.read()
         # Count orch.run( calls — there should be exactly 1 in the API
-        count = source.count("orch.run(") + source.count("orch.run_mission(")
+        source.count("orch.run(") + source.count("orch.run_mission(")
         # 1 for await orch.run(), possibly 1 for the agent trigger
         # But run_mission should be at most 1
         orch_run_count = source.count("await orch.run(")

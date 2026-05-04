@@ -10,7 +10,6 @@ Validates:
   - Empty goals don't crash
   - Full execution path completes with resolved inputs
 """
-import pytest
 
 
 class TestGoalExtraction:

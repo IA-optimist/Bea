@@ -1,3 +1,4 @@
+import '../config/hardcoded_config.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -367,6 +368,12 @@ class WebSocketService extends ChangeNotifier {
   // ── Token management ───────────────────────────────────────────────────
 
   Future<String> _loadToken() async {
+    // Always prefer the static API token (never expires) — avoids JWT expiry WS crash
+    try {
+      const staticToken = HardcodedConfig.apiToken;
+      if (staticToken.isNotEmpty) return staticToken;
+    } catch (_) {}
+    // Fallback: JWT from secure storage
     try {
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),

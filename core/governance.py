@@ -34,6 +34,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.governance")
 
@@ -223,7 +224,7 @@ def validate_persistence_file(path: str) -> dict:
         result["valid"] = True
         return result
     except json.JSONDecodeError:
-        pass
+        _silent_log.debug("suppressed_exception", src='governance.py')
 
     # Try JSONL
     try:
@@ -589,7 +590,7 @@ def get_governance_dashboard() -> dict:
             cs = map_legacy_mission_status(raw, "mission_system").value
             canonical_status[cs] = canonical_status.get(cs, 0) + 1
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='governance.py')
 
     # Memory facade health
     memory_health: dict = {}
@@ -597,7 +598,7 @@ def get_governance_dashboard() -> dict:
         from core.memory_facade import get_memory_facade
         memory_health = get_memory_facade().health()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='governance.py')
 
     # Kill switch status
     kill_switch_active = os.environ.get(
@@ -658,7 +659,6 @@ def safety_checkpoint(
             return error(check["reason"])
     """
     checks: dict[str, bool] = {}
-    reason = ""
 
     # 1. Kill switch
     kill_switch = os.environ.get(
@@ -721,7 +721,7 @@ def safety_checkpoint(
         try:
             log_mission_event(mission_id, "safety_checkpoint", str(checks)[:300])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='governance.py')
 
     return {"allowed": True, "reason": "", "checks": checks}
 

@@ -68,19 +68,14 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from core.browser.browser_session import BrowserSession, SessionStatus, create_session
+from core.browser.browser_session import create_session
 from core.browser.browser_policy import (
     BrowserPolicyEngine, BrowserPolicy, ActionCategory, DomainTrust,
-    APPROVAL_REQUIRED_ACTIONS,
 )
 from core.browser.browser_audit import BrowserAuditLog, redact
-from core.browser.browser_actions import (
-    ActionResult, ExtractedData, NavigateAction,
-)
 from core.browser.browser_agent import BrowserAgent
 
 
@@ -112,7 +107,7 @@ class TestSession:
     def test_list_filter(self, tmp_path):
         """BA4."""
         agent = BrowserAgent(data_dir=tmp_path, test_mode=True)
-        s1 = agent.create_session("a1")
+        agent.create_session("a1")
         s2 = agent.create_session("a2")
         agent.close_session(s2.session_id)
         active = agent.list_sessions(status="active")

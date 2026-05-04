@@ -26,13 +26,12 @@ Zero external dependencies. Fail-open everywhere.
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
 import time
-from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.execution_engine")
 
@@ -403,7 +402,7 @@ def execute_tool_intelligently(
         if error_hint:
             _recovery_hint = get_best_recovery(tool_name, error_hint.split(":")[0] if ":" in error_hint else error_hint[:30])
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='execution_engine.py')
 
     # Execute with adaptive retry
     try:

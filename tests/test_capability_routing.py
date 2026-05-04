@@ -24,7 +24,6 @@ Integration
 """
 import os
 import sys
-import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -46,7 +45,7 @@ class TestSpec:
         assert {s.value for s in ProviderStatus} == expected
 
     def test_CR03_provider_spec_fields(self):
-        from core.capability_routing.spec import ProviderSpec, ProviderType, ProviderStatus
+        from core.capability_routing.spec import ProviderSpec, ProviderType
         p = ProviderSpec(
             provider_id="agent:coder",
             provider_type=ProviderType.AGENT,
@@ -587,33 +586,25 @@ class TestIntegration:
         """Phase 0c exists in MetaOrchestrator source."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "capability_routing" in src
 
     def test_CR72_routing_is_fail_open(self):
         """If capability routing import fails, mission still works."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
-        # Must be wrapped in try/except
+        # Phase 0c a été extraite dans self._route_mission() ; on inspecte
+        # ce helper précisément pour vérifier son pattern fail-open (try/except).
+        src = inspect.getsource(MetaOrchestrator._route_mission)
         assert "capability_routing" in src
-        # Check it's in a try block (Phase 0c)
-        lines = src.split("\n")
-        in_try = False
-        for line in lines:
-            if "Phase 0c" in line:
-                # Previous lines should have try
-                idx = lines.index(line)
-                nearby = "\n".join(lines[max(0, idx-3):idx+15])
-                assert "try" in nearby
-                assert "except" in nearby
-                break
+        assert "try:" in src
+        assert "except" in src
 
     def test_CR73_routing_records_metadata(self):
         """MetaOrchestrator stores routing in ctx.metadata."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert 'capability_routing' in src
         assert 'routed_provider' in src
 
@@ -621,7 +612,7 @@ class TestIntegration:
         """MetaOrchestrator records routing in decision trace."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "capability_routed" in src or "capability_fallback" in src
 
     def test_CR75_registry_populated_from_agents(self):
@@ -651,7 +642,7 @@ class TestIntegration:
         """Legacy agent routing still present in MetaOrchestrator."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "delegate" in src
         assert "jarvis" in src.lower()
 
@@ -667,7 +658,7 @@ class TestIntegration:
 
     def test_CR80_backward_compat(self):
         """Existing test suites import MetaOrchestrator without error."""
-        from core.meta_orchestrator import MetaOrchestrator, get_meta_orchestrator
+        from core.meta_orchestrator import MetaOrchestrator
         m = MetaOrchestrator()
         assert hasattr(m, "run_mission")
         assert hasattr(m, "jarvis")
@@ -813,13 +804,13 @@ class TestExtendedAPI:
     def test_CR98_meta_has_feedback_recording(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "record_decision" in src
 
     def test_CR99_meta_has_outcome_recording(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "record_outcome" in src
 
     def test_CR100_total_routes(self):
@@ -917,8 +908,6 @@ class TestPhase12Integration:
     def test_CR104_registry_refresh_stable_routing(self):
         """Routing produces consistent results after registry refresh."""
         from core.capability_routing.registry import ProviderRegistry
-        from core.capability_routing.spec import CapabilityRequirement
-        from core.capability_routing.scorer import rank_providers
 
         r = ProviderRegistry()
         r.populate()

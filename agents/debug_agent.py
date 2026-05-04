@@ -24,7 +24,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from agents.crew import BaseAgent
 from core.contracts import (
-    AgentResult, ErrorReport, RootCauseType
+    ErrorReport
 )
 from core.state import JarvisSession
 
@@ -296,7 +296,7 @@ class DebugMonitor:
                         continue
                     traces.append(record)
                 except Exception:
-                    pass
+                    log.debug("suppressed_exception", src='debug_agent.py')
         except Exception:
-            pass
+            log.debug("suppressed_exception", src='debug_agent.py')
         return traces

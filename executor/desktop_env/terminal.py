@@ -7,9 +7,9 @@ import os
 import re
 import uuid
 import structlog
-from typing import Optional
 
 from executor.desktop_env.sandbox import DesktopEnvironment, DockerSandbox
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -137,5 +137,5 @@ class PersistentTerminal:
             try:
                 self._process.kill()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='terminal.py')
             self._process = None

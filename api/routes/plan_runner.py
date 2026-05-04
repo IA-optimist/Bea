@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
 from api._deps import require_auth
 
@@ -42,7 +41,7 @@ async def plan_pause(plan_id: str, _user: dict = Depends(require_auth)):
 @router.post("/api/v3/plans/{plan_id}/resume")
 async def plan_resume(plan_id: str, _user: dict = Depends(require_auth)):
     """Resume the paused/awaiting run for this plan."""
-    from core.planning.run_state import get_run_store, RunStatus
+    from core.planning.run_state import get_run_store
     for run_data in get_run_store().list_all():
         if run_data.get("plan_id") == plan_id and run_data.get("status") in ("paused", "awaiting_approval"):
             from core.planning.plan_runner import get_plan_runner

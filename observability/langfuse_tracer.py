@@ -33,6 +33,7 @@ import time
 import contextlib
 from typing import Any, Generator
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -76,7 +77,7 @@ class GenerationContext:
         if not self._active or self._gen is None:
             return
         try:
-            latency_ms = int((time.monotonic() - self._t0) * 1000)
+            int((time.monotonic() - self._t0) * 1000)
             kwargs: dict[str, Any] = {
                 "end_time": None,  # Langfuse calculera depuis start_time
                 "output":   output[:4000] if output else None,
@@ -208,7 +209,7 @@ class LangfuseTracer:
                 try:
                     self._client.flush()
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
 
     def score_trace(
         self,
@@ -236,7 +237,7 @@ class LangfuseTracer:
             try:
                 self._client.flush()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
 
     @staticmethod
     def _serialize_messages(messages: list) -> list[dict]:

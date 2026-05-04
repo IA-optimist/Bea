@@ -1,7 +1,8 @@
 """tests/test_multi_agent.py — Multi-agent coordination tests."""
-import os, sys, time
+import os
+import sys
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-import pytest
 
 
 class TestAgentMessage:

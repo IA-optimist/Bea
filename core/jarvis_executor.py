@@ -25,7 +25,7 @@ from typing import Callable, Awaitable
 
 from core.state import (
     JarvisSession, SessionStatus, ActionSpec,
-    RiskLevel, TaskMode
+    TaskMode
 )
 from core.task_router import TaskRouter
 from config.settings import get_settings
@@ -35,7 +35,7 @@ CB = Callable[[str], Awaitable[None]]
 
 # Timeout global par mode (secondes)
 SESSION_TIMEOUTS = {
-    "auto":    600,    # 10 min
+    "auto":    150,    # 2.5 min (optimise pour <60s missions simples)
     "night":   1800,   # 30 min
     "improve": 900,    # 15 min
     "chat":    60,
@@ -465,13 +465,14 @@ class JarvisOrchestrator:
         # Missions simples/standard → plan statique TaskRouter (rapide, déterministe)
         complexity   = self._compute_mission_complexity(session.user_input)
         use_director = (
-            complexity > 0.60
-            and decision.mode not in (TaskMode.CHAT,)
+            complexity > 0.80  # 0.60->0.80: evite atlas sur research/analyse simples
+            and decision.mode not in (TaskMode.CHAT, TaskMode.RESEARCH, TaskMode.PLAN)
         )
 
         # 3a. Hierarchical decomposition (strategic layer) — fires before AtlasDirector
-        # for high-complexity missions. Fail-open: if it fails, planning continues normally.
-        if use_director:
+        # Only for CODE/WORKFLOW — skip on RESEARCH/PLAN to avoid extra LLM call.
+        _hplan_modes = (TaskMode.CODE, TaskMode.WORKFLOW) if hasattr(TaskMode, 'WORKFLOW') else (TaskMode.CODE,)
+        if use_director and decision.mode in _hplan_modes:
             try:
                 from core.hierarchical_planner import get_mission_decomposer
                 _h_plan = get_mission_decomposer().decompose(
@@ -499,7 +500,8 @@ class JarvisOrchestrator:
         if use_director:
             await emit(f"Mission complexe (score={complexity:.2f}) — AtlasDirector planifie...")
             try:
-                await self.agents.run("atlas-director", session)
+                import asyncio as _aio
+                await _aio.wait_for(self.agents.run("atlas-director", session), timeout=30.0)
                 if not session.agents_plan:
                     raise ValueError("atlas-director a retourné un plan vide")
                 log.info("auto_atlas_director_used",
@@ -520,7 +522,6 @@ class JarvisOrchestrator:
                 a for a in decision.agents if a["agent"] != "vault-memory"
             ]
 
-        plan = session.agents_plan
 
         if session.agents_plan:
             planner    = "AtlasDirector" if use_director else "TaskRouter"
@@ -943,7 +944,10 @@ class JarvisOrchestrator:
 
             # Replan dynamique uniquement sur les vagues non-P3 en mode non-chat
             has_critical = any(t.get("priority", 2) <= 2 for t in wave_tasks)
-            use_replan   = (mode_val != "chat") and has_critical
+            # Replan only for complex modes (CODE, WORKFLOW) — skip for RESEARCH/PLAN
+            # to avoid double parallel wave that doubles execution time
+            _replan_modes = {"code", "workflow"}
+            use_replan   = (mode_val in _replan_modes) and has_critical
 
             if use_replan:
                 wave_results = await pex.run_with_replan(
@@ -1172,25 +1176,34 @@ class JarvisOrchestrator:
             factory  = LLMFactory(self.s)
             messages = [
                 SystemMessage(content=(
-                    f"Tu es {self.s.jarvis_name}. "
-                    "Redige un rapport final concis pour Max.\n"
-                    "1) Statut honnête (SUCCESS/PARTIAL/FAILURE) avec justification. "
-                    "2) Synthese (2 phrases). "
-                    "3) Points cles. "
-                    "4) Prochaines etapes.\n"
-                    "RÈGLE ABSOLUE : le statut dans ton rapport DOIT correspondre "
-                    "au statut réel ci-dessous. Ne déclare jamais SUCCESS si des agents ont échoué."
+                    f"Tu es {self.s.jarvis_name}, assistant business expert. "
+                    "Redige un rapport final professionnel en francais, directement presentable a un client.\n\n"
+                    "FORMAT OBLIGATOIRE (Markdown):\n"
+                    "## Résumé\n"
+                    "(2-3 phrases synthétisant les résultats principaux)\n\n"
+                    "## Points clés\n"
+                    "- Point 1 concret\n"
+                    "- Point 2 concret\n"
+                    "- ...\n\n"
+                    "## Recommandations\n"
+                    "(1-2 actions concrètes et prioritaires)\n\n"
+                    "REGLES: "
+                    "NE PAS commencer par 1) Statut / 2) Synthese. "
+                    "NE PAS mettre de prefixe SUCCESS/FAILED. "
+                    "NE PAS lister les resultats bruts des agents. "
+                    "Ecrire comme si tu presentais a un dirigeant: concis, factuel, actionnable. "
+                    "Max 250 mots."
                 )),
                 HumanMessage(content=(
                     f"Mission : {session.mission_summary}\n\n"
                     f"{status_note}\n\n"
-                    f"Resultats agents :\n{snippets}{actions_note}"
+                    f"Contexte agents (résumé) :\n{snippets[:800]}{actions_note}"
                 )),
             ]
             resp = await factory.safe_invoke(messages, role="fast", timeout=60.0)
             report_text = resp.content if resp else snippets[:2000]
-            session.final_report = f"{status_badge} **{status_label}**\n\n{report_text}"
-            await emit(f"Rapport final {status_badge}\n\n{report_text[:3500]}")
+            session.final_report = report_text
+            await emit(f"Rapport final\n\n{report_text[:3500]}")
         except asyncio.TimeoutError:
             session.final_report = f"{status_badge} **{status_label}** (timeout LLM)\n\n{snippets[:2000]}"
             await emit(f"Rapport (timeout LLM)\n\n{snippets[:2000]}")

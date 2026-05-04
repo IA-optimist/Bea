@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 import time
 from pathlib import Path
@@ -32,6 +31,7 @@ try:
 except ImportError:
     import logging
     log = logging.getLogger(__name__)
+_silent_log = log
 
 from core.canonical_types import (
     CanonicalMissionContext,
@@ -50,7 +50,7 @@ def _default_db_path() -> Path:
         s = get_settings()
         candidates.append(Path(s.workspace_dir))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='canonical_mission_store.py')
     candidates.append(Path("workspace"))
 
     for db_dir in candidates:
@@ -160,8 +160,26 @@ class CanonicalMissionStore:
 
         # SQLite fallback
         try:
+            explicit = db_path is not None
             path = db_path or _default_db_path()
             self._db_path = Path(path)
+            # Pre-check : ensure parent directory exists AND is writable before
+            # attempting sqlite3.connect (qui crée le fichier paresseusement et
+            # ne lève pas jusqu'à la première écriture SQL). Pour les chemins
+            # explicites, on NE crée PAS le parent — c'est une erreur utilisateur
+            # (ex. chemin mal-configuré). Pour les défauts, mkdir est OK.
+            parent = self._db_path.parent
+            if not parent.exists():
+                if explicit:
+                    raise OSError(
+                        f"parent directory does not exist: {parent} "
+                        f"(explicit db_path must have writable parent)"
+                    )
+                parent.mkdir(parents=True, exist_ok=True)
+            # Quick write-test (même pattern que _default_db_path).
+            _probe = parent / ".canonical_write_test"
+            _probe.touch()
+            _probe.unlink()
             self._init_db()
             self._ok = True
             log.info("canonical_mission_store.ready", db_path=str(self._db_path))
@@ -206,6 +224,15 @@ class CanonicalMissionStore:
                 context_json,
             )
             if self._pg_dsn:
+                import datetime as _dt
+                # PG expects timestamptz, not float — convert unix timestamps
+                vals_list = list(values)
+                # created_at = index 7, updated_at = index 8
+                for idx in (7, 8):
+                    v = vals_list[idx]
+                    if isinstance(v, (int, float)):
+                        vals_list[idx] = _dt.datetime.fromtimestamp(v, tz=_dt.timezone.utc)
+                values = tuple(vals_list)
                 self._save_pg(values)
             elif self._db_path:
                 with self._connect() as conn:
@@ -318,10 +345,11 @@ class CanonicalMissionStore:
 # ── Deserialization helper ──────────────────────────────────────────────────
 
 
-def _row_to_ctx(json_str: str) -> Optional[CanonicalMissionContext]:
+def _row_to_ctx(json_str) -> Optional[CanonicalMissionContext]:
     """Reconstruct CanonicalMissionContext from stored JSON."""
     try:
-        d = json.loads(json_str)
+        # Handle both str (SQLite) and dict (PostgreSQL jsonb) inputs
+        d = json_str if isinstance(json_str, dict) else json.loads(json_str)
         return CanonicalMissionContext(
             mission_id=d["mission_id"],
             goal=d.get("goal", ""),

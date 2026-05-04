@@ -8,14 +8,14 @@ All imports are lazy; works with zero API keys.
 """
 from __future__ import annotations
 
-import io
 import os
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -101,7 +101,7 @@ def _whisper_local(
         raise RuntimeError("local whisper not installed (pip install openai-whisper)")
 
     if isinstance(audio, bytes):
-        import tempfile, wave
+        import tempfile
         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         tmp.write(audio)
         tmp.flush()
@@ -424,13 +424,13 @@ def voice_capabilities() -> dict:
         import whisper  # noqa: F401
         has_whisper_local = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='voice.py')
     has_coqui = False
     try:
         import TTS  # noqa: F401
         has_coqui = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='voice.py')
 
     return {
         "stt_whisper_api":   has_openai,

@@ -19,8 +19,7 @@ Hooks:
 from __future__ import annotations
 
 import os
-import time
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -61,7 +60,7 @@ def post_mission_submit(mission_id: str, goal: str, **kwargs) -> dict:
                     for s in similar[:3]
                 ]
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
         except Exception as e:
             log.debug("hook_kg_err", err=str(e)[:60])
 
@@ -104,7 +103,7 @@ def post_step_complete(
                     error_type=error_type,
                 ))
             except ImportError:
-                pass
+                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
 
         # Tool evolution: update performance model
         if tool:
@@ -117,7 +116,7 @@ def post_step_complete(
                     mission_id=mission_id,
                 )
             except ImportError:
-                pass
+                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
 
     except Exception as e:
         log.debug("post_step_hook_err", err=str(e)[:60])
@@ -160,7 +159,7 @@ def post_mission_complete(
                 failure_category=errors[0] if errors else "",
             ))
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
 
         # Knowledge graph: ingest mission log
         try:
@@ -179,7 +178,7 @@ def post_mission_complete(
                 duration_s=duration_s,
             ))
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
 
         # Agent metrics
         if agents_used:
@@ -193,7 +192,7 @@ def post_mission_complete(
                         tools_used=tools_used or [],
                     ))
             except ImportError:
-                pass
+                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
 
     except Exception as e:
         log.debug("post_mission_hook_err", err=str(e)[:60])

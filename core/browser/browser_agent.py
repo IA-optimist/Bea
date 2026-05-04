@@ -18,24 +18,19 @@ Safety invariants:
 """
 from __future__ import annotations
 
-import hashlib
 import logging
 import time
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
 
 from core.browser.browser_session import (
-    BrowserSession, SessionStatus, create_session,
+    BrowserSession, create_session,
 )
 from core.browser.browser_policy import (
     BrowserPolicyEngine, BrowserPolicy, ActionCategory, ApprovalRequest,
     DomainTrust,
 )
 from core.browser.browser_actions import (
-    ActionResult, NavigateAction, ClickAction, TypeAction, SelectAction,
-    UploadAction, DownloadAction, ExtractAction, ScreenshotAction,
-    SecretInjectionAction, ExtractedData, LoginFlow,
+    ActionResult, ExtractedData,
 )
 from core.browser.browser_audit import BrowserAuditLog, redact
 

@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("orchestration.pre_execution")
 
@@ -83,7 +84,7 @@ def assess_before_execution(
             assessment.tool_health_ok = False
             assessment.estimated_confidence -= 0.15
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='pre_execution.py')
 
     # ── 3. Failure pattern matching ──────────────────
     try:
@@ -96,7 +97,7 @@ def assess_before_execution(
                     getattr(f, "content", str(f))[:100]
                 )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='pre_execution.py')
 
     if assessment.similar_failures:
         assessment.estimated_confidence -= 0.1 * min(3, len(assessment.similar_failures))

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import difflib
 import logging
-import os
 import shutil
 import time
 from pathlib import Path
@@ -19,7 +18,9 @@ from typing import Optional
 logger = logging.getLogger("jarvis.rollback")
 
 # Dossier de sauvegarde (relatif au cwd du container)
-import os as _os, tempfile as _tempfile
+import os as _os
+import tempfile as _tempfile
+_silent_log = __import__("structlog").get_logger(__name__)
 _BACKUP_DIR = Path(_os.environ.get("JARVIS_ROLLBACK_DIR",
     _os.path.join(_tempfile.gettempdir(), "jarvismax_rollbacks")))
 _MAX_BACKUPS_PER_FILE = 5  # évite accumulation infinie
@@ -49,7 +50,7 @@ def _cleanup_old_backups(filepath: str) -> None:
         for old in backups[:-_MAX_BACKUPS_PER_FILE]:
             old.unlink(missing_ok=True)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='rollback_manager.py')
 
 
 class RollbackContext:

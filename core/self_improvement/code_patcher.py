@@ -27,10 +27,10 @@ import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 # PROTECTED_FILES re-exported for backward compat (test_devin_core.py imports it from here)
-from core.self_improvement.protected_paths import is_protected, PROTECTED_FILES
+from core.self_improvement.protected_paths import is_protected
+_silent_log = __import__("structlog").get_logger(__name__)
 
 MAX_FILES_PER_PATCH = 3
 MAX_LINES_CHANGED = 200
@@ -548,7 +548,7 @@ class CodePatcher:
         Falls back to text replacement if AST manipulation fails.
         """
         try:
-            tree = ast.parse(source)
+            ast.parse(source)
         except SyntaxError:
             return None
 
@@ -583,5 +583,5 @@ class CodePatcher:
                 if count > 1:
                     duplicates.append(f"{name} (defined {count}x)")
         except SyntaxError:
-            pass
+            _silent_log.debug("suppressed_exception", src='code_patcher.py')
         return duplicates

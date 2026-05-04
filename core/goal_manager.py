@@ -34,10 +34,9 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any
 import structlog
 
 log = structlog.get_logger()
@@ -110,8 +109,8 @@ class Goal:
             "started_at":   self.started_at,
             "completed_at": self.completed_at,
             "duration_s":   self.duration_s,
-            "result":       self.result[:500],
-            "error":        self.error[:200],
+            "result":       self.result,
+            "error":        self.error,
             "tags":         self.tags[:10],
             "metadata":     self.metadata,
         }
@@ -278,7 +277,7 @@ class GoalManager:
 
         goal.status       = GoalStatus.COMPLETED
         goal.completed_at = time.time()
-        goal.result       = result[:500] if result else ""
+        goal.result       = result if result else ""
         if metadata:
             goal.metadata.update(metadata)
 

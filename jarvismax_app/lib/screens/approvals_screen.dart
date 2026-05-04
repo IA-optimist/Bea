@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/action_model.dart';
 import '../theme/design_system.dart';
+import 'decisions_screen.dart';
 
 /// Approvals — premium, touch-friendly approval flow.
 /// Each card: what Jarvis wants to do, why, risk, impact, approve/deny.
@@ -52,6 +53,18 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                         label: '${pending.length} EN ATTENTE',
                         color: JDS.amber,
                       ),
+                    // ── Autonomy decisions shortcut ──
+                    IconButton(
+                      tooltip: 'Décisions autonomy',
+                      icon: const Icon(Icons.checklist_rtl, color: JDS.textSecondary),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const DecisionsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ]),
                 )),
 

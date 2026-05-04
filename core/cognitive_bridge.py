@@ -21,10 +21,10 @@ from __future__ import annotations
 
 import os
 import threading
-import time
 from typing import Any, Dict, List, Optional
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -143,7 +143,7 @@ class CognitiveBridge:
             try:
                 self._capability_graph.update_reliability_from_reputation(self._reputation)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='cognitive_bridge.py')
 
     # ──────────────────────────────────────────────────────────────
     # 1. PRE-MISSION — called before mission execution starts
@@ -303,7 +303,7 @@ class CognitiveBridge:
             try:
                 self._reputation.save()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='cognitive_bridge.py')
 
     # ──────────────────────────────────────────────────────────────
     # 4. DECISION SCORING — callable from any routing point

@@ -7,7 +7,6 @@ Tests Phases 1-10:
   VL21-VL30: Loop engine + memory
   VL31-VL40: Safety + API + integration
 """
-import pytest
 
 
 # ── Phase 1: Venture Hypothesis ───────────────────────────────
@@ -201,7 +200,7 @@ class TestIterationProposal:
             success_signal_definition="10% signup rate from landing page visitors",
         )
         ev = evaluate_artifacts(h, [])
-        proposals = generate_proposals(ev, h)
+        generate_proposals(ev, h)
         # Strong hypothesis → fewer proposals
         assert ev.composite_score > 0.4
 

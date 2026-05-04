@@ -6,7 +6,7 @@ This script can be integrated into the FastAPI app or run standalone
 
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 import httpx
 
@@ -37,11 +37,11 @@ class TelegramAlertManager:
         # Build message
         message_parts = [
             f"{emoji} ALERT: {status}",
-            f"",
+            "",
             f"📋 Alert: {labels.get('alertname', 'Unknown')}",
             f"🏷️ Severity: {severity.upper()}",
             f"🔧 Component: {labels.get('component', 'Unknown')}",
-            f"",
+            "",
         ]
         
         # Add summary and description
@@ -165,7 +165,7 @@ async def test_webhook():
                     "summary": "High CPU usage detected",
                     "description": "CPU usage is 85% on vps1"
                 },
-                "startsAt": datetime.utcnow().isoformat()
+                "startsAt": datetime.now(timezone.utc).isoformat()
             }
         ]
     }

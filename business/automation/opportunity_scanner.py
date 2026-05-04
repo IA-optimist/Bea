@@ -25,7 +25,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -34,6 +33,7 @@ import asyncio
 
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -271,7 +271,7 @@ class OpportunityScanner:
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
             
-            cutoff_date = datetime.now() - timedelta(days=days_back)
+            datetime.now() - timedelta(days=days_back)
             
             # Parse posts - Product Hunt structure (adapt selectors as needed)
             posts = soup.find_all(['article', 'div'], class_=lambda x: x and ('post' in str(x).lower() or 'item' in str(x).lower()))
@@ -362,7 +362,7 @@ class OpportunityScanner:
                 content = await page.content()
                 soup = BeautifulSoup(content, 'html.parser')
                 
-                cutoff_timestamp = (datetime.now() - timedelta(days=days_back)).timestamp()
+                (datetime.now() - timedelta(days=days_back)).timestamp()
                 
                 # Parse posts
                 posts = soup.find_all('div', class_='thing')
@@ -389,7 +389,7 @@ class OpportunityScanner:
                                 try:
                                     upvotes = int(score_text)
                                 except ValueError:
-                                    pass
+                                    _silent_log.debug("suppressed_exception", src='opportunity_scanner.py')
                         
                         # Extract comments
                         comments = 0
@@ -460,7 +460,7 @@ class OpportunityScanner:
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
             
-            cutoff_date = datetime.now() - timedelta(days=days_back)
+            datetime.now() - timedelta(days=days_back)
             
             # Parse items
             items = soup.find_all('tr', class_='athing')
@@ -507,7 +507,7 @@ class OpportunityScanner:
                             comments = int(match.group(1))
                     
                     # Extract time (for filtering)
-                    age_span = subtext_td.find('span', class_='age')
+                    subtext_td.find('span', class_='age')
                     # Basic time filtering (HN shows relative times)
                     
                     pain_points = self._extract_pain_points(title)

@@ -21,6 +21,7 @@ from core.self_model.model import (
     AutonomyEnvelope, AutonomyMode,
 )
 from core.self_model import sources
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -314,7 +315,7 @@ def build_self_model() -> SelfModel:
         runtime = get_canonical_runtime()
         model.metadata = runtime.enrich_self_model(getattr(model, "metadata", {}) or {})
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='updater.py')
 
     log.info(
         "self_model.built",

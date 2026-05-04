@@ -4,7 +4,7 @@ Continuous improvement through skill discovery and performance tracking.
 """
 from __future__ import annotations
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 import structlog
 
 log = structlog.get_logger(__name__)
@@ -235,5 +235,5 @@ class PerformanceTracker:
             },
             "domains": self.metrics["domains"],
             "weak_domains": self.get_weak_domains(),
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat()
         }

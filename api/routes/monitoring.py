@@ -12,9 +12,9 @@ from __future__ import annotations
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header
 
 from api._deps import require_auth
 
@@ -64,11 +64,12 @@ def _last_mission_at() -> str | None:
             ts = missions[0].updated_at or missions[0].created_at
             return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='monitoring.py')
     return None
 
 
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -159,7 +160,7 @@ async def system_metrics(x_jarvis_token: Optional[str] = Header(None), authoriza
         agent_error_rates = report.get("agent_error_rates", {})
         retry_rate    = report.get("retry_rate", 0.0)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='monitoring.py')
 
     return {
         "total_missions":      total,
@@ -512,7 +513,7 @@ async def aios_status(
 
     # 1. Capabilities
     try:
-        from core.capabilities.ai_os_capabilities import AIOS_CAPABILITIES, capability_summary
+        from core.capabilities.ai_os_capabilities import capability_summary
         d["capabilities"] = capability_summary()
     except Exception as e:
         d["capabilities"] = {"error": str(e)[:100]}

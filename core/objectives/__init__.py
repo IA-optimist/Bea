@@ -4,6 +4,7 @@ Exporte les interfaces principales.
 Fail-open : si un sous-module manque, les autres restent disponibles.
 """
 from __future__ import annotations
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from core.objectives.objective_models import (
@@ -13,7 +14,7 @@ try:
         SubObjectiveStatus,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_engine import (
@@ -22,7 +23,7 @@ try:
         reset_engine,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_store import (
@@ -31,12 +32,12 @@ try:
         reset_store,
     )
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 try:
     from core.objectives.objective_cleanup import run_cleanup
 except ImportError:
-    pass
+    _silent_log.debug("suppressed_exception", src='__init__.py')
 
 __all__ = [
     "Objective",

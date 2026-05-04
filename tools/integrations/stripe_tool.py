@@ -31,6 +31,7 @@ import urllib.error
 import urllib.parse
 from dataclasses import dataclass, field
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ class StripeTool:
                 if isinstance(result, dict):
                     return result.get("value", "")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='stripe_tool.py')
         return ""
 
     # ═══════════════════════════════════════════════════════════════

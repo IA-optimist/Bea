@@ -6,6 +6,7 @@ Provides consistency checks and architecture overview.
 """
 from __future__ import annotations
 import logging
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.aios")
 
@@ -159,7 +160,7 @@ def consistency_check() -> dict:
             if tool_name not in TOOL_OS_REGISTRY:
                 issues.append(f"Tool '{tool_name}' in registry but not in Tool OS layer")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
     
     # Check: all agents map to a role
     try:
@@ -176,7 +177,7 @@ def consistency_check() -> dict:
             if agent not in role_map:
                 issues.append(f"Agent '{agent}' has no role assignment")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
     
     # Check: all memory types have valid tier mappings
     try:
@@ -186,7 +187,7 @@ def consistency_check() -> dict:
             if cfg["tier"] not in valid_tiers:
                 issues.append(f"Memory type '{mt}' has invalid tier '{cfg['tier']}'")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
     
     return {
         "consistent": len(issues) == 0,

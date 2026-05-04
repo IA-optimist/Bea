@@ -3,10 +3,8 @@ Tests for the real capability expansion: tool performance, mission performance,
 improvement proposals, improvement detector, performance API, cockpit integration.
 """
 import ast
-import json
 import os
 import sys
-import time
 import types
 import pytest
 pytestmark = pytest.mark.integration

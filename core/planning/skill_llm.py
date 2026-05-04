@@ -27,6 +27,7 @@ import json
 import re
 import time
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.skill_llm")
 
@@ -108,7 +109,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
         if isinstance(parsed, dict):
             return parsed
     except (json.JSONDecodeError, ValueError):
-        pass
+        _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 2: extract from markdown fences
     fence_match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
@@ -118,7 +119,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 3: balanced brace extraction (find outermost { ... })
     json_text = _extract_outermost_json(text)
@@ -128,7 +129,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 4: repair truncated JSON (common with long outputs)
     repaired = _repair_truncated_json(text)
@@ -138,7 +139,7 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             if isinstance(parsed, dict):
                 return parsed
         except (json.JSONDecodeError, ValueError):
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
     # Strategy 5: per-field extraction from text
     # Instead of assigning the entire blob to every field, try to find
@@ -265,7 +266,7 @@ def _extract_field_from_text(text: str, field_name: str) -> object | None:
             try:
                 return json.loads(extracted)
             except (json.JSONDecodeError, ValueError):
-                pass
+                _silent_log.debug("suppressed_exception", src='skill_llm.py')
     elif remainder.startswith("["):
         # Find matching ]
         depth = 0
@@ -333,7 +334,6 @@ async def _invoke_async(
 
         # Model intelligence: select optimal model for this skill
         selected_role = _LLM_ROLE
-        selection_info = ""
         _valid_modes = ("budget", "normal", "critical")
         if budget_mode not in _valid_modes:
             budget_mode = "normal"
@@ -355,7 +355,6 @@ async def _invoke_async(
                     "fallback_only": "fallback",
                 }
                 selected_role = _TASK_TO_ROLE.get(task_class, _LLM_ROLE)
-                selection_info = f" [model_intel: {task_class}→{selected_role}]"
         except Exception:
             pass  # fail-open: use default role
 
@@ -369,7 +368,6 @@ async def _invoke_async(
         content = _parse_llm_output(raw, output_schema)
 
         # Schema validation + auto-repair (fail-open)
-        needs_requery = False
         try:
             from core.planning.output_enforcer import OutputEnforcer
             enforcer = OutputEnforcer()
@@ -378,9 +376,9 @@ async def _invoke_async(
                 content = enforcer.auto_repair(content, output_schema)
                 revalidation = enforcer.validate_against_schema(content, output_schema)
                 if revalidation.overall_score < 0.5:
-                    needs_requery = True
+                    pass
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='skill_llm.py')
 
         duration_ms = round((time.time() - t0) * 1000)
 
@@ -406,7 +404,7 @@ async def _invoke_async(
                     or 0
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='skill_llm.py')
             get_model_performance().record(
                 model_id=str(model),
                 task_class=task_class,

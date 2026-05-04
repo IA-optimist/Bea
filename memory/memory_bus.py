@@ -45,6 +45,7 @@ import time
 from pathlib import Path
 from typing import Any
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -174,7 +175,7 @@ class MemoryBus:
                         "backend":  BACKEND_STORE,
                     })
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
 
         if not semantic:
             return results[:top_k]
@@ -505,7 +506,7 @@ class MemoryBus:
             try:
                 return self.failures.has_failed_before(patch)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
         return False
 
     def best_model_for(self, category: str) -> str | None:
@@ -514,7 +515,7 @@ class MemoryBus:
             try:
                 return self.patches.get_best_model(category)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
         return None
 
     # ── Statistiques ──────────────────────────────────────────
@@ -527,17 +528,17 @@ class MemoryBus:
             try:
                 stats["vector"] = self._vector.get_stats()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
         if self._patches:
             try:
                 stats["patches"] = self._patches.get_stats()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
         if self._failures:
             try:
                 stats["failures"] = self._failures.get_stats()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
 
         return stats
 
@@ -703,7 +704,7 @@ class MemoryBus:
             try:
                 await self._store.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='memory_bus.py')
 
     # ==========================================================================
     # PHASE 4 — Layer-based API (additive, fail-open)
@@ -734,7 +735,7 @@ class MemoryBus:
                 MemoryBus._write_count = 0
                 self._flush()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_bus.py')
 
     def add_with_ttl(self, layer: str, entry: dict, ttl_seconds: int) -> None:
         """Store entry with expiry timestamp. Entry is auto-removed on next read if expired."""
@@ -796,7 +797,7 @@ class MemoryBus:
                 ]
                 removed += before - len(store[layer])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_bus.py')
         return removed
 
     @classmethod
@@ -827,7 +828,7 @@ class MemoryBus:
             with open(self._CACHE_PATH, "w", encoding="utf-8") as f:
                 _json.dump(self._layers_store, f, default=str)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_bus.py')
 
     def _load_cache(self) -> None:
         """Load persisted layer data on startup. Fail-open."""
@@ -838,4 +839,4 @@ class MemoryBus:
                 if isinstance(data, dict):
                     object.__setattr__(self, "_layers_data", data)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_bus.py')

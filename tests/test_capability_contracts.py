@@ -18,7 +18,7 @@ from executor.capability_contracts import (
 from executor.capability_dispatch import CapabilityDispatcher
 from integrations.mcp.mcp_models import MCPServer, MCPTool
 from integrations.mcp.mcp_registry import MCPRegistry
-from plugins.plugin_models import PluginMetadata, PluginStatus
+from plugins.plugin_models import PluginMetadata
 from plugins.plugin_registry import PluginRegistry
 
 

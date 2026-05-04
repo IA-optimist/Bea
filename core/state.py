@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -203,14 +204,14 @@ class JarvisSession:
             except RuntimeError:
                 pass  # Pas de boucle en cours — contexte synchrone
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='state.py')
 
     async def _notify_subscribers(self, evt):
         for sub in self.event_stream._subscribers:
             try:
                 await sub(evt)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='state.py')
 
     def get_output(self, agent: str) -> str:
         o = self.outputs.get(agent)

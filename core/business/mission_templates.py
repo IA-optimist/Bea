@@ -14,7 +14,7 @@ Templates are blueprints — instantiated into real Missions by the engine.
 from __future__ import annotations
 
 from core.business.mission_schema import (
-    Mission, MissionStep, Priority, RiskLevel, ExecutionMode,
+    Mission, MissionStep, Priority, RiskLevel,
 )
 
 

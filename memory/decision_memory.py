@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import json
 import os
-import time
 from collections import deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 _WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
 _PERSIST_PATH  = _WORKSPACE_DIR / "decision_memory.jsonl"
@@ -167,7 +167,7 @@ class DecisionMemory:
                     count=stats["count"],
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='decision_memory.py')
 
         if stats["override_rate"] > 0.3 and "shadow-advisor" not in agents:
             agents = agents + ["shadow-advisor"]
@@ -179,7 +179,7 @@ class DecisionMemory:
                     override_rate=stats["override_rate"],
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='decision_memory.py')
 
         return agents
 
@@ -254,9 +254,9 @@ class DecisionMemory:
                 try:
                     self._entries.append(json.loads(line))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='decision_memory.py')
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='decision_memory.py')
 
     def _persist(self) -> None:
         """Écrit JSONL. FIFO géré par deque(maxlen=1000). Atomic write (tmp → rename)."""
@@ -267,7 +267,7 @@ class DecisionMemory:
             tmp.write_text("\n".join(lines) + "\n", "utf-8")
             tmp.replace(self.PERSIST_PATH)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='decision_memory.py')
 
 
 # ── Singleton module-level ────────────────────────────────────────────────────

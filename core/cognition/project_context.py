@@ -12,9 +12,8 @@ Each project has:
 """
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import structlog
 
@@ -46,19 +45,19 @@ class ProjectContext:
     avg_confidence: float = 0.0
     
     # Metadata
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_active: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_active: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def add_message(self, role: str, content: str):
         """Add message to recent history (keep last 20)."""
         self.recent_messages.append({
             "role": role,
             "content": content,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
         if len(self.recent_messages) > 20:
             self.recent_messages = self.recent_messages[-20:]
-        self.last_active = datetime.utcnow()
+        self.last_active = datetime.now(timezone.utc)
     
     def record_mission_result(self, success: bool, confidence: float):
         """Update performance metrics."""
@@ -104,7 +103,21 @@ class ProjectContextManager:
             self.current_project_id = 1
             return
         
-        # TODO: Load from projects table
+        try:
+            from core.mission_system import get_mission_system
+            ms = get_mission_system()
+            # Load recent missions as project contexts
+            missions = ms.list_missions(limit=50)
+            for m in missions:
+                pid = abs(hash(getattr(m, 'mission_id', ''))) % 100000
+                if pid not in self.contexts:
+                    self.contexts[pid] = ProjectContext(
+                        project_id=pid,
+                        name=str(getattr(m, 'goal', ''))[:50],
+                        description=str(getattr(m, 'goal', '')),
+                    )
+        except Exception as _e:
+            log.warning("project_load_failed", err=str(_e)[:80])
         log.info("project_contexts_initialized", count=len(self.contexts))
     
     def get_current_context(self) -> Optional[ProjectContext]:
@@ -151,18 +164,27 @@ class ProjectContextManager:
             log.warning("no_qdrant_client", msg="Cannot store long-term memory")
             return ""
         
-        # TODO: Implement Qdrant storage
-        # - Generate embedding
-        # - Store in project-specific collection
-        # - Return point ID
-        
-        log.info(
-            "long_term_memory_stored",
-            project_id=project_id,
-            content_length=len(content)
-        )
-        
-        return f"mock-qdrant-id-{project_id}"
+        try:
+            from core.memory.qdrant_client import get_qdrant
+            from core.memory.embedding_provider import EmbeddingProvider
+            import time
+            ep = EmbeddingProvider()
+            vec = ep.embed(content)
+            q = get_qdrant()
+            collection = f"project_{project_id}_memory"
+            q.ensure_collection(collection, size=len(vec))
+            point_id = f"proj-{project_id}-{int(time.time()*1000)}"
+            q.upsert(collection, point_id, vec, {
+                "content": content[:500],
+                "project_id": project_id,
+                "memory_type": metadata.get("memory_type", "generic"),
+                "timestamp": time.time(),
+            })
+            log.info("long_term_memory_stored", project_id=project_id, content_length=len(content))
+            return point_id
+        except Exception as _e:
+            log.warning("long_term_memory_failed", err=str(_e)[:80])
+            return f"error-{project_id}"
     
     async def retrieve_relevant_memory(
         self,
@@ -178,12 +200,18 @@ class ProjectContextManager:
         if not self.qdrant:
             return []
         
-        # TODO: Implement Qdrant search
-        # - Generate query embedding
-        # - Search project collection
-        # - Return top results
-        
-        return []
+        try:
+            from core.memory.qdrant_client import get_qdrant
+            from core.memory.embedding_provider import EmbeddingProvider
+            ep = EmbeddingProvider()
+            vec = ep.embed(query)
+            q = get_qdrant()
+            collection = f"project_{project_id}_memory"
+            results = q.search(collection, vec, limit=limit, score_threshold=0.3)
+            return [hit.get("payload", {}).get("content", "") for hit in results]
+        except Exception as _e:
+            log.warning("long_term_search_failed", err=str(_e)[:80])
+            return []
     
     def add_learned_skill(self, project_id: int, skill_name: str):
         """Record that project learned a new skill."""

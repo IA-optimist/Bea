@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import structlog
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 from typing import Dict, List, Any
 

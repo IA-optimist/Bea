@@ -27,7 +27,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import structlog
@@ -294,7 +294,7 @@ class CheckpointStore:
                     )
                 return
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
         if self._backend == "sqlite":
             await self._sqlite_mark_done(session_id)
 
@@ -309,7 +309,7 @@ class CheckpointStore:
                     )
                 return [dict(r) for r in rows]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
         if self._backend == "sqlite":
             return await self._sqlite_list_incomplete()
         return []
@@ -350,7 +350,8 @@ class CheckpointStore:
             from core.db import get_sqlite_path
             self._sqlite_path = get_sqlite_path()
         except Exception:
-            import os, tempfile
+            import os
+            import tempfile
             self._sqlite_path = os.path.join(tempfile.gettempdir(), "jarvis_checkpoints.db")
 
         loop = asyncio.get_running_loop()
@@ -681,7 +682,7 @@ class OrchestratorV2:
                 f"({cr.rerun_count + 1}/{2}). Feedback: {cr.feedback[:100]}"
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
 
         # ── Rerun with injected feedback ───────────────────────
         augmented = critic.build_rerun_prompt(task, report, cr.feedback, cr.suggestions)

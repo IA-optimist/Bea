@@ -11,9 +11,7 @@ Validates:
   - All emissions are fail-open
   - Execution trace queries work
 """
-import time
 import inspect
-import pytest
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -101,7 +99,6 @@ class TestToolExecutorKernelEvents:
         """Kernel tool completion events include duration_ms."""
         from core.tool_executor import ToolExecutor
         source = inspect.getsource(ToolExecutor.execute)
-        import re
         # Find completed/failed events
         for keyword in ['"tool.completed"', '"tool.failed"']:
             pos = source.find(keyword)

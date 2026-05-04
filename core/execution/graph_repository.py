@@ -11,13 +11,13 @@ Design:
 from __future__ import annotations
 
 import json
-import time
 import structlog
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 from core.execution.execution_graph import ExecutionGraph
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.graph_repository")
 
@@ -158,7 +158,7 @@ class GraphRepository:
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_repository.py')
 
     def _load_index(self) -> None:
         try:
@@ -177,7 +177,7 @@ class GraphRepository:
                     created_at=gd.get("created_at", 0),
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='graph_repository.py')
 
 
 # ── Singleton ──────────────────────────────────────────────────

@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("orchestration.context")
 
@@ -86,7 +86,7 @@ def assemble(
         from core.skills import get_skill_service
         ctx.prior_skills = get_skill_service().retrieve_for_mission(goal, top_k=3)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='context_assembler.py')
 
     # 2. Retrieve relevant memory
     try:
@@ -98,7 +98,7 @@ def assemble(
             for e in entries
         ]
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='context_assembler.py')
 
     # 3. Recent failures
     try:
@@ -110,7 +110,7 @@ def assemble(
             for e in failures
         ]
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='context_assembler.py')
 
     # 4. System health
     try:
@@ -141,11 +141,10 @@ def assemble(
     # 6. Business reasoning override
     if classification.get("task_type") == "business":
         try:
-            from core.skills.business_reasoning import OpportunityType
             ctx.suggested_approach = "business_structured_analysis"
             ctx.estimated_steps = 4
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_assembler.py')
 
     log.info("context_assembled",
              mission_id=mission_id,

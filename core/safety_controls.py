@@ -74,19 +74,19 @@ def get_safety_state() -> SafetyState:
 
 def is_intelligence_enabled() -> bool:
     """Quick check: is any intelligence feature allowed?"""
-    return not os.environ.get("JARVIS_DISABLE_ALL_INTELLIGENCE", "").lower() in ("1", "true", "yes", "on")
+    return os.environ.get("JARVIS_DISABLE_ALL_INTELLIGENCE", "").lower() not in ("1", "true", "yes", "on")
 
 
 def is_proposals_enabled() -> bool:
     """Quick check: can proposals be generated?"""
     if not is_intelligence_enabled():
         return False
-    return not os.environ.get("JARVIS_DISABLE_PROPOSALS", "").lower() in ("1", "true", "yes", "on")
+    return os.environ.get("JARVIS_DISABLE_PROPOSALS", "").lower() not in ("1", "true", "yes", "on")
 
 
 def is_execution_engine_enabled() -> bool:
     """Quick check: should execution engine be used?"""
-    return not os.environ.get("JARVIS_DISABLE_EXECUTION_ENGINE", "").lower() in ("1", "true", "yes", "on")
+    return os.environ.get("JARVIS_DISABLE_EXECUTION_ENGINE", "").lower() not in ("1", "true", "yes", "on")
 
 
 # ── Lifecycle Validation ─────────────────────────────────────────

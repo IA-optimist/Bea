@@ -8,9 +8,7 @@ No function ever modifies state — read-only introspection.
 from __future__ import annotations
 
 import os
-import time
 import structlog
-from typing import Any
 
 log = structlog.get_logger()
 
@@ -112,7 +110,7 @@ def read_protected_paths() -> dict:
 def probe_auth_health() -> dict:
     """Check if auth system is functional."""
     try:
-        from api._deps import _verify_jwt, _API_TOKEN
+        from api._deps import _API_TOKEN
         return {"healthy": True, "has_static_token": bool(_API_TOKEN),
                 "jwt_available": True}
     except Exception as e:

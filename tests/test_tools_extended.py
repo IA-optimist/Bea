@@ -3,6 +3,7 @@ Tests étendus pour les tools L4 — tous graceful (SKIP si tool indisponible).
 """
 import os
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 pytestmark = pytest.mark.integration
 
 
@@ -28,7 +29,8 @@ def test_file_read():
 
 def test_file_write_rollback():
     """Écrit un fichier de test, vérifie backup, nettoie."""
-    import tempfile, os
+    import tempfile
+    import os
     from core.tool_executor import write_file_safe
     from core.rollback_manager import get_rollback_manager
 
@@ -50,12 +52,12 @@ def test_file_write_rollback():
         try:
             os.unlink(test_path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_tools_extended.py')
 
 
 @pytest.mark.skip(reason="phantom: import changed")
 def test_file_create():
-    import tempfile, os
+    import os
     from core.tools.file_tool import file_create
 
     test_path = f"/tmp/jarvis_test_create_{os.getpid()}.txt"
@@ -67,7 +69,7 @@ def test_file_create():
         try:
             os.unlink(test_path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='test_tools_extended.py')
 
 
 # ── github_tool ────────────────────────────────────────────────────────────────

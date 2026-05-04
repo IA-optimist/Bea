@@ -106,7 +106,7 @@ class TestPriorFailureReuse(unittest.TestCase):
             prior_skills=[], relevant_memories=[],
         )
         # With simulated failures (would come from memory in real use)
-        a2 = assess_before_execution(
+        assess_before_execution(
             goal="Deploy app",
             classification={"complexity": "simple"},
             prior_skills=[], relevant_memories=[],
@@ -229,7 +229,10 @@ class TestTraceCompleteness(unittest.TestCase):
     def test_wiring_in_orchestrator(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator.run_mission)
+        # MetaOrchestrator.run_mission a été factorisé en helpers privés —
+        # on inspecte la source de la classe entière pour préserver l'invariant
+        # architectural (features présentes) sans coupler au body de run_mission.
+        src = inspect.getsource(MetaOrchestrator)
         self.assertIn("output_formatter", src)
         self.assertIn("pre_execution", src)
 

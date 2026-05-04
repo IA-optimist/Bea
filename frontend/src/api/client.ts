@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://77.42.40.146:8000/api/v2';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk/api/v2';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -19,18 +19,24 @@ class ApiClient {
     this.client = axios.create({
       baseURL: BASE_URL,
       timeout: 30000,
+      // withCredentials=true : envoie le cookie HttpOnly `jarvis_token` sur
+      // chaque requête. Le backend (api/_deps.require_auth + middleware)
+      // lit le cookie en priorité, fallback headers pour compat legacy.
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor
+    // Request interceptor — fallback legacy : si un token localStorage
+    // existe encore (session pré-migration), on l'envoie aussi en header
+    // pour maintenir la continuité. Sera retiré après la fin de la période
+    // de transition (une session post-migration n'écrit plus dans localStorage).
     this.client.interceptors.request.use(
       (config) => {
-        // Add auth token if available (consistent with Login.tsx storage key)
-        const token = localStorage.getItem('jarvis_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        const legacyToken = localStorage.getItem('jarvis_token');
+        if (legacyToken) {
+          config.headers.Authorization = `Bearer ${legacyToken}`;
         }
         return config;
       },
@@ -42,7 +48,8 @@ class ApiClient {
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Handle unauthorized (consistent with Login.tsx storage key)
+          // Nettoie l'éventuel token legacy et l'user cache côté client.
+          // Le cookie HttpOnly est déjà invalidé serveur-side via /auth/logout.
           localStorage.removeItem('jarvis_token');
           localStorage.removeItem('jarvis_user');
           window.location.href = '/login';
@@ -50,6 +57,20 @@ class ApiClient {
         return Promise.reject(error);
       }
     );
+  }
+
+  /**
+   * Logout — clear le cookie HttpOnly côté serveur et nettoie le cache user.
+   */
+  async logout(): Promise<void> {
+    try {
+      await this.client.post('/auth/logout');
+    } catch {
+      // Logout doit être idempotent — on nettoie le client même si le
+      // serveur ne répond pas.
+    }
+    localStorage.removeItem('jarvis_token');
+    localStorage.removeItem('jarvis_user');
   }
 
   // System endpoints
@@ -153,6 +174,20 @@ class ApiClient {
     const { data } = await this.client.patch<ApiResponse<Settings>>('/settings', settings);
     return data.data;
   }
+
+
+  // Missions endpoints
+  async getMissions(params?: { limit?: number; status?: string }): Promise<any[]> {
+    const { data } = await this.client.get('/api/v3/missions', {
+      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
+      params,
+    });
+    return data.data?.missions || [];
+  }
+
+  // submitMission / getMission removed in audit phase-11 — Missions.tsx
+  // posts directly to /api/v2/chat. Re-add via git history if a future
+  // page needs the v3/missions wrapper.
 
   // Generic request method for chat API
   async post<T = any>(url: string, data: any): Promise<{ data: T }> {

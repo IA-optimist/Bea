@@ -12,9 +12,7 @@ Date: 2026-04-09
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-import os
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -372,14 +370,20 @@ class ProactiveAgent:
         return {"status": "written", "file": str(note_file)}
 
     def _run_readonly_shell(self, cmd: str) -> dict:
-        """Exécute une commande shell en lecture seule (whitelist stricte)."""
-        ALLOWED_CMDS = {"echo", "cat", "ls", "systemctl is-active", "df", "free", "uptime"}
-        base_cmd = cmd.split()[0] if cmd.split() else ""
-        if base_cmd not in {"echo", "cat", "ls", "df", "free", "uptime"}:
+        """Exécute une commande shell en lecture seule (whitelist stricte, shell=False)."""
+        import shlex
+        try:
+            args = shlex.split(cmd)
+        except ValueError as e:
+            return {"status": "blocked", "reason": f"parse_error: {e}", "cmd": cmd}
+        if not args:
+            return {"status": "blocked", "reason": "empty", "cmd": cmd}
+        ALLOWED = {"echo", "cat", "ls", "df", "free", "uptime"}
+        if args[0] not in ALLOWED:
             return {"status": "blocked", "reason": "commande non autorisée", "cmd": cmd}
         try:
             result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=5
+                args, shell=False, capture_output=True, text=True, timeout=5
             )
             return {"status": "ok", "stdout": result.stdout[:500], "returncode": result.returncode}
         except subprocess.TimeoutExpired:

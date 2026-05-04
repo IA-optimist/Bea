@@ -30,6 +30,7 @@ Interface :
 from __future__ import annotations
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -95,19 +96,6 @@ class ModelSelector:
             except Exception as e:
                 log.debug("model_selector_no_learning", err=str(e)[:60])
         return self._learning
-
-        # TEMPORARY: Force OpenRouter for cognition (Ollama hangs)
-        if role == "cognition":
-            if self._cloud_allowed():
-                return ModelRecommendation(
-                    provider="openrouter",
-                    model=self.s.openrouter_model_main,
-                    role="cognition",
-                    reason="Cognition requires reliable cloud model (Ollama unstable)",
-                    complexity=0.0,
-                )
-            else:
-                log.warning("cognition_role_no_cloud", msg="OpenRouter keys missing, falling back to Ollama")
 
     # ── API publique ──────────────────────────────────────────
 
@@ -221,7 +209,7 @@ class ModelSelector:
             from core.escalation_engine import EscalationEngine
             return EscalationEngine(self.s)._compute_complexity(task)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='model_selector.py')
         # Heuristique fallback
         if not task:
             return 0.0
@@ -309,7 +297,7 @@ class ModelSelector:
                         reason=f"LLMPerf: avg_latency={avg_lat_ms:.0f}ms > 90s",
                     )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='model_selector.py')
 
         # 2. Fallback sur LearningEngine
         engine = self._get_learning()

@@ -16,6 +16,7 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.feedback")
 
@@ -217,7 +218,7 @@ class FeedbackCollector:
                 failure_reasons=trace.validation_failed[:5],
             ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='feedback.py')
 
     def _to_kernel_performance(self, trace: ExecutionTrace) -> None:
         try:
@@ -231,7 +232,7 @@ class FeedbackCollector:
                 quality=trace.confidence.composite,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='feedback.py')
 
     def _to_cognitive_journal(self, trace: ExecutionTrace) -> None:
         try:
@@ -254,7 +255,7 @@ class FeedbackCollector:
                 tags=["build", trace.artifact_type],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='feedback.py')
 
 
 # Singleton

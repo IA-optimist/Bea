@@ -11,10 +11,10 @@ Design:
 from __future__ import annotations
 
 import time
-import random
 import structlog
 from dataclasses import dataclass, field
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.auto_update")
 
@@ -224,7 +224,7 @@ class ModelAutoUpdate:
         candidates = []
         try:
             from core.model_intelligence.selector import (
-                get_model_performance, get_model_selector, TASK_CLASSES,
+                get_model_performance, TASK_CLASSES,
             )
             perf = get_model_performance()
             for tc in TASK_CLASSES:
@@ -243,7 +243,7 @@ class ModelAutoUpdate:
                             "samples_b": ranked[1].get("samples", 0),
                         })
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auto_update.py')
         return candidates
 
     def get_real_cost_stats(self) -> dict:

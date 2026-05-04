@@ -23,14 +23,14 @@ Endpoints:
 """
 from __future__ import annotations
 
-import json
 import os
 import time
 from typing import Optional
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
-    from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect
+    from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
     from fastapi.responses import JSONResponse
 except ImportError:
     # Stub for syntax validation without fastapi
@@ -45,7 +45,8 @@ except ImportError:
             def dec(f): return f
             return dec
     APIRouter = _Stub
-    Body = lambda **k: None
+    def Body(**k):
+        return None
     WebSocket = object
     WebSocketDisconnect = Exception
     JSONResponse = dict
@@ -114,18 +115,36 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                         from core.metrics_store import emit_mission_submitted
                         emit_mission_submitted("canonical")
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='convergence.py')
                 # Trigger real execution in background — without this, mission stays READY forever
                 if background_tasks and mission_id and result.get("ok"):
                     _goal_capture = goal
                     _mid_capture = mission_id
+                    _ctx_capture = str(body.get("context", "") or "")
+                    _risk_capture = str(body.get("risk_level", "low") or "low")
+                    _requires_capture = bool(body.get("requires_validation", False))
                     async def _execute_canonical():
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
                             mo = get_meta_orchestrator()
+
+                            # Tag mission as requiring validation in mission store
+                            if _requires_capture:
+                                try:
+                                    from core.mission_system import get_mission_system
+                                    _ms_inner = get_mission_system()
+                                    _m = _ms_inner.get(_mid_capture)
+                                    if _m:
+                                        _m.decision_trace["requires_validation"] = True
+                                        _m.decision_trace["requested_risk_level"] = _risk_capture
+                                        log.info("mission.validation_flagged", mission_id=_mid_capture)
+                                except Exception:
+                                    pass
+
                             await mo.run_mission(_goal_capture, mission_id=_mid_capture)
                         except Exception as _exc:
-                            log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120])
+                            import traceback
+                            log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120], tb=traceback.format_exc()[-300:])
                     background_tasks.add_task(_execute_canonical)
                 return _ok(result, status=201)
             except Exception as e:
@@ -145,7 +164,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
             if enrichment:
                 data["intelligence"] = enrichment
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='convergence.py')
 
         return _ok(data, status=201)
 
@@ -181,6 +200,59 @@ async def list_missions(
     except Exception as e:
         return _err(str(e)[:200], status=500)
 
+
+
+
+@router.get("/missions/history")
+async def mission_history(
+    limit: int = 50,
+    offset: int = 0,
+    status: Optional[str] = None,
+    domain: Optional[str] = None,
+):
+    """
+    GET /api/v3/missions/history — Paginated mission history with filters.
+    
+    Query params:
+      limit  (int, default=50)   — max results
+      offset (int, default=0)    — pagination offset
+      status (str, optional)     — filter by status (DONE, FAILED, ...)
+      domain (str, optional)     — filter by domain (software_dev, saas_builder, ...)
+    
+    Returns missions sorted by created_at DESC (most recent first).
+    """
+    try:
+        from core.mission_system import get_mission_system
+        ms = get_mission_system()
+        
+        # Get all missions then filter + paginate
+        all_missions = ms.list_missions(limit=1000)  # practical upper bound
+        
+        # Filter
+        filtered = all_missions
+        if status:
+            filtered = [m for m in filtered if (m.status.value if hasattr(m.status, "value") else str(m.status)).upper() == status.upper()]
+        if domain:
+            filtered = [m for m in filtered if getattr(m, "domain", "") == domain]
+        
+        # Sort DESC by created_at
+        filtered.sort(key=lambda m: getattr(m, "created_at", 0) or 0, reverse=True)
+        
+        # Paginate
+        total = len(filtered)
+        page = filtered[offset:offset + limit]
+        
+        return _ok({
+            "missions": [m.to_dict() for m in page],
+            "total":    total,
+            "offset":   offset,
+            "limit":    limit,
+            "has_more": (offset + limit) < total,
+            "filters":  {"status": status, "domain": domain},
+        })
+
+    except Exception as e:
+        return _err(str(e)[:200], status=500)
 
 @router.get("/missions/{mission_id}")
 async def get_mission(mission_id: str):
@@ -310,16 +382,16 @@ async def system_status():
     except ImportError:
         status_data["components"]["capability_expansion"] = {"status": "not_available"}
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     # Intelligence hooks
     try:
         from core.intelligence_hooks import periodic_health
         status_data["components"]["intelligence"] = periodic_health()
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     # Legacy compatibility info
     try:
@@ -327,7 +399,7 @@ async def system_status():
         status_data["authority_map"] = get_authority_map()
         status_data["deprecations"] = len(get_deprecations())
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='convergence.py')
 
     return _ok(status_data)
 

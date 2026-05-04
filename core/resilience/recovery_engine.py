@@ -12,7 +12,6 @@ review phase (Phase 6).
 """
 from __future__ import annotations
 
-import logging
 import structlog
 import time
 from dataclasses import dataclass, field
@@ -161,10 +160,9 @@ def _cleanup_context(mission_id: str):
 def classify_error(error: str | Exception) -> ErrorCategory:
     """Classify an error into a recovery category."""
     if isinstance(error, Exception):
-        etype = type(error).__name__
+        type(error).__name__
         msg = str(error).lower()
     else:
-        etype = ""
         msg = str(error).lower()
 
     # Check exception type first (subclass order matters!)
@@ -352,7 +350,7 @@ class RecoveryEngine:
 
         Returns a dict compatible with ToolExecutor result format.
         """
-        start = time.time()
+        time.time()
 
         if decision.strategy == RecoveryStrategy.RETRY:
             if decision.wait_seconds > 0:

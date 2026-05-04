@@ -41,22 +41,18 @@ Git Agent
 """
 import os
 import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.self_improvement.code_patcher import (
-    CodePatcher, FileAnalysis, CodePatch, PatchDiff,
-    MAX_FILES_PER_PATCH, MAX_LINES_CHANGED,
+    CodePatcher, CodePatch, PatchDiff,
 )
 from core.self_improvement.protected_paths import PROTECTED_FILES
 from core.self_improvement.sandbox_executor import (
-    SandboxExecutor, SandboxResult, SandboxConfig,
+    SandboxExecutor, SandboxConfig,
 )
 from core.self_improvement.test_runner import (
-    PatchRunner as TestRunner, SuiteResult as TestSuiteResult, RegressionReport,
+    PatchRunner as TestRunner, SuiteResult as TestSuiteResult,
 )
 from core.self_improvement.git_agent import (
     GitAgent, CommitInfo, PRInfo, PROTECTED_BRANCHES,
@@ -312,7 +308,7 @@ class TestGitAgent:
     def test_branch_prefix(self):
         """DC27: Branch name prefixed with auto/."""
         # GitAgent.create_branch prefixes if missing
-        agent = GitAgent("/tmp/nonexistent")
+        GitAgent("/tmp/nonexistent")
         # Can't actually create branch on non-repo, but verify logic
         assert "auto/" in "auto/fix-abc123"
 
@@ -335,7 +331,7 @@ class TestGitAgent:
     def test_rollback_concept(self):
         """DC29: Rollback returns to main concept."""
         # Test the logic structure without actual git
-        agent = GitAgent("/tmp")
+        GitAgent("/tmp")
         assert "main" not in PROTECTED_BRANCHES or "main" in PROTECTED_BRANCHES
 
     def test_pr_info_structure(self):

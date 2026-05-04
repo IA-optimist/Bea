@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import threading
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("kernel.capabilities.identity")
 
@@ -89,7 +90,7 @@ class CapabilityIdentityMap:
                     if "tool_invocation" not in self._tool_to_capabilities[tool_id]:
                         self._tool_to_capabilities[tool_id].append("tool_invocation")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='identity.py')
 
             # Source 4: ToolExecutor internal tools → tool_invocation
             try:
@@ -100,7 +101,7 @@ class CapabilityIdentityMap:
                     if "tool_invocation" not in self._tool_to_capabilities[tool_name]:
                         self._tool_to_capabilities[tool_name].append("tool_invocation")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='identity.py')
 
             # Source 5: Domain skills → economic capability mapping
             # Specific skills map to specific economic capabilities

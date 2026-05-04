@@ -2,13 +2,14 @@
 Tests de robustesse — retry, validation params, planner fallback.
 Couvre les 3 nouvelles fonctionnalités de la mission auto-amélioration niveau 2.
 """
-import sys, os
+import sys
+import os
 import pytest
 pytestmark = pytest.mark.integration
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from core.tool_executor import ToolExecutor, get_tool_executor
 from core.planner import build_plan, get_planner
 

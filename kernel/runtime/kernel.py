@@ -36,12 +36,15 @@ Phase 7 when the kernel becomes the primary executor.
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
+if TYPE_CHECKING:
+    from kernel.execution.contracts import ExecutionRequest, ExecutionResult  # noqa: F401
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -513,7 +516,7 @@ class JarvisKernel:
                     payload={"mission_id": mid, "mode": mode},
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -592,7 +595,7 @@ class JarvisKernel:
                     payload={"mission_id": mid, "mode": request.mode},
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -646,7 +649,7 @@ class JarvisKernel:
             if self.capabilities:
                 cap_count = len(self.capabilities.list_all())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='kernel.py')
 
         return KernelStatus(
             booted=self._booted_at > 0,

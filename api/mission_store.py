@@ -12,6 +12,7 @@ import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from api.models import MissionLogEvent, MissionSummary
@@ -143,7 +144,7 @@ class MissionStateStore:
                             timestamp=e.get("timestamp", time.time()),
                         ))
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='mission_store.py')
                 if loaded:
                     self._logs[mid] = loaded
             for mid, s in data.get("summaries", {}).items():
@@ -164,6 +165,6 @@ class MissionStateStore:
                         metadata=s.get("metadata", {}),
                     )
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='mission_store.py')
         except Exception:
             pass  # fresh start on any load error

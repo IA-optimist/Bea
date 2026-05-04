@@ -14,7 +14,6 @@ Observability (Cycle 2 Phase B):
 from __future__ import annotations
 import os
 import time
-import asyncio
 from typing import Any, Optional
 import structlog
 

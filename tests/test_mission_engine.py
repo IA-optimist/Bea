@@ -77,23 +77,21 @@ Dependency Validation
 """
 import os
 import sys
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
 from core.business.mission_schema import (
-    Mission, MissionStep, MissionStatus, StepStatus, Priority, RiskLevel,
-    DependencyCheckResult,
+    Mission, MissionStep, MissionStatus, StepStatus,
 )
 from core.business.mission_templates import (
-    list_templates, get_template, instantiate_template, TEMPLATES,
+    list_templates, instantiate_template,
 )
 from core.business.mission_memory import MissionMemory, MissionMemoryEntry
 from core.business.mission_audit import MissionAuditLog, AuditEvent
 from core.business.mission_runner import (
-    MissionRunner, StepExecutor, DependencyValidator, step_needs_approval,
+    MissionRunner, StepExecutor, DependencyValidator,
 )
 from core.business.mission_engine import MissionEngine
 
@@ -465,7 +463,7 @@ class TestRunner:
         runner.plan(m)
         runner.start(m)
         # First call fails, retry set
-        result = runner.execute_next_step(m)
+        runner.execute_next_step(m)
         assert m.steps[0].retry_count == 1
         assert m.steps[0].status == StepStatus.PENDING.value  # Ready for retry
 

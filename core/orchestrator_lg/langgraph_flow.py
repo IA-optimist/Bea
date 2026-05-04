@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any, Dict, List, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -68,14 +69,14 @@ def _get_llm():
                 kwargs["base_url"] = base_url
             return ChatOpenAI(**kwargs)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='langgraph_flow.py')
     try:
         from langchain_community.llms import Ollama  # type: ignore
         ollama_url = os.getenv("OLLAMA_HOST", "http://ollama:11434")
         model = os.getenv("OLLAMA_MODEL_MAIN", "llama3.1:8b")
         return Ollama(base_url=ollama_url, model=model)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='langgraph_flow.py')
     return None
 
 # ── Nodes ─────────────────────────────────────────────────────────────────────

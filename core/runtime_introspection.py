@@ -29,7 +29,6 @@ Usage:
 """
 from __future__ import annotations
 
-import ast
 import importlib
 import os
 import shutil
@@ -40,6 +39,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -169,7 +169,7 @@ def _detect_network() -> Capability:
     try:
         # Try DNS resolution — lightweight, no actual connection
         socket.setdefaulttimeout(2)
-        addr = socket.getaddrinfo("dns.google", 443, socket.AF_INET)
+        socket.getaddrinfo("dns.google", 443, socket.AF_INET)
         hostname = socket.gethostname()
         return Capability(
             name="network",
@@ -262,7 +262,7 @@ def _detect_optional_modules() -> Capability:
             importlib.import_module(mod)
             modules[mod] = True
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
     available_count = sum(1 for v in modules.values() if v)
     return Capability(
         name="optional_modules",
@@ -340,7 +340,7 @@ def get_runtime_capabilities() -> dict:
         log.info("runtime_capabilities_detected",
                  available=available, total=total)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
 
     return result
 

@@ -25,7 +25,6 @@ import json
 import logging
 import os
 import time
-import hashlib
 from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
@@ -110,7 +109,7 @@ def http_request(params: dict) -> ConnectorResult:
     # Safety: block internal IPs
     for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
         if blocked in url:
-            return ConnectorResult(error=f"blocked: internal address", connector="http_request")
+            return ConnectorResult(error="blocked: internal address", connector="http_request")
 
     try:
         import urllib.request
@@ -349,7 +348,7 @@ def structured_extractor(params: dict) -> ConnectorResult:
                 try:
                     extracted.append(json.loads(m))
                 except json.JSONDecodeError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='_base.py')
             return ConnectorResult(success=True, data=extracted,
                                    latency_ms=(time.time()-start)*1000, connector="structured_extractor")
 
@@ -493,6 +492,7 @@ EMAIL_SPEC = ConnectorSpec(
 
 # Email validation patterns
 import re as _re
+_silent_log = __import__("structlog").get_logger(__name__)
 _EMAIL_RE = _re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 _MAX_SUBJECT_LEN = 200
 _MAX_BODY_LEN = 50_000
@@ -1618,7 +1618,7 @@ def _audit_connector_execution(
             detail=detail[:500],
         )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
 
 def execute_connector(name: str, params: dict) -> ConnectorResult:
@@ -1663,7 +1663,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                     log_approval_event(name, "execute", True, "supervised_execution")
                     logger.info("connector_approval_required: %s (%s)", name, spec.risk_level)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Rate limit check ──────────────────────────────────────────────────
     try:
@@ -1675,7 +1675,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                                        (time.time() - _exec_start) * 1000)
             return result
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Budget guard (for spending connectors) ────────────────────────────
     if spec.category in ("communication", "integration") and spec.risk_level in ("medium", "high"):
@@ -1688,7 +1688,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                                            (time.time() - _exec_start) * 1000)
                 return result
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Execute ───────────────────────────────────────────────────────────
     result = connector["execute"](clean_params)
@@ -1703,7 +1703,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
             error_type=result.error[:50] if result.error else None,
         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='_base.py')
 
     # ── Audit trail ───────────────────────────────────────────────────────
     _audit_connector_execution(

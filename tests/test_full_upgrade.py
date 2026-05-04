@@ -6,15 +6,21 @@ end-to-end pipeline integration.
 """
 from __future__ import annotations
 
-import json
+import importlib.util
 import os
 import sys
 import tempfile
 import unittest
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# ── Skip si module memory.memory_linker retiré (drift connu) ──────────────
+_HAS_MEMORY_LINKER = importlib.util.find_spec("memory.memory_linker") is not None
 
+
+@pytest.mark.skipif(not _HAS_MEMORY_LINKER, reason="memory.memory_linker retiré du codebase (drift connu)")
 class TestMemoryLinker(unittest.TestCase):
 
     def setUp(self):
@@ -153,6 +159,7 @@ class TestSkillRetrieverUpgrade(unittest.TestCase):
         os.unlink(tmp.name)
 
 
+@pytest.mark.skipif(not _HAS_MEMORY_LINKER, reason="memory.memory_linker retiré du codebase (drift connu)")
 class TestLinkTypes(unittest.TestCase):
     """Verify all link types are valid."""
 

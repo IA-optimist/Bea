@@ -30,6 +30,7 @@ from core.execution.artifacts import (
     ExecutionArtifact, ArtifactStatus, ArtifactType, ValidationRequirement,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("execution.build_pipeline")
 
 _WORKSPACE = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
@@ -471,7 +472,6 @@ Generate a production-quality {artifact.artifact_type.value} artifact.
 
     def _scaffold_content(self, artifact: ExecutionArtifact) -> dict[str, str]:
         """Generate minimal scaffold when LLM is unavailable."""
-        files: dict[str, str] = {}
         scaffold = {
             ArtifactType.LANDING_PAGE: {"index.html": f"<!DOCTYPE html><html><head><title>{artifact.name}</title></head><body><h1>{artifact.name}</h1><p>{artifact.description}</p></body></html>"},
             ArtifactType.API_SERVICE: {"main.py": f'"""API Service: {artifact.name}"""\nfrom fastapi import FastAPI\napp = FastAPI(title="{artifact.name}")\n\n@app.get("/health")\ndef health():\n    return {{"status": "ok"}}\n', "requirements.txt": "fastapi\nuvicorn\n"},
@@ -576,7 +576,7 @@ Generate a production-quality {artifact.artifact_type.value} artifact.
                 failure_reasons=result.validation_failed[:5] if not result.success else [],
             ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='build_pipeline.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

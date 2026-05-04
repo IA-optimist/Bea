@@ -20,7 +20,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -142,7 +142,7 @@ class ImprovementBridge:
                            indent=2, default=str),
                 encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='improvement_bridge.py')
 
     def _load(self) -> None:
         if self._path.exists():
@@ -159,7 +159,7 @@ class ImprovementBridge:
                         last_test_score=rec_data.get("last_test_score", 0),
                     )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='improvement_bridge.py')
 
 
 def _suggest_improvement(rec: AgentPerformanceRecord) -> str:

@@ -1,0 +1,77 @@
+# ──────────────────────────────────────────────────────────────
+# ruff configuration — JarvisMax
+#
+# Strategy : block on safe rules that are already clean,
+# with a roadmap to expand coverage as the codebase is cleaned up.
+#
+# Gradually expand `select` as more categories reach 0 errors.
+# See .github/workflows/ci.yml for CI gating.
+# ──────────────────────────────────────────────────────────────
+target-version = "py311"
+line-length = 120
+
+# Directories that must never be linted : generated, legacy, vendored.
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "__pycache__",
+  "build",
+  "dist",
+  "node_modules",
+  "frontend/node_modules",
+  "jarvismax_app",           # Dart/Flutter, not Python
+  "core/_legacy",            # explicitly deprecated shims
+  "mcp/hexstrike-ai/_archive_legacy",
+  "docs",
+  "archive",
+  "workspace",
+]
+
+[lint]
+# ── Blocking rules (must be clean) ─────────────────────────
+# Expand this list as categories are fixed. See `ruff check --statistics`.
+select = [
+  # Currently clean (blocking) :
+  "F401",  # unused-import (cleaned phase 4, 17 noqa markers on probe-imports)
+  "F403",  # undefined-local-with-import-star (0 outside compat shims)
+  "F811",  # redefined-while-unused (cleaned phase 4)
+  "F821",  # undefined-name (cleaned phase 3, 539 bugs fixed)
+  "F823",  # undefined-local (cleaned phase 1)
+  "F841",  # unused-variable (cleaned phase 4)
+  "E401",  # multiple-imports-on-one-line (cleaned phase 8)
+  "E711",  # comparison-to-none
+  "E712",  # true-false-comparison (cleaned phase 4)
+  "E713",  # not-in test
+  "E714",  # not-is test
+  "E722",  # bare-except (cleaned phase 4)
+  "E731",  # lambda-assignment (cleaned phase 8 — 5 lambdas converted to def)
+  "W605",  # invalid escape sequence (0)
+]
+# TODO as these reach 0 errors, move them into `select` above :
+#   E701 (~78), E702 (~37) one-line multi-statements (intentional in stub
+#       classes; would need manual case-by-case refactor)
+#   E741 (~78) ambiguous-variable-name (manual l/I/O renames)
+
+# ── Non-blocking (known debt, fix later) ───────────────────
+# These are TRACKED but don't fail CI yet. Gate on them once cleanup PRs
+# have zeroed them out :
+#   E402  — 127 module-import-not-at-top-of-file (many intentional for
+#           lazy imports to break circular deps ; audit case-by-case)
+ignore = [
+  # Style choices
+  "E501",  # line-too-long (enforced elsewhere if needed)
+]
+
+[lint.per-file-ignores]
+# Tests : allow common patterns
+"tests/**" = [
+  "F401",  # fixtures often imported but used via pytest magic
+  "E402",  # test-order imports are sometimes intentional
+]
+# __init__.py re-exports
+"**/__init__.py" = ["F401"]
+# Compat shims : star imports are the whole point
+"core/orchestrator.py" = ["F403", "F401"]
+"core/orchestrator_v2.py" = ["F403", "F401"]
+"core/mission_persistence.py" = ["F403", "F401"]

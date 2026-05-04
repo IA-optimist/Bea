@@ -32,27 +32,16 @@ export default function Missions() {
 
   const loadMissions = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await apiClient.get('/api/v3/missions');
-      // setMissions(response.data);
-      
-      // Mock data for now
-      setMissions([
-        {
-          id: '1',
-          title: 'Analyse architecture système',
-          date: new Date().toISOString(),
-          status: 'completed',
-          confidenceScore: 0.92,
-        },
-        {
-          id: '2',
-          title: 'Bug fix authentification',
-          date: new Date(Date.now() - 3600000).toISOString(),
-          status: 'completed',
-          confidenceScore: 0.87,
-        },
-      ]);
+      const data = await apiClient.getMissions({ limit: 20 });
+      const mapped = data.map((m: any) => ({
+        id: m.mission_id || m.id,
+        title: m.goal || m.title || 'Mission',
+        date: m.created_at ? new Date(m.created_at * 1000).toISOString() : new Date().toISOString(),
+        status: (m.status || 'completed').toLowerCase() as 'completed' | 'failed' | 'running',
+        confidenceScore: m.confidence || m.advisory_score ? m.advisory_score / 10 : undefined,
+        agents: m.agents,
+      }));
+      setMissions(mapped);
     } catch (error) {
       console.error('Failed to load missions:', error);
     }
@@ -64,13 +53,13 @@ export default function Missions() {
     try {
       // Create new mission
       const newMission: Mission = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
         date: new Date().toISOString(),
         status: 'running',
       };
-      
-      setMissions([newMission, ...missions]);
+
+      setMissions(prev => [newMission, ...prev]);
       setActiveMission(newMission);
 
       // Call API
@@ -111,7 +100,7 @@ export default function Missions() {
       };
 
       setActiveMission(updatedMission);
-      setMissions([updatedMission, ...missions.filter(m => m.id !== newMission.id)]);
+      setMissions(prev => [updatedMission, ...prev.filter(m => m.id !== newMission.id)]);
       
     } catch (error) {
       console.error('Mission failed:', error);

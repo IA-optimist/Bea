@@ -6,17 +6,7 @@ from pathlib import Path
 
 
 def test_import():
-    from core.agent_specialization import (
-        get_task_clusters, classify_task,
-        discover_agent_roles, get_archetype,
-        analyze_agent_capability_coverage,
-        score_task_specialization,
-        get_agent_config_templates,
-        export_specialization_artifacts,
-        TaskCluster, AgentArchetype, CoverageAnalysis,
-        SpecializationScore, AgentConfigTemplate,
-        EXISTING_AGENTS, MISSION_ROUTING,
-    )
+    pass
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -24,21 +24,22 @@ import asyncio
 import inspect
 import json
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Awaitable
 
 import structlog
 
 from core.state import JarvisSession
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
 CB = Callable[[str], Awaitable[None]]
 
 # Timeouts par défaut
-_DEFAULT_AGENT_TIMEOUT = 90      # secondes par agent
-_DEFAULT_GLOBAL_TIMEOUT = 300    # secondes pour tout le batch
+_DEFAULT_AGENT_TIMEOUT = 40      # secondes par agent
+_DEFAULT_GLOBAL_TIMEOUT = 120    # secondes pour tout le batch
 
 _TRACE_LOG = Path("workspace/execution_trace.jsonl")
 # Rotation: keep max 50 MB of trace history.
@@ -66,7 +67,7 @@ def _rotate_trace_log_if_needed() -> None:
                  kept_lines=len(keep),
                  dropped_lines=len(lines) - len(keep))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
 
 # Seuil d'output vide — déclenche un retry automatique
@@ -97,7 +98,7 @@ def _append_trace_log(mission_id: str, trace: AgentTrace) -> None:
         with _TRACE_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
 
 class AgentResult:
@@ -531,7 +532,7 @@ class ParallelExecutor:
                 try:
                     _guard.release_slot(agent_name)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='parallel_executor.py')
 
     # ── Utilitaires ───────────────────────────────────────────
 

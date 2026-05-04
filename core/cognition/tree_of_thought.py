@@ -3,9 +3,8 @@ Tree-of-Thought Reasoning for JarvisMax
 Multi-path exploration with pruning and evaluation.
 """
 from __future__ import annotations
-import asyncio
 from dataclasses import dataclass
-from typing import List, Optional, Callable, Any
+from typing import List, Optional, Callable
 import structlog
 
 log = structlog.get_logger(__name__)
@@ -37,7 +36,7 @@ class TreeOfThought:
     def __init__(
         self,
         llm_function: Callable,
-        max_depth: int = 3,
+        max_depth: int = 2,
         branching_factor: int = 3,
         pruning_threshold: float = 0.3,
         mode: str = "bfs"  # bfs, dfs, beam
@@ -119,7 +118,7 @@ class TreeOfThought:
         
         await dfs(root)
     
-    async def _explore_beam(self, root: ThoughtNode, problem: str, beam_width: int = 5):
+    async def _explore_beam(self, root: ThoughtNode, problem: str, beam_width: int = 3):
         """Beam search exploration (keeps top-k nodes at each level)."""
         current_beam = [root]
         
@@ -204,7 +203,7 @@ Respond with ONLY a number between 0.0 and 1.0."""
             response = await self.llm(prompt)
             score = float(response.strip())
             return max(0.0, min(1.0, score))
-        except:
+        except Exception:
             return 0.5  # Default neutral score
     
     def _find_best_path(self, root: ThoughtNode) -> List[ThoughtNode]:

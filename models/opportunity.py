@@ -3,8 +3,12 @@ Opportunity Model — SaaS business opportunities discovered by scanner
 """
 from __future__ import annotations
 
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, JSON, Boolean
+from datetime import datetime, timezone
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from models.base import Base
 
@@ -20,7 +24,7 @@ class Opportunity(Base):
     description = Column(Text, nullable=False)
     source = Column(String(50), nullable=False, index=True)  # product_hunt, reddit, hackernews, indie_hackers
     url = Column(String(1000), nullable=False)
-    discovered_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    discovered_at = Column(DateTime, nullable=False, default=_utc_now, index=True)
     
     # Metrics
     upvotes = Column(Integer, default=0)
@@ -45,8 +49,8 @@ class Opportunity(Base):
     
     # Metadata
     raw_data = Column(JSONB, nullable=True)  # Full scraped data
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now)
+    updated_at = Column(DateTime, default=_utc_now, onupdate=_utc_now)
 
     def __repr__(self):
         return f"<Opportunity(id={self.id}, title='{self.title[:50]}...', total_score={self.total_score})>"

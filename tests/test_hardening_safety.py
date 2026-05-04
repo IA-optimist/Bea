@@ -16,7 +16,6 @@ import pytest
 import os
 import sys
 import time
-import json
 import types
 import unittest
 
@@ -293,7 +292,6 @@ class TestLeadPipeline(unittest.TestCase):
         self.assertLessEqual(len(lead.name), 200)
 
     def test_pipeline_summary(self):
-        import shutil
         persist = "/tmp/test_leads_summary.json"
         if os.path.exists(persist):
             os.unlink(persist)
@@ -340,7 +338,7 @@ class TestDangerClassification(unittest.TestCase):
         self.assertIn("level", result)
 
     def test_all_connectors_classified(self):
-        from core.governance import classify_danger, CONNECTOR_DANGER
+        from core.governance import classify_danger
         from core.connectors import CONNECTOR_REGISTRY
         for name in CONNECTOR_REGISTRY:
             result = classify_danger(connector_name=name)

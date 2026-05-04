@@ -20,9 +20,7 @@ Verifies that:
 import json
 import os
 import sys
-import time
 import threading
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -34,7 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 class TestTraceBridge:
 
     def test_tool_failed_event(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import process_trace_event
         m = reset_metrics()
 
@@ -49,7 +47,7 @@ class TestTraceBridge:
         assert m.get_counter("tool_failures_total", {"tool": "web_search"}) >= 1
 
     def test_tool_timeout_event(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import process_trace_event
         m = reset_metrics()
 
@@ -61,7 +59,7 @@ class TestTraceBridge:
         assert m.get_counter("tool_timeout_total", {"tool": "shell_command"}) == 1
 
     def test_model_error_event(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import process_trace_event
         m = reset_metrics()
 
@@ -74,7 +72,7 @@ class TestTraceBridge:
         assert m.get_counter("model_failure_total", {"model_id": "deepseek-v3"}) == 1
 
     def test_retry_event(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import process_trace_event
         m = reset_metrics()
 
@@ -86,7 +84,7 @@ class TestTraceBridge:
         assert m.get_counter("retry_attempts_total", {"component": "executor"}) == 1
 
     def test_mission_failed_event(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import process_trace_event
         m = reset_metrics()
 
@@ -119,7 +117,7 @@ class TestTraceBridge:
 class TestCostExtraction:
 
     def test_openrouter_real_cost(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import _extract_cost_from_response
         m = reset_metrics()
 
@@ -141,7 +139,7 @@ class TestCostExtraction:
         assert "m-test" in snap["top_missions"]
 
     def test_estimated_cost_fallback(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import _extract_cost_from_response
         m = reset_metrics()
 
@@ -158,7 +156,7 @@ class TestCostExtraction:
         assert "deepseek/deepseek-v3" in snap["by_model"]
 
     def test_local_model_zero_cost(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import _extract_cost_from_response
         m = reset_metrics()
 
@@ -186,8 +184,6 @@ class TestSnapshotPersistence:
 
     def test_snapshot_write(self, tmp_path):
         from core.metrics_store import reset_metrics, emit_mission_submitted
-        from core.metrics_bridge import _snapshot_loop
-        import threading
 
         m = reset_metrics()
         emit_mission_submitted("test_snap")
@@ -195,7 +191,7 @@ class TestSnapshotPersistence:
         path = tmp_path / "metrics_snapshot.json"
 
         # Run one iteration of the loop manually
-        stop = threading.Event()
+        threading.Event()
 
         # Just write once directly
         data = m.snapshot()
@@ -230,7 +226,7 @@ class TestAlerts:
         """I10: Alert fires when success rate < 0.7."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_completed, emit_mission_failed
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # 10 submitted, 3 completed, 7 failed → 30% success
         for _ in range(10):
@@ -249,7 +245,7 @@ class TestAlerts:
     def test_high_tool_failure_rate_alert(self):
         from core.metrics_store import reset_metrics, emit_tool_invocation
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # 10 calls, 5 failures → 50% failure rate
         for _ in range(5):
@@ -263,7 +259,7 @@ class TestAlerts:
     def test_retry_storm_alert(self):
         from core.metrics_store import reset_metrics, emit_retry
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(8):
             emit_retry("executor")
@@ -274,7 +270,7 @@ class TestAlerts:
     def test_circuit_breaker_alert(self):
         from core.metrics_store import reset_metrics, emit_circuit_breaker
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(5):
             emit_circuit_breaker("open")
@@ -286,7 +282,7 @@ class TestAlerts:
         """I11: No alerts when data is insufficient."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_completed
         from core.metrics_bridge import evaluate_alerts
-        m = reset_metrics()
+        reset_metrics()
 
         # Only 2 missions — below threshold of 5
         emit_mission_submitted("test")
@@ -299,7 +295,7 @@ class TestAlerts:
 
     def test_alert_emits_metric(self):
         """Triggered alerts increment alert_triggered_total counter."""
-        from core.metrics_store import reset_metrics, emit_retry, get_metrics
+        from core.metrics_store import reset_metrics, emit_retry
         from core.metrics_bridge import evaluate_alerts
         m = reset_metrics()
 
@@ -321,10 +317,6 @@ class TestInstallation:
         from core.metrics_bridge import (
             _patch_meta_orchestrator,
             _patch_tool_executor,
-            _patch_llm_factory,
-            _patch_memory_facade,
-            _patch_improvement_loop,
-            _patch_trace,
         )
         # These should not raise even if target modules have issues
         # (they're all wrapped in try/except)
@@ -358,8 +350,7 @@ class TestFullIntegration:
     def test_metrics_change_during_mission_simulation(self):
         """Simulate a full mission and verify all metrics updated."""
         from core.metrics_store import (
-            reset_metrics, get_metrics,
-            emit_mission_submitted, emit_mission_completed,
+            reset_metrics, emit_mission_submitted, emit_mission_completed,
             emit_tool_invocation, emit_model_selected,
             emit_model_latency, emit_memory_search,
             emit_orchestrator_timing, emit_experiment,
@@ -392,7 +383,7 @@ class TestFullIntegration:
         assert m.get_histogram("model_latency_ms", {"model_id": "claude-sonnet"})["avg"] == 3500
 
     def test_cost_tracked_during_mission(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.metrics_bridge import _extract_cost_from_response
         m = reset_metrics()
 

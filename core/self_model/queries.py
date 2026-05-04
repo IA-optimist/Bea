@@ -6,6 +6,9 @@ All operate on a SelfModel snapshot — no side effects.
 """
 from __future__ import annotations
 
+import structlog
+_silent_log = structlog.get_logger(__name__)
+
 from core.self_model.model import (
     SelfModel, CapabilityStatus, ComponentStatus, HealthStatus,
     ModificationZone,
@@ -302,7 +305,7 @@ def get_economic_status() -> dict:
         status["strategic_memory_active"] = True
         status["strategic_memory_records"] = mem.count
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     try:
         from core.economic.strategy_evaluation import get_strategy_evaluator
@@ -312,7 +315,7 @@ def get_economic_status() -> dict:
         status["recommendations_available"] = total_recs > 0
         status["recommendations_count"] = total_recs
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     try:
         from core.objectives.objective_horizon import get_horizon_manager
@@ -320,14 +323,14 @@ def get_economic_status() -> dict:
         data = mgr.to_dict()
         status["kpi_tracking_active"] = len(data.get("metrics", {})) > 0
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     try:
         from core.economic.playbook_composition import BUILT_IN_CHAINS
         status["playbook_chains_available"] = len(BUILT_IN_CHAINS) > 0
         status["chains_count"] = len(BUILT_IN_CHAINS)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     try:
         from kernel.capabilities.registry import get_capability_registry
@@ -335,7 +338,7 @@ def get_economic_status() -> dict:
         economic = reg.list_by_category("economic")
         status["economic_capabilities_registered"] = len(economic)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     return status
 
@@ -501,7 +504,7 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                 "source": "skill_llm",
             })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     # 10. Economic intelligence — strategic memory and capability health
     try:
@@ -519,7 +522,7 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                 "source": "strategic_memory",
             })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     try:
         from core.economic.strategy_evaluation import get_strategy_evaluator
@@ -537,7 +540,7 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                     "source": "strategy_evaluation",
                 })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='queries.py')
 
     # Sort by severity (critical > high > medium > low)
     severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}

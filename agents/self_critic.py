@@ -32,9 +32,9 @@ Interface principale :
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import Callable, Awaitable
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -148,7 +148,7 @@ class SelfCriticMixin:
                         from api.event_emitter import emit_agent_result
                         emit_agent_result(session.session_id, agent_name, output)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='self_critic.py')
             except Exception as e:
                 log.warning("self_critic_revision_failed",
                             round=round_n, err=str(e))

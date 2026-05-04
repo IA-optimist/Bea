@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 import structlog
@@ -588,7 +588,7 @@ def critique_output(
         )
 
     output_lower = output.lower()
-    goal_lower = goal.lower()
+    goal.lower()
 
     # ── 1. Generic detection ──────────────────────────
     specificity = _score_specificity(output, goal)

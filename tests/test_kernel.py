@@ -5,7 +5,6 @@ Validates: contracts, events, capabilities, memory, policy, boot.
 These tests must NOT depend on FastAPI, UI, or business modules.
 """
 import time
-import pytest
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -302,7 +301,7 @@ class TestPolicy:
 
     def test_K41_approval_gate(self):
         from kernel.policy.engine import ApprovalGate
-        from kernel.contracts import Action, PolicyDecision, RiskLevel
+        from kernel.contracts import Action, PolicyDecision
         gate = ApprovalGate()
         action = Action(action_id="a1", action_type="webhook")
         policy = PolicyDecision(allowed=True, requires_approval=True)

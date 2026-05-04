@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -181,7 +182,7 @@ async def ingest_file(path: str | Path) -> Document:
     try:
         stat = os.stat(path_str)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ingestion.py')
 
     metadata: dict[str, Any] = {
         "source":    path_str,

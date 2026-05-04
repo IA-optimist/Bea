@@ -15,7 +15,7 @@ Fail-open : toutes les fonctions retournent une valeur par défaut sans exceptio
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, List
 
 logger = logging.getLogger("jarvis.knowledge.memory_quality")
 

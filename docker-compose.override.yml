@@ -1,104 +1,12 @@
-# ================================================================
-# JARVIS MAX — docker-compose.override.yml (développement)
-# Bind-mount du code source Python pour éviter le rebuild à chaque modif.
-#
-# Ce fichier est chargé AUTOMATIQUEMENT par docker-compose (pas besoin de -f).
-# Il surcharge docker-compose.yml pour la section jarvis UNIQUEMENT.
-#
-# En production (CI/CD) : supprimer ou ignorer ce fichier.
-# En développement : garder pour le hot-reload du code.
-# ================================================================
-
+version: '3.9'
 services:
-
   api:
-    environment:
-      # Anthropic API key désactivée — crédit épuisé, cause 300ms overhead + log noise
-      # sur tous les rôles builder/reviewer/improve. OpenAI prend le relais directement.
-      # Réactiver quand le crédit Anthropic est rechargé.
-      ANTHROPIC_API_KEY: ""
-      # Fallback cloud : openai avant ollama pour les rôles cloud-preferred (builder/reviewer/improve)
-      # Par défaut MODEL_FALLBACK=ollama mais Ollama est lent — OpenAI plus fiable pour ces rôles.
-      MODEL_FALLBACK: "openai"
+    ports:
+      - '8000:8000'
     volumes:
-      # Persistance workspace et logs (inchangé)
-      - ./workspace:/app/workspace
-      - ./logs:/app/logs
-      # Bind-mount du code source Python — sync immédiat sans rebuild
-      # Les modifications locales sont visibles dans le container au redémarrage du process.
-      - ./agents:/app/agents
-      - ./core:/app/core
-      - ./memory:/app/memory
-      - ./config:/app/config
-      - ./monitoring:/app/monitoring
-      # Exécuteur supervisé
-      - ./executor:/app/executor
-      # Pipeline d'auto-amélioration
-      - ./self_improve:/app/self_improve
-      # Suite de tests (validate.py inclus)
-      - ./tests:/app/tests
-      # MCP layer (Cycle 1 + 2)
-      - ./jarvis_mcp:/app/jarvis_mcp
-      - ./connectors:/app/connectors
-      - ./integrations:/app/integrations
-      - ./api:/app/api
-      # Fichiers racine
-      - ./main.py:/app/main.py
-
-  # ── MCP Qdrant sidecar ──────────────────────────────────────
-  # Activate: docker compose --profile mcp up -d
-  # Requires: QDRANT_MCP_ENABLED=true in .env
-  # Jarvis calls it at: http://qdrant-mcp:8000/invoke
-  qdrant-mcp:
-    build:
-      context: ./docker/qdrant-mcp
-    container_name: jarvis_qdrant_mcp
-    restart: unless-stopped
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      QDRANT_URL:        http://qdrant:6333
-      QDRANT_API_KEY:    ${QDRANT_API_KEY:-}
-      QDRANT_COLLECTION: jarvis_memory
-    networks: [jarvismax-network]
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-        reservations:
-          memory: 32m
-    profiles: ["mcp"]
-    depends_on:
-      qdrant:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-  # ── MCP GitHub sidecar (read-only) ──────────────────────────
-  # Activate: docker compose --profile mcp up -d
-  # Requires: GITHUB_MCP_ENABLED=true + GITHUB_TOKEN in .env
-  # Jarvis calls it at: http://github-mcp:3000/invoke
-  # Security: GITHUB_TOKEN lives only in this sidecar env, never in jarvis_core
-  github-mcp:
-    build:
-      context: ./docker/github-mcp
-    container_name: jarvis_github_mcp
-    restart: unless-stopped
-    environment:
-      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN:-}
-    networks: [jarvismax-network]
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-        reservations:
-          memory: 32m
-    profiles: ["mcp"]
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/health')\" || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      # Profil VPS: max_agents=8 au lieu de 2 (LOCAL) -> crews complexes fonctionnent
+      - JARVIS_MODE=vps
+      - RESOURCE_MAX_AGENTS=8

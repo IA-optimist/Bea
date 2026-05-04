@@ -54,7 +54,6 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any
 
 try:
     import structlog
@@ -154,7 +153,7 @@ class SignalCollector:
                         context={"category": f.get("category", ""), "message": f.get("last_message", "")},
                     ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
 
         # Source 2: tool reliability
         try:
@@ -172,7 +171,7 @@ class SignalCollector:
                             context={"problem": problem.problem_type, "detail": problem.detail},
                         ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
 
         # Source 3: improvement daemon weaknesses
         try:
@@ -186,7 +185,7 @@ class SignalCollector:
                     context={"category": w.category, "metric": w.metric_name, "value": w.metric_value},
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
 
         for s in signals:
             self.add(s)
@@ -743,7 +742,7 @@ class PromptOptimizer:
                                 "uses": v.uses} for v in versions]
             self._path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
 
     def _load(self) -> None:
         if self._path.exists():
@@ -752,7 +751,7 @@ class PromptOptimizer:
                 for name, versions in data.items():
                     self._prompts[name] = [PromptVersion(**v) for v in versions]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
 
 
 # ═══════════════════════════════════════════════════════════════

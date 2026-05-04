@@ -19,6 +19,7 @@ logger = logging.getLogger("jarvis.api.models")
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 _auth = Depends(_check_auth)
 
 router = APIRouter(
@@ -147,7 +148,7 @@ async def model_status():
             from core.model_intelligence.auto_update import get_model_auto_update
             auto_status = get_model_auto_update().get_status()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='models.py')
         return {
             "catalog": catalog.status(),
             "performance_records": len(perf.get_all()),

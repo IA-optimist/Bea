@@ -18,9 +18,8 @@ Usage:
 """
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -390,7 +389,7 @@ def diagnose_tools() -> list[ToolDiagnosis]:
                 timeout_count = int(m.get_counter("tool_timeout_total",
                                                    {"tool": tool_name}))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_reliability.py')
 
             diagnoses.append(ToolDiagnosis(
                 tool_name=tool_name,

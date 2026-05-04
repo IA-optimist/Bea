@@ -12,13 +12,11 @@ Architecture:
 """
 from __future__ import annotations
 
-import logging
 import structlog
 import os
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
 
 import httpx
 
@@ -40,7 +38,7 @@ def _embed(text: str) -> list[float]:
         from core.capabilities.semantic_router import embed_single
         return embed_single(text)
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='vector_memory_legacy.py')
     # Direct call if semantic_router unavailable
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
@@ -150,7 +148,7 @@ class QdrantVectorStore:
             if r.status_code == 200:
                 return r.json()["result"].get("points_count", 0)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='vector_memory_legacy.py')
         return 0
 
     def delete(self, point_ids: list[str]) -> bool:

@@ -20,7 +20,7 @@ Zero external dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.tool_gap_analyzer")
 
@@ -97,7 +97,7 @@ def _detect_unmet_mission_needs() -> list[dict]:
                         })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_gap_analyzer.py')
     except Exception as e:
         logger.debug("unmet_needs_err", err=str(e)[:60])
 
@@ -144,7 +144,7 @@ def _detect_unreliable_categories() -> list[dict]:
                 })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_gap_analyzer.py')
     except Exception as e:
         logger.debug("unreliable_categories_err", err=str(e)[:60])
 
@@ -199,7 +199,7 @@ def _detect_tool_quality_issues() -> list[dict]:
                     })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_gap_analyzer.py')
     except Exception as e:
         logger.debug("tool_quality_err", err=str(e)[:60])
 
@@ -231,7 +231,7 @@ def _detect_coverage_holes() -> list[dict]:
                     })
 
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='tool_gap_analyzer.py')
     except Exception as e:
         logger.debug("coverage_holes_err", err=str(e)[:60])
 

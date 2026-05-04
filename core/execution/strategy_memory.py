@@ -18,6 +18,7 @@ import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.strategy_memory")
 
@@ -187,7 +188,7 @@ class StrategyMemory:
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(self._path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_memory.py')
 
     def load(self) -> None:
         """Load from disk (fail-open)."""
@@ -210,7 +211,7 @@ class StrategyMemory:
                     feedback_score=rd.get("feedback_score", 0),
                 ))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='strategy_memory.py')
 
 
 # Singleton

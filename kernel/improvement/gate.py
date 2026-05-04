@@ -26,6 +26,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from typing import Callable, List, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -182,7 +183,7 @@ class ImprovementGate:
             if p.exists():
                 return json.loads(p.read_text("utf-8")) or []
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='gate.py')
         return []
 
     def record(self, outcome: str, metadata: dict | None = None) -> None:

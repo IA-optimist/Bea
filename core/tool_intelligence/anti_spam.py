@@ -6,6 +6,7 @@ Fail-open: if check fails, always returns (allowed=True).
 import logging
 from collections import defaultdict
 from typing import Dict, List
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -67,4 +68,4 @@ def reset_task(task_id: str) -> None:
     try:
         _task_tool_history.pop(task_id, None)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='anti_spam.py')

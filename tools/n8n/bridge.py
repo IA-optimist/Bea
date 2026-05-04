@@ -3,9 +3,7 @@ JARVIS MAX — n8n Automation Bridge
 Crée, met à jour, exécute et supprime des workflows n8n via l'API REST.
 """
 from __future__ import annotations
-import json
 import structlog
-from typing import Any
 
 import httpx
 

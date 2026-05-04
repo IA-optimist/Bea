@@ -9,10 +9,9 @@ End-to-end test of autonomous MVP generation:
 """
 import pytest
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from models.opportunity import Opportunity
 from core.business.feasibility_analyzer import FeasibilityAnalyzer
-from core.business.portfolio_manager import PortfolioManager
 from core.cognition.lifelong_learning import LifelongLearningEngine
 
 
@@ -41,7 +40,7 @@ async def test_autonomous_mvp_pipeline():
             "Reddit: 500+ upvotes on prioritization struggle",
             "Twitter: viral thread on task overload",
         ],
-        discovered_at=datetime.utcnow(),
+        discovered_at=datetime.now(timezone.utc),
         total_score=85.5,
         analyzed=False,
     )
@@ -49,17 +48,17 @@ async def test_autonomous_mvp_pipeline():
     print("\n" + "="*70)
     print(" PHASE 7: AUTONOMOUS MVP TEST")
     print("="*70)
-    print(f"\n✅ Step 1: Opportunity created")
+    print("\n✅ Step 1: Opportunity created")
     print(f"   Title: {opportunity.title}")
     print(f"   Score: {opportunity.total_score}")
     
     # Step 2: Analyze with cognition (ToT + Learning)
-    print(f"\n⏳ Step 2: Analyzing feasibility (ToT enabled)...")
+    print("\n⏳ Step 2: Analyzing feasibility (ToT enabled)...")
     
     analyzer = FeasibilityAnalyzer()
     analysis = await analyzer.analyze(opportunity, project_id=1)
     
-    print(f"✅ Step 2: Analysis complete")
+    print("✅ Step 2: Analysis complete")
     print(f"   Recommendation: {analysis.get('recommendation')}")
     print(f"   Confidence: {analysis.get('confidence_score', 0):.2f}")
     print(f"   Complexity: {analysis.get('complexity_score', 0)}/10")
@@ -71,37 +70,37 @@ async def test_autonomous_mvp_pipeline():
     assert analysis["mission_id"].startswith("feasibility-")
     
     # Step 3: Check if skills were discovered
-    print(f"\n⏳ Step 3: Checking learning...")
+    print("\n⏳ Step 3: Checking learning...")
     
-    learning = LifelongLearningEngine()
+    LifelongLearningEngine()
     
     # Get mission from learning history
     # (In real flow, this would be auto-recorded by orchestrator)
     mission_id = analysis["mission_id"]
     
-    print(f"✅ Step 3: Learning tracked")
+    print("✅ Step 3: Learning tracked")
     print(f"   Mission ID: {mission_id}")
     
     # Step 4: Check portfolio metrics
-    print(f"\n⏳ Step 4: Checking portfolio metrics...")
+    print("\n⏳ Step 4: Checking portfolio metrics...")
     
     # Would need DB session in real test
     # manager = PortfolioManager(db_session)
     # metrics = manager.get_project_metrics(project_id=1)
     
-    print(f"✅ Step 4: Portfolio tracking ready")
+    print("✅ Step 4: Portfolio tracking ready")
     
     # Final validation
-    print(f"\n" + "="*70)
+    print("\n" + "="*70)
     print(" TEST RESULT: ✅ AUTONOMOUS PIPELINE WORKING")
     print("="*70)
-    print(f"\n📊 Summary:")
-    print(f"   • Opportunity analyzed: ✅")
-    print(f"   • ToT reasoning: ✅")
-    print(f"   • Confidence scoring: ✅")
-    print(f"   • Learning tracking: ✅")
-    print(f"   • Portfolio ready: ✅")
-    print(f"\n🚀 PHASE 7 VALIDATED - READY FOR PRODUCTION!!!\n")
+    print("\n📊 Summary:")
+    print("   • Opportunity analyzed: ✅")
+    print("   • ToT reasoning: ✅")
+    print("   • Confidence scoring: ✅")
+    print("   • Learning tracking: ✅")
+    print("   • Portfolio ready: ✅")
+    print("\n🚀 PHASE 7 VALIDATED - READY FOR PRODUCTION!!!\n")
     
     return {
         "success": True,

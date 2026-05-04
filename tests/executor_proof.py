@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """EXECUTOR PROOF MATRIX — test every claimed behavior."""
-import sys, os, time, json, re
+import sys
+import os
+import json
+import re
 os.chdir('/app')
 sys.path.insert(0, '/app')
 
@@ -124,7 +127,7 @@ for fp in HOT_FILES:
                     print(f"    SILENT: {fp}:{i+1}")
 
 # 1 known acceptable: tool_executor import fallback
-test(f"Silent except blocks ≤1 (import fallback)", total_silent <= 1, f"found={total_silent}")
+test("Silent except blocks ≤1 (import fallback)", total_silent <= 1, f"found={total_silent}")
 print()
 
 # ── E7: Trace reconstructable after failed mission ────────────────────

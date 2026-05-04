@@ -11,10 +11,10 @@ NOT a prompt. NOT a template. A structured reasoning module.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -150,7 +150,7 @@ class DomainSkill:
             try:
                 skill.examples = json.loads(examples_json.read_text("utf-8"))
             except json.JSONDecodeError:
-                pass
+                _silent_log.debug("suppressed_exception", src='domain_schema.py')
 
         eval_md = p / "evaluation.md"
         if eval_md.is_file():

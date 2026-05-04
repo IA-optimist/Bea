@@ -20,6 +20,7 @@ import copy
 import logging
 from typing import Any, Optional
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import networkx as nx
@@ -172,7 +173,7 @@ class CausalGraph:
                 for path in nx.all_simple_paths(self.graph, root, effect):
                     all_paths.append(path)
             except nx.NetworkXNoPath:
-                pass
+                _silent_log.debug("suppressed_exception", src='causal_module.py')
         if not all_paths:
             direct = list(self.graph.predecessors(effect))
             return f"'{effect}' is directly caused by: {', '.join(direct)}."
@@ -344,7 +345,7 @@ class CausalLLMWrapper:
             try:
                 graph.add_edge(cause, effect, 0.6, "auto-extracted:llm")
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='causal_module.py')
 
     def build_graph_from_text(self, text: str, graph: Optional[CausalGraph] = None) -> CausalGraph:
         if graph is None:
@@ -353,7 +354,7 @@ class CausalLLMWrapper:
             try:
                 graph.add_edge(cause, effect, 0.6, "text-extracted")
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='causal_module.py')
         return graph
 
 
@@ -392,7 +393,7 @@ class JarvisMaxCausalIntegration:
                 self.graph.add_edge(cause, effect, 0.5, "mission-result")
                 added.append((cause, effect))
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='causal_module.py')
         if added:
             self.graph.save(str(self.graph_path))
             if self.qdrant_url:
@@ -415,7 +416,7 @@ class JarvisMaxCausalIntegration:
         try:
             self.ingest_mission_result(text)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='causal_module.py')
 
     def _index_to_qdrant(self, edges: list[tuple[str, str]]) -> None:
         try:
@@ -553,7 +554,7 @@ def test_intervention() -> bool:
         print(f"  {var} = {g.get_value(var)}")
 
     do_result = g.do("university_access", 1.0)
-    print(f"\nAfter do(university_access=1.0):")
+    print("\nAfter do(university_access=1.0):")
     for var, val in do_result.items():
         print(f"  {var} = {val}")
 
@@ -608,7 +609,7 @@ def test_counterfactual() -> bool:
     for var, val in result["counterfactual_world"].items():
         print(f"  {var} = {val}")
 
-    print(f"\nDifferences:")
+    print("\nDifferences:")
     if result["differences"]:
         for var, diff in result["differences"].items():
             print(f"  {var}: {diff['observed']} -> {diff['counterfactual']}")

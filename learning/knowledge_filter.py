@@ -327,7 +327,7 @@ class KnowledgeFilter:
             reasons.append(f"contenu non actionnable ({action:.2f})")
         if _MARKETING_PATTERNS.search(url):
             reasons.append("URL contient des patterns marketing")
-        return "; ".join(reasons) if reasons else f"score global insuffisant"
+        return "; ".join(reasons) if reasons else "score global insuffisant"
 
     def _extract_tags(self, source_type: str, global_score: float) -> list[str]:
         tags = [source_type]

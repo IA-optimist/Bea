@@ -15,6 +15,7 @@ from pathlib import Path
 
 # SOURCE UNIQUE - ne pas redefinir RiskLevel ici
 from core.state import RiskLevel
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -313,7 +314,7 @@ class RiskEngine:
             Path(target).resolve().relative_to(WORKSPACE.resolve())
             return True
         except ValueError:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')
         # Chemins relatifs commencant par workspace/
         return target.startswith(("workspace/", "./workspace/"))
 

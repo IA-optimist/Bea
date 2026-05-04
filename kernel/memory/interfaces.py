@@ -19,12 +19,12 @@ Registration slots (Pass 13):
 """
 from __future__ import annotations
 
-import time
 import threading
 from typing import Callable, Optional
 import structlog
 
 from kernel.contracts.types import MemoryRecord
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("kernel.memory")
 
@@ -302,7 +302,7 @@ class MemoryInterface:
                     success=record.content.get("success", False),
                 )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='interfaces.py')
 
     def _emit_write(self, record: MemoryRecord) -> None:
         """

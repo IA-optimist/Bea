@@ -14,11 +14,12 @@ import structlog
 
 from core.capability_routing.spec import (
     RoutingDecision, CapabilityRequirement, ProviderSpec,
-    ProviderStatus, ProviderType,
+    ProviderType,
 )
 from core.capability_routing.registry import get_provider_registry
-from core.capability_routing.scorer import rank_providers, ScoredProvider
+from core.capability_routing.scorer import rank_providers
 from core.capability_routing.resolver import resolve_capabilities
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("capability_routing.router")
 
@@ -81,7 +82,7 @@ def route_mission(
         from core.agents.canonical_agents import get_canonical_runtime
         runtime = get_canonical_runtime()
         for d in decisions:
-            d_dict = d.__dict__ if hasattr(d, '__dict__') else {}
+            d.__dict__ if hasattr(d, '__dict__') else {}
             agent_id = runtime.get_agent_for_capability(d.capability_id)
             if agent_id:
                 if not hasattr(d, 'metadata') or d.metadata is None:
@@ -180,7 +181,7 @@ def _route_single(
         if kp and kp.get("adjustment", 0) != 0:
             reason += f" | {kp['explanation']}"
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='router.py')
 
     return RoutingDecision(
         capability_id=cap_id,

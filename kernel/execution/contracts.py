@@ -140,10 +140,14 @@ class ExecutionResult:
                 mode=str(ctx.get("mode", "auto")),
             )
         else:
+            # Extract result — if ctx.result is an ExecutionOutcome, unwrap .result
+            _raw_result = getattr(ctx, "result", "") or ""
+            if hasattr(_raw_result, "result"):  # ExecutionOutcome or similar
+                _raw_result = getattr(_raw_result, "result", "") or ""
             return cls(
                 mission_id=str(getattr(ctx, "mission_id", "unknown")),
                 status=status,
-                result=str(getattr(ctx, "result", "") or ""),
+                result=str(_raw_result),
                 error=getattr(ctx, "error", None),
                 metadata=getattr(ctx, "metadata", {}),
                 goal=str(getattr(ctx, "goal", ""))[:200],

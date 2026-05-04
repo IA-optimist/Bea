@@ -5,10 +5,10 @@ Single source for all /api/v2/task, /api/v2/tasks, /api/v2/missions, /api/v2/age
 from __future__ import annotations
 
 import asyncio
-import json as _json
+import json
 import os
 import time
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
@@ -22,11 +22,13 @@ from api._deps import (
     _get_orchestrator,
     _get_task_queue,
     # BLOC E: _get_kernel removed — dead import, never called.
+    # Use _get_kernel_adapter()
     # Use _get_kernel_adapter() (R8 canonical boundary) for all kernel access.
     _get_kernel_adapter,
 )
 
 log = structlog.get_logger()
+_silent_log = log
 logger = log
 
 router = APIRouter(tags=["missions"])
@@ -134,7 +136,7 @@ async def submit_task(
                         error_type="",
                     ))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
                 return
             # ── Knowledge Memory lookup (fail-open) ──────────────────────────
             _km_bonus_confidence = 0.0
@@ -164,7 +166,7 @@ async def submit_task(
                     if _ms_km2 is not None:
                         _ms_km2.decision_trace["knowledge_match"] = False
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end knowledge lookup ──────────────────────────────────────────
 
             # ── Mission Planning (fail-open) ──────────────────────────────────
@@ -254,7 +256,7 @@ async def submit_task(
                         _ms_tt2.decision_trace["available_tools"] = []
                         _ms_tt2.decision_trace["tool_executor_ready"] = False
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool trace ────────────────────────────────────────────────
 
             # ── Tool pre-execution (fail-open) ────────────────────────────────
@@ -276,7 +278,7 @@ async def submit_task(
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool pre-execution ────────────────────────────────────────
 
             # ── kernel.execute() via KernelAdapter (Pass 26 — R8) ───────────
@@ -441,14 +443,14 @@ async def submit_task(
                             )
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── Knowledge Memory confidence bonus ──────────────────────────────
                     try:
                         if _km_bonus_confidence > 0:
                             _current_conf = float(_ms_ref.decision_trace.get("confidence_score", 0.5))
                             _ms_ref.decision_trace["confidence_score"] = min(1.0, round(_current_conf + _km_bonus_confidence, 3))
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── end km bonus ───────────────────────────────────────────────────
                     # ── Mission Planning trace ─────────────────────────────────────────
                     try:
@@ -456,10 +458,10 @@ async def submit_task(
                         _ms_ref.decision_trace["plan_steps"] = _plan_steps_count
                         _ms_ref.decision_trace["plan_success_rate"] = _plan_success_rate
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='missions.py')
                     # ── end plan trace ─────────────────────────────────────────────────
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
             # Ajout ExecutionPolicy dans decision_trace (fail-open)
             try:
@@ -501,7 +503,7 @@ async def submit_task(
                         _ms_ep2.decision_trace["execution_policy_decision"] = "unknown"
                         _ms_ep2.decision_trace["execution_reason"] = str(_ep_err)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # Policy mode
             try:
@@ -515,7 +517,7 @@ async def submit_task(
                     if _ms_pm2 is not None:
                         _ms_pm2.decision_trace["policy_mode_used"] = "BALANCED"
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # ── Tool results dans decision_trace (fail-open) ──────────────────
             try:
@@ -526,7 +528,7 @@ async def submit_task(
                         k for k, v in _tool_run_results.items() if v.get("ok")
                     ]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end tool results trace ────────────────────────────────────────
 
             ms.set_final_output(result.mission_id, _final)
@@ -564,7 +566,7 @@ async def submit_task(
                         error_type="" if (_final and _final.strip()) else "empty_output",
                     ))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='missions.py')
 
             # ── Knowledge Memory store (fail-open) ────────────────────────────
             try:
@@ -583,7 +585,7 @@ async def submit_task(
                     execution_policy_decision=_dt_km_s.get("execution_policy_decision", "unknown"),
                 )
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── end km store ──────────────────────────────────────────────────
 
             # ── Observability + Self-Improvement trigger (fail-open) ──────────────
@@ -603,7 +605,7 @@ async def submit_task(
                     tools_used=[],  # a enrichir quand les agents utiliseront le tool_registry
                 ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
             try:
                 from core.self_improvement import get_self_improvement_manager
@@ -611,7 +613,7 @@ async def submit_task(
                 # Analyse asynchrone legere — ne bloque pas la reponse
                 _sim.analyze_patterns()  # resultat ignore ici, mis en cache implicitement
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
             # ── fin Observability ─────────────────────────────────────────────────
 
         except Exception as e:
@@ -688,6 +690,19 @@ async def list_tasks(
         }}
     ms       = _get_mission_system()
     missions = ms.list_missions(status=status, limit=limit)
+
+    # Inject PENDING_VALIDATION missions as PENDING for approval flow
+    pending_val = ms.list_missions(status="PENDING_VALIDATION", limit=50)
+    pending_ids = {m.mission_id for m in missions}
+    for m in pending_val:
+        if m.mission_id not in pending_ids:
+            d = m.to_dict()
+            d["status"] = "PENDING"
+            d["approvalRequired"] = True
+            d["approvalReason"] = d.get("note", "Approbation humaine requise")
+            missions = list(missions) + [type("M", (), {"to_dict": lambda self, _d=d: _d})()]
+            pending_ids.add(m.mission_id)
+
     return {"ok": True, "data": {
         "tasks": [m.to_dict() for m in missions],
         "total": len(missions),
@@ -1112,7 +1127,7 @@ async def approve_mission(
             try:
                 ms.complete(mission_id, result_text=f"Resumption error: {str(_re)[:200]}")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='missions.py')
 
     background_tasks.add_task(_resume_mission)
     return {
@@ -1158,7 +1173,7 @@ async def reject_mission(
                 from core.approval_queue import reject as _aq_reject
                 _aq_reject(_item_id, rejected_by="human")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='missions.py')
 
     ms.set_final_output(mission_id, f"Mission rejected: {note}")
     return {"ok": True, "data": {"mission_id": mission_id, "status": "rejected", "note": note}}
@@ -1211,3 +1226,58 @@ async def stream_mission_compat(mission_id: str):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
+
+# ── Livrable export endpoint ───────────────────────────────────────────────────
+
+@router.get("/api/v3/missions/{mission_id}/livrable")
+async def get_mission_livrable(
+    mission_id: str,
+    fmt: str = "markdown",  # "markdown" ou "html"
+    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    authorization: Annotated[Optional[str], Header()] = None,
+):
+    """
+    Retourne le livrable client generé pour cette mission.
+    fmt=markdown -> texte .md
+    fmt=html     -> HTML complet pour impression/PDF
+    """
+    _check_auth(x_jarvis_token, authorization)
+    try:
+        from pathlib import Path
+        livrable_dir = Path('/opt/jarvismax-app/workspace/livrables')
+        # Chercher un fichier contenant le mission_id court
+        mid_short = mission_id[:8]
+        candidates = list(livrable_dir.glob(f'*{mid_short}*.md'))
+
+        if not candidates:
+            # Générer à la demande si la mission est COMPLETED
+            ms = _get_mission_system()
+            m = ms.get(mission_id)
+            if not m:
+                raise HTTPException(status_code=404, detail="Mission not found")
+            result = m.get('result', '') or m.get('output', '')
+            if not result:
+                raise HTTPException(status_code=404, detail="No result available")
+            goal = m.get('goal', '')
+            from core.livrable_export import LivrableExport
+            exp = LivrableExport()
+            paths = exp.save(result, '', goal, mission_id)
+            md_path = Path(paths['markdown'])
+            html_path = Path(paths['html'])
+        else:
+            md_path = candidates[0]
+            html_path = md_path.with_suffix('.html')
+
+        if fmt == 'html' and html_path.exists():
+            from fastapi.responses import HTMLResponse
+            return HTMLResponse(content=html_path.read_text(encoding='utf-8'))
+        elif md_path.exists():
+            content = md_path.read_text(encoding='utf-8')
+            return {"ok": True, "data": {"content": content, "filename": md_path.name, "format": "markdown"}}
+        else:
+            raise HTTPException(status_code=404, detail="Livrable not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"ok": False, "error": str(e)}

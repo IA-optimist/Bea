@@ -19,7 +19,6 @@ import pytest
 import json
 import time
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 
 # Bootstrap path & mock structlog
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

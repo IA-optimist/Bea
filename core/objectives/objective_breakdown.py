@@ -11,6 +11,7 @@ import uuid
 from typing import List, Optional
 
 from core.objectives.objective_models import Objective, SubObjective, SubObjectiveStatus
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_breakdown")
 
@@ -107,7 +108,7 @@ def breakdown_objective(
                 )
                 difficulty_score = float(diff_result.get("score", difficulty_score))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='objective_breakdown.py')
 
         # ── Patterns similaires pour enrichir les outils (fail-open) ──────
         pattern_tools: List[str] = []
@@ -121,7 +122,7 @@ def breakdown_objective(
                     raw_pt = patterns.get("effective_tools", [])
                     pattern_tools = [t if isinstance(t, str) else (t.get("name","") if isinstance(t, dict) else str(t)) for t in raw_pt if t]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='objective_breakdown.py')
 
         # ── Sélection du template ──────────────────────────────────────────
         template = _TEMPLATES.get(category, _TEMPLATES["general"])

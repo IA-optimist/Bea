@@ -5,7 +5,7 @@ Defines 3 policy profiles (safe, balanced, autonomous) that control
 Jarvis's autonomy level. Integrates with existing policy_engine.py.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Literal
 import logging
 

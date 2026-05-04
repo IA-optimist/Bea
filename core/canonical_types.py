@@ -30,7 +30,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -348,7 +348,7 @@ class CanonicalMissionContext:
             "plan_summary": self.plan_summary[:500],
             "agents": self.agents,
             "error": self.error,
-            "result": self.result[:500],
+            "result": self.result,
             "source_system": self.source_system,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
@@ -371,4 +371,4 @@ class CanonicalMissionContext:
                 to_status=target.value,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='canonical_types.py')

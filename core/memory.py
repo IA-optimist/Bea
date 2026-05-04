@@ -4,9 +4,9 @@ Permet à l'agent de ne pas répéter les mêmes erreurs de syntaxe, ou de se so
 des configurations systèmes spécifiques utiles à sa survie.
 """
 import json
-import os
 import structlog
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -18,7 +18,7 @@ class MemoryBank:
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory.py')
         self.memories = self._load()
 
     def _load(self) -> list[dict]:

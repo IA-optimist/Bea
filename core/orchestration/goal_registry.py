@@ -15,6 +15,7 @@ import logging
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class ProactiveGoal:
                     deadline_ts = float(note.split(":", 1)[1])
                     return (deadline_ts - time.time()) / 3600
                 except ValueError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='goal_registry.py')
         return None
 
     def set_deadline(self, epoch: float) -> None:

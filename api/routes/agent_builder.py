@@ -14,6 +14,7 @@ import structlog
 from fastapi import Depends, APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -190,7 +191,7 @@ async def agent_metadata():
                 tools = [t.name if hasattr(t, 'name') else str(t)
                          for t in getattr(agent, "tools", []) or []]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='agent_builder.py')
 
             agents.append({
                 "name": name,

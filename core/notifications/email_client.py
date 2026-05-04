@@ -8,7 +8,6 @@ import smtplib
 import structlog
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
 from .models import NotificationPayload
 
 log = structlog.get_logger()

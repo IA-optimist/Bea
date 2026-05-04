@@ -221,23 +221,6 @@ def build_plan(
             logger.debug("routing_context_skipped: %s", str(_rt_err)[:60])
         # ── end knowledge + routing context ───────────────────────────────
 
-        # ── Operating primitives: feasibility + strategy (fail-open) ────────
-        _feasibility = None
-        _strategy_rec = None
-        try:
-            from core.safety_controls import is_intelligence_enabled
-            if is_intelligence_enabled():
-                from core.operating_primitives import score_feasibility, select_strategy
-                _feasibility = score_feasibility(goal, mission_type, recommended_tools, complexity)
-                _strategy_rec = select_strategy(goal, mission_type, complexity)
-                result["feasibility_score"] = _feasibility.overall
-                result["feasibility_missing_tools"] = _feasibility.missing_tools
-                if _strategy_rec.source != "default":
-                    result["strategy_recommendation"] = _strategy_rec.to_dict()
-        except Exception as _op_err:
-            logger.debug("operating_primitives_skipped: %s", str(_op_err)[:60])
-        # ── end operating primitives ──────────────────────────────────────
-
         # Contexte objectif actif (fail-open)
         objective_context = _get_objective_context(goal, mission_type)
 
@@ -258,6 +241,23 @@ def build_plan(
         recommended_tools = MISSION_TOOL_ROUTING.get(mission_type, [])
         if recommended_tools:
             result["recommended_tools"] = recommended_tools
+
+        # ── Operating primitives: feasibility + strategy (fail-open) ────────
+        _feasibility = None
+        _strategy_rec = None
+        try:
+            from core.safety_controls import is_intelligence_enabled
+            if is_intelligence_enabled():
+                from core.operating_primitives import score_feasibility, select_strategy
+                _feasibility = score_feasibility(goal, mission_type, recommended_tools, complexity)
+                _strategy_rec = select_strategy(goal, mission_type, complexity)
+                result["feasibility_score"] = _feasibility.overall
+                result["feasibility_missing_tools"] = _feasibility.missing_tools
+                if _strategy_rec.source != "default":
+                    result["strategy_recommendation"] = _strategy_rec.to_dict()
+        except Exception as _op_err:
+            logger.debug("operating_primitives_skipped: %s", str(_op_err)[:60])
+        # ── end operating primitives ──────────────────────────────────────
 
         # ── Real performance intelligence (fail-open, gated by safety flag) ──
         try:

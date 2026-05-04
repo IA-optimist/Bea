@@ -350,6 +350,14 @@ class VaultMemory:
         
         return stats
     
+    def is_known(self, key: str) -> bool:
+        """Check if a key exists in vault memory."""
+        try:
+            results = self.retrieve(query=key, limit=1)
+            return len(results) > 0
+        except Exception:
+            return False
+
     def close(self):
         """Clean shutdown - save to JSON and close PostgreSQL."""
         logger.info("Closing VaultMemory")
@@ -362,3 +370,13 @@ class VaultMemory:
             self._pg_backend.close()
         
         logger.info("VaultMemory closed")
+
+
+# ── Singleton helper ───────────────────────────────────────────────────────────
+_vault_instance = None
+
+def get_vault_memory() -> VaultMemory:
+    global _vault_instance
+    if _vault_instance is None:
+        _vault_instance = VaultMemory()
+    return _vault_instance

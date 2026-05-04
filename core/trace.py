@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class MissionTrace:
@@ -61,7 +62,7 @@ class MissionTrace:
                     except json.JSONDecodeError:
                         continue
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='trace.py')
         return events[-limit:]
 
     def summary(self) -> dict:

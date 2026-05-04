@@ -16,7 +16,6 @@ import structlog
 import uvicorn
 from fastapi import FastAPI, HTTPException
 
-import jwt  # PyJWT — listed in requirements.txt; absent = packaging bug, not a runtime fix
 
 
 # ── Logging ───────────────────────────────────────────────────

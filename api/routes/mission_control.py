@@ -21,19 +21,28 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
-from fastapi import APIRouter, Body, Depends, Header, Query, Request
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from api.schemas import ok, error as err_resp
 from api._deps import _check_auth
 from typing import Optional as _Opt
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     """Auth dependency for mission control routes."""
     _check_auth(x_jarvis_token, authorization)
+
+
+# ── v1 deprecation contract ───────────────────────────────────────────────
+# All endpoints in this router are deprecated as of 2026-04-25 with a
+# planned sunset of 2026-10-01 (≥ 5 months notice). RFC 8594 Deprecation +
+# Sunset headers and the structlog warning are injected by
+# api.middleware.V1DeprecationMiddleware (mounted in api/main.py) so
+# nothing here needs per-route plumbing.
 
 # ── Canonical status bridge (P4) ─────────────────────────────────────────────
 
@@ -222,7 +231,7 @@ async def system_status_v1():
                 if callable(count):
                     memory_usage["episodic"] = count()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Tool performance (fail-open)
         tool_performance: dict = {}
@@ -231,7 +240,7 @@ async def system_status_v1():
             tracker = ToolPerformanceTracker.get()
             tool_performance = tracker.summary() if hasattr(tracker, "summary") else {}
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Queue length (fail-open)
         queue_length = 0
@@ -241,7 +250,7 @@ async def system_status_v1():
             queue_length = len([a for a in aq._actions.values()
                                  if getattr(a, "status", "") == "PENDING"])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Memory facade health (fail-open, P5)
         memory_health: dict = {}
@@ -250,7 +259,7 @@ async def system_status_v1():
             facade = get_memory_facade()
             memory_health = facade.health()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         return JSONResponse(ok({
             "active_agents":        active_agents,
@@ -296,22 +305,6 @@ def _apply_mission_action(mission_id: str, action: str) -> tuple[dict | None, st
     return {"mission_id": mission_id, "action": action, "status": _cs, "legacy_status": str(result.status)}, ""
 
 
-@router.post("/missions/{mission_id}/approve")
-async def approve_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "approve")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
-
-
-@router.post("/missions/{mission_id}/reject")
-async def reject_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "reject")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
-
-
 @router.post("/missions/{mission_id}/pause")
 async def pause_mission(mission_id: str):
     data, err = _apply_mission_action(mission_id, "pause")
@@ -328,12 +321,16 @@ async def resume_mission(mission_id: str):
     return JSONResponse(ok(data))
 
 
-@router.post("/missions/{mission_id}/cancel")
-async def cancel_mission(mission_id: str):
-    data, err = _apply_mission_action(mission_id, "cancel")
-    if err:
-        return JSONResponse(err_resp(err), status_code=404)
-    return JSONResponse(ok(data))
+# ── REMOVED v1 endpoints (Sunset 2026-04-25) ──────────────────────────
+# The following endpoints were removed in audit phase-11 because static
+# audit found 0 callers and v2/v3 equivalents existed :
+#   POST /api/v1/missions/{id}/approve  → POST /api/v2/missions/{id}/approve
+#   POST /api/v1/missions/{id}/reject   → POST /api/v2/missions/{id}/reject
+#   POST /api/v1/missions/{id}/cancel   → POST /api/v2/missions/{id}/abort
+#   POST /api/v1/mission/run            → POST /api/v2/missions/submit
+#   GET  /api/v1/missions/{id}/summary  → GET  /api/v2/missions/{id}
+# Restore from git history (commit 230b630^) if a stale client surfaces
+# and migration is not yet possible.
 
 
 # ── 3e — SSE Streaming ────────────────────────────────────────────────────────
@@ -369,7 +366,7 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                             yield f"data: {json.dumps({'event': 'timeout', 'mission_id': mission_id, 'message': 'Mission found in workspace store'})}\n\n"
                         return
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='mission_control.py')
         yield f"data: {json.dumps({'event': 'error', 'message': 'not found'})}\n\n"
         return
 
@@ -407,7 +404,7 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                                 yield f"data: {json.dumps({'event': 'status', 'mission_id': mission_id, 'status': ws_status, 'source': 'workspace', 'ts': time.time()})}\n\n"
                             break
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='mission_control.py')
 
         # Stop on terminal status
         if _cs in _TERMINAL_STATUSES or str(mission.status).upper() in _TERMINAL_STATUSES:
@@ -432,47 +429,8 @@ async def stream_mission(mission_id: str):
     )
 
 
-# ── 3g — Create & run mission (v1 compat for Android) ───────────────────────
-
-@router.post("/mission/run")
-async def run_mission_v1(body: dict = Body(...)):
-    """
-    Phase 9 v1 mission creation endpoint — Android compatibility.
-    Accepts {goal, priority, max_steps, risk_tolerance} and maps to MissionSystem.submit().
-    """
-    try:
-        goal = body.get("goal") or body.get("input", "")
-        if not goal:
-            return JSONResponse({"status": "error", "message": "goal is required"}, status_code=400)
-        ms = _mission_system()
-        result = ms.submit(goal)
-        _cs = _canonical_status(str(result.status))
-        return JSONResponse({"status": "ok", "data": {
-            "mission_id": result.mission_id,
-            "status":     _cs,
-            "legacy_status": str(result.status),
-            "goal":       goal,
-            "agents_involved":   [],
-            "tools_used":        [],
-            "risk_level":        "write_low",
-            "requires_approval": _cs == "WAITING_APPROVAL",
-            "progress":          0.0,
-            "start_time":        result.created_at,
-        }})
-    except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-
-
-# ── 3f — Mission summary ──────────────────────────────────────────────────────
-
-@router.get("/missions/{mission_id}/summary")
-async def get_mission_summary(mission_id: str):
-    store = _store()
-    summary = store.get_summary(mission_id)
-    if not summary:
-        ms = _mission_system()
-        mission = ms.get(mission_id)
-        if not mission:
-            return JSONResponse(err_resp(f"Mission '{mission_id}' not found"), status_code=404)
-        return JSONResponse(err_resp(f"No summary available for mission '{mission_id}'"), status_code=404)
-    return JSONResponse(ok(summary.to_dict()))
+# ── REMOVED v1 endpoints (Sunset 2026-04-25) ──────────────────────────
+# Both endpoints had zero static callers and direct v2 equivalents :
+#   POST /api/v1/mission/run            → POST /api/v2/missions/submit
+#   GET  /api/v1/missions/{id}/summary  → GET  /api/v2/missions/{id}
+# Restore from git history if a stale client surfaces.

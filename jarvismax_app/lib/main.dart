@@ -13,6 +13,7 @@ import 'screens/mission_screen.dart';
 import 'screens/approvals_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/modules_screen.dart';
 import 'screens/login_screen.dart';
 
 void main() {
@@ -146,7 +147,7 @@ class _AppEntryState extends State<_AppEntry> {
         onLoginSuccess: () => setState(() => _loggedIn = true),
       );
     }
-    return _AppShell(key: _AppShell.globalKey);
+    return const _AppShell();
   }
 }
 

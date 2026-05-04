@@ -11,7 +11,6 @@ Standalone functions (used by tool_executor.py):
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import logging
@@ -19,6 +18,7 @@ import subprocess
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.tools.file")
 
@@ -177,7 +177,7 @@ def _search_in_files_python(root: Path, pattern: str) -> str:
                     rel = fpath.relative_to(_WORKSPACE)
                     matches.append(f"{rel}:{i}:{line.rstrip()}")
                     if len(matches) >= 200:
-                        matches.append(f"\n[truncated at 200 matches]")
+                        matches.append("\n[truncated at 200 matches]")
                         return "\n".join(matches)
         except Exception:
             continue
@@ -353,7 +353,7 @@ def workspace_snapshot(**kw) -> str:
                 try:
                     dirs.add(str(f.relative_to(_WORKSPACE)).split("/")[0])
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='file_tool.py')
 
         return (
             f"Workspace: {_WORKSPACE}\n"

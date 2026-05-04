@@ -5,7 +5,7 @@ Injecte les résultats dans le contexte comme préfixe de prompt.
 from __future__ import annotations
 import logging
 import time
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.tool_runner")
 
@@ -66,12 +66,12 @@ def run_tools_for_mission(
             if not is_execution_engine_enabled():
                 _use_engine = False
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_runner.py')
         if _use_engine:
             try:
                 from core.execution_engine import (
-                    execute_tool_intelligently, ExecutionTelemetry,
-                    record_telemetry, record_recovery,
+                    execute_tool_intelligently, ExecutionTelemetry,  # noqa: F401
+                    record_telemetry, record_recovery,  # noqa: F401
                 )
             except ImportError:
                 _use_engine = False
@@ -181,7 +181,7 @@ def _run_with_engine(
             from core.lifecycle_tracker import get_lifecycle_tracker
             get_lifecycle_tracker().record(mission_id, "tools_executed")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_runner.py')
 
     context_prefix = "\n".join(context_parts) + "\n[FIN CONTEXT]\n\n"
     return context_prefix, results

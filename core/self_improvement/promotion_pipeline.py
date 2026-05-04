@@ -26,7 +26,11 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
+
+if TYPE_CHECKING:
+    from core.self_improvement.test_runner import ExperimentReport
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -302,7 +306,7 @@ class PromotionPipeline:
                               step_name=f"Patch: {getattr(candidate, 'description', '')[:60]}",
                               plan_id="self-improvement")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
 
         # 1. Check protected files
         try:
@@ -320,7 +324,7 @@ class PromotionPipeline:
                         risk_level=risk_level,
                     )
         except ImportError:
-            pass
+            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
 
         # 2. Generate patch using CodePatcher
         try:
@@ -506,7 +510,7 @@ class PromotionPipeline:
                                       source="promotion_pipeline",
                                       plan_id="self-improvement")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
             return _decision
 
         # Legacy path
@@ -826,7 +830,7 @@ class PromotionPipeline:
                               plan_id="self-improvement",
                               error=result.error[:100] if result.error else "")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
 
     def _record_lesson(self, candidate, result: PromotionResult) -> None:
         """Record lesson learned in improvement memory."""

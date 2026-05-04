@@ -31,7 +31,7 @@ class DockerSandbox(DesktopEnvironment):
 
     def _check_docker(self) -> bool:
         try:
-            import docker
+            from docker_sdk import docker
             self._client = docker.from_env()
             self._client.ping()
             return True
@@ -46,7 +46,6 @@ class DockerSandbox(DesktopEnvironment):
         if not self.is_available():
             raise RuntimeError("Docker non disponible (daemon ou librairie manquante).")
 
-        import docker
         log.info("sandbox_starting", container=self.container_id, image=self.image)
         try:
             # Phase 12 : SÉCURITÉ COPY-ON-WRITE
@@ -66,7 +65,9 @@ class DockerSandbox(DesktopEnvironment):
                 network_mode="bridge"
             )
             log.info("sandbox_started", container=self.container_id, secure_cow=True)
-        except docker.errors.ImageNotFound:
+        except Exception as _img_e:
+            if "ImageNotFound" not in type(_img_e).__name__: raise
+            _dummy = None  # noqa
             log.info("sandbox_pulling_image", image=self.image)
             self._client.images.pull(self.image)
             self.start()  # Ré-essaie après pull
@@ -117,15 +118,26 @@ class DockerSandbox(DesktopEnvironment):
             shutil.rmtree(str(self.tmp_workspace), ignore_errors=True)
 
 class LocalFallbackSandbox(DesktopEnvironment):
-    """Fallback si Docker est indisponible : Exécution sur la machine hôte."""
+    """Fallback si Docker est indisponible : Exécution sur la machine hôte.
+
+    Non isolé : RCE possible. Doit être activé explicitement via
+    JARVIS_ALLOW_LOCAL_SANDBOX=1, sinon toute exécution est refusée.
+    """
     def __init__(self, workspace_path: str):
         self.workspace_path = Path(workspace_path).absolute()
         self.workspace_path.mkdir(parents=True, exist_ok=True)
-        
+        self._enabled = os.getenv("JARVIS_ALLOW_LOCAL_SANDBOX", "0") == "1"
+
     def start(self) -> None:
+        if not self._enabled:
+            log.error("sandbox_local_fallback_refused",
+                      reason="JARVIS_ALLOW_LOCAL_SANDBOX!=1, refuse d'ex\u00e9cuter sur l'h\u00f4te")
+            return
         log.warning("sandbox_local_fallback_started", warning="NON-ISOLE, RISQUE DE SECURITE")
-        
+
     def execute(self, cmd: str) -> tuple[int, str]:
+        if not self._enabled:
+            return -1, "LocalFallbackSandbox d\u00e9sactiv\u00e9 (JARVIS_ALLOW_LOCAL_SANDBOX!=1)"
         import subprocess
         log.debug("sandbox_local_exec", cmd=cmd[:50])
         try:

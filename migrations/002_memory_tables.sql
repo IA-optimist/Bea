@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS vault_memory (
     key TEXT NOT NULL,
     value JSONB NOT NULL DEFAULT '{}'::jsonb,
     tags TEXT[] DEFAULT '{}',
-    embedding VECTOR(1536),  -- For semantic search (optional — requires pgvector)
+    embedding TEXT,  -- For semantic search (optional — requires pgvector)
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     accessed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

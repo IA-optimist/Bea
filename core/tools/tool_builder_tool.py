@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import logging
 import os
+import structlog
+_silent_log = structlog.get_logger(__name__)
 import re
-import time
 
 logger = logging.getLogger("jarvis.tool_builder")
 
@@ -233,7 +234,7 @@ def {tool_name}({signature}) -> dict:
     try:
         logs = []
 {safety_checks}
-        # TODO: implement tool logic here
+        # IMPLEMENT: Add your tool logic here (auto-generated stub)
 
         result = {{{output_fields}}}
         logs.append("{tool_name} executed successfully")
@@ -305,13 +306,14 @@ def generate_tool_tests(tool_name: str, tool_code: str) -> dict:
 
         valid_call = f"{tool_name}({', '.join(test_args_valid)})"
         none_call = f"{tool_name}({', '.join(test_args_none)})" if test_args_none else f"{tool_name}()"
-        empty_call = f"{tool_name}()" if not any("=" not in a for a in test_args_valid) else f"{tool_name}()"
+        f"{tool_name}()" if not any("=" not in a for a in test_args_valid) else f"{tool_name}()"
 
         # Détecter le module
         module_path = f"core.tools.{tool_name}"
 
         test_code = f'''"""Tests unitaires pour {tool_name}."""
 import pytest
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def test_{tool_name}_import():
@@ -426,7 +428,7 @@ def register_tool_in_executor(
                 with open(executor_path, "r", encoding="utf-8") as f:
                     old_content = f.read()
             except FileNotFoundError:
-                pass
+                _silent_log.debug("suppressed_exception", src='tool_builder_tool.py')
             with RollbackContext(executor_path) as ctx:
                 with open(executor_path, "w", encoding="utf-8") as f:
                     f.write(content)

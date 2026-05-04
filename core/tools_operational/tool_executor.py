@@ -27,6 +27,7 @@ from core.tools_operational.tool_schema import (
 )
 from core.tools_operational.tool_registry import get_tool_registry
 from core.tools_operational.tool_readiness import check_readiness
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("tools_operational.executor")
 
@@ -402,7 +403,7 @@ class OperationalToolExecutor:
                 tags=["operational_tool", tool.category],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

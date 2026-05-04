@@ -46,7 +46,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -395,7 +395,7 @@ class MemoryFacade:
                                     score=item.get("score", 0.4),
                                 ))
                     except _queue_module.Empty:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='memory_facade.py')
                 else:
                     log.debug("memory_bus_search_thread_timeout", query=query[:40])
         except Exception as _exc:
@@ -530,19 +530,19 @@ class MemoryFacade:
             status.last_check = now
             try:
                 if name == "memory_toolkit":
-                    from core.tools.memory_toolkit import memory_search_similar
+                    from core.tools.memory_toolkit import memory_search_similar  # noqa: F401
                     status.available = True
                 elif name == "memory_bus":
-                    from memory.memory_bus import MemoryBus
+                    from memory.memory_bus import MemoryBus  # noqa: F401
                     status.available = True
                 elif name == "knowledge_memory":
-                    from core.knowledge_memory import get_knowledge_memory
+                    from core.knowledge_memory import get_knowledge_memory  # noqa: F401
                     status.available = True
                 elif name == "decision_memory":
-                    from memory.decision_memory import get_decision_memory
+                    from memory.decision_memory import get_decision_memory  # noqa: F401
                     status.available = True
                 elif name == "improvement_memory":
-                    from core.improvement_memory import get_improvement_memory
+                    from core.improvement_memory import get_improvement_memory  # noqa: F401
                     status.available = True
                 elif name == "knowledge_jsonl":
                     status.available = True
@@ -654,7 +654,7 @@ class MemoryFacade:
                                               tags=["failure", error_class]),
                      mission_id=mission_id, importance=0.8)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         # AI OS vector memory for failure (fail-open)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -664,7 +664,7 @@ class MemoryFacade:
                                importance=0.8, confidence=0.8,
                                tags=["failure", error_class])
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         return self.store(
             content=content,
             content_type="failure",
@@ -683,7 +683,7 @@ class MemoryFacade:
                                               scope=f"mission:{mission_id}"),
                      mission_id=mission_id, importance=0.6)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         # AI OS vector memory (fail-open, async-like)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -692,7 +692,7 @@ class MemoryFacade:
                                source="orchestrator", mission_id=mission_id,
                                importance=0.6, confidence=0.7)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='memory_facade.py')
         return self.store(
             content=content,
             content_type="mission_outcome",
@@ -726,5 +726,5 @@ def get_memory_facade(settings=None, workspace_dir: str = "workspace") -> Memory
                 try:
                     log.info("memory_facade.singleton_created")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='memory_facade.py')
     return _facade

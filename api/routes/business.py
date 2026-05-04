@@ -4,7 +4,7 @@ Phase 7.3: Business Performance & Skills API
 Endpoints for portfolio analytics, performance tracking, and skill library.
 """
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session

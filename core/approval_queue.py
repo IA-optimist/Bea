@@ -125,6 +125,14 @@ def submit_for_approval(
         if risk_level in AUTO_APPROVE_LEVELS:
             return {"approved": True, "item_id": None, "pending": False, "auto": True}
 
+        # Deduplication: skip if same action+risk already pending
+        existing = _load()
+        action_key = action[:120]
+        for e in existing:
+            if e.get("action", "")[:120] == action_key and e.get("risk_level") == str(risk_level) and e.get("status") == "pending":
+                logger.debug(f"[ApprovalQueue] duplicate skipped: {action_key[:60]}")
+                return {"approved": False, "item_id": e["id"], "pending": True, "auto": False}
+
         item = {
             "id": str(uuid.uuid4()),
             "action": action,
@@ -135,7 +143,7 @@ def submit_for_approval(
             "source": source,
             "payload": payload or {},
             "status": "pending",
-            "submitted_at": datetime.datetime.utcnow().isoformat(),
+            "submitted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "approved_at": None,
             "approved_by": None,
         }
@@ -164,7 +172,7 @@ def approve(item_id: str, approved_by: str = "human") -> bool:
         for item in items:
             if item["id"] == item_id:
                 item["status"] = "approved"
-                item["approved_at"] = datetime.datetime.utcnow().isoformat()
+                item["approved_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 item["approved_by"] = approved_by
                 _save(items)
                 logger.info(f"[ApprovalQueue] approved {item_id[:8]}… by {approved_by}")
@@ -182,7 +190,7 @@ def reject(item_id: str, rejected_by: str = "human") -> bool:
         for item in items:
             if item["id"] == item_id:
                 item["status"] = "rejected"
-                item["rejected_at"] = datetime.datetime.utcnow().isoformat()
+                item["rejected_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 item["rejected_by"] = rejected_by
                 _save(items)
                 return True

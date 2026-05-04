@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """PROOF BATTERY — Executor + Mobile Robustness"""
-import re, os, sys, json, asyncio
+import re
+import os
+import sys
 
 os.chdir('/app')
 sys.path.insert(0, '/app')
@@ -158,7 +160,8 @@ store.store(entry)
 entries = store.search(tier="EPISODIC", limit=5)
 integrity = store.integrity_check()
 # Test with file-based store for WAL verification
-import tempfile, os
+import tempfile
+import os
 _tmpf = os.path.join(tempfile.mkdtemp(), "test.db")
 store2 = MemoryStore(db_path=_tmpf)
 store2.store(MemoryEntry(content="wal test", tier="EPISODIC"))
@@ -237,6 +240,6 @@ all_tests = [
 for label, passed in all_tests:
     print(f"║  {'✅' if passed else '❌'} {label:50s}    ║")
 total_pass = sum(1 for _, p in all_tests if p)
-print(f"╠══════════════════════════════════════════════════════════════╣")
+print("╠══════════════════════════════════════════════════════════════╣")
 print(f"║  TOTAL: {total_pass}/{len(all_tests)} PASS                                          ║")
-print(f"╚══════════════════════════════════════════════════════════════╝")
+print("╚══════════════════════════════════════════════════════════════╝")

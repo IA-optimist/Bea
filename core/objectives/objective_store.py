@@ -6,17 +6,15 @@ Objective Engine — Persistance JSON locale + Qdrant secondaire.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
-import random
 import time
-import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_store")
 
@@ -32,7 +30,7 @@ def _get_store_path() -> Path:
     try:
         path.mkdir(parents=True, exist_ok=True)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='objective_store.py')
     return path / "objectives.json"
 
 

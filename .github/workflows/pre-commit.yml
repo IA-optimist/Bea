@@ -1,0 +1,37 @@
+name: Security — Pre-commit Hooks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  pre-commit:
+    name: detect-secrets + gitleaks + safety nets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (fetch-depth 0 pour que gitleaks voie tout le diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Run all pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure

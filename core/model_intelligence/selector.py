@@ -19,6 +19,7 @@ import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.selector")
 
@@ -300,7 +301,7 @@ class ModelPerformanceMemory:
                         last_used=v.get("last_used", 0),
                     )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='selector.py')
 
     def _save(self) -> None:
         try:
@@ -323,7 +324,7 @@ class ModelPerformanceMemory:
                 }, f)
             tmp.rename(self._path)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='selector.py')
 
     def record(
         self,

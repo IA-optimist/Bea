@@ -1,6 +1,15 @@
 -- P3.4 — Opportunity Deployments Table
 -- Tracks deployed MVPs (VPS location, status, uptime)
 
+-- Create update_updated_at_column function if not exists
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE TABLE IF NOT EXISTS opportunity_deployments (
     id SERIAL PRIMARY KEY,
     opportunity_id INTEGER NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,

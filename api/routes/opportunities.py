@@ -1,15 +1,17 @@
 """
-import tempfile
 JarvisMax — Opportunities API
 REST endpoints for SaaS opportunity management (Phase 3)
 """
 from __future__ import annotations
 
 import logging
+import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -266,9 +268,9 @@ async def get_stats(db: Session = Depends(get_db)):
     """
     try:
         total = db.query(Opportunity).count()
-        analyzed = db.query(Opportunity).filter(Opportunity.analyzed == True).count()
-        mvp_generated = db.query(Opportunity).filter(Opportunity.mvp_generated == True).count()
-        deployed = db.query(Opportunity).filter(Opportunity.deployed == True).count()
+        analyzed = db.query(Opportunity).filter(Opportunity.analyzed).count()
+        mvp_generated = db.query(Opportunity).filter(Opportunity.mvp_generated).count()
+        deployed = db.query(Opportunity).filter(Opportunity.deployed).count()
         
         # By source
         sources = {}
@@ -390,7 +392,7 @@ async def analyze_feasibility(
             # Store in database
             analysis = OpportunityAnalysis(
                 opportunity_id=opportunity_id,
-                analyzed_at=datetime.utcnow(),
+                analyzed_at=datetime.now(timezone.utc),
                 analysis_duration_seconds=analysis_result.get("duration_seconds"),
                 mission_id=analysis_result.get("mission_id"),
                 confidence_score=analysis_result.get("confidence_score"),
@@ -669,7 +671,7 @@ async def get_mvp_status(
     
     # Get analysis for project slug
     from models.opportunity_analysis import OpportunityAnalysis
-    analysis = db.query(OpportunityAnalysis).filter(
+    db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
     
@@ -916,8 +918,8 @@ async def undeploy_mvp(
     from models.opportunity import Opportunity
     from models.opportunity_deployment import OpportunityDeployment
     from core.business.deploy_manager import DeployManager
-    from datetime import datetime
-    
+    from datetime import datetime, timezone
+
     # Check opportunity exists
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
@@ -955,7 +957,7 @@ async def undeploy_mvp(
     
     # Update status
     deployment.status = "removed"
-    deployment.removed_at = datetime.utcnow()
+    deployment.removed_at = datetime.now(timezone.utc)
     opportunity.deployed = False
     db.commit()
     

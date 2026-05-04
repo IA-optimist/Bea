@@ -104,7 +104,7 @@ def classify(goal: str) -> MissionClassification:
     No LLM calls — pure keyword analysis + heuristics.
     """
     g = goal.lower().strip()
-    words = set(re.findall(r"[a-z]+", g))
+    set(re.findall(r"[a-z]+", g))
 
     # Task type
     task_type = _detect_type(g)

@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import List
 
 from api._deps import _check_auth
 

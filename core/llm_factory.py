@@ -17,6 +17,7 @@ import contextvars
 import os
 import time
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 try:
     from langchain_core.language_models import BaseChatModel
 except ImportError:
@@ -342,7 +343,7 @@ class LLMFactory:
                 try:
                     result._jarvis_provider = provider  # type: ignore[attr-defined]
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
 
             return result
 
@@ -420,27 +421,28 @@ class LLMFactory:
         from langchain_openai import ChatOpenAI
 
         # Role → model mapping (stability-first: expensive only when necessary)
-        _FAST = getattr(self.s, "fast_model", "openai/gpt-4o-mini")
+        _FAST = getattr(self.s, "openrouter_model_fast", None) or getattr(self.s, "fast_model", "openai/gpt-4o-mini")
         _ORCH = getattr(self.s, "orchestrator_model", "anthropic/claude-sonnet-4.5")
         _ARCH = getattr(self.s, "architect_model", _ORCH)
         _CODE = getattr(self.s, "coder_model", _ORCH)
         _SELF = getattr(self.s, "self_improvement_model", _ORCH)
+        _STD  = getattr(self.s, "openrouter_model_standard", None) or getattr(self.s, "standard_model", _FAST)
         _FALL = getattr(self.s, "fallback_model", _FAST)
         _VIS  = getattr(self.s, "vision_model_or", _FAST)
 
         model_map = {
             # ── Heavy roles → Sonnet ──────────────────────────────────────
             "director":            _ORCH,
-            "planner":             _ORCH,
+            "planner":             _STD,    # planner -> STANDARD (haiku, suffisant pour plans)
             "ops":                 _ORCH,
-            "research":            _ORCH,
-            "default":             _ORCH,
+            "research":            _STD,    # scout-research -> STANDARD (haiku, 4x plus rapide)
+            "default":             _STD,    # default -> STANDARD (haiku) pour actions generiques
             "builder":             _CODE,
             "improve":             _SELF,
-            "reviewer":            _CODE,
+            "reviewer":            _STD,    # Lens-reviewer -> STANDARD (haiku, rapport final complet)
             "context":             _ARCH,
-            "analyst":             _ORCH,   # Business analysis, strategy
-            "advisor":             _ORCH,   # Shadow-advisor — security/audit
+            "analyst":             _STD,    # Business analysis, strategy — haiku suffisant
+            "advisor":             _FAST,   # Shadow-advisor validation -> FAST (gemini-flash, ~3s)
             "memory":              _FAST,   # Vault-memory — context/retrieval
             # ── Light roles → GPT-4o-mini ─────────────────────────────────
             "fast":                _FAST,
@@ -689,7 +691,7 @@ class LLMFactory:
                     if m:
                         m.record_llm_call(role, latency_s=ms / 1000.0, error=False)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
                 # ── Langfuse : clôturer la generation ─────────
                 if gen_ctx is not None:
                     try:
@@ -702,7 +704,7 @@ class LLMFactory:
                             output_tokens=usage.get("completion_tokens", 0),
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
                 return resp
 
             except Exception as first_err:
@@ -721,14 +723,14 @@ class LLMFactory:
                     try:
                         gen_ctx.finish(error=str(first_err)[:200])
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
             # ── Métriques erreur ──────────────────────────────
             try:
                 m = _get_metrics(self.s)
                 if m:
                     m.record_llm_call(role, latency_s=ms / 1000.0, error=True)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='llm_factory.py')
 
         # ── Fallback cloud (uniquement pour rôles non-LOCAL_ONLY) ─
         if role not in LOCAL_ONLY_ROLES:
@@ -767,7 +769,7 @@ class LLMFactory:
                                 error=False,
                             )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
                     return resp2
 
                 except Exception as fb_err:

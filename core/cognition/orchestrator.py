@@ -5,11 +5,10 @@ Coordinates ToT, self-confidence, and active learning.
 from __future__ import annotations
 from typing import Dict, Any, Optional, List, Callable
 import structlog
-from pathlib import Path
 from core.cognition.tot_wrapper import plan_with_tot, should_use_tot
 from core.cognition.self_confidence import ConfidenceScorer, SelfCorrector
 from core.cognition.active_learning import SkillDiscoverer, PerformanceTracker
-from core.cognition.project_context import ProjectContextManager, ProjectContext
+from core.cognition.project_context import ProjectContextManager
 from core.cognition.lifelong_learning import LifelongLearningEngine
 from business.business_engine import BusinessEngine
 
@@ -231,8 +230,8 @@ Provide a comprehensive response addressing the mission goal."""
         
         # Phase 1: Tree-of-Thought reasoning (optional — for high-complexity tasks)
         # For now, skip ToT expansion to avoid 30s+ delays
-        # TODO: Activate for complexity > 7 or confidence < 0.5
-        thought_tree = None
+        # Activate ToT for high-complexity (>7) or low-confidence (<0.5) missions
+        # ToT activation is handled by should_use_tot() in meta_orchestrator
         
         # Phase 2: Execute mission with supervisor
         try:
@@ -313,7 +312,15 @@ Provide a comprehensive response addressing the mission goal."""
                         mission_id=mission_id,
                         complexity=skill_complexity,
                     )
-                    # TODO: Call skill_discoverer.propose_skill() with LLM
+                    try:
+                        if hasattr(self, 'skill_discoverer') and self.skill_discoverer:
+                            await self.skill_discoverer.propose_skill(
+                                mission_id=mission_id,
+                                goal=mission_payload.get('goal', ''),
+                                outcome=str(outcome)[:200],
+                            )
+                    except Exception as _sk_err:
+                        log.warning('skill_propose_failed', err=str(_sk_err)[:60])
             except Exception as skill_err:
                 log.warning("cognition.skill_discovery_failed", error=str(skill_err)[:100])
         
@@ -424,7 +431,8 @@ Provide a comprehensive response addressing the mission goal."""
         )
         
         # Record for learning
-        mission_id = mission.get("mission_id", f"mission-{datetime.utcnow().timestamp()}")
+        from datetime import datetime, timezone
+        mission_id = mission.get("mission_id", f"mission-{datetime.now(timezone.utc).timestamp()}")
         
         await self.learning_engine.record_mission(
             mission_id=mission_id,
@@ -671,7 +679,23 @@ Provide a comprehensive response addressing the mission goal."""
             if operation.startswith("business_"):
                 mission["operation"] = operation.replace("business_", "")
             
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                    return ex.submit(asyncio.run, self.execute_business_mission(mission)).result()
             return asyncio.run(self.execute_business_mission(mission))
         
         # Default to standard cognition pipeline
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop and loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(asyncio.run, self.execute_mission_with_cognition(mission)).result()
         return asyncio.run(self.execute_mission_with_cognition(mission))

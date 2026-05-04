@@ -8,9 +8,7 @@ Applies creation criteria to avoid noisy proliferation:
 """
 from __future__ import annotations
 
-import hashlib
 import re
-import time
 from collections import Counter
 from typing import Optional
 

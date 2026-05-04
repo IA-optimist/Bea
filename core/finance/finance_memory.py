@@ -18,6 +18,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -210,4 +211,4 @@ class FinanceMemory:
         try:
             json.loads(self._path.read_text())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='finance_memory.py')

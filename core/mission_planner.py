@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 import time
 import logging
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +224,7 @@ class MissionPlanner:
                     proven_agents = _best.get("agents", [])[:4]
                     _adapted = True
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='mission_planner.py')
 
             # ── Exclude known-failing tools (fail-open) ───────────────
             _degraded_tools = set()
@@ -233,7 +234,7 @@ class MissionPlanner:
                 for ft in _tpt.get_failing_tools():
                     _degraded_tools.add(ft["tool"])
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='mission_planner.py')
 
             steps = []
             for i, (desc, mt, tools, agents, cx, deps) in enumerate(steps_data):

@@ -15,10 +15,26 @@ _pool: Optional[asyncpg.Pool] = None
 
 
 async def init_pool(dsn: str):
-    """Initialize connection pool."""
+    """Initialize connection pool.
+
+    Configuration robuste (aligné sur FIX 3 de la branche master) :
+      - min_size=5, max_size=20 : capacité pour charge mixte
+      - max_queries=50 000 : recyclage pour éviter la dérive mémoire
+      - max_inactive_connection_lifetime=300s : ferme les conn. idle
+      - command_timeout=60s : évite les queries runaway
+      - timeout=30s : limite le temps d'attente d'une conn.
+    """
     global _pool
-    _pool = await asyncpg.create_pool(dsn, min_size=2, max_size=10)
-    log.info("project_crud_pool_initialized")
+    _pool = await asyncpg.create_pool(
+        dsn,
+        min_size=5,
+        max_size=20,
+        max_queries=50_000,
+        max_inactive_connection_lifetime=300,
+        command_timeout=60,
+        timeout=30,
+    )
+    log.info("project_crud_pool_initialized", min_size=5, max_size=20)
 
 
 async def get_project(project_id: str) -> Optional[Dict[str, Any]]:
@@ -144,7 +160,7 @@ async def update_project(
     if not updates:
         return await get_project(project_id)
     
-    updates.append(f"updated_at = NOW()")
+    updates.append("updated_at = NOW()")
     params.append(UUID(project_id))
     
     query = f"""

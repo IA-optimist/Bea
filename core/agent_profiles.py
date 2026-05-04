@@ -54,4 +54,5 @@ class AgentProfileLoader:
         return self._profiles.get(pid, self._profiles.get("default"))
 
 _loader = AgentProfileLoader()
-get_profile = lambda pid: _loader.get(pid)
+def get_profile(pid):
+    return _loader.get(pid)

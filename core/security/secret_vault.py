@@ -25,11 +25,9 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
 
 from core.security.secret_crypto import (
     derive_master_key, encrypt, decrypt,
@@ -37,14 +35,14 @@ from core.security.secret_crypto import (
     key_fingerprint,
 )
 from core.security.secret_policy import (
-    SecretMetadata, SecretPolicy, SecretType, PolicyEngine,
-    check_permission, PolicyViolation, Role,
+    SecretMetadata, SecretPolicy, PolicyEngine,
+    check_permission, PolicyViolation,
 )
 from core.security.secret_audit import (
     SecretAuditLog, AuditAction,
 )
 from core.security.totp_manager import (
-    decode_seed, generate_totp, time_remaining, TOTPConfig,
+    decode_seed, generate_totp, TOTPConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -254,7 +252,7 @@ class SecretVault:
         try:
             payload = EncryptedPayload.from_b64(self._encrypted_secrets[secret_id])
             plaintext = decrypt(payload, self._master_key)
-        except (DecryptionError, CryptoError, KeyError) as e:
+        except (DecryptionError, CryptoError, KeyError):
             return UseResult(success=False, secret_id=secret_id, error="Decryption failed")
 
         # TOTP?
@@ -459,7 +457,6 @@ class SecretVault:
 
     def _persist_salt(self) -> None:
         """Persist the KDF salt."""
-        import base64
         salt_file = self._vault_dir / "salt.bin"
         with open(salt_file, "wb") as f:
             f.write(self._salt)

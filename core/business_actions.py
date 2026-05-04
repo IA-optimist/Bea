@@ -23,6 +23,7 @@ import uuid
 import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("business_actions")
 
@@ -266,18 +267,18 @@ class BusinessActionExecutor:
                         action=f"Execute business action: {action.name}",
                     )
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='business_actions.py')
                 # For now, approval-gated actions produce a spec file
                 # instead of executing. Real execution requires explicit
                 # API call with approval_override=True.
                 if not self._check_approval(action_id, mission_id):
                     spec_file = project_dir / "approval-required.md"
-                    spec_content = f"# Approval Required\n\n"
+                    spec_content = "# Approval Required\n\n"
                     spec_content += f"**Action:** {action.name}\n"
                     spec_content += f"**Risk:** {action.risk_level}\n"
-                    spec_content += f"**Reason:** This action modifies external systems.\n\n"
-                    spec_content += f"Approve via API: POST /api/v3/business-actions/execute "
-                    spec_content += f"with approval_override=true\n"
+                    spec_content += "**Reason:** This action modifies external systems.\n\n"
+                    spec_content += "Approve via API: POST /api/v3/business-actions/execute "
+                    spec_content += "with approval_override=true\n"
                     self._write(spec_file, spec_content)
 
                     self._emit_event(action, mission_id, "awaiting_approval")
@@ -319,7 +320,7 @@ class BusinessActionExecutor:
                             details=f"Used by action {action_id}",
                         ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='business_actions.py')
 
             files = handler(action, agent_output, project_dir)
 
@@ -337,7 +338,7 @@ class BusinessActionExecutor:
                     )
                     files.append("skills-used.json")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='business_actions.py')
 
             # Emit cognitive event: action completed
             self._emit_event(action, mission_id, "completed",
@@ -397,7 +398,7 @@ class BusinessActionExecutor:
         # analysis.md — deeper breakdown
         analysis = f"# Sector Analysis: {sector}\n\n"
         analysis += f"## Market Overview\n\n{synthesis}\n\n"
-        analysis += f"## Opportunity Details\n\n"
+        analysis += "## Opportunity Details\n\n"
         for opp in opps:
             analysis += f"### {opp.get('title', '')}\n\n"
             analysis += f"- **Short term:** {opp.get('short_term', 'N/A')}\n"
@@ -409,20 +410,20 @@ class BusinessActionExecutor:
 
         # next-steps.md
         best = opps[0] if opps else {}
-        steps = f"# Next Steps\n\n"
+        steps = "# Next Steps\n\n"
         steps += f"## Recommended Focus: {best.get('title', 'TBD')}\n\n"
-        steps += f"### Week 1-2: Validation\n"
-        steps += f"- [ ] Interview 5 potential customers in target segment\n"
-        steps += f"- [ ] Research competitor pricing and features\n"
-        steps += f"- [ ] Draft value proposition canvas\n\n"
-        steps += f"### Week 3-4: MVP Design\n"
-        steps += f"- [ ] Define minimum viable offer\n"
-        steps += f"- [ ] Create landing page or demo\n"
-        steps += f"- [ ] Set up measurement (analytics, CRM)\n\n"
-        steps += f"### Month 2: First Revenue\n"
-        steps += f"- [ ] Launch to first 10 customers\n"
-        steps += f"- [ ] Collect feedback and iterate\n"
-        steps += f"- [ ] Establish recurring revenue baseline\n"
+        steps += "### Week 1-2: Validation\n"
+        steps += "- [ ] Interview 5 potential customers in target segment\n"
+        steps += "- [ ] Research competitor pricing and features\n"
+        steps += "- [ ] Draft value proposition canvas\n\n"
+        steps += "### Week 3-4: MVP Design\n"
+        steps += "- [ ] Define minimum viable offer\n"
+        steps += "- [ ] Create landing page or demo\n"
+        steps += "- [ ] Set up measurement (analytics, CRM)\n\n"
+        steps += "### Month 2: First Revenue\n"
+        steps += "- [ ] Launch to first 10 customers\n"
+        steps += "- [ ] Collect feedback and iterate\n"
+        steps += "- [ ] Establish recurring revenue baseline\n"
         self._write(project_dir / "next-steps.md", steps)
         files.append("next-steps.md")
 
@@ -529,7 +530,7 @@ class BusinessActionExecutor:
         synthesis = output.get("synthesis", "")
 
         # README.md
-        readme = f"# Workflow Blueprint\n\n"
+        readme = "# Workflow Blueprint\n\n"
         readme += f"**Generated:** {time.strftime('%Y-%m-%d %H:%M')}\n\n"
         readme += f"## Overview\n\n{synthesis}\n\n"
         readme += f"## Workflows ({len(workflows)})\n\n"
@@ -746,7 +747,7 @@ class BusinessActionExecutor:
                 tags=["business", action.agent],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='business_actions.py')
 
 
 # ── Singleton ─────────────────────────────────────────────────

@@ -10,7 +10,6 @@ import hashlib
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 
 class SessionStatus:

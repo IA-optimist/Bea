@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from executor.task_model import ExecutionTask
@@ -152,7 +153,7 @@ def handle_plan(task: "ExecutionTask") -> str:
         from core.mission_system import get_mission_system
         ms    = get_mission_system()
         stats = ms.stats()
-        lines.append(f"Contexte actuel :")
+        lines.append("Contexte actuel :")
         lines.append(f"  Missions totales  : {stats.get('total', 0)}")
     except Exception as exc:
         lines.append(f"Contexte : {exc}")
@@ -198,7 +199,7 @@ def handle_improve(task: "ExecutionTask") -> str:
                     if any(kw in line.upper() for kw in ["TODO", "FIXME", "HACK", "XXX"]):
                         todos.append(f"{f.name}:{i} → {line.strip()[:70]}")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='handlers.py')
 
         if todos:
             lines.append(f"\nPoints à améliorer ({len(todos)}) :")
@@ -234,7 +235,7 @@ def handle_generic(task: "ExecutionTask") -> str:
         all_acts = q.all(limit=500)
         executed = sum(1 for a in all_acts if a.status == "EXECUTED")
         pending  = sum(1 for a in all_acts if a.status == "PENDING")
-        lines.append(f"Snapshot système :")
+        lines.append("Snapshot système :")
         lines.append(f"  Actions exécutées : {executed}")
         lines.append(f"  Actions en attente: {pending}")
     except Exception as exc:

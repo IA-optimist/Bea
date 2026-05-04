@@ -17,6 +17,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -82,7 +83,7 @@ class LessonMemory:
                 json.dumps([le.to_dict() for le in self._lessons], indent=2, default=str),
                 encoding="utf-8")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='lesson_memory.py')
 
     def _load(self) -> None:
         if self._path.exists():
@@ -100,4 +101,4 @@ class LessonMemory:
                         timestamp=d.get("timestamp", 0),
                     ))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='lesson_memory.py')

@@ -17,13 +17,14 @@ Usage :
 """
 
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import asyncio
 import hashlib
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -74,14 +75,16 @@ class Surprise:
 # LLM Client interface (adaptateur)
 # ─────────────────────────────────────────────
 
-class LLMClient:
+class LLMClient(ABC):
     """
     Interface minimale. Implémentez pour votre backend (OpenRouter, Ollama, etc.)
     Exemple d'implémentation pour OpenRouter disponible dans jarvis_core/llm/openrouter.py
     """
+    @abstractmethod
     async def complete(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
         raise NotImplementedError
 
+    @abstractmethod
     async def embed(self, text: str) -> list[float]:
         raise NotImplementedError
 
@@ -352,19 +355,22 @@ class CreativeEngine:
 # 2. CROSS-MISSION CONNECTOR
 # ─────────────────────────────────────────────
 
-class MissionStore:
+class MissionStore(ABC):
     """
     Interface vers le store de missions (à implémenter avec Qdrant/pgvector).
     Contrat minimal pour CrossMissionConnector.
     """
+    @abstractmethod
     def get_mission(self, mission_id: str) -> dict | None:
         raise NotImplementedError
 
+    @abstractmethod
     def search_by_embedding(
         self, embedding: list[float], top_k: int
     ) -> list[dict]:
         raise NotImplementedError
 
+    @abstractmethod
     def get_all_missions(self) -> list[dict]:
         raise NotImplementedError
 
@@ -873,3 +879,129 @@ class JarvisCreativePipeline:
             ]
 
         return result
+
+
+# ─────────────────────────────────────────────
+# JARVIS NATIVE ADAPTERS
+# Connectent le CreativeEngine aux systèmes JarvisMax existants.
+# ─────────────────────────────────────────────
+
+class JarvisLLMClient(LLMClient):
+    """
+    Adaptateur LLM pour CreativeEngine utilisant OpenRouter (LLMFactory).
+    Fallback : OllamaLLMClient si OpenRouter indisponible.
+    Embed : EmbeddingProvider (nomic-embed-text via Ollama ou MiniLM local).
+    """
+
+    def __init__(self, role: str = "fast"):
+        self._role = role
+        self._embed_provider = None
+
+    def _get_factory(self):
+        from core.llm_factory import LLMFactory
+        from config.settings import get_settings
+        return LLMFactory(get_settings())
+
+    def _get_embed_provider(self):
+        if self._embed_provider is None:
+            from memory.embeddings import EmbeddingProvider
+            from config.settings import get_settings
+            self._embed_provider = EmbeddingProvider(get_settings(), provider="auto")
+        return self._embed_provider
+
+    async def complete(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
+        try:
+            factory = self._get_factory()
+            llm = factory.get(self._role)
+            from langchain_core.messages import HumanMessage
+            response = await llm.ainvoke([HumanMessage(content=prompt)])
+            return response.content if hasattr(response, "content") else str(response)
+        except Exception as e:
+            logger.warning(f"JarvisLLMClient.complete fallback: {e}")
+            # Fallback Ollama
+            from config.settings import get_settings
+            host = get_settings().ollama_host
+            ollama = OllamaLLMClient(ollama_url=host, model="tinyllama")
+            return await ollama.complete(prompt, temperature, max_tokens)
+
+    async def embed(self, text: str) -> list[float]:
+        try:
+            return await self._get_embed_provider().embed(text)
+        except Exception as e:
+            logger.warning(f"JarvisLLMClient.embed failed: {e}")
+            return [0.0] * 768
+
+
+class JarvisMissionStore(MissionStore):
+    """
+    Implémentation de MissionStore branchée sur MissionSystem + Qdrant.
+    Permet à CrossMissionConnector de chercher des analogies dans les missions passées.
+    """
+
+    def __init__(self):
+        self._embed_provider = None
+
+    def _get_embed(self):
+        if self._embed_provider is None:
+            from memory.embeddings import EmbeddingProvider
+            from config.settings import get_settings
+            self._embed_provider = EmbeddingProvider(get_settings(), provider="auto")
+        return self._embed_provider
+
+    def get_mission(self, mission_id: str) -> dict | None:
+        try:
+            from core.mission_system import get_mission_system
+            ms = get_mission_system()
+            ctx = ms._missions.get(mission_id)
+            if ctx is None:
+                return None
+            return {
+                "mission_id": ctx.mission_id,
+                "goal": ctx.goal,
+                "status": ctx.status.value if hasattr(ctx.status, "value") else str(ctx.status),
+                "result": ctx.result or "",
+            }
+        except Exception:
+            return None
+
+    def get_all_missions(self) -> list[dict]:
+        try:
+            from core.mission_system import get_mission_system
+            ms = get_mission_system()
+            return [
+                {
+                    "mission_id": ctx.mission_id,
+                    "goal": ctx.goal,
+                    "result": ctx.result or "",
+                }
+                for ctx in ms._missions.values()
+                if ctx.result
+            ]
+        except Exception:
+            return []
+
+    def search_by_embedding(self, embedding: list[float], top_k: int) -> list[dict]:
+        """Search missions by vector similarity via Qdrant."""
+        try:
+            from qdrant_client import QdrantClient
+            from config.settings import get_settings
+            s = get_settings()
+            client = QdrantClient(url=s.qdrant_url, api_key=s.qdrant_api_key, https=False)
+            results = client.search(
+                collection_name="jarvismax_memory_384",
+                query_vector=embedding[:384],  # Adapt to collection dims
+                limit=top_k,
+                with_payload=True,
+            )
+            return [
+                {
+                    "mission_id": r.payload.get("key", ""),
+                    "goal": r.payload.get("content", "")[:200],
+                    "score": r.score,
+                }
+                for r in results
+            ]
+        except Exception as e:
+            logger.debug(f"search_by_embedding failed: {e}")
+            # Fallback: keyword search over in-memory missions
+            return self.get_all_missions()[:top_k]

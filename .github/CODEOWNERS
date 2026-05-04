@@ -1,0 +1,56 @@
+# CODEOWNERS — JarvisMax
+#
+# Chaque ligne définit un propriétaire par pattern de chemin.
+# Le dernier pattern match l'emporte. Les owners sont requis
+# à la review des PR touchant leurs fichiers (si "Require code
+# owner reviews" est activé dans les branch protection rules).
+#
+# Format : <pattern>  @user1 @user2 @team
+# Docs : https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# ── Default owner — tout fichier non couvert ci-dessous ─────────
+*   @UniTy01
+
+# ── Surface de sécurité (review double recommandée) ─────────────
+/api/_deps.py                  @UniTy01
+/api/auth.py                   @UniTy01
+/api/middleware.py             @UniTy01
+/api/access_enforcement.py     @UniTy01
+/api/security_headers.py       @UniTy01
+/api/token_utils.py            @UniTy01
+/api/rate_limit_middleware.py  @UniTy01
+/api/access_tokens.py          @UniTy01
+/security/                     @UniTy01
+/docs/SECURITY_AUDIT.md        @UniTy01
+/.github/workflows/            @UniTy01
+/.pre-commit-config.yaml       @UniTy01
+/.gitleaks.toml                @UniTy01
+/.secrets.baseline             @UniTy01
+/.env.example                  @UniTy01
+/.env.production.example       @UniTy01
+/Dockerfile                    @UniTy01
+/docker-compose*.yml           @UniTy01
+/Caddyfile                     @UniTy01
+
+# ── Kernel (stable, review soigneuse) ──────────────────────────
+/kernel/                       @UniTy01
+/kernel/contracts/             @UniTy01
+
+# ── Core orchestration (cœur du système) ───────────────────────
+/core/meta_orchestrator.py     @UniTy01
+/core/orchestration/           @UniTy01
+/core/mission_system.py        @UniTy01
+/core/state.py                 @UniTy01
+/core/event_stream.py          @UniTy01
+
+# ── Tests gate (ne pas désactiver sans revue) ──────────────────
+/tests/test_api_structure.py               @UniTy01
+/tests/test_access_enforcement.py          @UniTy01
+/tests/test_cookie_auth.py                 @UniTy01
+/tests/test_mission_runner_protocol.py     @UniTy01
+/tests/test_kernel.py                      @UniTy01
+/tests/test_secret_vault.py                @UniTy01
+/tests/test_identity_manager.py            @UniTy01
+/tests/test_terminal_state_truth.py        @UniTy01
+/tests/test_canonical_mission_persistence.py  @UniTy01
+/tests/test_production_hardening_p34.py    @UniTy01

@@ -7,14 +7,14 @@ Aucun breaking change sur les routes existantes.
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Header
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v2/objectives", tags=["objectives"], dependencie
 _ENGINE_AVAILABLE = False
 try:
     from core.objectives.objective_engine import get_objective_engine
-    from core.objectives.objective_cleanup import run_cleanup
+    from core.objectives.objective_cleanup import run_cleanup  # noqa: F401
     _ENGINE_AVAILABLE = True
 except ImportError as _e:
     logger.warning(f"[API_OBJECTIVES] engine not available: {_e}")

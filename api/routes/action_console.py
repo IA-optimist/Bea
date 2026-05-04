@@ -17,9 +17,9 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from typing import Optional
 
 from api._deps import _check_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +46,10 @@ async def list_pending(
         # Also include module approval tickets
         try:
             from core.modules.approval_notifier import ApprovalNotifier
-            notifier = ApprovalNotifier()
+            ApprovalNotifier()
             # Module tickets are separate — include if available
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='action_console.py')
         return {"pending": pending, "count": len(pending)}
     except Exception as e:
         logger.warning(f"pending_list_failed: {e}")
@@ -136,7 +136,7 @@ async def console_stats(
     try:
         from core.mission_guards import get_guardian
         result["active_budgets"] = len(get_guardian().active_missions())
-    except Exception as e:
+    except Exception:
         result["active_budgets"] = 0
     return result
 

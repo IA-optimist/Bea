@@ -15,7 +15,6 @@ Messages are user-friendly (no raw error codes).
 """
 from __future__ import annotations
 
-from typing import Optional
 from api.auth import verify_token, has_permission
 from api.access_tokens import get_token_manager, AccessToken
 
@@ -56,8 +55,7 @@ _PUBLIC_PATHS = {
     "/redoc",
 }
 
-import os
-import sys
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Paths that match by prefix (static files)
 _PUBLIC_PREFIXES = (
@@ -208,7 +206,7 @@ def record_mission_usage(token: AccessToken | None) -> None:
             manager = get_token_manager()
             manager._save()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='access_enforcement.py')
 
 
 def get_user_friendly_error(status_code: int, detail: str = "") -> str:

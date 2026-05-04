@@ -28,14 +28,12 @@ Usage:
 """
 from __future__ import annotations
 
-import json
-import math
 import threading
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field, asdict
-from pathlib import Path
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -275,7 +273,7 @@ class MetricsRegistry:
         try:
             self._counters[name].inc(self._labels_key(labels), value)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_counter(self, name: str, labels: dict[str, str] | None = None) -> float:
         return self._counters[name].get(self._labels_key(labels))
@@ -290,7 +288,7 @@ class MetricsRegistry:
         try:
             self._histograms[name].observe(value, self._labels_key(labels))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_histogram(self, name: str,
                       labels: dict[str, str] | None = None) -> dict[str, float]:
@@ -303,7 +301,7 @@ class MetricsRegistry:
         try:
             self._gauges[name].set(value, self._labels_key(labels))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     def get_gauge(self, name: str,
                   labels: dict[str, str] | None = None) -> float:
@@ -320,7 +318,7 @@ class MetricsRegistry:
                 mission_id=mission_id, model_id=model_id, tool_name=tool_name))
             self.inc("failures_total", labels={"category": category, "component": component})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     # ── Cost tracking ─────────────────────────────────────────
 
@@ -330,7 +328,7 @@ class MetricsRegistry:
             self.costs.record(model_id, tokens, cost_tier, mission_id, actual_cost)
             self.inc("estimated_cost_total", labels={"model_id": model_id})
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='metrics_store.py')
 
     # ── Snapshot ──────────────────────────────────────────────
 
@@ -398,7 +396,7 @@ class MetricsRegistry:
         if isinstance(completed, dict): completed = completed.get("_total", 0)
         if isinstance(failed, dict): failed = failed.get("_total", 0)
         rate = round(completed / submitted * 100, 1) if submitted > 0 else 0
-        lines.append(f"── Missions ──")
+        lines.append("── Missions ──")
         lines.append(f"  Submitted: {int(submitted)}  Completed: {int(completed)}  Failed: {int(failed)}  Rate: {rate}%")
 
         # Mission duration
@@ -409,7 +407,7 @@ class MetricsRegistry:
         # Model routing
         model_selected = c.get("model_selected_total", {})
         if isinstance(model_selected, dict) and model_selected:
-            lines.append(f"\n── Model Routing ──")
+            lines.append("\n── Model Routing ──")
             for k, v in sorted(model_selected.items(), key=lambda x: -x[1] if isinstance(x[1], (int, float)) else 0):
                 if k == "_total": continue
                 lines.append(f"  {k}: {int(v)} calls")
@@ -425,7 +423,7 @@ class MetricsRegistry:
         if isinstance(tool_total, dict): tool_total = tool_total.get("_total", 0)
         if isinstance(tool_fail, dict): tool_fail = tool_fail.get("_total", 0)
         if tool_total:
-            lines.append(f"\n── Executor ──")
+            lines.append("\n── Executor ──")
             lines.append(f"  Tool calls: {int(tool_total)}  Failures: {int(tool_fail)}  "
                          f"Rate: {round((1 - tool_fail / tool_total) * 100, 1) if tool_total > 0 else 0}%")
             active = g.get("executor_active_tasks", 0)
@@ -435,7 +433,7 @@ class MetricsRegistry:
         mem_total = c.get("memory_entries_total", 0)
         if isinstance(mem_total, dict): mem_total = mem_total.get("_total", 0)
         if mem_total:
-            lines.append(f"\n── Memory ──")
+            lines.append("\n── Memory ──")
             lines.append(f"  Entries: {int(mem_total)}")
             hit_rate = g.get("memory_search_hit_rate", 0)
             if hit_rate: lines.append(f"  Search hit rate: {round(hit_rate * 100, 1)}%")
@@ -448,20 +446,20 @@ class MetricsRegistry:
             exp_rejected = c.get("experiments_rejected_total", 0)
             if isinstance(exp_promoted, dict): exp_promoted = exp_promoted.get("_total", 0)
             if isinstance(exp_rejected, dict): exp_rejected = exp_rejected.get("_total", 0)
-            lines.append(f"\n── Improvement Loop ──")
+            lines.append("\n── Improvement Loop ──")
             lines.append(f"  Experiments: {int(exp_started)}  Promoted: {int(exp_promoted)}  Rejected: {int(exp_rejected)}")
 
         # Failure patterns
         fp = s["failure_patterns"]
         if fp:
-            lines.append(f"\n── Failure Patterns (1h) ──")
+            lines.append("\n── Failure Patterns (1h) ──")
             for cat, count in sorted(fp.items(), key=lambda x: -x[1]):
                 lines.append(f"  {cat}: {count}")
 
         # Costs
         costs = s["costs"]
         if costs["total_estimated_usd"] > 0:
-            lines.append(f"\n── Estimated Cost ──")
+            lines.append("\n── Estimated Cost ──")
             lines.append(f"  Total: ${costs['total_estimated_usd']:.4f}")
             for m, c_val in list(costs["by_model"].items())[:5]:
                 lines.append(f"  {m}: ${c_val:.4f}")

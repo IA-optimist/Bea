@@ -295,5 +295,6 @@ class WorkflowEngine:
 # ── Helper compat asyncio ─────────────────────────────────────
 
 def asyncio_is_coroutine_function(f) -> bool:
-    import asyncio, inspect
+    import asyncio
+    import inspect
     return asyncio.iscoroutinefunction(f) or inspect.iscoroutinefunction(f)

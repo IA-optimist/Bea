@@ -5,14 +5,13 @@ action à l'aide d'un appel structuré LLM (Function Calling / JSON Schema).
 """
 import json
 import structlog
-from typing import Optional
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 from core.events import (
-    Event, Action, Observation, TerminalAction, FileReadAction,
+    Action, Observation, TerminalAction, FileReadAction,
     FileWriteAction, FileEditAction, FinishAction,
-    BrowserNavigateAction, DelegateAction, SaveMemoryAction, 
-    PythonExecuteAction, BackgroundAction, AnyAction
+    SaveMemoryAction, 
+    PythonExecuteAction, BackgroundAction
 )
 from core.event_stream import EventStream
 # Adaptateur fictif pour utiliser la LLM Factory du projet (ex: OpenAI/Claude)

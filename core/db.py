@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-import time
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 _DB_PATH = Path("workspace/jarvismax.db")
 _lock = threading.Lock()
@@ -220,5 +220,5 @@ def reset_singleton():
             try:
                 _conn.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='db.py')
             _conn = None

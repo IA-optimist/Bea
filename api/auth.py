@@ -98,12 +98,12 @@ def _check_auth_password(username: str, password: str) -> Optional[str]:
     return create_access_token({"sub": user["username"], "role": user.get("role", "user")})
 
 
-def create_access_token(data: dict, expires_in: int = 3600) -> str:
+def create_access_token(data: dict, expires_in: int = 2592000) -> str:
     """Create a JWT access token."""
     if _JWT_AVAILABLE:
         payload = {**data, "exp": int(time.time()) + expires_in, "iat": int(time.time())}
         return _jwt.encode(payload, _secret(), algorithm="HS256")
-    import hashlib, json
+    import json
     payload_str = json.dumps(data, sort_keys=True)
     sig = hashlib.sha256((payload_str + _secret()).encode()).hexdigest()[:16]
     return f"token.{sig}"
@@ -136,7 +136,13 @@ def verify_token(token_str: str) -> Optional[dict]:
                     "auth_type": "access_token",
                 }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auth.py')
+        # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
+        import os as _os
+        import hmac as _hmac
+        _static = _os.environ.get('JARVIS_API_TOKEN', '')
+        if _static and _hmac.compare_digest(token_str.encode(), _static.encode()):
+            return {'username': 'api', 'role': 'admin', 'auth_type': 'static'}
         return None
 
     # Path 2: JWT token
@@ -149,7 +155,7 @@ def verify_token(token_str: str) -> Optional[dict]:
                 "auth_type": "jwt",
             }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='auth.py')
 
     # Path 3: Static API token fallback
     from config.settings import get_settings
@@ -187,6 +193,7 @@ def require_permission(user: dict, permission: str) -> bool:
 # ========================================
 
 from fastapi import Header, HTTPException, status
+_silent_log = __import__("structlog").get_logger(__name__)
 
 async def get_current_user(
     authorization: str = Header(None)

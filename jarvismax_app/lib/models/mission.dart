@@ -136,6 +136,22 @@ class Mission {
         status: 'UNKNOWN',
       );
 
+
+  /// Retire le wrapper ExecutionOutcome si present dans l'output brut
+  static String _cleanOutput(String raw) {
+    if (raw.isEmpty) return raw;
+    if (raw.startsWith('ExecutionOutcome(')) {
+      final idx = raw.indexOf('result=');
+      if (idx != -1) {
+        var out = raw.substring(idx + 7);
+        if (out.startsWith('"') || out.startsWith("'")) out = out.substring(1);
+        if (out.endsWith('")')||out.endsWith("')")){out=out.substring(0,out.length-2);}
+        return out;
+      }
+    }
+    return raw;
+  }
+
   factory Mission.fromJson(Map<String, dynamic> j) {
     try {
       final dt = j['decision_trace'] as Map?;
@@ -161,7 +177,7 @@ class Mission {
         approvalReason: j['approval_reason']?.toString(),
         // Canonical v3 uses 'result'; legacy uses 'final_output' or 'output'
         finalOutput:
-            j['final_output']?.toString() ?? j['result']?.toString() ?? j['output']?.toString() ?? '',
+            _cleanOutput(j['final_output']?.toString() ?? j['result']?.toString() ?? j['output']?.toString() ?? ''),
         // Canonical v3 returns agents as list under 'agents'; legacy uses 'agents_selected'
         selectedAgents: _lstr(j['agents_selected'] ?? j['agents']),
         skippedAgents: _lstr(j['skipped_agents']),

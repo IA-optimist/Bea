@@ -7,7 +7,7 @@ import hmac
 import json as _json
 import os
 import time
-from typing import Any, Optional
+from typing import Optional
 
 import structlog
 from fastapi import Depends, Header, HTTPException, Request
@@ -25,7 +25,11 @@ def require_auth(
 ) -> dict:
     """Canonical auth dependency for FastAPI handlers.
 
-    Reads token from X-Jarvis-Token or Authorization: Bearer.
+    Reads token (priorité descendante) :
+      1. cookie `jarvis_token` (HttpOnly — XSS-safe)
+      2. header `X-Jarvis-Token`
+      3. header `Authorization: Bearer`
+
     Returns user dict on success, raises 401 on failure.
     Used as: Depends(require_auth)
 
@@ -42,7 +46,13 @@ def require_auth(
     from api.token_utils import strip_bearer
     from api.auth import verify_token
 
-    token = x_jarvis_token or (strip_bearer(authorization) if authorization else None)
+    # Cookie first (XSS-safe HttpOnly), then headers.
+    cookie_token = request.cookies.get("jarvis_token") if request else None
+    token = (
+        cookie_token
+        or x_jarvis_token
+        or (strip_bearer(authorization) if authorization else None)
+    )
 
     if not token:
         raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
@@ -126,7 +136,30 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if not _REQUIRE_AUTH:
         log.warning("auth_disabled", reason="JARVIS_REQUIRE_AUTH=false — dev mode active")
         return
-    
+
+    # 6. Auth required mais AUCUN système configuré → 503 (config error).
+    # Signale qu'on ne peut pas authentifier, plutôt que 401 qui suggère un
+    # mauvais token. Fail-closed + observability claire.
+    if not _API_TOKEN:
+        try:
+            from config.settings import get_settings
+            _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
+            _jwt_configured = _jwt_secret and _jwt_secret != "change-me-in-production"
+        except Exception:
+            _jwt_configured = False
+        if not _jwt_configured:
+            log.critical(
+                "auth_misconfigured",
+                reason="JARVIS_REQUIRE_AUTH=true but no JARVIS_API_TOKEN nor JARVIS_SECRET_KEY",
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Authentication system not configured: set JARVIS_API_TOKEN "
+                    "or JARVIS_SECRET_KEY (JWT) in the environment."
+                ),
+            )
+
     # No valid token found and auth required → reject
     raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 
@@ -229,7 +262,7 @@ def _extract_final_output(text: str) -> str:
             )
             return str(readable)  # no truncation — full response preserved for the user
         except (_json.JSONDecodeError, Exception):
-            pass
+            _silent_log.debug("suppressed_exception", src='_deps.py')
     return text
 
 
@@ -239,6 +272,7 @@ def _extract_final_output(text: str) -> str:
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
+_silent_log = __import__("structlog").get_logger(__name__)
 
 # Lazy init database engine
 _db_engine = None

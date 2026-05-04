@@ -18,6 +18,7 @@ import asyncio
 import hashlib
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -89,7 +90,7 @@ class MemoryStore:
                     await self.store(f"file:{p.name}", text, tags=["workspace", p.suffix])
                     indexed += 1
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='store_legacy.py')
         log.info("workspace_indexed", count=indexed)
         return indexed
 

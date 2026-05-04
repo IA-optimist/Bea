@@ -96,7 +96,7 @@ async def get_readiness(_user: dict = Depends(require_auth)):
 @router.get("/summary")
 async def get_summary(_user: dict = Depends(require_auth)):
     """Concise self-model summary with readiness, limitations, autonomy."""
-    from core.self_model import build_self_model, query, serialize
+    from core.self_model import build_self_model, query
     model = build_self_model()
     return {
         "ok": True,

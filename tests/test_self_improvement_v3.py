@@ -15,11 +15,8 @@ Tests the complete pipeline:
 """
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -85,7 +82,7 @@ class TestPromotionPipelineBridge:
 
         with patch("core.self_improvement.engine.SelfImprovementEngine._run_safe_executor") as mock_safe:
             mock_safe.return_value = {"decision": "APPLIED", "output": "done"}
-            result = engine._execute_candidate(candidate)
+            engine._execute_candidate(candidate)
 
         mock_safe.assert_called_once_with(candidate)
 
@@ -95,7 +92,6 @@ class TestPromotionPipelineBridge:
         engine = SelfImprovementEngine()
         candidate = MockWorkspaceCandidate()
 
-        promotion_called = []
 
         with patch("core.self_improvement.engine.SelfImprovementEngine._run_promotion_pipeline") as mock_promo:
             with patch("core.self_improvement.engine.SelfImprovementEngine._run_safe_executor") as mock_safe:
@@ -414,8 +410,6 @@ class TestNoAutoApply:
         candidate = MockCandidate(code_patch=SAMPLE_DIFF, risk="LOW")
 
         # Track all file writes
-        written_files = []
-        original_open = open
 
         mock_sandbox = MagicMock()
         mock_sandbox.success = True

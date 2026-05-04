@@ -17,19 +17,19 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
 
 from core.identity.identity_schema import (
-    Identity, IdentityType, IdentityStatus, Environment, SessionState, SecretLink,
+    Identity, SecretLink,
 )
 from core.identity.identity_templates import (
-    IdentityTemplate, get_template, list_templates, TEMPLATES,
+    IdentityTemplate, get_template,
 )
 from core.identity.identity_policy import (
     IdentityPolicy, IdentityPolicyEngine, check_identity_permission,
 )
-from core.identity.identity_graph import IdentityGraph, EdgeType
+from core.identity.identity_graph import IdentityGraph
 from core.identity.identity_audit import IdentityAuditLog, IdentityAction
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +378,7 @@ class IdentityManager:
                 try:
                     self._vault.revoke_secret(secret_id, role="admin")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
 
         self._persist()
         self._audit.record(IdentityAction.REVOKE, identity_id, role)
@@ -401,7 +401,7 @@ class IdentityManager:
                 try:
                     self._vault.delete_secret(secret_id, role="admin")
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
 
         del self._identities[identity_id]
         self._policies.pop(identity_id, None)

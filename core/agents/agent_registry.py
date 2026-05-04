@@ -15,11 +15,11 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Optional
 from enum import Enum
 
 from core.agents.role_definitions import (
-    ROLE_DEFINITIONS, role_for_agent, agent_role_map,
+    ROLE_DEFINITIONS,
 )
 
 log = structlog.get_logger("jarvis.agent_registry")

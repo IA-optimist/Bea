@@ -5,6 +5,7 @@ Metacognitive awareness - agent evaluates its own output quality.
 from __future__ import annotations
 from typing import Optional, Dict, Any
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -39,15 +40,24 @@ class ConfidenceScorer:
         prompt = self._build_scoring_prompt(task, output, context)
         
         try:
-            response = self.llm.chat.completions.create(
-                model="anthropic/claude-3.7-sonnet",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-                temperature=0.3  # Lower temp for consistent scoring
-            )
-            
-            content = response.choices[0].message.content
-            result = self._parse_score_response(content)
+            # Compat: use LangChain invoke (sync) if available; fallback to heuristic
+            content = None
+            if hasattr(self.llm, 'invoke'):
+                from langchain_core.messages import HumanMessage
+                resp = self.llm.invoke([HumanMessage(content=prompt)])
+                content = resp.content if hasattr(resp, 'content') else str(resp)
+            elif hasattr(self.llm, 'chat'):
+                response = self.llm.chat.completions.create(
+                    model="google/gemini-2.0-flash-001",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=300,
+                    temperature=0.3,
+                )
+                content = response.choices[0].message.content
+            result = self._parse_score_response(content) if content else {
+                "confidence": 0.6, "reasoning": "heuristic",
+                "issues": [], "should_retry": False
+            }
             
             log.info(
                 "confidence_scored",
@@ -67,6 +77,25 @@ class ConfidenceScorer:
                 "should_retry": False
             }
     
+    async def _llm_call(self, prompt: str, max_tokens: int = 300, temperature: float = 0.3) -> str:
+        """Compat helper: works with both LangChain ChatOpenAI and raw OpenAI client."""
+        try:
+            if hasattr(self.llm, 'ainvoke'):
+                from langchain_core.messages import HumanMessage
+                resp = await self.llm.ainvoke([HumanMessage(content=prompt)])
+                return resp.content if hasattr(resp, 'content') else str(resp)
+            else:
+                resp = self.llm.chat.completions.create(
+                    model="google/gemini-2.0-flash-001",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,
+                    temperature=temperature
+                )
+                return resp.choices[0].message.content
+        except Exception as e:
+            log.error("self_confidence_llm_failed", error=str(e))
+            return None
+
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
         """Build prompt for self-evaluation."""
         
@@ -113,8 +142,8 @@ SHOULD_RETRY: NO"""
                 try:
                     score = float(line.split(":", 1)[1].strip())
                     result["confidence"] = max(0.0, min(1.0, score))
-                except:
-                    pass
+                except Exception:
+                    _silent_log.debug("suppressed_exception", src='self_confidence.py')
             
             elif line.startswith("REASONING:"):
                 result["reasoning"] = line.split(":", 1)[1].strip()

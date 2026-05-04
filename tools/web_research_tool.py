@@ -5,7 +5,6 @@ No API key required. Fail-open on network errors.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from tools.base import BaseTool, ToolRisk
 

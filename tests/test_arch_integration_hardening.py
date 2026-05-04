@@ -24,14 +24,8 @@ Areas covered:
 """
 from __future__ import annotations
 
-import asyncio
-import inspect
-import sys
-import threading
-import time
-import types
 import unittest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +124,7 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
 
     def test_meta_orchestrator_sets_dispatcher_on_delegate(self):
         """Regression: run_mission() must set delegate.capability_dispatcher before supervise()."""
-        import ast, pathlib
+        import pathlib
         src = pathlib.Path("core/meta_orchestrator.py").read_text()
         # Verify the wiring code is present in source
         self.assertIn(
@@ -165,7 +159,7 @@ class TestRiskEngineContractSafety(unittest.TestCase):
     """Risk engine failure produces a safe fallback RiskReport, never raises."""
 
     def _make_action(self, action_type="write_file", target="test.txt"):
-        from core.state import ActionSpec, RiskLevel
+        from core.state import ActionSpec
         return ActionSpec(
             id="test-action-001",
             action_type=action_type,
@@ -312,7 +306,6 @@ class TestSupervisorTimeoutCoherence(unittest.IsolatedAsyncioTestCase):
 
     async def test_supervise_uses_wait_for_with_attempt_timeout(self):
         """Source-level check: supervise() wraps execute_fn in asyncio.wait_for."""
-        import inspect
         import pathlib
         src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text()
         self.assertIn("asyncio.wait_for", src)

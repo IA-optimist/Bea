@@ -28,6 +28,13 @@ import pytest
 # on security layer availability (qdrant, structlog) inside test environments.
 # DISABLED FOR SECURITY TESTS: # os.environ.setdefault("JARVIS_SKIP_IMPROVEMENT_GATE", "1")
 
+# ── Test auth token — accepté par api/_deps._check_auth ─────────────────────
+# La plupart des tests API envoient "Authorization: Bearer test". On aligne
+# JARVIS_API_TOKEN pour qu'ils passent sans monkeypatch individuel.
+# Tests qui utilisent un autre token (ex. "Bearer t" dans test_mcp_registry)
+# configurent leur propre override via monkeypatch.setenv / setattr.
+os.environ.setdefault("JARVIS_API_TOKEN", "test")
+
 # ── Pre-load key modules so test-level mocks cannot overwrite them ──────────
 # Tests that do sys.modules.setdefault("some.module", MagicMock()) can only
 # install their mock if the real module is NOT already in sys.modules.

@@ -2,7 +2,6 @@
 integrations/mcp/mcp_health.py — Periodic MCP server health monitoring.
 """
 from __future__ import annotations
-import asyncio
 import structlog
 from integrations.mcp.mcp_registry import get_mcp_registry
 from integrations.mcp.mcp_adapter import MCPAdapter

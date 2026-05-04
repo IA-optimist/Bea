@@ -1,113 +1,121 @@
-"""
-core/orchestration/output_formatter.py — Structured output formatting.
+"""Output formatting helpers for mission results.
 
-Takes raw mission output and produces cleaner, more actionable results.
-Applies formatting based on task type: summaries, reports, lists, JSON.
+Nettoie les préambules conversationnels et les filler LLM, extrait le JSON
+des réponses markdown, et préserve les sorties structurées.
 
-Does NOT hallucinate structure. Only cleans and organizes existing content.
+Utilisé par core/meta_orchestrator.py:1811 (phase de mission finalization)
+et par test_practical_usefulness.
 """
 from __future__ import annotations
 
 import json
 import re
+from typing import Any, Optional
 
-import structlog
+# Préambules LLM typiques à supprimer (match en début de texte).
+_PREAMBLE_PATTERNS = [
+    r"^\s*(sure|certainly|of course|absolutely|yes)[!.,]?\s*(here'?s|here is|let me)?[^\n]*[\n]+",
+    r"^\s*here'?s\s+(?:the|a|an|your)?[^\n]*[\n]+",
+    r"^\s*i'?(ll|d be happy to|m going to)[^\n]*[\n]+",
+    r"^\s*let me[^\n]*[\n]+",
+    r"^\s*(okay|ok|alright)[!.,]?\s*(?:here'?s|here is|let me)?[^\n]*[\n]+",
+]
 
-log = structlog.get_logger("orchestration.output_formatter")
+# Trailers conversationnels à supprimer (en fin de texte).
+_TRAILER_PATTERNS = [
+    r"\n+\s*let me know if[^.]*[.!?]?\s*$",
+    r"\n+\s*(?:feel free|happy) to[^.]*[.!?]?\s*$",
+    r"\n+\s*(?:hope|i hope) (?:this|that)[^.]*[.!?]?\s*$",
+    r"\n+\s*(?:is there anything|anything else)[^.]*\?\s*$",
+    r"\n+\s*(?:do you have|if you have)[^.]*\?\s*$",
+]
 
 
-def format_output(
-    raw_output: str,
-    task_type: str = "other",
-    goal: str = "",
-) -> str:
+def _is_already_structured(text: str) -> bool:
+    """True si le texte semble déjà formaté (markdown, liste, JSON, ...)."""
+    t = text.lstrip()
+    if t.startswith(("#", "- ", "* ", "1.", "```", "|", "{", "[")):
+        return True
+    if text.count("\n#") >= 1 or text.count("\n- ") >= 2:
+        return True
+    return False
+
+
+def format_output(text: str, task_type: Optional[str] = None, goal: Optional[str] = None) -> str:
+    """Clean conversational LLM output while preserving structured content.
+
+    Args:
+        text: raw LLM output.
+        task_type: optional hint (analysis, query, deployment, ...). Hook pour
+            future per-type formatting.
+        goal: optional original goal (hook pour future).
+
+    Returns:
+        Cleaned text. Preserves whitespace si vide, ou si déjà structuré.
     """
-    Format raw output based on task type.
-    Returns cleaned output. Never invents content.
+    if not text:
+        return text
+    # Preserve pour whitespace-only.
+    if not text.strip():
+        return text
+    # Already-structured : passthrough (tests expect exact equality).
+    if _is_already_structured(text):
+        return text
+
+    out = text
+    for patt in _PREAMBLE_PATTERNS:
+        out = re.sub(patt, "", out, count=1, flags=re.IGNORECASE)
+    for patt in _TRAILER_PATTERNS:
+        out = re.sub(patt, "", out, count=1, flags=re.IGNORECASE)
+    return out.strip() if out != text else text
+
+
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", re.DOTALL)
+
+
+def try_extract_json(text: str) -> Optional[Any]:
+    """Extrait un objet/tableau JSON depuis du texte, renvoie None sur échec.
+
+    Gère :
+      - ```` ```json\n{...}\n``` ```` fences markdown
+      - Direct JSON
+      - JSON embarqué dans du texte plus grand (greedy first match)
     """
-    if not raw_output or not raw_output.strip():
-        return raw_output
+    if not text:
+        return None
 
-    output = raw_output.strip()
-
-    # Remove common LLM artifacts
-    output = _clean_artifacts(output)
-
-    # Task-type-specific formatting
-    if task_type in ("research", "analysis"):
-        output = _format_analysis(output, goal)
-    elif task_type == "query":
-        output = _format_answer(output)
-
-    return output
-
-
-def _clean_artifacts(text: str) -> str:
-    """Remove common LLM noise without changing content."""
-    # Remove "Sure! Here's..." preambles
-    preamble_patterns = [
-        r"^(?:Sure[!,.]?\s*)?(?:Here'?s?\s+(?:is\s+)?(?:the\s+)?(?:a\s+)?)",
-        r"^(?:Certainly[!,.]?\s*)",
-        r"^(?:Of course[!,.]?\s*)",
-        r"^(?:I'd be happy to help[!,.]?\s*)",
-    ]
-    for pattern in preamble_patterns:
-        text = re.sub(pattern, "", text, count=1, flags=re.IGNORECASE).strip()
-
-    # Remove trailing "Let me know if..." filler
-    trailing_patterns = [
-        r"\n*(?:Let me know if (?:you )?(?:need|want|have).*$)",
-        r"\n*(?:Feel free to (?:ask|reach).*$)",
-        r"\n*(?:Hope (?:this|that) helps[!.]?\s*$)",
-        r"\n*(?:Is there anything else.*$)",
-    ]
-    for pattern in trailing_patterns:
-        text = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
-
-    return text
-
-
-def _format_analysis(text: str, goal: str) -> str:
-    """Light formatting for analysis/research outputs."""
-    # If output lacks structure but is long, it's fine as-is
-    if len(text) < 100:
-        return text
-
-    # If it already has markdown headers, leave it
-    if re.search(r'^#{1,3}\s', text, re.MULTILINE):
-        return text
-
-    # If it has bullet points, it's already structured
-    if text.count('\n- ') >= 2 or text.count('\n* ') >= 2:
-        return text
-
-    return text
-
-
-def _format_answer(text: str) -> str:
-    """Format simple query answers."""
-    # Remove unnecessary verbosity for simple answers
-    lines = text.strip().split('\n')
-    if len(lines) == 1 and len(text) < 200:
-        return text  # Already concise
-
-    return text
-
-
-def try_extract_json(text: str) -> dict | list | None:
-    """Try to extract JSON from text output. Returns None if not JSON."""
-    # Try direct parse
-    try:
-        return json.loads(text)
-    except (json.JSONDecodeError, ValueError):
-        pass
-
-    # Try to find JSON block in markdown
-    m = re.search(r'```(?:json)?\s*\n(.*?)\n```', text, re.DOTALL)
+    # 1. Markdown-fenced JSON.
+    m = _JSON_FENCE_RE.search(text)
     if m:
         try:
             return json.loads(m.group(1))
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError:
             pass
 
+    # 2. Direct parse.
+    try:
+        return json.loads(text.strip())
+    except json.JSONDecodeError:
+        pass
+
+    # 3. First balanced {...} or [...].
+    for open_ch, close_ch in (("{", "}"), ("[", "]")):
+        start = text.find(open_ch)
+        if start == -1:
+            continue
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == open_ch:
+                depth += 1
+            elif text[i] == close_ch:
+                depth -= 1
+                if depth == 0:
+                    candidate = text[start:i + 1]
+                    try:
+                        return json.loads(candidate)
+                    except json.JSONDecodeError:
+                        break
     return None
+
+
+__all__ = ["format_output", "try_extract_json"]

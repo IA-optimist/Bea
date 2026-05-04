@@ -9,7 +9,8 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -247,7 +248,7 @@ class OrchestrationGuard:
                     if entry.get("status") in ("failed", "timeout"):
                         failures.append(entry)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='orchestration_guard.py')
 
             return failures[-n:]
         except Exception:

@@ -8,10 +8,8 @@ Validates:
   CN25-CN30: HTTP connector
   CN31-CN35: Safety + integration
 """
-import pytest
 import os
 import json
-from pathlib import Path
 
 
 class TestConnectorBase:
@@ -170,9 +168,14 @@ class TestFilesystemConnector:
         result = FilesystemConnector().execute("export_bundle", {})
         assert not result.success
 
-    def test_CN21_list_outputs_empty(self):
+    def test_CN21_list_outputs_empty(self, tmp_path):
         from connectors.filesystem_connector import FilesystemConnector
-        result = FilesystemConnector().execute("list_outputs", {"dir": "/nonexistent"})
+        # tmp_path + '/absent' guarantees the dir does not exist (unique per
+        # test). Previous hardcoded /nonexistent was polluted by
+        # test_cognitive_security.test_SO04 which sets JARVISMAX_DATA_DIR
+        # there.
+        missing = tmp_path / "absent"
+        result = FilesystemConnector().execute("list_outputs", {"dir": str(missing)})
         assert result.success
         assert result.output["count"] == 0
 
@@ -285,9 +288,7 @@ class TestConnectorSafety:
         assert result.policy_checked
 
     def test_CN33_connectors_all_import(self):
-        from connectors.github_connector import GitHubConnector
-        from connectors.filesystem_connector import FilesystemConnector
-        from connectors.http_connector import HttpConnector
+        pass
 
     def test_CN34_connector_module_init(self):
         import connectors

@@ -21,6 +21,7 @@ import os
 from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -237,7 +238,7 @@ class RedisMemoryCache:
             try:
                 self._client.close()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='redis_cache.py')
             self._client = None
             log.info("redis_cache.closed")
 

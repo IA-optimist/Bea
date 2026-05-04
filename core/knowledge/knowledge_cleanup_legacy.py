@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import List
 
 logger = logging.getLogger("jarvis.knowledge.cleanup")
 
@@ -287,7 +287,7 @@ def summarize_experiences(
             return (success_score, pl.get("timestamp", 0))
 
         sorted_points = sorted(points, key=_sort_key, reverse=True)
-        to_keep = sorted_points[:max_entries]
+        sorted_points[:max_entries]
         to_remove = sorted_points[max_entries:]
         ids_to_remove = [p["id"] for p in to_remove]
 

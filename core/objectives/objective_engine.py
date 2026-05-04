@@ -164,7 +164,7 @@ class ObjectiveEngine:
 
             old_status = obj.status
             obj.status = new_status
-            obj.add_history_entry(f"status_changed", f"{old_status}→{new_status} {reason}")
+            obj.add_history_entry("status_changed", f"{old_status}→{new_status} {reason}")
 
             self._store.save(obj)
             _jlog("objective_status_changed", {
@@ -243,7 +243,7 @@ class ObjectiveEngine:
                 for s in obj.sub_objectives
             )
             if has_progress and obj.sub_objectives:
-                logger.info(f"[OBJECTIVE_ENGINE] breakdown: already has progress, skip re-breakdown")
+                logger.info("[OBJECTIVE_ENGINE] breakdown: already has progress, skip re-breakdown")
                 return obj.sub_objectives
 
             new_subs = breakdown_objective(obj)
@@ -392,7 +392,7 @@ class ObjectiveEngine:
                     "objective_title":         best.title,
                     "node_id":                 None,
                     "action_type":             "review_blocked",
-                    "rationale":               f"Tous les objectifs actifs semblent bloqués. Revue recommandée.",
+                    "rationale":               "Tous les objectifs actifs semblent bloqués. Revue recommandée.",
                     "confidence":              0.3,
                     "required_tools":          [],
                     "requires_human_approval": True,

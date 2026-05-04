@@ -11,9 +11,9 @@ Endpoints under /api/v3/venture/:
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import List
 
 logger = logging.getLogger("jarvis.api.venture")
 

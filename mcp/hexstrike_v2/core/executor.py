@@ -7,7 +7,7 @@ import logging
 import shlex
 import subprocess
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class CommandExecutor:
                 else:
                     logger.warning(f"Command failed with exit code {result.exit_code} (attempt {attempt}/{max_attempts})")
                     if attempt < max_attempts:
-                        logger.info(f"Retrying in 2 seconds...")
+                        logger.info("Retrying in 2 seconds...")
                         time.sleep(2)
                     else:
                         return result

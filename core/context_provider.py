@@ -5,11 +5,11 @@ Fail-open: if any source is unavailable, returns partial context.
 from __future__ import annotations
 
 import json
-import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -86,7 +86,7 @@ class ContextProvider:
                 from memory.memory_bus import MemoryBus
                 self._memory_bus = MemoryBus.get_instance()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='context_provider.py')
         return self._memory_bus
 
     def _read_json_file(self, path: str) -> Any:
@@ -97,7 +97,7 @@ class ContextProvider:
                 with open(full, "r", encoding="utf-8") as f:
                     return json.load(f)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
         return None
 
     def _load_decisions(self, max_entries: int) -> list[dict]:
@@ -152,7 +152,7 @@ class ContextProvider:
                 elif isinstance(val, str) and attr.endswith(("_mode", "_policy", "_level")):
                     constraints.append(f"{attr}={val}")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
         return constraints[:10]
 
     def _build_summary(
@@ -215,7 +215,7 @@ class ContextProvider:
             if bus and hasattr(bus, "get_recent"):
                 memory_entries = bus.get_recent("working_memory", n=max_entries)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
 
         agent_history: list[dict] = []
         try:
@@ -225,7 +225,7 @@ class ContextProvider:
                 if ctx_str:
                     agent_history = [{"text": ctx_str}]
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
 
         summary = self._build_summary(agent_id, mission_id, decisions, missions, memory_entries)
 
@@ -246,7 +246,7 @@ class ContextProvider:
             extra.append("shadow-advisor must validate feasibility before any irreversible action")
             extra.append("reject plans that lack rollback strategy")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
         block.known_constraints = extra + block.known_constraints
         return block
 
@@ -264,16 +264,15 @@ class ContextProvider:
         block = self.get_context("map-planner", mission_id=mission_id, max_entries=10)
         # Inject known agent list
         try:
-            from core.task_router import TaskRouter
             block.relevant_files.append("core/task_router.py")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
         try:
             from tools.tool_registry import get_tool_registry
             tools = get_tool_registry().list_tools()
             block.known_constraints.insert(0, f"Available tools: {', '.join(tools)}")
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='context_provider.py')
         return block
 
 

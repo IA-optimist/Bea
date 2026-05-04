@@ -14,6 +14,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
+_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from api.mission_store import MissionStateStore
@@ -73,12 +74,28 @@ class FailureCollector:
             for m in ms.list_missions(limit=200):
                 missions_by_id[m.mission_id] = m
         except Exception:
+            _silent_log.debug("suppressed_exception", src='failure_collector.py')
+
+        # Build set of already-logged (mission_id, category) to avoid duplicates
+        already_seen: set = set()
+        try:
+            existing = self.load_from_disk(limit=500)
+            for e in existing:
+                already_seen.add(f"{e.mission_id}:{e.category}")
+        except Exception:
             pass
 
         for mission_id, mission in missions_by_id.items():
             events = mission_store.get_log(mission_id)
             entries = self._analyze_mission(mission_id, mission, events)
-            new_entries.extend(entries)
+            # Filter out already-logged failures
+            new_filtered = [
+                e for e in entries
+                if f"{e.mission_id}:{e.category}" not in already_seen
+            ]
+            new_entries.extend(new_filtered)
+            for e in new_filtered:
+                already_seen.add(f"{e.mission_id}:{e.category}")
 
         # Mise à jour mémoire (max 100)
         self._entries = (self._entries + new_entries)[-_MAX_IN_MEMORY:]
@@ -104,9 +121,9 @@ class FailureCollector:
                 try:
                     entries.append(FailureEntry.from_dict(json.loads(line)))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='failure_collector.py')
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='failure_collector.py')
         return entries
 
     # ── Analyse ───────────────────────────────────────────────────────────────
@@ -166,7 +183,7 @@ class FailureCollector:
             ev_type = getattr(ev, "event_type", None)
             ev_type_str = ev_type.value if hasattr(ev_type, "value") else str(ev_type)
             agent_id = getattr(ev, "agent_id", "") or ""
-            data = getattr(ev, "data", {}) or {}
+            getattr(ev, "data", {}) or {}
             message = getattr(ev, "message", "") or ""
 
             # agent_failure : event_type ERROR (AGENT_FAILED)
@@ -180,7 +197,7 @@ class FailureCollector:
                     symptom=f"Agent {agent_id or 'inconnu'} a échoué",
                     cause="Exception non gérée dans BaseAgent.run() ou timeout",
                     evidence=message[:200],
-                    affected_files=[f"agents/crew.py"],
+                    affected_files=["agents/crew.py"],
                 ))
 
             # json_parse_error : tentative de parse JSON échouée (heuristique)

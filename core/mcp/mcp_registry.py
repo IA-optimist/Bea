@@ -243,7 +243,7 @@ class MCPRegistry:
         if not entry.command:
             return {"spawnable": False, "error": "No command configured"}
 
-        import subprocess, shutil
+        import shutil
         cmd = entry.command
         # Check if binary exists
         if not shutil.which(cmd):

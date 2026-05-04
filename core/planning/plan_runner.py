@@ -16,11 +16,12 @@ from __future__ import annotations
 import time
 import structlog
 
-from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus, StepType
+from core.planning.execution_plan import ExecutionPlan, PlanStatus
 from core.planning.step_context import StepContext
-from core.planning.step_executor import execute_step, StepResult
+from core.planning.step_executor import execute_step
 from core.planning.run_state import PlanRun, RunStatus, get_run_store
 from core.planning.plan_serializer import get_plan_store
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.runner")
 
@@ -328,7 +329,7 @@ class PlanRunner:
                 tags=["plan_runner", event],
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='plan_runner.py')
 
         # ── Kernel event emission (dual, fail-open) ──────────────
         try:
@@ -368,7 +369,7 @@ class PlanRunner:
                     kwargs["action"] = f"Step '{step.name}' requires approval"
                 emit_kernel_event(kernel_type, **kwargs)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='plan_runner.py')
 
     # ── Error helper ──────────────────────────────────────────
 

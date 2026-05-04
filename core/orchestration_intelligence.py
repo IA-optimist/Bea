@@ -85,16 +85,27 @@ class OrchestrationTracer:
         self.traces: List[OrchestrationTrace] = []
     
     def start_trace(self, mission: str) -> str:
-        """Start new trace"""
-        return "trace-001"
+        """Start new trace."""
+        import uuid
+        trace_id = f"trace-{uuid.uuid4().hex[:8]}"
+        self.traces.append(OrchestrationTrace(
+            id=trace_id,
+            capability=CapabilityType.CONVERSATION,
+            plan=[],
+            memory=MemoryContext(items=[]),
+            duration=0.0,
+        ))
+        return trace_id
     
     def complete_trace(self, trace_id: str, result: Dict[str, Any]) -> None:
-        """Complete trace"""
-        pass
+        """Complete trace - store result on matching trace."""
+        for trace in self.traces:
+            if trace.id == trace_id:
+                trace.duration = result.get("duration", 0.0)
     
     def get_recent(self, limit: int = 10) -> List[OrchestrationTrace]:
-        """Get recent traces"""
-        return []
+        """Get recent traces (most recent first)."""
+        return list(reversed(self.traces[-limit:]))
 
 
 @dataclass
@@ -109,24 +120,32 @@ class MissionCheckpointer:
         self.checkpoints: Dict[str, List[Checkpoint]] = {}
     
     def checkpoint_step(self, mission_id: str, step: Checkpoint) -> None:
-        """Save checkpoint"""
-        pass
+        """Save checkpoint for a mission step."""
+        if mission_id not in self.checkpoints:
+            self.checkpoints[mission_id] = []
+        self.checkpoints[mission_id].append(step)
     
     def resume_from(self, mission_id: str) -> Optional[Checkpoint]:
-        """Resume from last checkpoint"""
-        return None
+        """Resume from last completed checkpoint."""
+        steps = self.checkpoints.get(mission_id, [])
+        completed = [s for s in steps if s.completed]
+        return completed[-1] if completed else None
     
     def needs_replan(self, mission_id: str) -> bool:
-        """Check if replan needed"""
-        return False
+        """Check if replan needed (any checkpoint has error)."""
+        steps = self.checkpoints.get(mission_id, [])
+        return any(s.completed and s.result.get("error") for s in steps)
     
     def calculate_drift(self, mission_id: str) -> float:
-        """Calculate plan drift"""
-        return 0.0
+        """Calculate plan drift: ratio of failed steps."""
+        steps = self.checkpoints.get(mission_id, [])
+        if not steps: return 0.0
+        failed = sum(1 for s in steps if s.completed and s.result.get("error"))
+        return round(failed / len(steps), 2)
     
     def clear(self, mission_id: str) -> None:
-        """Clear checkpoints"""
-        pass
+        """Clear all checkpoints for a mission."""
+        self.checkpoints.pop(mission_id, None)
 
 
 class OrchestrationBrain:
@@ -138,5 +157,16 @@ class OrchestrationBrain:
         self.checkpointer = MissionCheckpointer()
     
     def execute_mission(self, mission: str) -> Dict[str, Any]:
-        """Execute mission end-to-end"""
-        return {"status": "completed", "result": "stub"}
+        """Execute mission end-to-end."""
+        import time
+        start = time.time()
+        cap = self.dispatcher.dispatch(mission)
+        plan = self.planner.create_plan(mission, cap.capability)
+        val = self.planner.validate_plan(plan)
+        self.memory.inject(mission)
+        tid = self.tracer.start_trace(mission)
+        result = {"status": "completed", "capability": cap.capability.value,
+                  "plan_steps": len(plan), "plan_valid": val.valid,
+                  "duration": round(time.time() - start, 3)}
+        self.tracer.complete_trace(tid, result)
+        return result

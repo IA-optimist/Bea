@@ -3,8 +3,6 @@ tests/test_graph_persistence.py — Execution graph persistence tests.
 
 GP01-GP20: Save, load, resume, list, index, history, stats.
 """
-import pytest
-from pathlib import Path
 
 
 class TestGraphRepository:
@@ -17,7 +15,7 @@ class TestGraphRepository:
         return build_execution_graph(schema, goal)
 
     def test_GP01_repo_creates_dir(self, tmp_path):
-        repo = self._make_repo(tmp_path)
+        self._make_repo(tmp_path)
         assert (tmp_path / "graphs").is_dir()
 
     def test_GP02_save_graph(self, tmp_path):

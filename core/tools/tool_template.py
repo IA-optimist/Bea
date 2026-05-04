@@ -17,7 +17,7 @@ import time
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.tools")
 
@@ -63,16 +63,16 @@ class BaseTool(ABC):
 
         # Timeout guard
         try:
-            from core.resilience import timeout_guard, idempotency_key, JarvisError
+            from core.resilience import timeout_guard, idempotency_key, JarvisError  # noqa: F401
         except ImportError:
-            timeout_guard = lambda **kw: None
-            idempotency_key = lambda *a: ""
+            def idempotency_key(*a):
+                return ""
 
         idem_key = ""
         try:
             idem_key = idempotency_key(self.name, params)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tool_template.py')
 
         try:
             result = self.execute(**params)

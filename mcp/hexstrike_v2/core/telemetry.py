@@ -4,9 +4,8 @@ Telemetry — Track tool usage, performance, and errors
 from __future__ import annotations
 
 import logging
-import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
 

@@ -15,8 +15,8 @@ from __future__ import annotations
 import json
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Dict, List, Optional, Any
+from datetime import datetime, timezone
+from typing import Dict, List, Any
 import structlog
 
 log = structlog.get_logger(__name__)
@@ -35,8 +35,8 @@ class Skill:
     avg_confidence: float = 0.0
     tags: List[str] = field(default_factory=list)
     learned_from: List[str] = field(default_factory=list)  # Mission IDs
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_used: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_used: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     @property
     def success_rate(self) -> float:
@@ -67,7 +67,25 @@ class LifelongLearningEngine:
     async def initialize(self):
         """Load skills from storage."""
         if self.qdrant:
-            # TODO: Load from Qdrant skills collection
+            try:
+                from core.memory.qdrant_client import get_qdrant
+                q = get_qdrant()
+                results = q.search('jarvis_skills', [0.0] * 768, limit=200, score_threshold=0.0)
+                for hit in results:
+                    p = hit.get('payload', {})
+                    if p.get('skill_id'):
+                        from core.cognition.lifelong_learning import Skill
+                        sk = Skill(
+                            skill_id=p['skill_id'],
+                            name=p.get('name', ''),
+                            description=p.get('description', ''),
+                            code=p.get('code', ''),
+                            success_rate=p.get('success_rate', 0.0),
+                            confidence=p.get('confidence', 0.5),
+                        )
+                        self.skills[sk.skill_id] = sk
+            except Exception as _e:
+                log.warning("skills_load_failed", err=str(_e)[:80])
             log.info("lifelong_learning_initialized", skill_count=len(self.skills))
         else:
             log.warning("no_qdrant", msg="Skills won't persist across restarts")
@@ -102,7 +120,7 @@ class LifelongLearningEngine:
             "confidence": confidence,
             "tools_used": tools_used,
             "execution_trace": execution_trace,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         self.mission_history.append(mission_record)
@@ -147,7 +165,7 @@ class LifelongLearningEngine:
             # Update existing skill stats
             skill = self.skills[skill_id]
             skill.success_count += 1
-            skill.last_used = datetime.utcnow()
+            skill.last_used = datetime.now(timezone.utc)
             skill.learned_from.append(mission["mission_id"])
             
             # Update confidence (rolling average)
@@ -192,11 +210,25 @@ class LifelongLearningEngine:
         if not self.qdrant:
             return
         
-        # TODO: Implement Qdrant storage
-        # - Generate embedding from skill description + code
-        # - Store in skills collection
-        # - Include metadata (success_rate, confidence, etc.)
-        
+        try:
+            from core.memory.qdrant_client import get_qdrant
+            from core.memory.embedding_provider import EmbeddingProvider
+            ep = EmbeddingProvider()
+            text = skill.name + ' ' + skill.description + ' ' + (skill.code or '')
+            vec = ep.embed(text)
+            q = get_qdrant()
+            q.ensure_collection('jarvis_skills', size=len(vec))
+            q.upsert('jarvis_skills', skill.skill_id, vec, {
+                'skill_id': skill.skill_id,
+                'name': skill.name,
+                'description': skill.description,
+                'code': skill.code or '',
+                'success_rate': skill.success_rate,
+                'confidence': skill.confidence,
+                'is_validated': skill.is_validated,
+            })
+        except Exception as _e:
+            log.warning("skill_persist_failed", skill_id=skill.skill_id, err=str(_e)[:80])
         log.info("skill_persisted", skill_id=skill.skill_id)
     
     async def suggest_skills_for_goal(self, goal: str, limit: int = 3) -> List[Skill]:
@@ -207,8 +239,22 @@ class LifelongLearningEngine:
         otherwise falls back to keyword matching.
         """
         if self.qdrant:
-            # TODO: Semantic search in Qdrant
-            pass
+            try:
+                from core.memory.qdrant_client import get_qdrant
+                from core.memory.embedding_provider import EmbeddingProvider
+                ep = EmbeddingProvider()
+                vec = ep.embed(goal)
+                q = get_qdrant()
+                results = q.search('jarvis_skills', vec, limit=limit, score_threshold=0.4)
+                found = []
+                for hit in results:
+                    sid = hit.get('payload', {}).get('skill_id', '')
+                    if sid and sid in self.skills:
+                        found.append(self.skills[sid])
+                if found:
+                    return found[:limit]
+            except Exception as _e:
+                log.warning("skill_search_failed", err=str(_e)[:80])
         
         # Fallback: keyword match
         goal_lower = goal.lower()

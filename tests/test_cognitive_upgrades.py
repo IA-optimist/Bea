@@ -13,7 +13,10 @@ Tests for all 8 cognitive/agentic upgrades:
 
 Total: 80 tests
 """
-import sys, os, json, tempfile, time
+import sys
+import os
+import json
+import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
@@ -32,7 +35,7 @@ class TestMemoryGraph:
     def test_MG01_add_node(self):
         from core.memory_graph.graph_schema import Node, NodeType
         g = self._make_graph()
-        n = g.add_node(Node(id="m:1", type=NodeType.MISSION, label="test mission"))
+        g.add_node(Node(id="m:1", type=NodeType.MISSION, label="test mission"))
         assert g.get_node("m:1") is not None
         assert g.get_node("m:1").label == "test mission"
 
@@ -466,7 +469,7 @@ class TestCapabilityGraph:
     def test_CG01_register(self):
         from core.capability_graph import CapabilityGraph, Capability
         cg = CapabilityGraph()
-        cap = cg.register_capability(Capability(id="code_review", name="Code Review", category="analysis"))
+        cg.register_capability(Capability(id="code_review", name="Code Review", category="analysis"))
         assert cg.get_capability("code_review") is not None
 
     def test_CG02_agent_capabilities(self):
@@ -632,7 +635,7 @@ class TestWorkflowPlaybooks:
     def test_WP01_register(self):
         from core.workflow_playbooks import Playbook, PlaybookStep
         r = self._make_registry()
-        pb = r.register(Playbook(
+        r.register(Playbook(
             id="test", name="Test PB", steps=[PlaybookStep(id="s1", name="Step 1")],
         ))
         assert r.get("test") is not None
@@ -780,7 +783,6 @@ class TestCapabilityGraphAutoPopulation:
     def test_CG06_no_secrets_in_graph(self):
         """Capability graph must not contain secrets or tokens."""
         from core.capability_graph import CapabilityGraph
-        import json
         g = CapabilityGraph()
         g.populate_from_runtime()
         dump = json.dumps([c.to_dict() for c in g._capabilities.values()])

@@ -7,10 +7,10 @@ import asyncio
 import json
 import os
 import structlog
-import datetime as _dt
 from datetime import datetime, timezone as _timezone
 UTC = _timezone.utc  # Python 3.10 compat: datetime.UTC added in 3.11
 from pathlib import Path
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -55,7 +55,7 @@ class SystemObserver:
             try:
                 result.append(json.loads(line))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='watcher.py')
         return result
 
     async def detect_changes(self, since_minutes: int = 60) -> list[str]:
@@ -80,7 +80,7 @@ class SystemObserver:
             try:
                 entries.append(json.loads(line))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='watcher.py')
 
         if not entries:
             return "Logs vides."
@@ -119,7 +119,6 @@ class SystemObserver:
     # ── Internals ─────────────────────────────────────────────
 
     async def _recent_files(self, n: int) -> list[tuple[str, str]]:
-        import time
         files = [
             (p, p.stat().st_mtime)
             for p in WORKSPACE.rglob("*")

@@ -22,7 +22,6 @@ GET  /vault/status   — Vault status
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field

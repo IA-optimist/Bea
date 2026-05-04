@@ -42,6 +42,8 @@ class VectorMemory:
     Utilise sentence-transformers si disponible, sinon TF-IDF simplifié.
     """
 
+    VECTOR_DIM = 768  # Default embedding dimension
+
     def __init__(self, settings):
         self.s         = settings
         self._path     = self._resolve_path()
@@ -163,7 +165,6 @@ class VectorMemory:
         if self._fallback or enc is None:
             return None
         try:
-            import numpy as np
             vec = enc.encode(text, normalize_embeddings=True)
             vec_list = vec.tolist()
             # Pad to 768 if using 384-dim model
@@ -178,7 +179,8 @@ class VectorMemory:
 
     @staticmethod
     def _vec_to_b64(vec: list[float]) -> str:
-        import numpy as np, struct
+        import numpy as np
+        import struct
         arr   = np.array(vec, dtype=np.float32)
         raw   = struct.pack(f"{len(arr)}f", *arr)
         return base64.b64encode(raw).decode("ascii")
@@ -432,7 +434,6 @@ class QdrantVectorMemory:
         if enc is None:
             return None
         try:
-            import numpy as np
             vec = enc.encode(text, normalize_embeddings=True)
             vec_list = vec.tolist()
             # Pad to 768 if using 384-dim model

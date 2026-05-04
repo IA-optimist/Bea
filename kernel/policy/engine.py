@@ -18,12 +18,12 @@ from __future__ import annotations
 
 import time
 import structlog
-from dataclasses import dataclass, field
 
 from kernel.contracts.types import (
     Action, PolicyDecision, Decision, DecisionType, RiskLevel,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("kernel.policy")
 
 
@@ -86,7 +86,6 @@ class KernelPolicyEngine:
             )
 
         if risk == RiskLevel.MEDIUM:
-            needs_approval = not action.requires_approval  # if already approved, don't re-ask
             return PolicyDecision(
                 allowed=True,
                 action_id=action.action_id,
@@ -136,7 +135,7 @@ class ApprovalGate:
                 action=f"{action.action_type}: {action.target}",
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')
         return request_id
 
     def decide(self, request_id: str, approved: bool,

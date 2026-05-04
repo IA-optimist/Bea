@@ -1,0 +1,14 @@
+# gitleaks configuration — étend le config par défaut.
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Exclusions — fichiers qui contiennent des hashes/exemples connus non-secrets."
+paths = [
+  '''\.secrets\.baseline$''',
+  '''docs/archive/''',
+  '''tests/''',                  # fake secrets pour tests
+  '''\.env\.example$''',         # placeholders CHANGE_ME
+]

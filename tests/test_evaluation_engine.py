@@ -49,15 +49,13 @@ Part 8: Full Engine
 """
 import os
 import sys
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.evaluation_engine import (
     EvaluationMetrics, MetricsCollector,
-    DimensionScore, AgentScore, ScoringModel, DEFAULT_WEIGHTS,
-    WeaknessType, ImprovementPriority, WeaknessDetector,
-    EvaluationSnapshot, EvaluationMemory,
+    DimensionScore, AgentScore, ScoringModel, WeaknessType, WeaknessDetector,
+    EvaluationMemory,
     EvaluationReport, AgentEvaluationEngine,
 )
 

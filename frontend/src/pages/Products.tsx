@@ -17,6 +17,7 @@ export const Products = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -44,7 +45,8 @@ export const Products = () => {
     try {
       setDeployingIds((prev) => new Set(prev).add(id));
       const result = await apiClient.deployProduct(id);
-      alert(`Deployment started! Job ID: ${result.job_id}`);
+      setMessage({ type: 'success', text: `Deployment started ! Job ID : ${result.job_id}` });
+      setTimeout(() => setMessage(null), 5000);
       
       // Poll for status updates
       setTimeout(() => {
@@ -57,7 +59,8 @@ export const Products = () => {
       }, 3000);
     } catch (err) {
       console.error('Failed to deploy product:', err);
-      alert('Failed to deploy product');
+      setMessage({ type: 'error', text: 'Failed to deploy product' });
+      setTimeout(() => setMessage(null), 5000);
       setDeployingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -98,6 +101,12 @@ export const Products = () => {
         </div>
       </div>
 
+      {message && (
+        <div role="status" className={`p-3 rounded border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-200' : 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200'}`}>
+          {message.text}
+        </div>
+      )}
+
       {/* Filters */}
       <Card>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -106,6 +115,7 @@ export const Products = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
+              aria-label="Search products"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

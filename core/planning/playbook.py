@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus, StepType
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.playbook")
 
@@ -380,7 +381,7 @@ def execute_playbook(
 
         # Only record if we have meaningful output (at least 1 field)
         if validation.get("field_count", 0) >= 1 or status == "failed":
-            trace = build_trace_from_output(
+            build_trace_from_output(
                 assembled.get("schema", ""),
                 assembled.get("data", {}),
                 validation,
@@ -459,7 +460,7 @@ def execute_playbook(
         )
         result["review"] = review.to_dict()
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='playbook.py')
 
     return result
 

@@ -4,8 +4,6 @@ Vérifie les limites, statuts et slots d'exécution.
 """
 from __future__ import annotations
 import threading
-import time
-import pytest
 
 from core.resource_guard import (
     ResourceGuard,

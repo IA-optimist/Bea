@@ -12,7 +12,6 @@ from api._deps import _check_auth
 from core.notifications import (
     get_notification_service,
     NotificationChannel,
-    send_notification,
 )
 from core.notifications.telegram_client import TelegramNotificationClient
 

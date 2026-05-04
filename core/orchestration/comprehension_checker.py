@@ -4,7 +4,8 @@ Diagnostic de comprehension reelle pour JarvisMax (Mistral-7B via Ollama).
 Auteur: JarvisMax Research Lab | 2026-04-09
 """
 
-import json, re, time
+import json
+import time
 import requests
 
 # ── Donnees Test 1 ────────────────────────────────────────────────────────────
@@ -366,7 +367,7 @@ def _cos_verdict(improvement: float) -> str:
 # ── CLI rapide ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
 
     parser = argparse.ArgumentParser(
         description="Diagnostic de comprehension pour LLMs via Ollama")

@@ -6,14 +6,11 @@ Live proof: two experiments through the ImprovementLoop.
 import json
 import sys
 import os
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.improvement_loop import (
-    ImprovementLoop, ExperimentSpec, EvaluationScore,
-    SandboxManager, RegressionGuard, LearningMemory, Lesson,
-    classify_file_safety, SafetyZone, ExperimentReport,
+    ImprovementLoop, ExperimentSpec,
 )
 
 
@@ -57,7 +54,6 @@ class TestLiveProof:
             return "Changed + to - in add()"
 
         # Override run_tests to simulate real pytest results
-        original_run = engine.guard.run_tests
 
         call_count = [0]
         def mock_run_tests(test_path, timeout=120):
@@ -95,7 +91,7 @@ class TestLiveProof:
         assert data["candidate"]["failed"] == 5
 
         print(f"\n✗ REJECTED: {report.reason}")
-        print(f"  Rollback: confirmed (original restored)")
+        print("  Rollback: confirmed (original restored)")
         print(f"  Lesson: {lessons[0].what_failed[:80]}")
 
     # ── EXPERIMENT 2: PROMOTED (safe improvement) ─────────────
@@ -204,4 +200,4 @@ class TestLiveProof:
         assert (repo / "utils.py").read_text() == original, "File not restored after crash!"
 
         print(f"\n🔄 ERROR RECOVERED: {report.reason}")
-        print(f"  File restored: ✓")
+        print("  File restored: ✓")

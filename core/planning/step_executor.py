@@ -12,6 +12,7 @@ import structlog
 
 from core.planning.execution_plan import PlanStep, StepType
 from core.planning.step_context import StepContext
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.step_executor")
 
@@ -88,7 +89,7 @@ def execute_step(step: PlanStep, context: StepContext) -> StepResult:
             issues=output.get("retry_trace", {}).get("issues_per_attempt", [[]])[0] if output.get("retry_trace") else [],
         )
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='step_executor.py')
 
     return result
 

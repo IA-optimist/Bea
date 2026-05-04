@@ -6,8 +6,8 @@ timeout, and agent allowlist. The executor checks this before execution.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Literal, Optional
+from dataclasses import dataclass, asdict
+from typing import Literal
 
 
 @dataclass(frozen=True)

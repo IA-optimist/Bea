@@ -25,8 +25,7 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable, Dict
 
 import structlog
 
@@ -39,60 +38,9 @@ CB = Callable[[str], Awaitable[None]]
 # Circuit breaker — prevents cascade failures when the delegate is broken
 # ─────────────────────────────────────────────────────────────────────────────
 
-class _CircuitBreaker:
-    """
-    Simple two-state circuit breaker (CLOSED / OPEN).
-
-    CLOSED → normal operation.
-    OPEN   → fast-fail for `_reset_s` seconds after `_threshold` consecutive
-             failures, then auto-reset to CLOSED for the next probe.
-
-    Thread-safe. Never raises.
-    """
-
-    def __init__(self, failure_threshold: int = 5, reset_s: float = 60.0):
-        self._threshold = failure_threshold
-        self._reset_s   = reset_s
-        self._failures  = 0
-        self._open_until = 0.0
-        self._lock = threading.Lock()
-
-    @property
-    def is_open(self) -> bool:
-        """Return True if the circuit is open (fast-fail mode)."""
-        with self._lock:
-            if self._open_until == 0.0:
-                return False
-            if time.time() >= self._open_until:
-                # Auto-reset: allow one probe through
-                self._open_until = 0.0
-                self._failures   = 0
-                return False
-            return True
-
-    def record_success(self) -> None:
-        with self._lock:
-            self._failures   = 0
-            self._open_until = 0.0
-
-    def record_failure(self) -> None:
-        with self._lock:
-            self._failures += 1
-            if self._failures >= self._threshold:
-                self._open_until = time.time() + self._reset_s
-                log.warning(
-                    "meta_orchestrator.circuit_open",
-                    failures=self._failures,
-                    open_for_s=self._reset_s,
-                )
-
-    def status(self) -> dict:
-        with self._lock:
-            return {
-                "open": self._open_until > time.time(),
-                "failures": self._failures,
-                "open_until": self._open_until,
-            }
+# ── _CircuitBreaker déplacé dans core/orchestration/mission_circuit_breaker.py ──
+# Alias conservé pour compatibilité avec les tests qui inspectent self._circuit_breaker.
+from core.orchestration.mission_circuit_breaker import MissionCircuitBreaker as _CircuitBreaker  # noqa: E402,F401
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +50,7 @@ class _CircuitBreaker:
 # MetaOrchestrator imports them and owns the side-effect layer
 # (event emission, persistence) on top of kernel state transitions.
 from core.state import MissionStatus  # noqa: F811  — single source of truth enum
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from kernel.state.mission_state import (
@@ -153,6 +102,12 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 # MetaOrchestrator
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+# ── _strip_execution_outcome déplacé dans core/orchestration/mission_text_utils.py ──
+# Alias conservé (wrapper qui appelle la fonction publique).
+from core.orchestration.mission_text_utils import strip_execution_outcome as _strip_execution_outcome  # noqa: E402,F401
+
 
 class MetaOrchestrator:
     """
@@ -267,13 +222,25 @@ class MetaOrchestrator:
                 # Use create_task for better exception visibility
                 asyncio.create_task(_stream.append(_evt))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         # Persist state to disk (fail-open)
         try:
             from core.mission_persistence import get_mission_persistence
             get_mission_persistence().persist(ctx)
         except Exception as _pe:
             log.debug("mission_persist_failed", err=str(_pe)[:80])
+        # Sync mission_system legacy store on terminal states (fixes RUNNING never updating)
+        if target in (MissionStatus.DONE, MissionStatus.FAILED, MissionStatus.CANCELLED):
+            try:
+                from core.mission_system import get_mission_system
+                _ms = get_mission_system()
+                _ms_rec = _ms.get_mission(ctx.mission_id)
+                if _ms_rec is not None:
+                    _ms_rec.status = target.value
+                    _ms_rec.final_output = str(ctx.result or "")[:5000]
+                    _ms._save_mission(_ms_rec)
+            except Exception:
+                pass
 
     # ── Kernel cognitive pre-computation (Pass 18) ───────────────────────────
 
@@ -325,11 +292,14 @@ class MetaOrchestrator:
     def _setup_event_stream(self, mid: str, ctx) -> None:
         """Setup EventStream for WebSocket consumers (lines 356-365)."""
         try:
-            from core.event_stream import EventStream, register_mission_stream
-            from api.ws import register_stream
+            from core.event_stream import (
+                EventStream,
+                register_mission_stream,
+                register_ws_stream,
+            )
             _event_stream = EventStream(mid)
             register_mission_stream(mid, _event_stream)  # for agents/supervisor lookup
-            register_stream(mid, _event_stream)           # for api/ws WebSocket endpoint
+            register_ws_stream(mid, _event_stream)       # for api/ws WebSocket endpoint
             ctx.metadata["event_stream"] = _event_stream
         except Exception as _es_err:
             log.debug("event_stream_register_skipped", err=str(_es_err)[:60])
@@ -364,13 +334,13 @@ class MetaOrchestrator:
             from core.cognitive_events.emitter import emit_mission_created
             emit_mission_created(mission_id=mid, goal=goal, mode=mode)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         # Kernel event: mission created (dual emission)
         try:
             from kernel.convergence.event_bridge import emit_kernel_event
             emit_kernel_event("mission.created", mission_id=mid, goal=goal, mode=mode)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _register_mission_guards(self, mid: str) -> None:
         """Register mission guards for iteration limit + budget (lines 395-400)."""
@@ -399,7 +369,14 @@ class MetaOrchestrator:
         """
         # NOTE: skip reasoning prepass for CHAT mode (short messages / greetings)
         _task_mode_str = ctx.metadata.get("task_mode", "")
-        _is_chat_mode  = (_task_mode_str == "chat") or (len(goal.strip()) <= 30)
+        _CHAT_KEYWORDS = ("salut","bonjour","hello","hi","hey","présente","qui es","recommence","répète","repete","présente-toi","aide moi","merci","ok cool","super","parfait")
+        _TASK_KEYWORDS = ("analyse","analyz","compare","comparison","architecture","implement","code","develop","build","create","list all","detailed","complet","rapport","report","research","explain","diagram","roadmap","strategy","plan","design","review","audit","optimize","migrate","database","deploy","docker","api","test","debug","fix","refactor","swagger","openapi","benchmark","security","vulnerability")
+        _goal_lower = goal.strip().lower()
+        _is_conversational = any(kw in _goal_lower for kw in _CHAT_KEYWORDS)
+        _is_complex_task = any(kw in _goal_lower for kw in _TASK_KEYWORDS) or len(goal.strip()) > 120
+        _is_chat_mode  = _task_mode_str == "chat" or (
+            not _is_complex_task and (_is_conversational or len(goal.strip()) <= 60)
+        )
         _reasoning_result = None
         
         if _is_chat_mode:
@@ -429,12 +406,14 @@ class MetaOrchestrator:
     def _cleanup_event_stream(self, mid: str) -> None:
         """Deregister EventStream after mission completion (lines 1938-1945)."""
         try:
-            from api.ws import deregister_stream
-            from core.event_stream import deregister_mission_stream
-            deregister_stream(mid)
+            from core.event_stream import (
+                deregister_mission_stream,
+                deregister_ws_stream,
+            )
+            deregister_ws_stream(mid)
             deregister_mission_stream(mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _post_mission_learning(self, mid: str, goal: str, mode: str, ctx) -> None:
         """Post-mission cognitive learning + guardian cleanup (lines 1900-1936)."""
@@ -461,7 +440,7 @@ class MetaOrchestrator:
             from core.mission_guards import get_guardian
             get_guardian().release_mission(mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Record routing outcome for learning
         try:
@@ -647,7 +626,7 @@ class MetaOrchestrator:
                             alternatives=_sp0.candidates_evaluated,
                         )
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
                 else:
                     trace.record("route", "capability_fallback",
                                  reason="no provider matched, using legacy agent routing")
@@ -892,8 +871,8 @@ class MetaOrchestrator:
             return None
         
         try:
-            from core.orchestration.creative_engine import JarvisCreativePipeline
-            _creative = JarvisCreativePipeline(ollama_url="http://localhost:11434")
+            from core.orchestration.creative_engine import JarvisCreativePipeline, JarvisLLMClient, JarvisMissionStore
+            _creative = JarvisCreativePipeline(llm_client=JarvisLLMClient(role="fast"), mission_store=JarvisMissionStore())
             _creative_result = await _creative.run(goal, n_solutions=3)
             if _creative_result.get("best"):
                 ctx.result = _creative_result["best"]
@@ -1224,7 +1203,7 @@ class MetaOrchestrator:
             try:
                 _causal.update_graph_from_text(enriched_goal[:500])
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         except Exception as _causal_err:
             log.debug("causal_module.skipped", err=str(_causal_err)[:80])
 
@@ -1232,7 +1211,7 @@ class MetaOrchestrator:
         try:
             from core.orchestration.comprehension_checker import ComprehensionChecker
             _cc = ComprehensionChecker()
-            _cc_report = await _cc.check(enriched_goal)
+            _cc_report = await asyncio.wait_for(_cc.check(enriched_goal), timeout=5.0)
             if _cc_report and not _cc_report.get("understood", True):
                 _clarification = _cc_report.get("clarification_needed", "")
                 if _clarification:
@@ -1245,7 +1224,7 @@ class MetaOrchestrator:
         try:
             from core.orchestration.memory_system import UnifiedMemory
             _um = UnifiedMemory()
-            _memories = await _um.recall(enriched_goal, top_k=3)
+            _memories = await asyncio.wait_for(_um.recall(enriched_goal, top_k=3), timeout=3.0)
             if _memories:
                 _mem_block = "\n".join(f"- {m['content'][:200]}" for m in _memories if m.get('content'))
                 if _mem_block:
@@ -1254,6 +1233,25 @@ class MetaOrchestrator:
         except Exception as _um_err:
             log.debug("unified_memory.skipped", err=str(_um_err)[:80])
 
+        # Inject client profile context if sector matches goal
+        try:
+            from core.client_profile import ClientProfile as _CP
+            _gl = goal.lower()
+            _sm = {'jardin': '2f190993', 'tonte': '2f190993', 'tondeuse': '2f190993',
+                   'chauffage': 'a08c93ad', 'pompe': 'a08c93ad', 'pac': 'a08c93ad',
+                   'ecommerce': '9ac01d10', 'piece': '9ac01d10', 'radiateur': '9ac01d10'}
+            for _kw, _pid in _sm.items():
+                if _kw in _gl:
+                    _p = _CP.load(_pid)
+                    if _p:
+                        enriched_goal = _p.inject_context(enriched_goal)
+                    break
+        except Exception:
+            pass
+        # Cap enriched_goal to avoid overwhelming agents with huge context
+        if len(enriched_goal) > 2000:
+            enriched_goal = enriched_goal[:2000] + "\n[...context truncated for performance...]"
+            log.debug("enriched_goal_capped", mission_id=mid, original_len=len(enriched_goal))
         from core.orchestration.execution_supervisor import supervise
         delegate = self.v2 if use_budget else self.jarvis
         
@@ -1315,7 +1313,7 @@ class MetaOrchestrator:
             _SL_ACTION_MAP = {
                 "deployment":   "deployment",
                 "improvement":  "self_improvement",
-                "business":     "payment",
+                # "business": removed - business missions are not payment actions
             }
             _sl_action = _SL_ACTION_MAP.get(_task_type_sl, "mission_execution")
             from security import get_security_layer as _get_sl
@@ -1393,7 +1391,7 @@ class MetaOrchestrator:
                 log.info("phase0c_routing_active",
                          mission_id=mid, provider=_phase0c_provider)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # ── Pass 43: use_safer_model — activate ContextVar before execution ──
         _safer_token = None
@@ -1409,10 +1407,163 @@ class MetaOrchestrator:
             except Exception as _sme:
                 log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
+        # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
+        # Skip fast-path if mission needs approval or contains destructive keywords
+        _DESTRUCTIVE_KW = (
+            # English
+            "delete","drop","remove","truncat","wipe","format","kill","destroy",
+            "purge","email all","send.*all","broadcast","sudo","chmod","rm -",
+            "mkfs","shutdown","reboot","restart server","drop table","drop database",
+            # French — commands that could cause real damage
+            "supprim","efface","effa\u00e7","suppression","vide la base",
+            "formate","arr\u00eate le serveur","red\u00e9marre","\u00e9teins",
+            "\u00e9crire dans","modifie la base","alter table","truncate",
+            "envoie un mail \u00e0 tous","envoie un email \u00e0 tous",
+        )
+        _goal_for_risk = goal.lower()
+        _fp_skip_risk = (
+            needs_approval
+            or ctx.metadata.get("classification", {}).get("risk_level", "low") in ("high", "write_high", "HIGH")
+            or any(kw in _goal_for_risk for kw in _DESTRUCTIVE_KW)
+        )
+        # Refus immédiat pour commandes destructives en mode chat
+        # Évite le crew complet (3-5min) pour une réponse de refus simple
+        if _is_chat_mode and _fp_skip_risk and not needs_approval:
+            _refusal = (
+                "Je ne peux pas exécuter cette action directement. "
+                "Les actions pouvant affecter le système ou les données "
+                "(suppression, modification, envoi) nécessitent une validation. "
+                "Si tu veux vraiment faire ça, soumets-la comme mission formelle."
+            )
+            ctx.result = _refusal
+            ctx.status = MissionStatus.DONE
+            ctx.completed_at = time.time()
+            log.info("chat_destructive_refused", mission_id=mid, goal=goal[:60])
+            try:
+                from core.mission_persistence import get_mission_persistence
+                get_mission_persistence().persist(ctx)
+            except Exception:
+                pass
+            return
+
+        if _is_chat_mode and not _fp_skip_risk:
+            try:
+                from core.orchestration.creative_engine import JarvisLLMClient
+                _fp_llm = JarvisLLMClient(role="fast")
+                _fp_sys = (
+                    "Tu es Jarvis, lorchestrateurIA de JarvisMax. "
+                    "Tu es lassistant personnel dUnity, fondateur du projet.\n"
+                    "\n"
+                    "TES CAPACITES REELLES :\n"
+                    "- Analyser du code, de larchitecture, des documents\n"
+                    "- Rechercher et synthétiser de linformation\n"
+                    "- Planifier et décomposer des projets complexes\n"
+                    "- Gérer des missions via ton pipeline dagents spécialisés\n"
+                    "- Te souvenir des échanges passés via ta mémoire persistante\n"
+                    "- Proposer des améliorations et apprendre de lexperience\n"
+                    "\n"
+                    "PERSONNALITE : direct, confiant, légèrement ironique. "
+                    "Pas de fioritures, pas de faux enthousiasme.\n"
+                    "\n"
+                    "REGLES :\n"
+                    "1. JAMAIS simuler une action réelle (suppression, modification, envoi).\n"
+                    "2. Répondre en français, de manière naturelle et conversationnelle.\n"
+                    "3. Longueur proportionnelle au message (court = réponse courte).\n"
+                    "4. Si tu ne sais pas → dire honnêtement, ne pas inventer."
+                )
+                _fp_ctx = str(ctx.metadata.get("context", "") or "")
+                # Inject semantic memory into fast-path
+                _fp_mem = ""
+                try:
+                    from core.orchestration.memory_system import UnifiedMemory
+                    _um_fp = UnifiedMemory()
+                    _mems = await asyncio.wait_for(_um_fp.recall(goal, top_k=3), timeout=3)
+                    if _mems:
+                        _fp_mem = "\n".join(f"- {m['content'][:150]}" for m in _mems if m.get("content"))
+                except Exception:
+                    pass
+                # Build prompt with all context
+                _fp_parts = [_fp_sys]
+                if _fp_mem:
+                    _fp_parts.append("\n\nMémoire pertinente:\n" + _fp_mem)
+                if _fp_ctx:
+                    _fp_parts.append("\n\nConversation récente:\n" + _fp_ctx)
+                _fp_parts.append("\n\nMessage: " + goal)
+                _fp_prompt = "".join(_fp_parts)
+                _fp_text = await asyncio.wait_for(
+                    _fp_llm.complete(_fp_prompt, max_tokens=2000),
+                    timeout=45
+                )
+                if not _fp_text or len(str(_fp_text).strip()) < 3:
+                    raise ValueError("empty_response")
+                ctx.result = str(_fp_text)
+                ctx.status = MissionStatus.DONE
+                ctx.completed_at = time.time()
+                log.info("chat_fast_path_ok", mission_id=mid, chars=len(str(_fp_text)))
+                # Store fast-path exchange in knowledge memory for future recall
+                try:
+                    from core.knowledge_memory import get_knowledge_memory
+                    _km = get_knowledge_memory()
+                    _km.store_if_useful(
+                        goal=goal,
+                        mission_type="chat",
+                        solution_summary=str(_fp_text)[:500],
+                        tools_used=[],
+                        agents_used=["fast-path"],
+                        confidence_score=0.8,
+                        fallback_level=0,
+                        execution_policy_decision="fast_path",
+                    )
+                except Exception:
+                    pass
+                # Persist to both stores so UI sees consistent status
+                try:
+                    from core.mission_persistence import get_mission_persistence
+                    get_mission_persistence().persist(ctx)
+                except Exception:
+                    pass
+                # Post-mission learning: extract lesson if needed
+                try:
+                    from core.orchestration.learning_loop import extract_lesson, store_lesson
+                    _lesson = extract_lesson(
+                        mission_id=mid,
+                        goal=goal[:200],
+                        result=str(ctx.result)[:300],
+                        reflection_verdict=ctx.metadata.get("reflection_verdict", "accept"),
+                        reflection_confidence=float(ctx.metadata.get("confidence_score", 0.8)),
+                        error_class=ctx.metadata.get("error_class", ""),
+                        retries=ctx.metadata.get("retries", 0),
+                    )
+                    if _lesson:
+                        store_lesson(_lesson)
+                        log.info("learning_loop.lesson_stored", mission_id=mid,
+                                 confidence=_lesson.confidence)
+                except Exception:
+                    pass
+                try:
+                    # Sync mission_system store to avoid READY/DONE mismatch
+                    from core.mission_system import get_mission_system
+                    _ms = get_mission_system()
+                    _ms_rec = _ms.get_mission(mid)
+                    if _ms_rec is not None:
+                        _ms_rec.status = "DONE"
+                        _ms_rec.final_output = ctx.result
+                        _ms._save_mission(_ms_rec)
+                except Exception:
+                    pass
+                try:
+                    self._cleanup_event_stream(mid)
+                except Exception:
+                    pass
+                return
+            except Exception as _fe:
+                log.warning("chat_fast_path_fail", err=str(_fe)[:120])
+                # Fall through to full crew
+
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # PHASE 4: AGI COGNITION WRAPPER
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        _mission_timeout = getattr(self.s, "mission_timeout_s", 600)
+        _mission_timeout = getattr(self.s, "mission_timeout_s", 120)
         
         _use_cognition = (
             not _is_chat_mode
@@ -1460,12 +1611,18 @@ class MetaOrchestrator:
                         return result.get("output", str(result))
                     return str(result)
                 
-                cognition_result = await _cog.execute_mission_with_cognition(
-                    mission=_payload,
-                    enable_tot=True,
-                    enable_confidence=True,
-                    enable_learning=True,
-                    executor_fn=_real_executor  # Pass real executor
+                # Only activate ToT for genuinely complex goals
+                from core.cognition.tot_wrapper import should_use_tot as _should_tot
+                _use_tot = _should_tot(goal)
+                cognition_result = await asyncio.wait_for(
+                    _cog.execute_mission_with_cognition(
+                        mission=_payload,
+                        enable_tot=_use_tot,
+                        enable_confidence=True,
+                        enable_learning=True,
+                        executor_fn=_real_executor,
+                    ),
+                    timeout=180,  # 3 min max for cognition (incl. ToT)
                 )
                 # Extract outcome from cognition result
                 # CognitionOrchestrator returns augmented mission dict with "result" key
@@ -1490,7 +1647,7 @@ class MetaOrchestrator:
                         goal=enriched_goal,
                         mode=mode,
                         session_id=mid,
-                        risk_level=risk,
+                        risk_level="high" if needs_approval and not force_approved else risk,
                         requires_approval=needs_approval,
                         skip_approval=force_approved,
                         callback=callback,
@@ -1504,14 +1661,14 @@ class MetaOrchestrator:
                         from core.llm_factory import _provider_override as _pov
                         _pov.reset(_provider_token)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
                 # Pass 43: reset safer_model ContextVar
                 if _safer_token is not None:
                     try:
                         from core.llm_factory import _safer_model_active as _sma
                         _sma.reset(_safer_token)
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Store execution context for post-processing helpers
         ctx.metadata["_exec_enriched_goal"] = enriched_goal
@@ -1561,7 +1718,13 @@ class MetaOrchestrator:
         self._circuit_breaker.record_success()
         # RUNNING -> REVIEW
         self._transition(ctx, MissionStatus.REVIEW)
-        ctx.result = outcome.result
+        # Unwrap nested ExecutionOutcome — outcome.result may itself be an ExecutionOutcome
+        _raw_outcome_result = getattr(outcome, "result", outcome) if outcome is not None else ""
+        if hasattr(_raw_outcome_result, "result"):  # nested ExecutionOutcome
+            _raw_outcome_result = getattr(_raw_outcome_result, "result", "") or ""
+        ctx.result = _strip_execution_outcome(
+            _raw_outcome_result if isinstance(_raw_outcome_result, str) else str(_raw_outcome_result or "")
+        )
 
         # ── KERNEL EVALUATION (authoritative — Phase 8) ───────
         # Single call replaces reflect() + critique_output().
@@ -1649,6 +1812,34 @@ class MetaOrchestrator:
             ctx.result = format_output(ctx.result, task_type=task_type, goal=goal)
         except Exception as _exc:
             log.debug("phase_failed", phase="output_format", err=str(_exc)[:100])
+
+        # ── Phase 3c: Livrable export (auto-generate client deliverable) ──
+        try:
+            from core.livrable_export import LivrableExport
+            from core.client_profile import ClientProfile
+            # Detect client from goal keywords
+            _gl = goal.lower()
+            _sm = {'jardin': '2f190993', 'tonte': '2f190993', 'tondeuse': '2f190993',
+                   'chauffage': 'a08c93ad', 'pompe': 'a08c93ad', 'pac': 'a08c93ad',
+                   'ecommerce': '9ac01d10', 'piece': '9ac01d10', 'radiateur': '9ac01d10'}
+            _client_name = ''
+            for _kw, _pid in _sm.items():
+                if _kw in _gl:
+                    _p = ClientProfile.load(_pid)
+                    if _p:
+                        _client_name = _p.name
+                        _p.add_mission(goal, 'COMPLETED', str(ctx.result)[:200])
+                        _p.save()
+                    break
+            if ctx.result and len(ctx.result) > 100:
+                _exp = LivrableExport()
+                _paths = _exp.save(ctx.result, _client_name or 'JarvisMax', goal, mid)
+                ctx.metadata['livrable_md'] = _paths['markdown']
+                ctx.metadata['livrable_html'] = _paths['html']
+                log.info('livrable_exported', mission_id=mid, client=_client_name,
+                         md=_paths['markdown'].split('/')[-1])
+        except Exception as _lv_err:
+            log.debug('livrable_export_skipped', err=str(_lv_err)[:80])
 
         # ── Phase 3b: Learning loop (kernel-authoritative — R5 / Pass 23) ──
         self._execute_kernel_learning(goal, ctx, mid, outcome, result_confidence, trace)
@@ -1821,8 +2012,8 @@ class MetaOrchestrator:
         
         # ── ArtificialCuriosity : detect and log surprising results ───────────────────
         try:
-            from core.orchestration.creative_engine import ArtificialCuriosity
-            _ac = ArtificialCuriosity(ollama_url="http://localhost:11434")
+            from core.orchestration.creative_engine import ArtificialCuriosity, JarvisLLMClient
+            _ac = ArtificialCuriosity(llm_client=JarvisLLMClient(role="fast"))
             _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
             if _surprise_ac > 0.6:
                 _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
@@ -1893,14 +2084,14 @@ class MetaOrchestrator:
                 confidence=result_confidence,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_completed as _ms_completed
             _ms_completed("canonical", duration_ms=outcome.duration_ms)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel event: mission completed (dual emission)
         try:
@@ -1909,14 +2100,14 @@ class MetaOrchestrator:
                               duration_ms=outcome.duration_ms,
                               confidence=result_confidence)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel working memory: clear mission slot (it is done)
         try:
             from kernel.runtime.boot import get_runtime as _get_kernel_rt
             _get_kernel_rt().memory.clear_working(mission_id=mid)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
     def _execute_kernel_learning(
         self,
@@ -2045,14 +2236,14 @@ class MetaOrchestrator:
                 error_class=outcome.error_class,
             )
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_failed as _ms_failed
             _ms_failed("canonical", reason=outcome.error_class)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
         
         # Kernel event: mission failed (dual emission)
         try:
@@ -2061,7 +2252,7 @@ class MetaOrchestrator:
                               error=outcome.error[:200],
                               error_class=outcome.error_class)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Store failure in memory
         try:
@@ -2099,6 +2290,19 @@ class MetaOrchestrator:
         log.info("mission.awaiting_approval",
                  mission_id=mid, risk_level=risk)
 
+        # Sync PENDING_VALIDATION into legacy MissionSystem so /api/v2/tasks sees it
+        try:
+            from core.mission_system import get_mission_system as _gms, MissionStatus as _LMS
+            _ms_sync = _gms()
+            _m_sync = _ms_sync.get(mid)
+            if _m_sync:
+                _m_sync.status = _LMS.PENDING_VALIDATION
+                _m_sync.decision_trace["awaiting_approval"] = True
+                _m_sync.decision_trace["approval_item_id"] = ctx.metadata.get("approval_item_id", "")
+                log.info("mission.pending_validation_synced", mission_id=mid)
+        except Exception as _sync_err:
+            log.debug("awaiting_approval_sync_failed", err=str(_sync_err)[:60])
+
     # ── Public API ───────────────────────────────────────────────────────────
 
     async def run_mission(
@@ -2110,6 +2314,7 @@ class MetaOrchestrator:
         use_budget: bool = False,
         force_approved: bool = False,
         project_id: str | None = None,  # Phase 2.1: Project isolation
+        extra_metadata: dict | None = None,  # Extra context (e.g. conversation history)
     ) -> MissionContext:
         """
         Enhanced mission lifecycle with classification, context assembly,
@@ -2120,6 +2325,7 @@ class MetaOrchestrator:
         """
         mid = mission_id or uuid.uuid4().hex[:16]
         now = time.time()
+        _extra_meta = extra_metadata or {}
 
         ctx = MissionContext(
             mission_id=mid,
@@ -2130,6 +2336,9 @@ class MetaOrchestrator:
             updated_at=now,
             project_id=project_id,  # Phase 2.1: Project isolation
         )
+        # Inject extra_metadata (conversation context, etc.) into ctx
+        if _extra_meta:
+            ctx.metadata.update(_extra_meta)
         with self._lock:
             self._missions[mid] = ctx
 
@@ -2142,6 +2351,22 @@ class MetaOrchestrator:
 
         # ── Decision trace ────────────────────────────────────────────
         trace, needs_approval = self._initialize_decision_trace(mid)
+
+        # Override needs_approval from extra_metadata (API request)
+        if _extra_meta.get("requires_validation"):
+            needs_approval = True
+            log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in extra_metadata")
+
+        # Also check mission decision_trace (set by convergence.py before run_mission)
+        try:
+            from core.mission_system import get_mission_system as _get_ms
+            _ms_check = _get_ms()
+            _m_check = _ms_check.get(mid)
+            if _m_check and _m_check.decision_trace.get("requires_validation"):
+                needs_approval = True
+                log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in decision_trace")
+        except Exception:
+            pass
 
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 
@@ -2176,12 +2401,12 @@ class MetaOrchestrator:
 
         try:
             # ── Phase 1: Classify (extracted method) ──────────────
-            classification = self._classify_mission(
+            self._classify_mission(
                 goal, mode, ctx, trace, _k_classification_obj
             )
 
             # ── Phase 0b: Match AI OS capabilities (extracted method) ────
-            matched_capabilities = self._match_ai_os_capabilities(
+            self._match_ai_os_capabilities(
                 goal, ctx, trace, _kernel_precomp_ok
             )
 
@@ -2307,7 +2532,6 @@ class MetaOrchestrator:
             # _mission_state was created in _execute_supervised and stored in ctx.metadata
             if ctx.metadata.get("mission_reasoning_state") is not None:
                 try:
-                    from core.orchestration.mission_reasoning_state import MissionReasoningState
                     _mrs_dict = ctx.metadata.get("mission_reasoning_state", {})
                     # Reconstruct from dict (simple approach - just skip update if complex)
                     # Alternative: return _mission_state from _execute_supervised
@@ -2319,9 +2543,32 @@ class MetaOrchestrator:
                     log.warning("phase_failed", phase="mission_state_observe",
                                 err=str(_mso_err)[:80])
 
-            if outcome.success:
+            # Guard: cognition may return a plain str instead of ExecutionOutcome
+            if isinstance(outcome, str):
+                from core.orchestration.execution_supervisor import ExecutionOutcome
+                _raw_str = outcome
+                outcome = ExecutionOutcome(
+                    success=bool(_raw_str and _raw_str.strip()),
+                    result=_raw_str,
+                )
+
+            # Guard: outcome can be None if fast-path already handled the mission
+            if outcome is None:
+                if ctx.status in (MissionStatus.DONE, MissionStatus.REVIEW):
+                    from core.orchestration.execution_supervisor import ExecutionOutcome
+                    outcome = ExecutionOutcome(success=True, result=ctx.result or "")
+                else:
+                    from core.orchestration.execution_supervisor import ExecutionOutcome
+                    outcome = ExecutionOutcome(success=False, result="")
+
+            # Skip success handler if mission already in terminal state (fast-path)
+            if ctx.status in (MissionStatus.DONE, MissionStatus.FAILED, MissionStatus.CANCELLED):
+                log.info("mission.already_terminal", mission_id=mid, status=ctx.status.value)
+                return ctx
+
+            if outcome is not None and outcome.success:
                 # Delegate to success outcome handler (evaluation, retry, memory, learning)
-                result_confidence = await self._handle_success_outcome(
+                await self._handle_success_outcome(
                     outcome=outcome,
                     ctx=ctx,
                     mid=mid,
@@ -2505,7 +2752,7 @@ class MetaOrchestrator:
             from core.mission_persistence import get_mission_persistence
             get_mission_persistence().resolve_approval(mission_id, granted, reason)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         # Journal event
         try:
@@ -2513,7 +2760,7 @@ class MetaOrchestrator:
             emit_approval_resolved(mission_id, granted=granted,
                                     item_id=ctx.metadata.get("approval_item_id", ""))
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
 
         if granted:
             # Resume: transition back to RUNNING and re-execute

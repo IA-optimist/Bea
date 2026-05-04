@@ -18,8 +18,11 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://77.42.40.146:8000'}/api/v2/auth/login`, {
+      // credentials: 'include' pour que le cookie HttpOnly set par le backend
+      // soit stocké dans le navigateur (le token n'atteint plus JS → XSS-proof).
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk'}/api/v2/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
@@ -30,8 +33,15 @@ export const Login = () => {
       }
 
       const data = await response.json();
-      localStorage.setItem('jarvis_token', data.data.token);
-      localStorage.setItem('jarvis_user', JSON.stringify(data.data.user));
+      // Le token JWT reste dans le body du login pour compat, mais n'est PLUS
+      // stocké en localStorage (XSS risk). L'auth est portée par le cookie
+      // HttpOnly `jarvis_token` envoyé automatiquement via withCredentials.
+      // Seul l'user display info est caché côté client (pas sensible).
+      if (data.data?.user) {
+        localStorage.setItem('jarvis_user', JSON.stringify(data.data.user));
+      }
+      // Cleanup legacy token s'il existait (migration d'une session pré-cookie).
+      localStorage.removeItem('jarvis_token');
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

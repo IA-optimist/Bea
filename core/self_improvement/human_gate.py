@@ -20,7 +20,6 @@ import structlog
 import os
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
 from typing import Optional
 
 log = structlog.get_logger()
@@ -63,7 +62,7 @@ def _format_slack_message(
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": f"🤖 JarvisMax SI — Review Required",
+                "text": "🤖 JarvisMax SI — Review Required",
             },
         },
         {

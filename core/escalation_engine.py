@@ -183,7 +183,7 @@ class EscalationEngine:
         # Critères d'escalade
         by_complexity = score >= threshold
         by_failures   = context.failure_count >= fail_limit
-        by_empty      = (
+        (
             bool(context.local_output) and
             len(context.local_output.strip()) < _DEFAULT_OUTPUT_LENGTH_LIMIT
         )

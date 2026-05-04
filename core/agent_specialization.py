@@ -30,11 +30,10 @@ from __future__ import annotations
 import json
 import os
 import re
-import time
-from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -315,7 +314,7 @@ def classify_task(task_text: str) -> list[dict]:
                         score += 0.5
                         matched_patterns.append(pattern[:50])
                 except re.error:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='agent_specialization.py')
 
             # Keyword overlap with tools
             task_words = set(re.findall(r'\w+', task_lower))
@@ -564,7 +563,7 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
             else:
                 analysis.missing.append(archetype.name)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
 
     try:
         # Detect overlapping agents (same role, similar capabilities)
@@ -587,7 +586,7 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
                         "overlap_count": len(overlap),
                     })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
 
     try:
         # Detect routing inefficiencies
@@ -604,7 +603,7 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
                         "issue": "agent not found in registry",
                     })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
 
     return analysis
 
@@ -883,6 +882,6 @@ def export_specialization_artifacts(output_dir: str = "workspace") -> dict:
     try:
         log.info("specialization_artifacts_exported", files=list(produced.keys()))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
 
     return produced

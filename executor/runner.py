@@ -20,6 +20,7 @@ from pathlib import Path
 import structlog
 
 from core.state import ActionSpec
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -464,7 +465,7 @@ class ActionExecutor:
                 try:
                     result.append(json.loads(line))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='runner.py')
             return result
         except Exception:
             return []

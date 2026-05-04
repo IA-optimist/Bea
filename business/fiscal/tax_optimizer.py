@@ -21,10 +21,9 @@ Target Markets:
 """
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -250,7 +249,7 @@ class TaxOptimizer:
         Returns:
             List of TaxScenario, sorted by net income (descending)
         """
-        logger.info(f"💶 Comparing tax scenarios...")
+        logger.info("💶 Comparing tax scenarios...")
         logger.info(f"   Revenue: €{revenue:,.2f}")
         logger.info(f"   Expenses: €{expenses:,.2f}")
         
@@ -306,7 +305,7 @@ class TaxOptimizer:
         if current_type == CompanyType.MICRO_ENTREPRENEUR and revenue > 77700:
             recommendations.append(TaxRecommendation(
                 title="Passer en société (SASU/SAS)",
-                description=f"Au-delà de 77,700€ de CA, le régime micro-entrepreneur n'est plus optimal. Une SASU/SAS permet de déduire les charges réelles et d'optimiser la rémunération (salaire + dividendes).",
+                description="Au-delà de 77,700€ de CA, le régime micro-entrepreneur n'est plus optimal. Une SASU/SAS permet de déduire les charges réelles et d'optimiser la rémunération (salaire + dividendes).",
                 savings=revenue * 0.15,  # ~15% savings
                 implementation_cost=1500,  # Frais création société
                 complexity="medium",
@@ -467,7 +466,7 @@ class TaxOptimizer:
 
 """
         
-        report += f"""
+        report += """
 ## ⚠️ DISCLAIMER
 
 **This is NOT legal or tax advice.**

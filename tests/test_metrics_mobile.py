@@ -44,7 +44,7 @@ class TestSummaryEndpoint:
             reset_metrics, emit_mission_submitted, emit_mission_completed,
             emit_mission_failed, emit_tool_invocation, emit_model_selected,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_mission_submitted("code_review")
         emit_mission_submitted("code_review")
@@ -57,7 +57,7 @@ class TestSummaryEndpoint:
         # Call the endpoint logic directly
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -78,7 +78,7 @@ class TestSummaryEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -94,7 +94,7 @@ class TestRoutingEndpoint:
             reset_metrics, emit_model_selected, emit_model_failure,
             emit_model_latency, emit_fallback_used,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_model_selected("claude-sonnet", "cloud")
         emit_model_selected("claude-sonnet", "cloud")
@@ -105,7 +105,7 @@ class TestRoutingEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_routing
-        resp = asyncio.get_event_loop().run_until_complete(metrics_routing(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_routing("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -123,7 +123,7 @@ class TestToolsEndpoint:
         from core.metrics_store import (
             reset_metrics, emit_tool_invocation, emit_tool_timeout,
         )
-        m = reset_metrics()
+        reset_metrics()
 
         emit_tool_invocation("shell_command", True, 150)
         emit_tool_invocation("shell_command", True, 200)
@@ -132,7 +132,7 @@ class TestToolsEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_tools
-        resp = asyncio.get_event_loop().run_until_complete(metrics_tools(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_tools("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -148,14 +148,14 @@ class TestImprovementEndpoint:
 
     def test_improvement_structure(self):
         from core.metrics_store import reset_metrics, emit_experiment
-        m = reset_metrics()
+        reset_metrics()
 
         emit_experiment("promoted", 0.15)
         emit_experiment("rejected", -0.05)
 
         import asyncio
         from api.routes.metrics_mobile import metrics_improvement
-        resp = asyncio.get_event_loop().run_until_complete(metrics_improvement(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_improvement("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -170,7 +170,7 @@ class TestFailuresEndpoint:
     """M6: Failures returns aggregated patterns."""
 
     def test_failures_structure(self):
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         m = reset_metrics()
 
         m.record_failure("timeout", "executor", "timed out")
@@ -179,7 +179,7 @@ class TestFailuresEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_failures
-        resp = asyncio.get_event_loop().run_until_complete(metrics_failures(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_failures("test"))
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -200,7 +200,7 @@ class TestNoSecrets:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary(None))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
         text = resp.body.decode() if isinstance(resp.body, bytes) else str(resp.body)
 
         for keyword in ["api_key", "token", "secret", "password", "bearer"]:

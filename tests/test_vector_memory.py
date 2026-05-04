@@ -1,5 +1,6 @@
 """tests/test_vector_memory.py — Vector memory layer tests."""
-import os, sys
+import os
+import sys
 import pytest
 pytestmark = pytest.mark.integration
 
@@ -48,7 +49,7 @@ class TestQdrantVectorStore:
 
 class TestVectorMemory:
     def test_import(self):
-        from core.memory.vector_memory import VectorMemory, get_vector_memory
+        from core.memory.vector_memory import get_vector_memory
         assert callable(get_vector_memory)
 
     def test_stats_structure(self):

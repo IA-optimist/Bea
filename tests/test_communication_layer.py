@@ -6,7 +6,6 @@ Approval enforcement, safety, determinism.
 """
 import pytest
 import ast
-import json
 import os
 import sys
 import time
@@ -270,7 +269,7 @@ def test_api_connector_blocks_internal():
 
 @pytest.mark.skip(reason="stale: moved")
 def test_api_connector_rate_limiting():
-    from core.connectors import api_connector, _api_rate_limits, _API_RATE_MAX
+    from core.connectors import api_connector, _api_rate_limits
     import core.connectors as conn
     old_max = conn._API_RATE_MAX
     conn._API_RATE_MAX = 3  # very low for testing

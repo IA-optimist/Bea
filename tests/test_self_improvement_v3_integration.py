@@ -76,33 +76,29 @@ Decision Contract
 import os
 import sys
 import shutil
-import tempfile
-import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 from core.self_improvement_loop import (
     JarvisImprovementLoop, ImprovementTask, PatchProposal,
-    LessonMemory, PromotionPolicy, PatchDecision, CycleReport, Lesson,
-    ImprovementSignal, SignalType,
+    PromotionPolicy,
 )
 from core.self_improvement.promotion_pipeline import (
     PromotionPipeline, CandidatePatch, PromotionDecision,
 )
 from core.self_improvement.code_patcher import PatchIntent
 from core.self_improvement.sandbox_executor import (
-    SandboxExecutor, SandboxResult, _scrub_secrets, FailureCategory,
+    SandboxExecutor, SandboxResult, _scrub_secrets,
 )
 from core.self_improvement.test_runner import (
-    PatchRunner as TestRunner, SuiteResult as TestSuiteResult,
-    ValidationReport, ExperimentReport,
+    PatchRunner as TestRunner, ValidationReport,
 )
 from core.self_improvement.observability import (
-    SIObservability, SIEvent, get_si_observability,
+    SIObservability, SIEvent,
 )
 from core.self_improvement.git_agent import GitAgent, WorkspaceSnapshot
 
@@ -405,7 +401,7 @@ class TestBridgeIntegration:
 
     def test_observability_events_end_to_end(self, tmp_repo):
         """VI23. Observability events emitted during real pipeline execution."""
-        obs = SIObservability()
+        SIObservability()
         # Run a real pipeline (not mocked)
         pipeline = PromotionPipeline(repo_root=tmp_repo)
         candidate = CandidatePatch(
@@ -825,7 +821,7 @@ class TestDecisionContract:
             mock_pipe = _mock_pipeline_result(decision_type)
             loop._pipeline = mock_pipe
             details = []
-            result = loop._execute_via_pipeline(_task(), _patch(), details)
+            loop._execute_via_pipeline(_task(), _patch(), details)
             # No detail step should say "applied_production"
             for d in details:
                 assert d.get("action") != "applied_production"

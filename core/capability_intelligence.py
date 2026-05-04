@@ -27,15 +27,14 @@ Usage:
 """
 from __future__ import annotations
 
-import importlib
 import json
 import os
 import re
 import time
-from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -585,7 +584,7 @@ def run_auto_discovery() -> DiscoveryReport:
                     "count": len(tools),
                 })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     return report
 
@@ -938,7 +937,7 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     suggestion=f"Install missing dependency for {unavail['tool']}.",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     try:
         # 2. Tool failure clusters
@@ -952,7 +951,7 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     suggestion=f"Investigate failures: {rel.last_error[:100]}",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     try:
         # 3. Missing capabilities — domains with zero available tools
@@ -972,7 +971,7 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     suggestion=f"Install dependencies for {domain} domain tools.",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     try:
         # 4. Coverage gaps — mission types with few available tools
@@ -990,7 +989,7 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     suggestion=f"Ensure dependencies for {mission} tools are installed.",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     return gaps
 
@@ -1070,6 +1069,6 @@ def export_artifacts(output_dir: str = "workspace") -> dict:
     try:
         log.info("capability_artifacts_exported", files=list(produced.keys()))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
 
     return produced

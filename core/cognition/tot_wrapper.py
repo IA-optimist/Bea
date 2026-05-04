@@ -3,7 +3,6 @@ Tree-of-Thought wrapper for mission planning.
 Integrates ToT with JarvisMax LLM client.
 """
 import os
-from typing import Optional
 import structlog
 from core.cognition.tree_of_thought import TreeOfThought
 
@@ -26,18 +25,23 @@ async def plan_with_tot(
     # Wrapper for LLM calls (convert to async)
     async def llm_call(prompt: str) -> str:
         try:
-            # Use OpenRouter client
-            response = llm_client.chat.completions.create(
-                model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.7-sonnet"),
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=500,
-                temperature=0.7
-            )
-            return response.choices[0].message.content
+            from langchain_core.messages import HumanMessage
+            if hasattr(llm_client, 'ainvoke'):
+                response = await llm_client.ainvoke([HumanMessage(content=prompt)])
+                return response.content if hasattr(response, 'content') else str(response)
+            elif hasattr(llm_client, 'chat'):
+                response = llm_client.chat.completions.create(
+                    model=os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001"),
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+            else:
+                return str(await llm_client(prompt))
         except Exception as e:
             log.error("tot_llm_call_failed", error=str(e))
             return "Error generating thought"
-    
     # Create ToT engine
     tot = TreeOfThought(
         llm_function=llm_call,
@@ -62,12 +66,10 @@ async def plan_with_tot(
 
 
 def should_use_tot(goal: str) -> bool:
-    """Decide if ToT is beneficial for this mission."""
-    # Use ToT for complex, open-ended missions
-    complexity_keywords = [
-        "design", "architecture", "strategy", "optimize", "compare",
-        "evaluate", "analyze", "research", "plan", "create"
-    ]
-    
-    goal_lower = goal.lower()
-    return any(keyword in goal_lower for keyword in complexity_keywords)
+    """Only activate ToT for genuinely complex missions, not simple chat."""
+    if len(goal.strip()) < 100:
+        return False
+    if "[ROUTING:" in goal and "complexity=simple" in goal:
+        return False
+    heavy_keywords = ["architecture", "strategy", "design a", "build a system", "roadmap"]
+    return any(k in goal.lower() for k in heavy_keywords)

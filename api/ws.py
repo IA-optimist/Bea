@@ -11,36 +11,20 @@ Sécurité :
     si le token est invalide — pas après.
 """
 import asyncio
-import time as _time
 import structlog
-from typing import Any, Optional
+from typing import Optional
 from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
-from config.settings import get_settings
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 router = APIRouter()
 
-# Registre global des EventStreams actifs.
-ACTIVE_STREAMS: dict[str, dict] = {}
-_STREAM_TTL_S = 3_600   # 1 hour
-
-
-def register_stream(mission_id: str, stream: Any) -> None:
-    ACTIVE_STREAMS[mission_id] = {"stream": stream, "ts": _time.time()}
-    _cleanup_stale_streams()
-
-
-def deregister_stream(mission_id: str) -> None:
-    ACTIVE_STREAMS.pop(mission_id, None)
-
-
-def _cleanup_stale_streams() -> None:
-    cutoff = _time.time() - _STREAM_TTL_S
-    stale = [k for k, v in ACTIVE_STREAMS.items() if v["ts"] < cutoff]
-    for k in stale:
-        log.debug("ws_stream_ttl_evicted", mission_id=k)
-        ACTIVE_STREAMS.pop(k, None)
+# Registre canonique dans core.event_stream — ce module ré-exporte pour
+# compatibilité (meta_orchestrator importe désormais directement depuis core).
+from core.event_stream import (
+    ACTIVE_WS_STREAMS as ACTIVE_STREAMS,
+)
 
 
 def _verify_ws_token(token: Optional[str]) -> bool:
@@ -52,9 +36,14 @@ def _verify_ws_token(token: Optional[str]) -> bool:
     if not token:
         return False
     try:
+        # Unified auth: use same verify_token as REST endpoints
+        from api.auth import verify_token as _api_verify_token
+        user = _api_verify_token(token)
+        if user:
+            return True
+        # Fallback: try RBAC resolver (returns CurrentUser instead of dict)
         from core.security.rbac import _resolve_user_from_token
-        user = _resolve_user_from_token(token)
-        return user is not None
+        return _resolve_user_from_token(token) is not None
     except Exception:
         return False
 
@@ -160,7 +149,7 @@ async def websocket_stream(
                     if isinstance(_p, dict) and _p.get('type') == 'ping':
                         _is_ping = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='ws.py')
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
             else:
@@ -231,7 +220,7 @@ async def ws_handler(websocket: WebSocket):
             "active_streams": len(ACTIVE_STREAMS),
         })
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ws.py')
 
     # Keep alive — relay events or wait for disconnect
     try:
@@ -250,7 +239,7 @@ async def ws_handler(websocket: WebSocket):
                     if isinstance(_parsed, dict) and _parsed.get('type') == 'ping':
                         _is_ping = True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='ws.py')
 
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
@@ -259,7 +248,7 @@ async def ws_handler(websocket: WebSocket):
     except WebSocketDisconnect:
         log.info("ws_handler_disconnected")
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='ws.py')
 
 
 class RewindRequest(BaseModel):

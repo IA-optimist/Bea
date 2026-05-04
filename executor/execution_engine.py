@@ -34,7 +34,6 @@ import structlog
 
 from executor.task_model import (
     ExecutionTask,
-    ExecutionResult,
     STATUS_PENDING,
     STATUS_RUNNING,
     STATUS_SUCCEEDED,
@@ -43,7 +42,7 @@ from executor.task_model import (
     STATUS_TIMED_OUT,
     TERMINAL_STATUSES,
 )
-from executor.retry_policy import RetryPolicy, DEFAULT_POLICY, should_retry, compute_delay
+from executor.retry_policy import DEFAULT_POLICY, should_retry, compute_delay
 
 log = structlog.get_logger()
 

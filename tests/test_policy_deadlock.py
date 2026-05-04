@@ -1,7 +1,6 @@
 """tests/test_policy_deadlock.py — Policy deadlock prevention tests."""
 import os
 import sys
-import time
 import unittest
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

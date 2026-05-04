@@ -30,8 +30,7 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.research_loop")
 
@@ -338,13 +337,13 @@ def collect_metrics() -> BaselineMetrics:
                         try:
                             m.test_count += int(parts[i - 1])
                         except ValueError:
-                            pass
+                            _silent_log.debug("suppressed_exception", src='research_loop.py')
                     if p == "failed" and i > 0:
                         try:
                             m.test_failures += int(parts[i - 1])
                             m.test_count += int(parts[i - 1])
                         except ValueError:
-                            pass
+                            _silent_log.debug("suppressed_exception", src='research_loop.py')
         m.test_pass_rate = (m.test_count - m.test_failures) / m.test_count if m.test_count else 1.0
     except Exception as e:
         log.debug("metrics_test_failed", err=str(e)[:60])
@@ -372,7 +371,7 @@ def collect_metrics() -> BaselineMetrics:
     # Tool success from recovery engine
     try:
         from core.resilience.recovery_engine import get_recovery_engine
-        stats = get_recovery_engine().stats()
+        get_recovery_engine().stats()
         m.tool_success_rate = 1.0  # Default if no failures tracked
     except Exception:
         m.tool_success_rate = 0.9
@@ -548,7 +547,7 @@ class ResearchLoop:
             result.rollback_info = rb_info
 
             # 3. Create sandbox
-            sandbox_path = self._sandbox.create(spec.experiment_id, spec.target_files)
+            self._sandbox.create(spec.experiment_id, spec.target_files)
 
             # 4. Apply change via safe executor
             try:

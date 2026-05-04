@@ -9,9 +9,8 @@ from __future__ import annotations
 import json
 import os
 import threading
-import time
 from collections import deque
-from typing import Any, Callable
+from typing import Callable
 
 import structlog
 
@@ -19,6 +18,7 @@ from core.cognitive_events.types import (
     CognitiveEvent, EventType, EventSeverity, EventDomain,
 )
 
+_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("cognitive_events.store")
 
 _DEFAULT_MAX_SIZE = 5000
@@ -73,14 +73,14 @@ class CognitiveJournal:
             try:
                 self._persist_event(event)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='store.py')
 
         # Notify subscribers (fail-open, non-blocking)
         for sub in self._subscribers:
             try:
                 sub(event)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='store.py')
 
         return event
 
@@ -323,7 +323,7 @@ class CognitiveJournal:
     def _persist_event(self, event: CognitiveEvent) -> None:
         """Append event to daily JSONL file."""
         import datetime
-        day = datetime.datetime.utcfromtimestamp(event.timestamp).strftime("%Y-%m-%d")
+        day = datetime.datetime.fromtimestamp(event.timestamp, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
         path = os.path.join(self._persist_dir, f"journal-{day}.jsonl")
         line = json.dumps(event.to_dict(), default=str) + "\n"
         with open(path, "a") as f:
@@ -337,7 +337,7 @@ class CognitiveJournal:
         import datetime
         loaded = 0
         for i in range(days):
-            day = (datetime.datetime.utcnow() - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+            day = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=i)).strftime("%Y-%m-%d")
             path = os.path.join(self._persist_dir, f"journal-{day}.jsonl")
             if not os.path.isfile(path):
                 continue

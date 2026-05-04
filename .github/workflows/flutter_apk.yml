@@ -1,0 +1,166 @@
+name: Build JarvisMax APK
+
+# ──────────────────────────────────────────────────────────────
+# Triggered by:
+#   - Tag push matching v*       → full release build + artifact
+#   - Manual dispatch            → on-demand build (any branch)
+#   - Push to main touching the Flutter app → smoke build (no artifact upload)
+#
+# Secrets consumed (configure in repo → Settings → Secrets and variables → Actions):
+#   Required for a usable APK :
+#     JARVIS_API_TOKEN   — current value from /root/Jarvismax-master/.env on VPS1
+#     JARVIS_API_HOST    — e.g. jarvis.jarvismaxapp.co.uk
+#     JARVIS_API_PORT    — e.g. 443
+#     JARVIS_USERNAME    — e.g. admin
+#
+#   Optional (release signing; if absent, APK is unsigned) :
+#     ANDROID_KEYSTORE_BASE64  — base64 of your .jks/.keystore
+#     KEYSTORE_PASSWORD        — keystore password
+#     KEY_ALIAS                — key alias in the keystore
+#     KEY_PASSWORD             — key password
+# ──────────────────────────────────────────────────────────────
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'jarvismax_app/**'
+      - '.github/workflows/flutter_apk.yml'
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'Build mode'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jarvismax_app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Show Flutter doctor
+        run: flutter doctor -v
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ── Optional: decode keystore for signing ────────────────
+      - name: Decode keystore (if provided)
+        id: keystore
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat <<EOF > android/key.properties
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+          echo "signing=true" >> "$GITHUB_OUTPUT"
+
+      # ── Determine build mode ─────────────────────────────────
+      - name: Determine build mode
+        id: mode
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            MODE="${{ inputs.build_mode }}"
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            MODE="release"
+          else
+            MODE="debug"
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Building in $MODE mode"
+
+      # ── Build APK with injected secrets ──────────────────────
+      - name: Build APK
+        env:
+          JARVIS_API_TOKEN: ${{ secrets.JARVIS_API_TOKEN }}
+          JARVIS_API_HOST: ${{ secrets.JARVIS_API_HOST }}
+          JARVIS_API_PORT: ${{ secrets.JARVIS_API_PORT }}
+          JARVIS_USERNAME: ${{ secrets.JARVIS_USERNAME }}
+        run: |
+          flutter build apk --${{ steps.mode.outputs.mode }} --no-shrink \
+            --dart-define=JARVIS_API_TOKEN="${JARVIS_API_TOKEN:-CHANGE_ME}" \
+            --dart-define=JARVIS_API_HOST="${JARVIS_API_HOST:-127.0.0.1}" \
+            --dart-define=JARVIS_API_PORT="${JARVIS_API_PORT:-8000}" \
+            --dart-define=JARVIS_USERNAME="${JARVIS_USERNAME:-admin}" \
+            --dart-define=JARVIS_AUTO_LOGIN=true
+
+      - name: Compute APK metadata
+        id: apk
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-${{ steps.mode.outputs.mode }}.apk"
+          if [[ ! -f "$APK_PATH" ]]; then
+            echo "APK not found at $APK_PATH"
+            ls -la build/app/outputs/flutter-apk/ || true
+            exit 1
+          fi
+          SIZE=$(du -h "$APK_PATH" | cut -f1)
+          SHA=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
+          echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "APK ready : $APK_PATH ($SIZE, sha256=$SHA)"
+
+      # ── Upload APK as workflow artifact (retained 90 days) ───
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvismax-${{ steps.mode.outputs.mode }}-${{ github.sha }}
+          path: jarvismax_app/${{ steps.apk.outputs.path }}
+          retention-days: 90
+          if-no-files-found: error
+
+      # ── Attach APK to a GitHub Release when triggered by tag ─
+      - name: Create GitHub Release (on tag)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: jarvismax_app/${{ steps.apk.outputs.path }}
+          name: JarvisMax ${{ github.ref_name }}
+          body: |
+            ## JarvisMax Mobile — ${{ github.ref_name }}
+
+            - APK : `app-${{ steps.mode.outputs.mode }}.apk` (${{ steps.apk.outputs.size }})
+            - SHA-256 : `${{ steps.apk.outputs.sha256 }}`
+            - Signé : ${{ steps.keystore.outputs.signing == 'true' && 'oui' || 'non (APK non-signé)' }}
+
+            Installer via ADB :
+            ```bash
+            adb install app-${{ steps.mode.outputs.mode }}.apk
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

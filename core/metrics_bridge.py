@@ -26,7 +26,6 @@ Design:
 """
 from __future__ import annotations
 
-import asyncio
 import functools
 import json
 import os
@@ -34,6 +33,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -63,7 +63,7 @@ def _patch_meta_orchestrator() -> bool:
             from core.metrics_store import (
                 emit_mission_submitted, emit_mission_completed,
                 emit_mission_failed, emit_mission_timeout,
-                emit_orchestrator_timing, get_metrics,
+                get_metrics,
             )
 
             # Classify mission type from mode/goal
@@ -137,7 +137,7 @@ def _patch_tool_executor() -> bool:
                 get_metrics().set_gauge("executor_active_tasks",
                     len([1 for t in getattr(self, '_tools', {})]))
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
             return result
 
@@ -150,7 +150,7 @@ def _patch_tool_executor() -> bool:
                 if max_retries > 0 and not result.get("ok"):
                     emit_retry("tool_executor")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
             return result
 
         ToolExecutor.execute = instrumented_execute
@@ -179,7 +179,7 @@ def _patch_llm_factory() -> bool:
                 locality = "local" if provider == "ollama" else "cloud"
                 emit_model_selected(model_name, locality)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
             return llm
 
         @functools.wraps(original_invoke)
@@ -187,7 +187,6 @@ def _patch_llm_factory() -> bool:
                                        session_id="", agent_name="", **kwargs):
             from core.metrics_store import (
                 emit_model_latency, emit_model_failure,
-                emit_fallback_used, get_metrics,
             )
 
             t0 = time.monotonic()
@@ -207,7 +206,7 @@ def _patch_llm_factory() -> bool:
                                                      kwargs.get("mission_id", ""))
                     emit_model_latency(model_name, ms)
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
                 return resp
             except Exception as e:
@@ -215,7 +214,7 @@ def _patch_llm_factory() -> bool:
                 try:
                     emit_model_failure(role, str(e)[:200])
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
                 raise
 
         LLMFactory.get = instrumented_get
@@ -247,7 +246,7 @@ def _patch_memory_facade() -> bool:
                 else:
                     m.set_gauge("memory_persistence_ok", 0)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
             return result
 
         @functools.wraps(original_search)
@@ -260,7 +259,7 @@ def _patch_memory_facade() -> bool:
                 hit = len(results) > 0
                 emit_memory_search(hit, ms)
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
             return results
 
         MemoryFacade.store = instrumented_store
@@ -291,7 +290,7 @@ def _patch_improvement_loop() -> bool:
                 if report.decision in ("error", "rejected"):
                     get_metrics().inc("rollback_total")
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
             return report
 
         ImprovementLoop.run_experiment = instrumented_run_experiment
@@ -353,7 +352,7 @@ def process_trace_event(event: dict) -> None:
         if handler:
             handler(event)
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
 
 def _patch_trace() -> bool:
@@ -368,7 +367,7 @@ def _patch_trace() -> bool:
             try:
                 process_trace_event({"component": component, "event": event, **data})
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
         MissionTrace.record = instrumented_record
         log.info("metrics_bridge.patched", target="MissionTrace.record")
@@ -440,7 +439,7 @@ def _extract_cost_from_response(response_metadata: dict, model_id: str,
         )
 
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -466,7 +465,7 @@ def _snapshot_loop(path: Path):
             try:
                 log.debug("snapshot_write_failed", err=str(e)[:80])
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
         # Save kernel performance every 5 cycles (~5 min at default interval)
         cycle += 1
@@ -475,7 +474,7 @@ def _snapshot_loop(path: Path):
                 from kernel.runtime.boot import save_performance
                 save_performance()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
 
 def start_snapshot_persistence(workspace_dir: str = "workspace") -> None:
@@ -594,7 +593,7 @@ def evaluate_alerts(window_s: float = 3600) -> list[dict]:
                 log.warning("alert_triggered", **{k: v for k, v in alert.items()
                                                    if k != "recommendation"})
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
 
         return alerts
 

@@ -14,10 +14,9 @@ import json
 import os
 import tempfile
 import time
-import pytest
 
 from kernel.capabilities.performance import (
-    PerformanceStore, PerformanceRecord, get_performance_store,
+    PerformanceStore, PerformanceRecord,
 )
 
 
@@ -237,7 +236,6 @@ class TestBootIntegration:
 
     def test_PP15_boot_restore_roundtrip(self):
         """Performance data survives save → boot cycle."""
-        import kernel.capabilities.performance as _mod
 
         # Create store with data
         store = PerformanceStore()

@@ -118,7 +118,7 @@ def test_parallel_run_with_mock_agents():
     # Monkey-patch AgentCrew pour éviter les vrais agents
     import agents.parallel_executor as pex_mod
 
-    original_crew = pex_mod.__dict__.get("AgentCrew")
+    pex_mod.__dict__.get("AgentCrew")
 
     class _MockCrew:
         def __init__(self, *a, **k): pass
@@ -131,10 +131,8 @@ def test_parallel_run_with_mock_agents():
     pex = ParallelExecutor(s)
 
     # Patcher la création du crew dans run()
-    original_run = pex.run
 
     async def _patched_run(tasks, session, emit=None):
-        import asyncio
         from agents.parallel_executor import AgentResult
         results = {}
         for t in tasks:
@@ -227,7 +225,7 @@ def test_synthesizer_synthesize_no_llm():
     ))
     assert isinstance(result, dict), f"Résultat doit être un dict : {type(result)}"
     assert "merged" in result, f"Clé 'merged' manquante : {result}"
-    assert isinstance(result["merged"], str), f"merged doit être une str"
+    assert isinstance(result["merged"], str), "merged doit être une str"
     assert len(result["merged"]) > 20, f"merged trop court : {repr(result['merged'])}"
     print(f"[OK] test_synthesizer_synthesize_no_llm ({len(result['merged'])} chars)")
 

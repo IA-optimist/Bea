@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -35,7 +36,7 @@ def _get_db_connection():
             host=os.getenv("POSTGRES_HOST", "postgres"),
             database=os.getenv("POSTGRES_DB", "jarvis"),
             user=os.getenv("POSTGRES_USER", "jarvis"),
-            password=os.getenv("POSTGRES_PASSWORD", "testpass123")
+            password=os.getenv("POSTGRES_PASSWORD", "")
         )
         return conn
     except Exception as e:
@@ -179,8 +180,8 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
                 SET success = false, error_message = EXCLUDED.error_message
             """, (migration_name, error_msg))
             conn.commit()
-        except:
-            pass
+        except Exception:
+            _silent_log.debug("suppressed_exception", src='migrate.py')
         
         return False, error_msg
 

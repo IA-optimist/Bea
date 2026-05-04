@@ -9,7 +9,6 @@ Templates are extensible — new providers added by registering a dict.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 
 @dataclass

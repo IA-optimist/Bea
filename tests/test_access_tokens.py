@@ -42,7 +42,6 @@ Phase B6: Multi-role
 import os
 import sys
 import time
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -119,7 +118,7 @@ class TestValidation:
 
     def test_expired_token_fails(self, tmp_path):
         """T8: Expired token returns None."""
-        from api.access_tokens import TokenManager, AccessToken
+        from api.access_tokens import TokenManager
         mgr = TokenManager(tmp_path / "tokens.json")
         raw, token = mgr.create_token("Test", role="user", expires_days=0)
         # Force expiry

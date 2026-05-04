@@ -1,5 +1,6 @@
 """tests/test_semantic_routing.py — Semantic capability routing tests."""
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import pytest
 
@@ -56,8 +57,7 @@ class TestSemanticRouter:
         assert cache.stats()["misses"] == 1
 
     def test_embedding_cache_ttl(self, monkeypatch):
-        from core.capabilities import semantic_router
-        from core.capabilities.semantic_router import EmbeddingCache, CachedEmbedding
+        from core.capabilities.semantic_router import EmbeddingCache
         cache = EmbeddingCache()
         cache.put("test", [0.1])
         # Force expiry

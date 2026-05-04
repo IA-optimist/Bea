@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 
 from core.self_improvement.patch_builder import PatchCandidate
 from core.self_improvement.protected_paths import is_protected
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -145,7 +146,7 @@ class DeploymentGate:
             try:
                 return float(m.group(1))
             except ValueError:
-                pass
+                _silent_log.debug("suppressed_exception", src='deployment_gate.py')
         return 0.5
 
     def _extract_risk(self, justification: str) -> str:

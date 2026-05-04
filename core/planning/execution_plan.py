@@ -18,6 +18,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class StepType(str, Enum):
@@ -140,7 +141,7 @@ class ExecutionPlan:
                     if tool and tool.requires_approval:
                         return True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='execution_plan.py')
             if step.type == StepType.BUSINESS_ACTION:
                 try:
                     from core.business_actions import ACTION_REGISTRY
@@ -148,7 +149,7 @@ class ExecutionPlan:
                     if action and action.requires_approval:
                         return True
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='execution_plan.py')
         return False
 
     @property

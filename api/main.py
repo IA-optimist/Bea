@@ -17,10 +17,12 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """
 from __future__ import annotations
 
+import structlog
+_silent_log = structlog.get_logger(__name__)
+
 from dotenv import load_dotenv
 load_dotenv()
 
-import asyncio
 import os
 import time
 from pathlib import Path
@@ -30,17 +32,17 @@ from pathlib import Path
 # (finance, venture, playbooks, browser, voice). Default: false.
 # When false, these endpoints return 404 instead of fake 200 with empty data.
 _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
-from typing import Any, Optional
+from typing import Any
 
 import structlog
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, WebSocket
-from api._deps import require_auth, get_start_time, _check_auth
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket
+from api._deps import require_auth, get_start_time
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
 from api.security_headers import SecurityHeadersMiddleware
 from api.token_utils import strip_bearer
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -114,8 +116,11 @@ app.add_middleware(SecurityHeadersMiddleware)
 # It MUST NOT be commented out — without it, per-route auth is the only
 # line of defense and any route without Depends(require_auth) becomes public.
 try:
-    from api.middleware import AccessEnforcementMiddleware
+    from api.middleware import AccessEnforcementMiddleware, V1DeprecationMiddleware
     app.add_middleware(AccessEnforcementMiddleware)
+    # Tags every /api/v1/* response with RFC 8594 Deprecation + Sunset headers
+    # and emits a structlog warning. Sunset target : 2026-10-01.
+    app.add_middleware(V1DeprecationMiddleware)
 except ImportError as _enf_err:
     log.error("access_enforcement_MISSING", err=str(_enf_err),
               note="Security middleware unavailable — API will rely on per-route auth only")
@@ -130,8 +135,8 @@ except ImportError as _enf_err:
 
 # ── Security headers middleware ───────────────────────────────
 try:
-    from api.security_headers import SecurityHeadersMiddleware
-    app.add_middleware(SecurityHeadersMiddleware)
+    # SecurityHeadersMiddleware already mounted above (line 110)
+    pass  # duplicate removed
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 
@@ -148,6 +153,15 @@ except ImportError as _rl_err:
             "PRODUCTION STARTUP BLOCKED — RateLimitMiddleware failed to import. "
             "Fix the import or unset JARVIS_PRODUCTION."
         ) from _rl_err
+
+# ── Training-data collector hook (opt-in via JARVIS_TRAINING_COLLECT=1) ──
+# Wraps LLMFactory.safe_invoke so every successful LLM call is captured
+# in data/training/raw/*.jsonl. No-op if the env var is unset.
+try:
+    from core.llm_wrapper import patch_llm_factory
+    patch_llm_factory()
+except Exception as _tc_err:
+    log.debug("training_collector_hook_skipped", err=str(_tc_err)[:120])
 
 # ── Router Registry ───────────────────────────────────────────
 try:
@@ -183,6 +197,13 @@ try:
     app.include_router(training_router)
 except Exception as _e:
     log.warning("training_router_unavailable", err=str(_e)[:120])
+
+# ── Import du routeur Autonomy (daemon control plane) ─────────
+try:
+    from api.routes.autonomy import router as autonomy_router
+    app.include_router(autonomy_router)
+except Exception as _e:
+    log.warning("autonomy_router_unavailable", err=str(_e)[:120])
 
 # ── Import du routeur Multimodal ───────────────────────────────
 try:
@@ -334,7 +355,7 @@ try:
     if token_mgmt_router:
         app.include_router(token_mgmt_router)
 except Exception:
-    pass
+    _silent_log.debug("suppressed_exception", src='main.py')
 
 # ── Skills & trace routers ──
 try:
@@ -343,11 +364,8 @@ try:
 except Exception as _e:
     log.warning("skills_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.trace import router as trace_router
-    app.include_router(trace_router)
-except Exception as _e:
-    log.warning("trace_router_unavailable", err=str(_e))
+# Trace router removed in audit phase-11 (2026-04-25). Both /api/v1/trace/* endpoints
+# had zero callers in code, tests, frontend, or docs. Restore from git history if needed.
 
 # ── V3 feature routes (finance, missions, vault, identity, modules_v3) ──
 try:
@@ -605,7 +623,6 @@ async def root_redirect():
 
 # ── Prometheus Metrics Endpoint ────────────────────────────────
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, REGISTRY
-from fastapi.responses import Response
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():
@@ -852,47 +869,133 @@ def _get_monitoring_agent():
 
 # ── Auth endpoints ────────────────────────────────────────────
 
+
+# HttpOnly cookie config — XSS-safe token storage (CVSS 9.1 mitigation).
+# Secure flag activé uniquement hors dev pour permettre le test en HTTP local.
+_COOKIE_NAME = "jarvis_token"
+_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
+_COOKIE_SECURE = os.environ.get("JARVIS_COOKIE_SECURE", "1") != "0"
+
+
+def _set_auth_cookie(response: Response, token: str) -> None:
+    """Set HttpOnly token cookie (XSS-safe). Additive — token reste aussi en body."""
+    response.set_cookie(
+        key=_COOKIE_NAME,
+        value=token,
+        max_age=_COOKIE_MAX_AGE,
+        httponly=True,
+        secure=_COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
+
+@app.post("/api/v2/auth/login", tags=["auth"])
+async def json_login(request: Request, response: Response):
+    """
+    JSON-compatible login endpoint for frontend React dashboard.
+    Accepts: {"email": "...", "password": "..."} or {"username": "...", "password": "..."}
+    Returns: {"ok": true, "data": {"token": "...", "user": {...}}}
+
+    Set aussi un cookie HttpOnly `jarvis_token` — prioritaire sur les
+    headers côté serveur. Les frontends legacy qui utilisent le token du
+    body continuent de fonctionner (backward-compat).
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+    username = body.get("username") or body.get("email") or ""
+    password = body.get("password") or ""
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="username/email and password required")
+    from api.auth import _check_auth_password
+    token = _check_auth_password(username, password)
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    _set_auth_cookie(response, token)
+    return {
+        "ok": True,
+        "data": {
+            "token": token,
+            "user": {"username": username, "role": "user"},
+        },
+    }
+
+
+@app.post("/api/v2/auth/logout", tags=["auth"])
+async def json_logout(response: Response):
+    """Clear le cookie HttpOnly. Les headers Bearer/X-Jarvis-Token sont la
+    responsabilité du client (drop côté frontend)."""
+    response.delete_cookie(_COOKIE_NAME, path="/")
+    return {"ok": True, "data": {"message": "logged_out"}}
+
+
 @app.post("/auth/token", tags=["auth"])
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
     from api.auth import _check_auth_password
     token = _check_auth_password(form_data.username, form_data.password)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if response is not None:
+        _set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/auth/login", tags=["auth"])
 # Returns: token, role, expires_in, authenticated, permissions
-async def login_alias(form_data: OAuth2PasswordRequestForm = Depends()):
-    return await login_for_access_token(form_data)
+async def login_alias(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
+    return await login_for_access_token(form_data, response)
 
 @app.get("/auth/me", tags=["auth"])
-# Returns: authenticated, role, permissions, expires_in
-# ROLE_PERMISSIONS mapping: admin=all, user=read/write, viewer=read
-async def auth_me(request: Request):
-    try:
-        from api._deps import require_auth as _ra
-        user = await _ra(request)
-        return {"ok": True, "user": user}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+async def auth_me(user: dict = Depends(require_auth)):
+    """Retourne l'identité de l'utilisateur authentifié (cookie ou header).
+
+    Le cookie HttpOnly `jarvis_token` est lu en priorité par require_auth,
+    fallback sur Bearer / X-Jarvis-Token pour legacy.
+
+    Permet au frontend de restaurer la session au chargement sans
+    persister aucune info sensible dans localStorage.
+    Retourne 401 si pas authentifié (via Depends).
+    """
+    return {
+        "ok": True,
+        "data": {
+            "authenticated": True,
+            "user": user,
+            "role": user.get("role", "user"),
+            "username": user.get("username", ""),
+        },
+    }
+
 
 @app.post("/auth/refresh", tags=["auth"])
-async def refresh_token(request: Request):
-    """Refresh a JWT token. Accepts Authorization: Bearer <token> header.
-    Returns a new token if the current one is valid; 401 otherwise.
-    Used by the Flutter mobile app for silent session renewal.
+async def refresh_token(request: Request, response: Response):
+    """Refresh a JWT token.
+
+    Accepts (priorité descendante) : cookie HttpOnly `jarvis_token`,
+    `Authorization: Bearer <token>` header, ou `X-Jarvis-Token` header.
+    Retourne un nouveau token + met à jour le cookie HttpOnly.
+    401 si le token actuel est invalide ou expiré.
     """
-    from api._deps import _check_auth
-    from api.token_utils import strip_bearer
     from api.auth import create_access_token, verify_token
-    auth_header = request.headers.get("Authorization", "")
-    token_str = strip_bearer(auth_header) or request.headers.get("X-Jarvis-Token", "")
+
+    # Priorité cookie → Bearer → X-Jarvis-Token (aligne sur require_auth).
+    token_str = (
+        request.cookies.get("jarvis_token")
+        or strip_bearer(request.headers.get("Authorization", ""))
+        or request.headers.get("X-Jarvis-Token", "")
+    )
     if not token_str:
         raise HTTPException(status_code=401, detail="No token provided")
     user = verify_token(token_str)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    new_token = create_access_token({"sub": user.get("username", ""), "role": user.get("role", "user")})
+    new_token = create_access_token({
+        "sub": user.get("username", ""),
+        "role": user.get("role", "user"),
+    })
+    # Refresh le cookie HttpOnly en même temps pour prolonger la session.
+    _set_auth_cookie(response, new_token)
     return {"access_token": new_token, "token_type": "bearer"}
 
 
@@ -907,7 +1010,7 @@ async def ws_stream_alias(websocket: WebSocket):
         try:
             await websocket.close()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='main.py')
 
 
 # ── v2 Chat Alias (frontend compatibility) ────────────────────
@@ -919,7 +1022,7 @@ async def chat_v2_alias(request: Request):
         from api.routes.chat import chat
         body = await request.json()
         from pydantic import BaseModel
-        from typing import List, Dict, Any
+        from typing import List
         
         class ChatMessage(BaseModel):
             role: str

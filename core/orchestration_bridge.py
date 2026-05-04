@@ -36,7 +36,6 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass, field
 from typing import Any, Optional
 
 try:
@@ -45,14 +44,13 @@ try:
 except ImportError:
     import logging
     log = logging.getLogger(__name__)
+_silent_log = log
 
 from core.canonical_types import (
     CanonicalMissionStatus,
     CanonicalMissionContext,
-    CanonicalRiskLevel,
     map_legacy_mission_status,
     map_legacy_risk_level,
-    validate_transition,
     TransitionError,
 )
 
@@ -191,7 +189,7 @@ class OrchestrationBridge:
             try:
                 duration_ms = (_t.time() - float(ctx.created_at)) * 1000
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
         # quality: 1.0 on success, 0.0 on failure — populates avg_quality for A/B detection
         quality_score = 1.0 if success else 0.0
@@ -320,7 +318,7 @@ class OrchestrationBridge:
                         self._update_cache(mo_canonical)
                         return mo_canonical
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
         # 1. Return cache if available
         if cached is not None:
@@ -336,7 +334,7 @@ class OrchestrationBridge:
                 self._update_cache(canonical)
                 return canonical
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
         return None
 
@@ -364,7 +362,7 @@ class OrchestrationBridge:
                 # Schedule the coroutine on the running event loop (non-blocking)
                 try:
                     _loop = asyncio.get_running_loop()
-                    asyncio.ensure_future(_coro, loop=_loop)
+                    asyncio.get_event_loop().create_task(_coro)
                 except RuntimeError:
                     # No running loop — create one in a thread
                     import threading
@@ -386,7 +384,7 @@ class OrchestrationBridge:
                     canonical.transition(CanonicalMissionStatus.READY)
                     self._update_cache(canonical)
                 except TransitionError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
             log.info("bridge.approve_ok", mission_id=mission_id, note=note[:80])
             return {
@@ -412,7 +410,7 @@ class OrchestrationBridge:
             # 1. Legacy system
             from core.mission_system import get_mission_system
             ms = get_mission_system()
-            result = ms.reject(mission_id, note=note)
+            ms.reject(mission_id, note=note)
 
             # 2. MetaOrchestrator — closes the approval gate
             try:
@@ -423,7 +421,7 @@ class OrchestrationBridge:
                                        reason=note or "Rejected via bridge")
                 try:
                     _loop = asyncio.get_running_loop()
-                    asyncio.ensure_future(_coro, loop=_loop)
+                    asyncio.get_event_loop().create_task(_coro)
                 except RuntimeError:
                     import threading
                     def _run():
@@ -444,7 +442,7 @@ class OrchestrationBridge:
                     canonical.transition(CanonicalMissionStatus.CANCELLED)
                     self._update_cache(canonical)
                 except TransitionError:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
             log.info("bridge.reject_ok", mission_id=mission_id, note=note[:80])
             return {
@@ -484,7 +482,7 @@ class OrchestrationBridge:
                     canonical = self._ms_result_to_canonical(result)
                     missions[result.mission_id] = canonical.to_dict()
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
         # From MetaOrchestrator
         try:
@@ -503,7 +501,7 @@ class OrchestrationBridge:
                         "source_system": "meta_orchestrator",
                     }
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
 
         # Sort by most recent
         result_list = sorted(missions.values(), key=lambda x: x.get("updated_at", 0), reverse=True)
@@ -593,7 +591,7 @@ def get_orchestration_bridge() -> OrchestrationBridge:
         try:
             log.info("orchestration_bridge.created", enabled=_bridge_enabled())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
     return _bridge
 
 

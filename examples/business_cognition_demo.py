@@ -23,7 +23,7 @@ def demo_scan_opportunities():
     mock_llm = Mock()
     mock_llm.ainvoke = Mock(return_value=Mock(content="Analysis"))
     
-    orchestrator = CognitionOrchestrator(
+    CognitionOrchestrator(
         llm_client=mock_llm,
         business_workspace=Path.home() / ".jarvismax" / "demo"
     )
@@ -58,7 +58,7 @@ def demo_portfolio_status():
     
     from unittest.mock import Mock
     mock_llm = Mock()
-    orchestrator = CognitionOrchestrator(llm_client=mock_llm)
+    CognitionOrchestrator(llm_client=mock_llm)
     
     # Note: No explicit operation - auto-detected from keywords
     mission = {
@@ -85,7 +85,7 @@ def demo_full_pipeline():
     
     from unittest.mock import Mock
     mock_llm = Mock()
-    orchestrator = CognitionOrchestrator(llm_client=mock_llm)
+    CognitionOrchestrator(llm_client=mock_llm)
     
     mission = {
         "mission_id": "demo-pipeline-001",
@@ -187,8 +187,8 @@ def demo_error_handling():
     for scenario in scenarios:
         print(f"\n❌ Scenario: {scenario['name']}")
         print(f"  Expected: {scenario['expected']}")
-        print(f"  Status: FAILED (as expected)")
-        print(f"  ✅ Error logged, mission marked FAILED")
+        print("  Status: FAILED (as expected)")
+        print("  ✅ Error logged, mission marked FAILED")
 
 
 def main():

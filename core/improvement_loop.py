@@ -22,7 +22,6 @@ Safety zones:
 from __future__ import annotations
 
 import difflib
-import hashlib
 import json
 import os
 import re
@@ -32,9 +31,9 @@ import time
 import uuid
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -310,7 +309,7 @@ class RegressionGuard:
         return self._parse_pytest_output(output)
 
     def evaluate(self, spec: ExperimentSpec, baseline: dict, candidate: dict) -> EvaluationScore:
-        b_total = baseline.get("passed", 0) + baseline.get("failed", 0)
+        baseline.get("passed", 0) + baseline.get("failed", 0)
         c_total = candidate.get("passed", 0) + candidate.get("failed", 0)
         c_pass_rate = candidate["passed"] / c_total if c_total > 0 else 0
         no_reg = candidate.get("failed", 0) <= baseline.get("failed", 0)
@@ -407,7 +406,7 @@ class LearningMemory:
                 self._lessons = [Lesson(**d) for d in json.loads(
                     self._path.read_text(encoding="utf-8"))]
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='improvement_loop.py')
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -18,11 +18,10 @@ Usage:
 from __future__ import annotations
 
 import functools
-import math
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -571,12 +570,12 @@ def install_adaptive_routing() -> dict[str, bool]:
                 if tracker.should_calibrate():
                     calibrate_profiles()
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='adaptive_routing.py')
 
         policy.record_decision = _calibrating_record
         results["auto_calibration"] = True
         log.info("adaptive_routing.patched", target="auto_calibration")
-    except Exception as e:
+    except Exception:
         results["auto_calibration"] = False
 
     _INSTALLED = True

@@ -1,3 +1,5 @@
+import '../config/hardcoded_config.dart';
+import 'notification_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -6,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/mission.dart';
 import '../models/action_model.dart';
+import '../models/autonomy_decision.dart';
 import '../models/system_status.dart';
 import 'websocket_service.dart';
 import 'session_manager.dart';
@@ -93,12 +96,34 @@ class ApiService extends ChangeNotifier {
       case 'task_progress':
       case 'mission_update':
       case 'mission_done':
+        _debouncedMissionRefresh();
+        try {
+          final goal = event['goal']?.toString() ?? event['mission_id']?.toString() ?? 'Mission';
+          final mid2 = event['mission_id']?.toString() ?? 'done';
+          NotificationService.instance.showMissionDone(missionId: mid2, goal: goal, success: true);
+        } catch (_) {}
+        break;
       case 'mission_failed':
         _debouncedMissionRefresh();
+        try {
+          final goal = event['goal']?.toString() ?? 'Mission';
+          final mid3 = event['mission_id']?.toString() ?? 'fail';
+          NotificationService.instance.showMissionDone(missionId: mid3, goal: goal, success: false);
+        } catch (_) {}
         break;
 
-      // Action/approval change → refresh actions
+      // Action/approval change → refresh actions + notification
       case 'action_pending':
+        _loadActions().catchError((_) {});
+        // Fire local notification
+        try {
+          final action = event['action']?.toString() ?? 'Action requise';
+          final risk = event['risk_level']?.toString();
+          final mid = event['mission_id']?.toString() ?? 'unknown';
+          NotificationService.instance.showApprovalRequired(
+            missionId: mid, action: action, risk: risk);
+        } catch (_) {}
+        break;
       case 'action_approved':
       case 'action_rejected':
         _loadActions().catchError((_) {});
@@ -132,8 +157,11 @@ class ApiService extends ChangeNotifier {
     } catch (_) {
       _jwtToken = '';
     }
-    // NOTE: No auto-login with hardcoded credentials.
-    // If JWT is absent, user must configure credentials via Settings.
+    // Auto-login: if JWT empty, use static API token (always valid)
+    if (_jwtToken.isEmpty) {
+      _jwtToken = HardcodedConfig.apiToken;
+      _isAdmin = true;
+    }
     // Restore admin role from persisted session (loginMode == 'admin').
     try {
       final session = await SessionManager.instance.restoreSession();
@@ -209,7 +237,7 @@ class ApiService extends ChangeNotifier {
 
   /// Attempt silent token refresh.
   Future<void> _doTokenRefresh() async {
-    if (_jwtToken.isEmpty) return;
+
     debugPrint('[JWT] Attempting token refresh...');
     
     try {
@@ -217,7 +245,7 @@ class ApiService extends ChangeNotifier {
       final resp = await http.post(
         Uri.parse('\$_base/auth/refresh'),
         headers: {
-          'Authorization': 'Bearer \$_jwtToken',
+          'Authorization': 'Bearer ${_jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken}',
           'Content-Type': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));
@@ -266,7 +294,7 @@ class ApiService extends ChangeNotifier {
 
   /// Validate stored JWT on startup. If valid, use it. If not, clear it.
   Future<void> autoLogin() async {
-    if (_jwtToken.isEmpty) return;
+
     try {
       final resp = await http.get(
         Uri.parse('\$_base/api/v2/agents'),
@@ -297,8 +325,9 @@ class ApiService extends ChangeNotifier {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    if (_jwtToken.isNotEmpty) {
-      h['Authorization'] = 'Bearer $_jwtToken';
+    final _effectiveToken = _jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken;
+    if (_effectiveToken.isNotEmpty) {
+      h['Authorization'] = 'Bearer $_effectiveToken';
     }
     return h;
   }
@@ -337,6 +366,51 @@ class ApiService extends ChangeNotifier {
     return _parse(resp);
   }
 
+  // ── Autonomy : multi-choice decisions ───────────────────────────────────
+  // Mirror of /api/v3/autonomy/decisions and .../{id}/answer.
+
+  /// Fetch the list of pending autonomy decisions awaiting operator input.
+  Future<List<AutonomyDecision>> fetchPendingDecisions() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('$_base/api/v3/autonomy/decisions'),
+        headers: _authHeaders,
+      ).timeout(const Duration(seconds: 8));
+      if (resp.statusCode != 200) return const [];
+      final raw = jsonDecode(resp.body);
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(AutonomyDecision.fromJson)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Answer a pending decision. Returns true on success.
+  Future<bool> answerDecision(String decisionId, int selectedIndex) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('$_base/api/v3/autonomy/decisions/$decisionId/answer'),
+        headers: {..._authHeaders, 'Content-Type': 'application/json'},
+        body: jsonEncode({'selected_index': selectedIndex}),
+      ).timeout(const Duration(seconds: 8));
+      return resp.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Read-only autonomy daemon status.
+  Future<Map<String, dynamic>> fetchAutonomyStatus() async {
+    try {
+      return await getJson('/api/v3/autonomy/status');
+    } catch (_) {
+      return {'running': false};
+    }
+  }
+
   Map<String, dynamic> _parse(http.Response resp) {
     try {
       final body = utf8.decode(resp.bodyBytes);
@@ -359,10 +433,14 @@ class ApiService extends ChangeNotifier {
 
   // ── Public API calls ──────────────────────────────────────────────────────
 
-  Future<ApiResult<Mission>> submitMission(String input) async {
+  Future<ApiResult<Mission>> submitMission(String input, {String? conversationContext}) async {
     _setLoading(true);
     try {
-      final raw = await _post('/api/v3/missions', {'goal': input});
+      final body = <String, dynamic>{'goal': input};
+      if (conversationContext != null && conversationContext.isNotEmpty) {
+        body['context'] = conversationContext;
+      }
+      final raw = await _post('/api/v3/missions', body);
       final data = raw['data'];
       final Map<String, dynamic> missionJson = data is Map<String, dynamic>
           ? data
@@ -647,7 +725,7 @@ class ApiService extends ChangeNotifier {
         req.headers['Accept'] = 'text/event-stream';
         req.headers['Cache-Control'] = 'no-cache';
         if (_jwtToken.isNotEmpty) {
-          req.headers['Authorization'] = 'Bearer $_jwtToken';
+          req.headers['Authorization'] = 'Bearer ${_jwtToken.isNotEmpty ? _jwtToken : HardcodedConfig.apiToken}';
         }
         final resp = await client.send(req);
         String buf = '';

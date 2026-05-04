@@ -6,7 +6,6 @@ Uses runtime route introspection (not the unused router_registry).
 """
 from __future__ import annotations
 
-import time
 import structlog
 from fastapi import APIRouter
 

@@ -3,10 +3,8 @@
 Tests for OpportunityScanner with Playwright mocking.
 """
 import pytest
-import asyncio
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from datetime import datetime
+from unittest.mock import AsyncMock, patch
 import json
 
 from business.automation.opportunity_scanner import (
@@ -216,7 +214,7 @@ class TestPlaywrightIntegration:
         mock_context.new_page = AsyncMock(return_value=mock_page)
         mock_page.add_init_script = AsyncMock()
         
-        page = await scanner._setup_browser(mock_browser)
+        await scanner._setup_browser(mock_browser)
         
         # Verify context created with proper settings
         mock_browser.new_context.assert_called_once()
@@ -402,7 +400,7 @@ class TestErrorHandling:
         
         mock_page.screenshot.assert_called_once()
         # Verify screenshot saved in screenshot directory
-        screenshot_files = list(scanner.screenshot_dir.glob("*.png"))
+        list(scanner.screenshot_dir.glob("*.png"))
         # Note: Won't exist in mock, but verifies the call was made
     
     @pytest.mark.asyncio

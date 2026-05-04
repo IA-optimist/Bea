@@ -287,7 +287,7 @@ class LearningEngine:
             "--- Derniers runs ---",
         ]
         for r in reversed(recent):
-            ts   = r.get("timestamp", 0)
+            r.get("timestamp", 0)
             mode = r.get("mode", "?")
             err  = " [ERR]" if r.get("error") else ""
             dur  = f"{r.get('duration_s', 0):.0f}s"

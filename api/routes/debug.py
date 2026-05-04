@@ -142,7 +142,7 @@ def pipeline_health():
     # Quality gate
     try:
         from core.execution.quality_gate import ArtifactQualityGate
-        gate = ArtifactQualityGate()
+        ArtifactQualityGate()
         checks["quality_gate"] = {"ok": True}
     except Exception as e:
         checks["quality_gate"] = {"ok": False, "error": str(e)[:100]}

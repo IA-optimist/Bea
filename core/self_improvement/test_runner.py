@@ -19,7 +19,6 @@ Safety:
 from __future__ import annotations
 
 import ast
-import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -304,7 +303,6 @@ class PatchRunner:
         )
 
         # 1. Syntax check
-        all_ok = True
         for f in changed_files:
             if f.endswith(".py"):
                 ok, err = self.syntax_check(f, sandbox_path)
@@ -314,7 +312,6 @@ class PatchRunner:
                     report.reason = f"Syntax error: {err}"
                     report.validation_level = "syntax"
                     return report
-                    all_ok = False
 
         report.syntax_ok = True
 

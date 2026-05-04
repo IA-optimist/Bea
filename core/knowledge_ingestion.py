@@ -19,9 +19,7 @@ Feature flag: JARVIS_KNOWLEDGE_INGESTION=1 (default ON when knowledge_memory exi
 from __future__ import annotations
 
 import logging
-import os
 import time
-from typing import Optional
 
 logger = logging.getLogger("jarvis.knowledge_ingestion")
 

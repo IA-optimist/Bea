@@ -32,8 +32,10 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors relative">
       <AIGradientBg />
       
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 transition-colors z-40">
+      {/* Sidebar — hidden below md (768px) ; restores baseline mobile usability.
+           A hamburger toggle is a TODO ; this fix removes the immediate
+           fullscreen-coverage bug. */}
+      <aside className="hidden md:block fixed inset-y-0 left-0 w-64 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 transition-colors z-40">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -73,8 +75,8 @@ export const Layout = ({ children }: LayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <main className="pl-64">
-        <div className="px-8 py-6">{children}</div>
+      <main className="md:pl-64">
+        <div className="px-4 md:px-8 py-6">{children}</div>
       </main>
     </div>
   );

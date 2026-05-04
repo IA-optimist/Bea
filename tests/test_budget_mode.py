@@ -11,7 +11,7 @@ Validates:
   - No regression in existing execution
 """
 import pytest
-from core.planning.execution_plan import ExecutionPlan, PlanStep, StepType, PlanStatus
+from core.planning.execution_plan import ExecutionPlan
 from core.planning.step_context import StepContext
 pytestmark = pytest.mark.integration
 

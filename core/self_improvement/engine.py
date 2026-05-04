@@ -13,14 +13,13 @@ V3 changes vs V1:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("jarvis.self_improvement.engine")
 
 from core.self_improvement.failure_collector import FailureCollector
 from core.self_improvement.improvement_planner import ImprovementPlanner
 from core.self_improvement.candidate_generator import CandidateGenerator
+_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class SelfImprovementEngine:
@@ -193,4 +192,4 @@ class SelfImprovementEngine:
                 "rejects": rejects,
             })
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='engine.py')

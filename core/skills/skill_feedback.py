@@ -11,7 +11,7 @@ import os
 import threading
 import time
 import structlog
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 log = structlog.get_logger("skills.feedback")

@@ -34,9 +34,9 @@ from __future__ import annotations
 import os
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -108,7 +108,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_fix="Increase retry budget or add fallback strategies",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 2. High tool failure rate per tool
     try:
@@ -133,7 +133,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_fix=f"Deprioritize or add fallback for {tool_name}",
                         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 3. High tool timeout frequency
     try:
@@ -158,7 +158,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_fix="Increase timeout for affected tools or add circuit breaker",
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 4. Retry storm
     try:
@@ -176,7 +176,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_fix="Tune backoff parameters or add jitter",
             ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 5. Expensive model usage
     try:
@@ -201,7 +201,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_fix=f"Route to cheaper model for non-critical tasks using {top_model}",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 6. High model failure rate
     try:
@@ -226,7 +226,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_fix=f"Deprioritize {model_id} in routing policy health tracker",
                         ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 7. Slow model latency
     try:
@@ -248,7 +248,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                         suggested_fix=f"Route time-sensitive tasks away from {model_id}",
                     ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # 8. Failure pattern aggregation
     try:
@@ -265,7 +265,7 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     description=f"Recurring failure pattern: {category} ({count}x in {window_s/3600:.0f}h)",
                 ))
     except Exception:
-        pass
+        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
     # Sort by severity
     _severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
@@ -478,7 +478,7 @@ def _propose_experiment(weakness: Weakness, repo_root: Path) -> dict | None:
     Returns dict with ExperimentSpec fields, or None if weakness
     targets a CRITICAL file or has no actionable suggestion.
     """
-    from core.improvement_loop import ExperimentSpec, classify_file_safety, SafetyZone
+    from core.improvement_loop import classify_file_safety, SafetyZone
 
     target = weakness.suggested_target
     if not target:
@@ -651,6 +651,15 @@ def run_cycle(repo_root: Path | None = None) -> dict:
         "error": "",
     }
 
+    # -- Detect improvements (read-only, before gate)
+    try:
+        from core.improvement_detector import detect_improvements
+        _new_props = detect_improvements(dry_run=False)
+        if _new_props:
+            log.info("daemon.proposals_generated", count=len(_new_props))
+            result["proposals_generated"] = len(_new_props)
+    except Exception as _de:
+        log.debug("daemon.detector_error", err=str(_de)[:80])
     # ── KERNEL GATE: must pass before any work ───────────────────────────────
     # kernel/ never imports core/ — gate reads workspace/self_improvement/history.json
     # directly when no history_provider is registered.
@@ -678,6 +687,16 @@ def run_cycle(repo_root: Path | None = None) -> dict:
         # 1. Detect weaknesses
         weaknesses = detect_weaknesses()
         result["weaknesses_found"] = len(weaknesses)
+
+        # Run improvement detector to generate real proposals
+        try:
+            from core.improvement_detector import detect_improvements
+            new_proposals = detect_improvements(dry_run=False)
+            result["proposals_generated"] = len(new_proposals)
+            log.info("daemon.proposals_generated", count=len(new_proposals))
+        except Exception as _det_err:
+            log.debug("daemon.detector_error", err=str(_det_err)[:80])
+
 
         if not weaknesses:
             log.debug("daemon.no_weaknesses")
@@ -782,7 +801,7 @@ def run_cycle(repo_root: Path | None = None) -> dict:
                             report.evaluation.get("composite", 0)
                             if isinstance(report.evaluation, dict) else 0)
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
 
         # 8. Set cooldown for this category
         _cooldown_tracker.set_cooldown(chosen_weakness.category, COOLDOWN_CYCLES)

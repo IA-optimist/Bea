@@ -19,10 +19,14 @@ Coverage:
 import os
 import sys
 import time
-import threading
-from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+# Daemon tests ne sont PAS des tests sécurité gate — bypass explicite.
+# Le gate est ré-activé par défaut (conftest.py), ce module se réactive en
+# local pour que les cycle tests valident le comportement fonctionnel du
+# daemon, pas la sécurité (testée séparément dans test_improvement_gate_security).
+os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = "1"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -35,7 +39,7 @@ class TestWeaknessDetection:
         """D1: Detect low mission success rate."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_completed, emit_mission_failed
         from core.improvement_daemon import detect_weaknesses
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(10):
             emit_mission_submitted("test")
@@ -51,7 +55,7 @@ class TestWeaknessDetection:
         """D1: Detect high tool failure rate."""
         from core.metrics_store import reset_metrics, emit_tool_invocation
         from core.improvement_daemon import detect_weaknesses
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(3):
             emit_tool_invocation("web_search", True)
@@ -65,7 +69,7 @@ class TestWeaknessDetection:
         """D1: Detect high timeout count."""
         from core.metrics_store import reset_metrics, emit_tool_timeout
         from core.improvement_daemon import detect_weaknesses
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(5):
             emit_tool_timeout("shell_command")
@@ -77,7 +81,7 @@ class TestWeaknessDetection:
         """D1: Detect retry storm."""
         from core.metrics_store import reset_metrics, emit_retry
         from core.improvement_daemon import detect_weaknesses
-        m = reset_metrics()
+        reset_metrics()
 
         for _ in range(8):
             emit_retry("executor")
@@ -87,7 +91,7 @@ class TestWeaknessDetection:
 
     def test_failure_patterns(self):
         """D1: Detect recurring failure patterns."""
-        from core.metrics_store import reset_metrics, get_metrics
+        from core.metrics_store import reset_metrics
         from core.improvement_daemon import detect_weaknesses
         m = reset_metrics()
 
@@ -110,7 +114,7 @@ class TestWeaknessDetection:
         """Weaknesses sorted by severity (high before medium)."""
         from core.metrics_store import reset_metrics, emit_mission_submitted, emit_mission_failed, emit_tool_timeout
         from core.improvement_daemon import detect_weaknesses
-        m = reset_metrics()
+        reset_metrics()
 
         # Low success (high severity: < 0.5)
         for _ in range(10):
@@ -285,7 +289,7 @@ class TestCycle:
         from core.metrics_store import reset_metrics, emit_tool_timeout
         from core.improvement_daemon import run_cycle, reset_daemon_state
 
-        m = reset_metrics()
+        reset_metrics()
         reset_daemon_state()
 
         # Create repo with target file
@@ -386,7 +390,7 @@ class TestSafetyLimits:
         """D13: Only one experiment per cycle even with multiple weaknesses."""
         from core.metrics_store import reset_metrics, emit_tool_timeout, emit_retry
         from core.improvement_daemon import run_cycle, reset_daemon_state
-        m = reset_metrics()
+        reset_metrics()
         reset_daemon_state()
 
         # Create multiple weaknesses

@@ -35,10 +35,9 @@ import logging
 import os
 import time
 import uuid
-import hashlib
-from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.workflow_runtime")
 
@@ -121,14 +120,14 @@ class ScheduledTask:
             # Check if current UTC HH:MM matches
             try:
                 import datetime
-                utc_now = datetime.datetime.utcfromtimestamp(now)
+                utc_now = datetime.datetime.fromtimestamp(now, tz=datetime.timezone.utc)
                 target_h, target_m = map(int, self.fixed_time.split(":"))
                 if utc_now.hour == target_h and utc_now.minute == target_m:
                     # Only run once per fixed window (check last_run)
                     if (now - self.last_run) > 120:  # 2-minute dedup
                         return True
             except Exception:
-                pass
+                _silent_log.debug("suppressed_exception", src='workflow_runtime.py')
             return False
 
         return False

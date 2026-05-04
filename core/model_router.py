@@ -8,7 +8,7 @@ Status: Kept for backward compatibility with test suite (16 tests).
 Consolidation note: Will be removed after tests migrated to capability_routing.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 

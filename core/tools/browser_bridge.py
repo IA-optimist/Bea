@@ -12,9 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import re
-from typing import Optional
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.tools.browser_bridge")
 
@@ -42,7 +41,7 @@ def _run_async(coro):
     Uses get_running_loop() to detect an active loop; falls back to asyncio.run().
     """
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # Already in async context — run in a dedicated thread to avoid nesting
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
@@ -188,7 +187,7 @@ def browser_close(**kwargs) -> dict:
         try:
             _run_async(_browser_tool.close())
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='browser_bridge.py')
         _browser_tool = None
     return {"ok": True, "result": "browser_closed", "error": ""}
 

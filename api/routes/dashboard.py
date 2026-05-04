@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-from fastapi import Depends, Header
+from fastapi import Header
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)
@@ -23,7 +23,7 @@ def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = H
 
 router = APIRouter(tags=["dashboard"], dependencies=[Depends(_auth)])
 
-_START_TIME = datetime.datetime.utcnow()
+_START_TIME = datetime.datetime.now(datetime.timezone.utc)
 
 
 def _read_json(path: pathlib.Path):
@@ -84,7 +84,7 @@ def _knowledge_stats() -> dict:
         data = _read_json(entries_path)
         if not isinstance(data, list):
             return {"entries_count": 0, "expired_count": 0}
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         expired = sum(1 for e in data if e.get("expires_at") and e["expires_at"] < now)
         return {"entries_count": len(data), "expired_count": expired}
     except Exception:
@@ -129,9 +129,9 @@ def _qdrant_health() -> dict:
 
 @router.get("/dashboard/status")
 async def dashboard_status():
-    uptime = (datetime.datetime.utcnow() - _START_TIME).total_seconds()
+    uptime = (datetime.datetime.now(datetime.timezone.utc) - _START_TIME).total_seconds()
     return JSONResponse({
-        "generated_at": datetime.datetime.utcnow().isoformat(),
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "api_health": {
             "status": "ok",
             "version": os.getenv("JARVIS_VERSION", "unknown"),

@@ -7,13 +7,13 @@ from __future__ import annotations
 
 import mimetypes
 import os
-import time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from api._deps import require_auth
+_silent_log = __import__("structlog").get_logger(__name__)
 
 router = APIRouter(prefix="/api/v3/business-artifacts", tags=["business-artifacts"])
 
@@ -53,7 +53,7 @@ async def list_runs(_user: dict = Depends(require_auth)):
             try:
                 timestamp = f"{parts[-2][:4]}-{parts[-2][4:6]}-{parts[-2][6:8]} {parts[-1][:2]}:{parts[-1][2:]}"
             except (IndexError, ValueError):
-                pass
+                _silent_log.debug("suppressed_exception", src='business_artifacts.py')
 
         # Detect action_id from files
         action_id = ""
@@ -115,7 +115,7 @@ async def read_artifact(
 
     if file_path.suffix.lower() not in _TEXT_EXTENSIONS:
         raise HTTPException(
-            400, f"Cannot read binary file. Use /download endpoint."
+            400, "Cannot read binary file. Use /download endpoint."
         )
 
     try:

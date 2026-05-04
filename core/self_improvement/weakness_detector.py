@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from typing import List
+_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.self_improvement.weakness_detector")
 
@@ -141,7 +142,7 @@ class WeaknessDetector:
                             ),
                         ))
                 except Exception:
-                    pass
+                    _silent_log.debug("suppressed_exception", src='weakness_detector.py')
         except Exception as e:
             logger.debug(f"_detect_from_knowledge_patterns error: {e}")
         return result

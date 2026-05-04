@@ -155,7 +155,8 @@ class WorkflowAgent:
     @staticmethod
     def _extract_name(text: str) -> str:
         """Génère un nom court depuis le texte (snake_case, max 30 chars)."""
-        import re, unicodedata
+        import re
+        import unicodedata
         # Normaliser accents
         normalized = unicodedata.normalize("NFD", text).encode("ascii", "ignore").decode()
         # Prendre les 4 premiers mots

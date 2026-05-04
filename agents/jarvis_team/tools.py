@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -148,7 +149,7 @@ def tool_git_branch_create(branch_name: str) -> ToolResult:
             success=False, tool="git_branch_create",
             error=f"Invalid branch name: {branch_name}. Must match jarvis/<agent>/<task>",
         )
-    out = _git(f"checkout -b {branch_name}")
+    _git(f"checkout -b {branch_name}")
     current = _git("rev-parse --abbrev-ref HEAD")
     ok = current == branch_name
     return ToolResult(
@@ -907,7 +908,7 @@ def tool_store_pattern(pattern_type: str, problem: str, solution: str,
             data={"confidence": confidence, "type": pattern_type},
             error=result.get("error", ""),
         )
-    except Exception as e:
+    except Exception:
         # Fail-open: store to local JSON file
         import json as _json
         store_path = REPO_ROOT / "workspace" / "knowledge_store.jsonl"
@@ -955,7 +956,7 @@ def tool_search_patterns(query: str, limit: int = 5) -> ToolResult:
                 if len(matches) >= limit:
                     break
         except Exception:
-            pass
+            _silent_log.debug("suppressed_exception", src='tools.py')
         return ToolResult(success=True, tool="search_patterns", data=matches)
 
 
@@ -990,7 +991,6 @@ def tool_store_decision(decision: str, rationale: str, impact: str,
 def tool_create_task(agent: str, description: str, priority: int = 2,
                      depends_on: list[str] | None = None) -> ToolResult:
     """Create a task description for an agent."""
-    import json as _json
     task = {
         "agent": agent,
         "description": description[:500],

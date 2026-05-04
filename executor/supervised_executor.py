@@ -255,7 +255,7 @@ class SupervisedExecutor:
         Liste le contenu d'un répertoire (LOW — lecture pure).
         depth=1 : liste directe / depth>1 : récursif limité.
         """
-        action = ActionSpec(
+        ActionSpec(
             id="read_dir",
             action_type="read_directory",
             target=path,
@@ -383,7 +383,8 @@ class SupervisedExecutor:
         Enregistre une tâche planifiée (MEDIUM).
         Persistance : workspace/scheduled_tasks.json
         """
-        import json, time
+        import json
+        import time
         task_name = task_def.get("name", "task")
         action    = ActionSpec(
             id="sched",

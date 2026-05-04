@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
+_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("kernel.capabilities.performance")
 
@@ -450,7 +451,7 @@ class PerformanceStore:
                             self._records[key] = disk_record
                             merged += 1
                     except Exception:
-                        pass
+                        _silent_log.debug("suppressed_exception", src='performance.py')
 
             log.info("performance_merged", path=str(path), merged=merged)
             return merged

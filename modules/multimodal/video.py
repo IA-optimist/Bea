@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import base64
 import os
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
@@ -154,7 +153,7 @@ def _extract_frames_pil(video_path: str, fps: float) -> FrameResult:
             frames.append(buf.getvalue())
             timestamps.append(round(i * frame_dur, 2))
     except EOFError:
-        pass
+        _silent_log.debug("suppressed_exception", src='video.py')
 
     log.info("pil_frames_extracted", count=len(frames))
     return FrameResult(
@@ -279,13 +278,13 @@ def video_capabilities() -> dict:
         import cv2  # noqa: F401
         has_cv2 = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='video.py')
     has_pil = False
     try:
         from PIL import Image  # noqa: F401
         has_pil = True
     except ImportError:
-        pass
+        _silent_log.debug("suppressed_exception", src='video.py')
 
     return {
         "video_generate": False,   # stub only for now
@@ -298,3 +297,4 @@ def video_capabilities() -> dict:
 
 # ── Missing import fix for PIL branch ────────────────────────
 import io  # noqa: E402  (needed by _extract_frames_pil)
+_silent_log = __import__("structlog").get_logger(__name__)
