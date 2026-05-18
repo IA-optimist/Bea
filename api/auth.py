@@ -10,7 +10,6 @@ Both produce authorized access. Access tokens have role-based permissions.
 """
 from __future__ import annotations
 
-import hashlib
 import hmac
 import logging
 import os
@@ -21,14 +20,20 @@ logger = logging.getLogger(__name__)
 
 try:
     import jwt as _jwt
-    _JWT_AVAILABLE = True
 except ImportError:
-    _JWT_AVAILABLE = False
+    _jwt = None
 
 
 def _secret() -> str:
     from config.settings import get_settings
     return get_settings().jarvis_secret_key
+
+
+def _require_jwt():
+    if _jwt is None:
+        logger.critical("PyJWT is required for token authentication")
+        raise RuntimeError("PyJWT is required for token authentication")
+    return _jwt
 
 
 # ── Constant-time comparison ──
@@ -40,28 +45,20 @@ def _constant_time_compare(a: str, b: str) -> bool:
 
 # ── Admin password resolution ──
 
-_ADMIN_PW_WARNING_EMITTED = False
+_ADMIN_PW_MISSING_LOGGED = False
 
 
 def _get_admin_password() -> str:
+    """Return the configured admin password, or raise if unset.
+
+    The legacy fallback to JARVIS_SECRET_KEY was removed so a missing
+    JARVIS_ADMIN_PASSWORD no longer silently elevates the JWT signing
+    key into an admin credential.
     """
-    Get admin password. Priority:
-    1. JARVIS_ADMIN_PASSWORD (preferred, always used in production)
-    2. JARVIS_SECRET_KEY (legacy fallback, warns once)
-    """
-    global _ADMIN_PW_WARNING_EMITTED
     admin_pw = os.environ.get("JARVIS_ADMIN_PASSWORD", "")
-    if admin_pw:
-        return admin_pw
-    # Legacy fallback
-    secret = _secret()
-    if not _ADMIN_PW_WARNING_EMITTED:
-        logger.warning(
-            "JARVIS_ADMIN_PASSWORD not set — falling back to JARVIS_SECRET_KEY. "
-            "Set JARVIS_ADMIN_PASSWORD explicitly for production."
-        )
-        _ADMIN_PW_WARNING_EMITTED = True
-    return secret
+    if not admin_pw:
+        raise RuntimeError("JARVIS_ADMIN_PASSWORD is not set — admin login is disabled.")
+    return admin_pw
 
 
 def authenticate_user(username: str, password: str) -> Optional[dict]:
@@ -70,10 +67,21 @@ def authenticate_user(username: str, password: str) -> Optional[dict]:
     Both valid-user/wrong-password and invalid-user paths do equivalent work.
     Returns user dict or None.
     """
+    global _ADMIN_PW_MISSING_LOGGED
     if not password:
         return None
 
-    admin_pw = _get_admin_password()
+    try:
+        admin_pw = _get_admin_password()
+    except RuntimeError:
+        if not _ADMIN_PW_MISSING_LOGGED:
+            logger.warning(
+                "Admin login attempted but JARVIS_ADMIN_PASSWORD is not set — refusing."
+            )
+            _ADMIN_PW_MISSING_LOGGED = True
+        # Still burn time on a dummy compare to avoid leaking the config state via timing
+        _constant_time_compare(password, "x" * 32)
+        return None
 
     if username == "admin":
         # Valid username path: compare against real password
@@ -100,13 +108,9 @@ def _check_auth_password(username: str, password: str) -> Optional[str]:
 
 def create_access_token(data: dict, expires_in: int = 2592000) -> str:
     """Create a JWT access token."""
-    if _JWT_AVAILABLE:
-        payload = {**data, "exp": int(time.time()) + expires_in, "iat": int(time.time())}
-        return _jwt.encode(payload, _secret(), algorithm="HS256")
-    import json
-    payload_str = json.dumps(data, sort_keys=True)
-    sig = hashlib.sha256((payload_str + _secret()).encode()).hexdigest()[:16]
-    return f"token.{sig}"
+    jwt_module = _require_jwt()
+    payload = {**data, "exp": int(time.time()) + expires_in, "iat": int(time.time())}
+    return jwt_module.encode(payload, _secret(), algorithm="HS256")
 
 
 def verify_token(token_str: str) -> Optional[dict]:
@@ -146,16 +150,16 @@ def verify_token(token_str: str) -> Optional[dict]:
         return None
 
     # Path 2: JWT token
-    if _JWT_AVAILABLE:
-        try:
-            payload = _jwt.decode(token_str, _secret(), algorithms=["HS256"])
-            return {
-                "username": payload.get("sub", "unknown"),
-                "role": payload.get("role", "user"),
-                "auth_type": "jwt",
-            }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='auth.py')
+    jwt_module = _require_jwt()
+    try:
+        payload = jwt_module.decode(token_str, _secret(), algorithms=["HS256"])
+        return {
+            "username": payload.get("sub", "unknown"),
+            "role": payload.get("role", "user"),
+            "auth_type": "jwt",
+        }
+    except Exception:
+        _silent_log.debug("suppressed_exception", src='auth.py')
 
     # Path 3: Static API token fallback
     from config.settings import get_settings

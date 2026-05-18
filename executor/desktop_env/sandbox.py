@@ -6,10 +6,25 @@ import os
 import uuid
 import shutil
 import tempfile
+import shlex
+import subprocess
 import structlog
 from pathlib import Path
 
 log = structlog.get_logger()
+_COMMAND_METACHARS = ("|", "&&", "||", ";", ">", "<", "`", "$(", "\n", "\r")
+
+
+def _parse_command(cmd: str) -> tuple[list[str] | None, str | None]:
+    if any(meta in cmd for meta in _COMMAND_METACHARS):
+        return None, "shell_metacharacters_not_allowed"
+    try:
+        args = shlex.split(cmd)
+    except ValueError as exc:
+        return None, f"invalid_command: {exc}"
+    if not args:
+        return None, "Commande vide"
+    return args, None
 
 class DesktopEnvironment:
     """Interface pour l'environnement d'exécution."""
@@ -95,8 +110,11 @@ class DockerSandbox(DesktopEnvironment):
         
         log.debug("sandbox_exec", cmd=cmd[:50])
         try:
+            args, parse_error = _parse_command(cmd)
+            if parse_error:
+                return -1, parse_error
             exit_code, output = self.container.exec_run(
-                cmd=["/bin/bash", "-c", cmd],
+                cmd=args,
                 workdir="/workspace"
             )
             return exit_code, output.decode("utf-8", errors="replace")
@@ -138,12 +156,13 @@ class LocalFallbackSandbox(DesktopEnvironment):
     def execute(self, cmd: str) -> tuple[int, str]:
         if not self._enabled:
             return -1, "LocalFallbackSandbox d\u00e9sactiv\u00e9 (JARVIS_ALLOW_LOCAL_SANDBOX!=1)"
-        import subprocess
         log.debug("sandbox_local_exec", cmd=cmd[:50])
         try:
+            args, parse_error = _parse_command(cmd)
+            if parse_error:
+                return -1, parse_error
             result = subprocess.run(
-                cmd,
-                shell=True,
+                args,
                 cwd=str(self.workspace_path),
                 capture_output=True,
                 text=True,

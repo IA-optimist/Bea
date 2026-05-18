@@ -1,9 +1,10 @@
 name: Auto Deploy to VPS1
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
 
 env:
@@ -17,6 +18,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     
     steps:
       - name: Checkout code
@@ -42,20 +44,20 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
-            echo "=== Rebuilding Docker image ==="
-            docker build -t jarvismax:latest .
-            
+            echo "=== Rebuilding Docker image (non-root) ==="
+            docker build -t jarvismax:latest -f Dockerfile.nonroot .
+
             echo "=== Stopping old container ==="
             docker stop ${{ env.CONTAINER_NAME }} || true
             docker rm ${{ env.CONTAINER_NAME }} || true
-            
+
             echo "=== Starting new container ==="
             docker run -d \
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
               -v /root/jarvismax-data:/app/data \
               -v /root/Jarvismax-master/.env:/app/.env:ro \
-              --network host \
+              -p 8000:8000 \
               jarvismax:latest
             
             echo "=== Waiting for container to be healthy ==="

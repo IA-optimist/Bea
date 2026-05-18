@@ -3,30 +3,30 @@
 ================================================================================
 
 📅 Date: 2026-04-09 21:20 UTC
-🖥️  Serveur: VPS1 (72.62.177.55)
+🖥️  Serveur: VPS1 (MONITORING_HOST)
 ✅ Statut: OPÉRATIONNEL
 
 ================================================================================
                             SERVICES DÉPLOYÉS
 ================================================================================
 
-✅ Prometheus      → http://72.62.177.55:9090
+✅ Prometheus      → http://MONITORING_HOST:9090
    - Collecte et stockage des métriques
    - Scraping: API, Node Exporter, Qdrant
    - Retention: 15 jours
    - Statut: HEALTHY
 
-✅ Grafana         → http://72.62.177.55:3002
+✅ Grafana         → http://MONITORING_HOST:3002
    - Username: admin
-   - Password: jarvismax2026
+   - Password: ${GRAFANA_ADMIN_PASSWORD}
    - 3 Dashboards pré-configurés
    - Statut: HEALTHY
 
-✅ Node Exporter   → http://72.62.177.55:9100
+✅ Node Exporter   → http://MONITORING_HOST:9100
    - Métriques système (CPU, RAM, Disque, Network)
    - Statut: RUNNING
 
-✅ Alertmanager    → http://72.62.177.55:9093
+✅ Alertmanager    → http://MONITORING_HOST:9093
    - Gestion des alertes
    - Webhook Telegram configuré
    - Statut: HEALTHY
@@ -118,8 +118,8 @@ docker compose -f docker-compose-monitoring.yml up -d
 5. Tester: curl http://localhost:8000/api/v2/webhooks/test-telegram
 
 📊 VALIDATION:
-1. Ouvrir http://72.62.177.55:3002
-2. Login: admin / jarvismax2026
+1. Ouvrir http://MONITORING_HOST:3002
+2. Login: admin / ${GRAFANA_ADMIN_PASSWORD}
 3. Naviguer vers Dashboards > JarvisMax
 4. Vérifier que les métriques s'affichent
 

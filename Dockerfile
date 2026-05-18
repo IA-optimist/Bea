@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # TODO(security): passer en USER non-root. Nécessite une migration coordonnée :
 #   1. useradd -m jarvis && chown -R jarvis /app /home/jarvis/.jarvismax
@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --upgrade pip>=26.0
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --upgrade "pip>=25,<26"
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .

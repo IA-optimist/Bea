@@ -3,20 +3,20 @@
 ## Accès Immédiat
 
 ### 📊 Grafana
-- **URL**: http://72.62.177.55:3002
+- **URL**: http://MONITORING_HOST:3002
 - **Username**: admin
-- **Password**: jarvismax2026
+- **Password**: ${GRAFANA_ADMIN_PASSWORD}
 
 ### 🔍 Prometheus
-- **URL**: http://72.62.177.55:9090
-- **Targets**: http://72.62.177.55:9090/targets
-- **Alerts**: http://72.62.177.55:9090/alerts
+- **URL**: http://MONITORING_HOST:9090
+- **Targets**: http://MONITORING_HOST:9090/targets
+- **Alerts**: http://MONITORING_HOST:9090/alerts
 
 ### 🔔 Alertmanager
-- **URL**: http://72.62.177.55:9093
+- **URL**: http://MONITORING_HOST:9093
 
 ### 📈 Node Exporter
-- **URL**: http://72.62.177.55:9100/metrics
+- **URL**: http://MONITORING_HOST:9100/metrics
 
 ## 📋 Dashboards Disponibles
 
@@ -44,9 +44,9 @@ Une fois connecté à Grafana, vous trouverez 3 dashboards pré-configurés:
 ### 1. Connexion à Grafana
 ```bash
 # Ouvrir dans le navigateur
-firefox http://72.62.177.55:3002
+firefox http://MONITORING_HOST:3002
 
-# Login: admin / jarvismax2026
+# Login: admin / ${GRAFANA_ADMIN_PASSWORD}
 ```
 
 ### 2. Navigation
@@ -131,7 +131,7 @@ docker compose -f docker-compose-monitoring.yml up -d
 
 ## 📊 Exemples de Requêtes PromQL
 
-Vous pouvez tester ces requêtes dans Prometheus (http://72.62.177.55:9090):
+Vous pouvez tester ces requêtes dans Prometheus (http://MONITORING_HOST:9090):
 
 ### CPU Usage
 ```promql
@@ -160,12 +160,12 @@ rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 1
 
 ## ✅ Checklist de Vérification
 
-- [ ] Grafana accessible sur http://72.62.177.55:3002
-- [ ] Login avec admin / jarvismax2026 réussi
+- [ ] Grafana accessible sur http://MONITORING_HOST:3002
+- [ ] Login avec admin / ${GRAFANA_ADMIN_PASSWORD} réussi
 - [ ] 3 dashboards visibles dans le dossier JarvisMax
 - [ ] Dashboard System affiche des métriques CPU/RAM
 - [ ] Dashboard API affiche request rate > 0
-- [ ] Prometheus targets "UP" sur http://72.62.177.55:9090/targets
+- [ ] Prometheus targets "UP" sur http://MONITORING_HOST:9090/targets
 - [ ] (Optionnel) Alertes Telegram configurées
 
 ## 🆘 Dépannage Rapide

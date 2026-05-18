@@ -39,6 +39,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocke
 from api._deps import require_auth, get_start_time
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from api.security_headers import SecurityHeadersMiddleware
 from api.token_utils import strip_bearer
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,7 +89,9 @@ if _enable_docs:
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
-# CORS: restrict to known origins (override via CORS_ORIGINS env var)
+# CORS: restrict to known origins (override via CORS_ORIGINS env var).
+# Mounted after auth/security middlewares so it executes first and can answer
+# preflight requests before auth/rate checks.
 _cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
 _allowed_origins = (
     [o.strip() for o in _cors_origins.split(",") if o.strip()]
@@ -100,16 +103,6 @@ _allowed_origins = (
         "http://127.0.0.1:8000",      # loopback
     ]
 )
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_allowed_origins,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Jarvis-Token", "X-Request-ID"],
-    expose_headers=["X-Request-ID"],
-)
-
-# Security headers (Phase 4.2)
-app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Global access enforcement middleware (fail-closed) ────────
 # CRITICAL: This middleware enforces auth on every request.
@@ -133,26 +126,20 @@ except ImportError as _enf_err:
             "to run in dev mode with per-route auth only."
         ) from _enf_err
 
-# ── Security headers middleware ───────────────────────────────
-try:
-    # SecurityHeadersMiddleware already mounted above (line 110)
-    pass  # duplicate removed
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
+# SlowAPI is the single mounted rate limiter. Keep it inside CORS so browser
+# preflights are answered before rate checks.
+app.add_middleware(SlowAPIMiddleware)
 
-# ── Rate limiting middleware (sliding window per IP+path) ─────
-# CRITICAL: MUST be enabled. Without rate limiting, the API is vulnerable
-# to brute-force attacks on /auth/* endpoints and DoS via mission spam.
-try:
-    from api.rate_limiter import RateLimitMiddleware
-    app.add_middleware(RateLimitMiddleware)
-except ImportError as _rl_err:
-    log.error("rate_limiter_MISSING", err=str(_rl_err))
-    if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
-        raise RuntimeError(
-            "PRODUCTION STARTUP BLOCKED — RateLimitMiddleware failed to import. "
-            "Fix the import or unset JARVIS_PRODUCTION."
-        ) from _rl_err
+# Security headers must wrap auth/rate-limit responses.
+app.add_middleware(SecurityHeadersMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Jarvis-Token", "X-Request-ID"],
+    expose_headers=["X-Request-ID"],
+)
 
 # ── Training-data collector hook (opt-in via JARVIS_TRAINING_COLLECT=1) ──
 # Wraps LLMFactory.safe_invoke so every successful LLM call is captured

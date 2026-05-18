@@ -84,6 +84,16 @@ def set_vault(vault):
     _vault = vault
 
 
+def _vault_role(user: dict) -> str:
+    """Map API roles to vault policy roles."""
+    role = (user or {}).get("role", "viewer")
+    if role == "admin":
+        return "admin"
+    if role == "user":
+        return "operator"
+    return "viewer"
+
+
 # ── Endpoints ──
 
 @router.post("/unlock")
@@ -143,10 +153,14 @@ def update_secret(req: UpdateSecretRequest, user: dict = Depends(require_admin))
 
 
 @router.post("/use")
-def use_secret(req: UseSecretRequest):
+def use_secret(req: UseSecretRequest, user: dict = Depends(require_auth)):
     vault = get_vault()
+    role = _vault_role(user)
+    if role not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Role cannot use secrets")
     result = vault.use_secret(
         req.secret_id, req.agent_name, req.target_domain, req.purpose,
+        role=role,
     )
     if not result.success:
         raise HTTPException(status_code=403, detail=result.error)
@@ -187,7 +201,8 @@ def audit_logs(
     secret_id: str | None = None,
     actor: str | None = None,
     limit: int = 100,
+    user: dict = Depends(require_admin),
 ):
     vault = get_vault()
-    logs = vault.get_audit_logs(secret_id=secret_id, actor=actor, limit=limit)
+    logs = vault.get_audit_logs(secret_id, actor, limit, role="admin")
     return {"logs": logs, "count": len(logs)}

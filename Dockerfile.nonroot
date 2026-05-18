@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # ── Non-root user for security ─────────────────────────────
 # UID 1000 aligned with most Linux hosts + compatible with `chown -R 1000:1000`
@@ -20,8 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ── Python dependencies ────────────────────────────────────
 COPY requirements.txt .
-RUN pip install --upgrade "pip>=26.0" \
- && pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --upgrade "pip>=25,<26" \
+ && python -m pip install --no-cache-dir -r requirements.txt
 
 # ── Application code ──────────────────────────────────────
 COPY . .

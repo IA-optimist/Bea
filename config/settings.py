@@ -5,9 +5,19 @@ Un seul import : from config.settings import get_settings
 """
 from __future__ import annotations
 import os
+import secrets
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
+
+_EPHEMERAL_SECRET_PREFIX = "ephemeral-"
+
+
+def _default_jarvis_secret() -> str:
+    explicit = os.environ.get("JARVIS_SECRET_KEY", "")
+    if explicit:
+        return explicit
+    return f"{_EPHEMERAL_SECRET_PREFIX}{secrets.token_urlsafe(32)}"
 
 
 def _detect_workspace() -> Path:
@@ -42,7 +52,7 @@ class Settings:
     # ── Identité ──────────────────────────────────────────────
     jarvis_name:       str = field(default_factory=lambda: os.environ.get("JARVIS_NAME", "JarvisMax"))
     jarvis_version:    str = field(default_factory=lambda: os.environ.get("JARVIS_VERSION", "1.0.0"))
-    jarvis_secret_key: str = field(default_factory=lambda: os.environ.get("JARVIS_SECRET_KEY", "change-me-in-production"))
+    jarvis_secret_key: str = field(default_factory=_default_jarvis_secret)
     jarvis_admin_password: str = field(default_factory=lambda: os.environ.get("JARVIS_ADMIN_PASSWORD", ""))
     jarvis_api_token: str = field(default_factory=lambda: os.environ.get("JARVIS_API_TOKEN", ""))
     qdrant_api_key: str = field(default_factory=lambda: os.environ.get("QDRANT_API_KEY", ""))
@@ -282,9 +292,13 @@ class Settings:
         if not self.production_mode:
             return
         errors: list[str] = []
-        if self.jarvis_secret_key == "change-me-in-production":
+        if (
+            not self.jarvis_secret_key
+            or self.jarvis_secret_key == "change-me-in-production"
+            or self.jarvis_secret_key.startswith(_EPHEMERAL_SECRET_PREFIX)
+        ):
             errors.append(
-                "JARVIS_SECRET_KEY is the default placeholder. "
+                "JARVIS_SECRET_KEY is not set (or is an ephemeral default). "
                 "Set a cryptographically random value in your .env file."
             )
         if not self.jarvis_admin_password:
@@ -309,8 +323,12 @@ class Settings:
         Ne bloque pas le démarrage — log uniquement.
         Pour un hard-fail en production, appeler enforce_production_secrets()."""
         warnings: list[str] = []
-        if self.jarvis_secret_key == "change-me-in-production":
-            warnings.append("JARVIS_SECRET_KEY is set to the default placeholder — override it in production")
+        if (
+            not self.jarvis_secret_key
+            or self.jarvis_secret_key == "change-me-in-production"
+            or self.jarvis_secret_key.startswith(_EPHEMERAL_SECRET_PREFIX)
+        ):
+            warnings.append("JARVIS_SECRET_KEY is not set (ephemeral default in use) — override it in production")
         if not self.jarvis_admin_password:
             warnings.append(
                 "JARVIS_ADMIN_PASSWORD is not set — admin login falls back to JARVIS_SECRET_KEY. "

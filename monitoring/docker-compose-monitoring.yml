@@ -47,9 +47,9 @@ services:
     container_name: jarvismax-grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=jarvismax2026
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://72.62.177.55:3002
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3002}
       - GF_SERVER_HTTP_PORT=3000
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:

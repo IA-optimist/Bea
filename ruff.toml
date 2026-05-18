@@ -7,7 +7,7 @@
 # Gradually expand `select` as more categories reach 0 errors.
 # See .github/workflows/ci.yml for CI gating.
 # ──────────────────────────────────────────────────────────────
-target-version = "py311"
+target-version = "py312"
 line-length = 120
 
 # Directories that must never be linted : generated, legacy, vendored.

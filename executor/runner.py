@@ -10,6 +10,7 @@ import asyncio
 import json
 import os
 import re
+import shlex
 import shutil
 import time
 from dataclasses import dataclass
@@ -46,6 +47,36 @@ EXEC_LOG   = LOGS_DIR / "executor.jsonl"
 
 CMD_TIMEOUT = 60  # secondes
 AGENT_TIMEOUT_SECONDS = 60  # configurable
+_COMMAND_METACHARS = ("|", "&&", "||", ";", ">", "<", "`", "$(", "\n", "\r")
+
+
+def _workspace_path(raw: str, *, must_exist: bool = False) -> tuple[Path | None, str | None]:
+    """Resolve a target inside WORKSPACE. Returns (path, error)."""
+    if not raw:
+        return WORKSPACE, None
+    base = WORKSPACE.resolve()
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        candidate = base / candidate
+    try:
+        resolved = candidate.resolve(strict=must_exist)
+    except FileNotFoundError:
+        resolved = candidate.parent.resolve() / candidate.name
+    if resolved != base and base not in resolved.parents:
+        return None, f"outside workspace: {raw}"
+    return resolved, None
+
+
+def _parse_allowed_command(cmd: str) -> tuple[list[str] | None, str | None]:
+    if any(meta in cmd for meta in _COMMAND_METACHARS):
+        return None, "shell_metacharacters_not_allowed"
+    try:
+        args = shlex.split(cmd)
+    except ValueError as exc:
+        return None, f"invalid_command: {exc}"
+    if not args:
+        return None, "Commande vide"
+    return args, None
 
 
 async def run_with_timeout(coro, timeout=AGENT_TIMEOUT_SECONDS, agent_name=""):
@@ -211,7 +242,9 @@ class ActionExecutor:
     # ── Handlers ──────────────────────────────────────────────
 
     async def _read_file(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target)
+        p, path_error = _workspace_path(a.target, must_exist=True)
+        if path_error:
+            return ExecutionResult(False, "read_file", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "read_file", a.target, "",
                                    f"Fichier introuvable : {a.target}")
@@ -226,7 +259,9 @@ class ActionExecutor:
                                    "Permission refusee")
 
     async def _write_file(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target)
+        p, path_error = _workspace_path(a.target)
+        if path_error:
+            return ExecutionResult(False, "write_file", a.target, "", path_error)
         backup = None
         if p.exists():
             backup = await self._backup(p)
@@ -256,7 +291,9 @@ class ActionExecutor:
                                backup_path=backup)
 
     async def _backup_action(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target)
+        p, path_error = _workspace_path(a.target, must_exist=True)
+        if path_error:
+            return ExecutionResult(False, "backup_file", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "backup_file", a.target, "",
                                    "Fichier introuvable")
@@ -265,7 +302,9 @@ class ActionExecutor:
                                f"Backup cree : {Path(bp).name}", backup_path=bp)
 
     async def _replace_in_file(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target)
+        p, path_error = _workspace_path(a.target, must_exist=True)
+        if path_error:
+            return ExecutionResult(False, "replace_in_file", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "replace_in_file", a.target, "",
                                    "Fichier introuvable")
@@ -320,10 +359,13 @@ class ActionExecutor:
                                    f"Commande hors whitelist - non executee. "
                                    f"Commande : '{cmd[:80]}'. "
                                    f"Utilise une commande en lecture seule (ls, cat, grep, python3 script.py...).")
+        args, parse_error = _parse_allowed_command(cmd)
+        if parse_error:
+            return ExecutionResult(False, "run_command", cmd, "", parse_error)
 
         try:
-            proc = await asyncio.create_subprocess_shell(
-                cmd,
+            proc = await asyncio.create_subprocess_exec(
+                *args,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=str(WORKSPACE),
@@ -352,7 +394,9 @@ class ActionExecutor:
             return ExecutionResult(False, "run_command", cmd, "", str(e))
 
     async def _list_dir(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target) if a.target else WORKSPACE
+        p, path_error = _workspace_path(a.target) if a.target else (WORKSPACE, None)
+        if path_error:
+            return ExecutionResult(False, "list_dir", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "list_dir", str(p), "",
                                    f"Dossier introuvable : {p}")
@@ -368,7 +412,9 @@ class ActionExecutor:
                                "\n".join(lines) if lines else "(dossier vide)")
 
     async def _analyze_dir(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target) if a.target else WORKSPACE
+        p, path_error = _workspace_path(a.target) if a.target else (WORKSPACE, None)
+        if path_error:
+            return ExecutionResult(False, "analyze_dir", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "analyze_dir", str(p), "",
                                    f"Dossier introuvable : {p}")
@@ -387,7 +433,9 @@ class ActionExecutor:
                                f"Extensions :\n{ext_str}")
 
     async def _delete_file(self, a: ActionSpec) -> ExecutionResult:
-        p = Path(a.target)
+        p, path_error = _workspace_path(a.target, must_exist=True)
+        if path_error:
+            return ExecutionResult(False, "delete_file", a.target, "", path_error)
         if not p.exists():
             return ExecutionResult(False, "delete_file", a.target, "", "Fichier introuvable")
         # Backup systematique avant suppression
@@ -401,8 +449,12 @@ class ActionExecutor:
                                backup_path=bp)
 
     async def _move_file(self, a: ActionSpec) -> ExecutionResult:
-        src = Path(a.target)
-        dst = Path(a.content) if a.content else None
+        src, src_error = _workspace_path(a.target, must_exist=True)
+        if src_error:
+            return ExecutionResult(False, "move_file", a.target, "", src_error)
+        dst, dst_error = _workspace_path(a.content) if a.content else (None, None)
+        if dst_error:
+            return ExecutionResult(False, "move_file", a.target, "", dst_error)
         if not src.exists():
             return ExecutionResult(False, "move_file", a.target, "", "Source introuvable")
         if not dst:
@@ -413,8 +465,12 @@ class ActionExecutor:
         return ExecutionResult(True, "move_file", a.target, f"Deplace vers {dst}")
 
     async def _copy_file(self, a: ActionSpec) -> ExecutionResult:
-        src = Path(a.target)
-        dst = Path(a.content) if a.content else None
+        src, src_error = _workspace_path(a.target, must_exist=True)
+        if src_error:
+            return ExecutionResult(False, "copy_file", a.target, "", src_error)
+        dst, dst_error = _workspace_path(a.content) if a.content else (None, None)
+        if dst_error:
+            return ExecutionResult(False, "copy_file", a.target, "", dst_error)
         if not src.exists():
             return ExecutionResult(False, "copy_file", a.target, "", "Source introuvable")
         if not dst:

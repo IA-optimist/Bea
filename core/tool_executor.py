@@ -220,6 +220,7 @@ _SHELL_BLOCKED = ("rm -rf", "dd if=", "mkfs", "> /dev", "shutdown", "reboot", "p
 _SHELL_ALLOWED_PREFIXES = ("ls", "cat", "head", "tail", "grep", "find", "echo", "date",
                            "wc", "sort", "uniq", "diff", "git ", "python3 -m pytest",
                            "cd ", "pwd", "stat", "file", "which", "env")
+_SHELL_METACHARS = ("|", "&&", "||", ";", ">", "<", "`", "$(", "\n", "\r")
 
 def run_shell_command(cmd: str, timeout: int = 8) -> dict:
     """Exécute une commande shell dans /opt/jarvismax avec validation stricte."""
@@ -232,6 +233,9 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
     for banned in _SHELL_BLOCKED:
         if banned in cmd:
             return _err(f"blocked_command: '{banned}' interdit")
+
+    if any(meta in cmd for meta in _SHELL_METACHARS):
+        return _err("shell_metacharacters_not_allowed")
 
     # Allowlist enforced by default — opt-out uniquement via
     # JARVIS_SHELL_ALLOWLIST=0 dans un contexte explicitement trusté.
@@ -248,12 +252,12 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
         log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
     try:
         _cwd = _os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
-        # Use shlex for safer argument handling
+        # Use shlex for safer argument handling and execute without a shell.
         import shlex
         try:
             args = shlex.split(cmd)
-        except ValueError:
-            args = None
+        except ValueError as exc:
+            return _err(f"invalid_command: {exc}")
 
         if args and len(args) >= 1:
             proc = subprocess.run(
@@ -261,16 +265,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
                 timeout=timeout, cwd=_cwd,
             )
         else:
-            # Fallback to shell=True for complex piped commands (with extra validation)
-            if any(ch in cmd for ch in ("|", "&&", "||", ">>", ">")):
-                # Pipe/redirect commands — still use shell but validated above
-                proc = subprocess.run(
-                    cmd, shell=True, capture_output=True, text=True,
-                    timeout=timeout, cwd=_cwd,
-                )
-            else:
-                return _err("invalid_command: could not parse")
-
+            return _err("invalid_command: could not parse")
         result = f"returncode={proc.returncode} stdout={proc.stdout[:1000]}"
         return _ok(result)
     except subprocess.TimeoutExpired:

@@ -80,10 +80,10 @@ docker-compose -f docker-compose-monitoring.yml logs -f
 
 | Service | URL | Identifiants |
 |---------|-----|--------------|
-| **Grafana** | http://72.62.177.55:3002 | admin / jarvismax2026 |
-| **Prometheus** | http://72.62.177.55:9090 | - |
-| **Alertmanager** | http://72.62.177.55:9093 | - |
-| **Node Exporter** | http://72.62.177.55:9100 | - |
+| **Grafana** | http://MONITORING_HOST:3002 | admin / ${GRAFANA_ADMIN_PASSWORD} |
+| **Prometheus** | http://MONITORING_HOST:9090 | - |
+| **Alertmanager** | http://MONITORING_HOST:9093 | - |
+| **Node Exporter** | http://MONITORING_HOST:9100 | - |
 
 ## 📈 Dashboards Grafana
 
@@ -342,7 +342,7 @@ curl http://localhost:8000/metrics
 docker exec jarvismax-prometheus cat /etc/prometheus/prometheus.yml
 
 # Vérifier les targets dans Prometheus UI
-# http://72.62.177.55:9090/targets
+# http://MONITORING_HOST:9090/targets
 ```
 
 ### Grafana ne se connecte pas à Prometheus
@@ -357,10 +357,10 @@ docker exec jarvismax-grafana wget -O- http://prometheus:9090/api/v1/status/conf
 ### Alertes ne sont pas envoyées
 ```bash
 # Vérifier les alertes actives dans Prometheus
-# http://72.62.177.55:9090/alerts
+# http://MONITORING_HOST:9090/alerts
 
 # Vérifier Alertmanager
-# http://72.62.177.55:9093/#/alerts
+# http://MONITORING_HOST:9093/#/alerts
 
 # Tester le webhook
 curl -X POST http://localhost:8000/api/v2/webhooks/alertmanager \
@@ -374,9 +374,9 @@ curl -X POST http://localhost:8000/api/v2/webhooks/alertmanager \
 - [ ] Configuration Telegram dans `.env` (optionnel)
 - [ ] Services lancés: `docker-compose up -d`
 - [ ] Tous les services "healthy": `docker-compose ps`
-- [ ] Prometheus scrape l'API: http://72.62.177.55:9090/targets
-- [ ] Grafana accessible: http://72.62.177.55:3002
-- [ ] Login Grafana: admin / jarvismax2026
+- [ ] Prometheus scrape l'API: http://MONITORING_HOST:9090/targets
+- [ ] Grafana accessible: http://MONITORING_HOST:3002
+- [ ] Login Grafana: admin / ${GRAFANA_ADMIN_PASSWORD}
 - [ ] 3 dashboards visibles dans Grafana
 - [ ] Webhook Telegram implémenté dans l'API
 - [ ] Test alerte Telegram fonctionnel

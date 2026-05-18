@@ -48,6 +48,15 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+pytest-cache-files-*/
+
+# ── Repo hygiene (audit Sprint 1) ────────────────────────────
+snapshots/jarvismax_memory_*/
+.claude-*.log
+.claude-*.json
+.claude-dispatch-*-debug.log
+test_write_perm.tmp
+latest
 
 # ── Docker ───────────────────────────────────────────────────
 .docker/

@@ -509,20 +509,9 @@ def send_exploit(target_url, command):
             exploit_code = exploit_code.replace('"', "'")
             exploit_code = f"# Obfuscated exploit\n{exploit_code}"
         elif evasion_level == "advanced":
-            # Advanced obfuscation
-            exploit_code = self._advanced_obfuscation(exploit_code)
+            logger.warning("Advanced evasion disabled; returning unobfuscated exploit")
 
         return exploit_code
-
-    def _advanced_obfuscation(self, code):
-        """Apply advanced obfuscation techniques"""
-        # This is a simplified version - real implementation would be more sophisticated
-        obfuscated = f"""
-# Advanced evasion techniques applied
-import base64
-exec(base64.b64decode('{base64.b64encode(code.encode()).decode()}'))
-        """
-        return obfuscated
 
     def _analyze_vulnerability_details(self, description, cve_data):
         """Analyze CVE data to extract specific vulnerability details"""

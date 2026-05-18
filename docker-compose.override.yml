@@ -5,7 +5,6 @@ services:
       - '8000:8000'
     volumes:
       - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       # Profil VPS: max_agents=8 au lieu de 2 (LOCAL) -> crews complexes fonctionnent
       - JARVIS_MODE=vps

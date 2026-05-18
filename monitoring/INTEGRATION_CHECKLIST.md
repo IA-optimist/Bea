@@ -75,7 +75,7 @@ cd /root/Jarvismax-master/monitoring
 ./test_stack.sh
 
 # Vérifier l'accès Grafana
-curl -I http://72.62.177.55:3002/login
+curl -I http://MONITORING_HOST:3002/login
 
 # Vérifier les targets Prometheus
 curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
@@ -83,8 +83,8 @@ curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 
 #### 3. Accès Grafana (1 min)
 
-1. Ouvrir http://72.62.177.55:3002
-2. Login: `admin` / `jarvismax2026`
+1. Ouvrir http://MONITORING_HOST:3002
+2. Login: `admin` / `${GRAFANA_ADMIN_PASSWORD}`
 3. Menu (☰) > Dashboards > JarvisMax
 4. Ouvrir un dashboard pour vérifier les métriques
 
@@ -119,11 +119,11 @@ curl -X POST http://localhost:9090/-/reload
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| **Grafana** | http://72.62.177.55:3002 | admin / jarvismax2026 |
-| **Prometheus** | http://72.62.177.55:9090 | Métriques et requêtes |
-| **Alertmanager** | http://72.62.177.55:9093 | État des alertes |
-| **Node Exporter** | http://72.62.177.55:9100 | Métriques brutes |
-| **API Metrics** | http://72.62.177.55:8000/metrics | Métriques API |
+| **Grafana** | http://MONITORING_HOST:3002 | admin / ${GRAFANA_ADMIN_PASSWORD} |
+| **Prometheus** | http://MONITORING_HOST:9090 | Métriques et requêtes |
+| **Alertmanager** | http://MONITORING_HOST:9093 | État des alertes |
+| **Node Exporter** | http://MONITORING_HOST:9100 | Métriques brutes |
+| **API Metrics** | http://MONITORING_HOST:8000/metrics | Métriques API |
 
 ## 🔧 Commandes Utiles
 

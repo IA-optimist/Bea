@@ -1,7 +1,7 @@
 # 📊 Rapport de Déploiement - Stack Monitoring JarvisMax
 
 **Date**: 2026-04-09  
-**Serveur**: VPS1 (72.62.177.55)  
+**Serveur**: VPS1 (MONITORING_HOST)
 **Statut**: ✅ DÉPLOYÉ ET OPÉRATIONNEL
 
 ---
@@ -43,7 +43,7 @@ Stack de monitoring complète déployée avec succès incluant:
 
 ## 📊 Dashboards Grafana
 
-Tous accessibles via http://72.62.177.55:3002 (admin / jarvismax2026)
+Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWORD})
 
 ### 1. System Monitoring Dashboard
 **UID**: `jarvismax-system`  
@@ -114,23 +114,23 @@ Tous accessibles via http://72.62.177.55:3002 (admin / jarvismax2026)
 ## 🔐 Accès et Identifiants
 
 ### Grafana
-- **URL**: http://72.62.177.55:3002
+- **URL**: http://MONITORING_HOST:3002
 - **Username**: `admin`
-- **Password**: `jarvismax2026`
+- **Password**: `${GRAFANA_ADMIN_PASSWORD}`
 - **Datasource**: Prometheus (pré-configuré)
 
 ### Prometheus
-- **URL**: http://72.62.177.55:9090
-- **Targets**: http://72.62.177.55:9090/targets
-- **Alerts**: http://72.62.177.55:9090/alerts
+- **URL**: http://MONITORING_HOST:9090
+- **Targets**: http://MONITORING_HOST:9090/targets
+- **Alerts**: http://MONITORING_HOST:9090/alerts
 - **Auth**: Aucune
 
 ### Alertmanager
-- **URL**: http://72.62.177.55:9093
+- **URL**: http://MONITORING_HOST:9093
 - **Auth**: Aucune
 
 ### Node Exporter
-- **URL**: http://72.62.177.55:9100/metrics
+- **URL**: http://MONITORING_HOST:9100/metrics
 - **Auth**: Aucune
 
 ---
@@ -300,10 +300,10 @@ curl -X POST http://localhost:9093/-/reload
 ### Dashboard vide
 - Attendre 1-2 minutes pour la première collecte
 - Vérifier que l'API expose /metrics: `curl http://localhost:8000/metrics`
-- Vérifier les targets: http://72.62.177.55:9090/targets
+- Vérifier les targets: http://MONITORING_HOST:9090/targets
 
 ### Alerte ne fonctionne pas
-- Vérifier Alertmanager: http://72.62.177.55:9093
+- Vérifier Alertmanager: http://MONITORING_HOST:9093
 - Vérifier les logs: `docker logs jarvismax-alertmanager`
 - Tester manuellement l'endpoint webhook
 
@@ -320,7 +320,7 @@ En cas de problème:
 1. Consulter la documentation dans `README.md`
 2. Vérifier les logs: `docker compose logs -f`
 3. Exécuter le script de test: `./test_stack.sh`
-4. Vérifier les targets Prometheus: http://72.62.177.55:9090/targets
+4. Vérifier les targets Prometheus: http://MONITORING_HOST:9090/targets
 
 ---
 
