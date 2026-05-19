@@ -56,3 +56,15 @@ repos:
             docs/archive/.*|
             jarvismax_app/.*
           )$
+
+  # ── Ruff (lint only, NO autofix to avoid massive churn) ─────────
+  # The repo has ~107 pre-existing ruff errors (mostly orchestrate-mobile/
+  # and legacy code paths). This hook lints only the files staged for
+  # commit, so new code is held to ruff.toml standards without forcing
+  # a sweeping cleanup of the existing baseline.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.10
+    hooks:
+      - id: ruff
+        name: ruff check (staged files only, no autofix)
+        args: [--no-fix]
