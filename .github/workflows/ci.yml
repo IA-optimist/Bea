@@ -83,11 +83,16 @@ jobs:
         run: |
           # Coverage threshold = conservative baseline ; raise gradually as
           # cleanup PRs land. Fails CI if core/ coverage drops below.
+          # 50 → 55 (audit Sprint 4 §6.4). A bump to 60 was attempted in
+          # Sprint 7 tour 1 (commit 6f5f5af) but reality is 56.98% so we
+          # held at 55. Roadmap : add tests for the 0%-coverage modules
+          # (workspace_cleaner, low-coverage workflow_runtime/workflow_playbooks
+          # branches) before the next ratchet.
           # -n auto runs one worker per CPU core (pytest-xdist) — local suite
           # time drops from ~6.5min single-threaded to ~2min on a 4-core runner.
           pytest tests/ -v -n auto --dist=loadfile \
             --cov=core --cov-report=xml --cov-report=term \
-            --cov-fail-under=50
+            --cov-fail-under=55
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457  # v3

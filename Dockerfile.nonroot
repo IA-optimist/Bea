@@ -1,8 +1,38 @@
-FROM python:3.12-slim
+# Multi-stage non-root build for Jarvismax (audit Sprint 4 §6.4).
+#
+# Stage 1 (builder) installs build-essential + git, compiles wheels into
+# /wheels. Stage 2 (runtime) ships only python:3.12-slim + the prebuilt
+# wheels + the app code, runs as UID 1000 jarvis. The build toolchain
+# stays out of the final image (~150 MB lighter, no compiler at runtime).
+
+# ──────────────────────────────────────────────────────────────
+# Stage 1: builder — heavy, has compilers, throw-away
+# ──────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# build-essential + git only for wheel compilation (psycopg2, etc.).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+# Pre-build all wheels into /wheels so the runtime stage doesn't need
+# the compiler. Pip 25 wheel API stays stable.
+RUN python -m pip install --upgrade "pip>=25,<26" \
+ && python -m pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
+
+# ──────────────────────────────────────────────────────────────
+# Stage 2: runtime — slim, non-root, no compiler
+# ──────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
 
 # ── Non-root user for security ─────────────────────────────
 # UID 1000 aligned with most Linux hosts + compatible with `chown -R 1000:1000`
-# on the VPS volume mount. Avoids running the whole framework as root.
+# on the VPS volume mount. Audit S2.4 hardened sandbox runs alongside this.
 ARG JARVIS_UID=1000
 ARG JARVIS_GID=1000
 RUN groupadd --gid "${JARVIS_GID}" jarvis \
@@ -10,18 +40,20 @@ RUN groupadd --gid "${JARVIS_GID}" jarvis \
 
 WORKDIR /app
 
-# ── System dependencies ────────────────────────────────────
-# Installed as root THEN we drop privileges.
+# ── Minimal runtime system deps ────────────────────────────
+# curl needed for HEALTHCHECK ; git only for tools that may shell out to it.
+# build-essential is NOT in the runtime image (compiled wheels live in /wheels).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    build-essential \
+        curl \
+        git \
  && rm -rf /var/lib/apt/lists/*
 
-# ── Python dependencies ────────────────────────────────────
+# ── Install pre-built wheels from the builder stage ────────
+COPY --from=builder /wheels /wheels
 COPY requirements.txt .
 RUN python -m pip install --upgrade "pip>=25,<26" \
- && python -m pip install --no-cache-dir -r requirements.txt
+ && python -m pip install --no-cache-dir --no-index --find-links /wheels -r requirements.txt \
+ && rm -rf /wheels
 
 # ── Application code ──────────────────────────────────────
 COPY . .
@@ -34,12 +66,13 @@ RUN mkdir -p /home/jarvis/.jarvismax/logs /app/workspace \
 
 # ── Drop privileges ────────────────────────────────────────
 USER jarvis
-ENV HOME=/home/jarvis
+ENV HOME=/home/jarvis \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/api/v2/health || exit 1
+    CMD curl -f http://localhost:8000/api/v2/health || exit 1
 
 CMD ["python", "main.py"]

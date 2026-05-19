@@ -26,6 +26,13 @@ exclude = [
   "docs",
   "archive",
   "workspace",
+  # Audit S5.B (2026-05-19): both `orchestrate-*` packages were imported
+  # wholesale from external projects with ~106 F841/unused-variable errors.
+  # They are excluded until a dedicated cleanup PR brings them up to
+  # ruff.toml standards. Do NOT add new code to these dirs without lint
+  # compliance.
+  "orchestrate-cli",
+  "orchestrate-mobile",
 ]
 
 [lint]

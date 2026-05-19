@@ -1,7 +1,5 @@
 # Orchestrate - Plateforme d'Orchestration d'Agents IA Multi-framework
 
-[English](README_EN.md) | [Español](README_ES.md) | [中文](README_ZH.md) | [日本語](README_JA.md) | [Deutsch](README_DE.md)
-
 ## 🎯 Présentation
 
 Orchestrate est une plateforme complète d'orchestration d'agents IA qui combine un CLI puissant pour la gestion multi-framework et une application mobile native pour le suivi en temps réel et la visualisation 3D des workflows.
