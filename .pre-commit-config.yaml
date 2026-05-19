@@ -34,7 +34,9 @@ repos:
             README\.md|
             README_EN\.md|
             ARCHITECTURE\.md|
-            core/_legacy/README\.md
+            core/_legacy/README\.md|
+            orchestrate-cli/.*|
+            orchestrate-mobile/.*
           )$
 
   - repo: https://github.com/gitleaks/gitleaks
