@@ -1,0 +1,61 @@
+# .gitleaksignore — historical secret fingerprints allowlisted.
+#
+# These 37 fingerprints predate the audit hardening pass (2026-05-18 +
+# 2026-05-19). They live in git history but the offending files have been
+# either removed or gitignored in current main. Tokens reachable via these
+# fingerprints SHOULD BE ROTATED out-of-band — this allowlist is not a
+# substitute for rotation.
+#
+# Categories (regenerate by re-running gitleaks if rotated):
+#   - OPENCLAW_TOKEN in 7× openclaw/agents/*/SOUL.md (commit 48fabb6)
+#   - curl example tokens in completion reports / runbooks / docs
+#   - workspace/access_tokens.json runtime tokens (now gitignored)
+#   - jarvismax_app/lib/config/hardcoded_config.dart (mobile token placeholder)
+#   - docker-compose.yml api-key (historic, env-driven now)
+#
+# Do NOT add new entries here without an out-of-band rotation note.
+
+# OPENCLAW_TOKEN — openclaw/agents/* (commit 48fabb6, 2026-03-31)
+48fabb67ec26e5c0436344d21f48003695f9068b:docs/incidents/2026-03-27/CONFIRMATION_TEST.md:curl-auth-header:5
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-architect/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-coder/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-devops/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-orchestrator/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-qa/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-reviewer/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-watcher/SOUL.md:generic-api-key:21
+
+# curl-auth-header examples in completion reports + docs
+1e901dede9d370d0e69fba0c56f165bf21781917:docs/DEPLOYMENT_GUIDE.md:curl-auth-header:213
+39250a1a3e082cc1803f8befb2436a21f9d4c537:P3.2_COMPLETION_REPORT.md:curl-auth-header:498
+39250a1a3e082cc1803f8befb2436a21f9d4c537:P3.2_COMPLETION_REPORT.md:curl-auth-header:523
+39250a1a3e082cc1803f8befb2436a21f9d4c537:P3.2_COMPLETION_REPORT.md:curl-auth-header:534
+3eb0000df187256042a1e1d5c61fee43bdd5f313:docs/RUNBOOK.md:curl-auth-header:268
+8c0ae5d748b033e489e64d6d2f89c656a65fc6b1:P3.1_COMPLETION_REPORT.md:curl-auth-header:528
+9d58e4ccdd94c79bbc5fe797ec0014c871e1ba35:RUNBOOK.md:curl-auth-header:267
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:NOTIFICATION_SYSTEM_SUMMARY.md:curl-auth-header:221
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:NOTIFICATION_SYSTEM_SUMMARY.md:curl-auth-header:234
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:docs/NOTIFICATIONS_SYSTEM.md:curl-auth-header:169
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:docs/NOTIFICATIONS_SYSTEM.md:curl-auth-header:180
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:docs/NOTIFICATIONS_SYSTEM.md:curl-auth-header:207
+c5f6a86f620fbef668c9f1bc34cb4fd17756ee8f:docs/NOTIFICATIONS_SYSTEM.md:curl-auth-header:218
+e953da9b7d3f1d02ca51e40f0a566166a21b49a7:P3.3_COMPLETION_REPORT.md:curl-auth-header:625
+e953da9b7d3f1d02ca51e40f0a566166a21b49a7:P3.3_COMPLETION_REPORT.md:curl-auth-header:650
+e953da9b7d3f1d02ca51e40f0a566166a21b49a7:P3.3_COMPLETION_REPORT.md:curl-auth-header:669
+e953da9b7d3f1d02ca51e40f0a566166a21b49a7:P3.3_COMPLETION_REPORT.md:curl-auth-header:680
+
+# workspace runtime token stores (now gitignored, kept in history)
+ac544ce68844a9f97cfbe3b07f011176df40ef8d:workspace/access_tokens.json:generic-api-key:178
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:25
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:50
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:75
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:100
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:125
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:150
+ffb8322e11fffcc26e4600d26eb1f1354c950df9:workspace/access_tokens.json:generic-api-key:175
+d98da3673bd6731af0077417993e56d798631355:.tokens.json:generic-api-key:25
+
+# Hardcoded placeholder tokens in build artefacts / docs
+ab3a9b122b3a17cd82efabe134db79f60c52b8c9:docker-compose.yml:generic-api-key:67
+b4ae9dca3bbd2faa2abf5c5558e812631a282875:jarvismax_app/lib/config/hardcoded_config.dart:generic-api-key:9
+f00039995ac5f9795410d66a796dbd1ea91c40da:docs/API_REFERENCE.md:generic-api-key:74

@@ -141,22 +141,27 @@ class CanonicalMissionStore:
         self._ok = False
         self._pg_dsn: Optional[str] = None
 
-        # Try Postgres first
-        try:
-            from config.settings import Settings
-            dsn = Settings().database_url
-            if dsn:
-                import psycopg2
-                conn = psycopg2.connect(dsn)
-                conn.autocommit = True
-                conn.cursor().execute(_CREATE_TABLE_PG)
-                conn.close()
-                self._pg_dsn = dsn
-                self._ok = True
-                log.info("canonical_mission_store.ready", backend="postgres")
-                return
-        except Exception as exc:
-            log.debug("canonical_mission_store.pg_skipped", err=str(exc)[:80])
+        # Try Postgres first — UNLESS the caller explicitly requested a SQLite
+        # path. Tests pass tmpfile paths and expect SQLite behaviour; if we
+        # silently routed their writes to an opportunistically-available
+        # Postgres (e.g. DATABASE_URL set in CI), every read-back assertion
+        # would fail (audit S6.E, 2026-05-19).
+        if db_path is None:
+            try:
+                from config.settings import Settings
+                dsn = Settings().database_url
+                if dsn:
+                    import psycopg2
+                    conn = psycopg2.connect(dsn)
+                    conn.autocommit = True
+                    conn.cursor().execute(_CREATE_TABLE_PG)
+                    conn.close()
+                    self._pg_dsn = dsn
+                    self._ok = True
+                    log.info("canonical_mission_store.ready", backend="postgres")
+                    return
+            except Exception as exc:
+                log.debug("canonical_mission_store.pg_skipped", err=str(exc)[:80])
 
         # SQLite fallback
         try:

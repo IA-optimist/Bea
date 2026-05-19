@@ -18,6 +18,13 @@ import uuid
 import requests
 import numpy as np
 
+try:
+    import structlog
+    log = structlog.get_logger(__name__)
+except ImportError:  # structlog not installed (smoke env)
+    import logging
+    log = logging.getLogger(__name__)
+
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -174,7 +181,7 @@ class ContinualMemory:
             resp.raise_for_status()
         except Exception as e:
             # Non-fatal: log and continue
-            print(f"[ContinualMemory] store_experience failed: {e}")
+            log.warning("continual_memory.store_experience_failed", err=str(e)[:200])
 
     async def get_replay_batch(
         self, current_goal: str, n: int = 5
@@ -210,7 +217,7 @@ class ContinualMemory:
             resp.raise_for_status()
             hits = resp.json().get("result", [])
         except Exception as e:
-            print(f"[ContinualMemory] get_replay_batch failed: {e}")
+            log.warning("continual_memory.get_replay_batch_failed", err=str(e)[:200])
             return []
 
         # Re-rank with boosted score
@@ -287,7 +294,7 @@ class ContinualMemory:
                     break
                 offset = next_offset
         except Exception as e:
-            print(f"[ContinualMemory] consolidate scroll failed: {e}")
+            log.warning("continual_memory.consolidate_scroll_failed", err=str(e)[:200])
             return {"error": str(e), "lessons": [], "patterns": []}
 
         if not all_payloads:
@@ -336,7 +343,7 @@ class ContinualMemory:
             raw = llm_resp.json().get("response", "{}")
             summary = json.loads(raw)
         except Exception as e:
-            print(f"[ContinualMemory] consolidate LLM failed: {e}")
+            log.warning("continual_memory.consolidate_llm_failed", err=str(e)[:200])
             summary = {
                 "lessons": ["LLM unavailable — check Ollama connection"],
                 "patterns": [],
