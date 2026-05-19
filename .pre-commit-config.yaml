@@ -30,7 +30,11 @@ repos:
             jarvismax_app/.*|
             frontend/.*|
             mobile/.*|
-            .*\.min\.(js|css)
+            .*\.min\.(js|css)|
+            README\.md|
+            README_EN\.md|
+            ARCHITECTURE\.md|
+            core/_legacy/README\.md
           )$
 
   - repo: https://github.com/gitleaks/gitleaks
