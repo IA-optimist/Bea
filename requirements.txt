@@ -22,7 +22,7 @@ fastapi==0.109.1
 uvicorn[standard]==0.42.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)
-python-multipart==0.0.26
+python-multipart==0.0.29
 
 # Data processing
 beautifulsoup4==4.12.3
