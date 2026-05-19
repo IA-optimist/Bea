@@ -516,13 +516,16 @@ _CORE_MCP_STACK: List[MCPServerEntry] = [
         ],
     ),
     # ── LAYER C: HexStrike (user-requested) ──
+    # Audit Sprint 3 (2026-05-19): vendored mcp/hexstrike-ai/ removed.
+    # Capability stays registered for metadata; install points upstream and
+    # MUST be executed in an isolated container (cf. requires_approval).
     MCPServerEntry(
         id="mcp-hexstrike", name="HexStrike AI",
         description="Cybersecurity MCP — 150+ pentesting tools, vulnerability scanning, bug bounty",
         source="0x4m4/hexstrike-ai", source_url="https://github.com/0x4m4/hexstrike-ai",
         trust_level=TrustLevel.COMMUNITY,
         transport="http", endpoint="http://localhost:8888",
-        install_command="pip install -r mcp/hexstrike-ai/requirements.txt",
+        install_command="pip install 'hexstrike-ai @ git+https://github.com/0x4m4/hexstrike-ai'",
         risk_level="critical", category="security",
         requires_approval=True,
         tags=["security", "pentest", "vulnerability", "bugbounty"],

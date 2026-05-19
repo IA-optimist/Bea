@@ -125,11 +125,17 @@ async def test_stripe_webhook_rejects_missing_signature(monkeypatch):
     assert exc.value.status_code == 400
 
 
-def test_hexstrike_advanced_obfuscation_is_removed():
-    content = Path("mcp/hexstrike-ai/command_execution.py").read_text(encoding="utf-8")
-
-    assert "def _advanced_obfuscation" not in content
-    assert "exec(base64.b64decode" not in content
+def test_hexstrike_vendored_module_is_removed():
+    """Audit Sprint 3 P0 (2026-05-19): the entire vendored mcp/hexstrike-ai/
+    tree was removed (~12k LOC, 0 import from the rest of the repo,
+    RCE-by-design via subprocess shell=True in command_execution.py).
+    The MCP registry entry is kept for capability metadata, but the
+    vendored copy itself stays deleted. Re-vendoring would re-introduce
+    the obfuscation + RCE surface this test originally guarded against."""
+    assert not Path("mcp/hexstrike-ai").exists(), (
+        "mcp/hexstrike-ai/ should remain deleted — install upstream "
+        "(0x4m4/hexstrike-ai) in an isolated container if you need it."
+    )
 
 
 def test_missions_route_has_no_tmp_trace_logging():

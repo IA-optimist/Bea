@@ -1,6 +1,6 @@
 # Orchestrate - Plateforme d'Orchestration d'Agents IA Multi-framework
 
-[English](README_EN.md) | [Español](README_ES.md) | [中文](README_ZH.md) | [日本語](README_JA.md) | [Deutsch](README_DE.md)
+[English](README_EN.md)
 
 ## 🎯 Présentation
 
