@@ -32,11 +32,11 @@ repos:
             mobile/.*|
             .*\.min\.(js|css)|
             README\.md|
-            README_EN\.md|
             ARCHITECTURE\.md|
             core/_legacy/README\.md|
             orchestrate-cli/.*|
-            orchestrate-mobile/.*
+            orchestrate-mobile/.*|
+            tests/.*
           )$
 
   - repo: https://github.com/gitleaks/gitleaks
