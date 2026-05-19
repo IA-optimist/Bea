@@ -82,8 +82,12 @@ class SkillBuilder:
 
         existing = self._find_duplicate(goal)
         if existing:
-            # Update existing skill instead of creating new one
-            self._merge_into(existing, result, tools_used, confidence)
+            # Update existing skill instead of creating new one.
+            # Audit S6.C (2026-05-19): the caller used to pass `result` as a
+            # second positional argument, but _merge_into's signature is
+            # (skill, tools, confidence) and `result` was never consumed —
+            # the extra arg raised TypeError on every duplicate detection.
+            self._merge_into(existing, tools_used, confidence)
             return existing
 
         # ── Build the skill ──────────────────────────────────────

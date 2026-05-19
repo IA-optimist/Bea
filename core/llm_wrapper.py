@@ -86,6 +86,15 @@ def patch_llm_factory(LLMFactory: Optional[type] = None) -> bool:
     if getattr(original, _PATCHED_FLAG, False):
         return False  # already wrapped
 
+    import functools as _functools
+
+    # @functools.wraps preserves the original signature so
+    # inspect.signature(LLMFactory.safe_invoke) still resolves the explicit
+    # kwargs (task_description, budget, latency, timeout, session_id,
+    # agent_name). Without it, the wrapper collapses everything into
+    # (self, messages, role, **kw) and breaks the contract-introspection
+    # regression tests (audit S6.F, 2026-05-19).
+    @_functools.wraps(original)
     async def safe_invoke_with_capture(self, messages, role="fast", **kw):
         t0 = time.monotonic()
         resp = await original(self, messages, role=role, **kw)

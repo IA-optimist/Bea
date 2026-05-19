@@ -84,10 +84,24 @@ class GoalRegistry:
     Pour multi-process, préférer une base SQLite ou Redis.
     """
 
-    DEFAULT_PATH = Path("/root/.openclaw-bestclaw/workspace/Jarvismax-master/workspace/proactive_goals.json")
+    @staticmethod
+    def _default_path() -> Path:
+        """Resolve a writable default goals path.
+
+        Prefer the configured workspace dir (config.settings.workspace_dir);
+        fall back to ~/.jarvismax/proactive_goals.json. The earlier hardcoded
+        /root/.openclaw-bestclaw/... path was env-specific and tripped
+        PermissionError on CI runners and any non-root host (audit S6.B).
+        """
+        try:
+            from config.settings import get_settings
+            return Path(get_settings().workspace_dir) / "proactive_goals.json"
+        except Exception:
+            return Path.home() / ".jarvismax" / "proactive_goals.json"
 
     def __init__(self, storage_path: Optional[Path] = None) -> None:
-        self._path = Path(storage_path or self.DEFAULT_PATH)
+        self._path = Path(storage_path) if storage_path is not None else self._default_path()
+        self._path.parent.mkdir(parents=True, exist_ok=True)
         self._goals: dict[str, ProactiveGoal] = {}
         self._load()
 

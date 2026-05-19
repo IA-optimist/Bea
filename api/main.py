@@ -92,7 +92,19 @@ app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 # CORS: restrict to known origins (override via CORS_ORIGINS env var).
 # Mounted after auth/security middlewares so it executes first and can answer
 # preflight requests before auth/rate checks.
+#
+# Audit Sprint 2 §4.1 P2 : in production, CORS_ORIGINS MUST be set explicitly.
+# Falling through to the localhost defaults in prod is a config smell that
+# would silently allow misconfigured browser clients to be reachable.
 _cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
+_is_production = os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes")
+if _is_production and not _cors_origins:
+    raise RuntimeError(
+        "PRODUCTION STARTUP BLOCKED — CORS_ORIGINS is not set. "
+        "Set CORS_ORIGINS to a comma-separated allowlist of trusted origins "
+        "(e.g. CORS_ORIGINS=https://app.example.com,https://admin.example.com) "
+        "or unset JARVIS_PRODUCTION to run in dev mode."
+    )
 _allowed_origins = (
     [o.strip() for o in _cors_origins.split(",") if o.strip()]
     if _cors_origins
