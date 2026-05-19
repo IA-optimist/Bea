@@ -89,7 +89,7 @@ watchdog>=3.0.0
 
 # Authentication dependencies
 cryptography>=41.0.0
-python-jose>=3.3.0
+python-jose>=3.5.0
 authlib>=1.2.0
 
 # Monitoring dependencies
