@@ -140,11 +140,18 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     # 6. Auth required mais AUCUN système configuré → 503 (config error).
     # Signale qu'on ne peut pas authentifier, plutôt que 401 qui suggère un
     # mauvais token. Fail-closed + observability claire.
+    # Audit S6.D (2026-05-19): the ephemeral random secret introduced in
+    # audit Sprint 1 (config/settings.py) must NOT count as "configured" —
+    # it is per-process and not a real deployment credential.
     if not _API_TOKEN:
         try:
             from config.settings import get_settings
             _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
-            _jwt_configured = _jwt_secret and _jwt_secret != "change-me-in-production"
+            _jwt_configured = bool(
+                _jwt_secret
+                and _jwt_secret != "change-me-in-production"
+                and not _jwt_secret.startswith("ephemeral-")
+            )
         except Exception:
             _jwt_configured = False
         if not _jwt_configured:

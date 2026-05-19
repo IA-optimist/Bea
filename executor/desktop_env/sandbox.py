@@ -64,11 +64,29 @@ class DockerSandbox(DesktopEnvironment):
         log.info("sandbox_starting", container=self.container_id, image=self.image)
         try:
             # Phase 12 : SÉCURITÉ COPY-ON-WRITE
-            # Crée un dossier temporaire et y copie le workspace pour protéger l'hôte
+            # Crée un dossier temporaire et y copie le workspace pour protéger l'hôte.
+            # `ignore` list exclut les fichiers sensibles qui ne doivent JAMAIS
+            # entrer dans le conteneur (audit Sprint 2).
             self.workspace_path.mkdir(parents=True, exist_ok=True)
             self.tmp_workspace = Path(tempfile.mkdtemp(prefix="jarvis_sandbox_"))
-            shutil.copytree(str(self.workspace_path), str(self.tmp_workspace), dirs_exist_ok=True)
-            
+            _excluded = shutil.ignore_patterns(
+                ".env", ".env.*", ".git", ".gitignore",
+                "*.key", "*.pem", "secrets", "tokens.json", ".tokens.json",
+            )
+            shutil.copytree(
+                str(self.workspace_path),
+                str(self.tmp_workspace),
+                dirs_exist_ok=True,
+                ignore=_excluded,
+            )
+
+            # Sandbox hardening (audit Sprint 2 §4.1 P1) :
+            #   - network_mode="none"  : pas d'accès réseau par défaut
+            #     (opt-in via JARVIS_SANDBOX_ALLOW_NETWORK=1 → bridge)
+            #   - read_only=True       : root filesystem read-only
+            #   - tmpfs /tmp           : tmpfs writable pour /tmp
+            #   - mem_limit / pids_limit / cap_drop=ALL / no-new-privileges
+            _net = "bridge" if os.getenv("JARVIS_SANDBOX_ALLOW_NETWORK") == "1" else "none"
             self.container = self._client.containers.run(
                 image=self.image,
                 name=self.container_id,
@@ -77,9 +95,22 @@ class DockerSandbox(DesktopEnvironment):
                 working_dir="/workspace",
                 detach=True,
                 auto_remove=True,
-                network_mode="bridge"
+                network_mode=_net,
+                read_only=True,
+                tmpfs={"/tmp": "size=64m,mode=1777", "/run": "size=8m"},
+                mem_limit="512m",
+                memswap_limit="512m",
+                pids_limit=128,
+                cap_drop=["ALL"],
+                security_opt=["no-new-privileges:true"],
             )
-            log.info("sandbox_started", container=self.container_id, secure_cow=True)
+            log.info(
+                "sandbox_started",
+                container=self.container_id,
+                secure_cow=True,
+                network=_net,
+                read_only=True,
+            )
         except Exception as _img_e:
             if "ImageNotFound" not in type(_img_e).__name__: raise
             _dummy = None  # noqa

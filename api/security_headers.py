@@ -38,14 +38,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # HSTS: Force HTTPS for 1 year (31536000 seconds)
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
-        # CSP: Content Security Policy (strict but functional)
-        # Allows self + inline scripts/styles + Google Fonts
-        # Exempt Swagger/ReDoc/OpenAPI paths (need inline scripts).
-        if not _is_csp_exempt(request.url.path):
+        # CSP: Content Security Policy.
+        # - Strict policy everywhere except Swagger/ReDoc/OpenAPI (which need
+        #   inline scripts AND styles to render their UI).
+        # - Audit Sprint 2 §4.1 P2: 'unsafe-inline' is scoped to /docs only,
+        #   not applied to the main API surface.
+        if _is_csp_exempt(request.url.path):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data: https://fonts.gstatic.com; "
+                "connect-src 'self' https:; "
+                "frame-ancestors 'none'"
+            )
+        else:
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "script-src 'self'; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "style-src 'self' https://fonts.googleapis.com; "
                 "img-src 'self' data: https:; "
                 "font-src 'self' data: https://fonts.gstatic.com; "
                 "connect-src 'self' https:; "
