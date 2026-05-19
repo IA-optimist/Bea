@@ -142,7 +142,6 @@ class TestModelAutoUpdate:
         assert stats["total_cost"] == pytest.approx(0.08, abs=0.001)
         assert stats["per_model"]["m2"] == pytest.approx(0.05, abs=0.001)
 
-    @pytest.mark.xfail(reason="dynamic cost ratio drift", strict=False)
     def test_MD18_dynamic_quality_cost_ratio_no_data(self):
         from core.model_intelligence.auto_update import ModelAutoUpdate
         e = ModelAutoUpdate()

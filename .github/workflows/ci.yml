@@ -83,12 +83,14 @@ jobs:
         run: |
           # Coverage threshold = conservative baseline ; raise gradually as
           # cleanup PRs land. Fails CI if core/ coverage drops below.
-          # 50 → 55 (audit Sprint 4 §6.4, 2026-05-19). Roadmap : 55 → 60 → 70.
+          # 50 → 55 → 60 (audit Sprint 4 §6.4, bumped 2026-05-19 after the
+          # Sprint 6 test fixes brought the suite from 5086 → 5106 passing).
+          # Roadmap: 60 → 65 → 70 as god-object splits unlock missing branches.
           # -n auto runs one worker per CPU core (pytest-xdist) — local suite
           # time drops from ~6.5min single-threaded to ~2min on a 4-core runner.
           pytest tests/ -v -n auto --dist=loadfile \
             --cov=core --cov-report=xml --cov-report=term \
-            --cov-fail-under=55
+            --cov-fail-under=60
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457  # v3
