@@ -10,14 +10,14 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
-_EPHEMERAL_SECRET_PREFIX = "ephemeral-"
+_EPHEMERAL_KEY_PREFIX = "ephemeral-"  # pragma: allowlist secret
 
 
 def _default_jarvis_secret() -> str:
     explicit = os.environ.get("JARVIS_SECRET_KEY", "")
     if explicit:
         return explicit
-    return f"{_EPHEMERAL_SECRET_PREFIX}{secrets.token_urlsafe(32)}"
+    return f"{_EPHEMERAL_KEY_PREFIX}{secrets.token_urlsafe(32)}"
 
 
 def _detect_workspace() -> Path:
@@ -295,7 +295,7 @@ class Settings:
         if (
             not self.jarvis_secret_key
             or self.jarvis_secret_key == "change-me-in-production"
-            or self.jarvis_secret_key.startswith(_EPHEMERAL_SECRET_PREFIX)
+            or self.jarvis_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
         ):
             errors.append(
                 "JARVIS_SECRET_KEY is not set (or is an ephemeral default). "
@@ -326,7 +326,7 @@ class Settings:
         if (
             not self.jarvis_secret_key
             or self.jarvis_secret_key == "change-me-in-production"
-            or self.jarvis_secret_key.startswith(_EPHEMERAL_SECRET_PREFIX)
+            or self.jarvis_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
         ):
             warnings.append("JARVIS_SECRET_KEY is not set (ephemeral default in use) — override it in production")
         if not self.jarvis_admin_password:

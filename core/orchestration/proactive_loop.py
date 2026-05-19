@@ -27,8 +27,27 @@ logger = logging.getLogger(__name__)
 # ── Constantes ────────────────────────────────────────────────────────────────
 
 CYCLE_INTERVAL_SECONDS = 30 * 60   # 30 minutes
-HEARTBEAT_PATH = Path("/root/.openclaw-bestclaw/workspace/HEARTBEAT.md")
-WORKSPACE = Path("/root/.openclaw-bestclaw/workspace")
+
+
+def _resolve_workspace_paths() -> tuple[Path, Path]:
+    """Resolve heartbeat + workspace paths via config.settings.
+
+    The original module-level constants were hardcoded to
+    /root/.openclaw-bestclaw/workspace/* which broke non-root hosts and
+    CI runners. Audit S7 (2026-05-19): defer the path resolution behind
+    a function so the heavy import side-effect is avoided, and so the
+    paths follow whatever workspace_dir the settings layer resolves at
+    runtime.
+    """
+    try:
+        from config.settings import get_settings
+        ws = Path(get_settings().workspace_dir)
+    except Exception:
+        ws = Path.home() / ".jarvismax" / "workspace"
+    return ws / "HEARTBEAT.md", ws
+
+
+HEARTBEAT_PATH, WORKSPACE = _resolve_workspace_paths()
 
 
 # ── Types de données ──────────────────────────────────────────────────────────

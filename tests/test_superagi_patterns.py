@@ -466,7 +466,6 @@ class TestActionConsoleAPI:
         app.include_router(router)
         return TestClient(app)
 
-    @pytest.mark.xfail(reason="pending endpoint auth drift", strict=False)
     def test_AC01_pending_requires_auth(self):
         c = self._get_client()
         resp = c.get("/api/v3/console/pending")

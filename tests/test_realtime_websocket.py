@@ -59,7 +59,6 @@ async def test_websocket_connection():
         print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: {e}")
 
 
-@pytest.mark.xfail(reason="module ModuleNotFoundError (drift)", strict=False)
 async def test_http_endpoints():
     """Test HTTP endpoints for WebSocket status and snapshot."""
     import aiohttp
