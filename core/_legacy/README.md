@@ -35,16 +35,29 @@ audit S8 (2026-05-20). Issue #15 closed.**
 
 ## What remains under core/_legacy/
 
-After S8 only `memory/` legacy files remain (out of scope for issue #15):
+After **S9 (2026-05-20)** the `memory/` subdir is gone too :
 
-- `core/_legacy/memory/legacy_knowledge_memory.py` (2 callers)
-- `core/_legacy/memory/memory_toolkit_legacy.py` (1 caller)
-- `core/_legacy/memory/vector_memory_legacy.py` (1 caller)
-- `core/_legacy/memory/intelligent_memory.py` (0 callers — orphan, safe
-  to delete in a follow-up)
+- ~~`core/_legacy/memory/intelligent_memory.py`~~ — DELETED (orphan, 0
+  callers, header said "placeholder to allow test collection").
+- ~~`core/_legacy/memory/memory_toolkit_legacy.py`~~ — DELETED (423 LOC
+  orphan ; the actual `core.tools.memory_toolkit_legacy` is a different
+  33 LOC stub that lives at `core/tools/memory_toolkit_legacy.py`).
+- ~~`core/_legacy/memory/legacy_knowledge_memory.py`~~ — MOVED to
+  `memory/legacy_knowledge_memory.py` (restores the silently-disabled
+  `from memory.legacy_knowledge_memory import …` calls in agents/crew.py
+  and memory/memory_bus.py).
+- ~~`core/_legacy/memory/vector_memory_legacy.py`~~ — MOVED to
+  `core/memory/vector_memory_legacy.py` (restores the broken shim
+  `core/memory/vector_memory.py` that imports it).
 
-Plus the orphan `core/_legacy/policy_engine_v2.py` was deleted in S8 as
-free cleanup (0 callers, predates the policy_engine_LEGACY rename).
+The `core/_legacy/` directory now contains only this README.md and an
+`__init__.py` with a deprecation docstring. Both can be removed in a
+follow-up — they no longer guard any code.
+
+### Historical orphans deleted along the way
+
+- `core/_legacy/policy_engine_v2.py` (Sprint 8.5) — 0 callers, predated
+  the `policy_engine_LEGACY_20260407` rename.
 
 **Migration plan** (a dedicated PR, not bundled with the hardening pass):
 1. Find every caller of each shim (`grep -rn 'core\\.mission_persistence\\|core\\.orchestrator_v2\\|...'`).

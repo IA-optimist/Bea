@@ -20,6 +20,13 @@ from dataclasses import dataclass, field
 
 import httpx
 
+# Audit S9 (2026-05-20): silent logger for suppressed exceptions. Previously
+# this module sat inside core/_legacy/memory/ which ruff excludes, so F821
+# on `_silent_log` references was never surfaced. Now that the module is
+# back at core/memory/vector_memory_legacy.py (where core/memory/vector_memory.py
+# shim points), ruff catches it.
+_silent_log = structlog.get_logger(__name__)
+
 log = structlog.get_logger("jarvis.vector_memory")
 
 # ── Config ───────────────────────────────────────────────────────────────────
