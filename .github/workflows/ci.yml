@@ -68,13 +68,7 @@ jobs:
         run: |
           pip install ruff==0.15.8
           ruff check .
-      
-      - name: Run type checking
-        continue-on-error: true
-        run: |
-          pip install mypy
-          mypy core/ --ignore-missing-imports
-      
+
       - name: Run tests with coverage gate
         env:
           DATABASE_URL: postgresql://jarvis:test123@localhost:5432/jarvismax_test
@@ -100,6 +94,33 @@ jobs:
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+
+  # Audit S8 (2026-05-20): mypy moved out of the test job into its own
+  # informational job. It's still continue-on-error at the job level (so it
+  # doesn't gate the green CI badge), but the run shows up cleanly in the
+  # Actions summary and the conclusion turns into a single signal you can
+  # watch over time. Long-term goal: turn off continue-on-error once
+  # `mypy core/` reaches < 10 errors with a baseline file.
+  mypy:
+    name: mypy (informational, non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install minimal deps for type checking
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy structlog pydantic fastapi pydantic-settings
+
+      - name: Run mypy on core/
+        run: mypy core/ --ignore-missing-imports
 
   build:
     runs-on: ubuntu-latest

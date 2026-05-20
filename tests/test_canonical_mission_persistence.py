@@ -131,11 +131,19 @@ class TestCanonicalMissionStore(unittest.TestCase):
             self.assertIsNotNone(loaded, f"Expected to load {status.value}")
             self.assertEqual(loaded.status, status)
 
+    @unittest.skipUnless(
+        hasattr(__import__("os"), "geteuid"),
+        "POSIX-only: needs os.geteuid() and POSIX chmod 0o555 semantics",
+    )
     def test_graceful_degradation_bad_path(self):
-        """Store must not raise when given an unwritable path."""
-        # Use a path with an invalid character that no privilege can create.
-        # Previous /nonexistent/path/ approach was flaky : a test running as
-        # root could create it, and it persisted across runs.
+        """Store must not raise when given an unwritable path.
+
+        Skipped on Windows: NTFS does not honour POSIX chmod 0o555 the same
+        way (mode bits are coarser, and `os.geteuid` is missing entirely),
+        so this Linux-CI-targeted contract is not reproducible locally on
+        Windows dev machines. The contract still holds — and is exercised
+        on the Linux CI runner.
+        """
         import os
         import shutil
         Path("/tmp/jarvis_bad_path_test.XXXXXX")
