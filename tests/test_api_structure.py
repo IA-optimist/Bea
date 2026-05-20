@@ -82,37 +82,37 @@ class TestExtractedRouters:
 class TestMainReduction:
     def test_AS10_main_py_reduced(self):
         """api/main.py must be under 1600 lines (was 1990)."""
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         lines = content.count("\n") + 1
         assert lines < 1600, f"api/main.py has {lines} lines (target < 1600)"
 
     def test_AS11_main_py_syntax_valid(self):
         import ast
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         ast.parse(content)
 
     def test_AS12_no_duplicate_decision_memory(self):
         """decision_memory_stats should only be in system_v2, not main."""
-        main = Path("api/main.py").read_text()
+        main = Path("api/main.py").read_text(encoding="utf-8")
         # Should not have the full handler, only comments
         assert main.count("async def decision_memory_stats") == 0
 
     def test_AS13_no_duplicate_si_handlers(self):
         """SI handlers should only be in self_improvement_v2, not main."""
-        main = Path("api/main.py").read_text()
+        main = Path("api/main.py").read_text(encoding="utf-8")
         assert main.count("async def si_get_failures") == 0
         assert main.count("async def si_get_proposals") == 0
         assert main.count("async def get_suggestions") == 0
 
     def test_AS14_no_duplicate_system_handlers(self):
-        main = Path("api/main.py").read_text()
+        main = Path("api/main.py").read_text(encoding="utf-8")
         assert main.count("async def get_policy_mode") == 0
         assert main.count("async def get_capabilities") == 0
         assert main.count("async def get_tools_registry") == 0
 
     def test_AS15_orphan_marker_exists(self):
         """Orphaned code removed marker."""
-        main = Path("api/main.py").read_text()
+        main = Path("api/main.py").read_text(encoding="utf-8")
         assert "_ORPHAN_REMOVED" in main
 
 
@@ -175,7 +175,7 @@ class TestBackwardCompat:
 
     def test_AS25_static_mount_last(self):
         """Static files mount at the end."""
-        main = Path("api/main.py").read_text()
+        main = Path("api/main.py").read_text(encoding="utf-8")
         lines = main.strip().split("\n")
         last_10 = "\n".join(lines[-10:])
         assert "StaticFiles" in last_10 or "static" in last_10

@@ -270,7 +270,7 @@ def test_memory_facade_store_jsonl():
         # Should fall through to JSONL since no Qdrant available
         fallback = Path(tmpdir) / "memory_facade_store.jsonl"
         assert fallback.exists()
-        entries = fallback.read_text().strip().split("\n")
+        entries = fallback.read_text(encoding="utf-8").strip().split("\n")
         assert len(entries) == 1
         data = json.loads(entries[0])
         assert data["type"] == "solution"
@@ -320,7 +320,7 @@ def test_memory_facade_cleanup():
         facade.store("Old entry", content_type="general")
         # Manually backdate the entry
         fallback = Path(tmpdir) / "memory_facade_store.jsonl"
-        lines = fallback.read_text().strip().split("\n")
+        lines = fallback.read_text(encoding="utf-8").strip().split("\n")
         old = json.loads(lines[0])
         old["timestamp"] = time.time() - (60 * 86400)  # 60 days ago
         fallback.write_text(json.dumps(old) + "\n")

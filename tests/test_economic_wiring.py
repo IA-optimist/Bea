@@ -172,7 +172,7 @@ class TestWebVisibility:
         from pathlib import Path
         page = Path("static/economic.html")
         assert page.exists()
-        content = page.read_text()
+        content = page.read_text(encoding="utf-8")
         assert "Economic Intelligence" in content
         assert "/api/v3/economic/" in content
 
@@ -423,7 +423,7 @@ class TestNoSecretLeakage:
     def test_EW31_web_page_no_secrets(self):
         """Economic HTML page has no embedded secret values."""
         from pathlib import Path
-        content = Path("static/economic.html").read_text()
+        content = Path("static/economic.html").read_text(encoding="utf-8")
         assert "sk-or-" not in content  # actual OpenRouter key pattern
         assert "OPENROUTER_API_KEY" not in content
         assert "ghp_" not in content

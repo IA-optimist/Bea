@@ -125,7 +125,7 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
     def test_meta_orchestrator_sets_dispatcher_on_delegate(self):
         """Regression: run_mission() must set delegate.capability_dispatcher before supervise()."""
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         # Verify the wiring code is present in source
         self.assertIn(
             "delegate.capability_dispatcher = _cap_dispatcher",
@@ -136,7 +136,7 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
     def test_wiring_is_guarded_by_none_check(self):
         """Wiring must be inside 'if _cap_dispatcher is not None' guard."""
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         # Find the wiring line and verify it's guarded
         lines = src.splitlines()
         wiring_line_idx = None
@@ -220,7 +220,7 @@ class TestRiskEngineContractSafety(unittest.TestCase):
     def test_supervised_executor_source_has_try_except_around_analyze(self):
         """Regression: supervised_executor.py must wrap analyze() in try/except."""
         import pathlib
-        src = pathlib.Path("executor/supervised_executor.py").read_text()
+        src = pathlib.Path("executor/supervised_executor.py").read_text(encoding="utf-8")
         self.assertIn("risk_engine_analyze_failed", src,
                       "supervised_executor must log risk_engine_analyze_failed on exception")
         self.assertIn("RiskReport(", src,
@@ -267,20 +267,20 @@ class TestSourceAudit(unittest.TestCase):
 
     def test_execution_supervisor_attempt_timeout_is_180(self):
         import pathlib
-        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text()
+        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text(encoding="utf-8")
         self.assertIn("_ATTEMPT_TIMEOUT_S = 180", src,
                       "_ATTEMPT_TIMEOUT_S must be 180 in execution_supervisor.py")
 
     def test_execution_supervisor_has_coherence_comment(self):
         import pathlib
-        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text()
+        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text(encoding="utf-8")
         self.assertIn("retry budget", src.lower(),
                       "execution_supervisor.py must document timeout coherence rationale")
 
     def test_meta_orchestrator_removes_next_step_todo(self):
         """Old 'Next step' TODO about dispatcher must be replaced with actual wiring."""
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         self.assertNotIn(
             "Next step: pass it to delegates via run() signature",
             src,
@@ -289,7 +289,7 @@ class TestSourceAudit(unittest.TestCase):
 
     def test_supervised_executor_risk_analysis_protected(self):
         import pathlib
-        src = pathlib.Path("executor/supervised_executor.py").read_text()
+        src = pathlib.Path("executor/supervised_executor.py").read_text(encoding="utf-8")
         # try block must exist before report.level access
         try_idx = src.find("try:")
         report_idx = src.find("report = self.risk.analyze(")
@@ -307,7 +307,7 @@ class TestSupervisorTimeoutCoherence(unittest.IsolatedAsyncioTestCase):
     async def test_supervise_uses_wait_for_with_attempt_timeout(self):
         """Source-level check: supervise() wraps execute_fn in asyncio.wait_for."""
         import pathlib
-        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text()
+        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text(encoding="utf-8")
         self.assertIn("asyncio.wait_for", src)
         self.assertIn("_ATTEMPT_TIMEOUT_S", src)
 

@@ -246,19 +246,19 @@ class TestScenarioG_UI:
 
     @pytest.mark.xfail(reason="app.html required views drift", strict=False)
     def test_ST24_app_html_has_required_views(self):
-        html = Path("static/app.html").read_text()
+        html = Path("static/app.html").read_text(encoding="utf-8")
         assert 'data-view="missions"' in html
         assert 'data-view="approvals"' in html
         assert 'data-view="system"' in html or 'view-system' in html
 
     def test_ST25_no_dead_page_links(self):
-        html = Path("static/app.html").read_text()
+        html = Path("static/app.html").read_text(encoding="utf-8")
         for dead in ["cockpit.html", "cognitive.html", "console.html"]:
             assert dead not in html
 
     @pytest.mark.xfail(reason="mode system in app.html drift", strict=False)
     def test_ST26_mode_system_present(self):
-        html = Path("static/app.html").read_text()
+        html = Path("static/app.html").read_text(encoding="utf-8")
         assert "setMode" in html
         assert "jarvis_mode" in html
 

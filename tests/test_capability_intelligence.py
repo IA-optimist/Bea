@@ -361,7 +361,7 @@ def test_export_artifacts():
         assert "tool_reliability_signals.json" in produced
         # Verify files are valid JSON
         for filename, path in produced.items():
-            content = Path(path).read_text()
+            content = Path(path).read_text(encoding="utf-8")
             data = json.loads(content)
             assert data is not None
 
@@ -370,7 +370,7 @@ def test_export_profiles_contain_tools():
     from core.capability_intelligence import export_artifacts
     with tempfile.TemporaryDirectory() as tmpdir:
         produced = export_artifacts(output_dir=tmpdir)
-        profiles = json.loads(Path(produced["tool_profiles.json"]).read_text())
+        profiles = json.loads(Path(produced["tool_profiles.json"]).read_text(encoding="utf-8"))
         assert len(profiles) > 0
         assert "name" in profiles[0]
         assert "semantic_tags" in profiles[0]
@@ -380,6 +380,6 @@ def test_export_graph_has_stats():
     from core.capability_intelligence import export_artifacts
     with tempfile.TemporaryDirectory() as tmpdir:
         produced = export_artifacts(output_dir=tmpdir)
-        graph = json.loads(Path(produced["capability_graph.json"]).read_text())
+        graph = json.loads(Path(produced["capability_graph.json"]).read_text(encoding="utf-8"))
         assert graph["stats"]["tools"] > 0
         assert graph["stats"]["capabilities"] > 0

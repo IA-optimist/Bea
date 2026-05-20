@@ -420,7 +420,7 @@ class TestQualityGate:
                                     description="placeholder", auto_correctable=True)]
             result = gate.auto_correct(f.name, issues)
             assert result.corrected
-            content = Path(f.name).read_text()
+            content = Path(f.name).read_text(encoding="utf-8")
             assert "TODO" not in content
             os.unlink(f.name)
 

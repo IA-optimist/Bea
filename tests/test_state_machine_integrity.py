@@ -28,7 +28,7 @@ class TestCircuitBreakerStateTransition(unittest.TestCase):
     def test_circuit_breaker_rejection_calls_transition(self):
         """When CB is open, the FAILED status must go through _transition()."""
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
 
         # Locate the CB guard block
         cb_start = src.find("if self._circuit_breaker.is_open")
@@ -93,7 +93,7 @@ class TestCircuitBreakerStateTransition(unittest.TestCase):
 class TestMissionIDLength(unittest.TestCase):
 
     def test_uuid_hex_16_in_source(self):
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         self.assertIn(".hex[:16]", src,
                       "Mission IDs must use uuid4().hex[:16] (16-char hex)")
         # uuid4()[:8] pattern must not appear (collision risk); other [:8] slices are fine
@@ -155,14 +155,14 @@ class TestMissionIDLength(unittest.TestCase):
 class TestLearningLoopFixes(unittest.TestCase):
 
     def test_store_lesson_uses_get_memory_facade(self):
-        src = pathlib.Path("core/orchestration/learning_loop.py").read_text()
+        src = pathlib.Path("core/orchestration/learning_loop.py").read_text(encoding="utf-8")
         self.assertIn("get_memory_facade", src,
                       "store_lesson must import get_memory_facade, not get_memory")
         self.assertNotIn("from core.memory_facade import get_memory\n", src,
                          "Old broken import 'get_memory' must be removed")
 
     def test_store_lesson_correct_api_call(self):
-        src = pathlib.Path("core/orchestration/learning_loop.py").read_text()
+        src = pathlib.Path("core/orchestration/learning_loop.py").read_text(encoding="utf-8")
         # Must use content=, error_class=, mission_id= (not context=, error=, recovery=)
         self.assertIn("content=", src,
                       "store_failure must be called with content= parameter")
@@ -253,7 +253,7 @@ class TestNoDirectStatusAssignment(unittest.TestCase):
 
     def test_no_direct_failed_assignment_outside_fallback(self):
         """Direct ctx.status = MissionStatus.FAILED only in ValueError fallback."""
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         lines = src.splitlines()
         direct_assigns = []
         for i, line in enumerate(lines):
@@ -279,14 +279,14 @@ class TestBackgroundTaskTracking(unittest.TestCase):
     @pytest.mark.xfail(reason="orchestrator shim — _bg_tasks moved", strict=False)
     def test_bg_tasks_set_in_init(self):
         """JarvisOrchestrator must initialize _bg_tasks set in __init__."""
-        src = pathlib.Path("core/orchestrator.py").read_text()
+        src = pathlib.Path("core/orchestrator.py").read_text(encoding="utf-8")
         self.assertIn("_bg_tasks", src,
                       "orchestrator.py must have _bg_tasks set for task tracking")
 
     @pytest.mark.xfail(reason="orchestrator shim — _bg_tasks.add moved", strict=False)
     def test_create_task_stores_reference(self):
         """asyncio.create_task() result must be stored in _bg_tasks."""
-        src = pathlib.Path("core/orchestrator.py").read_text()
+        src = pathlib.Path("core/orchestrator.py").read_text(encoding="utf-8")
         # Find the evaluator task creation
         task_block_start = src.find("_evaluate_session_async")
         task_block_end = src.find("\n\n", task_block_start)
@@ -299,7 +299,7 @@ class TestBackgroundTaskTracking(unittest.TestCase):
     @pytest.mark.xfail(reason="orchestrator shim — _bg_tasks no longer in this file (moved)", strict=False)
     def test_bg_tasks_initialized_as_set(self):
         """_bg_tasks must be a set (for O(1) add/discard)."""
-        src = pathlib.Path("core/orchestrator.py").read_text()
+        src = pathlib.Path("core/orchestrator.py").read_text(encoding="utf-8")
         self.assertIn("_bg_tasks: set = set()", src,
                       "_bg_tasks must be initialized as set()")
 

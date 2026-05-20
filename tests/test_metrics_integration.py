@@ -200,7 +200,7 @@ class TestSnapshotPersistence:
         os.replace(str(tmp), str(path))
 
         assert path.exists()
-        loaded = json.loads(path.read_text())
+        loaded = json.loads(path.read_text(encoding="utf-8"))
         assert "counters" in loaded
         assert "missions_submitted_total" in loaded["counters"]
 
@@ -213,7 +213,7 @@ class TestSnapshotPersistence:
 
         assert path.exists()
         assert not tmp.exists()
-        assert json.loads(path.read_text()) == {"test": True}
+        assert json.loads(path.read_text(encoding="utf-8")) == {"test": True}
 
 
 # ═══════════════════════════════════════════════════════════════

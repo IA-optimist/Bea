@@ -317,7 +317,7 @@ class TestAudit:
         audit.record(AuditAction.CREATE, "sec-1", "admin")
         audit.record(AuditAction.USE, "sec-1", "agent")
         assert log_file.exists()
-        lines = log_file.read_text().strip().split("\n")
+        lines = log_file.read_text(encoding="utf-8").strip().split("\n")
         assert len(lines) == 2
 
     def test_verify_chain(self):

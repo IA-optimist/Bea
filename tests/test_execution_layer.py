@@ -571,7 +571,7 @@ class TestDeploymentTargets:
         # Read HTML and verify structure
         html_files = [f for f in result.output_files if f.endswith(".html")]
         assert len(html_files) >= 1
-        content = Path(html_files[0]).read_text()
+        content = Path(html_files[0]).read_text(encoding="utf-8")
         assert "<html>" in content.lower()
         assert "test site" in content.lower()
         shutil.rmtree(result.output_dir, ignore_errors=True)
@@ -586,7 +586,7 @@ class TestDeploymentTargets:
         assert result.success is True
         py_files = [f for f in result.output_files if f.endswith("main.py")]
         assert len(py_files) >= 1
-        content = Path(py_files[0]).read_text()
+        content = Path(py_files[0]).read_text(encoding="utf-8")
         assert "FastAPI" in content or "fastapi" in content.lower()
         shutil.rmtree(result.output_dir, ignore_errors=True)
 
@@ -600,7 +600,7 @@ class TestDeploymentTargets:
         assert result.success is True
         json_files = [f for f in result.output_files if f.endswith("workflow.json")]
         assert len(json_files) >= 1
-        content = json.loads(Path(json_files[0]).read_text())
+        content = json.loads(Path(json_files[0]).read_text(encoding="utf-8"))
         assert isinstance(content, dict)
         shutil.rmtree(result.output_dir, ignore_errors=True)
 

@@ -204,7 +204,7 @@ class TestVerification:
         """S17: index.html exists and is complete."""
         index = Path("static/app.html")
         assert index.exists()
-        content = index.read_text()
+        content = index.read_text(encoding="utf-8")
         assert 'login-overlay' in content
         assert '</html>' in content
 

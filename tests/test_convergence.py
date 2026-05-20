@@ -20,13 +20,13 @@ def test_convergence_router_syntax():
     """Convergence API router parses without errors."""
     path = Path("api/routes/convergence.py")
     assert path.exists()
-    source = path.read_text()
+    source = path.read_text(encoding="utf-8")
     ast.parse(source)
 
 
 def test_convergence_router_endpoints():
     """Router defines expected endpoint functions."""
-    source = Path("api/routes/convergence.py").read_text()
+    source = Path("api/routes/convergence.py").read_text(encoding="utf-8")
     for endpoint in [
         "submit_mission", "list_missions", "get_mission",
         "approve_mission", "reject_mission",
@@ -38,7 +38,7 @@ def test_convergence_router_endpoints():
 
 def test_canonical_types_syntax():
     """canonical_types.py parses and has all enums."""
-    source = Path("core/canonical_types.py").read_text()
+    source = Path("core/canonical_types.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
     assert "CanonicalMissionStatus" in classes
@@ -47,19 +47,19 @@ def test_canonical_types_syntax():
 
 def test_orchestration_bridge_syntax():
     """orchestration_bridge.py parses."""
-    source = Path("core/orchestration_bridge.py").read_text()
+    source = Path("core/orchestration_bridge.py").read_text(encoding="utf-8")
     ast.parse(source)
 
 
 def test_memory_facade_syntax():
     """memory_facade.py parses."""
-    source = Path("core/memory_facade.py").read_text()
+    source = Path("core/memory_facade.py").read_text(encoding="utf-8")
     ast.parse(source)
 
 
 def test_canonical_status_coverage():
     """Canonical status enum covers all legacy states."""
-    source = Path("core/canonical_types.py").read_text()
+    source = Path("core/canonical_types.py").read_text(encoding="utf-8")
     # All legacy MissionSystem statuses should be mappable
     for legacy in ["submitted", "planning", "executing", "completed",
                    "failed", "cancelled"]:
@@ -68,7 +68,7 @@ def test_canonical_status_coverage():
 
 def test_bridge_feature_flag():
     """Bridge respects JARVIS_USE_CANONICAL_ORCHESTRATOR flag."""
-    source = Path("core/orchestration_bridge.py").read_text()
+    source = Path("core/orchestration_bridge.py").read_text(encoding="utf-8")
     assert "JARVIS_USE_CANONICAL_ORCHESTRATOR" in source
 
 
@@ -76,7 +76,7 @@ def test_bridge_feature_flag():
                     reason="static/cockpit.html supprimé (consolidé dans app.html)")
 def test_cockpit_v3_endpoints():
     """Cockpit HTML calls v3 convergence endpoints."""
-    source = Path("static/cockpit.html").read_text()
+    source = Path("static/cockpit.html").read_text(encoding="utf-8")
     assert "/api/v3/missions" in source
     assert "/api/v3/missions/" in source
     assert "/api/v3/system/status" in source
@@ -86,7 +86,7 @@ def test_cockpit_v3_endpoints():
                     reason="static/cockpit.html supprimé (consolidé dans app.html)")
 def test_cockpit_fallback_to_legacy():
     """Cockpit falls back to legacy endpoints."""
-    source = Path("static/cockpit.html").read_text()
+    source = Path("static/cockpit.html").read_text(encoding="utf-8")
     assert "/api/missions" in source
     assert "/api/health" in source
 
@@ -97,7 +97,7 @@ def test_no_existing_routes_modified():
               "api/routes/dashboard.py"]:
         if Path(f).exists():
             # Just verify they still parse
-            ast.parse(Path(f).read_text())
+            ast.parse(Path(f).read_text(encoding="utf-8"))
 
 
 @pytest.mark.skipif(not Path("docs/convergence-rollback.md").exists(),
@@ -106,6 +106,6 @@ def test_convergence_rollback_doc():
     """Rollback documentation exists."""
     doc_path = Path("docs/convergence-rollback.md")
     assert doc_path.exists(), "Missing rollback playbook"
-    content = doc_path.read_text()
+    content = doc_path.read_text(encoding="utf-8")
     assert "rollback" in content.lower()
     assert "feature flag" in content.lower()

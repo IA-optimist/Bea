@@ -16,27 +16,27 @@ class TestGraphRepositoryWiring:
 
     def test_CV01_graph_api_saves(self):
         """POST /graph now persists to repository."""
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert "graph_repository" in content
         assert "get_graph_repository" in content
         assert "save(graph)" in content
 
     def test_CV02_get_graph_loads_from_repo(self):
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert ".load(graph_id)" in content
 
     def test_CV03_list_graphs_endpoint(self):
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert "list_graphs" in content
         assert "/graphs" in content
 
     def test_CV04_resumable_graphs_endpoint(self):
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert "resumable" in content
 
     def test_CV05_no_placeholder_error(self):
         """Old placeholder 'not implemented yet' removed."""
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert "not implemented yet" not in content
 
 
@@ -49,7 +49,7 @@ class TestConnectorWiring:
         assert any("/api/v3/connectors" in p for p in routes)
 
     def test_CV07_connector_route_mounted(self):
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         assert "connectors_router" in content
 
     def test_CV08_execute_endpoint(self):
@@ -58,7 +58,7 @@ class TestConnectorWiring:
         assert any("execute" in p for p in routes)
 
     def test_CV09_builtin_connectors_auto_registered(self):
-        content = Path("api/routes/connectors.py").read_text()
+        content = Path("api/routes/connectors.py").read_text(encoding="utf-8")
         assert "GitHubConnector" in content
         assert "FilesystemConnector" in content
         assert "HttpConnector" in content
@@ -75,7 +75,7 @@ class TestStrategyAPIWiring:
         assert any("promotions" in p for p in routes)
 
     def test_CV11_strategy_route_mounted(self):
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         assert "strategy_router" in content
 
     def test_CV12_strategy_check_endpoint(self):
@@ -98,7 +98,7 @@ class TestModelAutoUpdateWiring:
     """Cycle 5: Model auto-update wired into runtime."""
 
     def test_CV15_model_status_includes_auto_update(self):
-        content = Path("api/routes/models.py").read_text()
+        content = Path("api/routes/models.py").read_text(encoding="utf-8")
         assert "auto_update" in content
         assert "get_model_auto_update" in content
 
@@ -113,12 +113,12 @@ class TestModelAutoUpdateWiring:
         assert any("costs" in p for p in routes)
 
     def test_CV18_skill_llm_feeds_auto_update(self):
-        content = Path("core/planning/skill_llm.py").read_text()
+        content = Path("core/planning/skill_llm.py").read_text(encoding="utf-8")
         assert "get_model_auto_update" in content
         assert "record_invocation" in content
 
     def test_CV19_skill_llm_tracks_cost(self):
-        content = Path("core/planning/skill_llm.py").read_text()
+        content = Path("core/planning/skill_llm.py").read_text(encoding="utf-8")
         assert "x-openrouter-cost" in content
         assert "cost_estimate" in content
 
@@ -147,22 +147,22 @@ class TestDeadCodeRemoval:
 
     @pytest.mark.xfail(reason="cockpit mount check drift", strict=False)
     def test_CV26_cockpit_not_mounted(self):
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         assert "cockpit_router" not in content
 
     def test_CV27_cockpit_not_in_access_enforcement(self):
-        content = Path("api/access_enforcement.py").read_text()
+        content = Path("api/access_enforcement.py").read_text(encoding="utf-8")
         # Only active lines (not comments) should not have cockpit
         active_lines = [l for l in content.split('\n') if l.strip() and not l.strip().startswith('#')]
         for line in active_lines:
             assert 'cockpit.html' not in line, f"Active cockpit ref: {line}"
 
     def test_CV28_cockpit_not_in_security_headers(self):
-        content = Path("api/security_headers.py").read_text()
+        content = Path("api/security_headers.py").read_text(encoding="utf-8")
         assert "cockpit.html" not in content
 
     def test_CV29_index_html_no_cockpit(self):
-        content = Path("static/app.html").read_text()
+        content = Path("static/app.html").read_text(encoding="utf-8")
         assert "cockpit.html" not in content
 
 
@@ -170,29 +170,29 @@ class TestCoherence:
     """Overall coherence checks."""
 
     def test_CV30_api_main_syntax(self):
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         ast.parse(content)
 
     def test_CV31_all_new_routes_syntax(self):
         for path in ["api/routes/connectors.py", "api/routes/strategy.py"]:
-            content = Path(path).read_text()
+            content = Path(path).read_text(encoding="utf-8")
             ast.parse(content)
 
     def test_CV32_execution_route_syntax(self):
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         ast.parse(content)
 
     def test_CV33_models_route_syntax(self):
-        content = Path("api/routes/models.py").read_text()
+        content = Path("api/routes/models.py").read_text(encoding="utf-8")
         ast.parse(content)
 
     def test_CV34_skill_llm_syntax(self):
-        content = Path("core/planning/skill_llm.py").read_text()
+        content = Path("core/planning/skill_llm.py").read_text(encoding="utf-8")
         ast.parse(content)
 
     def test_CV35_no_orphan_graph_placeholder(self):
         """No placeholder messages in execution API."""
-        content = Path("api/routes/execution.py").read_text()
+        content = Path("api/routes/execution.py").read_text(encoding="utf-8")
         assert "placeholder" not in content.lower()
         assert "TODO" not in content
 
@@ -201,12 +201,12 @@ class TestRecoveryWiring:
     """Cycle 7: Build recovery wired into build pipeline."""
 
     def test_CV36_recovery_in_build_pipeline(self):
-        content = Path("core/execution/build_pipeline.py").read_text()
+        content = Path("core/execution/build_pipeline.py").read_text(encoding="utf-8")
         assert "retry_build" in content
         assert "recovery" in content.lower()
 
     def test_CV37_recovery_failopen(self):
-        content = Path("core/execution/build_pipeline.py").read_text()
+        content = Path("core/execution/build_pipeline.py").read_text(encoding="utf-8")
         assert "RECOVERY: SKIPPED (fail-open" in content
 
 
@@ -214,12 +214,12 @@ class TestStrategyPromotionWiring:
     """Cycle 9: Playbook executions trigger promotion check."""
 
     def test_CV38_playbook_checks_promotion(self):
-        content = Path("core/planning/playbook.py").read_text()
+        content = Path("core/planning/playbook.py").read_text(encoding="utf-8")
         assert "check_promotion" in content
         assert "get_strategy_registry" in content
 
     def test_CV39_skill_llm_cost_extraction(self):
-        content = Path("core/planning/skill_llm.py").read_text()
+        content = Path("core/planning/skill_llm.py").read_text(encoding="utf-8")
         assert "x-openrouter-cost" in content
         assert "cost_estimate" in content
 
@@ -230,7 +230,7 @@ class TestRemainingDuplicates:
     def test_CV40_inline_route_count(self):
         """api/main.py inline routes should be documented (25 remain)."""
         import ast
-        content = Path("api/main.py").read_text()
+        content = Path("api/main.py").read_text(encoding="utf-8")
         tree = ast.parse(content)
         inline = 0
         for node in ast.walk(tree):
@@ -247,15 +247,15 @@ class TestPersistenceWiring:
     """Cycle 11-12: Persistence wired into singletons."""
 
     def test_CV41_strategy_memory_has_persist_path(self):
-        content = Path("core/execution/strategy_memory.py").read_text()
+        content = Path("core/execution/strategy_memory.py").read_text(encoding="utf-8")
         assert "strategy_memory.json" in content
 
     def test_CV42_strategy_memory_loads_on_init(self):
-        content = Path("core/execution/strategy_memory.py").read_text()
+        content = Path("core/execution/strategy_memory.py").read_text(encoding="utf-8")
         assert "_memory.load()" in content
 
     def test_CV43_strategy_registry_has_persist_path(self):
-        content = Path("core/execution/strategy_registry.py").read_text()
+        content = Path("core/execution/strategy_registry.py").read_text(encoding="utf-8")
         assert "strategy_registry.json" in content
 
     def test_CV44_dead_flutter_screens_removed(self):

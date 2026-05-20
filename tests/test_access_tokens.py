@@ -74,7 +74,7 @@ class TestTokenModel:
         assert token.token_hash != ""
         assert token.token_hash != raw
         # Raw not in persisted file
-        content = (tmp_path / "tokens.json").read_text()
+        content = (tmp_path / "tokens.json").read_text(encoding="utf-8")
         assert raw not in content
 
     def test_correct_role(self, tmp_path):

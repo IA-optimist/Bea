@@ -50,7 +50,7 @@ class TestNoDeprecatedGetEventLoop(unittest.TestCase):
         path = pathlib.Path(rel_path)
         if not path.exists():
             self.skipTest(f"{rel_path} not found")
-        src = path.read_text()
+        src = path.read_text(encoding="utf-8")
         # Filter out comment lines and the known store.py docstring reference
         bad_lines = [
             (i + 1, line.strip())
@@ -148,7 +148,7 @@ class TestBrowserBridgeRunAsync(unittest.TestCase):
 
     def test_run_async_no_event_loop_calls(self):
         """_run_async must not use the deprecated get_event_loop()."""
-        src = pathlib.Path("core/tools/browser_bridge.py").read_text()
+        src = pathlib.Path("core/tools/browser_bridge.py").read_text(encoding="utf-8")
         # The _run_async function specifically: check the body
         fn_start = src.find("def _run_async(")
         fn_end = src.find("\ndef ", fn_start + 1)
@@ -164,7 +164,7 @@ class TestBrowserBridgeRunAsync(unittest.TestCase):
 class TestSupervisorUsesRunningLoop(unittest.TestCase):
 
     def test_request_approval_uses_get_running_loop(self):
-        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text()
+        src = pathlib.Path("core/orchestration/execution_supervisor.py").read_text(encoding="utf-8")
         # Find _request_approval function
         start = src.find("async def _request_approval")
         end = src.find("\nasync def ", start + 1)
@@ -182,7 +182,7 @@ class TestSupervisorUsesRunningLoop(unittest.TestCase):
 class TestCheckpointStoreRunningLoop(unittest.TestCase):
 
     def test_checkpoint_sqlite_methods_use_running_loop(self):
-        src = pathlib.Path("core/orchestrator_v2.py").read_text()
+        src = pathlib.Path("core/orchestrator_v2.py").read_text(encoding="utf-8")
         # Find CheckpointStore class section
         start = src.find("class CheckpointStore")
         class_body = src[start:] if start >= 0 else src

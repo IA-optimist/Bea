@@ -236,12 +236,12 @@ class TestSandbox:
 
         # Modify the file (simulate patch)
         (repo / "test.py").write_text("modified")
-        assert (repo / "test.py").read_text() == "modified"
+        assert (repo / "test.py").read_text(encoding="utf-8") == "modified"
 
         # Rollback
         restored = sm.rollback("exp-002")
         assert "test.py" in restored
-        assert (repo / "test.py").read_text() == "original"
+        assert (repo / "test.py").read_text(encoding="utf-8") == "original"
 
     def test_diff_shows_changes(self, tmp_path):
         from core.improvement_loop import SandboxManager
@@ -453,7 +453,7 @@ class TestEngineIntegration:
 
         report = engine.run_experiment(spec, apply_patch=bad_patch)
         # File should be rolled back
-        assert (repo / "safe_file.py").read_text() == "original"
+        assert (repo / "safe_file.py").read_text(encoding="utf-8") == "original"
         assert report.decision in ("error", "blocked")
 
     def test_lesson_stored_on_block(self, tmp_path):

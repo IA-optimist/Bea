@@ -184,6 +184,6 @@ def test_all_convergence_files_syntax():
         if not p.exists():
             continue
         if f.endswith('.py'):
-            ast.parse(p.read_text())
+            ast.parse(p.read_text(encoding="utf-8"))
         elif f.endswith('.html'):
-            assert len(p.read_text()) > 100
+            assert len(p.read_text(encoding="utf-8")) > 100

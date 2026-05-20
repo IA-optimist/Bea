@@ -88,7 +88,7 @@ class TestSICanonicalPath:
         (tmp_path / "core").mkdir()
         target = tmp_path / "core" / "test.py"
         target.write_text("x = 1\n")
-        original = target.read_text()
+        original = target.read_text(encoding="utf-8")
 
         from core.self_improvement_loop import SandboxRunner, PatchProposal
         runner = SandboxRunner(tmp_path)
@@ -96,7 +96,7 @@ class TestSICanonicalPath:
         runner.run(patch)
 
         # File must be UNCHANGED
-        assert target.read_text() == original
+        assert target.read_text(encoding="utf-8") == original
 
     def test_sandbox_runner_syntax_only(self, tmp_path):
         """CS3. SandboxRunner.run() only does syntax validation."""
@@ -124,7 +124,7 @@ class TestSICanonicalPath:
         """CS5. Fallback path treats APPLIED_PRODUCTION as pending review."""
         (tmp_path / "core").mkdir()
         (tmp_path / "core" / "test.py").write_text("x = 1\n")
-        original = (tmp_path / "core" / "test.py").read_text()
+        original = (tmp_path / "core" / "test.py").read_text(encoding="utf-8")
 
         from core.self_improvement_loop import (
             JarvisImprovementLoop, ImprovementTask, PatchProposal,
@@ -144,7 +144,7 @@ class TestSICanonicalPath:
         result = loop._execute_via_pipeline(task, patch, details)
 
         # File unchanged
-        assert (tmp_path / "core" / "test.py").read_text() == original
+        assert (tmp_path / "core" / "test.py").read_text(encoding="utf-8") == original
         # Result is pending (not promoted)
         assert result["pending"] == 1 or result["rejected"] == 1
 
@@ -192,7 +192,7 @@ class TestSICanonicalPath:
         result = loop._execute_via_pipeline(task, patch, details)
         assert result["promoted"] == 1
         assert len(loop._pending_reviews) == 1
-        assert (tmp_path / "test.py").read_text() == "x = 1\n"  # UNCHANGED
+        assert (tmp_path / "test.py").read_text(encoding="utf-8") == "x = 1\n"  # UNCHANGED
 
     def test_reject_traceable(self, tmp_path):
         """CS8. REJECT is traceable in details."""
@@ -291,7 +291,7 @@ class TestSICanonicalPath:
         """CS14. Fallback never modifies production files."""
         (tmp_path / "core").mkdir()
         (tmp_path / "core" / "x.py").write_text("a = 1\n")
-        original = (tmp_path / "core" / "x.py").read_text()
+        original = (tmp_path / "core" / "x.py").read_text(encoding="utf-8")
 
         from core.self_improvement_loop import (
             JarvisImprovementLoop, ImprovementTask, PatchProposal,
@@ -305,7 +305,7 @@ class TestSICanonicalPath:
         patch = PatchProposal(task_id="t1", diff={"core/x.py": "a = 2\n"})
         details = []
         loop._execute_via_pipeline(task, patch, details)
-        assert (tmp_path / "core" / "x.py").read_text() == original
+        assert (tmp_path / "core" / "x.py").read_text(encoding="utf-8") == original
 
     def test_no_write_text_in_active_path(self):
         """CS15. No write_text to repo in active code path."""

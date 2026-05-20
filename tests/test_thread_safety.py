@@ -107,7 +107,7 @@ class TestMetaOrchestratorThreadSafety(unittest.TestCase):
     def test_get_status_iterates_snapshot_not_live_dict(self):
         """get_status() must iterate a copy — no 'changed size during iteration'."""
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         # Must snapshot with list() before iterating
         self.assertIn("list(self._missions.values())", src,
                       "get_status must snapshot missions with list() before iterating")
@@ -121,7 +121,7 @@ class TestMetaSingletonThreadSafety(unittest.TestCase):
 
     def test_singleton_lock_exists_in_source(self):
         import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text()
+        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
         self.assertIn("_meta_lock", src,
                       "get_meta_orchestrator must use _meta_lock for thread safety")
 
@@ -163,7 +163,7 @@ class TestMemoryFacadeSingletonThreadSafety(unittest.TestCase):
 
     def test_singleton_lock_exists_in_source(self):
         import pathlib
-        src = pathlib.Path("core/memory_facade.py").read_text()
+        src = pathlib.Path("core/memory_facade.py").read_text(encoding="utf-8")
         self.assertIn("_facade_lock", src,
                       "get_memory_facade must use _facade_lock for thread safety")
 

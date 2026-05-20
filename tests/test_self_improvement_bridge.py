@@ -128,7 +128,7 @@ class TestBridgeConversion:
     def test_intents_carry_original(self, tmp_repo):
         """SB2."""
 
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         # Verify original content is non-empty
         assert "timeout = 30" in original
 
@@ -211,7 +211,7 @@ class TestPipelineIntegration:
 
     def test_fallback_never_writes(self, tmp_repo):
         """SB10."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         # Force fallback
         loop._pipeline = MagicMock()
@@ -219,7 +219,7 @@ class TestPipelineIntegration:
         details = []
         loop._execute_via_pipeline(_make_task(), _make_patch(), details)
         # File should be unchanged
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original
 
 
@@ -246,14 +246,14 @@ class TestDecisionMapping:
 
     def test_promote_stored_not_applied(self, tmp_repo):
         """SB11."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = self._mock_pipeline_decision(tmp_repo, "PROMOTE")
         details = []
         result = loop._execute_via_pipeline(_make_task(), _make_patch(), details)
         assert result["promoted"] == 1
         assert result["lesson_result"] == "success"
         # File NOT modified
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original
         # But stored in pending reviews
         assert len(loop._pending_reviews) == 1
@@ -338,22 +338,22 @@ class TestSafetyGuarantees:
 
     def test_no_write_on_promote(self, tmp_repo):
         """SB21."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = TestDecisionMapping()._mock_pipeline_decision(tmp_repo, "PROMOTE")
         details = []
         loop._execute_via_pipeline(_make_task(), _make_patch(), details)
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original
 
     def test_no_write_on_fallback(self, tmp_repo):
         """SB22."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = Exception("fail")
         details = []
         loop._execute_via_pipeline(_make_task(), _make_patch(), details)
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original
 
     def test_protected_blocked_pipeline(self, tmp_repo):

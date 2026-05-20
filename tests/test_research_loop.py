@@ -168,10 +168,10 @@ class TestRollbackManager:
         src.write_text("original")
         rm.create_rollback_point("exp1", [str(src)])
         src.write_text("modified")
-        assert src.read_text() == "modified"
+        assert src.read_text(encoding="utf-8") == "modified"
         ok, msg = rm.rollback("exp1")
         assert ok
-        assert src.read_text() == "original"
+        assert src.read_text(encoding="utf-8") == "original"
 
     def test_rollback_missing(self, tmp_path):
         from core.self_improvement.research_loop import RollbackManager

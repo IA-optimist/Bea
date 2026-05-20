@@ -74,7 +74,7 @@ class TestLiveProof:
         assert "regression" in report.reason.lower(), f"Reason should mention regression: {report.reason}"
 
         # File must be rolled back to original
-        content = (repo / "utils.py").read_text()
+        content = (repo / "utils.py").read_text(encoding="utf-8")
         assert "return a + b" in content, "File not rolled back!"
         assert "return a - b" not in content, "Bug still present after rollback!"
 
@@ -130,7 +130,7 @@ class TestLiveProof:
         assert report.decision == "promoted", f"Expected promoted, got {report.decision}: {report.reason}"
 
         # File should contain the improvement (NOT rolled back)
-        content = (repo / "utils.py").read_text()
+        content = (repo / "utils.py").read_text(encoding="utf-8")
         assert '"""Utility functions for JarvisMax."""' in content
         assert '"""Add two numbers."""' in content
 
@@ -183,7 +183,7 @@ class TestLiveProof:
             target_subsystem="utils",
         )
 
-        original = (repo / "utils.py").read_text()
+        original = (repo / "utils.py").read_text(encoding="utf-8")
 
         def crashing_patch(root, s):
             (root / "utils.py").write_text("CORRUPTED")
@@ -197,7 +197,7 @@ class TestLiveProof:
         report = engine.run_experiment(spec, apply_patch=crashing_patch)
 
         assert report.decision == "error"
-        assert (repo / "utils.py").read_text() == original, "File not restored after crash!"
+        assert (repo / "utils.py").read_text(encoding="utf-8") == original, "File not restored after crash!"
 
         print(f"\n🔄 ERROR RECOVERED: {report.reason}")
         print("  File restored: ✓")

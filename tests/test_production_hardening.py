@@ -375,7 +375,7 @@ class TestMemoryFacadeContentTypes:
         # Verify the fallback JSONL was written with correct type
         fallback = tmp_path / "memory_facade_store.jsonl"
         if fallback.exists():
-            lines = [json.loads(l) for l in fallback.read_text().strip().split("\n") if l.strip()]
+            lines = [json.loads(l) for l in fallback.read_text(encoding="utf-8").strip().split("\n") if l.strip()]
             if lines:
                 # Find our entry
                 matching = [l for l in lines if "cannot connect" in l.get("content", "")]

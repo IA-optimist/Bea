@@ -203,7 +203,7 @@ def test_store_to_jsonl_fallback(memory_facade):
     assert memory_facade._fallback_path.exists()
     
     # Verify content
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     assert data["content"] == "Test solution"
     assert data["type"] == "solution"
@@ -221,7 +221,7 @@ def test_store_invalid_content_type(memory_facade):
     assert result["ok"] is True
     
     # Check that it was stored with 'general' type
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     assert data["type"] == "general"
     print("[OK] test_store_invalid_content_type")
@@ -238,7 +238,7 @@ def test_store_with_metadata(memory_facade):
     
     assert result["ok"] is True
     
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     assert "metadata" in data
     assert data["metadata"]["source"] == "test"
@@ -443,7 +443,7 @@ def test_jsonl_content_truncation(memory_facade):
     long_content = "x" * 10000
     memory_facade.store(long_content, content_type="solution")
     
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     
     assert len(data["content"]) <= 3000
@@ -455,7 +455,7 @@ def test_jsonl_tags_truncation(memory_facade):
     many_tags = [f"tag{i}" for i in range(20)]
     memory_facade.store("Test", content_type="solution", tags=many_tags)
     
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     
     assert len(data["tags"]) <= 10
@@ -467,7 +467,7 @@ def test_jsonl_metadata_truncation(memory_facade):
     large_metadata = {f"key{i}": "x" * 500 for i in range(20)}
     memory_facade.store("Test", content_type="solution", metadata=large_metadata)
     
-    content = memory_facade._fallback_path.read_text()
+    content = memory_facade._fallback_path.read_text(encoding="utf-8")
     data = json.loads(content.strip())
     
     assert len(data["metadata"]) <= 10

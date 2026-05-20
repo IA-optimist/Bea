@@ -262,7 +262,7 @@ class TestCodePatcher:
         (sandbox / "core" / "tool_runner.py").write_text("timeout = 30\n")
 
         assert patcher.apply_to_sandbox(patch, sandbox)
-        content = (sandbox / "core" / "tool_runner.py").read_text()
+        content = (sandbox / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert "timeout = 60" in content
 
     def test_rollback(self, tmp_repo):
@@ -278,7 +278,7 @@ class TestCodePatcher:
 
         patcher.apply_to_sandbox(patch, sandbox)
         patcher.rollback_from_sandbox(patch, sandbox)
-        content = (sandbox / "core" / "tool_runner.py").read_text()
+        content = (sandbox / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert "timeout = 30" in content
 
     def test_is_valid(self, tmp_repo):

@@ -417,13 +417,13 @@ class TestBridgeIntegration:
 
     def test_no_production_write(self, tmp_repo):
         """VI24. PROMOTE never writes to production."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
         loop._execute_via_pipeline(_task(), _patch(), details)
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original  # UNCHANGED
 
     def test_rollback_in_decision(self, tmp_repo):
@@ -461,13 +461,13 @@ class TestBridgeIntegration:
 
     def test_fallback_safe(self, tmp_repo):
         """VI28. Fallback path never writes to production."""
-        original = (tmp_repo / "core" / "tool_runner.py").read_text()
+        original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
         details = []
         loop._execute_via_pipeline(_task(), _patch(), details)
-        after = (tmp_repo / "core" / "tool_runner.py").read_text()
+        after = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
         assert after == original
 
     def test_files_changed_propagated(self, tmp_repo):

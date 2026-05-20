@@ -250,7 +250,7 @@ class TestMCPSecurity:
         r = MCPRegistry(data_dir=path)
         r.seed_core_stack()
         # Read persisted file
-        data = json.loads((r._dir / "registry.json").read_text())
+        data = json.loads((r._dir / "registry.json").read_text(encoding="utf-8"))
         serialized = json.dumps(data)
         assert "sk-" not in serialized
         assert "password" not in serialized.lower()

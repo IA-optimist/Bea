@@ -26,11 +26,11 @@ def test_backup_and_restore():
         assert backup_path.exists()
         # Overwrite original
         Path(path).write_text("modified content")
-        assert Path(path).read_text() == "modified content"
+        assert Path(path).read_text(encoding="utf-8") == "modified content"
         # Restore
         ok = restore_file(path, backup_path)
         assert ok
-        assert Path(path).read_text() == "original content"
+        assert Path(path).read_text(encoding="utf-8") == "original content"
     finally:
         os.unlink(path)
         if backup_path and backup_path.exists():
@@ -41,7 +41,7 @@ def test_save_diff():
     from core.rollback_manager import save_diff
     diff_path = save_diff("/tmp/test.py", "old line\n", "new line\n")
     if diff_path:
-        content = diff_path.read_text()
+        content = diff_path.read_text(encoding="utf-8")
         assert "old line" in content or "new line" in content
         diff_path.unlink(missing_ok=True)
 
@@ -67,7 +67,7 @@ def test_rollback_context_success():
         with RollbackContext(path):
             Path(path).write_text("new content")
         # No exception → file keeps new content
-        assert Path(path).read_text() == "new content"
+        assert Path(path).read_text(encoding="utf-8") == "new content"
     finally:
         os.unlink(path)
 
@@ -85,7 +85,7 @@ def test_rollback_context_on_error():
         except RuntimeError:
             _silent_log.debug("suppressed_exception", src='test_rollback_manager.py')
         # Exception → file should be restored
-        assert Path(path).read_text() == "original"
+        assert Path(path).read_text(encoding="utf-8") == "original"
     finally:
         os.unlink(path)
 

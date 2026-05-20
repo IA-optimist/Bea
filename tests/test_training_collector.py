@@ -195,7 +195,7 @@ class TestAtomicWrite(unittest.TestCase):
             target = Path(d) / "out.jsonl"
             tc._atomic_append(target, json.dumps({"x": 1}))
             tc._atomic_append(target, json.dumps({"x": 2}))
-            text = target.read_text()
+            text = target.read_text(encoding="utf-8")
             self.assertEqual(text.strip().splitlines(), ['{"x": 1}', '{"x": 2}'])
             # tmp file should never linger after replace
             self.assertFalse(target.with_suffix(".jsonl.tmp").exists())

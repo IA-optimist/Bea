@@ -286,26 +286,26 @@ class TestSessionUX:
 
     def test_web_login_overlay(self):
         """E19: Web SPA has login section."""
-        content = (REPO / "static/app.html").read_text()
+        content = (REPO / "static/app.html").read_text(encoding="utf-8")
         assert 'doLogin' in content
         assert 'token' in content.lower()
 
     def test_web_logout(self):
         """E20: Web has logout function."""
-        content = (REPO / "static/app.html").read_text()
+        content = (REPO / "static/app.html").read_text(encoding="utf-8")
         assert 'logout()' in content
         assert 'déconnecter' in content.lower()
 
     def test_mobile_login_screen(self):
         """E21: Mobile login screen exists."""
-        content = (REPO / "jarvismax_app/lib/screens/login_screen.dart").read_text()
+        content = (REPO / "jarvismax_app/lib/screens/login_screen.dart").read_text(encoding="utf-8")
         assert 'LoginScreen' in content
         assert 'token' in content.lower()  # UI is French: "Token invalide" / "token login"
         assert 'onLoginSuccess' in content  # Login success callback present
 
     def test_user_friendly_errors(self):
         """E22: Error messages are user-friendly."""
-        content = (REPO / "static/app.html").read_text()
+        content = (REPO / "static/app.html").read_text(encoding="utf-8")
         assert 'invalide' in content.lower()  # French: "Token invalide"
         assert 'expirée' in content.lower() or 'erreur' in content.lower()
         # Enforcement module has friendly messages
@@ -319,7 +319,7 @@ class TestAdminPanel:
 
     def test_token_management_routes(self):
         """E23: Token management endpoints exist."""
-        content = (REPO / "api/routes/token_management.py").read_text()
+        content = (REPO / "api/routes/token_management.py").read_text(encoding="utf-8")
         assert '/api/v3/tokens' in content
         assert 'create_token' in content
         assert 'revoke' in content

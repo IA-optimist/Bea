@@ -272,7 +272,7 @@ def test_export_artifacts():
         assert "agent_archetypes.json" in produced
         assert "agent_routing_suggestions.json" in produced
         for filename, path in produced.items():
-            data = json.loads(Path(path).read_text())
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
             assert data is not None
 
 
@@ -280,7 +280,7 @@ def test_export_clusters_content():
     from core.agent_specialization import export_specialization_artifacts
     with tempfile.TemporaryDirectory() as tmpdir:
         produced = export_specialization_artifacts(output_dir=tmpdir)
-        clusters = json.loads(Path(produced["task_clusters.json"]).read_text())
+        clusters = json.loads(Path(produced["task_clusters.json"]).read_text(encoding="utf-8"))
         assert len(clusters) >= 10
         assert clusters[0]["name"] == "code_modification"
 
@@ -289,7 +289,7 @@ def test_export_routing_has_coverage():
     from core.agent_specialization import export_specialization_artifacts
     with tempfile.TemporaryDirectory() as tmpdir:
         produced = export_specialization_artifacts(output_dir=tmpdir)
-        routing = json.loads(Path(produced["agent_routing_suggestions.json"]).read_text())
+        routing = json.loads(Path(produced["agent_routing_suggestions.json"]).read_text(encoding="utf-8"))
         assert "coverage" in routing
         assert "config_templates" in routing
         assert "existing_agents" in routing

@@ -143,7 +143,7 @@ class TestCodePatcher:
         patch = cp.generate_patch("Fix", "foo.py", "x = 1", "x = 42")
         cp.validate_syntax(patch)
         assert cp.apply(patch)
-        content = (tmp_path / "foo.py").read_text()
+        content = (tmp_path / "foo.py").read_text(encoding="utf-8")
         assert "42" in content
 
     def test_apply_protected(self, tmp_path):
@@ -162,9 +162,9 @@ class TestCodePatcher:
         patch = cp.generate_patch("Fix", "foo.py", "x = 1", "x = 42")
         cp.validate_syntax(patch)
         cp.apply(patch)
-        assert "42" in (tmp_path / "foo.py").read_text()
+        assert "42" in (tmp_path / "foo.py").read_text(encoding="utf-8")
         cp.rollback(patch)
-        assert "x = 1" in (tmp_path / "foo.py").read_text()
+        assert "x = 1" in (tmp_path / "foo.py").read_text(encoding="utf-8")
 
     def test_protected_list(self):
         """DC12: Protected files include critical paths."""
