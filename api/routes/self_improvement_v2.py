@@ -116,9 +116,15 @@ async def self_improve_run(
     if os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
         return {"ok": False, "error": "execution_disabled"}
     try:
-        from core.self_improvement_engine import run_improvement_cycle
-        report = run_improvement_cycle()
-        return {"ok": True, "data": report.to_dict()}
+        # Audit S8 / issue #15: migrated from deprecated
+        # `core.self_improvement_engine.run_improvement_cycle` shim to the
+        # canonical SelfImprovementEngine. The previous code didn't await
+        # the async legacy facade and called `.to_dict()` on a coroutine —
+        # the route was 100% broken in production (always hit the except).
+        from core.self_improvement.engine import SelfImprovementEngine
+        engine = SelfImprovementEngine()
+        report = await engine.run_cycle()
+        return {"ok": True, "data": report}  # run_cycle() already returns a dict
     except Exception as e:
         logger.error("SelfImproveV2 run failed: %s", str(e)[:200])
         return {"ok": False, "error": str(e)[:200]}
@@ -126,15 +132,14 @@ async def self_improve_run(
 
 @router.get("/api/v2/self-improve/report")
 async def self_improve_report(_user: dict = _auth):
-    """Get last self-improvement cycle report."""
-    try:
-        from core.self_improvement_engine import get_improvement_report
-        report = get_improvement_report()
-        if report:
-            return {"ok": True, "data": report}
-        return {"ok": True, "data": None, "message": "No improvement cycle has run yet"}
-    except Exception as e:
-        return {"ok": False, "error": str(e)[:200]}
+    """Get last self-improvement cycle report.
+
+    The legacy `get_improvement_report()` shim always returned None
+    (SelfImprovementEngine has no get_report method). Until that method
+    is added upstream, this endpoint stays a no-op that returns None
+    rather than fabricating data — audit S8 / issue #15.
+    """
+    return {"ok": True, "data": None, "message": "No improvement cycle has run yet"}
 
 
 @router.post("/api/v2/self-improvement/proposals/{proposal_id}/apply")

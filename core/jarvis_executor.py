@@ -827,8 +827,13 @@ class JarvisOrchestrator:
             raise
 
     async def _run_improve(self, session: JarvisSession, emit: CB):
-        from core.self_improvement_engine import run_improvement_cycle
-        result = await run_improvement_cycle()
+        # Audit S8 / issue #15: migrated from `core.self_improvement_engine`
+        # legacy shim to the canonical SelfImprovementEngine. The legacy
+        # facade returned a coroutine (because it never awaited) — the
+        # previous `await run_improvement_cycle()` worked only by accident.
+        from core.self_improvement.engine import SelfImprovementEngine
+        engine = SelfImprovementEngine()
+        result = await engine.run_cycle()
         if emit:
             await emit(f"Self-improvement: {result.get('status', 'done')}")
         session.final_report = str(result.get("summary", "improvement cycle complete"))
