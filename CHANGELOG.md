@@ -85,6 +85,8 @@ sprints (2026-05-18 → 2026-05-19):
 | 3-4    | ca86268 | Delete hexstrike + agent_marketplace + multi-stage Docker + READMEs |
 | 5      | d7d2650 | CI stabilization (gitleaksignore, ruff scope, baseline)            |
 | 6      | fb6619f | 19 pre-existing pytest failures fixed                              |
-| 7      | (this)  | Coverage 60, portable paths, CHANGELOG, audit doc move             |
+| 7      | 6f5f5af | Coverage 60, portable paths, CHANGELOG, audit doc move             |
+| 8      | 95f10e4 | mypy dedicated job + 5/5 core/_legacy/ shims migrated (issue #15)  |
+| 9      | (this)  | core/_legacy/ deleted entirely + 247 open() encoding fix           |
 
 The full audit document is at `docs/audits/Audit_Jarvismax_2026-05-18.docx`.

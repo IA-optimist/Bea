@@ -21,7 +21,6 @@ exclude = [
   "node_modules",
   "frontend/node_modules",
   "jarvismax_app",           # Dart/Flutter, not Python
-  "core/_legacy",            # explicitly deprecated shims
   "mcp/hexstrike-ai/_archive_legacy",
   "docs",
   "archive",
