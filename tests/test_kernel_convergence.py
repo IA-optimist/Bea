@@ -403,7 +403,7 @@ class TestConvergenceInvariants:
                 if not f.endswith(".py"):
                     continue
                 path = os.path.join(root, f)
-                content = open(path).read()
+                content = open(path, encoding="utf-8").read()
                 # api/routes/kernel.py is in api/, not kernel/
                 assert "from fastapi" not in content, f"FastAPI import found in {path}"
                 assert "import fastapi" not in content, f"FastAPI import found in {path}"
@@ -415,7 +415,7 @@ class TestConvergenceInvariants:
         for f in os.listdir(adapter_dir):
             if f.endswith(".py") and f != "__init__.py":
                 path = os.path.join(adapter_dir, f)
-                lines = len(open(path).readlines())
+                lines = len(open(path, encoding="utf-8").readlines())
                 assert lines <= 200, f"Adapter {f} is {lines} lines (max 200)"
 
     def test_KC39_all_emissions_fail_open(self):

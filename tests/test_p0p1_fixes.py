@@ -32,7 +32,7 @@ async def test_jarvis_team_dispatcher_ainvoke():
     print("\n=== Test 2: JarvisTeam ainvoke usage ===")
     
     # Read the source to verify
-    with open('core/orchestration/jarvis_team_dispatcher.py', 'r') as f:
+    with open('core/orchestration/jarvis_team_dispatcher.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     # Check no achat calls (except in comments)
@@ -54,7 +54,7 @@ async def test_jarvis_team_dispatcher_continue():
     """Test that jarvis_team_dispatcher uses continue, not break."""
     print("\n=== Test 3: Exception handling with continue ===")
     
-    with open('core/orchestration/jarvis_team_dispatcher.py', 'r') as f:
+    with open('core/orchestration/jarvis_team_dispatcher.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     lines = content.split('\n')
@@ -85,7 +85,7 @@ async def test_meta_orchestrator_create_task():
     """Test that meta_orchestrator uses create_task, not ensure_future."""
     print("\n=== Test 4: asyncio.create_task usage ===")
     
-    with open('core/meta_orchestrator.py', 'r') as f:
+    with open('core/meta_orchestrator.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     # Check for ensure_future (should not be used for new code)
@@ -112,7 +112,7 @@ async def test_vault_rbac():
     """Test that vault /reveal endpoint has RBAC check."""
     print("\n=== Test 5: Vault RBAC for /reveal ===")
     
-    with open('api/routes/vault.py', 'r') as f:
+    with open('api/routes/vault.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     # Find the reveal_secret function
@@ -137,7 +137,7 @@ async def test_docker_compose_no_reload():
     """Test that docker-compose.yml doesn't use --reload."""
     print("\n=== Test 6: Docker-compose no --reload ===")
     
-    with open('docker-compose.yml', 'r') as f:
+    with open('docker-compose.yml', "r", encoding="utf-8") as f:
         content = f.read()
     
     # Check for --reload in uvicorn command

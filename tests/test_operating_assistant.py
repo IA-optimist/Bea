@@ -348,7 +348,7 @@ def test_workflow_constraint_adaptation():
 
 def test_planner_has_feasibility():
     """Planner integrates operating primitives."""
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "score_feasibility" in src
     assert "select_strategy" in src
@@ -356,7 +356,7 @@ def test_planner_has_feasibility():
 
 
 def test_api_has_operating_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/operating/feasibility" in src
     assert "/operating/value" in src
@@ -367,7 +367,7 @@ def test_api_has_operating_endpoints():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_operating_panels():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     assert "operational-signals" in html
     assert "objectives-panel" in html
@@ -382,5 +382,5 @@ def test_all_new_files_parse():
         "api/routes/performance.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

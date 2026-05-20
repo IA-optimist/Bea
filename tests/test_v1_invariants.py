@@ -243,7 +243,7 @@ class TestLegacyAliasesNotCanonical(unittest.TestCase):
         for path in deprecated:
             full_path = os.path.join(_ROOT, path)
             if os.path.exists(full_path):
-                with open(full_path, "r") as f:
+                with open(full_path, "r", encoding="utf-8") as f:
                     header = f.read(500)
                 self.assertIn("DEPRECATED", header,
                              f"INVARIANT VIOLATED: {path} missing DEPRECATED header")

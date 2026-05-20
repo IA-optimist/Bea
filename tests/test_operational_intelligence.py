@@ -575,7 +575,7 @@ class TestSafety:
             for f in os.listdir(tools_dir):
                 if f.endswith(".json"):
                     path = os.path.join(tools_dir, f)
-                    with open(path) as fh:
+                    with open(path, encoding="utf-8") as fh:
                         data = json.load(fh)
                     assert "id" in data, f"Missing id in {f}"
 
@@ -586,7 +586,7 @@ class TestSafety:
             for f in os.listdir(wf_dir):
                 if f.endswith(".json"):
                     path = os.path.join(wf_dir, f)
-                    with open(path) as fh:
+                    with open(path, encoding="utf-8") as fh:
                         data = json.load(fh)
                     assert "template_id" in data, f"Missing template_id in {f}"
                     assert "steps" in data, f"Missing steps in {f}"

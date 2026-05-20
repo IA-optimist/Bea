@@ -124,7 +124,7 @@ def test_file_export_csv():
             "data": [{"name": "A", "value": 1}, {"name": "B", "value": 2}],
         })
         assert r.success
-        with open(r.data["path"]) as f:
+        with open(r.data["path"], encoding="utf-8") as f:
             content = f.read()
         assert "name,value" in content
     finally:
@@ -144,7 +144,7 @@ def test_file_export_markdown():
             "template": "# {{title}}\n\nStatus: {{status}}"
         })
         assert r.success
-        with open(r.data["path"]) as f:
+        with open(r.data["path"], encoding="utf-8") as f:
             content = f.read()
         assert "Q1 Report" in content
         assert "green" in content
@@ -262,12 +262,12 @@ def test_mission_slicing_bounded():
 def test_all_files_parse():
     for f in ["core/connectors.py", "core/operating_primitives.py",
               "core/mission_planner.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 def test_api_has_operating_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/operating/summary" in src
     assert "/operating/recommendations" in src

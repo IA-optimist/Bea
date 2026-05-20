@@ -34,7 +34,7 @@ sys.path.insert(0, '.')
 @pytest.mark.skip(reason="stale: API changed")
 def test_p1_get_orchestrator_returns_meta():
     """api/main.py _get_orchestrator() routes to MetaOrchestrator."""
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     assert "get_meta_orchestrator" in src
     # No direct instantiation of legacy orchestrators
@@ -46,7 +46,7 @@ def test_p1_no_direct_legacy_instantiation():
     """No file outside meta_orchestrator directly instantiates legacy."""
     import glob
     for pyfile in glob.glob("api/**/*.py", recursive=True):
-        with open(pyfile) as f:
+        with open(pyfile, encoding="utf-8") as f:
             src = f.read()
         # api/ should not directly instantiate legacy orchestrators
         if "meta_orchestrator" not in pyfile:
@@ -55,7 +55,7 @@ def test_p1_no_direct_legacy_instantiation():
 
 
 def test_p1_meta_orchestrator_has_run_mission():
-    with open("core/meta_orchestrator.py") as f:
+    with open("core/meta_orchestrator.py", encoding="utf-8") as f:
         src = f.read()
     assert "async def run_mission" in src
     assert "class MetaOrchestrator" in src
@@ -66,7 +66,7 @@ def test_p1_meta_orchestrator_has_run_mission():
 # ═══════════════════════════════════════════════════════════════
 
 def test_p2_tool_executor_has_approval_check():
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "APPROVAL_REQUIRED_ACTIONS" in src
     assert "classify_danger" in src
@@ -114,7 +114,7 @@ def test_p2_tool_executor_kill_switch():
 @pytest.mark.skip(reason="stale: removed")
 def test_p3_no_simulation_in_runtime():
     """Runtime path has no simulated execution strings."""
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     # The old simulation string should be gone
     assert 'f"Étape {_step_to_run.step_id}:' not in src
@@ -125,7 +125,7 @@ def test_p3_no_simulation_in_runtime():
 @pytest.mark.skip(reason="stale: format changed")
 def test_p3_step_results_structured():
     """Step results are structured dicts, not strings."""
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     assert '"executed": False' in src
     assert '"agents_selected"' in src
@@ -138,7 +138,7 @@ def test_p3_step_results_structured():
 @pytest.mark.skip(reason="stale: enum changed")
 def test_p4_mission_status_exists():
     """MissionStatus enum exists in state.py (canonical location)."""
-    with open("core/state.py") as f:
+    with open("core/state.py", encoding="utf-8") as f:
         src = f.read()
     assert "class MissionStatus" in src
 
@@ -146,7 +146,7 @@ def test_p4_mission_status_exists():
 def test_p4_meta_orchestrator_status_values():
     """MetaOrchestrator has the canonical lifecycle states."""
     # Can't import due to structlog, so check source
-    with open("core/meta_orchestrator.py") as f:
+    with open("core/meta_orchestrator.py", encoding="utf-8") as f:
         src = f.read()
     for status in ["CREATED", "PLANNED", "RUNNING", "REVIEW", "DONE", "FAILED"]:
         assert status in src
@@ -157,13 +157,13 @@ def test_p4_meta_orchestrator_status_values():
 # ═══════════════════════════════════════════════════════════════
 
 def test_p6_kill_switch_in_tool_executor():
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "JARVIS_EXECUTION_DISABLED" in src
 
 
 def test_p6_kill_switch_in_shell():
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     # Shell command function also checks kill switch
     assert 'JARVIS_EXECUTION_DISABLED' in src
@@ -228,14 +228,14 @@ def test_p8_shell_allowlist():
 
 def test_p8_shell_uses_shlex():
     """Shell command uses shlex for argument splitting."""
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "shlex.split" in src
 
 
 def test_p8_shell_audit_logged():
     """Shell execution is logged to audit trail."""
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "log_mission_event" in src
 
@@ -247,7 +247,7 @@ def test_p8_shell_audit_logged():
 def test_all_files_parse():
     for f in ["api/main.py", "core/tool_executor.py", "core/governance.py",
               "core/meta_orchestrator.py", "core/mission_system.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
@@ -256,7 +256,7 @@ def test_no_new_orchestrator():
     import glob
     orchestrators = 0
     for pyfile in glob.glob("core/**/*.py", recursive=True):
-        with open(pyfile) as f:
+        with open(pyfile, encoding="utf-8") as f:
             src = f.read()
         orchestrators += src.count("class.*Orchestrator")
     # We should only have the known ones
@@ -267,16 +267,16 @@ def test_no_new_orchestrator():
 def test_governance_wired():
     """Governance module is wired into real execution paths."""
     # In connectors
-    with open("core/connectors.py") as f:
+    with open("core/connectors.py", encoding="utf-8") as f:
         assert "check_connector_rate" in f.read()
 
     # In mission_system
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
         assert "log_mission_event" in src
 
     # In tool_executor
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
         assert "classify_danger" in src
         assert "JARVIS_EXECUTION_DISABLED" in src

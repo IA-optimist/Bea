@@ -458,5 +458,5 @@ def test_all_modified_files_syntax():
         "core/execution_engine.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

@@ -43,7 +43,7 @@ def test_file_write_rollback():
     try:
         result = write_file_safe(test_path, "new content")
         assert result.get("ok"), f"write failed: {result.get('error')}"
-        with open(test_path, "r") as f:
+        with open(test_path, "r", encoding="utf-8") as f:
             assert f.read() == "new content"
         rm = get_rollback_manager()
         backups = rm.list_backups(test_path)

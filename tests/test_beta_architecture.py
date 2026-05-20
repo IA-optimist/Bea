@@ -176,7 +176,7 @@ class TestNoMockExecution(unittest.TestCase):
         combined = ""
         for p in api_files:
             try:
-                with open(p) as fh:
+                with open(p, encoding="utf-8") as fh:
                     combined += fh.read()
             except (IOError, OSError):
                 _silent_log.debug("suppressed_exception", src='test_beta_architecture.py')
@@ -223,7 +223,7 @@ class TestLangGraphCompatibility(unittest.TestCase):
         lg_path = os.path.join(_ROOT, "core", "orchestrator_lg", "langgraph_flow.py")
         if not os.path.exists(lg_path):
             self.skipTest("LangGraph module not present")
-        with open(lg_path) as f:
+        with open(lg_path, encoding="utf-8") as f:
             content = f.read()
         self.assertIn("MetaOrchestrator", content)
 

@@ -24,7 +24,7 @@ def test_backup_and_restore():
     _write("# version 2\nprint('v2')\n")
     ok = restore_file(_TEST_FILE, backup)
     assert ok, "restore should succeed"
-    content = open(_TEST_FILE).read()
+    content = open(_TEST_FILE, encoding="utf-8").read()
     assert "v1" in content, f"expected v1, got: {content}"
     print(f"✅ restore OK: content='{content.strip()}'")
 
@@ -37,7 +37,7 @@ def test_rollback_context_auto_restore():
     except RuntimeError:
         pass  # attendu
 
-    content = open(_TEST_FILE).read()
+    content = open(_TEST_FILE, encoding="utf-8").read()
     assert "original" in content, f"should be restored, got: {content}"
     print(f"✅ auto-rollback OK: content='{content.strip()}'")
 
@@ -46,7 +46,7 @@ def test_save_diff():
     new = "line1\nline2_modified\nline3\n"
     diff_path = save_diff(_TEST_FILE, old, new)
     if diff_path:
-        diff = open(diff_path).read()
+        diff = open(diff_path, encoding="utf-8").read()
         assert "-line2" in diff
         print(f"✅ diff saved: {diff_path}")
     else:
@@ -56,7 +56,7 @@ def test_write_file_safe():
     _write("# initial content\n")
     result = write_file_safe(_TEST_FILE, "# new safe content\nprint('safe')\n")
     assert result["ok"], f"write_file_safe failed: {result}"
-    content = open(_TEST_FILE).read()
+    content = open(_TEST_FILE, encoding="utf-8").read()
     assert "safe" in content
     print(f"✅ write_file_safe OK: {result['result']}")
 
@@ -71,7 +71,7 @@ def test_restore_latest():
     _write("# version_B_corrupted\n")
     ok = restore_latest(_TEST_FILE)
     assert ok, "restore_latest should succeed"
-    content = open(_TEST_FILE).read()
+    content = open(_TEST_FILE, encoding="utf-8").read()
     assert "version_A" in content
     print(f"✅ restore_latest OK: content='{content.strip()}'")
 

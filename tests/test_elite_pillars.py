@@ -393,7 +393,7 @@ class TestMemoryCompactor(unittest.TestCase):
         stats = compact_jsonl(path, dry_run=True)
         self.assertEqual(stats["removed"], 1)
         # File should still have the empty entry (dry run)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             self.assertEqual(len(f.readlines()), 1)
         os.unlink(path)
 

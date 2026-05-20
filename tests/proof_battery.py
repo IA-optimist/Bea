@@ -75,7 +75,7 @@ logged_count = 0
 for fp in HOT_PATH:
     if not os.path.exists(fp):
         continue
-    with open(fp) as fh:
+    with open(fp, encoding="utf-8") as fh:
         lines = fh.readlines()
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -126,7 +126,7 @@ print()
 
 # ── T6: Completion Integrity ──────────────────────────────────────────
 print("━━━ T6: COMPLETION INTEGRITY CODE ━━━")
-with open("core/action_executor.py") as f:
+with open("core/action_executor.py", encoding="utf-8") as f:
     ae_code = f.read()
 has_fail_guard = "if executed == 0 and failed_count > 0:" in ae_code
 has_fail_log = "mission_all_actions_failed" in ae_code
@@ -138,7 +138,7 @@ print()
 
 # ── T7: Timeout Guard ─────────────────────────────────────────────────
 print("━━━ T7: TIMEOUT GUARD ━━━")
-with open("core/tool_executor.py") as f:
+with open("core/tool_executor.py", encoding="utf-8") as f:
     te_code = f.read()
 has_thread_timeout = "_t.join(timeout=_max_timeout)" in te_code
 has_timeout_classify = 'error_class="TIMEOUT"' in te_code
@@ -182,7 +182,7 @@ print()
 # ── T9: WebSocket State Machine (code audit) ──────────────────────────
 print("━━━ T9: WEBSOCKET STATE MACHINE ━━━")
 ws_path = "jarvismax_app/lib/services/websocket_service.dart"
-with open(ws_path) as f:
+with open(ws_path, encoding="utf-8") as f:
     ws_code = f.read()
 
 checks_t9 = [
@@ -206,7 +206,7 @@ print()
 # ── T10: Token Refresh Integration ────────────────────────────────────
 print("━━━ T10: TOKEN REFRESH → WS RECONNECT ━━━")
 api_path = "jarvismax_app/lib/services/api_service.dart"
-with open(api_path) as f:
+with open(api_path, encoding="utf-8") as f:
     api_code = f.read()
 
 checks_t10 = [

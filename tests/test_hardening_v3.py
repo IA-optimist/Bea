@@ -149,7 +149,7 @@ class TestSelfImprovementSafety(unittest.TestCase):
         self.assertIn("core/orchestrator.py", PROTECTED_FILES)
 
     def test_protected_paths_no_telegram_reference(self):
-        with open("core/self_improvement/protected_paths.py") as f:
+        with open("core/self_improvement/protected_paths.py", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("Telegram", content)
 

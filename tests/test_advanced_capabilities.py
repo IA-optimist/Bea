@@ -246,7 +246,7 @@ def test_detector_routing_optimization():
 # ═══════════════════════════════════════════════════════════════
 
 def test_crew_has_dynamic_routing():
-    with open("agents/crew.py") as f:
+    with open("agents/crew.py", encoding="utf-8") as f:
         src = f.read()
     assert "dynamic_agent_router" in src
     assert "route_agents" in src
@@ -254,7 +254,7 @@ def test_crew_has_dynamic_routing():
 
 
 def test_planner_has_knowledge_context():
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "knowledge_graph_context" in src
     assert "routing_intelligence" in src
@@ -262,7 +262,7 @@ def test_planner_has_knowledge_context():
 
 
 def test_mission_system_has_knowledge_ingestion():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "knowledge_ingestion" in src
     assert "ingest_mission_outcome" in src
@@ -277,7 +277,7 @@ def test_all_new_files_syntax():
         "api/routes/performance.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
@@ -288,7 +288,7 @@ def test_cockpit_specialization_screen():
 
 
 def test_performance_router_specialization_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "agents/specialization" in src
     assert "routing/explain" in src

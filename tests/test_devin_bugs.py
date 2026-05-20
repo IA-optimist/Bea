@@ -45,7 +45,7 @@ class TestAntiDuplicateMission:
     def test_DA04_orchestrator_single_entrypoint(self):
         """DA04: Only one orch.run() call exists in the API layer."""
         api_main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(api_main_path) as f:
+        with open(api_main_path, encoding="utf-8") as f:
             source = f.read()
         # Count orch.run( calls — there should be exactly 1 in the API
         source.count("orch.run(") + source.count("orch.run_mission(")
@@ -75,7 +75,7 @@ class TestAntiDuplicateMission:
     def test_DA07_finally_cleanup_present(self):
         """DA07: _run_mission has finally block that clears running guard."""
         api_main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(api_main_path) as f:
+        with open(api_main_path, encoding="utf-8") as f:
             source = f.read()
         assert "_running_missions.discard(" in source, "Missing cleanup in finally block"
 
@@ -207,7 +207,7 @@ class TestNoOpPatchDetection:
             os.path.dirname(__file__), "..",
             "core", "self_improvement", "promotion_pipeline.py"
         )
-        with open(pipeline_path) as f:
+        with open(pipeline_path, encoding="utf-8") as f:
             source = f.read()
         assert "noop_mutation" in source, "Missing post-apply mutation check in pipeline"
         assert "No-op: sandbox has no actual diff" in source
@@ -251,7 +251,7 @@ class TestNoOpPatchDetection:
                 f.write(original)
             result = patcher.apply_to_sandbox(patch, sandbox)
             assert result is True
-            with open(sandbox_file) as f:
+            with open(sandbox_file, encoding="utf-8") as f:
                 final = f.read()
             assert final != original, "File content must be different after apply"
             assert "x = 42" in final
@@ -310,28 +310,28 @@ class TestBearerTokenParsing:
     def test_DC08_auth_py_uses_strip_bearer(self):
         """DC08: api/auth.py uses centralized strip_bearer."""
         auth_path = os.path.join(os.path.dirname(__file__), "..", "api", "auth.py")
-        with open(auth_path) as f:
+        with open(auth_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
     def test_DC09_middleware_uses_strip_bearer(self):
         """DC09: api/middleware.py uses centralized strip_bearer."""
         mw_path = os.path.join(os.path.dirname(__file__), "..", "api", "middleware.py")
-        with open(mw_path) as f:
+        with open(mw_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
     def test_DC10_access_enforcement_uses_strip_bearer(self):
         """DC10: api/access_enforcement.py uses centralized strip_bearer."""
         ae_path = os.path.join(os.path.dirname(__file__), "..", "api", "access_enforcement.py")
-        with open(ae_path) as f:
+        with open(ae_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
     def test_DC11_main_py_uses_strip_bearer(self):
         """DC11: api/main.py uses centralized strip_bearer."""
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path) as f:
+        with open(main_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
@@ -378,7 +378,7 @@ class TestBearerTokenParsing:
         """DC12: No inline 'startswith("Bearer ")' + [7:] parsing in auth files."""
         for fname in ["api/auth.py", "api/access_enforcement.py", "api/middleware.py"]:
             fpath = os.path.join(os.path.dirname(__file__), "..", fname)
-            with open(fpath) as f:
+            with open(fpath, encoding="utf-8") as f:
                 source = f.read()
             # Should not have the old pattern (startswith + [7:])
             lines = source.split("\n")

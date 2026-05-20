@@ -29,7 +29,7 @@ sys.path.insert(0, '.')
 
 def test_single_active_orchestrator():
     """Only MissionSystem is the active API orchestrator."""
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     # MissionSystem is initialized
     assert "MissionSystem" in src or "mission_system" in src
@@ -45,7 +45,7 @@ def test_single_active_orchestrator():
 def test_legacy_orchestrators_deprecated():
     """Legacy orchestrators have deprecation markers."""
     for path in ["core/orchestrator.py", "core/orchestrator_v2.py"]:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             first_line = f.readline()
         assert "DEPRECATED" in first_line.upper(), f"{path} missing DEPRECATED marker"
 
@@ -62,7 +62,7 @@ def test_deprecation_registry():
 
 def test_mission_cancel():
     """MissionSystem supports mission cancellation."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "def cancel(" in src
     assert "cancelled" in src
@@ -142,7 +142,7 @@ def test_memory_modules_bounded():
 
 def test_auto_detection_wired_to_lifecycle():
     """Improvement detection is triggered in mission complete()."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "detect_improvements" in src
     assert "is_proposals_enabled" in src
@@ -155,7 +155,7 @@ def test_auto_detection_wired_to_lifecycle():
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_all_12_panels():
     """Cockpit covers all target system views."""
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     required = [
         "confidence-panel",
@@ -225,7 +225,7 @@ def test_multimodal_modules_exist():
     """Multimodal modules exist and parse cleanly."""
     for path in ["modules/multimodal/__init__.py", "modules/multimodal/image.py",
                   "modules/multimodal/voice.py", "modules/multimodal/video.py"]:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             ast.parse(f.read())
 
 
@@ -234,7 +234,7 @@ def test_multimodal_modules_exist():
 # ═══════════════════════════════════════════════════════════════
 
 def test_api_cancel_endpoint():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/missions/{mission_id}/cancel" in src
     assert "/execution/limits" in src
@@ -257,7 +257,7 @@ def test_all_modified_files_parse():
         "core/tool_runner.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 

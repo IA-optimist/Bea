@@ -242,12 +242,12 @@ def test_all_files_syntax():
         "api/routes/performance.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 def test_tool_runner_uses_engine():
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         src = f.read()
     assert "execution_engine" in src
     assert "execute_tool_intelligently" in src
@@ -256,7 +256,7 @@ def test_tool_runner_uses_engine():
 
 
 def test_mission_system_has_evaluation():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "evaluate_mission" in src
     assert "store_evaluation" in src
@@ -264,7 +264,7 @@ def test_mission_system_has_evaluation():
 
 
 def test_performance_api_has_execution_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "execution/telemetry" in src
     assert "execution/evaluations" in src
@@ -274,7 +274,7 @@ def test_performance_api_has_execution_endpoints():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_telemetry_ui():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     assert "exec-telemetry" in html
     assert "eval-trend-stats" in html

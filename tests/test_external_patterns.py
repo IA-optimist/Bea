@@ -94,7 +94,7 @@ class TestMemoryDecay(unittest.TestCase):
         stats = apply_decay(path, grace_days=7)
         self.assertEqual(stats["decayed"], 1)
 
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             item = json.loads(f.readline())
         self.assertLess(item["confidence"], 0.8)
         os.unlink(path)
@@ -139,7 +139,7 @@ class TestMemoryDecay(unittest.TestCase):
 
         apply_decay(path, grace_days=7)
 
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             high_use = json.loads(f.readline())
             low_use = json.loads(f.readline())
         # High use should decay less
@@ -163,7 +163,7 @@ class TestMemoryDecay(unittest.TestCase):
         self.assertEqual(stats["decayed"], 1)
 
         # File should be unchanged
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             item = json.loads(f.readline())
         self.assertEqual(item["confidence"], 0.8)
         os.unlink(path)

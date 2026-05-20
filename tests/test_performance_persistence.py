@@ -92,7 +92,7 @@ class TestStorePersistence:
             assert ok is True
             assert os.path.exists(path)
 
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             assert data["version"] == 1
             assert data["record_count"] == 2
@@ -291,7 +291,7 @@ class TestEdgeCases:
         try:
             ok = store.save_to_file(path)
             assert ok is True
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             assert data["record_count"] == 0
         finally:

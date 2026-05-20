@@ -179,7 +179,7 @@ class TestOpportunityScanner:
         assert filepath.name == "test_output.json"
         
         # Load and verify
-        with open(filepath, 'r') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
         
         assert data['total_opportunities'] == 1

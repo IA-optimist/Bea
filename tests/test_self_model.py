@@ -810,7 +810,7 @@ class TestExtendedAPIRoutes:
         """SM76."""
         import os
         path = os.path.join(os.path.dirname(__file__), "..", "static", "self-model.html")
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             html = f.read()
         assert "jarvis_token" in html
         assert "Authorization" in html
@@ -823,7 +823,7 @@ class TestExtendedAPIRoutes:
         """SM77."""
         import os
         path = os.path.join(os.path.dirname(__file__), "..", "static", "self-model.html")
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             html = f.read()
         assert "limitations" in html.lower()
 
@@ -835,7 +835,7 @@ class TestExtendedAPIRoutes:
         """SM78."""
         import os
         path = os.path.join(os.path.dirname(__file__), "..", "static", "self-model.html")
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             html = f.read()
         assert "autonomy" in html.lower()
 
@@ -847,7 +847,7 @@ class TestExtendedAPIRoutes:
         """SM79."""
         import os
         path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             html = f.read()
         assert "self-model.html" in html
 

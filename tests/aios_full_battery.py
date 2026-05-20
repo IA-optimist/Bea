@@ -124,7 +124,7 @@ if mid:
     # Check trace exists
     trace_path = f"workspace/traces/{mid}.jsonl"
     if os.path.exists(trace_path):
-        with open(trace_path) as f:
+        with open(trace_path, encoding="utf-8") as f:
             events = [json.loads(l) for l in f if l.strip()]
         test("D", "Trace saved", len(events) > 0, f"events={len(events)}")
         phases = [e["phase"] for e in events]
@@ -171,7 +171,7 @@ test("E", "Default → TOOL_ERROR", _err("x")["error_class"] == "TOOL_ERROR")
 import re
 silent = 0
 for fp in ["core/action_executor.py", "core/tool_executor.py", "core/meta_orchestrator.py"]:
-    with open(fp) as f:
+    with open(fp, encoding="utf-8") as f:
         lines = f.readlines()
     for i, line in enumerate(lines):
         if re.match(r'\s*except\s+(Exception)?\s*:', line.strip()) and i+1 < len(lines):

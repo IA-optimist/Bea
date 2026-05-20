@@ -63,7 +63,7 @@ def _k1_scan_directory(directory: str) -> list[str]:
         if "__pycache__" in str(py_file):
             continue
         try:
-            with open(py_file) as f:
+            with open(py_file, encoding="utf-8") as f:
                 src = f.read()
             tree = ast.parse(src)
             for node in ast.walk(tree):
@@ -402,7 +402,7 @@ def group_interfaces():
     def t_adapter_result_decoupled():
         # AdapterResult must NOT import ExecutionResult from kernel
         import ast
-        with open("interfaces/kernel_adapter.py") as f:
+        with open("interfaces/kernel_adapter.py", encoding="utf-8") as f:
             src = f.read()
         tree = ast.parse(src)
         for node in ast.walk(tree):

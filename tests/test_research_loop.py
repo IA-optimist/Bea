@@ -222,6 +222,6 @@ class TestReportGeneration:
         )
         path = generate_report(result)
         assert os.path.exists(path)
-        content = open(path).read()
+        content = open(path, encoding="utf-8").read()
         assert "Test" in content
         assert "PROMOTED" in content

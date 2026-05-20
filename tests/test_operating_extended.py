@@ -318,14 +318,14 @@ def test_scenario_priority_no_oscillation():
 # ═══════════════════════════════════════════════════════════════
 
 def test_mission_system_has_economics():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "compute_economics" in src
     assert "get_workflow_store" in src
 
 
 def test_api_has_all_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     endpoints = ["/operating/economics", "/operating/portfolio",
                  "/operating/opportunities", "/operating/workflows",
@@ -336,7 +336,7 @@ def test_api_has_all_endpoints():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_new_panels():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     panels = ["portfolio-panel", "opportunities-panel", "workflows-panel"]
     for p in panels:
@@ -346,5 +346,5 @@ def test_cockpit_has_new_panels():
 def test_all_files_parse():
     for f in ["core/operating_primitives.py", "core/mission_system.py",
               "core/planner.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

@@ -126,7 +126,7 @@ def test_no_silent_except_in_hot_path():
         full = os.path.join('/app', filepath)
         if not os.path.exists(full):
             continue
-        with open(full) as fh:
+        with open(full, encoding="utf-8") as fh:
             lines = fh.readlines()
         
         for i, line in enumerate(lines):

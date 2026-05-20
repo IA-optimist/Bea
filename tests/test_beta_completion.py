@@ -291,7 +291,7 @@ def test_e2e_failure_recovery():
 # ═══════════════════════════════════════════════════════════════
 
 def test_mission_system_has_lifecycle():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "lifecycle_tracker" in src
     assert "mission_received" in src
@@ -303,7 +303,7 @@ def test_mission_system_has_lifecycle():
 
 
 def test_tool_runner_has_lifecycle():
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         src = f.read()
     assert "tools_executed" in src
     assert "lifecycle_tracker" in src
@@ -311,7 +311,7 @@ def test_tool_runner_has_lifecycle():
 
 
 def test_execution_engine_has_volatility():
-    with open("core/execution_engine.py") as f:
+    with open("core/execution_engine.py", encoding="utf-8") as f:
         src = f.read()
     assert "should_retry" in src
     assert "volatility" in src
@@ -319,7 +319,7 @@ def test_execution_engine_has_volatility():
 
 
 def test_performance_api_has_lifecycle_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/lifecycle" in src
     assert "/confidence" in src
@@ -328,7 +328,7 @@ def test_performance_api_has_lifecycle_endpoints():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_confidence_panel():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     assert "confidence-panel" in html
     assert "safety-panel" in html
@@ -348,5 +348,5 @@ def test_all_new_files_syntax():
         "core/tool_runner.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

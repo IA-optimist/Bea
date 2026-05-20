@@ -66,7 +66,7 @@ def test_known_duplications_documented():
 
 def test_tool_runner_uses_renamed_dict():
     """tool_runner now uses _PRE_EXEC_TOOLS with clear documentation."""
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         src = f.read()
     assert "_PRE_EXEC_TOOLS" in src
     assert "READ-ONLY" in src or "pre-execution" in src.lower()
@@ -76,12 +76,12 @@ def test_tool_runner_uses_renamed_dict():
 def test_single_lifecycle_authority():
     """Only one module actively manages lifecycle transitions."""
     # mission_system is the active authority
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         ms_src = f.read()
     assert "MissionStatus.DONE" in ms_src  # it controls transitions
 
     # meta_orchestrator exists but should NOT be actively called from API
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         api_src = f.read()
     # MetaOrchestrator is NOT directly called from main API
     assert "MetaOrchestrator" not in api_src or "convergence" in api_src
@@ -91,12 +91,12 @@ def test_single_lifecycle_authority():
 def test_no_parallel_orchestration():
     """Verify no module duplicates mission execution logic."""
     # Only api/main.py _run_mission should orchestrate execution
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     assert "_run_mission" in src
 
     # tool_runner should NOT decide mission outcomes
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         tr = f.read()
     assert "MissionStatus" not in tr
     assert "mission_complete" not in tr.lower()
@@ -117,7 +117,7 @@ def test_clear_module_boundaries():
         "core/safety_controls.py": ["get_safety_state", "validate_lifecycle"],
     }
     for filepath, expected_symbols in boundary_checks.items():
-        with open(filepath) as f:
+        with open(filepath, encoding="utf-8") as f:
             src = f.read()
         for sym in expected_symbols:
             assert sym in src, f"{filepath} missing expected: {sym}"
@@ -301,19 +301,19 @@ def test_signal_naming_consistency():
 
 def test_api_endpoints_consistent():
     """All v3 endpoints follow /api/v3/ prefix."""
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     # All router paths start with /api/v3/performance
     assert 'prefix="/api/v3/performance"' in src
 
-    with open("api/routes/convergence.py") as f:
+    with open("api/routes/convergence.py", encoding="utf-8") as f:
         src = f.read()
     assert 'prefix="/api/v3"' in src
 
 
 def test_feature_flags_documented():
     """All feature flags are documented in safety_controls."""
-    with open("core/safety_controls.py") as f:
+    with open("core/safety_controls.py", encoding="utf-8") as f:
         src = f.read()
     flags = [
         "JARVIS_DISABLE_ALL_INTELLIGENCE",
@@ -345,7 +345,7 @@ def test_all_modules_parse():
         "api/routes/performance.py",
     ]
     for f in new_modules:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
@@ -381,7 +381,7 @@ def test_ownership_validation():
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_completeness():
     """Cockpit covers all major system views."""
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     required_panels = [
         "confidence-panel",

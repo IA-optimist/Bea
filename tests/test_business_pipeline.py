@@ -360,7 +360,7 @@ def test_scenario_full_business_cycle():
 # ═══════════════════════════════════════════════════════════════
 
 def test_no_orchestration_in_business_pipeline():
-    with open("core/business_pipeline.py") as f:
+    with open("core/business_pipeline.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
     assert "MetaOrchestrator" not in src
@@ -369,7 +369,7 @@ def test_no_orchestration_in_business_pipeline():
 
 
 def test_api_has_business_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/business/dashboard" in src
     assert "/business/leads" in src
@@ -378,14 +378,14 @@ def test_api_has_business_endpoints():
 
 
 def test_mission_system_wires_budget():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "get_budget_tracker" in src
     assert "mission_cost" in src
 
 
 def test_mission_system_wires_events():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "get_event_manager" in src
     assert "mission_completed" in src
@@ -393,5 +393,5 @@ def test_mission_system_wires_events():
 
 def test_all_files_parse():
     for f in ["core/business_pipeline.py", "core/mission_system.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

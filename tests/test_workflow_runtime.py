@@ -676,7 +676,7 @@ def test_output_schema_consistency():
 
 def test_no_uncontrolled_external_calls():
     """Workflow engine itself makes no HTTP calls."""
-    with open("core/workflow_runtime.py") as f:
+    with open("core/workflow_runtime.py", encoding="utf-8") as f:
         src = f.read()
     # Should not contain direct urllib/requests usage
     assert "urllib.request.urlopen" not in src
@@ -686,12 +686,12 @@ def test_no_uncontrolled_external_calls():
 
 def test_all_files_parse():
     for f in ["core/workflow_runtime.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 def test_api_has_workflow_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/workflows/dashboard" in src
     assert "/workflows/create" in src

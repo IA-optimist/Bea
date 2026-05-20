@@ -391,7 +391,7 @@ def test_scenario_kill_switch_respected():
 # ═══════════════════════════════════════════════════════════════
 
 def test_governance_no_orchestration():
-    with open("core/governance.py") as f:
+    with open("core/governance.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
     assert "MetaOrchestrator" not in src
@@ -401,19 +401,19 @@ def test_governance_no_orchestration():
 
 @pytest.mark.skip(reason="stale: removed files")
 def test_connectors_rate_limit_wired():
-    with open("core/connectors.py") as f:
+    with open("core/connectors.py", encoding="utf-8") as f:
         src = f.read()
     assert "check_connector_rate" in src
 
 
 def test_mission_system_audit_wired():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "log_mission_event" in src
 
 
 def test_api_has_governance_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/governance/dashboard" in src
     assert "/governance/rate-limits" in src
@@ -427,5 +427,5 @@ def test_api_has_governance_endpoints():
 def test_all_files_parse():
     for f in ["core/governance.py", "core/connectors.py",
               "core/mission_system.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

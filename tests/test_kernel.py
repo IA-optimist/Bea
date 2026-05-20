@@ -362,7 +362,7 @@ class TestKernelBoot:
         import os
         path = os.path.join(os.path.dirname(__file__), "..", "docs", "kernel_spec.md")
         assert os.path.isfile(path)
-        content = open(path).read()
+        content = open(path, encoding="utf-8").read()
         assert "Domain Contracts" in content
         assert "Capability Model" in content
         assert "Event Model" in content

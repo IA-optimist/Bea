@@ -21,11 +21,11 @@ ws_path = "jarvismax_app/lib/services/websocket_service.dart"
 api_path = "jarvismax_app/lib/services/api_service.dart"
 main_path = "jarvismax_app/lib/main.dart"
 
-with open(ws_path) as f:
+with open(ws_path, encoding="utf-8") as f:
     ws_code = f.read()
-with open(api_path) as f:
+with open(api_path, encoding="utf-8") as f:
     api_code = f.read()
-with open(main_path) as f:
+with open(main_path, encoding="utf-8") as f:
     main_code = f.read()
 
 # ── M1: Login works ────────────────────────────────────────────────────
@@ -267,7 +267,7 @@ test("notifyListeners on state change", has_notify)
 # Check mission_screen uses state
 mission_screen_path = "jarvismax_app/lib/screens/mission_screen.dart"
 if os.path.exists(mission_screen_path):
-    with open(mission_screen_path) as f:
+    with open(mission_screen_path, encoding="utf-8") as f:
         ms_code = f.read()
     has_state_ui = "WsConnectionState" in ms_code
     test("Mission screen uses WsConnectionState", has_state_ui)

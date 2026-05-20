@@ -40,7 +40,7 @@ class TestRouteAuth:
         [type(m).__name__ for m in app.user_middleware]
         # Check that AccessEnforcementMiddleware was attempted
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path) as f:
+        with open(main_path, encoding="utf-8") as f:
             source = f.read()
         assert "AccessEnforcementMiddleware" in source, "Middleware not in main.py"
         # Verify check_access exists and works
@@ -73,7 +73,7 @@ class TestRouteAuth:
     def test_PA04_no_duplicate_legacy_routes(self):
         """PA04: Legacy routes (/api/mission, /api/missions, /api/stats) not in main.py inline."""
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path) as f:
+        with open(main_path, encoding="utf-8") as f:
             source = f.read()
         # Should NOT have @app.post("/api/mission") or @app.get("/api/missions") inline
         assert '@app.post("/api/mission"' not in source, "Legacy /api/mission still inline in main.py"
@@ -126,14 +126,14 @@ class TestWebSocketAuth:
     def test_PB01_ws_uses_strip_bearer(self):
         """PB01: api/ws.py uses centralized strip_bearer."""
         ws_path = os.path.join(os.path.dirname(__file__), "..", "api", "ws.py")
-        with open(ws_path) as f:
+        with open(ws_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
     def test_PB02_ws_no_inline_bearer_parsing(self):
         """PB02: No inline Bearer parsing in ws.py."""
         ws_path = os.path.join(os.path.dirname(__file__), "..", "api", "ws.py")
-        with open(ws_path) as f:
+        with open(ws_path, encoding="utf-8") as f:
             source = f.read()
         # Should not have replace("Bearer ", "")
         assert '.replace("Bearer ", "")' not in source, "Inline Bearer parsing in ws.py"
@@ -141,7 +141,7 @@ class TestWebSocketAuth:
     def test_PB03_ws_auth_before_accept(self):
         """PB03: WS verifies auth BEFORE accept()."""
         ws_path = os.path.join(os.path.dirname(__file__), "..", "api", "ws.py")
-        with open(ws_path) as f:
+        with open(ws_path, encoding="utf-8") as f:
             source = f.read()
         # close(code=1008) must come before accept()
         close_pos = source.find("close(code=1008)")
@@ -152,14 +152,14 @@ class TestWebSocketAuth:
     def test_PB04_ws_no_query_param_token(self):
         """PB04: WS docstring says no query params."""
         ws_path = os.path.join(os.path.dirname(__file__), "..", "api", "ws.py")
-        with open(ws_path) as f:
+        with open(ws_path, encoding="utf-8") as f:
             source = f.read()
         assert "query params" in source.lower() and "plus acceptés" in source.lower()
 
     def test_PB05_deps_uses_strip_bearer(self):
         """PB05: api/_deps.py uses centralized strip_bearer."""
         deps_path = os.path.join(os.path.dirname(__file__), "..", "api", "_deps.py")
-        with open(deps_path) as f:
+        with open(deps_path, encoding="utf-8") as f:
             source = f.read()
         assert "from api.token_utils import strip_bearer" in source
 
@@ -174,14 +174,14 @@ class TestDocsControl:
     def test_PC01_docs_env_var_exists(self):
         """PC01: ENABLE_API_DOCS env var controls /docs."""
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path) as f:
+        with open(main_path, encoding="utf-8") as f:
             source = f.read()
         assert "ENABLE_API_DOCS" in source
 
     def test_PC02_docs_conditional(self):
         """PC02: docs_url is conditional based on env var."""
         main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path) as f:
+        with open(main_path, encoding="utf-8") as f:
             source = f.read()
         assert 'docs_url="/docs" if _enable_docs else None' in source
 
@@ -192,7 +192,7 @@ class TestDocsControl:
             fpath = os.path.join(static_dir, fname)
             if not os.path.exists(fpath):
                 continue
-            with open(fpath) as f:
+            with open(fpath, encoding="utf-8") as f:
                 source = f.read()
             assert "jarvis_token" in source and "/api/v2/status" in source, \
                 f"{fname} missing session guard"
@@ -269,7 +269,7 @@ class TestSISafety:
     def test_PS01_no_write_text_in_active_si(self):
         """PS01: No write_text to repo in active SI path."""
         si_path = os.path.join(os.path.dirname(__file__), "..", "core", "self_improvement_loop.py")
-        with open(si_path) as f:
+        with open(si_path, encoding="utf-8") as f:
             source = f.read()
         # Find _execute_via_pipeline method
         assert "_execute_via_pipeline" in source
@@ -283,7 +283,7 @@ class TestSISafety:
     def test_PS02_pipeline_has_noop_check(self):
         """PS02: PromotionPipeline rejects no-op mutations."""
         pp_path = os.path.join(os.path.dirname(__file__), "..", "core", "self_improvement", "promotion_pipeline.py")
-        with open(pp_path) as f:
+        with open(pp_path, encoding="utf-8") as f:
             source = f.read()
         assert "noop_mutation" in source
 

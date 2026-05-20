@@ -29,7 +29,7 @@ sys.path.insert(0, '.')
 @pytest.mark.skip(reason="stale: response changed")
 def test_p1_single_mission_api():
     """Only one mission submission path is active in the main API."""
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     # ms.submit() is called once in _run_mission
     submit_calls = [l for l in src.splitlines() if "ms.submit(" in l and "#" not in l.lstrip()[:2]]
@@ -40,7 +40,7 @@ def test_p1_single_mission_api():
 
 def test_p1_convergence_router_is_separate():
     """Convergence router is a separate path (v3), not duplicating v1."""
-    with open("api/routes/convergence.py") as f:
+    with open("api/routes/convergence.py", encoding="utf-8") as f:
         src = f.read()
     assert "prefix=\"/api/v3\"" in src
     # It delegates to bridge, not directly to MissionSystem
@@ -53,9 +53,9 @@ def test_p1_convergence_router_is_separate():
 
 def test_p2_all_7_stages_wired():
     """All 7 lifecycle stages are recorded in the actual execution flow."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         ms_src = f.read()
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         tr_src = f.read()
 
     # mission_received is recorded via lifecycle_tracker.start(), not as a string literal
@@ -69,7 +69,7 @@ def test_p2_all_7_stages_wired():
 
 def test_p2_lifecycle_tracker_start_and_finish():
     """Lifecycle tracker is started and finished in mission_system."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert ".start(" in src  # lifecycle.start(mission_id)
     assert ".finish(" in src  # lifecycle.finish(mission_id)
@@ -81,7 +81,7 @@ def test_p2_lifecycle_tracker_start_and_finish():
 
 def test_p3_planner_queries_performance():
     """Planner integrates performance intelligence."""
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_performance_tracker" in src
     assert "tool_performance_tracker" in src
@@ -89,14 +89,14 @@ def test_p3_planner_queries_performance():
 
 def test_p3_executor_records_performance():
     """Tool executor records performance data."""
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "tool_performance_tracker" in src
 
 
 def test_p3_mission_complete_records_all():
     """Mission complete records to all memory systems."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_performance_tracker" in src
     assert "knowledge_ingestion" in src
@@ -157,28 +157,28 @@ def test_p3_full_loop_simulation():
 
 def test_p4_intelligence_flag_gates_planner():
     """Planner checks is_intelligence_enabled before performance queries."""
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "is_intelligence_enabled" in src
 
 
 def test_p4_proposals_flag_gates_detection():
     """Improvement detection is gated by is_proposals_enabled."""
-    with open("core/improvement_detector.py") as f:
+    with open("core/improvement_detector.py", encoding="utf-8") as f:
         src = f.read()
     assert "is_proposals_enabled" in src
 
 
 def test_p4_execution_engine_flag_gates_tool_runner():
     """Tool runner checks is_execution_engine_enabled."""
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         src = f.read()
     assert "is_execution_engine_enabled" in src
 
 
 def test_p4_dynamic_routing_flag():
     """Dynamic routing is gated by JARVIS_DYNAMIC_ROUTING."""
-    with open("core/dynamic_agent_router.py") as f:
+    with open("core/dynamic_agent_router.py", encoding="utf-8") as f:
         src = f.read()
     assert "JARVIS_DYNAMIC_ROUTING" in src
     assert "is_enabled" in src
@@ -201,9 +201,9 @@ def test_p4_kill_switch_actually_works():
 
 def test_p5_planner_roles_documented():
     """The two planners have distinct, documented roles."""
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         planner_src = f.read()
-    with open("core/mission_planner.py") as f:
+    with open("core/mission_planner.py", encoding="utf-8") as f:
         mp_src = f.read()
     # planner.py handles intelligence integration
     assert "performance_intelligence" in planner_src or "mission_performance_tracker" in planner_src
@@ -255,7 +255,7 @@ def test_p7_tool_definition_has_required_fields():
 
 def test_p8_multimodal_wired_to_agent_selector():
     """Agent selector includes multimodal routing overlay."""
-    with open("agents/crew.py") as f:
+    with open("agents/crew.py", encoding="utf-8") as f:
         src = f.read()
     assert "detect_multimodal_type" in src
     assert "get_multimodal_agents" in src
@@ -285,7 +285,7 @@ def test_p8_multimodal_detection_comprehensive():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_p9_cockpit_all_panels():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     panels = [
         "confidence-panel", "safety-panel", "lifecycle-panel",
@@ -300,7 +300,7 @@ def test_p9_cockpit_all_panels():
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_p9_cockpit_api_calls():
     """Cockpit JS calls real API endpoints."""
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     endpoints = [
         "/api/v3/performance/confidence",
@@ -554,5 +554,5 @@ def test_all_files_parse():
         "api/routes/performance.py", "api/main.py", "agents/crew.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

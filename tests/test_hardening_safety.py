@@ -513,7 +513,7 @@ class TestRollbackManager(unittest.TestCase):
         with RollbackContext(test_file):
             with open(test_file, "w") as f:
                 f.write("after")
-        with open(test_file) as f:
+        with open(test_file, encoding="utf-8") as f:
             self.assertEqual(f.read(), "after")
         os.unlink(test_file)
 

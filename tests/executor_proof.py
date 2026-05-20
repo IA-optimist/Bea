@@ -50,7 +50,7 @@ je2 = JarvisExecutionError.from_exception(OSError("network unreachable"))
 test("OSError → TRANSIENT retryable=True", je2.retryable is True and je2.error_type == "TRANSIENT")
 
 # Verify retry logic in code
-with open("core/tool_executor.py") as f:
+with open("core/tool_executor.py", encoding="utf-8") as f:
     te_code = f.read()
 has_retry_loop = "for attempt in range(max_retries + 1):" in te_code
 test("Retry loop exists in _execute_with_retry", has_retry_loop)
@@ -114,7 +114,7 @@ total_silent = 0
 for fp in HOT_FILES:
     if not os.path.exists(fp):
         continue
-    with open(fp) as fh:
+    with open(fp, encoding="utf-8") as fh:
         lines = fh.readlines()
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -133,7 +133,7 @@ print()
 # ── E7: Trace reconstructable after failed mission ────────────────────
 print("━━━ E7: TRACE AFTER FAILED MISSION ━━━")
 # Check that trace is saved even on failure path
-with open("core/action_executor.py") as f:
+with open("core/action_executor.py", encoding="utf-8") as f:
     ae_code = f.read()
 
 has_trace_on_complete = "trace.save()" in ae_code

@@ -325,30 +325,30 @@ def test_all_core_files_parse():
         "api/routes/performance.py",
     ]
     for f in core_files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 @pytest.mark.skip(reason="stale: removed files")
 def test_no_parallel_orchestration():
     """Ensure no duplicate orchestration paths were created."""
-    with open("core/business_pipeline.py") as f:
+    with open("core/business_pipeline.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
     assert "MetaOrchestrator" not in src
 
-    with open("core/workflow_runtime.py") as f:
+    with open("core/workflow_runtime.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
 
-    with open("core/connectors.py") as f:
+    with open("core/connectors.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
 
 
 def test_api_endpoint_count():
     """Verify we have comprehensive API coverage."""
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     # Count @router decorators
     count = src.count("@router.")
@@ -356,7 +356,7 @@ def test_api_endpoint_count():
 
 
 def test_cockpit_has_new_panels():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         src = f.read()
     assert "business-pipeline-panel" in src
     assert "workflow-runtime-panel" in src
@@ -384,7 +384,7 @@ def test_persistence_files_documented():
               "core/operating_primitives.py", "core/tool_performance_tracker.py",
               "core/mission_performance_tracker.py", "core/mission_memory.py",
               "core/improvement_proposals.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             all_source += fh.read()
     for path in expected:
         assert path in all_source, f"Persistence path not found: {path}"

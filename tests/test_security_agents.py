@@ -100,7 +100,7 @@ def test_sa17_skills_file_exists():
 def test_sa18_skills_file_valid_json():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     assert "skills" in data
     assert isinstance(data["skills"], list)
@@ -108,14 +108,14 @@ def test_sa18_skills_file_valid_json():
 def test_sa19_skills_count_50():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     assert 47 <= len(data["skills"]) <= 50
 
 def test_sa20_skills_all_have_required_fields():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     for skill in data["skills"]:
         assert "id" in skill
@@ -129,7 +129,7 @@ def test_sa20_skills_all_have_required_fields():
 def test_sa21_blue_team_skills_count():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     bt = [s for s in data["skills"] if s["domain"] == "blue_team"]
     assert len(bt) >= 10
@@ -137,7 +137,7 @@ def test_sa21_blue_team_skills_count():
 def test_sa22_red_team_skills_count():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     rt = [s for s in data["skills"] if s["domain"] == "red_team"]
     assert len(rt) >= 10
@@ -145,7 +145,7 @@ def test_sa22_red_team_skills_count():
 def test_sa23_compliance_skills_count():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     co = [s for s in data["skills"] if s["domain"] == "compliance"]
     assert len(co) >= 10
@@ -153,7 +153,7 @@ def test_sa23_compliance_skills_count():
 def test_sa24_osint_skills_count():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     os_skills = [s for s in data["skills"] if s["domain"] == "osint"]
     assert len(os_skills) >= 10
@@ -164,7 +164,7 @@ def test_sa24_osint_skills_count():
 def test_sa25_skill_ids_unique():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     ids = [s["id"] for s in data["skills"]]
     assert len(ids) == len(set(ids))
@@ -172,7 +172,7 @@ def test_sa25_skill_ids_unique():
 def test_sa26_skill_ids_format():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     for skill in data["skills"]:
         parts = skill["id"].split("-")
@@ -183,7 +183,7 @@ def test_sa26_skill_ids_format():
 def test_sa27_domain_values_valid():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     valid_domains = {"blue_team", "red_team", "compliance", "osint"}
     for skill in data["skills"]:
@@ -192,7 +192,7 @@ def test_sa27_domain_values_valid():
 def test_sa28_descriptions_not_empty():
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     for skill in data["skills"]:
         assert len(skill["description"]) > 10

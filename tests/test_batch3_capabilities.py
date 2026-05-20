@@ -130,7 +130,7 @@ def test_tool_gap_unmet_needs():
 # ═══════════════════════════════════════════════════════════════
 
 def test_api_main_registers_routers():
-    with open("api/main.py") as f:
+    with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
     assert "convergence_router" in src
     assert "performance_router" in src
@@ -139,7 +139,7 @@ def test_api_main_registers_routers():
 
 
 def test_planner_has_mission_memory():
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_memory" in src
     assert "proven_strategy" in src
@@ -149,7 +149,7 @@ def test_planner_has_mission_memory():
 
 
 def test_mission_system_has_mission_memory():
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_memory" in src
     assert "record_outcome" in src
@@ -158,7 +158,7 @@ def test_mission_system_has_mission_memory():
 
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_intelligence_overview():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     assert "intelligence-overview" in html
     assert "Strategy Memory" in html
@@ -167,7 +167,7 @@ def test_cockpit_has_intelligence_overview():
 
 
 def test_performance_api_has_new_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "tools/gaps" in src
     assert "memory/strategies" in src
@@ -182,5 +182,5 @@ def test_all_new_files_syntax():
         "api/main.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())

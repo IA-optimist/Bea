@@ -290,7 +290,7 @@ def test_all_new_files_syntax():
         "api/routes/performance.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
@@ -302,7 +302,7 @@ def test_modified_files_syntax():
         "static/cockpit.html",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             content = fh.read()
         if f.endswith('.py'):
             ast.parse(content)
@@ -312,7 +312,7 @@ def test_modified_files_syntax():
 
 
 def test_cockpit_has_performance_screen():
-    with open("static/cockpit.html") as f:
+    with open("static/cockpit.html", encoding="utf-8") as f:
         html = f.read()
     assert 'screen-performance' in html
     assert 'loadPerformance' in html
@@ -325,7 +325,7 @@ def test_cockpit_has_performance_screen():
 
 def test_tool_executor_wiring():
     """Tool executor now has performance tracking code."""
-    with open("core/tool_executor.py") as f:
+    with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     assert "tool_performance_tracker" in src
     assert "ToolExecution" in src
@@ -334,7 +334,7 @@ def test_tool_executor_wiring():
 
 def test_mission_system_wiring():
     """Mission system now has performance tracking code."""
-    with open("core/mission_system.py") as f:
+    with open("core/mission_system.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_performance_tracker" in src
     assert "MissionOutcome" in src
@@ -343,7 +343,7 @@ def test_mission_system_wiring():
 
 def test_planner_wiring():
     """Planner now has performance intelligence code."""
-    with open("core/planner.py") as f:
+    with open("core/planner.py", encoding="utf-8") as f:
         src = f.read()
     assert "mission_performance_tracker" in src
     assert "tool_performance_tracker" in src
@@ -352,5 +352,5 @@ def test_planner_wiring():
 
 
 def test_performance_router_syntax():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         ast.parse(f.read())

@@ -397,7 +397,7 @@ def test_scenario_multiplatform_messaging():
 
 @pytest.mark.skip(reason="stale: removed files")
 def test_connectors_no_duplicate_orchestration():
-    with open("core/connectors.py") as f:
+    with open("core/connectors.py", encoding="utf-8") as f:
         src = f.read()
     assert "MissionSystem" not in src
     assert "MissionStatus" not in src
@@ -408,11 +408,11 @@ def test_connectors_no_duplicate_orchestration():
 @pytest.mark.skip(reason="stale: removed files")
 def test_all_files_parse():
     for f in ["core/connectors.py", "api/routes/performance.py"]:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 def test_api_has_audit_endpoint():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/connectors/audit" in src

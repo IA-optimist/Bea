@@ -139,7 +139,7 @@ def test_dr16_skills_have_subdomain():
     import json
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     for skill in data["skills"]:
         assert "subdomain" in skill, f"Skill {skill['id']} missing subdomain"
@@ -149,7 +149,7 @@ def test_dr17_skills_have_expected_output_type():
     import json
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     valid_types = {"report", "assessment", "action", "artifact"}
     for skill in data["skills"]:
@@ -160,7 +160,7 @@ def test_dr18_blue_team_output_types():
     import json
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     bt = [s for s in data["skills"] if s["domain"] == "blue_team"]
     for s in bt:
@@ -170,7 +170,7 @@ def test_dr19_compliance_output_types():
     import json
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     co = [s for s in data["skills"] if s["domain"] == "compliance"]
     for s in co:
@@ -180,7 +180,7 @@ def test_dr20_osint_output_types():
     import json
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "business", "skills", "cybersecurity", "skill.json")
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     os_skills = [s for s in data["skills"] if s["domain"] == "osint"]
     for s in os_skills:

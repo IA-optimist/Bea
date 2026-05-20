@@ -350,7 +350,7 @@ class TestMemoryFacadeInPlanner(unittest.TestCase):
     def test_planner_has_facade_search_block(self):
         """Check that planner.py contains memory_facade import."""
         planner_path = os.path.join(_ROOT, "core", "planner.py")
-        with open(planner_path, "r") as f:
+        with open(planner_path, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("from core.memory_facade import get_memory_facade", content)
         self.assertIn("memory_facade_context", content)
@@ -358,7 +358,7 @@ class TestMemoryFacadeInPlanner(unittest.TestCase):
     def test_mission_system_has_facade_store(self):
         """Check that mission_system.py stores outcomes via facade."""
         ms_path = os.path.join(_ROOT, "core", "mission_system.py")
-        with open(ms_path, "r") as f:
+        with open(ms_path, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("from core.memory_facade import get_memory_facade", content)
         self.assertIn("content_type=\"mission_outcome\"", content)
@@ -369,7 +369,7 @@ class TestMonitoringHasFacadeHealth(unittest.TestCase):
 
     def test_monitoring_route_includes_facade(self):
         monitoring_path = os.path.join(_ROOT, "api", "routes", "monitoring.py")
-        with open(monitoring_path, "r") as f:
+        with open(monitoring_path, "r", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("memory_facade", content)
         self.assertIn("facade_health", content)

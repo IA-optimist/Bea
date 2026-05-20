@@ -46,41 +46,41 @@ class TestServerAuth:
     def test_auth_login_exists(self):
         """A1: /auth/login endpoint exists (alias)."""
         # Verify the route is registered in main.py
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert '/auth/login' in content
         assert 'login_alias' in content
 
     def test_auth_login_returns_role(self):
         """A2: /auth/login returns role and expires_in."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert 'role' in content
         assert 'expires_in' in content
 
     def test_auth_me_endpoint_exists(self):
         """A3: GET /auth/me endpoint exists."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert '/auth/me' in content
         assert 'authenticated' in content
 
     def test_auth_me_returns_401_on_invalid(self):
         """A4: /auth/me handles invalid tokens."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert 'Invalid or expired token' in content
 
     def test_auth_me_returns_401_no_token(self):
         """A5: /auth/me handles missing tokens."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert 'No token provided' in content
 
     @pytest.mark.xfail(reason="ROLE_PERMISSIONS mapping non-implémenté (feature drift)", strict=False)
     def test_auth_me_returns_role_permissions(self):
         """A6: /auth/me returns role and permissions."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         assert 'permissions' in content
         assert 'ROLE_PERMISSIONS' in content
@@ -142,7 +142,7 @@ class TestWebSessionContracts:
     @pytest.mark.xfail(reason="SessionStore class non-implémenté dans static/app.html (feature drift)", strict=False)
     def test_session_store_in_html(self):
         """A13: SessionStore.save exists in web frontend."""
-        with open("static/app.html") as f:
+        with open("static/app.html", encoding="utf-8") as f:
             content = f.read()
         assert "SessionStore" in content
         assert "save(" in content
@@ -153,7 +153,7 @@ class TestWebSessionContracts:
     @pytest.mark.xfail(reason="jarvis_admin_pw storage non-implémenté (feature drift)", strict=False)
     def test_session_clear_in_html(self):
         """A14: SessionStore.clear removes all keys."""
-        with open("static/app.html") as f:
+        with open("static/app.html", encoding="utf-8") as f:
             content = f.read()
         assert "clear()" in content
         # Must clear all storage keys
@@ -162,7 +162,7 @@ class TestWebSessionContracts:
     @pytest.mark.xfail(reason="remember-me checkbox non-implémenté (feature drift)", strict=False)
     def test_remember_me_checkbox(self):
         """A15: Remember me checkbox in login form."""
-        with open("static/app.html") as f:
+        with open("static/app.html", encoding="utf-8") as f:
             content = f.read()
         assert 'id="remember-me"' in content
         assert "Remember me" in content
@@ -177,7 +177,7 @@ class TestMobileSessionContracts:
     def test_session_manager_exists(self):
         """A16: SessionManager uses FlutterSecureStorage."""
         path = "jarvismax_app/lib/services/session_manager.dart"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "FlutterSecureStorage" in content
         assert "jarvis_auth_token" in content
@@ -186,7 +186,7 @@ class TestMobileSessionContracts:
     def test_logout_wipes_all(self):
         """A17: Logout deletes all secure storage entries."""
         path = "jarvismax_app/lib/services/session_manager.dart"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "delete(key: _keyToken)" in content
         assert "delete(key: _keyPassword)" in content
@@ -196,7 +196,7 @@ class TestMobileSessionContracts:
     def test_restore_returns_null_when_empty(self):
         """A18: restoreSession handles empty storage."""
         path = "jarvismax_app/lib/services/session_manager.dart"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "return null" in content
         # Must check for null/empty token

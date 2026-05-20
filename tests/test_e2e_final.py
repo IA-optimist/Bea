@@ -36,12 +36,12 @@ class TestContractUnity(unittest.TestCase):
     def test_no_alias_in_runner(self):
         import executor.runner as mod
         # Should NOT have an ExecutionResult attribute anymore
-        src = open(mod.__file__).read()
+        src = open(mod.__file__, encoding="utf-8").read()
         self.assertNotIn("ExecutionResult = ActionResult", src)
 
     def test_no_alias_in_safe_executor(self):
         import core.self_improvement.safe_executor as mod
-        src = open(mod.__file__).read()
+        src = open(mod.__file__, encoding="utf-8").read()
         self.assertNotIn("ExecutionResult = PatchResult", src)
 
     def test_error_taxonomy_complete(self):
@@ -131,7 +131,7 @@ class TestMemoryEffectiveness(unittest.TestCase):
             }) + "\n")
             path = f.name
         apply_decay(path)
-        with open(path) as fh:
+        with open(path, encoding="utf-8") as fh:
             high = json.loads(fh.readline())
             low = json.loads(fh.readline())
         self.assertGreater(high["confidence"], low["confidence"])

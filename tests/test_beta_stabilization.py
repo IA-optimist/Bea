@@ -150,7 +150,7 @@ def test_tool_quality_detection():
 
 def test_recovery_memory_used_in_execution():
     """Verify execution_engine.execute_tool_intelligently consults recovery memory."""
-    with open("core/execution_engine.py") as f:
+    with open("core/execution_engine.py", encoding="utf-8") as f:
         src = f.read()
     assert "get_best_recovery" in src
     assert "_recovery_hint" in src
@@ -282,7 +282,7 @@ def test_no_circular_fallback():
                 # allow_fallback=False on the recursive call
                 pass
     # Just verify the code structure prevents loops
-    with open("core/execution_engine.py") as f:
+    with open("core/execution_engine.py", encoding="utf-8") as f:
         src = f.read()
     assert "allow_fallback=False" in src
 
@@ -324,19 +324,19 @@ def test_all_files_syntax():
         "api/routes/performance.py",
     ]
     for f in files:
-        with open(f) as fh:
+        with open(f, encoding="utf-8") as fh:
             ast.parse(fh.read())
 
 
 def test_tool_runner_checks_safety():
-    with open("core/tool_runner.py") as f:
+    with open("core/tool_runner.py", encoding="utf-8") as f:
         src = f.read()
     assert "is_execution_engine_enabled" in src
     assert "safety_controls" in src
 
 
 def test_performance_api_has_safety_endpoints():
-    with open("api/routes/performance.py") as f:
+    with open("api/routes/performance.py", encoding="utf-8") as f:
         src = f.read()
     assert "/safety" in src
     assert "lifecycle/validate" in src

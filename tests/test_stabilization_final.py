@@ -33,7 +33,7 @@ class TestEntrypoints(unittest.TestCase):
         self.assertTrue(os.path.exists("main.py"))
 
     def test_main_py_is_canonical_docker_cmd(self):
-        with open("docker/Dockerfile") as f:
+        with open("docker/Dockerfile", encoding="utf-8") as f:
             content = f.read()
         self.assertIn('CMD ["python", "main.py"]', content)
 
@@ -65,7 +65,7 @@ class TestAPICoherence(unittest.TestCase):
         parts = []
         for path in _glob.glob("api/**/*.py", recursive=True):
             try:
-                with open(path) as fh:
+                with open(path, encoding="utf-8") as fh:
                     parts.append(fh.read())
             except (IOError, OSError):
                 _silent_log.debug("suppressed_exception", src='test_stabilization_final.py')
@@ -97,7 +97,7 @@ class TestFlutterPortConfig(unittest.TestCase):
     """Verify Flutter app uses canonical port 8000."""
 
     def test_api_config_profiles_use_port_8000(self):
-        with open("jarvismax_app/lib/config/api_config.dart") as f:
+        with open("jarvismax_app/lib/config/api_config.dart", encoding="utf-8") as f:
             content = f.read()
         # All profiles must use 8000
         for match in re.findall(r"'[^']+'\s*,\s*(\d+)", content):
@@ -110,7 +110,7 @@ class TestFlutterPortConfig(unittest.TestCase):
             for f in files:
                 if f.endswith(".dart"):
                     path = os.path.join(root, f)
-                    with open(path) as fh:
+                    with open(path, encoding="utf-8") as fh:
                         content = fh.read()
                     self.assertNotIn(":7070", content, f"Found :7070 in {path}")
 
@@ -121,13 +121,13 @@ class TestDocumentation(unittest.TestCase):
 
     @pytest.mark.xfail(reason="README missing PRIMARY INTERFACE text (drift)", strict=False)
     def test_readme_says_app_first(self):
-        with open("README.md") as f:
+        with open("README.md", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("PRIMARY INTERFACE", content.upper() if "primary" not in content else content)
 
     @pytest.mark.xfail(reason="ARCHITECTURE.md at root missing (moved to docs/)", strict=False)
     def test_architecture_says_app_primary(self):
-        with open("ARCHITECTURE.md") as f:
+        with open("ARCHITECTURE.md", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("primary", content.lower())
         self.assertIn("Jarvis App", content)
@@ -169,14 +169,14 @@ class TestAPIConsolidation(unittest.TestCase):
                          "api/control_api.py should be deleted")
 
     def test_api_main_docstring_is_canonical(self):
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             first_lines = f.read(200)
         self.assertIn("Canonical API", first_lines)
         self.assertNotIn("WIP", first_lines)
 
     def test_no_duplicate_router_mounts(self):
         """Each router should be mounted exactly once."""
-        with open("api/main.py") as f:
+        with open("api/main.py", encoding="utf-8") as f:
             content = f.read()
         # Count include_router calls for each router
         import re
@@ -208,12 +208,12 @@ class TestCIConfig(unittest.TestCase):
 
     @pytest.mark.xfail(reason="deploy.yml runs smoke tests via SSH, not pytest (design)", strict=False)
     def test_deploy_yml_runs_tests(self):
-        with open(".github/workflows/deploy.yml") as f:
+        with open(".github/workflows/deploy.yml", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("pytest", content)
 
     def test_requirements_has_pytest(self):
-        with open("requirements.txt") as f:
+        with open("requirements.txt", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("pytest", content)
 
@@ -227,17 +227,17 @@ class TestTelegramRemoved(unittest.TestCase):
                          "jarvis_bot/ should be deleted")
 
     def test_no_telegram_in_requirements(self):
-        with open("requirements.txt") as f:
+        with open("requirements.txt", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("python-telegram-bot", content)
 
     def test_no_telegram_in_main_py(self):
-        with open("main.py") as f:
+        with open("main.py", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("webhook", content.lower())
 
     def test_no_telegram_in_readme(self):
-        with open("README.md") as f:
+        with open("README.md", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("Telegram", content)
 

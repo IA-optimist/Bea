@@ -506,7 +506,7 @@ class TestPlanRunnerSafety:
     def test_PR40_runs_dashboard_exists(self):
         path = os.path.join(os.path.dirname(__file__), "..", "static", "runs.html")
         assert os.path.isfile(path)
-        content = open(path).read()
+        content = open(path, encoding="utf-8").read()
         assert "Active" in content
         assert "Awaiting Approval" in content or "approval" in content.lower()
         assert "Resume" in content

@@ -117,7 +117,7 @@ class TestStaging:
         from core.self_improvement.safety_boundary import stage_modification
         path = stage_modification("core/skills/test.py", "# test content\n")
         assert os.path.exists(path)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             assert f.read() == "# test content\n"
         os.unlink(path)
 

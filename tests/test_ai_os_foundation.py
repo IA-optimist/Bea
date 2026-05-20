@@ -20,7 +20,7 @@ class TestArchitecture:
     def test_AO01_architecture_md_exists(self):
         path = os.path.join(os.path.dirname(__file__), "..", "ARCHITECTURE.md")
         assert os.path.isfile(path)
-        content = open(path).read()
+        content = open(path, encoding="utf-8").read()
         assert "COGNITION LAYER" in content
         assert "SKILLS LAYER" in content
         assert "PLANNING LAYER" in content
@@ -363,7 +363,7 @@ class TestDashboard:
 
     def test_AO40_operations_has_seven_tabs(self):
         path = os.path.join(os.path.dirname(__file__), "..", "static", "operations.html")
-        content = open(path).read()
+        content = open(path, encoding="utf-8").read()
         for tab in ["Overview", "Agents", "Skills", "Tools", "Plans", "History", "Templates"]:
             assert tab in content, f"Missing tab: {tab}"
 
