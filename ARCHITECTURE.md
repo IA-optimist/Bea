@@ -108,6 +108,11 @@ These each need their own PR:
   aliases, static mount, and decision-memory wiring.
 - **Split `agents/crew.py`** (1390 lines, 10+ classes) per-agent files.
 - **Replace ~110 `print()` calls** in `core/orchestration/` with `structlog`.
-- **Centralise the `contracts.py` schemas** (currently fragmented across
-  `agents/`, `core/`, `executor/`, `kernel/execution/`).
+- ~~**Centralise the `contracts.py` schemas** (currently fragmented across
+  `agents/`, `core/`, `executor/`, `kernel/execution/`).~~ — Sprint 9.2:
+  the 4 files are layered, not duplicated. Centralising would break the
+  K1 rule on `kernel/`. Documented the boundaries + name collisions in
+  [`docs/CONTRACTS.md`](docs/CONTRACTS.md) instead. Two rename candidates
+  noted for a future PR (`executor.ExecutionStatus` → `ResultOutcome`,
+  `executor.ExecutionResult` → `ToolExecutionResult`).
 - **Multi-stage Dockerfile** — done in audit S4.A.
