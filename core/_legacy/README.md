@@ -9,7 +9,7 @@ This directory contains deprecated components that have been superseded by newer
 - ~~`orchestrator_v2.py`~~ — MOVED back to `core/orchestrator_v2.py` audit S8 (2026-05-20). It was mis-classified as legacy : MetaOrchestrator actively lazy-imports it for budget/DAG missions.
 
 ## Policy Engines
-- `policy_engine_v2.py` - Old PolicyEngine (replaced by kernel/policy/engine.py KernelPolicyEngine)
+- ~~`policy_engine_v2.py`~~ ~~`policy_engine_LEGACY_20260407.py`~~ — MOVED back to `core/policy_engine.py` audit S8 (2026-05-20). The migration guide in the header pointed to `core/policy/policy_engine.py` (Economic Policy Engine) but that file was never actually created — the 3 production call sites (main.py, kernel/adapters/policy_adapter.py, core/jarvis_executor.py) all still depend on this Constitution-based engine.
 
 ## Self-Improvement
 - `self_improvement_v1.py` - V1 monolithic self-improvement (replaced by core/self_improvement/)
@@ -22,15 +22,15 @@ All files in this directory are kept for historical reference only and should NO
 ## Migration debt (audit Sprint 3 P1, tracked 2026-05-19)
 
 The audit flagged five shim files in `core/` that still re-export from this
-directory, blocking the simple `rm -rf core/_legacy/`. 3/5 have been
+directory, blocking the simple `rm -rf core/_legacy/`. 4/5 have been
 addressed in audit S8 (2026-05-20):
 
 | Shim in core/                         | Re-exports from core/_legacy/                   | Status   |
 |---------------------------------------|-------------------------------------------------|----------|
-| ~~`core/mission_persistence.py`~~     | ~~`mission_persistence.py`~~                    | **promoted S8** (file moved out of legacy) |
-| ~~`core/orchestrator_v2.py`~~         | ~~`orchestrator_v2.py`~~                        | **promoted S8** (file moved out of legacy) |
-| `core/policy_engine.py`               | `policy_engine_LEGACY_20260407.py`              | open     |
-| ~~`core/self_improvement_engine.py`~~ | ~~`self_improvement_engine_v2.py`~~             | **migrated S8** (callers updated) |
+| ~~`core/mission_persistence.py`~~     | ~~`mission_persistence.py`~~                    | **promoted S8** |
+| ~~`core/orchestrator_v2.py`~~         | ~~`orchestrator_v2.py`~~                        | **promoted S8** |
+| ~~`core/policy_engine.py`~~           | ~~`policy_engine_LEGACY_20260407.py`~~          | **promoted S8** |
+| ~~`core/self_improvement_engine.py`~~ | ~~`self_improvement_engine_v2.py`~~             | **migrated S8** |
 | `core/self_improvement_loop.py`       | `self_improvement_loop_v2.py`                   | open     |
 
 **Migration plan** (a dedicated PR, not bundled with the hardening pass):
