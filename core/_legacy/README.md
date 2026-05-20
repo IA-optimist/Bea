@@ -22,8 +22,8 @@ All files in this directory are kept for historical reference only and should NO
 ## Migration debt (audit Sprint 3 P1, tracked 2026-05-19)
 
 The audit flagged five shim files in `core/` that still re-export from this
-directory, blocking the simple `rm -rf core/_legacy/`. 4/5 have been
-addressed in audit S8 (2026-05-20):
+directory, blocking the simple `rm -rf core/_legacy/`. **All 5 done in
+audit S8 (2026-05-20). Issue #15 closed.**
 
 | Shim in core/                         | Re-exports from core/_legacy/                   | Status   |
 |---------------------------------------|-------------------------------------------------|----------|
@@ -31,7 +31,20 @@ addressed in audit S8 (2026-05-20):
 | ~~`core/orchestrator_v2.py`~~         | ~~`orchestrator_v2.py`~~                        | **promoted S8** |
 | ~~`core/policy_engine.py`~~           | ~~`policy_engine_LEGACY_20260407.py`~~          | **promoted S8** |
 | ~~`core/self_improvement_engine.py`~~ | ~~`self_improvement_engine_v2.py`~~             | **migrated S8** |
-| `core/self_improvement_loop.py`       | `self_improvement_loop_v2.py`                   | open     |
+| ~~`core/self_improvement_loop.py`~~   | ~~`self_improvement_loop_v2.py`~~               | **promoted S8** |
+
+## What remains under core/_legacy/
+
+After S8 only `memory/` legacy files remain (out of scope for issue #15):
+
+- `core/_legacy/memory/legacy_knowledge_memory.py` (2 callers)
+- `core/_legacy/memory/memory_toolkit_legacy.py` (1 caller)
+- `core/_legacy/memory/vector_memory_legacy.py` (1 caller)
+- `core/_legacy/memory/intelligent_memory.py` (0 callers — orphan, safe
+  to delete in a follow-up)
+
+Plus the orphan `core/_legacy/policy_engine_v2.py` was deleted in S8 as
+free cleanup (0 callers, predates the policy_engine_LEGACY rename).
 
 **Migration plan** (a dedicated PR, not bundled with the hardening pass):
 1. Find every caller of each shim (`grep -rn 'core\\.mission_persistence\\|core\\.orchestrator_v2\\|...'`).
