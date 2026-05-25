@@ -6,7 +6,7 @@ requests>=2.32.5
 # Database
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
-sqlalchemy==2.0.23
+sqlalchemy==2.0.50
 alembic==1.13.1
 
 # Cache & Queue
@@ -18,8 +18,8 @@ celery==5.3.4
 # TODO(deferred): bump fastapi 0.109 → 0.115+ pour pull starlette 0.40+
 # (CVE-2024-47874, CVE-2025-54121) — breaking: Pydantic v2 lifecycle,
 # route signatures, OAuth2 flows. À planifier en PR dédiée.
-fastapi==0.109.1
-uvicorn[standard]==0.42.0
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)
 python-multipart==0.0.29
