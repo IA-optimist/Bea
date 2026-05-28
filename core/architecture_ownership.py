@@ -49,8 +49,8 @@ OWNERSHIP = {
 
     # --- Agent Selection ---
     "agent_selection": {
-        "canonical": "agents.crew.AgentSelector.select_agents",
-        "note": "Dynamic routing overlay from core.dynamic_agent_router is advisory, not owner.",
+        "canonical": "agents.selector.AgentSelector.select_agents",
+        "note": "agents.crew re-exports selector symbols for legacy imports; core.dynamic_agent_router remains advisory, not owner.",
     },
 
     # --- Tool Execution ---

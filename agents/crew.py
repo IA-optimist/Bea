@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from agents.contracts import AgentContract
 from agents.self_critic import SelfCriticMixin
 from core.reasoning_framework import INJECT_SCOUT, INJECT_PLANNER, INJECT_BUILDER, INJECT_REVIEWER, INJECT_ADVISOR
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -57,8 +56,13 @@ class BaseAgent(ABC):
                     action_type="agent_start",
                     reasoning=f"Starting {self.name}",
                 )))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='crew.py')
+        except Exception as _exc:
+            # Hardening M3: was DEBUG `suppressed_exception` (invisible in prod).
+            # Now WARNING with exception class + action so silently-broken event
+            # emission is observable in logs.
+            log.warning("swallowed_exception", action="agent_start_event_stream",
+                        agent=self.name, exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200])
         try:
             from core.llm_factory import LLMFactory
             factory = LLMFactory(self.s)
@@ -67,7 +71,8 @@ class BaseAgent(ABC):
                 from core.learning_loop import get_learning_loop
                 _addon = await get_learning_loop().get_agent_system_prompt_addon(self.name)
                 if _addon: _sys += "\n\n" + _addon
-            except Exception: pass
+            except Exception as e:
+                log.debug("learning_loop_prompt_addon_skipped", agent=self.name, err=str(e)[:60])
             # Build user message with real repo context injection
             _user_msg = self.user_message(session)
             try:
@@ -95,8 +100,11 @@ class BaseAgent(ABC):
             try:
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
+            except Exception as _exc:
+                # Hardening M3.
+                log.warning("swallowed_exception", action="emit_agent_result",
+                            agent=self.name, exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200])
             # Emit agent_output to EventStream (fail-open)
             try:
                 from core.event_stream import get_mission_stream
@@ -109,8 +117,11 @@ class BaseAgent(ABC):
                         content=out[:500],
                         metadata={"agent": self.name, "ms": ms, "chars": len(out)},
                     ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
+            except Exception as _exc:
+                # Hardening M3.
+                log.warning("swallowed_exception", action="emit_agent_output_observation",
+                            agent=self.name, exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200])
             log.info(f"{self.name}_done", ms=ms, chars=len(out))
             return out
         except asyncio.TimeoutError:
@@ -889,8 +900,11 @@ class ImageAgent(BaseAgent):
             try:
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
+            except Exception as _exc:
+                # Hardening M3.
+                log.warning("swallowed_exception", action="emit_image_agent_result",
+                            agent=self.name, exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200])
             return out
         except Exception as e:
             log.error("image_agent_error", err=str(e)[:120])
@@ -899,8 +913,11 @@ class ImageAgent(BaseAgent):
             try:
                 from api.event_emitter import emit_agent_result
                 emit_agent_result(session.session_id, self.name, out)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
+            except Exception as _exc:
+                # Hardening M3.
+                log.warning("swallowed_exception", action="emit_image_agent_error",
+                            agent=self.name, exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200])
             return out
 
     @staticmethod
@@ -958,433 +975,15 @@ class MapPlannerWithCritic(SelfCriticMixin, MapPlanner):
 # AGENT CREW — Registre et dispatcher
 # ══════════════════════════════════════════════════════════════
 
-class AgentCrew:
-    def __init__(self, settings):
-        self.s = settings
-        self.registry: dict[str, BaseAgent] = {
-            "atlas-director": AtlasDirector(settings),
-            "scout-research": ScoutResearch(settings),
-            # Critic variants activés en production (1 round de révision)
-            "map-planner":    MapPlannerWithCritic(settings),
-            "forge-builder":  ForgeBuilderWithCritic(settings),
-            "lens-reviewer":  LensReviewer(settings),
-            "vault-memory":   VaultMemory(settings),
-            "shadow-advisor": ShadowAdvisor(settings),
-            "pulse-ops":      PulseOps(settings),
-            "night-worker":   NightWorker(settings),
-            # HuggingFace image generation agent
-            "image-agent":    ImageAgent(settings),
-        }
-        self._register_v2_agents(settings)
-        self.tools: dict = self._init_tools()
-
-    def _init_tools(self) -> dict:
-        """Initialise les outils disponibles pour les agents (BrowserTool, …)."""
-        tools: dict = {}
-        try:
-            from tools.browser_tool import BrowserTool
-            tools["browser"] = BrowserTool()
-            log.info("tool_registered", name="browser")
-        except Exception as e:
-            log.warning("tool_init_failed", name="browser", err=str(e)[:80])
-        return tools
-
-    def _register_v2_agents(self, settings) -> None:
-        """Enregistre les agents v2 (DebugAgent, RecoveryAgent, MonitoringAgent)."""
-        for agent_name, module_path, class_name in [
-            ("debug-agent",      "agents.debug_agent",      "DebugAgent"),
-            ("recovery-agent",   "agents.recovery_agent",   "RecoveryAgent"),
-            ("monitoring-agent", "agents.monitoring_agent", "MonitoringAgent"),
-        ]:
-            try:
-                mod = __import__(module_path, fromlist=[class_name])
-                cls = getattr(mod, class_name)
-                self.registry[agent_name] = cls(settings)
-                log.info("agent_registered", name=agent_name)
-            except Exception as e:
-                log.warning("agent_register_failed", name=agent_name, err=str(e)[:80])
-        self._register_jarvis_team(settings)
-
-    def _register_jarvis_team(self, settings) -> None:
-        """Register jarvis-team agents (meta-level codebase agents). Fail-open."""
-        try:
-            from agents.jarvis_team import JARVIS_TEAM_AGENTS
-            for agent_name, agent_cls in JARVIS_TEAM_AGENTS.items():
-                try:
-                    self.registry[agent_name] = agent_cls(settings)
-                    log.info("agent_registered", name=agent_name, team="jarvis")
-                except Exception as e:
-                    log.warning("jarvis_team_agent_failed", name=agent_name, err=str(e)[:80])
-        except Exception as e:
-            log.debug("jarvis_team_import_skipped", err=str(e)[:80])
-
-    def discover(self, extra_agents=None) -> None:
-        """Enregistre des agents supplementaires dynamiquement."""
-        for agent in (extra_agents or []):
-            self.registry[agent.name] = agent
-            log.info("agent_discovered", name=agent.name)
-
-    def list_agents(self) -> list:
-        """Retourne la liste des agents enregistres avec leurs metadonnees."""
-        return [
-            {"name": name, "role": getattr(a, "role", "?"), "timeout": getattr(a, "timeout_s", "?")}
-            for name, a in self.registry.items()
-        ]
-
-    async def run(self, name: str, session: JarvisSession) -> str:
-        agent = self.registry.get(name)
-        if not agent:
-            log.warning("unknown_agent", name=name)
-            return ""
-        return await agent.run(session)
-
-    def add(self, agent: BaseAgent):
-        """Enregistre un agent personnalisé (extensibilité)."""
-        self.registry[agent.name] = agent
-        log.info("agent_registered", name=agent.name)
-
-
-# ── AgentSelector (V1 optimisé) ──────────────────────────────────────────────
-
-# Profils agents par rôle
-AGENT_PROFILES = {
-    "scout-research": {"domains": ["research", "analysis", "business", "cyber"], "cost": 1},
-    "map-planner":    {"domains": ["all"], "cost": 1},
-    "shadow-advisor": {"domains": ["all"], "cost": 1},
-    "forge-builder":  {"domains": ["dev", "saas", "automation", "file"], "cost": 2},
-    "lens-reviewer":  {"domains": ["all"], "cost": 1},
-    "vault-memory":   {"domains": ["memory", "history", "context"], "cost": 1},
-    "pulse-ops":      {"domains": ["ops", "monitoring", "infra"], "cost": 2},
-}
-
-MAX_AGENTS_PER_MISSION = 5
-
-# Mission-type-first routing table (taxonomy v2)
-MISSION_ROUTING: dict[str, list[str]] = {
-    "coding_task":           ["forge-builder"],
-    "debug_task":            ["forge-builder", "lens-reviewer"],
-    "architecture_task":     ["map-planner", "lens-reviewer"],
-    "system_task":           ["pulse-ops"],
-    "planning_task":         ["map-planner"],
-    "business_task":         ["scout-research", "map-planner"],
-    "research_task":         ["scout-research"],
-    "info_query":            ["scout-research"],
-    "compare_query":         ["scout-research", "lens-reviewer"],
-    "evaluation_task":       ["lens-reviewer"],
-    "self_improvement_task": ["shadow-advisor"],
-}
-
-# Agents préférés par domaine (Phase 5 — DomainRouter)
-DOMAIN_AGENT_PROFILES: dict[str, list[str]] = {
-    "software_dev":  ["scout-research", "map-planner", "forge-builder", "shadow-advisor", "lens-reviewer"],
-    "ai_engineer":   ["scout-research", "map-planner", "forge-builder", "shadow-advisor", "lens-reviewer"],
-    "cyber_security":["scout-research", "shadow-advisor", "map-planner", "lens-reviewer"],
-    "automation":    ["map-planner", "forge-builder", "lens-reviewer"],
-    "business":      ["scout-research", "map-planner", "shadow-advisor", "lens-reviewer"],
-    "saas_builder":  ["scout-research", "map-planner", "forge-builder", "shadow-advisor", "lens-reviewer"],
-    "general":       ["map-planner", "lens-reviewer"],
-}
-
-
-class AgentSelector:
-    """
-    Sélectionne le minimum d'agents nécessaires pour une mission.
-
-    Règles V1 :
-    - Toujours : map-planner, lens-reviewer
-    - scout-research si mots-clés research/analysis/report/context
-    - shadow-advisor si MEDIUM/HIGH risk ou mots-clés risk/security/delete/modify
-    - forge-builder UNIQUEMENT si mots-clés code/file/create/build/write/script
-    - vault-memory UNIQUEMENT si mots-clés memory/history/past/remember
-    - pulse-ops UNIQUEMENT si mots-clés monitor/infra/ops/deploy/status
-    - Jamais > MAX_AGENTS_PER_MISSION (5)
-    """
-
-    _ALWAYS = ["map-planner", "lens-reviewer"]
-
-    _RESEARCH_KW = frozenset({
-        "research", "recherche", "analyse", "analyser", "analysis", "report",
-        "rapport", "bilan", "context", "contexte", "inspect", "audit",
-        "étude", "synthèse", "investigate", "explore",
-    })
-    _RISK_KW = frozenset({
-        "risk", "risque", "security", "sécurité", "delete", "supprimer", "drop",
-        "modify", "modifier", "remove", "dangerous", "critical", "exploit",
-        "vulnerability", "pentest",
-    })
-    _CODE_KW = frozenset({
-        "code", "créer", "crée", "create", "file", "fichier", "build", "write",
-        "écrire", "script", "programme", "function", "fonction", "class", "module",
-        "api", "library", "test", "debug", "bug", "implement", "développe",
-    })
-    _MEMORY_KW = frozenset({
-        "memory", "mémoire", "history", "historique", "past", "passé",
-        "remember", "souviens", "rappelle", "précédent",
-    })
-    _OPS_KW = frozenset({
-        "monitor", "monitoring", "infra", "infrastructure", "ops", "deploy",
-        "deployment", "status", "cron", "pipeline", "service", "container",
-    })
-
-    _PLANNING_KW = frozenset({
-        "plan", "roadmap", "étapes", "phases", "strategy", "architecture",
-    })
-
-    def select_agents(
-        self,
-        goal: str,
-        risk_level: str = "LOW",
-        domain: str = "general",
-        mission_type: str = "",
-        preferred_agents: list[str] | None = None,
-        complexity: str = "medium",
-    ) -> list[str]:
-        """
-        Retourne la liste minimale des agents à activer.
-        Ne dépasse jamais MAX_AGENTS_PER_MISSION.
-        Piloté par complexity : low=1 agent, medium=2-3, high=logique complète.
-        """
-        from core.mission_system import is_capability_query
-        if is_capability_query(goal):
-            log.info("agent_selector_capability_query", goal=goal[:60])
-            return []
-
-        g  = goal.lower()
-        rl = risk_level.upper()
-        cx = complexity.lower()
-
-        # ── PolicyMode override (fail-open) ─────────────────────────────────
-        try:
-            from core.policy_mode import get_policy_mode_store
-            _pm = get_policy_mode_store().get().value
-        except Exception:
-            _pm = "BALANCED"
-        # Sera utilisé plus bas pour SAFE cap et UNCENSORED boost
-        # ── end PolicyMode read ──────────────────────────────────────────────
-
-        # ── MISSION_TYPE-FIRST ROUTING ────────────────────────────────────────
-        if mission_type in MISSION_ROUTING:
-            base = list(MISSION_ROUTING[mission_type])
-            if cx == "low":
-                agents = base[:1]
-            elif cx == "medium":
-                agents = base[:2]
-            else:  # high
-                agents = list(base)
-                if rl in ("MEDIUM", "HIGH") and "shadow-advisor" not in agents:
-                    agents.append("shadow-advisor")
-
-            # ── Dynamic routing overlay (fail-open) ──────────────────────
-            try:
-                from core.dynamic_agent_router import route_agents
-                agents = route_agents(
-                    goal=goal,
-                    mission_type=mission_type,
-                    complexity=cx,
-                    risk_level=rl,
-                    static_candidates=agents,
-                    max_agents=MAX_AGENTS_PER_MISSION,
-                )
-            except Exception as _dr_err:
-                log.debug("dynamic_routing_skipped", err=str(_dr_err)[:60])
-            # ── end dynamic routing ──────────────────────────────────────
-
-            # ── Multimodal routing overlay (fail-open) ───────────────────
-            try:
-                from core.dynamic_agent_router import detect_multimodal_type, get_multimodal_agents
-                _modal = detect_multimodal_type(goal)
-                if _modal:
-                    _modal_agents = get_multimodal_agents(_modal)
-                    for _ma in _modal_agents:
-                        if _ma not in agents:
-                            agents.append(_ma)
-                    log.info("multimodal_routing", type=_modal, agents=agents)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
-            # ── end multimodal routing ───────────────────────────────────
-
-            # Capability registry filter (fail-open, ≥10 entries)
-            try:
-                from memory.capability_registry import CapabilityRegistry
-                from memory.decision_memory import get_decision_memory
-                _dm = get_decision_memory()
-                if len(_dm._entries) >= 10:
-                    _reg = CapabilityRegistry()
-                    _reg.build_from_memory(_dm)
-                    _f = [
-                        a for a in agents
-                        if _reg.score_agent_for_context(a, mission_type, cx) >= 0.3
-                    ]
-                    if _f:
-                        agents = _f
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='crew.py')
-            log.info(
-                "agent_selector_mission_routing",
-                agents=agents, mission_type=mission_type,
-                complexity=cx, risk=risk_level, count=len(agents),
-            )
-            return agents
-
-        # ── LOW → 1 agent strict ──────────────────────────────────────────────
-        if cx == "low":
-            agent = "forge-builder" if "code" in g else "scout-research"
-            log.info(
-                "agent_selector_v1",
-                agents=[agent], goal=goal[:60], risk=risk_level,
-                domain=domain, count=1, complexity=cx,
-            )
-            return [agent]
-
-        # ── MEDIUM → 2-3 agents ───────────────────────────────────────────────
-        if cx == "medium":
-            agents = ["scout-research", "lens-reviewer"]
-            if rl in ("MEDIUM", "HIGH"):
-                agents.append("shadow-advisor")
-            log.info(
-                "agent_selector_v1",
-                agents=agents, goal=goal[:60], risk=risk_level,
-                domain=domain, count=len(agents), complexity=cx,
-            )
-            return agents
-
-        # ── HIGH → logique complète (map-planner conditionnel) ────────────────
-        # Base : lens-reviewer toujours, map-planner uniquement si mots planning
-        agents: list[str] = ["lens-reviewer"]
-        if any(kw in g for kw in self._PLANNING_KW):
-            agents.insert(0, "map-planner")
-
-        # Si un profil de domaine est fourni, utiliser ses agents préférés comme guide
-        if preferred_agents:
-            domain_set = preferred_agents
-        else:
-            domain_set = DOMAIN_AGENT_PROFILES.get(domain, DOMAIN_AGENT_PROFILES["general"])
-
-        # scout-research : mots-clés recherche/analyse
-        if any(kw in g for kw in self._RESEARCH_KW) or "scout-research" in domain_set:
-            if "scout-research" not in agents:
-                agents.insert(0, "scout-research")
-
-        # shadow-advisor : MEDIUM/HIGH risk OU mots-clés sensibles
-        if rl in ("MEDIUM", "HIGH") or any(kw in g for kw in self._RISK_KW):
-            if "shadow-advisor" not in agents:
-                agents.append("shadow-advisor")
-
-        # forge-builder : mots-clés code/construction (indépendant du domaine)
-        if any(kw in g for kw in self._CODE_KW):
-            if "forge-builder" not in agents:
-                agents.append("forge-builder")
-
-        # vault-memory : mots-clés mémoire/historique
-        if any(kw in g for kw in self._MEMORY_KW):
-            if "vault-memory" not in agents:
-                agents.insert(0, "vault-memory")
-
-        # pulse-ops : mots-clés ops/monitoring
-        if any(kw in g for kw in self._OPS_KW):
-            if "pulse-ops" not in agents:
-                agents.append("pulse-ops")
-
-        # Cap strict MAX_AGENTS_PER_MISSION
-        # Priorité de conservation : map-planner, lens-reviewer, shadow-advisor, scout-research, forge-builder, vault-memory, pulse-ops
-        _priority_order = [
-            "map-planner", "lens-reviewer", "shadow-advisor",
-            "scout-research", "forge-builder", "vault-memory", "pulse-ops",
-        ]
-        if len(agents) > MAX_AGENTS_PER_MISSION:
-            # Garder dans l'ordre de priorité
-            kept = []
-            for p in _priority_order:
-                if p in agents and len(kept) < MAX_AGENTS_PER_MISSION:
-                    kept.append(p)
-            agents = kept
-
-        log.info(
-            "agent_selector_v1",
-            agents=agents,
-            goal=goal[:60],
-            risk=risk_level,
-            domain=domain,
-            count=len(agents),
-        )
-        try:
-            from memory.decision_memory import get_decision_memory, classify_mission_type
-            agents = get_decision_memory().suggest_agents(
-                classify_mission_type(goal, complexity), complexity, agents,
-            )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='crew.py')
-
-        # ── Capability registry filter (fail-open, < 1ms) ────────────────────
-        try:
-            from memory.capability_registry import CapabilityRegistry
-            from memory.decision_memory import get_decision_memory, classify_mission_type
-            _dm = get_decision_memory()
-            if len(_dm._entries) >= 10:
-                _reg = CapabilityRegistry()
-                _reg.build_from_memory(_dm)
-                _mtype = classify_mission_type(goal, complexity)
-
-                _filtered = [
-                    a for a in agents
-                    if _reg.score_agent_for_context(a, _mtype, complexity) >= 0.3
-                ]
-                if _filtered:
-                    agents = _filtered
-
-                if complexity != "low" and len(agents) < MAX_AGENTS_PER_MISSION:
-                    _recommended = _reg.get_recommended_agents(_mtype, complexity, 1)
-                    for _rec in _recommended:
-                        if _rec not in agents and len(agents) < MAX_AGENTS_PER_MISSION:
-                            agents.append(_rec)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='crew.py')
-
-        # ── PolicyMode apply ─────────────────────────────────────────────────
-        try:
-            if _pm == "SAFE":
-                # Force 1 agent max, jamais shadow/planner
-                safe_filter = [a for a in agents if a not in ("shadow-advisor", "map-planner")]
-                agents = safe_filter[:1] if safe_filter else agents[:1]
-            elif _pm == "UNCENSORED" and complexity != "low":
-                # Boost exploration : ajoute lens-reviewer + map-planner si pas présents et pas info_query
-                from memory.decision_memory import classify_mission_type
-                _mt = mission_type if mission_type else ""
-                if _mt not in ("info_query", "compare_query", "planning_task"):
-                    if "lens-reviewer" not in agents and len(agents) < 4:
-                        agents = agents + ["lens-reviewer"]
-                    if "map-planner" not in agents and len(agents) < 5 and complexity == "high":
-                        agents = agents + ["map-planner"]
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='crew.py')
-        # ── end PolicyMode apply ─────────────────────────────────────────────
-
-        return agents
-
-
-_selector_instance: AgentSelector | None = None
-
-
-def get_agent_selector() -> AgentSelector:
-    global _selector_instance
-    if _selector_instance is None:
-        _selector_instance = AgentSelector()
-    return _selector_instance
-
-
-def select_agents(
-    goal: str,
-    risk_level: str = "LOW",
-    domain: str = "general",
-    complexity: str = "medium",
-    *,
-    mission_type: str = "",
-) -> list[str]:
-    """Module-level convenience wrapper around AgentSelector.select_agents()."""
-    return get_agent_selector().select_agents(
-        goal,
-        risk_level=risk_level,
-        domain=domain,
-        mission_type=mission_type,
-        complexity=complexity,
-    )
+# AgentCrew compatibility export. New code should import from agents.crew_runtime.
+from agents.crew_runtime import AgentCrew as AgentCrew
+# AgentSelector compatibility exports. New code should import from agents.selector.
+from agents.selector import (
+    AGENT_PROFILES as AGENT_PROFILES,
+    DOMAIN_AGENT_PROFILES as DOMAIN_AGENT_PROFILES,
+    MAX_AGENTS_PER_MISSION as MAX_AGENTS_PER_MISSION,
+    MISSION_ROUTING as MISSION_ROUTING,
+    AgentSelector as AgentSelector,
+    get_agent_selector as get_agent_selector,
+    select_agents as select_agents,
+)

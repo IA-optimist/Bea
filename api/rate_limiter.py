@@ -12,6 +12,7 @@ Design:
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections import defaultdict
 from threading import Lock
@@ -29,6 +30,26 @@ ROUTE_LIMITS: dict[str, tuple[int, int]] = {
     "/health":    (120, 60),    # Health: 120/min
     "default":    (30, 60),     # Everything else: 30/min
 }
+
+
+def _trusted_proxy_ips() -> set[str]:
+    return {
+        ip.strip()
+        for ip in os.getenv("TRUSTED_PROXY_IPS", "").split(",")
+        if ip.strip()
+    }
+
+
+def _client_ip_from_scope(scope) -> str:
+    direct_ip = scope.get("client", ("unknown",))[0] if scope.get("client") else "unknown"
+    if direct_ip not in _trusted_proxy_ips():
+        return direct_ip
+
+    headers = dict(scope.get("headers", []))
+    fwd = headers.get(b"x-forwarded-for", b"").decode("latin-1").strip()
+    if not fwd:
+        return direct_ip
+    return fwd.split(",", 1)[0].strip() or direct_ip
 
 
 def _route_key(path: str) -> str:
@@ -191,14 +212,8 @@ class RateLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Extract client IP from X-Forwarded-For or direct connection
-        client_ip = "unknown"
-        headers = dict(scope.get("headers", []))
-        fwd = headers.get(b"x-forwarded-for", b"").decode("latin-1").strip()
-        if fwd:
-            client_ip = fwd.split(",")[0].strip()
-        elif scope.get("client"):
-            client_ip = scope["client"][0]
+        # Trust X-Forwarded-For only from explicitly configured proxies.
+        client_ip = _client_ip_from_scope(scope)
 
         try:
             allowed = _global_limiter.allow(client_ip, path)

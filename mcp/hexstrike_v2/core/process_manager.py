@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import psutil
+import shlex
 import subprocess
 import threading
 import time
@@ -109,10 +110,14 @@ class ProcessManager:
             )
 
         try:
-            # Start process
+            # Start process without a shell. Existing callers may pass a
+            # command string; parse it into argv instead of invoking a shell.
+            args = shlex.split(command) if isinstance(command, str) else list(command)
+            if not args:
+                raise ValueError("Command cannot be empty")
             process = subprocess.Popen(
-                command,
-                shell=True,
+                args,
+                shell=False,
                 stdout=subprocess.PIPE if capture_output else None,
                 stderr=subprocess.PIPE if capture_output else None,
                 text=True,

@@ -1,11 +1,20 @@
-FROM python:3.12-slim
+# ⚠️ DEPRECATED — Ne pas utiliser en CI/prod. ⚠️
+#
+# Le Dockerfile CANONIQUE est `docker/Dockerfile` (multi-stage, non-root,
+# user `jarvis`). Il est référencé par :
+#   - .github/workflows/ci.yml      (build CI)
+#   - .github/workflows/deploy.yml  (build prod, "canonical non-root")
+#   - docker-compose.yml            (service api)
+#   - docker-compose.prod.yml
+#   - docker-compose.test.yml
+#
+# Ce fichier-ci est conservé temporairement pour les vieux workflows manuels
+# (`docker build .` sans `-f`) mais NE DOIT PAS être étendu. À supprimer
+# dans une PR dédiée après confirmation qu'aucun script local ne dépend de lui.
+#
+# Le TODO historique sur la migration non-root a été résolu dans `docker/Dockerfile`.
 
-# TODO(security): passer en USER non-root. Nécessite une migration coordonnée :
-#   1. useradd -m jarvis && chown -R jarvis /app /home/jarvis/.jarvismax
-#   2. Adapter le volume mount (docker-compose.yml: ~/.jarvismax:/root/.jarvismax
-#      → ~/.jarvismax:/home/jarvis/.jarvismax)
-#   3. Adapter les scripts qui assument /root (start_with_deps.sh, etc.)
-# Laisser en root pour l'instant afin de ne pas casser les déploiements existants.
+FROM python:3.12-slim
 
 WORKDIR /app
 

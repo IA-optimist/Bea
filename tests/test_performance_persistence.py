@@ -271,7 +271,7 @@ class TestShutdownIntegration:
         main_mod = importlib.import_module("api.main")
         source = inspect.getsource(main_mod)
         assert "save_performance" in source
-        assert "on_event" in source and "shutdown" in source
+        assert "lifespan" in source and "_on_shutdown" in source
 
     def test_PP17_snapshot_loop_saves_periodically(self):
         """Metrics bridge snapshot loop includes kernel performance save."""

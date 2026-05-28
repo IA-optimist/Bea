@@ -164,7 +164,8 @@ def verify_token(token_str: str) -> Optional[dict]:
     # Path 3: Static API token fallback
     from config.settings import get_settings
     settings = get_settings()
-    if hasattr(settings, 'jarvis_api_token') and token_str == settings.jarvis_api_token:
+    configured_static = getattr(settings, 'jarvis_api_token', '') or ''
+    if configured_static and hmac.compare_digest(token_str.encode(), configured_static.encode()):
         return {"username": "api", "role": "admin", "auth_type": "static"}
 
     return None

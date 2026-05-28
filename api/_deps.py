@@ -1,4 +1,4 @@
-"""
+﻿"""
 api/_deps.py — Shared auth, getters, and utilities for all route modules.
 """
 from __future__ import annotations
@@ -58,7 +58,7 @@ def require_auth(
         raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 
     # Static token match
-    if _API_TOKEN and token == _API_TOKEN:
+    if _API_TOKEN and hmac.compare_digest(token.encode(), _API_TOKEN.encode()):
         return {"username": "api", "role": "admin", "auth_type": "static"}
 
     # JWT or access token

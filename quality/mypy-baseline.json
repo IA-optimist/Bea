@@ -1,0 +1,10 @@
+{
+  "scope": [
+    "core",
+    "api",
+    "kernel"
+  ],
+  "max_errors": 5000,
+  "created": "2026-05-28",
+  "policy": "Ratchet this number downward after each cleanup; CI fails on increases."
+}

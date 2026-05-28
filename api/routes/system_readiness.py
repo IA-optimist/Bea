@@ -6,6 +6,7 @@ Uses runtime route introspection (not the unused router_registry).
 """
 from __future__ import annotations
 
+import os
 import structlog
 from fastapi import APIRouter
 
@@ -52,6 +53,40 @@ EXPECTED_COMPONENTS = {
 }
 
 
+def build_readiness_payload(
+    mounted_paths: set[str],
+    expected_components: dict[str, str] | None = None,
+) -> dict:
+    expected = expected_components or EXPECTED_COMPONENTS
+
+    loaded = []
+    failed = []
+    for name, signature_path in expected.items():
+        found = any(signature_path in p for p in mounted_paths)
+        if found:
+            loaded.append(name)
+        else:
+            failed.append(name)
+
+    total_routes = len(mounted_paths)
+    production = os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes")
+    allowed_failures = 0 if production else 5
+    ready = len(failed) <= allowed_failures
+
+    return {
+        "ready": ready,
+        "total_routes_mounted": total_routes,
+        "components": {
+            "loaded": len(loaded),
+            "failed": len(failed),
+            "loaded_list": sorted(loaded),
+            "failed_list": sorted(failed),
+        },
+        "allowed_failures": allowed_failures,
+        "summary": f"{len(loaded)}/{len(expected)} components loaded, {total_routes} routes mounted",
+    }
+
+
 @router.get("/readiness", tags=["system"])
 async def system_readiness():
     """Report which API components are loaded vs missing.
@@ -73,26 +108,4 @@ async def system_readiness():
                 if hasattr(sub, "path"):
                     mounted_paths.add(sub.path)
 
-    loaded = []
-    failed = []
-    for name, signature_path in EXPECTED_COMPONENTS.items():
-        found = any(signature_path in p for p in mounted_paths)
-        if found:
-            loaded.append(name)
-        else:
-            failed.append(name)
-
-    total_routes = len(mounted_paths)
-    ready = len(failed) <= 5  # allow up to 5 optional missing components
-
-    return {
-        "ready": ready,
-        "total_routes_mounted": total_routes,
-        "components": {
-            "loaded": len(loaded),
-            "failed": len(failed),
-            "loaded_list": sorted(loaded),
-            "failed_list": sorted(failed),
-        },
-        "summary": f"{len(loaded)}/{len(EXPECTED_COMPONENTS)} components loaded, {total_routes} routes mounted",
-    }
+    return build_readiness_payload(mounted_paths)

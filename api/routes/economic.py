@@ -22,8 +22,8 @@ logger = logging.getLogger("jarvis.api.economic")
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.
-from api._deps import _check_auth
-_auth = Depends(_check_auth)
+from api._deps import require_auth
+_auth = Depends(require_auth)
 
 router = APIRouter(
     prefix="/api/v3/economic",
