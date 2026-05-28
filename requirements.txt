@@ -14,11 +14,17 @@ redis==5.0.1
 celery==5.3.4
 
 # Web framework
-# fastapi 0.109.0 → 0.109.1 (PYSEC-2024-38)
-# TODO(deferred): bump fastapi 0.109 → 0.115+ pour pull starlette 0.40+
-# (CVE-2024-47874, CVE-2025-54121) — breaking: Pydantic v2 lifecycle,
-# route signatures, OAuth2 flows. À planifier en PR dédiée.
-fastapi==0.109.1
+# C4 (audit follow-up): bumped 0.109.1 → 0.115.6 to close two Starlette
+# CVEs (CVE-2024-47874 multipart Content-Type DoS, CVE-2025-54121
+# MultiPartParser allocation DoS). The dry-run done in
+# docs/security/c4-fastapi-115-migration.md found a single concrete break
+# (api/routes/projects.py:266, fixed in the same PR). The audit-deferred
+# surfaces (Pydantic v2 lifecycle, route signatures, OAuth2 flows) all
+# turned out to be backward-compatible under 0.115.6.
+fastapi==0.115.6
+# Starlette pinned explicitly for supply-chain visibility; FastAPI 0.115.6
+# pulls 0.41.x transitively.
+starlette==0.41.3
 uvicorn[standard]==0.42.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)

@@ -1,22 +1,22 @@
 {
   "ignored_ids": [
-    "GHSA-2jv5-9r88-3w3p",
-    "GHSA-f96h-pmfr-66vw",
     "PYSEC-2024-225",
     "GHSA-h4gh-qq45-vh27"
   ],
   "notes": [
     "Each ignored vulnerability MUST be matched by a TODO row in requirements.txt explaining why the bump is deferred and what blocks it (typically: breaking-change scope).",
     "",
-    "Anchor TODOs (audit 2026-05-28):",
-    "  - fastapi==0.109.1 (CVE-2024-47874, CVE-2025-54121 in starlette) — bump to 0.115+ requires Pydantic v2 lifecycle + route signature changes. Tracked: requirements.txt L17-20.",
+    "Anchor TODOs (audit 2026-05-28, refreshed post-C4):",
     "  - cryptography==43.0.1 (CVE-2024-12797, CVE-2026-26007, CVE-2026-34073) — bump to 46.0.6 requires asyncpg/jwt/TLS validation. Tracked: requirements.txt L34-37.",
     "  - pytest==7.4.4 (CVE-2025-71176) — major bump to 9.x risks breaking conftest/plugins. Tracked: requirements.txt L49-50.",
     "",
-    "The ignored_ids list above is intentionally seeded with placeholder GHSA / PYSEC identifiers. On the first CI run after this lands, pip-audit will report the actual CVE/PYSEC/GHSA identifiers for these CVEs — the team should then replace the seeds with the exact ones reported. Until then, ANY new vulnerability will fail CI because it won't match these placeholders.",
+    "Closed by C4 (FastAPI 0.109 → 0.115 bump):",
+    "  - CVE-2024-47874 (Starlette multipart Content-Type DoS)",
+    "  - CVE-2025-54121 (Starlette MultiPartParser allocation DoS)",
+    "  Both vanished once starlette pinned to 0.41.3 transitively via fastapi==0.115.6.",
     "",
     "Process to add a new entry:",
-    "  1. Add the vuln ID to ignored_ids.",
+    "  1. Add the vuln ID to ignored_ids (the *real* CVE/PYSEC/GHSA identifier from the pip-audit JSON, not a placeholder).",
     "  2. Add a TODO row in requirements.txt with the bump-blocker reason.",
     "  3. Tag the entry above with the package + CVE in plain text."
   ]
