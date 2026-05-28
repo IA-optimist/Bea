@@ -9,7 +9,7 @@ This file tracks the MAJOR audit items M1 and M5 so refactors can happen increme
 | `core/meta_orchestrator.py` | High-level orchestration, routing, fallback behavior | Extract routing policy, execution state, and fallback decisions into focused modules. |
 | `core/connectors/_base.py` | Connector contracts plus runtime helpers | Split protocol contracts from concrete lifecycle/runtime helpers. |
 | `core/mission_system.py` | Mission lifecycle, classification, persistence glue | Extract mission classification and state transitions first. |
-| `api/routes/missions.py` | HTTP routes plus mission orchestration glue | Move request/response schemas and service calls out of the route module. |
+| `api/routes/missions.py` | HTTP routes plus mission orchestration glue | Request schemas are now in `api/schemas_missions.py`; agent output extraction is now in `api/mission_outputs.py`; mission response assembly is now in `api/mission_response.py`; next split should move task submission orchestration. |
 | `agents/crew.py` | Agent base class, concrete agents, legacy facades | AgentSelector is now in `agents/selector.py`; AgentCrew registry/dispatch is now in `agents/crew_runtime.py`; next split should move BaseAgent or concrete prompt agents. |
 | `core/jarvis_executor.py` | Execution facade and operational helpers | Extract command policy and execution result normalization. |
 | `core/operating_primitives.py` | Primitive definitions plus behavior | Split data contracts from runtime execution helpers. |

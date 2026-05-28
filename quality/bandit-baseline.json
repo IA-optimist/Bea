@@ -1,0 +1,22 @@
+{
+  "counts": {},
+  "notes": [
+    "Per-test-id count budget for Bandit findings in api/core/kernel.",
+    "",
+    "Format: {\"counts\": {\"B102\": 3, \"B602\": 0, ...}, \"notes\": [...]}.",
+    "Each key is a Bandit test-id (https://bandit.readthedocs.io/en/latest/plugins/index.html).",
+    "Common ones to watch:",
+    "  B102 exec_used / B103 set_bad_file_permissions",
+    "  B105 hardcoded_password_string / B106 hardcoded_password_funcarg",
+    "  B201 flask_debug_true / B301 pickle / B306 mktemp_q",
+    "  B311 random / B324 hashlib_insecure (MD5/SHA1)",
+    "  B501 request_with_no_cert_validation / B602 subprocess_with_shell_eq_true",
+    "  B608 hardcoded_sql_expressions",
+    "",
+    "The baseline is empty on purpose: the first CI run will fail on EVERY",
+    "existing high/medium finding. Bump test-ids one by one with a justified",
+    "PR (fix preferred ; budget only when the fix is non-trivial). This is",
+    "the same ratchet model as quality/mypy-baseline.json and",
+    "quality/legacy_silent_swallows.json."
+  ]
+}

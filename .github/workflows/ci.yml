@@ -93,6 +93,89 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
+  # Security scan: known-CVE check on the locked dependencies.
+  # Delta gate via quality/pip-audit-baseline.json — fails on any CVE not
+  # already acknowledged in the baseline (mirrors the TODO rows in
+  # requirements.txt). Bump the baseline only with a written justification.
+  pip-audit:
+    name: pip-audit (CVE delta gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Run pip-audit on requirements.lock
+        # --exit-zero: surface every finding to JSON without short-circuiting
+        # on the first vuln. The delta gate decides what's actually failing.
+        run: |
+          pip-audit -r requirements.lock --format json --output audit.json --strict || true
+          cat audit.json | python -m json.tool | head -60 || true
+
+      - name: Compare to pip-audit baseline
+        run: |
+          python scripts/check_pip_audit_baseline.py audit.json quality/pip-audit-baseline.json
+
+      - name: Upload pip-audit JSON as artifact
+        if: always()
+        uses: actions/upload-artifact@7.0.1
+        with:
+          name: pip-audit-report
+          path: audit.json
+          retention-days: 30
+
+  # Bandit static analysis on api/core/kernel — catches eval/exec/shell=True/
+  # pickle/hardcoded secrets at PR time. Delta gate via per-test-id count
+  # baseline (quality/bandit-baseline.json). Starts at zero budget; first
+  # baseline bump should be a dedicated cleanup PR per Bandit test-id.
+  bandit:
+    name: bandit (delta gate)
+    runs-on: ubuntu-latest
+    # Non-blocking for the first run-in window; remove continue-on-error
+    # once the team has triaged the initial findings into the baseline.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run bandit on api/core/kernel
+        run: |
+          # --exit-zero so the JSON output is always written;
+          # the delta gate below is what fails the step.
+          # B101 = assert_used; legitimate in dataclasses + tests.
+          bandit -r api core kernel -f json -o bandit.json --exit-zero --skip B101
+
+      - name: Compare to bandit baseline
+        run: |
+          python scripts/check_bandit_baseline.py bandit.json quality/bandit-baseline.json
+
+      - name: Upload bandit JSON as artifact
+        if: always()
+        uses: actions/upload-artifact@7.0.1
+        with:
+          name: bandit-report
+          path: bandit.json
+          retention-days: 30
+
   # M6: mypy is blocking through a delta baseline. The job allows the
   # current legacy error budget, but fails if the count increases.
   mypy:

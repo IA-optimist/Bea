@@ -13,8 +13,16 @@ from typing import Annotated, Optional
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, field_validator
-
+from api.mission_outputs import extract_agent_outputs
+from api.mission_response import build_mission_response_data
+from api.schemas_missions import (
+    AbortRequest,
+    ApproveRequest,
+    MissionSubmitRequest,
+    ModeRequest,
+    TaskRequest,
+    TriggerRequest,
+)
 from api._deps import (
     _check_auth,
     _extract_final_output,
@@ -41,46 +49,7 @@ _running_missions: set[str] = set()
 _running_missions_lock = asyncio.Lock()
 
 
-# ── Pydantic models ───────────────────────────────────────────
-
-class TaskRequest(BaseModel):
-    input: str
-    mode:  str = "auto"
-
-    @field_validator("input", mode="before")
-    @classmethod
-    def input_not_empty(cls, v):
-        v = (v or "").strip()
-        if not v:
-            raise ValueError("Mission input cannot be empty")
-        if len(v) > 50000:
-            raise ValueError("Mission input too long (max 50000 chars)")
-        # Sanitization anti-prompt injection
-        from core.security.input_sanitizer import sanitize_user_input
-        result = sanitize_user_input(v, strict=False)
-        if result.warnings:
-            import structlog as _sl
-            _sl.get_logger().warning("mission_input_sanitized", warnings=result.warnings)
-        return result.value
-
-
-class ModeRequest(BaseModel):
-    mode:       str = "SUPERVISED"
-    changed_by: str = "api"
-
-
-class TriggerRequest(BaseModel):
-    mission: str = ""
-
-
-class AbortRequest(BaseModel):
-    reason: str = ""
-
-
-class MissionSubmitRequest(BaseModel):
-    goal: str = ""
-    mode: str = "auto"
-
+# Pydantic request schemas live in api.schemas_missions.
 
 @router.post("/api/v2/task", status_code=201)
 async def submit_task(
@@ -356,7 +325,7 @@ async def submit_task(
             # the first 500 chars, which indicates repo_inspector injection, not
             # a real answer. The actual LLM responses are in agent_outputs.
             if _final and ("fichier(s)" in _final[:500] or "Workspace :" in _final[:500]):
-                _workspace_agent_outputs = _extract_agent_outputs(result.mission_id)
+                _workspace_agent_outputs = extract_agent_outputs(result.mission_id)
                 # Filter out vault-memory and internal agents — keep real analysis agents
                 _useful = {k: v for k, v in _workspace_agent_outputs.items()
                            if k not in ("vault-memory", "pulse-ops", "observer")
@@ -375,7 +344,7 @@ async def submit_task(
             if not _final or not _final.strip():
                 _fallback_level = 1
                 _final_source = "synthesis"
-                _agent_outputs = _extract_agent_outputs(result.mission_id)
+                _agent_outputs = extract_agent_outputs(result.mission_id)
                 if _agent_outputs:
                     _parts = []
                     for _aname, _aout in _agent_outputs.items():
@@ -420,7 +389,7 @@ async def submit_task(
                     from core.mission_system import compute_confidence_score
                     _ms_ref.decision_trace["confidence_score"] = compute_confidence_score(
                         fallback_level=_fallback_level,
-                        agent_outputs=_extract_agent_outputs(result.mission_id),
+                        agent_outputs=extract_agent_outputs(result.mission_id),
                         complexity=_ms_ref.complexity,
                         skipped_agents=_ms_ref.decision_trace.get("skipped_agents", []),
                         agents_selected=list(getattr(_ms_ref, "agents_selected", None) or []),
@@ -789,39 +758,6 @@ async def list_missions(
     }}
 
 
-def _extract_agent_outputs(mission_id: str) -> dict:
-    """Extrait le texte brut de chaque agent depuis MissionStateStore.
-
-    Retourne {agent_name: full_output_str} — directement utilisable côté Flutter
-    (Map<String, String>). Chaque agent n'apparaît qu'une fois (dernière entrée gagne).
-    """
-    try:
-        from api.mission_store import MissionStateStore
-        from api.models import LogEventType
-        store  = MissionStateStore.get()
-        events = store.get_log(mission_id)
-        outputs: dict[str, str] = {}
-        for ev in events:
-            if ev.event_type != LogEventType.TOOL_RESULT:
-                continue
-            agent = ev.agent_id
-            if not agent:
-                continue
-            data = ev.data or {}
-            # Priorité : full_output > reasoning (structured fallback) > message brut
-            text = (
-                data.get("full_output")
-                or (data.get("agent_result") or {}).get("reasoning")
-                or ev.message
-                or ""
-            )
-            if text:
-                outputs[agent] = str(text)[:3000]
-        return outputs
-    except Exception:
-        return {}
-
-
 @router.get("/api/v2/missions/{mission_id}")
 async def get_mission(mission_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     _check_auth(x_jarvis_token, authorization)
@@ -829,83 +765,7 @@ async def get_mission(mission_id: str, x_jarvis_token: Annotated[Optional[str], 
     r  = ms.get(mission_id)
     if not r:
         raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' introuvable.")
-    data = r.to_dict()
-    data["agent_outputs"]   = _extract_agent_outputs(mission_id)
-    data["execution_trace"] = data.pop("execution_trace", [])
-    # ── Result Envelope (Kensho-style) ─────────────────────────────────────
-    # Try to parse stored FinalOutput JSON, otherwise build from raw data
-    try:
-        import json as _json
-        raw_fo = data.get("final_output", "")
-        parsed_envelope = None
-        if raw_fo and raw_fo.strip().startswith("{"):
-            try:
-                parsed_envelope = _json.loads(raw_fo)
-                # Validate it's a FinalOutput envelope
-                if "agent_outputs" in parsed_envelope and "status" in parsed_envelope:
-                    data["result_envelope"] = parsed_envelope
-                    # Also set human-readable final_output from envelope
-                    parts = []
-                    for ao in parsed_envelope.get("agent_outputs", []):
-                        if ao.get("output_text"):
-                            parts.append(f"## {ao.get('agent_name', 'agent')}\n{ao['output_text'][:1500]}")
-                    if parts:
-                        data["final_output"] = f"# Résultats ({len(parts)} agents)\n\n" + "\n\n---\n\n".join(parts)
-                    else:
-                        data["final_output"] = parsed_envelope.get("summary", raw_fo)
-                else:
-                    parsed_envelope = None
-            except (_json.JSONDecodeError, Exception):
-                parsed_envelope = None
-        if not parsed_envelope:
-            # Fallback: build envelope from existing data
-            try:
-                from core.result_aggregator import aggregate_mission_result
-                envelope = aggregate_mission_result(
-                    mission_id=str(mission_id),
-                    mission_status=str(getattr(r, "status", "DONE")),
-                    start_time=getattr(r, "created_at", 0.0),
-                    summary=data.get("plan_summary", "")[:500],
-                )
-                data["result_envelope"] = envelope.to_dict()
-            except Exception:
-                data["result_envelope"] = None
-            # Keep existing pipeline_guard for final_output text
-            try:
-                from api.pipeline_guard import build_safe_final_output
-                _ao_dict = data.get("agent_outputs") or {}
-                _ao_list = [{"agent_name": k, "result": v} for k, v in _ao_dict.items()] if isinstance(_ao_dict, dict) else list(_ao_dict)
-                data["final_output"] = build_safe_final_output(
-                    raw_output=raw_fo or (data.get("plan_summary") or "")[:2000],
-                    agent_outputs=_ao_list,
-                    mission_id=str(mission_id or ""),
-                )
-            except Exception:
-                if not data.get("final_output"):
-                    data["final_output"] = "Mission exécutée. Réponse temporairement indisponible."
-    except Exception as _env_err:
-        import logging as _log
-        _log.getLogger(__name__).error("[RESULT ENVELOPE] failed: %s", _env_err)
-        data.setdefault("result_envelope", None)
-        if not data.get("final_output"):
-            data["final_output"] = "Mission exécutée. Réponse temporairement indisponible."
-    data.setdefault("summary",         data.get("plan_summary", "")[:500])
-    data.setdefault("agents_selected", [])
-    data.setdefault("domain",          "general")
-    data.setdefault("complexity",      getattr(r, "complexity", "medium"))
-    # DQ v2 — champs Flutter
-    _dt = getattr(r, "decision_trace", {}) or {}
-    data["decision_trace"]       = _dt
-    # Extract result_envelope from decision_trace (stored by executor)
-    if "result_envelope" not in data or not data.get("result_envelope"):
-        data["result_envelope"] = _dt.get("result_envelope")
-    data["confidence_score"]     = _dt.get("confidence_score", 0.0)
-    data["skipped_agents"]       = _dt.get("skipped_agents", [])
-    data["final_output_source"]  = _dt.get("final_output_source", "unknown")
-    data["fallback_level_used"]  = _dt.get("fallback_level_used", 0)
-    data["approval_reason"]      = _dt.get("approval_reason", "")
-    data["approval_decision"]    = _dt.get("approval_decision", "")
-    data["risk_score"]           = getattr(r, "risk_score", 0)
+    data = build_mission_response_data(mission_id, r)
     return {"ok": True, "data": data}
 
 
@@ -1051,10 +911,6 @@ async def reject_task(
 
 
 # ── Mission-level approve/reject + resumption ────────────────
-
-class ApproveRequest(BaseModel):
-    note: str = "Approved by human supervisor"
-
 
 @router.post("/api/v2/missions/{mission_id}/approve")
 async def approve_mission(
