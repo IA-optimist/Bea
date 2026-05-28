@@ -80,6 +80,62 @@ _DEFAULT_REFRESH_TTL = 30 * 24 * 60 * 60  # 30 days
 _USED_REFRESH_GRACE = 60 * 60          # 1 hour replay window
 
 
+# ── Prometheus metrics ──────────────────────────────────────────
+# Emitted from each public function so the /metrics endpoint surfaces
+# token-lifecycle activity. Defined under a guarded try so the module
+# stays importable in test contexts that don't pull prometheus_client.
+
+try:
+    from prometheus_client import Counter as _PromCounter
+except ImportError:  # pragma: no cover
+    _PromCounter = None  # type: ignore[assignment,misc]
+
+
+def _try_counter(name: str, doc: str, labelnames: tuple[str, ...]):
+    """Build a Counter or return None if prometheus_client is unavailable
+    or if the name is already registered (avoid "Duplicated timeseries"
+    errors when tests import the module multiple times)."""
+    if _PromCounter is None:
+        return None
+    try:
+        return _PromCounter(name, doc, labelnames=labelnames)
+    except ValueError:
+        # Already registered in this process; fetch the existing collector.
+        from prometheus_client import REGISTRY
+        for collector in list(REGISTRY._collector_to_names):  # type: ignore[attr-defined]
+            if getattr(collector, "_name", None) == name:
+                return collector
+        return None
+
+
+M_JWT_V2_PAIRS_ISSUED = _try_counter(
+    "jarvis_jwt_v2_pairs_issued_total",
+    "JWT v2 access+refresh pairs issued.",
+    ("origin",),  # "login" | "rotation"
+)
+M_JWT_V2_ROTATIONS = _try_counter(
+    "jarvis_jwt_v2_rotations_total",
+    "JWT v2 refresh-token rotation attempts.",
+    ("outcome",),  # "ok" | "replay" | "unknown"
+)
+M_JWT_V2_REVOCATIONS = _try_counter(
+    "jarvis_jwt_v2_revocations_total",
+    "JWT v2 revocations issued.",
+    ("kind",),  # "access" | "refresh" | "family"
+)
+
+
+def _mcount(metric, **labels) -> None:
+    """Increment a counter if it exists; no-op when prometheus_client is
+    not installed or when the registration failed."""
+    if metric is None:
+        return
+    try:
+        metric.labels(**labels).inc()
+    except Exception:  # pragma: no cover — metrics must never break auth
+        logger.debug("jwt_v2_metric_emit_failed: %s", metric)
+
+
 def is_v2_enabled() -> bool:
     """Return True iff JARVIS_JWT_HARDENING_V2 is set to a truthy value."""
     return os.environ.get("JARVIS_JWT_HARDENING_V2", "0").lower() in {
@@ -229,6 +285,7 @@ def create_token_pair(
     s.sadd(fkey, refresh_token.encode())
     s.expire(fkey, refresh_ttl)
 
+    _mcount(M_JWT_V2_PAIRS_ISSUED, origin="login")
     return TokenPair(
         access_token=access,
         refresh_token=refresh_token,
@@ -308,11 +365,13 @@ def rotate_refresh_token(
                 family_id = ""
             if family_id:
                 _revoke_family(s, family_id)
+        _mcount(M_JWT_V2_ROTATIONS, outcome="replay")
         raise ValueError("refresh_token_replay_detected")
 
     rkey = f"{prefix}refresh:{refresh_token}"
     raw = s.get(rkey)
     if raw is None:
+        _mcount(M_JWT_V2_ROTATIONS, outcome="unknown")
         raise ValueError("refresh_token_unknown_or_expired")
 
     try:
@@ -356,6 +415,8 @@ def rotate_refresh_token(
     s.sadd(fkey, new_refresh.encode())
     s.expire(fkey, refresh_ttl)
 
+    _mcount(M_JWT_V2_PAIRS_ISSUED, origin="rotation")
+    _mcount(M_JWT_V2_ROTATIONS, outcome="ok")
     return TokenPair(
         access_token=access,
         refresh_token=new_refresh,
@@ -383,6 +444,7 @@ def revoke_access_jti(
     s = store or _get_store()
     ttl = remaining_ttl_seconds if remaining_ttl_seconds is not None else _access_ttl()
     s.set(f"{_prefix()}revoked:{jti}", b"1", ex=max(ttl, 1))
+    _mcount(M_JWT_V2_REVOCATIONS, kind="access")
 
 
 def revoke_refresh_token(
@@ -394,6 +456,7 @@ def revoke_refresh_token(
         return
     s = store or _get_store()
     s.delete(f"{_prefix()}refresh:{refresh_token}")
+    _mcount(M_JWT_V2_REVOCATIONS, kind="refresh")
 
 
 def _revoke_family(s: RedisStore, family_id: str) -> None:
@@ -411,3 +474,4 @@ def _revoke_family(s: RedisStore, family_id: str) -> None:
         "jwt_v2_family_revoked",
         extra={"family_id_prefix": family_id[:8], "revoked_count": len(members)},
     )
+    _mcount(M_JWT_V2_REVOCATIONS, kind="family")

@@ -180,14 +180,24 @@ helper in `api/auth.py` can also be retired.
     rotates; replay returns 401; logout revokes jti; legacy refresh path
     untouched when flag is off.
 
-## Known gaps (intentionally deferred)
+## Known gaps
 
-- The legacy `verify_token` in `api/auth.py` is NOT yet wired to consult
-  the v2 revocation list when given a JWT with a `jti` claim. It
-  silently passes such tokens through. Wire in a follow-up PR — adding
-  the check is safe because legacy tokens never carry `jti`.
-- No metrics counter yet for `jwt_v2_family_revoked` / `jwt_v2_logout`.
-  Add a Prometheus gauge when the observability audit lands.
+**Closed in follow-up commits (after the original prep):**
+
+- ✅ Legacy `verify_token` in `api/auth.py` now consults the v2
+  revocation list when the JWT carries a `jti` and the flag is on.
+  Closed in `tests/test_legacy_verify_token_revokes_v2.py` (4 tests
+  covering: accept-not-revoked, reject-after-revoke, ignore-when-flag-off,
+  legacy-token-without-jti-still-works).
+- ✅ Three Prometheus counters wired:
+  - `jarvis_jwt_v2_pairs_issued_total{origin="login"|"rotation"}`
+  - `jarvis_jwt_v2_rotations_total{outcome="ok"|"replay"|"unknown"}`
+  - `jarvis_jwt_v2_revocations_total{kind="access"|"refresh"|"family"}`
+  Visible on `/metrics`. Coverage: `tests/test_jwt_v2_metrics.py`
+  (10 tests).
+
+**Still deferred (intentional, scoped):**
+
 - HttpOnly cookie for the refresh token is not implemented; the current
   contract returns it in the body. Frontend currently has to handle the
   storage. Tracked for Phase 2.

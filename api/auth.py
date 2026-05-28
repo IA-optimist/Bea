@@ -153,6 +153,19 @@ def verify_token(token_str: str) -> Optional[dict]:
     jwt_module = _require_jwt()
     try:
         payload = jwt_module.decode(token_str, _secret(), algorithms=["HS256"])
+        # Mo2 wire-up (closes the gap in docs/security/jwt-hardening-v2.md):
+        # if v2 is enabled and the token carries a `jti` claim, consult the
+        # revocation list. Tokens minted by the legacy path do not have a
+        # `jti`, so they pass through unchanged — flipping the feature flag
+        # does not invalidate any existing session.
+        if payload.get("jti"):
+            from api import jwt_v2
+            if jwt_v2.is_v2_enabled():
+                # verify_access_token re-decodes + checks Redis revocation.
+                # Returns None on revoked, the claims dict otherwise.
+                v2_claims = jwt_v2.verify_access_token(token_str, _secret())
+                if v2_claims is None:
+                    return None
         return {
             "username": payload.get("sub", "unknown"),
             "role": payload.get("role", "user"),
