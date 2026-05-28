@@ -25,9 +25,12 @@ from tests.test_jwt_v2 import FakeRedis
 
 @pytest.fixture
 def jarvis_secret(monkeypatch: pytest.MonkeyPatch) -> str:
-    monkeypatch.setenv("JARVIS_SECRET_KEY", "test-secret-32-bytes-or-more-please")
+    """Patch api.auth._secret to bypass the @lru_cache on get_settings()."""
+    s = "test-secret-32-bytes-or-more-please"
+    monkeypatch.setenv("JARVIS_SECRET_KEY", s)
     monkeypatch.setenv("JARVIS_ADMIN_PASSWORD", "admin-password-for-test")
-    return "test-secret-32-bytes-or-more-please"
+    monkeypatch.setattr("api.auth._secret", lambda: s)
+    return s
 
 
 @pytest.fixture

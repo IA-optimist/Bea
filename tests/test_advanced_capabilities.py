@@ -246,11 +246,21 @@ def test_detector_routing_optimization():
 # ═══════════════════════════════════════════════════════════════
 
 def test_crew_has_dynamic_routing():
-    with open("agents/crew.py", encoding="utf-8") as f:
-        src = f.read()
+    """M1: AgentSelector + routing extracted to agents/selector.py.
+    The combined surface still contains dynamic_agent_router."""
+    chunks = []
+    for rel in ("agents/crew.py", "agents/selector.py"):
+        try:
+            with open(rel, encoding="utf-8") as f:
+                chunks.append(f.read())
+        except FileNotFoundError:
+            pass
+    src = "\n".join(chunks)
     assert "dynamic_agent_router" in src
     assert "route_agents" in src
-    ast.parse(src)
+    # Syntax check on crew.py specifically (the file that still owns BaseAgent).
+    with open("agents/crew.py", encoding="utf-8") as f:
+        ast.parse(f.read())
 
 
 def test_planner_has_knowledge_context():

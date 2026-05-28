@@ -128,6 +128,7 @@ ignore = [
 "scripts/run_proactive_agent.py" = ["T201"]
 "scripts/safety_check.py" = ["T201"]
 "scripts/suggest_coverage_ratchet.py" = ["T201"]  # CLI reporter, prints are the output.
+"jarvismax" = ["T201"]  # CLI entrypoint script (no .py extension).
 "security/blue_team/soc_service.py" = ["T201"]
 
 # __init__.py re-exports

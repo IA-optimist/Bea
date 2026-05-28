@@ -17,8 +17,13 @@ from tests.test_jwt_v2 import FakeRedis
 
 @pytest.fixture
 def jarvis_secret(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Patch api.auth._secret directly to avoid the @lru_cache on
+    get_settings() that would otherwise return the old cached secret
+    in CI (where the singleton is built at import time before our env
+    monkeypatch takes effect)."""
     s = "test-secret-32-bytes-or-more-please"
     monkeypatch.setenv("JARVIS_SECRET_KEY", s)
+    monkeypatch.setattr("api.auth._secret", lambda: s)
     return s
 
 

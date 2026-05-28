@@ -163,10 +163,17 @@ class TestBackwardCompat:
         assert health_check
 
     def test_AS23_auth_endpoints_remain(self):
+        """Audit Mo3: auth routes were extracted from api.main to
+        api.routes.auth. Both files together still expose the surface."""
         import inspect
         main_src = inspect.getsource(importlib.import_module("api.main"))
-        assert "login_for_access_token" in main_src
-        assert "auth/me" in main_src
+        try:
+            routes_src = inspect.getsource(importlib.import_module("api.routes.auth"))
+        except Exception:
+            routes_src = ""
+        combined = main_src + "\n" + routes_src
+        assert "login_for_access_token" in combined
+        assert "auth/me" in combined
 
     def test_AS24_websocket_remains(self):
         import inspect

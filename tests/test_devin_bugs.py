@@ -329,11 +329,21 @@ class TestBearerTokenParsing:
         assert "from api.token_utils import strip_bearer" in source
 
     def test_DC11_main_py_uses_strip_bearer(self):
-        """DC11: api/main.py uses centralized strip_bearer."""
-        main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path, encoding="utf-8") as f:
-            source = f.read()
-        assert "from api.token_utils import strip_bearer" in source
+        """DC11: the auth subsystem uses centralized strip_bearer.
+
+        Audit Mo3: auth routes moved from api/main.py to api/routes/auth.py.
+        The "no ad-hoc Bearer parsing" guarantee still holds as long as
+        one of those two files imports strip_bearer.
+        """
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sources = []
+        for rel in ("api/main.py", "api/routes/auth.py"):
+            path = os.path.join(repo_root, rel)
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as f:
+                    sources.append(f.read())
+        combined = "\n".join(sources)
+        assert "from api.token_utils import strip_bearer" in combined
 
     def test_DC12_bearer_abc_token(self):
         """DC12: 'Bearer abc' → 'abc'."""

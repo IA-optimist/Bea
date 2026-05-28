@@ -41,40 +41,52 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # PART 5: SERVER COMPATIBILITY
 # ═══════════════════════════════════════════════════════════════
 
+def _auth_subsystem_source() -> str:
+    """Return concatenated source of the auth subsystem.
+
+    Audit Mo3: auth routes were extracted from api/main.py to
+    api/routes/auth.py. Tests that used to check strings in main.py
+    must now check the combined surface — both files together are the
+    "auth subsystem".
+    """
+    chunks = []
+    for rel in ("api/main.py", "api/routes/auth.py"):
+        try:
+            with open(rel, encoding="utf-8") as f:
+                chunks.append(f.read())
+        except FileNotFoundError:
+            pass
+    return "\n".join(chunks)
+
+
 class TestServerAuth:
 
     def test_auth_login_exists(self):
         """A1: /auth/login endpoint exists (alias)."""
-        # Verify the route is registered in main.py
-        with open("api/main.py", encoding="utf-8") as f:
-            content = f.read()
+        content = _auth_subsystem_source()
         assert '/auth/login' in content
         assert 'login_alias' in content
 
     def test_auth_login_returns_role(self):
         """A2: /auth/login returns role and expires_in."""
-        with open("api/main.py", encoding="utf-8") as f:
-            content = f.read()
+        content = _auth_subsystem_source()
         assert 'role' in content
         assert 'expires_in' in content
 
     def test_auth_me_endpoint_exists(self):
         """A3: GET /auth/me endpoint exists."""
-        with open("api/main.py", encoding="utf-8") as f:
-            content = f.read()
+        content = _auth_subsystem_source()
         assert '/auth/me' in content
         assert 'authenticated' in content
 
     def test_auth_me_returns_401_on_invalid(self):
         """A4: /auth/me handles invalid tokens."""
-        with open("api/main.py", encoding="utf-8") as f:
-            content = f.read()
+        content = _auth_subsystem_source()
         assert 'Invalid or expired token' in content
 
     def test_auth_me_returns_401_no_token(self):
         """A5: /auth/me handles missing tokens."""
-        with open("api/main.py", encoding="utf-8") as f:
-            content = f.read()
+        content = _auth_subsystem_source()
         assert 'No token provided' in content
 
     @pytest.mark.xfail(reason="ROLE_PERMISSIONS mapping non-implémenté (feature drift)", strict=False)
