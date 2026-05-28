@@ -195,3 +195,4 @@ tests/e2e/results.json
 workspace/*.db
 workspace/*.db-*
 core/causal_graph.json
+.venv-c4-prep/

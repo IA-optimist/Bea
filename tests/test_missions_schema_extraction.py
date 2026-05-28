@@ -138,6 +138,8 @@ def test_legacy_mission_helpers_have_dedicated_module():
 
     assert callable(mission_legacy.legacy_health_payload)
     assert callable(mission_legacy.legacy_stats_payload)
+    assert callable(mission_legacy.legacy_stream_response)
     assert "from api.routes.system import health" not in route_source
-    assert "ms.stats()" not in route_source
+    assert "_sse_generator" not in route_source
+    assert "legacy_stats_payload(_get_mission_system)" in route_source
     assert "from api.mission_legacy import" in route_source
