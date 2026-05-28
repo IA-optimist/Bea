@@ -83,3 +83,61 @@ def test_mission_response_assembly_has_dedicated_module(monkeypatch):
     assert "aggregate_mission_result" not in route_source
     assert "build_safe_final_output" not in route_source
     assert "from api.mission_response import build_mission_response_data" in route_source
+
+def test_mission_agent_helpers_have_dedicated_module():
+    from types import SimpleNamespace
+    from api import mission_agents
+
+    payload = mission_agents.serialize_agent_registry(
+        {"forge-builder": SimpleNamespace(role="builder", timeout_s=42)}
+    )
+    route_source = Path("api/routes/missions.py").read_text(encoding="utf-8")
+
+    assert payload == [
+        {
+            "name": "forge-builder",
+            "role": "builder",
+            "timeout": 42,
+            "status": "registered",
+        }
+    ]
+    assert callable(mission_agents.list_registered_agents)
+    assert callable(mission_agents.schedule_agent_trigger)
+    assert "AgentCrew(get_settings())" not in route_source
+    assert "__import__(\"core.state\"" not in route_source
+    assert "from api.mission_agents import" in route_source
+
+def test_mission_approval_helpers_have_dedicated_module():
+    from api import mission_approval
+
+    route_source = Path("api/routes/missions.py").read_text(encoding="utf-8")
+
+    assert callable(mission_approval.approve_task_payload)
+    assert callable(mission_approval.reject_task_payload)
+    assert callable(mission_approval.approve_mission_for_resume)
+    assert callable(mission_approval.reject_mission_payload)
+    assert "get_action_queue" not in route_source
+    assert "get_orchestration_bridge" not in route_source
+    assert "async def _resume_mission" not in route_source
+    assert "from api.mission_approval import" in route_source
+
+def test_system_mode_helpers_have_dedicated_module():
+    from api import mission_system_mode
+
+    route_source = Path("api/routes/missions.py").read_text(encoding="utf-8")
+
+    assert callable(mission_system_mode.get_system_mode_payload)
+    assert callable(mission_system_mode.set_system_mode_payload)
+    assert "get_mode_system" not in route_source
+    assert "from api.mission_system_mode import" in route_source
+
+def test_legacy_mission_helpers_have_dedicated_module():
+    from api import mission_legacy
+
+    route_source = Path("api/routes/missions.py").read_text(encoding="utf-8")
+
+    assert callable(mission_legacy.legacy_health_payload)
+    assert callable(mission_legacy.legacy_stats_payload)
+    assert "from api.routes.system import health" not in route_source
+    assert "ms.stats()" not in route_source
+    assert "from api.mission_legacy import" in route_source

@@ -14,7 +14,16 @@ import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from api.mission_outputs import extract_agent_outputs
+from api.mission_agents import list_registered_agents, schedule_agent_trigger
+from api.mission_approval import (
+    approve_mission_for_resume,
+    approve_task_payload,
+    reject_mission_payload,
+    reject_task_payload,
+)
 from api.mission_response import build_mission_response_data
+from api.mission_system_mode import get_system_mode_payload, set_system_mode_payload
+from api.mission_legacy import legacy_health_payload, legacy_stats_payload, legacy_stream_response
 from api.schemas_missions import (
     AbortRequest,
     ApproveRequest,
@@ -777,21 +786,8 @@ async def get_mission(mission_id: str, x_jarvis_token: Annotated[Optional[str], 
 async def list_agents(x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Liste tous les agents enregistrés."""
     _check_auth(x_jarvis_token, authorization)
-    try:
-        from config.settings import get_settings
-        from agents.crew import AgentCrew
-        crew   = AgentCrew(get_settings())
-        agents = []
-        for name, agent in crew.registry.items():
-            agents.append({
-                "name":    name,
-                "role":    getattr(agent, "role", "?"),
-                "timeout": getattr(agent, "timeout_s", "?"),
-                "status":  "registered",
-            })
-        return {"ok": True, "data": {"agents": agents, "total": len(agents)}}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    return list_registered_agents()
+
 
 
 @router.post("/api/v2/agents/{agent_id}/trigger")
@@ -804,22 +800,13 @@ async def trigger_agent(
     """Déclencher un agent manuellement."""
     _check_auth(x_jarvis_token, authorization)
 
-    async def _run():
-        try:
-            orch    = _get_orchestrator()
-            session = __import__("core.state", fromlist=["JarvisSession"]).JarvisSession(
-                session_id=f"manual-{agent_id}",
-                user_input=req.mission,
-                mode="auto",
-            )
-            session.mission_summary = req.mission
-            session.agents_plan     = [{"agent": agent_id, "task": req.mission, "priority": 1}]
-            await orch.agents.run(agent_id, session)
-        except Exception as e:
-            log.error("agent_trigger_failed", agent=agent_id, err=str(e)[:100])
-
-    background_tasks.add_task(_run)
-    return {"ok": True, "data": {"agent_id": agent_id, "status": "triggered"}}
+    return schedule_agent_trigger(
+        background_tasks=background_tasks,
+        agent_id=agent_id,
+        mission=req.mission,
+        get_orchestrator=_get_orchestrator,
+        logger=log,
+    )
 
 # ══════════════════════════════════════════════════════════════
 # COMPATIBILITÉ v1
@@ -839,8 +826,7 @@ async def legacy_post_mission(
 @router.get("/api/health")
 async def legacy_health():
     """Alias v1 → GET /api/v2/health"""
-    from api.routes.system import health
-    return await health()
+    return await legacy_health_payload()
 
 
 @router.get("/api/missions", deprecated=True)
@@ -862,11 +848,7 @@ async def legacy_missions(
 @router.get("/api/stats", deprecated=True)
 async def legacy_stats():
     """Alias v1 → GET /api/v2/metrics. Used by mobile."""
-    try:
-        ms = _get_mission_system()
-        return {"ok": True, "data": {"missions": ms.stats()}}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    return legacy_stats_payload(_get_mission_system)
 
 
 # ── Task approve/reject (Flutter uses these) ──────────────────
@@ -875,18 +857,7 @@ async def legacy_stats():
 async def approve_task(task_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Approve a pending action/task."""
     _check_auth(x_jarvis_token, authorization)
-    try:
-        from core.action_queue import get_action_queue
-        aq = get_action_queue()
-        action = aq.approve(task_id, note="Approved via API")
-        if action is None:
-            raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found or not pending.")
-        return {"ok": True, "data": action.to_dict()}
-    except HTTPException:
-        raise
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
+    return approve_task_payload(task_id)
 
 @router.post("/api/v2/tasks/{task_id}/reject")
 async def reject_task(
@@ -897,18 +868,7 @@ async def reject_task(
     """Reject a pending action/task."""
     _check_auth(x_jarvis_token, authorization)
     note = req.reason if req else "Rejected via API"
-    try:
-        from core.action_queue import get_action_queue
-        aq = get_action_queue()
-        action = aq.reject(task_id, note=note)
-        if action is None:
-            raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found.")
-        return {"ok": True, "data": action.to_dict()}
-    except HTTPException:
-        raise
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
+    return reject_task_payload(task_id, note)
 
 # ── Mission-level approve/reject + resumption ────────────────
 
@@ -926,73 +886,15 @@ async def approve_mission(
     """
     _check_auth(x_jarvis_token, authorization)
     note = (req.note if req else None) or "Approved by human supervisor"
-    ms = _get_mission_system()
-
-    # 1. Approve in MissionSystem (PENDING_VALIDATION → APPROVED)
-    r = ms.approve(mission_id, note=note)
-    if r is None:
-        raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found.")
-    if r.status not in ("APPROVED", "PENDING_VALIDATION"):
-        return {"ok": False, "error": f"Mission is in status '{r.status}', cannot approve."}
-
-    # 1b. Canonical bridge approval — updates canonical status + MetaOrchestrator + persists
-    try:
-        from core.orchestration_bridge import get_orchestration_bridge
-        get_orchestration_bridge().approve_mission(mission_id, note=note)
-    except Exception as _be:
-        log.debug("bridge_approve_skipped", err=str(_be)[:60])
-
-    # 2. Approve the pending approval_queue item (if any)
-    try:
-        from core.meta_orchestrator import get_meta_orchestrator
-        _orch = get_meta_orchestrator()
-        _ctx = _orch._missions.get(mission_id)
-        if _ctx:
-            _item_id = _ctx.metadata.get("approval_item_id", "")
-            if _item_id:
-                from core.approval_queue import approve as _aq_approve
-                _aq_approve(_item_id, approved_by="human")
-    except Exception as _ae:
-        log.debug("approval_queue_approve_skipped", err=str(_ae)[:60])
-
-    # 3. Re-run the mission with force_approved=True (bypass gate)
-    _original_goal = r.user_input or r.decision_trace.get("original_goal", "")
-    if not _original_goal:
-        return {"ok": False, "error": "Cannot resume: original goal not found."}
-
-    async def _resume_mission():
-        try:
-            orch = _get_orchestrator()
-            session = await orch.run_mission(
-                goal=_original_goal,
-                mode="auto",
-                mission_id=mission_id,
-                force_approved=True,
-            )
-            _final = getattr(session, "result", "") or getattr(session, "final_report", "") or ""
-            if _final:
-                ms.set_final_output(mission_id, _final)
-                ms.complete(mission_id, result_text=_final)
-            else:
-                ms.complete(mission_id, result_text="Mission approved and executed.")
-            log.info("mission_resumed_completed", mission_id=mission_id)
-        except Exception as _re:
-            log.error("mission_resume_failed", mission_id=mission_id, err=str(_re)[:120])
-            try:
-                ms.complete(mission_id, result_text=f"Resumption error: {str(_re)[:200]}")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
-
-    background_tasks.add_task(_resume_mission)
-    return {
-        "ok": True,
-        "data": {
-            "mission_id": mission_id,
-            "status":     "resuming",
-            "note":       note,
-        }
-    }
-
+    return approve_mission_for_resume(
+        mission_id=mission_id,
+        note=note,
+        mission_system=_get_mission_system(),
+        background_tasks=background_tasks,
+        get_orchestrator=_get_orchestrator,
+        logger=log,
+        silent_logger=_silent_log,
+    )
 
 @router.post("/api/v2/missions/{mission_id}/reject")
 async def reject_mission(
@@ -1004,47 +906,20 @@ async def reject_mission(
     """Reject a mission that is PENDING_VALIDATION."""
     _check_auth(x_jarvis_token, authorization)
     note = (req.reason if req else None) or "Rejected by human supervisor"
-    ms = _get_mission_system()
-
-    r = ms.reject(mission_id, note=note)
-    if r is None:
-        raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found.")
-
-    # Canonical bridge rejection — updates canonical status + MetaOrchestrator + persists
-    try:
-        from core.orchestration_bridge import get_orchestration_bridge
-        get_orchestration_bridge().reject_mission(mission_id, note=note)
-    except Exception as _be:
-        log.debug("bridge_reject_skipped", err=str(_be)[:60])
-
-    # Reject the approval_queue item too
-    try:
-        from core.meta_orchestrator import get_meta_orchestrator
-        _ctx = get_meta_orchestrator()._missions.get(mission_id)
-        if _ctx:
-            _item_id = _ctx.metadata.get("approval_item_id", "")
-            if _item_id:
-                from core.approval_queue import reject as _aq_reject
-                _aq_reject(_item_id, rejected_by="human")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='missions.py')
-
-    ms.set_final_output(mission_id, f"Mission rejected: {note}")
-    return {"ok": True, "data": {"mission_id": mission_id, "status": "rejected", "note": note}}
-
+    return reject_mission_payload(
+        mission_id=mission_id,
+        note=note,
+        mission_system=_get_mission_system(),
+        logger=log,
+        silent_logger=_silent_log,
+    )
 
 # ── System mode (Flutter setMode uses POST /api/system/mode) ──
 @router.get("/api/system/mode")
 async def get_system_mode(x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Get current system operation mode."""
     _check_auth(x_jarvis_token, authorization)
-    try:
-        from core.mode_system import get_mode_system
-        ms = get_mode_system()
-        return {"ok": True, "data": ms.to_dict()}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
+    return get_system_mode_payload()
 
 
 @router.post("/api/system/mode")
@@ -1052,15 +927,9 @@ async def set_system_mode(req: ModeRequest, x_jarvis_token: Annotated[Optional[s
     """Change system operation mode (MANUAL / SUPERVISED / AUTO)."""
     _check_auth(x_jarvis_token, authorization)
     try:
-        from core.mode_system import get_mode_system
-        ms = get_mode_system()
-        ms.set_mode(req.mode.upper(), changed_by=req.changed_by)
-        return {"ok": True, "data": ms.to_dict()}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
+        return set_system_mode_payload(req.mode, req.changed_by)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 # ── Legacy SSE alias (Flutter may call this path) ─────────────
 
@@ -1070,17 +939,9 @@ async def set_system_mode(req: ModeRequest, x_jarvis_token: Annotated[Optional[s
 async def stream_mission_compat(mission_id: str):
     """SSE stream — legacy alias; /api/v1/missions/{id}/stream handled by mission_control."""
     try:
-        from api.routes.mission_control import _sse_generator
-        from fastapi.responses import StreamingResponse
-        return StreamingResponse(
-            _sse_generator(mission_id),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-        )
+        return await legacy_stream_response(mission_id)
     except Exception as e:
         return {"ok": False, "error": str(e)}
-
-
 
 # ── Livrable export endpoint ───────────────────────────────────────────────────
 

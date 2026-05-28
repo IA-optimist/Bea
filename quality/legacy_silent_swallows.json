@@ -18,7 +18,7 @@
   "api/routes/kernel.py": 8,
   "api/routes/metrics_mobile.py": 3,
   "api/routes/mission_control.py": 6,
-  "api/routes/missions.py": 17,
+  "api/routes/missions.py": 15,
   "api/routes/models.py": 1,
   "api/routes/monitoring.py": 2,
   "api/routes/performance.py": 6,
