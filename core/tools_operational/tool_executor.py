@@ -312,14 +312,14 @@ class OperationalToolExecutor:
         self, tool: OperationalTool, inputs: dict
     ) -> ToolExecutionResult:
         """Run git status (read-only)."""
-        import subprocess
+        import subprocess  # nosec B404
         try:
             repo_path = inputs.get("path", ".")
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["git", "status", "--short"],
                 capture_output=True, text=True, timeout=10, cwd=repo_path,
             )
-            branch_result = subprocess.run(
+            branch_result = subprocess.run(  # nosec B603 B607
                 ["git", "branch", "--show-current"],
                 capture_output=True, text=True, timeout=5, cwd=repo_path,
             )

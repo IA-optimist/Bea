@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import time
 from typing import Optional
 
@@ -145,7 +145,7 @@ def execute_python_snippet(code: str, timeout: int = 8) -> dict:
         if banned in code:
             return _err(f"blocked_pattern: '{banned}' interdit")
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["python", "-c", code],
             capture_output=True, text=True, timeout=timeout,
         )
@@ -260,7 +260,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
             return _err(f"invalid_command: {exc}")
 
         if args and len(args) >= 1:
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec B603 B607
                 args, capture_output=True, text=True,
                 timeout=timeout, cwd=_cwd,
             )

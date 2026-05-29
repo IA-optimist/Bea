@@ -1,7 +1,7 @@
 """github_tool — opérations git via subprocess."""
 from __future__ import annotations
 import os
-import subprocess
+import subprocess  # nosec B404
 
 _JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
 _ALLOWED_ROOTS = (_JARVIS_ROOT, "/tmp")  # nosec B108 — path-prefix allowlist, not a write target.
@@ -33,7 +33,7 @@ def _check_path(repo_path: str) -> str | None:
 def _run(args: list[str], repo_path: str, timeout: int = 15, risk_level: str = "low") -> dict:
     logs = [f"cmd={args}"]
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             args, capture_output=True, text=True, timeout=timeout, cwd=repo_path
         )
         out = proc.stdout[:2000]

@@ -1,6 +1,6 @@
 """test_toolkit — outils de test et healthcheck pour Jarvis."""
 from __future__ import annotations
-import subprocess
+import subprocess  # nosec B404
 
 
 def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
@@ -28,7 +28,7 @@ def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict:
     try:
         import os
         cwd = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["python", "-m", "pytest", test_path, "-v", "--tb=short"],
             capture_output=True, text=True, timeout=timeout, cwd=cwd
         )

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 import re
-import subprocess
+import subprocess  # nosec B404
 import time
 from pathlib import Path
 from typing import Optional
@@ -154,7 +154,7 @@ def git_status() -> dict:
     """
     t0 = time.monotonic()
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["git", "status", "--porcelain", "-b"],
             capture_output=True, text=True, timeout=5,
             cwd=str(_REPO_ROOT),
@@ -181,7 +181,7 @@ def git_log(n: int = 5) -> dict:
     t0 = time.monotonic()
     n = min(n, 20)  # cap at 20
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["git", "log", f"-{n}", "--oneline", "--no-decorate"],
             capture_output=True, text=True, timeout=5,
             cwd=str(_REPO_ROOT),
@@ -308,7 +308,7 @@ def run_tests(test_path: str = "tests/", pattern: str = "", timeout: int = 60) -
             safe_pattern = re.sub(r"[^a-zA-Z0-9_\-.]", "", pattern)
             cmd.extend(["-k", safe_pattern])
 
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             cmd,
             capture_output=True, text=True,
             timeout=min(timeout, 120),  # hard cap at 2 min

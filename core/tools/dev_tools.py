@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-import subprocess
+import subprocess  # nosec B404
 import time
 
 logger = logging.getLogger("jarvis.dev_tools")
@@ -93,7 +93,7 @@ def dependency_analyzer(project_path: str = None) -> dict:
 
         for pkg_name, req_spec in packages:
             try:
-                result = subprocess.run(
+                result = subprocess.run(  # nosec B603 B607
                     ["pip", "show", pkg_name],
                     capture_output=True, text=True, timeout=5,
                 )

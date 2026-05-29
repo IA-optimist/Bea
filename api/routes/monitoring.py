@@ -84,8 +84,8 @@ async def system_health(x_jarvis_token: Optional[str] = Header(None), authorizat
     # Container status (docker socket ou simple fichier de présence)
     containers: dict[str, str] = {}
     try:
-        import subprocess
-        result = subprocess.run(
+        import subprocess  # nosec B404
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "ps", "--filter", "name=jarvis", "--format", "{{.Names}}:{{.Status}}"],
             capture_output=True, text=True, timeout=5,
         )

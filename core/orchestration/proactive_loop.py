@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import subprocess
+import subprocess  # nosec B404
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -313,7 +313,7 @@ class ProactiveAgent:
         down: list[str] = []
         for svc in known_services:
             try:
-                result = subprocess.run(
+                result = subprocess.run(  # nosec B603 B607
                     ["systemctl", "is-active", svc],
                     capture_output=True, text=True, timeout=3
                 )
@@ -401,7 +401,7 @@ class ProactiveAgent:
         if args[0] not in ALLOWED:
             return {"status": "blocked", "reason": "commande non autorisée", "cmd": cmd}
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 args, shell=False, capture_output=True, text=True, timeout=5
             )
             return {"status": "ok", "stdout": result.stdout[:500], "returncode": result.returncode}

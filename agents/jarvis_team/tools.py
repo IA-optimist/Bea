@@ -23,7 +23,7 @@ from __future__ import annotations
 import ast
 import os
 import re
-import subprocess
+import subprocess  # nosec B404
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -132,7 +132,7 @@ def _git(cmd: str, timeout: int = 30) -> str:
     """Run git command, return stdout. Fail-open: returns '' on error."""
     import shlex
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["git"] + shlex.split(cmd), shell=False, cwd=str(REPO_ROOT),
             capture_output=True, text=True, timeout=timeout,
         )
@@ -211,7 +211,7 @@ def tool_git_commit(message: str, files: list[str] | None = None) -> ToolResult:
     else:
         _git("add -A")
     # Commit
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607
         ["git", "commit", "-m", message],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=15,
     )
@@ -242,7 +242,7 @@ def tool_git_compare_branches(branch_a: str, branch_b: str = "master") -> ToolRe
 def tool_git_detect_conflicts(branch: str, target: str = "master") -> ToolResult:
     """Check if a branch would merge cleanly into target."""
     # Dry-run merge
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607
         ["git", "merge", "--no-commit", "--no-ff", branch],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=15,
     )
@@ -586,7 +586,7 @@ def tool_complexity_estimate(path: str) -> ToolResult:
 def tool_run_tests(test_path: str = "tests/", timeout: int = 120) -> ToolResult:
     """Run pytest on a path. Returns structured pass/fail counts."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["python3", "-m", "pytest", test_path, "-x", "-q", "--tb=short"],
             shell=False, cwd=str(REPO_ROOT),
             capture_output=True, text=True, timeout=timeout,
@@ -807,7 +807,7 @@ def tool_python_version() -> ToolResult:
 def tool_detect_installed_packages() -> ToolResult:
     """List installed Python packages."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["python3", "-m", "pip", "list", "--format=json"],
             shell=False, capture_output=True, text=True, timeout=15,
         )

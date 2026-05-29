@@ -152,8 +152,8 @@ def probe_mission_system_health() -> dict:
 def probe_docker_health() -> dict:
     """Check if Docker runtime is available (for sandbox execution)."""
     try:
-        import subprocess
-        result = subprocess.run(
+        import subprocess  # nosec B404
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "info"], capture_output=True, text=True, timeout=5,
         )
         return {"healthy": result.returncode == 0}

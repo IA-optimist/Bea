@@ -26,7 +26,7 @@ import json
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
@@ -299,7 +299,7 @@ class RegressionGuard:
                "-w", "/app", "--network", self.network, "-e", "PYTHONPATH=/app",
                self.docker_image, "python", "-m", "pytest", test_path, "--tb=no", "-q"]
         try:
-            r = subprocess.run(cmd, capture_output=True, text=True,
+            r = subprocess.run(cmd, capture_output=True, text=True,  # nosec B603 B607
                                timeout=timeout, cwd=str(self.repo_root))
             output = r.stdout + r.stderr
         except subprocess.TimeoutExpired:

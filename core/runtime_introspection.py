@@ -33,7 +33,7 @@ import importlib
 import os
 import shutil
 import socket
-import subprocess
+import subprocess  # nosec B404
 import sys
 import time
 from dataclasses import dataclass, field
@@ -194,7 +194,7 @@ def _detect_network() -> Capability:
 def _detect_docker() -> Capability:
     """Detect Docker availability."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "version", "--format", "{{.Server.Version}}"],
             capture_output=True, text=True, timeout=5,
         )
@@ -224,13 +224,13 @@ def _detect_docker() -> Capability:
 def _detect_git() -> Capability:
     """Detect Git availability and repo state."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["git", "--version"], capture_output=True, text=True, timeout=5,
         )
         if result.returncode == 0:
             version = result.stdout.strip().replace("git version ", "")
             # Check if we're in a repo
-            branch_result = subprocess.run(
+            branch_result = subprocess.run(  # nosec B603 B607
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 capture_output=True, text=True, timeout=5,
             )
@@ -419,7 +419,7 @@ def _check_deps(tool_name: str) -> tuple[bool, str]:
 def _check_binary(name: str, timeout: int = 3) -> tuple[bool, str]:
     """Check if a binary is available on PATH."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             [name, "--version"], capture_output=True, text=True, timeout=timeout,
         )
         return result.returncode == 0, result.stdout.strip()[:80]

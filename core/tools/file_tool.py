@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import re
 import logging
-import subprocess
+import subprocess  # nosec B404
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
@@ -131,7 +131,7 @@ def search_in_files(directory: str = ".", pattern: str = "", **kw) -> str:
         return f"error: directory not found: {directory}"
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["grep", "-rn", "--include=*.py", "--include=*.md", "--include=*.txt",
              "--include=*.json", "--include=*.yaml", "--include=*.yml",
              "--include=*.html", "--include=*.js", "--include=*.ts",

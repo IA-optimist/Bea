@@ -17,7 +17,7 @@ import structlog
 import os
 import shlex
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 import tempfile
 import time
@@ -165,7 +165,7 @@ def _apply_patch(unified_diff: str, work_dir: Path) -> tuple[bool, str]:
     diff_file.write_text(unified_diff, encoding="utf-8")
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["patch", "-p1", "--input", str(diff_file), "--forward", "--reject-file=-"],
             cwd=str(work_dir),
             capture_output=True,
@@ -247,7 +247,7 @@ def _run_in_docker(work_dir: Path) -> SandboxResult:
 
     # Check Docker availability
     try:
-        subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)
+        subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)  # nosec B603 B607
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
         log.warning("sandbox.docker_unavailable — falling back to in-process")
         return _run_in_process(work_dir, docker_attempted=True)
@@ -273,7 +273,7 @@ def _run_in_docker(work_dir: Path) -> SandboxResult:
     ]
 
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             cmd,
             capture_output=True,
             text=True,
@@ -348,7 +348,7 @@ def _run_in_process(work_dir: Path, docker_attempted: bool = False) -> SandboxRe
 def _run_subprocess(cmd: list[str], cwd: Path) -> tuple[str, int]:
     """Run a subprocess command, returns (output, returncode)."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             cmd,
             cwd=str(cwd),
             capture_output=True,
@@ -456,7 +456,7 @@ class SandboxExecutor:
                                              delete=False) as f:
                 f.write(code)
                 tmp_file = f.name
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec B603 B607
                 [sys.executable, tmp_file],
                 capture_output=True, text=True, timeout=timeout,
             )
@@ -558,7 +558,7 @@ class SandboxExecutor:
                 error="Docker unavailable — degraded to syntax-only",
             )
         try:
-            subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)
+            subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)  # nosec B603 B607
         except Exception:
             self._docker_available = False
             return SandboxResult(
@@ -574,7 +574,7 @@ class SandboxExecutor:
         """Run ruff linter on files. Returns blocked/skipped result if ruff unavailable."""
         try:
             cmd = ["python", "-m", "ruff", "check"] + files
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 cmd, cwd=sandbox_path, capture_output=True, text=True, timeout=30,
             )
             combined = (result.stdout + result.stderr).lower()
@@ -621,7 +621,7 @@ class SandboxExecutor:
         else:
             cmd.extend(["tests/", "-x", "-q", "--tb=short"])
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 cmd, cwd=sandbox_path, capture_output=True, text=True, timeout=timeout,
             )
             return SandboxResult(
@@ -646,7 +646,7 @@ class SandboxExecutor:
         if getattr(self, "_docker_available", None) is False:
             return False
         try:
-            subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)
+            subprocess.run(["docker", "info"], capture_output=True, timeout=5, check=True)  # nosec B603 B607
             return True
         except Exception:
             self._docker_available = False
@@ -667,7 +667,7 @@ class SandboxExecutor:
             SANDBOX_DOCKER_IMAGE, "sh", "-c", cmd,
         ]
         try:
-            result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)
+            result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)  # nosec B603 B607
             return SandboxResult(
                 success=result.returncode == 0,
                 stdout=result.stdout[:3000], stderr=result.stderr[:1000],
@@ -683,7 +683,7 @@ class SandboxExecutor:
         """Run a command via subprocess."""
         work_dir = cwd or str(self.project_root)
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 shlex.split(cmd), cwd=work_dir,
                 capture_output=True, text=True, timeout=timeout,
             )

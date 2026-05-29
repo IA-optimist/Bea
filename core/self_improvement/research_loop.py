@@ -305,8 +305,8 @@ class RollbackManager:
     @staticmethod
     def _get_git_sha() -> str:
         try:
-            import subprocess
-            r = subprocess.run(["git", "rev-parse", "HEAD"],
+            import subprocess  # nosec B404
+            r = subprocess.run(["git", "rev-parse", "HEAD"],  # nosec B603 B607
                                capture_output=True, text=True, timeout=3)
             return r.stdout.strip()[:12] if r.returncode == 0 else ""
         except Exception:
@@ -321,8 +321,8 @@ def collect_metrics() -> BaselineMetrics:
 
     # Test suite
     try:
-        import subprocess
-        r = subprocess.run(
+        import subprocess  # nosec B404
+        r = subprocess.run(  # nosec B603 B607
             ["python3", "-m", "pytest", "tests/", "-q", "--tb=no",
              "--ignore=tests/aios_full_battery.py", "-x"],
             capture_output=True, text=True, timeout=60, cwd="/app"

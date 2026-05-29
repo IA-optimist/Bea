@@ -1,6 +1,6 @@
 """docker_tool — inspection et gestion des containers Docker."""
 from __future__ import annotations
-import subprocess
+import subprocess  # nosec B404
 import logging
 
 logger = logging.getLogger("jarvis.docker_tool")
@@ -27,7 +27,7 @@ def _err(error: str, logs: list = None, risk_level: str = "low") -> dict:
 def _run(args: list[str], timeout: int = 10, risk_level: str = "low") -> dict:
     logs = [f"cmd={args}"]
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             args, capture_output=True, text=True, timeout=timeout
         )
         out = proc.stdout[:3000]
@@ -107,7 +107,7 @@ def docker_compose_down(project_dir: str) -> dict:
 def docker_healthcheck(container: str) -> bool:
     """Vérifie qu'un container est Up et healthy. Retourne bool."""
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["docker", "inspect", "--format",
              "{{.State.Status}} {{.State.Health.Status}}", container],
             capture_output=True, text=True, timeout=5

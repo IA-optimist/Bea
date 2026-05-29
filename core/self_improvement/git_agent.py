@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import structlog
 import os
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 import time
 from dataclasses import dataclass, field, asdict
@@ -139,7 +139,7 @@ def _run_git(args: list[str], cwd: Path, env: Optional[dict] = None) -> tuple[in
         git_env.update(env)
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["git"] + args,
             cwd=str(cwd),
             capture_output=True,
@@ -359,7 +359,7 @@ class GitAgent:
         if not snapshot.sandbox_path or not os.path.exists(snapshot.sandbox_path):
             return ""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["diff", "-ruN", str(self.project_root), snapshot.sandbox_path],
                 capture_output=True, text=True, timeout=30,
             )

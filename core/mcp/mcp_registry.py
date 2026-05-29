@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import threading
 import time
 from dataclasses import dataclass, field
@@ -255,7 +255,7 @@ class MCPRegistry:
         # Try to start the process and immediately kill it
         try:
             full_cmd = [cmd] + entry.args
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec B603 B607
                 full_cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

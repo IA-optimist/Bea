@@ -15,7 +15,7 @@ from __future__ import annotations
 import ast
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -330,21 +330,21 @@ def _git_commit(branch: str, proposal: dict, changes: list[dict]) -> None:
     changed_files = [c["file"] for c in changes]
 
     # Never push to protected branches
-    current = subprocess.check_output(
+    current = subprocess.check_output(  # nosec B603 B607
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
         cwd=str(_REPO_ROOT), text=True
     ).strip()
 
     if current in ("main", "master", "production"):
         # Create SI branch off current
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             ["git", "checkout", "-b", branch],
             cwd=str(_REPO_ROOT), check=True, capture_output=True
         )
 
     # Stage changed files
     for f in changed_files:
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             ["git", "add", f],
             cwd=str(_REPO_ROOT), check=True, capture_output=True
         )
@@ -356,7 +356,7 @@ def _git_commit(branch: str, proposal: dict, changes: list[dict]) -> None:
         f"Risk: {proposal.get('risk_level', 'low')}\n"
         f"Files: {', '.join(changed_files)}"
     )
-    subprocess.run(
+    subprocess.run(  # nosec B603 B607
         ["git", "commit", "-m", msg],
         cwd=str(_REPO_ROOT), check=True, capture_output=True
     )

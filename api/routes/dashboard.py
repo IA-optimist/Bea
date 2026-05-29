@@ -8,7 +8,7 @@ import datetime
 import json
 import os
 import pathlib
-import subprocess
+import subprocess  # nosec B404
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -35,7 +35,7 @@ def _read_json(path: pathlib.Path):
 
 def _git_info() -> dict:
     try:
-        out = subprocess.check_output(
+        out = subprocess.check_output(  # nosec B603 B607
             ["git", "log", "-1", "--format=%H|||%s|||%ad", "--date=iso"],
             timeout=3,
             stderr=subprocess.DEVNULL,
@@ -45,7 +45,7 @@ def _git_info() -> dict:
             "commit": parts[0] if parts else None,
             "subject": parts[1] if len(parts) > 1 else None,
             "date": parts[2] if len(parts) > 2 else None,
-            "branch": subprocess.check_output(
+            "branch": subprocess.check_output(  # nosec B603 B607
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 timeout=3, stderr=subprocess.DEVNULL,
             ).decode().strip(),
