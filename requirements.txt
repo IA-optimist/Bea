@@ -14,17 +14,20 @@ redis==5.0.1
 celery==5.3.4
 
 # Web framework
-# C4 (audit follow-up): bumped 0.109.1 → 0.115.6 to close two Starlette
-# CVEs (CVE-2024-47874 multipart Content-Type DoS, CVE-2025-54121
-# MultiPartParser allocation DoS). The dry-run done in
-# docs/security/c4-fastapi-115-migration.md found a single concrete break
-# (api/routes/projects.py:266, fixed in the same PR). The audit-deferred
-# surfaces (Pydantic v2 lifecycle, route signatures, OAuth2 flows) all
-# turned out to be backward-compatible under 0.115.6.
-fastapi==0.115.6
-# Starlette pinned explicitly for supply-chain visibility; FastAPI 0.115.6
-# pulls 0.41.x transitively.
-starlette==0.41.3
+# C4 cycle 2 (audit follow-up): bumped 0.115.6 → 0.136.3 to close three
+# more Starlette CVEs that surfaced after the C4 cycle 1 bump:
+#   - PYSEC-2026-161 (fix: starlette 1.0.1)
+#   - CVE-2025-54121 (fix: starlette 0.47.2) — was misreported as closed in C4 cycle 1
+#   - CVE-2025-62727 (fix: starlette 0.49.1)
+# Side-venv dry-run (docs/security/c4-fastapi-115-migration.md) re-ran
+# under 0.136.3 + starlette 1.2.0: 13/13 module imports clean, 84/84
+# hardening tests pass, no concrete breaks. The 1-line projects.py fix
+# from cycle 1 (response_model=None, response_class=Response) still
+# applies and continues to work.
+fastapi==0.136.3
+# Starlette pinned explicitly for supply-chain visibility; FastAPI 0.136.3
+# pulls 1.2.x transitively.
+starlette==1.2.0
 uvicorn[standard]==0.42.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)
