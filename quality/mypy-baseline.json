@@ -4,7 +4,12 @@
     "api",
     "kernel"
   ],
-  "max_errors": 5000,
+  "max_errors": 1000,
   "created": "2026-05-28",
-  "policy": "Ratchet this number downward after each cleanup; CI fails on increases."
+  "updated": "2026-05-29",
+  "history": [
+    {"date": "2026-05-28", "max_errors": 5000, "reason": "Initial conservative budget"},
+    {"date": "2026-05-29", "max_errors": 1000, "reason": "First ratchet — measured 967 errors on the hardening branch (mypy core api kernel --ignore-missing-imports). Tightening to 1000 catches any regression instead of letting 4x headroom hide drift."}
+  ],
+  "policy": "Ratchet this number downward after each cleanup; CI fails on increases. Aim for current_count + ~30 buffer when bumping."
 }
