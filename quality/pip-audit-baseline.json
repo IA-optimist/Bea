@@ -5,8 +5,7 @@
     "CVE-2026-26007",
     "CVE-2026-44843",
     "PYSEC-2026-87",
-    "CVE-2025-71176",
-    "CVE-2026-28684"
+    "CVE-2025-71176"
   ],
   "notes": [
     "Each ignored vulnerability MUST be matched by a TODO row in requirements.txt explaining why the bump is deferred and what blocks it.",
@@ -28,10 +27,8 @@
     "  pytest==7.4.4 → tracked in requirements.txt L49-50.",
     "    CVE-2025-71176    fix: 9.0.3",
     "",
-    "  python-dotenv==1.0.0 → NEW (not previously tracked).",
-    "    CVE-2026-28684    fix: 1.2.2",
-    "    Likely a quick win — python-dotenv is a tiny pure-Python lib.",
-    "    Audit follow-up.",
+    "Closed by python-dotenv 1.0.0 → 1.2.2 bump (this commit):",
+    "  - CVE-2026-28684 (python-dotenv)",
     "",
     "Closed by C4 cycle 1 (commit 605cb6c, fastapi 0.109.1→0.115.6):",
     "  - CVE-2024-47874 (Starlette multipart Content-Type DoS)",

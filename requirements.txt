@@ -1,5 +1,6 @@
 # Core dependencies
-python-dotenv==1.0.0
+# python-dotenv 1.0.0 → 1.2.2 (CVE-2026-28684, quick close: pure-Python lib)
+python-dotenv==1.2.2
 pyyaml==6.0.1
 requests==2.34.2
 
