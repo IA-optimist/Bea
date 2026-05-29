@@ -144,7 +144,7 @@ def _detect_filesystem() -> Capability:
         cwd = os.getcwd()
         home = str(Path.home())
         writable = os.access(cwd, os.W_OK)
-        tmp_writable = os.access("/tmp", os.W_OK)
+        tmp_writable = os.access("/tmp", os.W_OK)  # nosec B108 — probe (no write); just reports whether /tmp is writable.
         disk_usage = shutil.disk_usage(cwd)
         free_gb = round(disk_usage.free / (1024**3), 1)
         return Capability(

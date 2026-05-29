@@ -4,7 +4,7 @@ import os
 import subprocess
 
 _JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
-_ALLOWED_ROOTS = (_JARVIS_ROOT, "/tmp")
+_ALLOWED_ROOTS = (_JARVIS_ROOT, "/tmp")  # nosec B108 — path-prefix allowlist, not a write target.
 
 
 def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class MVPGenerator:
     """Generate complete MVP codebase from feasibility analysis"""
     
-    def __init__(self, workspace_dir: str = "/tmp/jarvismax_mvp"):
+    def __init__(self, workspace_dir: str = "/tmp/jarvismax_mvp"):  # nosec B108 — default; callers override with explicit dir.
         """
         Initialize MVP generator.
         

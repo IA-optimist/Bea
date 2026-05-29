@@ -121,7 +121,7 @@ class IdentityManager:
                 raise ValueError(f"Missing required fields for {provider}: {missing}")
 
         # Generate ID
-        iid = f"id-{hashlib.md5(f'{provider}{time.time()}'.encode()).hexdigest()[:10]}"
+        iid = f"id-{hashlib.md5(f'{provider}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
 
         # Determine risk and approval
         risk_level = template.risk_level if template else "medium"

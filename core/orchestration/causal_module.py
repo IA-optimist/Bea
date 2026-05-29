@@ -453,7 +453,7 @@ class JarvisMaxCausalIntegration:
         points = []
         for cause, effect in edges:
             text = f"{cause} causes {effect}"
-            uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
+            uid = int(hashlib.md5(text.encode(), usedforsecurity=False).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
             
             # Generate real embeddings (768-dim) using nomic-embed-text via Ollama

@@ -312,7 +312,7 @@ class ModuleManager:
     def create_agent(self, config: dict, mode: str = "simple") -> AgentConfig:
         """Create agent. mode: simple or advanced."""
         _name_key = (config.get("name") or "") + str(time.time())
-        aid = config.get("id") or f"agent-{hashlib.md5(_name_key.encode()).hexdigest()[:8]}"
+        aid = config.get("id") or f"agent-{hashlib.md5(_name_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
 
         agent = AgentConfig(
             id=aid,
@@ -379,7 +379,7 @@ class ModuleManager:
         agent = self._agents.get(agent_id)
         if not agent:
             return None
-        new_id = f"agent-{hashlib.md5(f'{agent_id}{time.time()}'.encode()).hexdigest()[:8]}"
+        new_id = f"agent-{hashlib.md5(f'{agent_id}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
         new_agent = AgentConfig(**{k: v for k, v in agent.__dict__.items()})
         new_agent.id = new_id
         new_agent.display_name = f"{agent.display_name} (Copy)"
@@ -403,7 +403,7 @@ class ModuleManager:
 
     def create_skill(self, config: dict) -> SkillConfig:
         _skill_key = (config.get("name") or "") + str(time.time())
-        sid = config.get("id") or f"skill-{hashlib.md5(_skill_key.encode()).hexdigest()[:8]}"
+        sid = config.get("id") or f"skill-{hashlib.md5(_skill_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         skill = SkillConfig(
             id=sid, name=config.get("name", ""),
             description=config.get("description", ""),
@@ -467,7 +467,7 @@ class ModuleManager:
 
     def create_mcp(self, config: dict) -> MCPConfig:
         _mcp_key = (config.get("name") or "") + str(time.time())
-        mid = config.get("id") or f"mcp-{hashlib.md5(_mcp_key.encode()).hexdigest()[:8]}"
+        mid = config.get("id") or f"mcp-{hashlib.md5(_mcp_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         mcp = MCPConfig(
             id=mid, display_name=config.get("name", ""),
             transport=config.get("transport", "http"),
@@ -534,7 +534,7 @@ class ModuleManager:
 
     def create_connector(self, config: dict) -> ConnectorConfig:
         _conn_key = (config.get("provider") or "") + str(time.time())
-        cid = config.get("id") or f"conn-{hashlib.md5(_conn_key.encode()).hexdigest()[:8]}"
+        cid = config.get("id") or f"conn-{hashlib.md5(_conn_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         conn = ConnectorConfig(
             id=cid, provider=config.get("provider", ""),
             display_name=config.get("name", ""),

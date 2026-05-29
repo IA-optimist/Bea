@@ -181,7 +181,7 @@ class MemoryFacade:
             content_type = "general"
         tags = tags or []
         metadata = metadata or {}
-        entry_id = hashlib.md5(f"{content[:100]}:{time.time()}".encode()).hexdigest()[:12]
+        entry_id = hashlib.md5(f"{content[:100]}:{time.time()}".encode(), usedforsecurity=False).hexdigest()[:12]
 
         # Try preferred backends in order
         backends = _ROUTING.get(content_type, ["knowledge_jsonl"])
@@ -413,7 +413,7 @@ class MemoryFacade:
         seen = set()
         unique = []
         for r in results:
-            h = hashlib.md5(r.content[:200].encode()).hexdigest()
+            h = hashlib.md5(r.content[:200].encode(), usedforsecurity=False).hexdigest()
             if h not in seen:
                 seen.add(h)
                 unique.append(r)

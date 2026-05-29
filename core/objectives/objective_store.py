@@ -55,7 +55,7 @@ def _get_store_path() -> Path:
 
 # def _make_vector(text: str, dim: int = 768) -> List[float]:
 #     """Vecteur pseudo-aléatoire déterministe basé sur le hash du texte."""
-#     seed = int(hashlib.md5(text.encode("utf-8", errors="replace")).hexdigest()[:8], 16)
+#     seed = int(hashlib.md5(text.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()[:8], 16)
 #     rng = random.Random(seed)
 #     vec = [rng.gauss(0, 1) for _ in range(dim)]
 #     norm = sum(x * x for x in vec) ** 0.5

@@ -65,7 +65,7 @@ def _default_db_path() -> Path:
             continue
 
     # Last-resort fallback: use /tmp (survives the session but not reboots)
-    fallback = Path("/tmp/jarvismax_canonical_missions.db")
+    fallback = Path("/tmp/jarvismax_canonical_missions.db")  # nosec B108 — documented last-resort path; preferred paths checked above.
     log.warning("canonical_mission_store.using_tmp_fallback", path=str(fallback))
     return fallback
 

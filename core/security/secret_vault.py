@@ -187,7 +187,7 @@ class SecretVault:
             raise PolicyViolation(f"Role '{role}' cannot create secrets")
 
         # Generate ID
-        secret_id = f"sec-{hashlib.md5(f'{name}{time.time()}'.encode()).hexdigest()[:10]}"
+        secret_id = f"sec-{hashlib.md5(f'{name}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
 
         # Encrypt value
         payload = encrypt(value, self._master_key, self._salt)

@@ -98,7 +98,7 @@ class ImprovementSignal:
 
     @property
     def id(self) -> str:
-        return hashlib.md5(f"{self.type}:{self.component}:{self.stacktrace[:100]}".encode()).hexdigest()[:12]
+        return hashlib.md5(f"{self.type}:{self.component}:{self.stacktrace[:100]}".encode(), usedforsecurity=False).hexdigest()[:12]
 
     def to_dict(self) -> dict:
         return {
@@ -326,7 +326,7 @@ class CriticAgent:
         # Priority = severity × frequency × confidence
         priority = severity_max * min(total_freq, 20) * confidence / 20
 
-        task_id = hashlib.md5(f"{component}:{strategy}".encode()).hexdigest()[:10]
+        task_id = hashlib.md5(f"{component}:{strategy}".encode(), usedforsecurity=False).hexdigest()[:10]
 
         return ImprovementTask(
             id=f"task-{task_id}",

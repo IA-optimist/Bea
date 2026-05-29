@@ -46,7 +46,7 @@ def _is_safe_path(path: str) -> bool:
     for blocked in _BLOCKED_PATHS:
         if abs_path.startswith(blocked):
             return False
-    safe_roots = [os.path.abspath(JARVIS_ROOT), "/tmp", os.path.abspath(".")]
+    safe_roots = [os.path.abspath(JARVIS_ROOT), "/tmp", os.path.abspath(".")]  # nosec B108 — path-prefix allowlist, not a write target.
     return any(abs_path.startswith(root) for root in safe_roots)
 
 

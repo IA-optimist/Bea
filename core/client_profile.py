@@ -20,7 +20,7 @@ class ClientProfile:
     def __post_init__(self):
         if not self.profile_id:
             import hashlib
-            self.profile_id = hashlib.md5(f'{self.name}:{self.sector}'.encode()).hexdigest()[:8]
+            self.profile_id = hashlib.md5(f'{self.name}:{self.sector}'.encode(), usedforsecurity=False).hexdigest()[:8]
 
     def inject_context(self, goal: str) -> str:
         """Enrichit un goal avec le contexte client."""

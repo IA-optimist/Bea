@@ -104,7 +104,7 @@ def create_session(
     sandbox_root: str = "data/browser_sessions",
 ) -> BrowserSession:
     """Create a new isolated browser session."""
-    sid = f"bs-{hashlib.md5(f'{agent_name}{time.time()}'.encode()).hexdigest()[:10]}"
+    sid = f"bs-{hashlib.md5(f'{agent_name}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
 
     # Create isolated downloads directory
     downloads = Path(sandbox_root) / sid / "downloads"
