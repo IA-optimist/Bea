@@ -123,7 +123,7 @@ def _classify_error(error_str) -> str:
 
 def execute_http_get(url: str, timeout: int = 8) -> dict:
     """HTTP GET simple. Bloqué sur localhost / réseau interne."""
-    _BLOCKED = ("localhost", "127.0.0.1", "10.0.", "0.0.0.0", "169.254.")
+    _BLOCKED = ("localhost", "127.0.0.1", "10.0.", "0.0.0.0", "169.254.")  # nosec B104 — SSRF blocklist, not a bind
     for blocked in _BLOCKED:
         if blocked in url:
             return _err(f"blocked_url: {blocked} not allowed")

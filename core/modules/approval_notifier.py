@@ -72,8 +72,8 @@ class ApprovalNotifier:
 
     def __init__(
         self,
-        bot_token: str = "",
-        chat_id: str = "",
+        bot_token: str = "",  # nosec B107 — empty default; real value pulled from TELEGRAM_BOT_TOKEN env below.
+        chat_id: str = "",  # nosec B107 — same.
     ):
         self._bot_token = bot_token or os.environ.get("TELEGRAM_BOT_TOKEN", "")
         self._chat_id = chat_id or os.environ.get("TELEGRAM_CHAT_ID", "")

@@ -169,7 +169,7 @@ class SecretVault:
 
     # ── Create ──
 
-    def create_secret(
+    def create_secret(  # nosec B107 — `secret_type` default below is a category label, not a secret value.
         self,
         name: str,
         value: str,

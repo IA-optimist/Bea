@@ -77,7 +77,7 @@ def browser_navigate(url: str = "", **kwargs) -> dict:
         return {"ok": False, "result": "", "error": "url required"}
 
     # Block internal addresses
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return {"ok": False, "result": "", "error": f"blocked: internal address {blocked}"}
 

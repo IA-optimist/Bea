@@ -107,7 +107,7 @@ def http_request(params: dict) -> ConnectorResult:
         return ConnectorResult(error="url required", connector="http_request")
 
     # Safety: block internal IPs
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return ConnectorResult(error="blocked: internal address", connector="http_request")
 
@@ -773,7 +773,7 @@ def webhook_connector(params: dict) -> ConnectorResult:
         return ConnectorResult(error="url required", latency_ms=_latency(), connector="webhook")
 
     # Safety: block internal
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return ConnectorResult(error="blocked: internal address", latency_ms=_latency(), connector="webhook")
 
@@ -848,7 +848,7 @@ def api_connector(params: dict) -> ConnectorResult:
         return ConnectorResult(error="url required", latency_ms=_latency(), connector="api_connector")
 
     # Safety: block internal
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return ConnectorResult(error="blocked: internal address", latency_ms=_latency(), connector="api_connector")
 
@@ -1363,7 +1363,7 @@ def web_scrape_connector(params: dict) -> ConnectorResult:
         return ConnectorResult(error="url required", latency_ms=_latency(), connector="web_scrape")
 
     # Safety: block internal
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return ConnectorResult(error="blocked: internal address",
                                    latency_ms=_latency(), connector="web_scrape")

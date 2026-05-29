@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 
-_BLOCKED_HOSTS = (
+_BLOCKED_HOSTS = (  # nosec B104 — SSRF blocklist, not a bind
     "localhost", "127.0.0.1", "0.0.0.0",
     "10.0.", "10.1.", "10.2.", "10.3.", "10.4.", "10.5.", "10.6.", "10.7.",
     "10.8.", "10.9.", "10.10.", "10.11.", "10.12.", "10.13.", "10.14.", "10.15.",
