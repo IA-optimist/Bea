@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from models.opportunity import Opportunity
 from models.opportunity_analysis import OpportunityAnalysis
@@ -30,9 +30,17 @@ class MVPGenerator:
         self.workspace_dir = Path(workspace_dir)
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
         
-        # Setup Jinja2 environment
+        # Setup Jinja2 environment.
+        # Bandit B701 hardening: autoescape via select_autoescape so HTML/XML
+        # template files in business/templates/mvp/frontend/ get auto-escaped
+        # (any user-controlled value rendered into them is safe). Source-code
+        # templates (Python in backend/, Dockerfile, README.md.jinja2) are
+        # left untouched — escaping would corrupt code generation.
         templates_dir = Path(__file__).parent.parent.parent / "business" / "templates" / "mvp"
-        self.jinja_env = Environment(loader=FileSystemLoader(str(templates_dir)))
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(str(templates_dir)),
+            autoescape=select_autoescape(["html", "htm", "xml"]),
+        )
         
         logger.info(f"mvp_generator_initialized workspace={self.workspace_dir}")
     

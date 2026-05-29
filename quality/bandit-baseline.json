@@ -11,9 +11,7 @@
     "B324": 15,
     "B404": 22,
     "B603": 63,
-    "B607": 36,
-    "B608": 2,
-    "B701": 1
+    "B607": 36
   },
   "notes": [
     "Per-test-id count budget for Bandit findings in api/core/kernel.",
