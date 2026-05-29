@@ -41,11 +41,14 @@ pandas==2.2.0
 playwright==1.41.2
 
 # Security
-# cryptography 42.0.2 → 43.0.1 (GHSA-h4gh-qq45-vh27 + PYSEC-2024-225).
-# TODO(deferred): bump to 46.0.6 pour fermer CVE-2024-12797, CVE-2026-26007,
-# CVE-2026-34073 — nécessite validation des breaking changes côté asyncpg/
-# jwt/TLS. À faire dans une PR dédiée avec tests d'intégration.
-cryptography==43.0.1
+# cryptography 43.0.1 → 46.0.6 (PYSEC-2026-35, CVE-2024-12797, CVE-2026-26007).
+# Validated 2026-05-29 in .venv-c4-prep:
+#   - 94/94 hardening tests pass
+#   - AES-GCM encrypt/decrypt round-trip OK (core/security/secret_crypto.py)
+#   - pyjwt 2.13.0 HS256 round-trip OK
+#   - asyncpg 0.31.0 imports clean (SCRAM uses cryptography ≥ 41 — no break)
+#   - Smoke harness 13/13 module imports clean
+cryptography==46.0.6
 # pyjwt 2.8.0 → 2.12.0 (CVE-2026-32597)
 pyjwt==2.12.0
 
