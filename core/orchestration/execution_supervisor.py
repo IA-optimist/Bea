@@ -359,7 +359,7 @@ async def supervise(
         duration_ms=outcome.duration_ms,
         retries=outcome.retries,
         error_class=outcome.error_class,
-        error=last_error[:80],
+        err=last_error[:80],
     )
     return outcome
 

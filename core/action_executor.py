@@ -103,7 +103,7 @@ class ActionExecutor:
                 self._llm_helper = get_agent_helper(factory)
                 log.info("llm_agent_helper_initialized")
             except Exception as e:
-                log.warning("llm_agent_helper_init_failed", error=str(e))
+                log.warning("llm_agent_helper_init_failed", err=str(e))
 
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ class ActionExecutor:
             try:
                 self.run_once()
             except Exception as exc:
-                log.error("executor_cycle_error", error=str(exc))
+                log.error("executor_cycle_error", err=str(exc))
             time.sleep(_POLL_INTERVAL)
 
     def run_once(self) -> list[dict]:
@@ -209,7 +209,7 @@ class ActionExecutor:
             self._failed_total += 1
             self._learn(action, err, success=False)
 
-            log.error("executor_action_failed", id=action_id, error=str(exc))
+            log.error("executor_action_failed", id=action_id, err=str(exc))
 
             with self._lock:
                 self._current_action_id = None
@@ -262,7 +262,7 @@ class ActionExecutor:
                 role="default"
             )
         except Exception as e:
-            log.warning("llm_agent_call_failed", agent=agent_type, error=str(e))
+            log.warning("llm_agent_call_failed", agent=agent_type, err=str(e))
             return None
 
     def _run_research(self, action) -> str:
@@ -631,7 +631,7 @@ class ActionExecutor:
                     except Exception as _exc:
                         log.warning("silent_exception_caught", err=str(_exc)[:200], stage="action_executor")
                 except Exception as _agg_err:
-                    log.warning("result_aggregator_fallback", error=str(_agg_err))
+                    log.warning("result_aggregator_fallback", err=str(_agg_err))
                     full_output = f"{executed}/{len(all_acts)} actions exécutées avec succès."
 
                 # DO NOT call ms.complete() here — the main pipeline in
@@ -695,7 +695,7 @@ class ActionExecutor:
                                 mission_id=mission_id,
                                 error=str(_trace_err)[:100])
         except Exception as e:
-            log.warning("mission_completion_check_failed", error=str(e))
+            log.warning("mission_completion_check_failed", err=str(e))
 
     # ── Learning feedback ─────────────────────────────────────────────────────
 

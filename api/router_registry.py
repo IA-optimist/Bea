@@ -72,7 +72,7 @@ class RouterRegistry:
             error=error,
         )
         self._load_errors.append({"name": name, "error": error[:200]})
-        log.warning("router_load_failed", name=name, error=error[:100])
+        log.warning("router_load_failed", name=name, err=error[:100])
 
     def get(self, name: str) -> Optional[APIRouter]:
         """Get a router by name. Returns None if not found or failed."""

@@ -87,7 +87,7 @@ async def websocket_stream(
     # Pre-accept rejection: if header token provided but invalid, reject early
     # NOTE: query params plus acceptés — use headers or first-message auth only
     if token and not _authorized and _api_token:
-        log.warning("ws_unauthorized_pre_accept", mission_id=mission_id, error="Your access token is invalid")
+        log.warning("ws_unauthorized_pre_accept", mission_id=mission_id, err="Your access token is invalid")
         await websocket.close(code=1008)
         return
 

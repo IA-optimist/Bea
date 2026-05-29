@@ -71,7 +71,7 @@ def _build_capabilities() -> dict[str, CapabilityEntry]:
                 failure_count=cap.get("failure_count", 0),
             )
     except Exception as e:
-        log.debug("self_model.updater.capabilities_failed", error=str(e)[:80])
+        log.debug("self_model.updater.capabilities_failed", err=str(e)[:80])
     return capabilities
 
 
@@ -119,7 +119,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 trust_level=mcp.get("trust_level", ""),
             )
     except Exception as e:
-        log.debug("self_model.updater.mcp_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.mcp_components_failed", err=str(e)[:80])
 
     # Tool permissions (gated tools)
     try:
@@ -136,7 +136,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 reason="Gated tool" if not approved else "",
             )
     except Exception as e:
-        log.debug("self_model.updater.tool_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.tool_components_failed", err=str(e)[:80])
 
     # Connectors from module manager
     try:
@@ -152,7 +152,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 status=ComponentStatus.READY if enabled else ComponentStatus.DISABLED,
             )
     except Exception as e:
-        log.debug("self_model.updater.connector_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.connector_components_failed", err=str(e)[:80])
 
     return components
 

@@ -348,7 +348,7 @@ class LLMFactory:
             return result
 
         except Exception as e:
-            log.warning("llm_build_failed", provider=provider, role=role, error=str(e))
+            log.warning("llm_build_failed", provider=provider, role=role, err=str(e))
             # Feedback circuit breaker : échec Ollama → incrémenter les failures
             if provider == "ollama":
                 _OLLAMA_CIRCUIT.record_failure()

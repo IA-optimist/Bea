@@ -181,7 +181,7 @@ Format as numbered list:
             return children
             
         except Exception as e:
-            log.error("tot_generation_failed", error=str(e))
+            log.error("tot_generation_failed", err=str(e))
             return []
     
     async def _evaluate_thought(self, node: ThoughtNode, problem: str) -> float:

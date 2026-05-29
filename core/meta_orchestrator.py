@@ -166,7 +166,7 @@ class MetaOrchestrator:
                 self._capability_dispatcher = get_capability_dispatcher()
                 log.debug("meta_orchestrator.capability_dispatcher_loaded")
             except Exception as e:
-                log.warning("meta_orchestrator.capability_dispatcher_unavailable", error=str(e))
+                log.warning("meta_orchestrator.capability_dispatcher_unavailable", err=str(e))
                 self._capability_dispatcher = None
         return self._capability_dispatcher
 
@@ -2887,7 +2887,7 @@ class MetaOrchestrator:
             result = await handler(mission, context or {})
             return result
         except Exception as e:
-            log.error("mission_handler_failed", mission_type=mission_type, error=str(e))
+            log.error("mission_handler_failed", mission_type=mission_type, err=str(e))
             raise
 
     # ── Backward-compat shims ────────────────────────────────────────────────

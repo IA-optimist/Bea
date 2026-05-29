@@ -756,7 +756,7 @@ class SandboxExecutor:
             # Apply patch
             applied, patch_error = _apply_patch(unified_diff, work_dir)
             if not applied:
-                log.warning("sandbox.patch_failed", error=patch_error)
+                log.warning("sandbox.patch_failed", err=patch_error)
                 return SandboxResult(
                     success=False,
                     error=f"Patch application failed: {patch_error}",

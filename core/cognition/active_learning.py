@@ -65,7 +65,7 @@ class SkillDiscoverer:
             return result
             
         except Exception as e:
-            log.error("skill_extraction_failed", error=str(e))
+            log.error("skill_extraction_failed", err=str(e))
             return {"is_skill_worthy": False, "reason": f"Extraction failed: {str(e)}"}
     
     def _estimate_complexity(self, mission: Dict[str, Any]) -> int:

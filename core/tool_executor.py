@@ -668,7 +668,7 @@ class ToolExecutor:
             if _perm["requires_approval"] and approval_mode == "SUPERVISED":
                 log.info("tool_requires_approval", tool=tool_name, risk=_perm["capability"]["risk_level"])
         except Exception as _cap_err:
-            log.debug("capability_check_skipped", error=str(_cap_err))
+            log.debug("capability_check_skipped", err=str(_cap_err))
 
         # Per-tool permission gate (P1) — requires approval for dangerous tools
         try:
@@ -689,7 +689,7 @@ class ToolExecutor:
                     "approval_request_id": _req.request_id,
                 }
         except Exception as _tp_err:
-            log.debug("tool_permission_check_skipped", error=str(_tp_err)[:100])
+            log.debug("tool_permission_check_skipped", err=str(_tp_err)[:100])
 
         # Circuit breaker check (fail-closed for broken tools)
         try:
@@ -725,7 +725,7 @@ class ToolExecutor:
                 log.info("policy_requires_approval",
                            tool=tool_name, score=_policy_decision.score)
         except Exception as _pol_err:
-            log.warning("policy_check_failed", error=str(_pol_err)[:200])
+            log.warning("policy_check_failed", err=str(_pol_err)[:200])
             # Fail-CLOSED for HIGH risk tools; fail-open for LOW risk
             try:
                 _high_risk = {"shell_execute", "code_execute"}
@@ -922,7 +922,7 @@ class ToolExecutor:
             except Exception:
                 _silent_log.debug("suppressed_exception", src='tool_executor.py')
 
-            log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} error={e}")
+            log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} err={e}")
             return _err(str(e), error_class=error_class, tool=tool_name, blocked_by_policy=False)
 
     def _validate_params(self, tool_name: str, params: dict) -> Optional[str]:

@@ -28,7 +28,7 @@ class MemoryBank:
             with open(self.db_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            log.error("memory_load_failed", error=str(e))
+            log.error("memory_load_failed", err=str(e))
             return []
 
     def _save(self):
@@ -36,7 +36,7 @@ class MemoryBank:
             with open(self.db_path, "w", encoding="utf-8") as f:
                 json.dump(self.memories, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            log.error("memory_save_failed", error=str(e))
+            log.error("memory_save_failed", err=str(e))
 
     def add_lesson(self, error_context: str, successful_solution: str):
         """Mémorise qu'une solution a corrigé un problème spécifique."""

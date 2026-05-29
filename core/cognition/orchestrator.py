@@ -74,7 +74,7 @@ Provide a comprehensive response addressing the mission goal."""
                 return str(response)
                 
         except Exception as e:
-            log.error("llm_execution_failed", error=str(e), mission_id=mission.get("mission_id"))
+            log.error("llm_execution_failed", err=str(e), mission_id=mission.get("mission_id"))
             return f"ERROR: LLM execution failed - {str(e)}"
 
     async def execute_mission_with_cognition(
@@ -261,7 +261,7 @@ Provide a comprehensive response addressing the mission goal."""
                 decision_trace: list = None
             return TimeoutOutcome()
         except Exception as exec_err:
-            log.error("cognition.execution_error", mission_id=mission_id, error=str(exec_err)[:200])
+            log.error("cognition.execution_error", mission_id=mission_id, err=str(exec_err)[:200])
             raise
         
         # Phase 3: Self-Confidence scoring
@@ -277,7 +277,7 @@ Provide a comprehensive response addressing the mission goal."""
                     score=confidence_result,
                 )
             except Exception as conf_err:
-                log.warning("cognition.confidence_failed", error=str(conf_err)[:100])
+                log.warning("cognition.confidence_failed", err=str(conf_err)[:100])
         
         # Phase 4: Performance tracking
         duration = (datetime.now() - start_time).total_seconds()
@@ -322,7 +322,7 @@ Provide a comprehensive response addressing the mission goal."""
                     except Exception as _sk_err:
                         log.warning('skill_propose_failed', err=str(_sk_err)[:60])
             except Exception as skill_err:
-                log.warning("cognition.skill_discovery_failed", error=str(skill_err)[:100])
+                log.warning("cognition.skill_discovery_failed", err=str(skill_err)[:100])
         
         # Log final cognition summary
         perf_report = self.tracker.get_report()
@@ -584,7 +584,7 @@ Provide a comprehensive response addressing the mission goal."""
             mission["status"] = "COMPLETED"
             
         except Exception as e:
-            log.error("business_execution_failed", error=str(e), mission_id=mission_id)
+            log.error("business_execution_failed", err=str(e), mission_id=mission_id)
             mission["result"] = f"Business operation failed: {str(e)}"
             mission["business_result"] = {"error": str(e), "operation": operation}
             mission["status"] = "FAILED"

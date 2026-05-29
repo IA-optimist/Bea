@@ -49,7 +49,7 @@ def _read_jsonl(path: Path, max_age_hours: int = 24) -> List[Dict[str, Any]]:
                     except json.JSONDecodeError:
                         continue
     except Exception as e:
-        log.warning("cognitive_consolidation.read_error", path=str(path), error=str(e))
+        log.warning("cognitive_consolidation.read_error", path=str(path), err=str(e))
     
     return entries
 
@@ -213,7 +213,7 @@ async def run_nightly_consolidation() -> Dict[str, Any]:
                  traces=len(all_traces),
                  avg_dopamine=summary['meta']['avg_global_dopamine'])
     except Exception as e:
-        log.error("cognitive_consolidation.save_failed", error=str(e))
+        log.error("cognitive_consolidation.save_failed", err=str(e))
         raise
     
     return {

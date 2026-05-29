@@ -529,7 +529,7 @@ class ExecutionGuard:
                 target=name[:80],
                 failed_step=failed.step if failed else "?",
                 failed_detail=(failed.detail[:80] if failed else ""),
-                error=result.error[:140],
+                err=result.error[:140],
                 elapsed_ms=result.elapsed_ms,
                 proof=result.proof,
             )

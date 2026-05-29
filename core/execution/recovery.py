@@ -224,7 +224,7 @@ def retry_build(artifact, build_error: str, budget_mode: str = "normal") -> Retr
     )
 
     if not failure.retryable:
-        log.info("build_not_retryable", category=failure.category.value, error=build_error[:80])
+        log.info("build_not_retryable", category=failure.category.value, err=build_error[:80])
         return result
 
     from core.execution.build_pipeline import BuildPipeline
@@ -274,6 +274,6 @@ def retry_build(artifact, build_error: str, budget_mode: str = "normal") -> Retr
             attempt.error = str(e)[:200]
 
         result.attempts.append(attempt)
-        log.info("build_retry_failed", attempt=attempt_num, strategy=strategy.value, error=attempt.error[:60])
+        log.info("build_retry_failed", attempt=attempt_num, strategy=strategy.value, err=attempt.error[:60])
 
     return result

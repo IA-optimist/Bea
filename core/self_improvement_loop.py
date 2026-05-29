@@ -1073,7 +1073,7 @@ class JarvisImprovementLoop:
         except Exception as e:
             # Fallback: if pipeline import/execution fails, use legacy path
             # but WITHOUT writing to production (fail-safe)
-            log.warning("pipeline_fallback", error=str(e)[:200])
+            log.warning("pipeline_fallback", err=str(e)[:200])
             details.append({"step": "pipeline_fallback", "error": str(e)[:200]})
 
             sandbox_result = self._sandbox.run(patch)

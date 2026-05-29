@@ -36,7 +36,7 @@ try:
         delete_project
     )
 except ImportError as e:
-    log.error("failed_to_import_project_model", error=str(e))
+    log.error("failed_to_import_project_model", err=str(e))
     raise
 
 # Create router with real auth dependency (uses canonical require_auth from api._deps)
@@ -143,7 +143,7 @@ async def create_project_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        log.error("create_project_endpoint_failed", error=str(e))
+        log.error("create_project_endpoint_failed", err=str(e))
         raise HTTPException(status_code=500, detail="Failed to create project")
 
 
@@ -177,7 +177,7 @@ async def list_projects_endpoint(
             total=len(projects)
         )
     except Exception as e:
-        log.error("list_projects_endpoint_failed", error=str(e))
+        log.error("list_projects_endpoint_failed", err=str(e))
         raise HTTPException(status_code=500, detail="Failed to list projects")
 
 
@@ -216,7 +216,7 @@ async def get_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("get_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("get_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to get project")
 
 
@@ -259,7 +259,7 @@ async def update_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("update_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("update_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to update project")
 
 
@@ -296,7 +296,7 @@ async def delete_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("delete_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("delete_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to delete project")
 
 

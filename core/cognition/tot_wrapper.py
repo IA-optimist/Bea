@@ -40,7 +40,7 @@ async def plan_with_tot(
             else:
                 return str(await llm_client(prompt))
         except Exception as e:
-            log.error("tot_llm_call_failed", error=str(e))
+            log.error("tot_llm_call_failed", err=str(e))
             return "Error generating thought"
     # Create ToT engine
     tot = TreeOfThought(

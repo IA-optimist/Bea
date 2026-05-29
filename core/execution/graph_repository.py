@@ -69,7 +69,7 @@ class GraphRepository:
             self._update_index(graph)
             return True
         except Exception as e:
-            log.warning("graph_save_failed", graph_id=graph.graph_id, error=str(e)[:100])
+            log.warning("graph_save_failed", graph_id=graph.graph_id, err=str(e)[:100])
             return False
 
     def load(self, graph_id: str) -> Optional[ExecutionGraph]:
@@ -81,7 +81,7 @@ class GraphRepository:
             data = json.loads(path.read_text())
             return ExecutionGraph.from_dict(data)
         except Exception as e:
-            log.warning("graph_load_failed", graph_id=graph_id, error=str(e)[:100])
+            log.warning("graph_load_failed", graph_id=graph_id, err=str(e)[:100])
             return None
 
     def delete(self, graph_id: str) -> bool:

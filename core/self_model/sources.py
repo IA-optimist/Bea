@@ -23,7 +23,7 @@ def read_capability_graph() -> list[dict]:
         graph = bridge.capability_graph
         return graph.get_all() if hasattr(graph, "get_all") else []
     except Exception as e:
-        log.debug("self_model.source.capability_graph_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.capability_graph_unavailable", err=str(e)[:80])
         return []
 
 
@@ -37,7 +37,7 @@ def read_mcp_registry() -> list[dict]:
         return [s.safe_dict() if hasattr(s, "safe_dict") else vars(s)
                 for s in registry.list_all()]
     except Exception as e:
-        log.debug("self_model.source.mcp_registry_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.mcp_registry_unavailable", err=str(e)[:80])
         return []
 
 
@@ -54,7 +54,7 @@ def read_modules() -> dict[str, list[dict]]:
             result[mtype] = items if isinstance(items, list) else []
         return result
     except Exception as e:
-        log.debug("self_model.source.module_manager_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.module_manager_unavailable", err=str(e)[:80])
         return {}
 
 
@@ -67,7 +67,7 @@ def read_tool_permissions() -> list[dict]:
         perms = get_tool_permissions()
         return perms.list_all() if hasattr(perms, "list_all") else []
     except Exception as e:
-        log.debug("self_model.source.tool_permissions_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.tool_permissions_unavailable", err=str(e)[:80])
         return []
 
 
@@ -83,7 +83,7 @@ def read_agent_reputation() -> dict[str, dict]:
             return rep.get_all()
         return {}
     except Exception as e:
-        log.debug("self_model.source.agent_reputation_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.agent_reputation_unavailable", err=str(e)[:80])
         return {}
 
 
@@ -101,7 +101,7 @@ def read_protected_paths() -> dict:
             "patterns": list(PROTECTED_PATTERNS) if hasattr(PROTECTED_PATTERNS, "__iter__") else [],
         }
     except Exception as e:
-        log.debug("self_model.source.protected_paths_unavailable", error=str(e)[:80])
+        log.debug("self_model.source.protected_paths_unavailable", err=str(e)[:80])
         return {"files": [], "dirs": [], "patterns": []}
 
 

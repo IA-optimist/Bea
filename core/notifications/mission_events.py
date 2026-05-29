@@ -61,7 +61,7 @@ async def on_mission_status_change(
     except Exception as e:
         # Never let notification errors break mission execution
         log.error("mission_notification_error",
-                  error=str(e),
+                  err=str(e),
                   mission_id=mission_id,
                   status=new_status)
 
@@ -111,5 +111,5 @@ def trigger_mission_notification_sync(
             )
     except Exception as e:
         log.error("sync_notification_trigger_failed",
-                  error=str(e),
+                  err=str(e),
                   mission_id=mission_id)
