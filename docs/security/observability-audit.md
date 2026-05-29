@@ -111,20 +111,27 @@ profiling itself. Pattern matches what `api/jwt_v2.py` now does.
 (recommended: `err=` since it's 8× more common) and migrate the 80
 holdouts. Easy with `git grep -l "error=" -- '*.py' | xargs sed -i`.
 
-**S2 — `sid` vs `mission_id`** (medium). 12 `sid=` sites use a short
-alias for what is everywhere else called `mission_id`. Mixed naming
-makes log queries fragile :
-```
-# Today you need both:
-mission_id="abc" OR sid="abc"
-```
-Migrate the 12 `sid=` sites to `mission_id=`. They live in
-`agents/crew.py` and 1-2 other files (`git grep "sid=" -- '*.py'`).
+**S2 — `sid` vs `mission_id`** ✅ **closed**. The 9 `sid=` sites (audit
+estimated 12; the real count was 9 after Codex's M1 extractions moved
+some) were migrated to `mission_id=` in:
+  - `core/jarvis_executor.py` (3 sites)
+  - `core/policy_engine.py` (1 site)
+  - `agents/crew.py` (2 sites)
+  - `agents/openhands_agent.py` (1 site)
+  - `agents/web_scout.py` (2 sites)
+Verify with `grep -rnE "log\\.(info|warning|error|debug)\\([^)]*\\bsid=" --include='*.py' api/ core/ kernel/ agents/`
+— must return zero.
 
-**S3 — `agent=` vs `agent_id=`** (small). 33 `agent=` vs 4 `agent_id=`.
-The `agent=` form is dominant and carries the agent **name**, not an
-id. Rename the 4 `agent_id=` sites to `agent=` (or convert the value to
-match the convention).
+**S3 — `agent=` vs `agent_id=`** (clarification, no migration). 33
+`agent=` (name) vs 4 `agent_id=` (UUID). Initially we thought this was
+a duplicate — it isn't. The two sets carry semantically distinct
+values:
+  - `agent=self.name` → human-readable name like ``"planner"``.
+  - `agent_id=_status_agent.agent_id` → kernel UUID for the registered agent.
+Both are legitimate. The audit convention is therefore: use `agent=`
+for the name and `agent_id=` for the UUID, never reuse the same key
+for both. The current state already respects this distinction —
+nothing to migrate. Update made post-Quick-win #3.
 
 **S4 — Bare `id=`** (medium). 30 sites use `id=...` without a prefix.
 Either a `mission_id`, `agent_id`, `tool_id`, `action_id`, depending on

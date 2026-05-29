@@ -44,7 +44,7 @@ class BaseAgent(ABC):
 
     async def run(self, session: JarvisSession) -> str:
         t0 = time.monotonic()
-        log.info(f"{self.name}_start", sid=session.session_id)
+        log.info(f"{self.name}_start", mission_id=session.session_id)
         # Emit agent_start to EventStream (fail-open)
         try:
             from core.event_stream import get_mission_stream
@@ -888,7 +888,7 @@ class ImageAgent(BaseAgent):
 
     async def run(self, session: JarvisSession) -> str:
         task = self._task(session)
-        log.info("image_agent_start", task=task[:80], sid=session.session_id)
+        log.info("image_agent_start", task=task[:80], mission_id=session.session_id)
         try:
             from modules.multimodal.image import generate_image_hf
             image_path = await generate_image_hf(task or session.mission_summary)
