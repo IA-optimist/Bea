@@ -138,19 +138,17 @@ Either a `mission_id`, `agent_id`, `tool_id`, `action_id`, depending on
 context. When grouping logs in Loki / Datadog this means a wildcard
 `id=*` matches everything and can't be narrowed. Migrate to typed keys.
 
-**S5 — Event name convention** (medium, no fix). Event names (`log.info("X", ...)`
-first argument) follow no convention :
-```
-log.info("mission_complete", ...)
-log.info("opportunity_scan_complete", ...)
-log.info("repo_context_injected", ...)
-log.warning("swallowed_exception", ...)        # new (M3)
-log.warning("jwt_v2_family_revoked", ...)      # new (Mo2)
-```
-The dominant pattern is `<subsystem>_<verb>` or `<subsystem>_<event>_<state>`.
-The newly-introduced ones (`swallowed_exception`, `jwt_v2_*`) already
-follow this. Worth committing the convention to a one-pager and adding
-a soft lint (regex `^[a-z][a-z_]*[a-z]$` on the first arg of `log.*(`).
+**S5 — Event name convention** ✅ **landed**. Convention documented at
+`docs/observability/log-events.md` and enforced by
+`tests/test_log_event_name_convention.py`:
+
+  - Regex: `^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$` (lowercase
+    snake_case with optional dotted namespace).
+  - Top-30 frequency leaders all comply.
+  - 54-entry ratchet baseline at `quality/legacy_log_event_names.json`
+    captures the long-tail "sentence used as event name" violations.
+  - Three sub-tests: no new violation, no stale baseline entry,
+    ≥100 events scanned (catches AST walker breakage).
 
 **S6 — Exception capture convention** (good, new). The recently
 introduced `swallowed_exception` events all carry `action`, `exc_type`,
