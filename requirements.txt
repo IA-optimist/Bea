@@ -82,14 +82,16 @@ openai==2.37.0
 
 # LLM & AI — required at runtime (versions aligned with requirements.lock)
 structlog==25.5.0
-langchain==1.2.15
-# langchain-core 1.2.25 → 1.2.31 (CVE-2026-40087, min requis par langchain-openai 1.1.14)
-langchain-core==1.2.31
-# langchain-openai 1.1.12 → 1.1.14 (GHSA-r7w7-9xr2-qq2r)
-langchain-openai==1.1.14
-langchain-community==0.4.1
-langchain-ollama==1.0.1
-langgraph==1.1.5
+# langchain stack bump 2026-05-30 (closes CVE-2026-44843 in langchain-core).
+# Resolver constraints chained the whole stack — langchain 1.3.2 requires
+# langchain-core >= 1.4.0, which is the CVE fix. Validated in side-venv:
+# 94/94 hardening tests pass, smoke harness 13/13 module imports OK.
+langchain==1.3.2
+langchain-core==1.4.0
+langchain-openai==1.2.2
+langchain-community==0.4.2
+langchain-ollama==1.1.0
+langgraph==1.2.2
 ollama==0.6.1
 qdrant-client==1.17.1
 httpx==0.27.2
