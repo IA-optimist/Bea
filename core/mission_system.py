@@ -19,7 +19,6 @@ Persistance : SQLite (workspace/jarvismax.db) avec fallback JSON
 """
 from __future__ import annotations
 
-import json
 import re
 import time
 import uuid
@@ -49,6 +48,11 @@ from core.mission_analysis import (
 # SINGLE SOURCE: core/state.py — imported here for backward compatibility
 from core.state import MissionStatus  # noqa: F811
 
+from core.mission_persistence import (
+    load_missions,
+    save_missions,
+    sqlite_upsert_mission,
+)
 from core.mission_models import (
     MissionPlan as MissionPlan,
     MissionResult as MissionResult,
@@ -959,123 +963,12 @@ class MissionSystem:
             self._save()
 
     def _load(self) -> None:
-        # Try SQLite first
-        try:
-            from core import db as _db_mod
-            db = _db_mod.get_db()
-            if db is not None:
-                rows = _db_mod.fetchall(
-                    "SELECT * FROM missions ORDER BY created_at DESC LIMIT 200"
-                )
-                for row in rows:
-                    try:
-                        m = MissionResult(
-                            mission_id=row["id"],
-                            user_input=row["user_input"] or "",
-                            intent=row["intent"] or "OTHER",
-                            status=row["status"] or MissionStatus.ANALYZING,
-                            plan_summary=row["plan_summary"] or "",
-                            plan_steps=_db_mod.loads(row.get("plan_steps"), []),
-                            advisory_score=row["advisory_score"] or 0.0,
-                            advisory_decision=row["advisory_decision"] or "UNKNOWN",
-                            advisory_issues=_db_mod.loads(row.get("advisory_issues"), []),
-                            advisory_risks=_db_mod.loads(row.get("advisory_risks"), []),
-                            action_ids=_db_mod.loads(row.get("action_ids"), []),
-                            requires_validation=bool(row["requires_validation"]),
-                            created_at=row["created_at"] or time.time(),
-                            updated_at=row["updated_at"] or time.time(),
-                            final_output=row.get("final_output") or "",
-                            summary=row.get("summary") or "",
-                            agents_selected=_db_mod.loads(row.get("agents_selected"), []),
-                            domain=row.get("domain") or "general",
-                            execution_trace=_db_mod.loads(row.get("execution_trace"), []),
-                            decision_trace=_db_mod.loads(row.get("decision_trace"), {}),
-                            risk_score=row.get("risk_score") or 0,
-                            complexity=row.get("complexity") or "medium",
-                            error=row.get("error") or "",
-                        )
-                        self._missions[m.mission_id] = m
-                    except Exception as _exc:
-                        log.debug("silent_exception_caught", err=str(_exc)[:120], location="mission_system:sqlite_row")
-                self._use_sqlite = True
-                log.debug("mission_system_loaded_sqlite", count=len(self._missions))
-                return
-        except Exception as exc:
-            log.warning("mission_sqlite_load_failed", err=str(exc))
-        # Fallback JSON
-        self._use_sqlite = False
-        try:
-            self._path.parent.mkdir(parents=True, exist_ok=True)
-            if not self._path.exists():
-                return
-            data = json.loads(self._path.read_text("utf-8"))
-            for item in data.get("missions", []):
-                try:
-                    m = MissionResult.from_dict(item)
-                    self._missions[m.mission_id] = m
-                except Exception as _exc:
-                    log.debug("silent_exception_caught", err=str(_exc)[:120], location="mission_system:json_row")
-        except Exception as exc:
-            log.warning("mission_system_load_failed", err=str(exc))
-
+        self._missions, self._use_sqlite = load_missions(self._path, log)
     def _save(self) -> None:
-        try:
-            self._path.parent.mkdir(parents=True, exist_ok=True)
-            # Rotation
-            if len(self._missions) > _MAX_STORED:
-                done = [m for m in self._missions.values() if m.is_done()]
-                for old in sorted(done, key=lambda m: m.created_at)[:20]:
-                    del self._missions[old.mission_id]
-            data = {
-                "version":  1,
-                "saved_at": time.time(),
-                "missions": [m.to_dict() for m in self._missions.values()],
-            }
-            self._path.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), "utf-8"
-            )
-        except Exception as exc:
-            log.warning("mission_system_save_failed", err=str(exc))
-
+        save_missions(self._path, self._missions, _MAX_STORED, log)
     def _sqlite_upsert(self, result: MissionResult) -> None:
-        try:
-            from core import db as _db_mod
-            _db_mod.execute(
-                """INSERT OR REPLACE INTO missions
-                   (id, user_input, intent, status, plan_summary, plan_steps,
-                    advisory_score, advisory_decision, advisory_issues, advisory_risks,
-                    action_ids, requires_validation, auto_approved, created_at,
-                    updated_at, completed_at, note, final_output, summary, agents_selected,
-                    domain, execution_trace, decision_trace, risk_score, complexity, error)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (
-                    result.mission_id, result.user_input, result.intent, result.status,
-                    result.plan_summary,
-                    _db_mod.dumps(result.plan_steps),
-                    result.advisory_score, result.advisory_decision,
-                    _db_mod.dumps(result.advisory_issues),
-                    _db_mod.dumps(result.advisory_risks),
-                    _db_mod.dumps(result.action_ids),
-                    1 if result.requires_validation else 0,
-                    0,  # auto_approved
-                    result.created_at, result.updated_at,
-                    None,  # completed_at
-                    "",  # note
-                    result.final_output,
-                    result.summary,
-                    _db_mod.dumps(result.agents_selected),
-                    result.domain,
-                    _db_mod.dumps(result.execution_trace),
-                    _db_mod.dumps(result.decision_trace),
-                    result.risk_score,
-                    result.complexity,
-                    result.error,
-                )
-            )
-        except Exception as exc:
-            log.warning("mission_sqlite_upsert_failed", err=str(exc))
+        if not sqlite_upsert_mission(result, log):
             self._save()
-
 
 # ── Singleton ─────────────────────────────────────────────────────────────────
 

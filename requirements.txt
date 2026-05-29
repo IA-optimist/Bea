@@ -36,7 +36,11 @@ python-multipart==0.0.29
 
 # Data processing
 beautifulsoup4==4.12.3
-lxml==5.1.0
+# lxml 5.1.0 → 6.1.0 (PYSEC-2026-87). Validated 2026-05-29 in side-venv:
+#   - lxml.etree + lxml.html imports clean
+#   - bs4 4.12.3 with `BeautifulSoup(..., "lxml")` parser works
+#   - 94/94 hardening tests pass under lxml 6.1.0
+lxml==6.1.0
 pandas==2.2.0
 playwright==1.41.2
 
@@ -59,10 +63,12 @@ stripe==8.0.0
 prometheus-client==0.19.0
 
 # Testing
-# TODO(deferred): pytest 7.4.4 → 9.0.3 (CVE-2025-71176). Bump major, risque
-# de breaking sur conftest/plugins ; à planifier avec un run complet ciblé.
-pytest==7.4.4
-pytest-asyncio==0.23.3
+# pytest 7.4.4 → 9.0.3 (CVE-2025-71176). Validated 2026-05-29 in side-venv:
+#   - 94/94 hardening tests pass (conftest pre-imports + JARVIS_API_TOKEN
+#     env injection unchanged)
+#   - pytest-asyncio bumped to 0.25 for pytest 9 compat
+pytest==9.0.3
+pytest-asyncio==0.25.0
 
 # Utilities
 psutil==5.9.8
