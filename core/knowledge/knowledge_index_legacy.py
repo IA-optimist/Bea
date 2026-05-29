@@ -34,9 +34,14 @@ _VECTOR_DIM = 768
 # ── Helpers internes ──────────────────────────────────────────────────────────
 
 def _pseudo_vector(text: str) -> list:
-    """Vecteur pseudo-aléatoire déterministe basé sur hash(text)."""
+    """Vecteur pseudo-aléatoire déterministe basé sur hash(text).
+
+    Bandit B311 nosec: this is a stable hash-based embedding for legacy
+    indexing — same input must always produce the same vector. Using
+    `secrets.SystemRandom` would defeat the purpose. Not security-sensitive.
+    """
     seed = hash(text) % (2 ** 32)
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311
     return [rng.gauss(0, 1) for _ in range(_VECTOR_DIM)]
 
 

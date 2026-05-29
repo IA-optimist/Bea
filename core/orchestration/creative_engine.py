@@ -286,10 +286,13 @@ class CreativeEngine:
         Chaque reformulation peut révéler une structure cachée du problème.
         """
         import random
-        selected = random.sample(self.domains, min(3, len(self.domains)))
+        # Bandit B311 nosec: creative reframing diversity, not security.
+        # The random output is fed to LLM prompts; no token / secret value
+        # is derived from it.
+        selected = random.sample(self.domains, min(3, len(self.domains)))  # nosec B311
         tasks = []
         for domain in selected:
-            template = random.choice(REFRAME_TEMPLATES)
+            template = random.choice(REFRAME_TEMPLATES)  # nosec B311
             prompt = template.format(domain=domain, problem=problem)
             tasks.append(self.llm.complete(prompt, temperature=0.8, max_tokens=200))
 
