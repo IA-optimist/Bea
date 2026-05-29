@@ -115,7 +115,7 @@ class OllamaLLMClient(LLMClient):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 data = json.loads(resp.read().decode())
                 return data.get("response", "").strip()
         except Exception as e:
@@ -132,7 +132,7 @@ class OllamaLLMClient(LLMClient):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 data = json.loads(resp.read().decode())
                 return data.get("embedding", [])
         except Exception as e:

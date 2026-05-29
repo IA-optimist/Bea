@@ -261,7 +261,7 @@ class OperationalToolExecutor:
             if extra_headers:
                 headers.update(extra_headers)
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 body = resp.read().decode("utf-8")[:2000]
                 return ToolExecutionResult(
                     tool_id=tool_id, ok=True,

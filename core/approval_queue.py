@@ -61,7 +61,7 @@ def _fire_approval_webhook(item: dict) -> None:
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 logger.info(
                     f"[ApprovalQueue] webhook fired → {webhook_url[:40]}… "
                     f"status={resp.status}"

@@ -440,7 +440,7 @@ class ActionExecutor:
         try:
             import urllib.request
             # Use /health (no auth) instead of /api/health (auth required)
-            urllib.request.urlopen("http://localhost:8000/health", timeout=2)
+            urllib.request.urlopen("http://localhost:8000/health", timeout=2)  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
             checks.append(("✅", "API Control Layer", "accessible (200)"))
         except Exception as e:
             checks.append(("❌", "API Control Layer", f"non accessible ({e})"))

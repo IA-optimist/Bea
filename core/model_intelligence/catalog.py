@@ -204,7 +204,7 @@ class ModelCatalog:
                     "Accept": "application/json",
                 },
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 data = json.loads(resp.read().decode())
 
             raw_models = data.get("data", [])

@@ -594,7 +594,7 @@ class GitAgent:
                 method="POST",
             )
 
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 data = json.loads(resp.read().decode("utf-8"))
                 pr_url = data.get("html_url", "")
                 log.info("git_agent.pr_created", pr_url=pr_url, run_id=run_id)

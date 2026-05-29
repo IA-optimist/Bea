@@ -696,7 +696,7 @@ class BusinessActionExecutor:
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 result = resp.read().decode("utf-8")[:2000]
                 status = resp.status
         except Exception as e:

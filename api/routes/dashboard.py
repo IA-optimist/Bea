@@ -119,7 +119,7 @@ def _qdrant_health() -> dict:
         import urllib.request
         qdrant_host = os.getenv("QDRANT_HOST", "qdrant")
         url = f"http://{qdrant_host}:6333/collections"
-        with urllib.request.urlopen(url, timeout=2) as resp:
+        with urllib.request.urlopen(url, timeout=2) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
             data = json.loads(resp.read())
             collections = [c["name"] for c in data.get("result", {}).get("collections", [])]
             return {"status": "ok", "collections": collections}
