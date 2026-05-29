@@ -149,7 +149,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
             _jwt_configured = bool(
                 _jwt_secret
-                and _jwt_secret != "change-me-in-production"
+                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential
                 and not _jwt_secret.startswith("ephemeral-")
             )
         except Exception:

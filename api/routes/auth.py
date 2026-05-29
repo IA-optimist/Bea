@@ -160,7 +160,7 @@ def _maybe_issue_v2_pair(username: str, role: str) -> dict | None:
     return {
         "access_token": pair.access_token,
         "refresh_token": pair.refresh_token,
-        "token_type": "bearer",
+        "token_type": "bearer",  # nosec B105 — OAuth2 standard string
         "expires_in": pair.access_expires_in,
         "refresh_expires_in": pair.refresh_expires_in,
     }
@@ -187,7 +187,7 @@ async def login_for_access_token(
     token = create_access_token({"sub": user["username"], "role": user.get("role", "user")})
     if response is not None:
         set_auth_cookie(response, token)
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer"}  # nosec B105 — OAuth2 standard string
 
 
 @router.post("/auth/login")
@@ -262,7 +262,7 @@ async def refresh_token(request: Request, response: Response):
         return {
             "access_token": pair.access_token,
             "refresh_token": pair.refresh_token,
-            "token_type": "bearer",
+            "token_type": "bearer",  # nosec B105 — OAuth2 standard string
             "expires_in": pair.access_expires_in,
             "refresh_expires_in": pair.refresh_expires_in,
         }
@@ -284,4 +284,4 @@ async def refresh_token(request: Request, response: Response):
         "role": user.get("role", "user"),
     })
     set_auth_cookie(response, new_token)
-    return {"access_token": new_token, "token_type": "bearer"}
+    return {"access_token": new_token, "token_type": "bearer"}  # nosec B105 — OAuth2 standard string

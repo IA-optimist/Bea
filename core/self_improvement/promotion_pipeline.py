@@ -842,7 +842,7 @@ class PromotionPipeline:
                 hypothesis=getattr(candidate, "description", "")[:200],
                 touched_modules=result.changed_files,
                 risk_level=result.risk_level,
-                baseline_report={"pass_rate": 1.0},
+                baseline_report={"pass_rate": 1.0},  # nosec B105 — schema field, not a credential
                 candidate_report={
                     "pass_rate": 1.0 if result.validation_report.get("tests_passed") else 0.0,
                     "regressions": result.validation_report.get("regressions", []),

@@ -179,7 +179,7 @@ class MVPGenerator:
             
             # Database
             "db_user": "mvp_user",
-            "db_password": "mvp_pass_change_me",
+            "db_password": "mvp_pass_change_me",  # nosec B105 — generated-template placeholder (literally "_change_me")
             "db_name": f"{project_slug}_db",
             
             # Models (extracted from features)

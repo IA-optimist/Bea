@@ -114,7 +114,7 @@ _register(AIOSCapability(
     risk_level="LOW",
     required_tools=("http_request", "http_test"),
     required_agent_type="operator",
-    output_schema={"results": "list[dict]", "pass_rate": "float", "errors": "list[str]"},
+    output_schema={"results": "list[dict]", "pass_rate": "float", "errors": "list[str]"},  # nosec B105 — schema field types, not credentials
     timeout_profile=TimeoutProfile(execution_seconds=60, total_seconds=120),
 ))
 

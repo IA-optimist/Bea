@@ -81,7 +81,7 @@ class SignalType(str, Enum):
     APPROVAL_REJECTION = "approval_rejection"
     EXCEPTION = "exception"
     PERFORMANCE_DEGRADATION = "performance_degradation"
-    TOKEN_ANOMALY = "token_anomaly"
+    TOKEN_ANOMALY = "token_anomaly"  # nosec B105 — enum signal-type label
     TEST_FAILURE = "test_failure"
 
 

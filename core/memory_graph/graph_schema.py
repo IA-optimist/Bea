@@ -21,7 +21,7 @@ class NodeType(str, Enum):
     MODULE = "module"
     PATCH = "patch"
     BUG = "bug"
-    SECRET = "secret"
+    SECRET = "secret"  # nosec B105 — enum node-type label, not a credential
     CONNECTOR = "connector"
     IDENTITY = "identity"
     USER_REQUEST = "user_request"
@@ -45,7 +45,7 @@ class EdgeType(str, Enum):
     VALIDATED_BY = "validated_by"   # patch → test_result
     # Dependencies
     DEPENDS_ON = "depends_on"       # module → module
-    REQUIRES_SECRET = "requires_secret"  # connector → secret
+    REQUIRES_SECRET = "requires_secret"  # connector → secret  # nosec B105 — enum edge-type label
     BOUND_TO = "bound_to"          # identity → connector
     # Learning
     LEARNED_FROM = "learned_from"  # lesson → mission

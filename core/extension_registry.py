@@ -328,7 +328,7 @@ class ExtensionRegistry:
         data["created_by"] = actor
 
         # Handle MCP secrets
-        raw_secret = ""
+        raw_secret = ""  # nosec B105 — empty init; assigned below from data
         if ext_type == "mcp" and data.get("_raw_secret"):
             raw_secret = data.pop("_raw_secret")
             data["secret_ref"] = _hash_secret(raw_secret)
