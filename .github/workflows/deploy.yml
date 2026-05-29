@@ -1,10 +1,12 @@
 name: Auto Deploy to VPS1
 
+# Auto-triggers disabled 2026-05-30 — see ci.yml header for rationale.
+# Manual dispatch only (deploys consume billing minutes too).
 on:
-  workflow_run:
-    workflows: ["CI/CD Pipeline"]
-    branches: [main]
-    types: [completed]
+  # workflow_run:
+  #   workflows: ["CI/CD Pipeline"]
+  #   branches: [main]
+  #   types: [completed]
   workflow_dispatch:
 
 env:

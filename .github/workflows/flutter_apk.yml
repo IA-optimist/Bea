@@ -20,15 +20,17 @@ name: Build JarvisMax APK
 #     KEY_PASSWORD             — key password
 # ──────────────────────────────────────────────────────────────
 
+# Auto-triggers disabled 2026-05-30 — see ci.yml header for rationale.
+# Manual dispatch only, for explicit release builds.
 on:
-  push:
-    tags:
-      - 'v*'
-    branches:
-      - main
-    paths:
-      - 'jarvismax_app/**'
-      - '.github/workflows/flutter_apk.yml'
+  # push:
+  #   tags:
+  #     - 'v*'
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'jarvismax_app/**'
+  #     - '.github/workflows/flutter_apk.yml'
   workflow_dispatch:
     inputs:
       build_mode:

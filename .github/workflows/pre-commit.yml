@@ -1,10 +1,14 @@
 name: Security — Pre-commit Hooks
 
+# Auto-triggers disabled 2026-05-30 — see ci.yml header for rationale.
+# Pre-commit hooks still run locally on every commit via
+# `.pre-commit-config.yaml` (install with `pre-commit install`).
 on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: [main, develop]
+  workflow_dispatch:
+  # push:
+  #   branches: ["**"]
+  # pull_request:
+  #   branches: [main, develop]
 
 jobs:
   pre-commit:

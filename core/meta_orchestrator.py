@@ -24,7 +24,6 @@ import asyncio
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict
 
 import structlog
@@ -52,54 +51,13 @@ from core.orchestration.mission_circuit_breaker import MissionCircuitBreaker as 
 from core.state import MissionStatus  # noqa: F811  — single source of truth enum
 _silent_log = __import__("structlog").get_logger(__name__)
 
-try:
-    from kernel.state.mission_state import (
-        MissionContext,
-        VALID_TRANSITIONS as _VALID_TRANSITIONS,
-        get_state_machine as _get_kernel_sm,
-    )
-    _KERNEL_STATE_AVAILABLE = True
-except ImportError:
-    _KERNEL_STATE_AVAILABLE = False
-    _get_kernel_sm = None  # type: ignore[assignment]
+from core.meta_orchestrator_state import (
+    MissionContext as MissionContext,
+    _KERNEL_STATE_AVAILABLE as _KERNEL_STATE_AVAILABLE,
+    _VALID_TRANSITIONS as _VALID_TRANSITIONS,
+    _get_kernel_sm as _get_kernel_sm,
+)
 
-    # Inline fallback (should never happen in production)
-    _VALID_TRANSITIONS: dict[MissionStatus, set[MissionStatus]] = {
-        MissionStatus.CREATED:           {MissionStatus.PLANNED, MissionStatus.FAILED},
-        MissionStatus.PLANNED:           {MissionStatus.RUNNING, MissionStatus.FAILED},
-        MissionStatus.RUNNING:           {MissionStatus.REVIEW,  MissionStatus.FAILED,
-                                          MissionStatus.AWAITING_APPROVAL},
-        MissionStatus.AWAITING_APPROVAL: {MissionStatus.RUNNING, MissionStatus.FAILED,
-                                          MissionStatus.CANCELLED},
-        MissionStatus.REVIEW:            {MissionStatus.DONE,    MissionStatus.RUNNING,
-                                          MissionStatus.FAILED},
-        MissionStatus.DONE:              set(),
-        MissionStatus.FAILED:            set(),
-    }
-
-    @dataclass
-    class MissionContext:  # type: ignore[no-redef]
-        """Fallback — identical to kernel version."""
-        mission_id: str; goal: str; mode: str; status: MissionStatus
-        created_at: float; updated_at: float
-        result: str | None = None; error: str | None = None
-        metadata: dict = field(default_factory=dict)
-        project_id: str | None = None  # Phase 2.1: Project isolation
-        def get_output(self, agent: str) -> str:
-            outputs = self.metadata.get("agent_outputs", {})
-            if isinstance(outputs, dict):
-                out = outputs.get(agent, "")
-                return out if isinstance(out, str) else str(out) if out else ""
-            return ""
-        def to_dict(self) -> dict:
-            return {"mission_id": self.mission_id, "goal": self.goal[:200],
-                    "mode": self.mode, "status": self.status.value,
-                    "created_at": self.created_at, "updated_at": self.updated_at,
-                    "result": (self.result or "")[:500], "error": self.error,
-                    "metadata": self.metadata}
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # MetaOrchestrator
 # ─────────────────────────────────────────────────────────────────────────────
 
