@@ -48,7 +48,6 @@
   "core/cognitive_events/store.py": 2,
   "core/connectors/_base.py": 1,
   "core/connectors/runtime.py": 5,
-  "core/context_provider.py": 8,
   "core/db.py": 1,
   "core/db/migrate.py": 1,
   "core/evaluation_engine.py": 7,

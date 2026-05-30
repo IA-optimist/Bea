@@ -9,7 +9,10 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
+
+import structlog
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -85,8 +88,9 @@ class ContextProvider:
             try:
                 from memory.memory_bus import MemoryBus
                 self._memory_bus = MemoryBus.get_instance()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='context_provider.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="memory_bus_lazy_import",
+                            exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self._memory_bus
 
     def _read_json_file(self, path: str) -> Any:
@@ -96,8 +100,10 @@ class ContextProvider:
             if full.exists():
                 with open(full, "r", encoding="utf-8") as f:
                     return json.load(f)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="workspace_json_read",
+                        path=str(path)[:120], exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200])
         return None
 
     def _load_decisions(self, max_entries: int) -> list[dict]:
@@ -151,8 +157,9 @@ class ContextProvider:
                     constraints.append(f"{attr}=True")
                 elif isinstance(val, str) and attr.endswith(("_mode", "_policy", "_level")):
                     constraints.append(f"{attr}={val}")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="extract_settings_constraints",
+                        exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return constraints[:10]
 
     def _build_summary(
@@ -214,8 +221,9 @@ class ContextProvider:
             bus = self._get_memory_bus()
             if bus and hasattr(bus, "get_recent"):
                 memory_entries = bus.get_recent("working_memory", n=max_entries)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="memory_bus_get_recent",
+                        exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         agent_history: list[dict] = []
         try:
@@ -224,8 +232,10 @@ class ContextProvider:
                 ctx_str = bus.build_agent_context(agent_id, mission_id=mission_id)
                 if ctx_str:
                     agent_history = [{"text": ctx_str}]
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="memory_bus_build_agent_context",
+                        agent=agent_id, exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200])
 
         summary = self._build_summary(agent_id, mission_id, decisions, missions, memory_entries)
 
@@ -245,8 +255,9 @@ class ContextProvider:
         try:
             extra.append("shadow-advisor must validate feasibility before any irreversible action")
             extra.append("reject plans that lack rollback strategy")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="shadow_advisor_extras",
+                        exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         block.known_constraints = extra + block.known_constraints
         return block
 
@@ -265,14 +276,16 @@ class ContextProvider:
         # Inject known agent list
         try:
             block.relevant_files.append("core/task_router.py")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="map_planner_inject_router_file",
+                        exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         try:
             from tools.tool_registry import get_tool_registry
             tools = get_tool_registry().list_tools()
             block.known_constraints.insert(0, f"Available tools: {', '.join(tools)}")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_provider.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="map_planner_inject_tool_list",
+                        exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return block
 
 

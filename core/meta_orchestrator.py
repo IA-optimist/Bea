@@ -65,9 +65,10 @@ from core.meta_orchestrator_state import (
 # ── _strip_execution_outcome déplacé dans core/orchestration/mission_text_utils.py ──
 # Alias conservé (wrapper qui appelle la fonction publique).
 from core.orchestration.mission_text_utils import strip_execution_outcome as _strip_execution_outcome  # noqa: E402,F401
+from core.meta_custom_handlers import CustomMissionHandlerMixin  # noqa: E402
 
 
-class MetaOrchestrator:
+class MetaOrchestrator(CustomMissionHandlerMixin):
     """
     Cerveau unique de JarvisMax.
 
@@ -1367,32 +1368,20 @@ class MetaOrchestrator:
 
         # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
         # Skip fast-path if mission needs approval or contains destructive keywords
-        _DESTRUCTIVE_KW = (
-            # English
-            "delete","drop","remove","truncat","wipe","format","kill","destroy",
-            "purge","email all","send.*all","broadcast","sudo","chmod","rm -",
-            "mkfs","shutdown","reboot","restart server","drop table","drop database",
-            # French — commands that could cause real damage
-            "supprim","efface","effa\u00e7","suppression","vide la base",
-            "formate","arr\u00eate le serveur","red\u00e9marre","\u00e9teins",
-            "\u00e9crire dans","modifie la base","alter table","truncate",
-            "envoie un mail \u00e0 tous","envoie un email \u00e0 tous",
+        from core.meta_chat_fast_path import (
+            CHAT_DESTRUCTIVE_REFUSAL,
+            build_fast_path_prompt,
+            should_skip_fast_path,
         )
-        _goal_for_risk = goal.lower()
-        _fp_skip_risk = (
-            needs_approval
-            or ctx.metadata.get("classification", {}).get("risk_level", "low") in ("high", "write_high", "HIGH")
-            or any(kw in _goal_for_risk for kw in _DESTRUCTIVE_KW)
+        _fp_skip_risk = should_skip_fast_path(
+            goal,
+            needs_approval=needs_approval,
+            risk_level=ctx.metadata.get("classification", {}).get("risk_level", "low"),
         )
         # Refus immédiat pour commandes destructives en mode chat
         # Évite le crew complet (3-5min) pour une réponse de refus simple
         if _is_chat_mode and _fp_skip_risk and not needs_approval:
-            _refusal = (
-                "Je ne peux pas exécuter cette action directement. "
-                "Les actions pouvant affecter le système ou les données "
-                "(suppression, modification, envoi) nécessitent une validation. "
-                "Si tu veux vraiment faire ça, soumets-la comme mission formelle."
-            )
+            _refusal = CHAT_DESTRUCTIVE_REFUSAL
             ctx.result = _refusal
             ctx.status = MissionStatus.DONE
             ctx.completed_at = time.time()
@@ -1408,27 +1397,6 @@ class MetaOrchestrator:
             try:
                 from core.orchestration.creative_engine import JarvisLLMClient
                 _fp_llm = JarvisLLMClient(role="fast")
-                _fp_sys = (
-                    "Tu es Jarvis, lorchestrateurIA de JarvisMax. "
-                    "Tu es lassistant personnel dUnity, fondateur du projet.\n"
-                    "\n"
-                    "TES CAPACITES REELLES :\n"
-                    "- Analyser du code, de larchitecture, des documents\n"
-                    "- Rechercher et synthétiser de linformation\n"
-                    "- Planifier et décomposer des projets complexes\n"
-                    "- Gérer des missions via ton pipeline dagents spécialisés\n"
-                    "- Te souvenir des échanges passés via ta mémoire persistante\n"
-                    "- Proposer des améliorations et apprendre de lexperience\n"
-                    "\n"
-                    "PERSONNALITE : direct, confiant, légèrement ironique. "
-                    "Pas de fioritures, pas de faux enthousiasme.\n"
-                    "\n"
-                    "REGLES :\n"
-                    "1. JAMAIS simuler une action réelle (suppression, modification, envoi).\n"
-                    "2. Répondre en français, de manière naturelle et conversationnelle.\n"
-                    "3. Longueur proportionnelle au message (court = réponse courte).\n"
-                    "4. Si tu ne sais pas → dire honnêtement, ne pas inventer."
-                )
                 _fp_ctx = str(ctx.metadata.get("context", "") or "")
                 # Inject semantic memory into fast-path
                 _fp_mem = ""
@@ -1440,14 +1408,7 @@ class MetaOrchestrator:
                         _fp_mem = "\n".join(f"- {m['content'][:150]}" for m in _mems if m.get("content"))
                 except Exception:
                     pass
-                # Build prompt with all context
-                _fp_parts = [_fp_sys]
-                if _fp_mem:
-                    _fp_parts.append("\n\nMémoire pertinente:\n" + _fp_mem)
-                if _fp_ctx:
-                    _fp_parts.append("\n\nConversation récente:\n" + _fp_ctx)
-                _fp_parts.append("\n\nMessage: " + goal)
-                _fp_prompt = "".join(_fp_parts)
+                _fp_prompt = build_fast_path_prompt(goal, memory=_fp_mem, context=_fp_ctx)
                 _fp_text = await asyncio.wait_for(
                     _fp_llm.complete(_fp_prompt, max_tokens=2000),
                     timeout=45
@@ -2800,53 +2761,6 @@ class MetaOrchestrator:
 
         log.info("recovery.complete", **recovered)
         return recovered
-
-    # ── Custom mission handlers ───────────────────────────────────────────────
-    
-    def register_mission_handler(self, mission_type: str, handler: Callable) -> None:
-        """
-        Register a custom mission handler for a specific mission type.
-        
-        Example:
-            async def handle_custom_mission(mission: dict, context: dict) -> dict:
-                return {"status": "success", "result": ...}
-            
-            orchestrator.register_mission_handler("custom.mission", handle_custom_mission)
-        
-        Args:
-            mission_type: Mission type identifier (e.g. "business.scan_opportunities")
-            handler: Async function that takes (mission: dict, context: dict) and returns dict
-        """
-        self._custom_handlers[mission_type] = handler
-        log.info("mission_handler_registered", mission_type=mission_type)
-    
-    async def dispatch_custom_mission(self, mission_type: str, mission: dict, context: dict | None = None) -> dict:
-        """
-        Dispatch a mission to a custom handler if registered.
-        
-        Args:
-            mission_type: Mission type identifier
-            mission: Mission dict with params
-            context: Optional execution context
-        
-        Returns:
-            Handler result dict
-        
-        Raises:
-            KeyError: If mission_type not registered
-        """
-        if mission_type not in self._custom_handlers:
-            raise KeyError(f"No handler registered for mission type: {mission_type}")
-        
-        handler = self._custom_handlers[mission_type]
-        log.info("mission_dispatch", mission_type=mission_type)
-        
-        try:
-            result = await handler(mission, context or {})
-            return result
-        except Exception as e:
-            log.error("mission_handler_failed", mission_type=mission_type, err=str(e))
-            raise
 
     # ── Backward-compat shims ────────────────────────────────────────────────
     # Ces méthodes permettent aux modules qui appelaient JarvisOrchestrator.run()

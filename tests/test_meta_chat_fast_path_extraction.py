@@ -1,8 +1,25 @@
 ﻿"""Regression tests for MetaOrchestrator chat fast-path helpers."""
 from pathlib import Path
+import sys
+import types
+
+
+class _StructlogStub(types.SimpleNamespace):
+    def get_logger(self, *_args, **_kwargs):
+        return types.SimpleNamespace(
+            debug=lambda *_a, **_k: None,
+            info=lambda *_a, **_k: None,
+            warning=lambda *_a, **_k: None,
+            error=lambda *_a, **_k: None,
+        )
+
+
+def _install_structlog_stub():
+    sys.modules.setdefault("structlog", _StructlogStub())
 
 
 def test_chat_fast_path_policy_has_dedicated_module():
+    _install_structlog_stub()
     from core import meta_chat_fast_path as chat_fast_path
 
     assert chat_fast_path.should_skip_fast_path(
