@@ -68,7 +68,6 @@
   "core/memory/vector_memory_legacy.py": 2,
   "core/memory_facade.py": 6,
   "core/memory_graph/graph_linker.py": 5,
-  "core/meta_orchestrator.py": 19,
   "core/metrics_store.py": 5,
   "core/mission_planner.py": 2,
   "core/model_intelligence/auto_update.py": 1,

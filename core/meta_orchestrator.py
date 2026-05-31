@@ -49,7 +49,6 @@ from core.orchestration.mission_circuit_breaker import MissionCircuitBreaker as 
 # MetaOrchestrator imports them and owns the side-effect layer
 # (event emission, persistence) on top of kernel state transitions.
 from core.state import MissionStatus  # noqa: F811  — single source of truth enum
-_silent_log = __import__("structlog").get_logger(__name__)
 
 from core.meta_orchestrator_state import (
     MissionContext as MissionContext,
@@ -180,8 +179,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 )
                 # Use create_task for better exception visibility
                 asyncio.create_task(_stream.append(_evt))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="event_stream_append", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Persist state to disk (fail-open)
         try:
             from core.mission_persistence import get_mission_persistence
@@ -292,14 +291,14 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         try:
             from core.cognitive_events.emitter import emit_mission_created
             emit_mission_created(mission_id=mid, goal=goal, mode=mode)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="cognitive_event_mission_created", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Kernel event: mission created (dual emission)
         try:
             from kernel.convergence.event_bridge import emit_kernel_event
             emit_kernel_event("mission.created", mission_id=mid, goal=goal, mode=mode)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="kernel_event_mission_created", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _register_mission_guards(self, mid: str) -> None:
         """Register mission guards for iteration limit + budget (lines 395-400)."""
@@ -371,8 +370,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             )
             deregister_ws_stream(mid)
             deregister_mission_stream(mid)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="ws_stream_deregister", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _post_mission_learning(self, mid: str, goal: str, mode: str, ctx) -> None:
         """Post-mission cognitive learning + guardian cleanup (lines 1900-1936)."""
@@ -398,8 +397,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         try:
             from core.mission_guards import get_guardian
             get_guardian().release_mission(mid)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_guardian_release", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Record routing outcome for learning
         try:
@@ -584,8 +583,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                             score=_sp0.score,
                             alternatives=_sp0.candidates_evaluated,
                         )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="subplan_metrics_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 else:
                     trace.record("route", "capability_fallback",
                                  reason="no provider matched, using legacy agent routing")
@@ -1161,8 +1160,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 log.info("causal_module.context_injected", mission_id=mid)
             try:
                 _causal.update_graph_from_text(enriched_goal[:500])
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="causal_graph_update", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         except Exception as _causal_err:
             log.debug("causal_module.skipped", err=str(_causal_err)[:80])
 
@@ -1349,8 +1348,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 _provider_token = _pov.set(_phase0c_provider)
                 log.info("phase0c_routing_active",
                          mission_id=mid, provider=_phase0c_provider)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="phase0c_routing_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Pass 43: use_safer_model — activate ContextVar before execution ──
         _safer_token = None
@@ -1579,15 +1578,15 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                     try:
                         from core.llm_factory import _provider_override as _pov
                         _pov.reset(_provider_token)
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="provider_override_reset", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 # Pass 43: reset safer_model ContextVar
                 if _safer_token is not None:
                     try:
                         from core.llm_factory import _safer_model_active as _sma
                         _sma.reset(_safer_token)
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="safer_model_reset", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Store execution context for post-processing helpers
         ctx.metadata["_exec_enriched_goal"] = enriched_goal
@@ -2002,15 +2001,15 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 mission_id=mid, duration_ms=outcome.duration_ms,
                 confidence=result_confidence,
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_outcome_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_completed as _ms_completed
             _ms_completed("canonical", duration_ms=outcome.duration_ms)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="metrics_store_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         # Kernel event: mission completed (dual emission)
         try:
@@ -2018,15 +2017,15 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             emit_kernel_event("mission.completed", mission_id=mid,
                               duration_ms=outcome.duration_ms,
                               confidence=result_confidence)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="cognitive_event_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         # Kernel working memory: clear mission slot (it is done)
         try:
             from kernel.runtime.boot import get_runtime as _get_kernel_rt
             _get_kernel_rt().memory.clear_working(mission_id=mid)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="kernel_working_memory_clear", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _execute_kernel_learning(
         self,
@@ -2154,15 +2153,15 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 mission_id=mid, error=outcome.error[:200],
                 error_class=outcome.error_class,
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_outcome_emit_failed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_failed as _ms_failed
             _ms_failed("canonical", reason=outcome.error_class)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="metrics_store_emit_failed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         # Kernel event: mission failed (dual emission)
         try:
@@ -2170,8 +2169,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             emit_kernel_event("mission.failed", mission_id=mid,
                               error=outcome.error[:200],
                               error_class=outcome.error_class)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="cognitive_event_emit_failed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Store failure in memory
         try:
@@ -2670,16 +2669,16 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         try:
             from core.mission_persistence import get_mission_persistence
             get_mission_persistence().resolve_approval(mission_id, granted, reason)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="persistence_resolve_approval", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Journal event
         try:
             from core.cognitive_events.emitter import emit_approval_resolved
             emit_approval_resolved(mission_id, granted=granted,
                                     item_id=ctx.metadata.get("approval_item_id", ""))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='meta_orchestrator.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="cognitive_event_approval_resolved", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if granted:
             # Resume: transition back to RUNNING and re-execute
