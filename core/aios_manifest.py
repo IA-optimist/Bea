@@ -6,7 +6,6 @@ Provides consistency checks and architecture overview.
 """
 from __future__ import annotations
 import logging
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.aios")
 
@@ -159,8 +158,8 @@ def consistency_check() -> dict:
         for tool_name in reg:
             if tool_name not in TOOL_OS_REGISTRY:
                 issues.append(f"Tool '{tool_name}' in registry but not in Tool OS layer")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="aios_manifest_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     
     # Check: all agents map to a role
     try:
@@ -176,8 +175,8 @@ def consistency_check() -> dict:
         for agent in known_agents:
             if agent not in role_map:
                 issues.append(f"Agent '{agent}' has no role assignment")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="aios_manifest_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     
     # Check: all memory types have valid tier mappings
     try:
@@ -186,8 +185,8 @@ def consistency_check() -> dict:
         for mt, cfg in MEMORY_TYPE_CONFIG.items():
             if cfg["tier"] not in valid_tiers:
                 issues.append(f"Memory type '{mt}' has invalid tier '{cfg['tier']}'")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='aios_manifest.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="aios_manifest_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     
     return {
         "consistent": len(issues) == 0,

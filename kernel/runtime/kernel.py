@@ -44,7 +44,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
     from kernel.execution.contracts import ExecutionRequest, ExecutionResult  # noqa: F401
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -515,8 +514,8 @@ class JarvisKernel:
                     summary=f"Mission submitted: {goal[:80]}",
                     payload={"mission_id": mid, "mode": mode},
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='kernel.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="kernel_runtime_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -594,8 +593,8 @@ class JarvisKernel:
                     summary=f"kernel.execute: {request.goal[:80]}",
                     payload={"mission_id": mid, "mode": request.mode},
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='kernel.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="kernel_runtime_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 3 — Delegate to registered orchestrator
         if _orchestrator_fn is None:
@@ -648,8 +647,8 @@ class JarvisKernel:
         try:
             if self.capabilities:
                 cap_count = len(self.capabilities.list_all())
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='kernel.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="kernel_runtime_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return KernelStatus(
             booted=self._booted_at > 0,

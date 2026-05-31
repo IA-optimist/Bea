@@ -16,7 +16,6 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.feedback")
 
@@ -217,8 +216,8 @@ class FeedbackCollector:
                 key_findings=[f"files={len(trace.files_produced)}"] if trace.build_success else [],
                 failure_reasons=trace.validation_failed[:5],
             ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='feedback.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="execution_feedback_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _to_kernel_performance(self, trace: ExecutionTrace) -> None:
         try:
@@ -231,8 +230,8 @@ class FeedbackCollector:
                 duration_ms=trace.build_duration_ms,
                 quality=trace.confidence.composite,
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='feedback.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="execution_feedback_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _to_cognitive_journal(self, trace: ExecutionTrace) -> None:
         try:
@@ -254,8 +253,8 @@ class FeedbackCollector:
                 },
                 tags=["build", trace.artifact_type],
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='feedback.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="execution_feedback_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # Singleton

@@ -15,8 +15,10 @@ Auth: JARVIS_API_TOKEN if set. No secrets in responses.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from fastapi import APIRouter, Header, HTTPException
@@ -51,8 +53,8 @@ if APIRouter:
                 from api._deps import _verify_jwt
                 if _verify_jwt(jwt_token):
                     return
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="metrics_mobile_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Always require valid auth — no silent bypass
         raise HTTPException(401, "Unauthorized")
 
@@ -150,8 +152,8 @@ if APIRouter:
             try:
                 from core.adaptive_routing import get_enhanced_tracker
                 live_health = get_enhanced_tracker().get_all()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="metrics_mobile_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             costs = m.costs.snapshot()
 
@@ -235,8 +237,8 @@ if APIRouter:
             try:
                 from core.improvement_daemon import get_daemon_status
                 daemon_status = get_daemon_status()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_mobile.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="metrics_mobile_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return JSONResponse(content={"ok": True, "data": {
                 "experiments": {

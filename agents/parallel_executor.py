@@ -31,7 +31,6 @@ from typing import Callable, Awaitable
 import structlog
 
 from core.state import JarvisSession
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -66,8 +65,8 @@ def _rotate_trace_log_if_needed() -> None:
         log.info("trace_log_rotated",
                  kept_lines=len(keep),
                  dropped_lines=len(lines) - len(keep))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="parallel_executor_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # Seuil d'output vide — déclenche un retry automatique
@@ -97,8 +96,8 @@ def _append_trace_log(mission_id: str, trace: AgentTrace) -> None:
         record = {"mission_id": mission_id, "ts": time.time(), **trace.to_dict()}
         with _TRACE_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='parallel_executor.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="parallel_executor_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 class AgentResult:
@@ -531,8 +530,8 @@ class ParallelExecutor:
             if _guard and _slot_acquired:
                 try:
                     _guard.release_slot(agent_name)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='parallel_executor.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="parallel_executor_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Utilitaires ───────────────────────────────────────────
 

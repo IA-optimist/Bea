@@ -152,8 +152,8 @@ def _extract_frames_pil(video_path: str, fps: float) -> FrameResult:
             img.convert("RGB").save(buf, format="JPEG", quality=75)
             frames.append(buf.getvalue())
             timestamps.append(round(i * frame_dur, 2))
-    except EOFError:
-        _silent_log.debug("suppressed_exception", src='video.py')
+    except EOFError as _exc:
+        log.warning("swallowed_exception", action="multimodal_video_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     log.info("pil_frames_extracted", count=len(frames))
     return FrameResult(
@@ -277,14 +277,14 @@ def video_capabilities() -> dict:
     try:
         import cv2  # noqa: F401
         has_cv2 = True
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='video.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="multimodal_video_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     has_pil = False
     try:
         from PIL import Image  # noqa: F401
         has_pil = True
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='video.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="multimodal_video_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return {
         "video_generate": False,   # stub only for now
@@ -297,4 +297,3 @@ def video_capabilities() -> dict:
 
 # ── Missing import fix for PIL branch ────────────────────────
 import io  # noqa: E402  (needed by _extract_frames_pil)
-_silent_log = __import__("structlog").get_logger(__name__)
