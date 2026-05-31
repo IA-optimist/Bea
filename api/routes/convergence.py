@@ -23,11 +23,13 @@ Endpoints:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
 import time
 from typing import Optional
 from api._deps import _check_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
@@ -114,8 +116,8 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                     try:
                         from core.metrics_store import emit_mission_submitted
                         emit_mission_submitted("canonical")
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='convergence.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="mission_submitted_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 # Trigger real execution in background — without this, mission stays READY forever
                 if background_tasks and mission_id and result.get("ok"):
                     _goal_capture = goal
@@ -163,8 +165,8 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
             enrichment = post_mission_submit(data.get("mission_id", ""), goal)
             if enrichment:
                 data["intelligence"] = enrichment
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='convergence.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="intelligence_enrichment", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return _ok(data, status=201)
 
@@ -381,25 +383,25 @@ async def system_status():
         status_data["components"]["capability_expansion"] = get_expansion_status()
     except ImportError:
         status_data["components"]["capability_expansion"] = {"status": "not_available"}
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='convergence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_expansion_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Intelligence hooks
     try:
         from core.intelligence_hooks import periodic_health
         status_data["components"]["intelligence"] = periodic_health()
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='convergence.py')
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='convergence.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="intelligence_periodic_health", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="intelligence_periodic_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Legacy compatibility info
     try:
         from core.legacy_compat import get_authority_map, get_deprecations
         status_data["authority_map"] = get_authority_map()
         status_data["deprecations"] = len(get_deprecations())
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='convergence.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="deprecations_count_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return _ok(status_data)
 

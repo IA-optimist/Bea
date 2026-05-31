@@ -17,7 +17,6 @@ import contextvars
 import os
 import time
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 try:
     from langchain_core.language_models import BaseChatModel
 except ImportError:
@@ -342,8 +341,8 @@ class LLMFactory:
             if result is not None:
                 try:
                     result._jarvis_provider = provider  # type: ignore[attr-defined]
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="provider_tag_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return result
 
@@ -690,8 +689,8 @@ class LLMFactory:
                     m = _get_metrics(self.s)
                     if m:
                         m.record_llm_call(role, latency_s=ms / 1000.0, error=False)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="llm_metrics_record_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 # ── Langfuse : clôturer la generation ─────────
                 if gen_ctx is not None:
                     try:
@@ -703,8 +702,8 @@ class LLMFactory:
                             input_tokens=usage.get("prompt_tokens", 0),
                             output_tokens=usage.get("completion_tokens", 0),
                         )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_finish_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 return resp
 
             except Exception as first_err:
@@ -722,15 +721,15 @@ class LLMFactory:
                 if gen_ctx is not None:
                     try:
                         gen_ctx.finish(error=str(first_err)[:200])
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_finish_err", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── Métriques erreur ──────────────────────────────
             try:
                 m = _get_metrics(self.s)
                 if m:
                     m.record_llm_call(role, latency_s=ms / 1000.0, error=True)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='llm_factory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="llm_metrics_record_err", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Fallback cloud (uniquement pour rôles non-LOCAL_ONLY) ─
         if role not in LOCAL_ONLY_ROLES:
@@ -768,8 +767,8 @@ class LLMFactory:
                                 latency_s=ms2 / 1000.0,
                                 error=False,
                             )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_late_finish", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     return resp2
 
                 except Exception as fb_err:

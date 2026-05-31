@@ -18,8 +18,10 @@ Hooks:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -59,8 +61,8 @@ def post_mission_submit(mission_id: str, goal: str, **kwargs) -> dict:
                     {"id": s["mission_id"], "similarity": s["similarity"]}
                     for s in similar[:3]
                 ]
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="core_planner_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         except Exception as e:
             log.debug("hook_kg_err", err=str(e)[:60])
 
@@ -102,8 +104,8 @@ def post_step_complete(
                     duration_ms=duration_s * 1000,
                     error_type=error_type,
                 ))
-            except ImportError:
-                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+            except ImportError as _exc:
+                log.warning("swallowed_exception", action="meta_chat_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Tool evolution: update performance model
         if tool:
@@ -115,8 +117,8 @@ def post_step_complete(
                     error_type=error_type,
                     mission_id=mission_id,
                 )
-            except ImportError:
-                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+            except ImportError as _exc:
+                log.warning("swallowed_exception", action="mission_complete_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     except Exception as e:
         log.debug("post_step_hook_err", err=str(e)[:60])
@@ -158,8 +160,8 @@ def post_mission_complete(
                 tools_used=tools_used or [],
                 failure_category=errors[0] if errors else "",
             ))
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="mission_failed_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Knowledge graph: ingest mission log
         try:
@@ -177,8 +179,8 @@ def post_mission_complete(
                 strategy=strategy,
                 duration_s=duration_s,
             ))
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="mission_resume_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Agent metrics
         if agents_used:
@@ -191,8 +193,8 @@ def post_mission_complete(
                         duration_s=duration_s / max(len(agents_used), 1),
                         tools_used=tools_used or [],
                     ))
-            except ImportError:
-                _silent_log.debug("suppressed_exception", src='intelligence_hooks.py')
+            except ImportError as _exc:
+                log.warning("swallowed_exception", action="mission_paused_hook_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     except Exception as e:
         log.debug("post_mission_hook_err", err=str(e)[:60])

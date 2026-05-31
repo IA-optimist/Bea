@@ -28,12 +28,12 @@ except ImportError:
 
 from api._deps import _check_auth
 from typing import Optional as _Opt
-_silent_log = __import__("structlog").get_logger(__name__)
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)
 
 logger = logging.getLogger("jarvis.api.performance")
+log = logger  # alias for the M3 swallowed_exception emitter convention
 
 
 def _ok(data, status: int = 200):
@@ -195,16 +195,16 @@ if router:
             from core.tool_performance_tracker import get_tool_performance_tracker
             td = get_tool_performance_tracker().get_dashboard_data()
             overview["tool_health"] = td.get("summary", {})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_health_summary", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Mission health
         try:
             from core.mission_performance_tracker import get_mission_performance_tracker
             md = get_mission_performance_tracker().get_dashboard_data()
             overview["mission_health"] = md.get("summary", {})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_health_summary", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Agent health
         try:
@@ -218,8 +218,8 @@ if router:
                     for a in sorted(agents, key=lambda x: x["success_rate"], reverse=True)[:5]
                 ],
             }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="planning_summary", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Mission memory
         try:
@@ -230,24 +230,24 @@ if router:
                 "effective": mm.get("effective_strategies", 0),
                 "failing_patterns": mm.get("failing_patterns", 0),
             }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="capability_summary", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Tool gaps
         try:
             from core.tool_gap_analyzer import analyze_tool_gaps
             gaps = analyze_tool_gaps()
             overview["tool_gaps"] = len(gaps)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_gaps_count", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Improvement proposals
         try:
             from core.improvement_proposals import get_proposal_store
             proposals = get_proposal_store().list_pending()
             overview["improvement_proposals"] = proposals[:10]
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='performance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_proposals_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return _ok(overview)
 

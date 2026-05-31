@@ -38,6 +38,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import asyncio
 import hashlib
 import json
@@ -46,7 +49,6 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -394,8 +396,8 @@ class MemoryFacade:
                                     source="memory_bus",
                                     score=item.get("score", 0.4),
                                 ))
-                    except _queue_module.Empty:
-                        _silent_log.debug("suppressed_exception", src='memory_facade.py')
+                    except _queue_module.Empty as _exc:
+                        log.warning("swallowed_exception", action="queue_drain_empty", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 else:
                     log.debug("memory_bus_search_thread_timeout", query=query[:40])
         except Exception as _exc:
@@ -653,8 +655,8 @@ class MemoryFacade:
                                               scope=f"mission:{mission_id}",
                                               tags=["failure", error_class]),
                      mission_id=mission_id, importance=0.8)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="success_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # AI OS vector memory for failure (fail-open)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -663,8 +665,8 @@ class MemoryFacade:
                                source="orchestrator", mission_id=mission_id,
                                importance=0.8, confidence=0.8,
                                tags=["failure", error_class])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="failure_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self.store(
             content=content,
             content_type="failure",
@@ -682,8 +684,8 @@ class MemoryFacade:
                      metadata=MemoryMetadata(source="orchestrator", confidence=0.7,
                                               scope=f"mission:{mission_id}"),
                      mission_id=mission_id, importance=0.6)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="decision_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # AI OS vector memory (fail-open, async-like)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -691,8 +693,8 @@ class MemoryFacade:
             vm.store_embedding(content[:500], "mission_memory",
                                source="orchestrator", mission_id=mission_id,
                                importance=0.6, confidence=0.7)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="lesson_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self.store(
             content=content,
             content_type="mission_outcome",
@@ -725,6 +727,6 @@ def get_memory_facade(settings=None, workspace_dir: str = "workspace") -> Memory
                 _facade = MemoryFacade(settings=settings, workspace_dir=workspace_dir)
                 try:
                     log.info("memory_facade.singleton_created")
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='memory_facade.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="singleton_creation_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return _facade
