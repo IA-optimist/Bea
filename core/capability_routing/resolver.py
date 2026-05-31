@@ -14,7 +14,6 @@ import re
 import structlog
 
 from core.capability_routing.spec import CapabilityRequirement, ProviderType
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("capability_routing.resolver")
 
@@ -202,14 +201,14 @@ def resolve_capabilities(
     if classification:
         try:
             requirements.extend(_from_classification(classification))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='resolver.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="resolver_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 4. Keyword matching (always, complements semantic/AIOS)
     try:
         requirements.extend(_from_keywords(goal))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='resolver.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="resolver_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 5. Ultimate fallback
     if not requirements:

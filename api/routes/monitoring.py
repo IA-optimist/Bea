@@ -9,6 +9,9 @@ Routes :
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
 import time
 from pathlib import Path
@@ -63,13 +66,12 @@ def _last_mission_at() -> str | None:
         if missions:
             ts = missions[0].updated_at or missions[0].created_at
             return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='monitoring.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="monitoring_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return None
 
 
 from api._deps import _check_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -159,8 +161,8 @@ async def system_metrics(x_jarvis_token: Optional[str] = Header(None), authoriza
         report        = monitor.generate_debug_report()
         agent_error_rates = report.get("agent_error_rates", {})
         retry_rate    = report.get("retry_rate", 0.0)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='monitoring.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="monitoring_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return {
         "total_missions":      total,

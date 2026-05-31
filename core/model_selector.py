@@ -30,7 +30,6 @@ Interface :
 from __future__ import annotations
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -208,8 +207,8 @@ class ModelSelector:
         try:
             from core.escalation_engine import EscalationEngine
             return EscalationEngine(self.s)._compute_complexity(task)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='model_selector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="model_selector_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Heuristique fallback
         if not task:
             return 0.0
@@ -296,8 +295,8 @@ class ModelSelector:
                         provider="ollama", model=model, role=role,
                         reason=f"LLMPerf: avg_latency={avg_lat_ms:.0f}ms > 90s",
                     )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='model_selector.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="model_selector_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 2. Fallback sur LearningEngine
         engine = self._get_learning()

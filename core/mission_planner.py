@@ -9,9 +9,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 import time
 import logging
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
+log = logger  # alias for M3 emitter
 
 # Seuil de complexité pour déclencher la planification
 PLAN_COMPLEXITY_THRESHOLD = 0.55
@@ -223,8 +223,8 @@ class MissionPlanner:
                     proven_tools = _best.get("tools", [])[:8]
                     proven_agents = _best.get("agents", [])[:4]
                     _adapted = True
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='mission_planner.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="mission_planner_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # ── Exclude known-failing tools (fail-open) ───────────────
             _degraded_tools = set()
@@ -233,8 +233,8 @@ class MissionPlanner:
                 _tpt = get_tool_performance_tracker()
                 for ft in _tpt.get_failing_tools():
                     _degraded_tools.add(ft["tool"])
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='mission_planner.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="mission_planner_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             steps = []
             for i, (desc, mt, tools, agents, cx, deps) in enumerate(steps_data):

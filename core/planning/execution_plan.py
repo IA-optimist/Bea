@@ -13,12 +13,14 @@ Plans are:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class StepType(str, Enum):
@@ -140,16 +142,16 @@ class ExecutionPlan:
                     tool = get_tool_registry().get(step.target_id)
                     if tool and tool.requires_approval:
                         return True
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='execution_plan.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="execution_plan_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             if step.type == StepType.BUSINESS_ACTION:
                 try:
                     from core.business_actions import ACTION_REGISTRY
                     action = ACTION_REGISTRY.get(step.target_id)
                     if action and action.requires_approval:
                         return True
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='execution_plan.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="execution_plan_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return False
 
     @property

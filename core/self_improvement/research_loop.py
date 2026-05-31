@@ -30,7 +30,6 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.research_loop")
 
@@ -336,14 +335,14 @@ def collect_metrics() -> BaselineMetrics:
                     if p == "passed" and i > 0:
                         try:
                             m.test_count += int(parts[i - 1])
-                        except ValueError:
-                            _silent_log.debug("suppressed_exception", src='research_loop.py')
+                        except ValueError as _exc:
+                            log.warning("swallowed_exception", action="research_loop_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     if p == "failed" and i > 0:
                         try:
                             m.test_failures += int(parts[i - 1])
                             m.test_count += int(parts[i - 1])
-                        except ValueError:
-                            _silent_log.debug("suppressed_exception", src='research_loop.py')
+                        except ValueError as _exc:
+                            log.warning("swallowed_exception", action="research_loop_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         m.test_pass_rate = (m.test_count - m.test_failures) / m.test_count if m.test_count else 1.0
     except Exception as e:
         log.debug("metrics_test_failed", err=str(e)[:60])

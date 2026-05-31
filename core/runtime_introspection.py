@@ -39,7 +39,6 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -261,8 +260,8 @@ def _detect_optional_modules() -> Capability:
         try:
             importlib.import_module(mod)
             modules[mod] = True
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="runtime_introspection_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     available_count = sum(1 for v in modules.values() if v)
     return Capability(
         name="optional_modules",
@@ -339,8 +338,8 @@ def get_runtime_capabilities() -> dict:
     try:
         log.info("runtime_capabilities_detected",
                  available=available, total=total)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="runtime_introspection_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return result
 

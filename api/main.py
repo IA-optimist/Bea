@@ -362,8 +362,8 @@ try:
     from api.routes.token_management import router as token_mgmt_router
     if token_mgmt_router:
         app.include_router(token_mgmt_router)
-except Exception:
-    _silent_log.debug("suppressed_exception", src='main.py')
+except Exception as _exc:
+    log.warning("swallowed_exception", action="main_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 # ── Skills & trace routers ──
 try:
@@ -905,8 +905,8 @@ async def ws_stream_alias(websocket: WebSocket):
     except Exception:
         try:
             await websocket.close()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='main.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="main_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── v2 Chat Alias (frontend compatibility) ────────────────────

@@ -15,6 +15,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import hashlib
 import json
 import time
@@ -23,7 +26,6 @@ from pathlib import Path
 
 from business_agents.template_schema import BusinessAgentTemplate
 from business_agents.template_registry import get_template, list_templates
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -257,8 +259,8 @@ class AgentFactory:
             if test_scenarios:
                 data["test_scenarios"] = test_scenarios
             path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='factory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="factory_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if not self._persist_dir.exists():
@@ -282,8 +284,8 @@ class AgentFactory:
                     created_at=data.get("created_at", 0),
                 )
                 self._agents[agent.id] = agent
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='factory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="factory_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_registry_summary(self) -> dict:
         """Summary for the operator view."""

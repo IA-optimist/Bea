@@ -29,9 +29,9 @@ from core.identity.identity_policy import (
 )
 from core.identity.identity_graph import IdentityGraph
 from core.identity.identity_audit import IdentityAuditLog, IdentityAction
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
+log = logger  # alias for M3 emitter
 
 
 # ── Use Result ──
@@ -377,8 +377,8 @@ class IdentityManager:
             for secret_id in identity.linked_secrets:
                 try:
                     self._vault.revoke_secret(secret_id, role="admin")
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="identity_manager_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         self._persist()
         self._audit.record(IdentityAction.REVOKE, identity_id, role)
@@ -400,8 +400,8 @@ class IdentityManager:
             for secret_id in identity.linked_secrets:
                 try:
                     self._vault.delete_secret(secret_id, role="admin")
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='identity_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="identity_manager_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         del self._identities[identity_id]
         self._policies.pop(identity_id, None)

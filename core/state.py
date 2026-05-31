@@ -4,11 +4,13 @@ Source unique pour tous les types : RiskLevel, ActionSpec, JarvisSession.
 Règle : aucun autre module ne redéfinit RiskLevel.
 """
 from __future__ import annotations
+
+import structlog
+log = structlog.get_logger(__name__)
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -203,15 +205,15 @@ class JarvisSession:
                 asyncio.get_running_loop().create_task(self._notify_subscribers(evt))
             except RuntimeError:
                 pass  # Pas de boucle en cours — contexte synchrone
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='state.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="state_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     async def _notify_subscribers(self, evt):
         for sub in self.event_stream._subscribers:
             try:
                 await sub(evt)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='state.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="state_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_output(self, agent: str) -> str:
         o = self.outputs.get(agent)

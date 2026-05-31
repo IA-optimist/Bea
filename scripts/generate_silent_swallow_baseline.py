@@ -30,7 +30,11 @@ EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules",
                 ".claude", "build", "dist", "snapshots",
                 # Tests legitimately mention the pattern as data (gates,
                 # documentation strings). Only runtime code is scanned.
-                "tests"}
+                "tests",
+                # The migration script itself contains the pattern as a
+                # string literal so it can detect and replace it. Don't
+                # count its own grammar against the baseline.
+                "scripts"}
 
 
 def _iter_python_files(root: Path):

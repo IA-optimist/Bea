@@ -22,7 +22,6 @@ from core.execution.strategy_memory import (
     StrategyMemory, get_strategy_memory,
 )
 
-_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("execution.strategy_registry")
 
 # ── Promotion thresholds ───────────────────────────────────────
@@ -272,8 +271,8 @@ class StrategyRegistry:
             tmp = self._path.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2))
             tmp.rename(self._path)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='strategy_registry.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="strategy_registry_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if not self._path or not self._path.exists():
@@ -299,8 +298,8 @@ class StrategyRegistry:
                     timestamp=pd.get("timestamp", 0),
                 ))
             self._last_promotion = data.get("last_promotion", {})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='strategy_registry.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="strategy_registry_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ──────────────────────────────────────────────────

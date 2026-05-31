@@ -33,7 +33,6 @@ import time
 import contextlib
 from typing import Any, Generator
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -208,8 +207,8 @@ class LangfuseTracer:
             if self._client and gen:
                 try:
                     self._client.flush()
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="langfuse_tracer_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def score_trace(
         self,
@@ -236,8 +235,8 @@ class LangfuseTracer:
         if self._client:
             try:
                 self._client.flush()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='langfuse_tracer.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="langfuse_tracer_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     @staticmethod
     def _serialize_messages(messages: list) -> list[dict]:

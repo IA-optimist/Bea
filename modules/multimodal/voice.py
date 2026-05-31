@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -423,14 +422,14 @@ def voice_capabilities() -> dict:
     try:
         import whisper  # noqa: F401
         has_whisper_local = True
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='voice.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="voice_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     has_coqui = False
     try:
         import TTS  # noqa: F401
         has_coqui = True
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='voice.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="voice_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return {
         "stt_whisper_api":   has_openai,

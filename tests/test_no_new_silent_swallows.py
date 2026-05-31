@@ -43,7 +43,10 @@ _EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules",
                  ".claude", "build", "dist", "snapshots",
                  # Tests legitimately mention the pattern as data
                  # (this very file does); only runtime code is scanned.
-                 "tests"}
+                 "tests",
+                 # scripts/migrate_silent_swallows.py contains the pattern
+                 # as a string literal so it can detect and replace it.
+                 "scripts"}
 
 
 def _iter_python_files():

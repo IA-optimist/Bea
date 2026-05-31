@@ -17,6 +17,7 @@ import time
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+log = logger  # alias for M3 emitter
 
 try:
     import jwt as _jwt
@@ -139,8 +140,8 @@ def verify_token(token_str: str) -> Optional[dict]:
                     "token_id": access_token.id,
                     "auth_type": "access_token",
                 }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='auth.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="auth_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
         import os as _os
         import hmac as _hmac
@@ -171,8 +172,8 @@ def verify_token(token_str: str) -> Optional[dict]:
             "role": payload.get("role", "user"),
             "auth_type": "jwt",
         }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='auth.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="auth_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Path 3: Static API token fallback
     from config.settings import get_settings
@@ -211,7 +212,6 @@ def require_permission(user: dict, permission: str) -> bool:
 # ========================================
 
 from fastapi import Header, HTTPException, status
-_silent_log = __import__("structlog").get_logger(__name__)
 
 async def get_current_user(
     authorization: str = Header(None)

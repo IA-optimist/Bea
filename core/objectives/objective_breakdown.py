@@ -11,9 +11,9 @@ import uuid
 from typing import List, Optional
 
 from core.objectives.objective_models import Objective, SubObjective, SubObjectiveStatus
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_breakdown")
+log = logger  # alias for M3 emitter
 
 # ── Imports fail-open ──────────────────────────────────────────────────────────
 
@@ -107,8 +107,8 @@ def breakdown_objective(
                     mission_type=category,
                 )
                 difficulty_score = float(diff_result.get("score", difficulty_score))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='objective_breakdown.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="objective_breakdown_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Patterns similaires pour enrichir les outils (fail-open) ──────
         pattern_tools: List[str] = []
@@ -121,8 +121,8 @@ def breakdown_objective(
                 if patterns.get("has_prior_knowledge"):
                     raw_pt = patterns.get("effective_tools", [])
                     pattern_tools = [t if isinstance(t, str) else (t.get("name","") if isinstance(t, dict) else str(t)) for t in raw_pt if t]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='objective_breakdown.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="objective_breakdown_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Sélection du template ──────────────────────────────────────────
         template = _TEMPLATES.get(category, _TEMPLATES["general"])
