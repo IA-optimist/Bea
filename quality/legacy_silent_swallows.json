@@ -153,7 +153,6 @@
   "memory/decision_memory.py": 5,
   "memory/legacy/store_legacy.py": 1,
   "memory/legacy_knowledge_memory.py": 1,
-  "memory/memory_bus.py": 11,
   "memory/redis_cache.py": 1,
   "memory/vector_store.py": 1,
   "modules/multimodal/video.py": 3,
