@@ -45,7 +45,6 @@ from api._deps import (
 )
 
 log = structlog.get_logger()
-_silent_log = log
 logger = log
 
 router = APIRouter(tags=["missions"])
@@ -112,8 +111,8 @@ async def submit_task(
                         retry_count=0,
                         error_type="",
                     ))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="mission_telemetry_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 return
             # ── Knowledge Memory lookup (fail-open) ──────────────────────────
             _km_bonus_confidence = 0.0
@@ -142,8 +141,8 @@ async def submit_task(
                     _ms_km2 = ms.get(result.mission_id)
                     if _ms_km2 is not None:
                         _ms_km2.decision_trace["knowledge_match"] = False
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="knowledge_match_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end knowledge lookup ──────────────────────────────────────────
 
             # ── Mission Planning (fail-open) ──────────────────────────────────
@@ -232,8 +231,8 @@ async def submit_task(
                     if _ms_tt2 is not None:
                         _ms_tt2.decision_trace["available_tools"] = []
                         _ms_tt2.decision_trace["tool_executor_ready"] = False
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="tool_executor_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end tool trace ────────────────────────────────────────────────
 
             # ── Tool pre-execution (fail-open) ────────────────────────────────
@@ -254,8 +253,8 @@ async def submit_task(
                 )
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="context_enrichment", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end tool pre-execution ────────────────────────────────────────
 
             # ── kernel.execute() via KernelAdapter (Pass 26 — R8) ───────────
@@ -419,26 +418,26 @@ async def submit_task(
                                 _ms_ref.complexity,
                             )
                         )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='missions.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="mission_telemetry_emit_v2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     # ── Knowledge Memory confidence bonus ──────────────────────────────
                     try:
                         if _km_bonus_confidence > 0:
                             _current_conf = float(_ms_ref.decision_trace.get("confidence_score", 0.5))
                             _ms_ref.decision_trace["confidence_score"] = min(1.0, round(_current_conf + _km_bonus_confidence, 3))
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='missions.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="confidence_bonus_apply", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     # ── end km bonus ───────────────────────────────────────────────────
                     # ── Mission Planning trace ─────────────────────────────────────────
                     try:
                         _ms_ref.decision_trace["plan_used"] = _plan_used
                         _ms_ref.decision_trace["plan_steps"] = _plan_steps_count
                         _ms_ref.decision_trace["plan_success_rate"] = _plan_success_rate
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='missions.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="plan_trace_record", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     # ── end plan trace ─────────────────────────────────────────────────
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="plan_trace_wrap", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # Ajout ExecutionPolicy dans decision_trace (fail-open)
             try:
@@ -479,8 +478,8 @@ async def submit_task(
                     if _ms_ep2 is not None:
                         _ms_ep2.decision_trace["execution_policy_decision"] = "unknown"
                         _ms_ep2.decision_trace["execution_reason"] = str(_ep_err)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="execution_policy_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # Policy mode
             try:
@@ -493,8 +492,8 @@ async def submit_task(
                     _ms_pm2 = ms.get(result.mission_id)
                     if _ms_pm2 is not None:
                         _ms_pm2.decision_trace["policy_mode_used"] = "BALANCED"
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="policy_mode_default", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # ── Tool results dans decision_trace (fail-open) ──────────────────
             try:
@@ -504,8 +503,8 @@ async def submit_task(
                     _ms_tr2.decision_trace["tool_results_ok"] = [
                         k for k, v in _tool_run_results.items() if v.get("ok")
                     ]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_run_results_aggregate", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end tool results trace ────────────────────────────────────────
 
             ms.set_final_output(result.mission_id, _final)
@@ -542,8 +541,8 @@ async def submit_task(
                         retry_count=0,
                         error_type="" if (_final and _final.strip()) else "empty_output",
                     ))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='missions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="mission_completion_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # ── Knowledge Memory store (fail-open) ────────────────────────────
             try:
@@ -561,8 +560,8 @@ async def submit_task(
                     fallback_level=int(_dt_km_s.get("fallback_level_used", 0)),
                     execution_policy_decision=_dt_km_s.get("execution_policy_decision", "unknown"),
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="decision_metrics_record", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end km store ──────────────────────────────────────────────────
 
             # ── Observability + Self-Improvement trigger (fail-open) ──────────────
@@ -581,16 +580,16 @@ async def submit_task(
                     duration_ms=_dur,
                     tools_used=[],  # a enrichir quand les agents utiliseront le tool_registry
                 ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="mission_event_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             try:
                 from core.self_improvement import get_self_improvement_manager
                 _sim = get_self_improvement_manager()
                 # Analyse asynchrone legere — ne bloque pas la reponse
                 _sim.analyze_patterns()  # resultat ignore ici, mis en cache implicitement
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='missions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="self_improvement_pattern_analyze", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── fin Observability ─────────────────────────────────────────────────
 
         except Exception as e:
@@ -893,7 +892,7 @@ async def approve_mission(
         background_tasks=background_tasks,
         get_orchestrator=_get_orchestrator,
         logger=log,
-        silent_logger=_silent_log,
+        silent_logger=log,
     )
 
 @router.post("/api/v2/missions/{mission_id}/reject")
@@ -911,7 +910,7 @@ async def reject_mission(
         note=note,
         mission_system=_get_mission_system(),
         logger=log,
-        silent_logger=_silent_log,
+        silent_logger=log,
     )
 
 # ── System mode (Flutter setMode uses POST /api/system/mode) ──
