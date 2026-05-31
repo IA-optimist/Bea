@@ -79,7 +79,6 @@
   "core/objectives/__init__.py": 4,
   "core/objectives/objective_breakdown.py": 2,
   "core/objectives/objective_store.py": 1,
-  "core/operating_primitives.py": 19,
   "core/orchestration/causal_module.py": 5,
   "core/orchestration/context_assembler.py": 4,
   "core/orchestration/execution_supervisor.py": 2,

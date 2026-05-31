@@ -22,9 +22,9 @@ import os
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.operating_primitives")
+log = logger  # alias for the M3 swallowed_exception emitter convention
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -230,8 +230,8 @@ def select_strategy(
             result.source = "memory"
             result.reasoning = f"Proven strategy: {best.get('successes',0)} successes"
             return result
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="proven_strategy_lookup", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 2. Check performance data for best agents/tools
     try:
@@ -246,8 +246,8 @@ def select_strategy(
             result.source = "performance"
             result.reasoning = f"Performance data: {strategy['sample_size']} missions, {strategy.get('success_rate',0):.0%} success"
             return result
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="strategy_performance_data", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 3. Default strategy based on mission type
     defaults = {
@@ -478,8 +478,8 @@ def get_operational_signals() -> dict:
             t: {"success_rate": s.success_rate, "total": s.total}
             for t, s in mpt._type_stats.items()
         }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="mission_pattern_type_stats", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.mission_memory import get_mission_memory
@@ -489,8 +489,8 @@ def get_operational_signals() -> dict:
                 "confidence": s.confidence,
                 "success_rate": s.success_rate,
             }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="strategy_success_rate_table", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.tool_performance_tracker import get_tool_performance_tracker
@@ -501,24 +501,24 @@ def get_operational_signals() -> dict:
                 "total_calls": stats.total_calls,
                 "health": stats.health_status,
             }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="connector_health_stats", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.execution_engine import get_telemetry_summary
         ts = get_telemetry_summary()
         signals["execution_stability"] = ts.get("avg_stability", 0)
         signals["planning_confidence"] = ts.get("avg_success_rate", 0)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="execution_stability_signals", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         tracker = get_objective_tracker()
         d = tracker.get_dashboard()
         if d["total"] > 0:
             signals["long_horizon_ratio"] = round(d["completed"] / max(d["total"], 1), 3)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="long_horizon_ratio", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return signals
 
@@ -752,8 +752,8 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                 source="tool_gap",
                 required_tools=[gap.get("tool", "")],
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="tool_gap_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 2. Detect repeated failure patterns
     try:
@@ -769,8 +769,8 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                     confidence=0.7,
                     source="failure_pattern",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="failure_pattern_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 3. Detect automation opportunities (high-frequency mission types)
     try:
@@ -786,8 +786,8 @@ def detect_opportunities() -> list[OpportunitySuggestion]:
                     confidence=0.8,
                     source="repetition",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="repetition_pattern_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return suggestions[:_MAX_SUGGESTIONS]
 
@@ -1073,8 +1073,8 @@ def recommend_focus() -> list[FocusRecommendation]:
                     estimated_value=obj.estimated_value,
                     confidence=0.8,
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="convergence_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 2. Check business pipeline
     try:
@@ -1100,8 +1100,8 @@ def recommend_focus() -> list[FocusRecommendation]:
                 estimated_value=summary["total_pipeline_value"],
                 confidence=0.6,
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_gap_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 3. Check economic trends
     try:
@@ -1113,8 +1113,8 @@ def recommend_focus() -> list[FocusRecommendation]:
                 priority=0.8,
                 confidence=0.6,
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="cost_pattern_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 4. Check workflow templates for automation opportunities
     try:
@@ -1129,8 +1129,8 @@ def recommend_focus() -> list[FocusRecommendation]:
                 priority=0.5,
                 confidence=0.7,
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="health_degradation_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Sort by priority
     recommendations.sort(key=lambda r: r.priority, reverse=True)
@@ -1162,8 +1162,8 @@ def suggest_playbooks() -> list[dict]:
                     f"Use tools: {', '.join(t.tools_used[:4])}."
                 ),
             })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="learning_opportunity_inference", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Also check mission memory for effective sequences
     try:
@@ -1181,8 +1181,8 @@ def suggest_playbooks() -> list[dict]:
                     "reusable": True,
                     "suggestion": f"Effective tool sequence for {mission_type}",
                 })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="effective_tool_sequence", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return playbooks[:15]
 
@@ -1200,24 +1200,24 @@ def get_operating_summary() -> dict:
     obj_dashboard = {}
     try:
         obj_dashboard = get_objective_tracker().get_dashboard()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="objective_dashboard_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Pipeline status
     pipeline = {}
     try:
         from core.business_pipeline import get_lead_tracker
         pipeline = get_lead_tracker().get_pipeline_summary()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="pipeline_summary_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Budget
     budget = {}
     try:
         from core.business_pipeline import get_budget_tracker
         budget = get_budget_tracker().get_summary()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='operating_primitives.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="budget_summary_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return {
         "objectives": obj_dashboard,
