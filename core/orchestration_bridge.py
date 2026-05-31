@@ -34,6 +34,9 @@ No modifications to MissionSystem, MetaOrchestrator, or WorkflowGraph source cod
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
 import time
 from typing import Any, Optional

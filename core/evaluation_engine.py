@@ -21,6 +21,9 @@ Design:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import time
 from dataclasses import dataclass, field

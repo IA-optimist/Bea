@@ -5,6 +5,9 @@ Scoped to workspace/business/. Read-only file access.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import mimetypes
 import os
 from pathlib import Path
@@ -13,7 +16,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from api._deps import require_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 
 router = APIRouter(prefix="/api/v3/business-artifacts", tags=["business-artifacts"])
 
@@ -52,8 +54,8 @@ async def list_runs(_user: dict = Depends(require_auth)):
         if len(parts) >= 3:
             try:
                 timestamp = f"{parts[-2][:4]}-{parts[-2][4:6]}-{parts[-2][6:8]} {parts[-1][:2]}:{parts[-1][2:]}"
-            except (IndexError, ValueError):
-                _silent_log.debug("suppressed_exception", src='business_artifacts.py')
+            except (IndexError, ValueError) as _exc:
+                log.warning("swallowed_exception", action="business_artifacts_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Detect action_id from files
         action_id = ""

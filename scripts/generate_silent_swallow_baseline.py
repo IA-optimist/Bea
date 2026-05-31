@@ -25,6 +25,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = REPO_ROOT / "quality" / "legacy_silent_swallows.json"
 PATTERN = re.compile(r"_silent_log\.debug\(['\"]suppressed_exception")
+# Files where the pattern appears in a docstring / data context (not as
+# actual silent-swallow code). Excluded from the scan.
+EXCLUDE_FILES = {
+    "core/_logging_helpers.py",  # docstring "before" example
+}
 
 EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules",
                 ".claude", "build", "dist", "snapshots",
@@ -51,9 +56,11 @@ def main() -> int:
             text = py.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
+        rel = py.relative_to(REPO_ROOT).as_posix()
+        if rel in EXCLUDE_FILES:
+            continue
         n = len(PATTERN.findall(text))
         if n > 0:
-            rel = py.relative_to(REPO_ROOT).as_posix()
             counts[rel] = n
 
     counts = dict(sorted(counts.items()))

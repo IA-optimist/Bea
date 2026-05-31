@@ -27,7 +27,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -175,8 +174,8 @@ class ToolConfigRegistry:
                     return self._vault.has_secret(secret_name)
                 if hasattr(self._vault, "list_secrets"):
                     return secret_name in self._vault.list_secrets()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_config_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_config_registry_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Fallback: check environment variable
         env_key = secret_name.upper().replace("-", "_").replace(".", "_")
         return bool(os.environ.get(env_key))

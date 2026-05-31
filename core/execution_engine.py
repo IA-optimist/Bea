@@ -31,9 +31,9 @@ import os
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.execution_engine")
+log = logger  # M3 emitter alias
 
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURABLE EXECUTION LIMITS
@@ -401,8 +401,8 @@ def execute_tool_intelligently(
         error_hint = health.get("last_error", "")
         if error_hint:
             _recovery_hint = get_best_recovery(tool_name, error_hint.split(":")[0] if ":" in error_hint else error_hint[:30])
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='execution_engine.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="execution_engine_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Execute with adaptive retry
     try:

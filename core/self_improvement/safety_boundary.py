@@ -72,8 +72,8 @@ def is_path_protected(path: str) -> bool:
         from core.self_improvement.protected_paths import is_protected as _canonical_check
         if _canonical_check(path):
             return True
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='safety_boundary.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="safety_boundary_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     # Local fallback (subset of canonical — kept for safety during import errors)
     for protected in PROTECTED_RUNTIME:
         if path == protected or path.endswith("/" + protected):
@@ -128,7 +128,6 @@ def validate_proposal(proposal: ImprovementProposal) -> tuple[bool, str]:
 
 import os as _os
 import tempfile as _tempfile
-_silent_log = __import__("structlog").get_logger(__name__)
 # Use JARVIS_STAGING_DIR env var if set, fall back to a writable temp dir.
 # workspace/dev/ is the logical staging area but may not allow deletions in
 # sandboxed/container environments; /tmp is always writable+deletable.

@@ -48,6 +48,11 @@ _EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules",
                  # as a string literal so it can detect and replace it.
                  "scripts"}
 
+# Files where the pattern appears in a docstring / data context only.
+_EXCLUDE_FILES = {
+    "core/_logging_helpers.py",  # docstring "before" example
+}
+
 
 def _iter_python_files():
     for path in _REPO_ROOT.rglob("*.py"):
@@ -63,9 +68,12 @@ def _scan_counts() -> dict[str, int]:
             text = py.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
+        rel = py.relative_to(_REPO_ROOT).as_posix()
+        if rel in _EXCLUDE_FILES:
+            continue
         n = len(_PATTERN.findall(text))
         if n > 0:
-            counts[py.relative_to(_REPO_ROOT).as_posix()] = n
+            counts[rel] = n
     return counts
 
 

@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from typing import List
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.self_improvement.weakness_detector")
+log = logger  # M3 emitter alias
 
 # Severity thresholds for capability score success_rate
 _HIGH_THRESHOLD = 0.5     # success_rate < 0.5  → HIGH
@@ -141,8 +141,8 @@ class WeaknessDetector:
                                 f"Review task strategy and tool selection."
                             ),
                         ))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='weakness_detector.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="weakness_detector_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         except Exception as e:
             logger.debug(f"_detect_from_knowledge_patterns error: {e}")
         return result

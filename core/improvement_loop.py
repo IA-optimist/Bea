@@ -33,7 +33,6 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -405,8 +404,8 @@ class LearningMemory:
             try:
                 self._lessons = [Lesson(**d) for d in json.loads(
                     self._path.read_text(encoding="utf-8"))]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='improvement_loop.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="improvement_loop_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════

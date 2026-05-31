@@ -268,8 +268,8 @@ def _extract_final_output(text: str) -> str:
                 or str(data)
             )
             return str(readable)  # no truncation — full response preserved for the user
-        except (_json.JSONDecodeError, Exception):
-            _silent_log.debug("suppressed_exception", src='_deps.py')
+        except (_json.JSONDecodeError, Exception) as _exc:
+            log.warning("swallowed_exception", action="_deps_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return text
 
 
@@ -279,7 +279,6 @@ def _extract_final_output(text: str) -> str:
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
-_silent_log = __import__("structlog").get_logger(__name__)
 
 # Lazy init database engine
 _db_engine = None

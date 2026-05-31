@@ -13,10 +13,12 @@ Usage:
     events = trace.get_events()
 """
 from __future__ import annotations
+
+import structlog
+log = structlog.get_logger(__name__)
 import json
 import time
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class MissionTrace:
@@ -61,8 +63,8 @@ class MissionTrace:
                         events.append(entry)
                     except json.JSONDecodeError:
                         continue
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='trace.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="trace_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return events[-limit:]
 
     def summary(self) -> dict:

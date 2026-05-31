@@ -35,7 +35,6 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.skill_store")
 
@@ -283,8 +282,8 @@ class SkillStore:
                         },
                         points=[hit.id],
                     )
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='skill_store.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="skill_store_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 skills.append(p)
 
             if skills:

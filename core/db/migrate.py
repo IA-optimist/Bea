@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -180,8 +179,8 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
                 SET success = false, error_message = EXCLUDED.error_message
             """, (migration_name, error_msg))
             conn.commit()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='migrate.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="migrate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         return False, error_msg
 

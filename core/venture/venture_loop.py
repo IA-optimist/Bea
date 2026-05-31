@@ -19,7 +19,6 @@ import uuid
 import structlog
 from dataclasses import dataclass, field
 from enum import Enum
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("venture.loop")
 
@@ -660,5 +659,5 @@ def _record_loop_outcome(result: VentureLoopResult, hypothesis: VentureHypothesi
                 "confidence": result.final_confidence,
             },
         )
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='venture_loop.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="venture_loop_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

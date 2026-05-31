@@ -48,6 +48,9 @@ Safety:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 # Audit S8 (2026-05-20): silent logger for suppressed exceptions — matches
 # the pattern used elsewhere in core/. Previously this module sat inside
 # core/_legacy/ which ruff excludes, so F821 on `_silent_log` references

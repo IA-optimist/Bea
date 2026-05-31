@@ -31,9 +31,9 @@ import urllib.error
 import urllib.parse
 from dataclasses import dataclass, field
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
+log = logger  # M3 emitter alias
 
 STRIPE_BASE = "https://api.stripe.com/v1"
 TIMEOUT = 15
@@ -96,8 +96,8 @@ class StripeTool:
                     return result.inject_value
                 if isinstance(result, dict):
                     return result.get("value", "")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='stripe_tool.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="stripe_tool_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return ""
 
     # ═══════════════════════════════════════════════════════════════

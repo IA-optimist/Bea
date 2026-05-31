@@ -14,7 +14,6 @@ import time
 import structlog
 from dataclasses import dataclass, field
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.auto_update")
 
@@ -242,8 +241,8 @@ class ModelAutoUpdate:
                             "samples_a": ranked[0].get("samples", 0),
                             "samples_b": ranked[1].get("samples", 0),
                         })
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='auto_update.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="auto_update_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return candidates
 
     def get_real_cost_stats(self) -> dict:

@@ -27,7 +27,6 @@ from core.tools_operational.tool_schema import (
 )
 from core.tools_operational.tool_registry import get_tool_registry
 from core.tools_operational.tool_readiness import check_readiness
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("tools_operational.executor")
 
@@ -402,8 +401,8 @@ class OperationalToolExecutor:
                         "risk": tool.risk_level, **{k: str(v)[:200] for k, v in extra.items()}},
                 tags=["operational_tool", tool.category],
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_executor.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_executor_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ─────────────────────────────────────────────────

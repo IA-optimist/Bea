@@ -19,6 +19,9 @@ Reuses existing metrics_store and observability_helpers when available.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import time
 
 try:

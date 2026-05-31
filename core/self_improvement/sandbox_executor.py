@@ -60,7 +60,6 @@ class FailureCategory:
 # ── Secret scrubbing ─────────────────────────────────────────────────────────
 
 import re as _re
-_silent_log = __import__("structlog").get_logger(__name__)
 
 _SECRET_PATTERNS = [
     _re.compile(r"(sk-[a-zA-Z0-9]{20,})"),           # OpenAI-style
@@ -480,8 +479,8 @@ class SandboxExecutor:
             if tmp_file:
                 try:
                     Path(tmp_file).unlink()
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='sandbox_executor.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="sandbox_executor_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     @staticmethod
     def _is_allowed_command(command: str) -> bool:

@@ -19,6 +19,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import sqlite3
 import time
@@ -49,8 +52,8 @@ def _default_db_path() -> Path:
         from config.settings import get_settings
         s = get_settings()
         candidates.append(Path(s.workspace_dir))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='canonical_mission_store.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="canonical_mission_store_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     candidates.append(Path("workspace"))
 
     for db_dir in candidates:

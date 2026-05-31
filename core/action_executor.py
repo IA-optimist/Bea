@@ -40,7 +40,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 # ===== LLM AGENT SUPPORT (2026-04-08) =====
 try:
@@ -649,8 +648,8 @@ class ActionExecutor:
                         dt["action_executor_output"] = full_output[:2000]
                         dt["action_executor_completed"] = True
                         r_action.decision_trace = dt
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='action_executor.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="action_executor_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
                 log.info("action_executor_results_stored",
                          mission_id=mission_id,

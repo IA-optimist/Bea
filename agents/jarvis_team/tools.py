@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import Any
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -955,8 +954,8 @@ def tool_search_patterns(query: str, limit: int = 5) -> ToolResult:
                     matches.append(entry)
                 if len(matches) >= limit:
                     break
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tools.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tools_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return ToolResult(success=True, tool="search_patterns", data=matches)
 
 

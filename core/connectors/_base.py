@@ -32,6 +32,7 @@ from core.connectors.contracts import (
 )
 
 logger = logging.getLogger("jarvis.connectors")
+log = logger  # M3 emitter alias
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -307,8 +308,8 @@ def structured_extractor(params: dict) -> ConnectorResult:
             for m in matches[:20]:
                 try:
                     extracted.append(json.loads(m))
-                except json.JSONDecodeError:
-                    _silent_log.debug("suppressed_exception", src='_base.py')
+                except json.JSONDecodeError as _exc:
+                    log.warning("swallowed_exception", action="_base_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return ConnectorResult(success=True, data=extracted,
                                    latency_ms=(time.time()-start)*1000, connector="structured_extractor")
 
@@ -452,7 +453,6 @@ EMAIL_SPEC = ConnectorSpec(
 
 # Email validation patterns
 import re as _re
-_silent_log = __import__("structlog").get_logger(__name__)
 _EMAIL_RE = _re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 _MAX_SUBJECT_LEN = 200
 _MAX_BODY_LEN = 50_000

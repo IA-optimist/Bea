@@ -19,7 +19,6 @@ import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.catalog")
 
@@ -186,8 +185,8 @@ class ModelCatalog:
             try:
                 import os
                 api_key = os.environ.get("OPENROUTER_API_KEY", "")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='catalog.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="catalog_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if not api_key:
             log.debug("catalog_refresh_skipped", reason="no_api_key")

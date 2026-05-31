@@ -56,6 +56,7 @@ except Exception as _l4_err:
     logging.getLogger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
 
 logger = logging.getLogger("jarvis.tool_executor")
+log = logger  # M3 emitter alias
 try:
     import structlog as _structlog
     log = _structlog.get_logger("jarvis.tool_executor")

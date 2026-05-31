@@ -49,6 +49,7 @@ These files cross the 800-line threshold but are not the headline monoliths to s
 | `core/runtime_introspection.py` | ~844 | Extract probes from aggregators/reporters. |
 | `core/modules/module_manager.py` | ~839 | Separate manifest parsing from runtime activation. |
 | `core/llm_factory.py` | ~831 | Extract provider config from instantiation logic. |
+| `core/evaluation_engine.py` | ~801 | Crossed the 800-line threshold after the M3 silent-swallow migration expanded the per-call `log.warning(...)` payload. Trim by extracting the per-metric helpers (approval_rate, timeout_rate, cost, error_count, patch_success_rate) into a small `core/evaluation_metrics.py`. |
 
 ## Ratchet Rules
 

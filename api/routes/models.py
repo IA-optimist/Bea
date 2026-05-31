@@ -15,11 +15,11 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 logger = logging.getLogger("jarvis.api.models")
+log = logger  # M3 emitter alias
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.
 from api._deps import require_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 _auth = Depends(require_auth)
 
 router = APIRouter(
@@ -152,8 +152,8 @@ async def model_status():
         try:
             from core.model_intelligence.auto_update import get_model_auto_update
             auto_status = get_model_auto_update().get_status()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='models.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="models_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return {
             "catalog": catalog.status(),
             "performance_records": len(perf.get_all()),

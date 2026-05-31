@@ -19,7 +19,6 @@ from core.capability_routing.spec import (
 from core.capability_routing.registry import get_provider_registry
 from core.capability_routing.scorer import rank_providers
 from core.capability_routing.resolver import resolve_capabilities
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("capability_routing.router")
 
@@ -180,8 +179,8 @@ def _route_single(
         kp = best.provider.metadata.get("kernel_performance", {})
         if kp and kp.get("adjustment", 0) != 0:
             reason += f" | {kp['explanation']}"
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='router.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="router_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return RoutingDecision(
         capability_id=cap_id,

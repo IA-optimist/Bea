@@ -18,7 +18,6 @@ import subprocess  # nosec B404
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.tools.file")
 
@@ -352,8 +351,8 @@ def workspace_snapshot(**kw) -> str:
             if f.is_dir() and f.name not in {".git", "__pycache__", "node_modules"}:
                 try:
                     dirs.add(str(f.relative_to(_WORKSPACE)).split("/")[0])
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='file_tool.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="file_tool_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return (
             f"Workspace: {_WORKSPACE}\n"

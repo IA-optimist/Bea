@@ -18,9 +18,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
+log = logger  # M3 emitter alias
 
 
 @dataclass
@@ -210,5 +210,5 @@ class FinanceMemory:
             return
         try:
             json.loads(self._path.read_text())
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='finance_memory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="finance_memory_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

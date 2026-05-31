@@ -17,12 +17,14 @@ Handlers disponibles :
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import re
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
-_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from executor.task_model import ExecutionTask
@@ -198,8 +200,8 @@ def handle_improve(task: "ExecutionTask") -> str:
                 for i, line in enumerate(content.splitlines(), 1):
                     if any(kw in line.upper() for kw in ["TODO", "FIXME", "HACK", "XXX"]):
                         todos.append(f"{f.name}:{i} → {line.strip()[:70]}")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='handlers.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="handlers_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if todos:
             lines.append(f"\nPoints à améliorer ({len(todos)}) :")

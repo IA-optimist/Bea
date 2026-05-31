@@ -15,11 +15,11 @@ from __future__ import annotations
 import logging
 
 logger = logging.getLogger("jarvis.self_improvement.engine")
+log = logger  # M3 emitter alias
 
 from core.self_improvement.failure_collector import FailureCollector
 from core.self_improvement.improvement_planner import ImprovementPlanner
 from core.self_improvement.candidate_generator import CandidateGenerator
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 class SelfImprovementEngine:
@@ -191,5 +191,5 @@ class SelfImprovementEngine:
                 "reviews": reviews,
                 "rejects": rejects,
             })
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="engine_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

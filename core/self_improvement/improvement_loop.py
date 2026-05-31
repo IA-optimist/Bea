@@ -13,7 +13,6 @@ import uuid
 import logging
 from dataclasses import dataclass, field, asdict
 from typing import Literal
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = logging.getLogger("jarvis.improvement.loop")
 
@@ -344,8 +343,8 @@ class ImprovementLoop:
                 "outcome": decision.outcome,
                 "pass_rate": experiment.candidate_pass_rate,
             })
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='improvement_loop.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_loop_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         log.info("improvement_evaluated",
                 candidate_id=candidate_id,

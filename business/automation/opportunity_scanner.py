@@ -33,10 +33,10 @@ import asyncio
 
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+log = logger  # M3 emitter alias
 
 
 @dataclass
@@ -388,8 +388,8 @@ class OpportunityScanner:
                             if score_text and score_text != '•':
                                 try:
                                     upvotes = int(score_text)
-                                except ValueError:
-                                    _silent_log.debug("suppressed_exception", src='opportunity_scanner.py')
+                                except ValueError as _exc:
+                                    log.warning("swallowed_exception", action="opportunity_scanner_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                         
                         # Extract comments
                         comments = 0

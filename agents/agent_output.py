@@ -8,10 +8,12 @@ Contrat uniforme exposable par l'API :
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 from dataclasses import dataclass, field
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -135,8 +137,8 @@ class AgentOutput:
                     execution_time_ms=execution_time_ms,
                     success=True,
                 )
-        except (json.JSONDecodeError, Exception):
-            _silent_log.debug("suppressed_exception", src='agent_output.py')
+        except (json.JSONDecodeError, Exception) as _exc:
+            log.warning("swallowed_exception", action="agent_output_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Fallback brut
         action_fb = ""

@@ -36,6 +36,9 @@ Phase 7 when the kernel becomes the primary executor.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import logging
 import time
 import uuid

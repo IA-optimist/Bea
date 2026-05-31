@@ -6,7 +6,6 @@ des configurations systèmes spécifiques utiles à sa survie.
 import json
 import structlog
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -17,8 +16,8 @@ class MemoryBank:
         self.db_path = Path(db_path).absolute()
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="memory_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         self.memories = self._load()
 
     def _load(self) -> list[dict]:

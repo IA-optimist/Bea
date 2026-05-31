@@ -6,10 +6,12 @@ Auth-protected. No secret leakage.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 from fastapi import APIRouter, Depends, Query
 
 from api._deps import require_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 
 router = APIRouter(prefix="/api/v3/cognitive-events", tags=["cognitive-events"])
 
@@ -41,8 +43,8 @@ async def get_recent_events(
     if event_type:
         try:
             kwargs["event_type"] = EventType(event_type)
-        except ValueError:
-            _silent_log.debug("suppressed_exception", src='cognitive_events.py')
+        except ValueError as _exc:
+            log.warning("swallowed_exception", action="cognitive_events_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     if mission_id:
         kwargs["mission_id"] = mission_id
     if severity:

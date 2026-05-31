@@ -29,6 +29,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import importlib
 import os
 import shutil

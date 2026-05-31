@@ -14,9 +14,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.objective_store")
+log = logger  # M3 emitter alias
 
 # ── Chemins ────────────────────────────────────────────────────────────────────
 
@@ -29,8 +29,8 @@ def _get_store_path() -> Path:
     path = Path(workspace) / "objectives"
     try:
         path.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='objective_store.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="objective_store_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return path / "objectives.json"
 
 

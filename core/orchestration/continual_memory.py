@@ -1,3 +1,5 @@
+import structlog
+log = structlog.get_logger(__name__)
 """
 continual_memory.py — Replay buffer intelligent pour JarvisMax
 Résout l'oubli catastrophique entre sessions via prioritized experience replay.

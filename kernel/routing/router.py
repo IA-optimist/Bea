@@ -30,6 +30,9 @@ capability arbitration, or model selection override before returning.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
