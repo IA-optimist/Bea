@@ -78,7 +78,6 @@ ERROR_CLASSES: dict[str, list[str]] = {
 # ── Résultat standard ─────────────────────────────────────────────────────────
 
 import time as _time
-_silent_log = __import__("structlog").get_logger(__name__)
 
 def _ok(result: str, **meta) -> dict:
     """Structured success result with optional metadata."""
@@ -102,8 +101,8 @@ def _classify_error(error_str) -> str:
         if isinstance(error_str, Exception):
             classified = JarvisExecutionError.from_exception(error_str)
             return classified.error_type
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="classified_error_lookup", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     # String-based fallback using canonical types
     e = str(error_str).lower()
     if "timeout" in e or "timed out" in e:
@@ -472,8 +471,8 @@ class ToolExecutor:
         )
         _tools.update(BROWSER_TOOLS)
         _TOOL_TIMEOUTS.update(BROWSER_TOOL_TIMEOUTS)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_tool_timeouts_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Paramètres requis par tool (validation avant exécution)
     _TOOL_REQUIRED_PARAMS: dict = {
@@ -535,8 +534,8 @@ class ToolExecutor:
     try:
         from core.tools.browser_bridge import BROWSER_TOOL_REQUIRED_PARAMS
         _TOOL_REQUIRED_PARAMS.update(BROWSER_TOOL_REQUIRED_PARAMS)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_required_params_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Tools qui acceptent un kwarg timeout
     _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet"}
@@ -593,8 +592,8 @@ class ToolExecutor:
     try:
         from core.tools.browser_bridge import BROWSER_ACTION_TYPES
         _action_types.update(BROWSER_ACTION_TYPES)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_action_types_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Niveaux de risque par tool
     _TOOL_RISK_LEVELS: dict[str, str] = {
@@ -823,8 +822,8 @@ class ToolExecutor:
                               mission_id=_mission_id_for_journal,
                               risk_level=self._TOOL_RISK_LEVELS.get(tool_name, "unknown"),
                               param_keys=list(params.keys())[:8] if params else [])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_executor.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_call_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Exécution réelle avec retry automatique
         _t0 = _time.time()
@@ -879,8 +878,8 @@ class ToolExecutor:
                     success=_tool_ok,
                     error=result.get("error", "")[:100] if not _tool_ok else "",
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_executor.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_metrics_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return result
         except Exception as e:
@@ -919,8 +918,8 @@ class ToolExecutor:
                                   duration_ms=_duration_ms,
                                   error=str(e)[:100],
                                   error_class=error_class)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_executor.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_error_class_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} err={e}")
             return _err(str(e), error_class=error_class, tool=tool_name, blocked_by_policy=False)

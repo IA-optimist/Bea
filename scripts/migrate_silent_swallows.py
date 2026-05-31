@@ -34,7 +34,7 @@ from pathlib import Path
 _SILENT_RE = re.compile(
     r'_silent_log\.debug\("suppressed_exception", src=\'[^\']+\.py\'\)'
 )
-_EXCEPT_RE = re.compile(r"^(\s*)except Exception:\s*$")
+_EXCEPT_RE = re.compile(r"^(\s*)except\s+([^:]+?)\s*:\s*$")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,11 +73,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             continue
         indent_except = m.group(1)
+        exc_clause = m.group(2).strip()  # e.g. "Exception", "(json.JSONDecodeError, ValueError)", "ImportError"
         # Compute indent of the silent line so the replacement keeps it.
         silent_line = lines[hit]
         indent_silent = silent_line[: len(silent_line) - len(silent_line.lstrip())]
 
-        lines[hit - 1] = f"{indent_except}except Exception as _exc:\n"
+        # Preserve the original exception type ; just add `as _exc`.
+        if " as " in exc_clause:
+            # Already had `as X` — strip and rebind as `_exc`.
+            exc_clause = exc_clause.split(" as ")[0].strip()
+        lines[hit - 1] = f"{indent_except}except {exc_clause} as _exc:\n"
         lines[hit] = (
             f"{indent_silent}log.warning(\"swallowed_exception\", "
             f"action=\"{action}\", "
