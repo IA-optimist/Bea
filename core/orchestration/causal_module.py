@@ -20,7 +20,6 @@ import copy
 import logging
 from typing import Any, Optional
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import networkx as nx
@@ -28,6 +27,7 @@ except ImportError:
     raise ImportError("networkx is required: pip install networkx")
 
 logger = logging.getLogger(__name__)
+log = logger  # alias for M3 swallowed_exception emitter
 
 
 def _demo_log(*args: Any, sep: str = " ", end: str = "\n") -> None:
@@ -184,8 +184,8 @@ class CausalGraph:
             try:
                 for path in nx.all_simple_paths(self.graph, root, effect):
                     all_paths.append(path)
-            except nx.NetworkXNoPath:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except nx.NetworkXNoPath as _exc:
+                log.warning("swallowed_exception", action="path_no_route", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if not all_paths:
             direct = list(self.graph.predecessors(effect))
             return f"'{effect}' is directly caused by: {', '.join(direct)}."
@@ -356,8 +356,8 @@ class CausalLLMWrapper:
         for cause, effect in self.extract_causal_claim(response):
             try:
                 graph.add_edge(cause, effect, 0.6, "auto-extracted:llm")
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_llm", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def build_graph_from_text(self, text: str, graph: Optional[CausalGraph] = None) -> CausalGraph:
         if graph is None:
@@ -365,8 +365,8 @@ class CausalLLMWrapper:
         for cause, effect in self.extract_causal_claim(text):
             try:
                 graph.add_edge(cause, effect, 0.6, "text-extracted")
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_text", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return graph
 
 
@@ -404,8 +404,8 @@ class JarvisMaxCausalIntegration:
             try:
                 self.graph.add_edge(cause, effect, 0.5, "mission-result")
                 added.append((cause, effect))
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_ingest", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if added:
             self.graph.save(str(self.graph_path))
             if self.qdrant_url:
@@ -427,8 +427,8 @@ class JarvisMaxCausalIntegration:
         """Alias pour ingest_mission_result()"""
         try:
             self.ingest_mission_result(text)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='causal_module.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="ingest_mission_result", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _index_to_qdrant(self, edges: list[tuple[str, str]]) -> None:
         try:

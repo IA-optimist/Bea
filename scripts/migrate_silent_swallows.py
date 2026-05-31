@@ -32,7 +32,7 @@ from pathlib import Path
 
 
 _SILENT_RE = re.compile(
-    r'_silent_log\.debug\("suppressed_exception", src=\'[^\']+\.py\'\)'
+    r'_silent_log\.debug\("suppressed_exception", src=(\'[^\']+\.py\'|"[^"]+\.py")\)'
 )
 _EXCEPT_RE = re.compile(r"^(\s*)except\s+([^:]+?)\s*:\s*$")
 

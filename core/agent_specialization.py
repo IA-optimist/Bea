@@ -33,7 +33,6 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -313,8 +312,8 @@ def classify_task(task_text: str) -> list[dict]:
                     if re.search(pattern, task_lower):
                         score += 0.5
                         matched_patterns.append(pattern[:50])
-                except re.error:
-                    _silent_log.debug("suppressed_exception", src='agent_specialization.py')
+                except re.error as _exc:
+                    log.warning("swallowed_exception", action="pattern_regex_match", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # Keyword overlap with tools
             task_words = set(re.findall(r'\w+', task_lower))
@@ -562,8 +561,8 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
                 analysis.partial.append(archetype.name)
             else:
                 analysis.missing.append(archetype.name)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="archetype_missing_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         # Detect overlapping agents (same role, similar capabilities)
@@ -585,8 +584,8 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
                         "shared_capabilities": sorted(overlap),
                         "overlap_count": len(overlap),
                     })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_signal_export_a", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         # Detect routing inefficiencies
@@ -602,8 +601,8 @@ def analyze_agent_capability_coverage() -> CoverageAnalysis:
                         "agent": agent_name,
                         "issue": "agent not found in registry",
                     })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_signal_export_b", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return analysis
 
@@ -881,7 +880,7 @@ def export_specialization_artifacts(output_dir: str = "workspace") -> dict:
 
     try:
         log.info("specialization_artifacts_exported", files=list(produced.keys()))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='agent_specialization.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="specialization_artifacts_export", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return produced

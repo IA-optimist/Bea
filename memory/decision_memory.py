@@ -5,13 +5,15 @@ stdlib uniquement : json, os, time, collections, dataclasses, pathlib.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import os
 from collections import deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 _WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
 _PERSIST_PATH  = _WORKSPACE_DIR / "decision_memory.jsonl"
@@ -166,8 +168,8 @@ class DecisionMemory:
                     success_rate=stats["success_rate"],
                     count=stats["count"],
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='decision_memory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="decision_record_a", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if stats["override_rate"] > 0.3 and "shadow-advisor" not in agents:
             agents = agents + ["shadow-advisor"]
@@ -178,8 +180,8 @@ class DecisionMemory:
                     mission_type=mission_type,
                     override_rate=stats["override_rate"],
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='decision_memory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="decision_record_b", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return agents
 
@@ -253,10 +255,10 @@ class DecisionMemory:
             for line in lines:
                 try:
                     self._entries.append(json.loads(line))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='decision_memory.py')
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='decision_memory.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="decision_load_line_parse", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="decision_load_iter", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _persist(self) -> None:
         """Écrit JSONL. FIFO géré par deque(maxlen=1000). Atomic write (tmp → rename)."""
@@ -266,8 +268,8 @@ class DecisionMemory:
             tmp = self.PERSIST_PATH.with_suffix(".tmp")
             tmp.write_text("\n".join(lines) + "\n", "utf-8")
             tmp.replace(self.PERSIST_PATH)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='decision_memory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="decision_persist_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton module-level ────────────────────────────────────────────────────

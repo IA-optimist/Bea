@@ -33,7 +33,6 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field, asdict
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -272,8 +271,8 @@ class MetricsRegistry:
             labels: dict[str, str] | None = None) -> None:
         try:
             self._counters[name].inc(self._labels_key(labels), value)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='metrics_store.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="counter_inc", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_counter(self, name: str, labels: dict[str, str] | None = None) -> float:
         return self._counters[name].get(self._labels_key(labels))
@@ -287,8 +286,8 @@ class MetricsRegistry:
                 labels: dict[str, str] | None = None) -> None:
         try:
             self._histograms[name].observe(value, self._labels_key(labels))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='metrics_store.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="histogram_observe", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_histogram(self, name: str,
                       labels: dict[str, str] | None = None) -> dict[str, float]:
@@ -300,8 +299,8 @@ class MetricsRegistry:
                   labels: dict[str, str] | None = None) -> None:
         try:
             self._gauges[name].set(value, self._labels_key(labels))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='metrics_store.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="gauge_set", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_gauge(self, name: str,
                   labels: dict[str, str] | None = None) -> float:
@@ -317,8 +316,8 @@ class MetricsRegistry:
                 category=category, component=component, message=message[:500],
                 mission_id=mission_id, model_id=model_id, tool_name=tool_name))
             self.inc("failures_total", labels={"category": category, "component": component})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='metrics_store.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="failure_inc", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Cost tracking ─────────────────────────────────────────
 
@@ -327,8 +326,8 @@ class MetricsRegistry:
         try:
             self.costs.record(model_id, tokens, cost_tier, mission_id, actual_cost)
             self.inc("estimated_cost_total", labels={"model_id": model_id})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='metrics_store.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="cost_inc", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Snapshot ──────────────────────────────────────────────
 

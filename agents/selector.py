@@ -164,8 +164,8 @@ class AgentSelector:
                         if _ma not in agents:
                             agents.append(_ma)
                     log.info("multimodal_routing", type=_modal, agents=agents)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='selector.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="multimodal_routing_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── end multimodal routing ───────────────────────────────────
 
             # Capability registry filter (fail-open, ≥10 entries)
@@ -182,8 +182,8 @@ class AgentSelector:
                     ]
                     if _f:
                         agents = _f
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='selector.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="specialization_filter", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             log.info(
                 "agent_selector_mission_routing",
                 agents=agents, mission_type=mission_type,
@@ -277,8 +277,8 @@ class AgentSelector:
             agents = get_decision_memory().suggest_agents(
                 classify_mission_type(goal, complexity), complexity, agents,
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='selector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="decision_memory_suggest", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Capability registry filter (fail-open, < 1ms) ────────────────────
         try:
@@ -302,8 +302,8 @@ class AgentSelector:
                     for _rec in _recommended:
                         if _rec not in agents and len(agents) < MAX_AGENTS_PER_MISSION:
                             agents.append(_rec)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='selector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="agent_specialization_apply", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── PolicyMode apply ─────────────────────────────────────────────────
         try:
@@ -320,8 +320,8 @@ class AgentSelector:
                         agents = agents + ["lens-reviewer"]
                     if "map-planner" not in agents and len(agents) < 5 and complexity == "high":
                         agents = agents + ["map-planner"]
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='selector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="policymode_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # ── end PolicyMode apply ─────────────────────────────────────────────
 
         return agents

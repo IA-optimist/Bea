@@ -53,7 +53,6 @@ from __future__ import annotations
 # core/_legacy/ which ruff excludes, so F821 on `_silent_log` references
 # was never surfaced. Now that the module is back at
 # core/self_improvement_loop.py, ruff catches it ; add the import explicitly.
-_silent_log = __import__("structlog").get_logger(__name__)
 
 import hashlib
 import json
@@ -159,8 +158,8 @@ class SignalCollector:
                         frequency=f["count"],
                         context={"category": f.get("category", ""), "message": f.get("last_message", "")},
                     ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_a", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Source 2: tool reliability
         try:
@@ -177,8 +176,8 @@ class SignalCollector:
                             frequency=int(problem.metric_value),
                             context={"problem": problem.problem_type, "detail": problem.detail},
                         ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_b", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Source 3: improvement daemon weaknesses
         try:
@@ -191,8 +190,8 @@ class SignalCollector:
                     frequency=w.count,
                     context={"category": w.category, "metric": w.metric_name, "value": w.metric_value},
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_c", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         for s in signals:
             self.add(s)
@@ -748,8 +747,8 @@ class PromptOptimizer:
                                 "content": v.content[:500], "score": v.score,
                                 "uses": v.uses} for v in versions]
             self._path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="prompt_versions_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if self._path.exists():
@@ -757,8 +756,8 @@ class PromptOptimizer:
                 data = json.loads(self._path.read_text(encoding="utf-8"))
                 for name, versions in data.items():
                     self._prompts[name] = [PromptVersion(**v) for v in versions]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="prompt_versions_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════

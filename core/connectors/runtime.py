@@ -9,7 +9,7 @@ from typing import Optional
 from core.connectors.contracts import ConnectorResult
 
 logger = logging.getLogger("jarvis.connectors")
-_silent_log = __import__("structlog").get_logger(__name__)
+log = logger  # alias for M3 swallowed_exception emitter
 
 
 def _connector_registry() -> dict[str, dict]:
@@ -97,8 +97,8 @@ def _audit_connector_execution(
             event="connector_executed",
             detail=detail[:500],
         )
-    except Exception:
-        _silent_log.debug("suppressed_exception", src="runtime.py")
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="connector_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 def execute_connector(name: str, params: dict) -> ConnectorResult:
@@ -138,8 +138,8 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                 else:
                     log_approval_event(name, "execute", True, "supervised_execution")
                     logger.info("connector_approval_required: %s (%s)", name, spec.risk_level)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src="runtime.py")
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="connector_approval_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.governance import check_connector_rate
@@ -149,8 +149,8 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
             _audit_connector_execution(name, list(params.keys()), result, sanitize_warnings,
                                        (time.time() - exec_start) * 1000)
             return result
-    except Exception:
-        _silent_log.debug("suppressed_exception", src="runtime.py")
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="connector_execute_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     if spec.category in ("communication", "integration") and spec.risk_level in ("medium", "high"):
         try:
@@ -161,8 +161,8 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
                 _audit_connector_execution(name, list(params.keys()), result, sanitize_warnings,
                                            (time.time() - exec_start) * 1000)
                 return result
-        except Exception:
-            _silent_log.debug("suppressed_exception", src="runtime.py")
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="connector_subexec_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     result = connector["execute"](clean_params)
 
@@ -174,8 +174,8 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
             latency_ms=result.latency_ms,
             error_type=result.error[:50] if result.error else None,
         ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src="runtime.py")
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="connector_audit_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     _audit_connector_execution(
         name, list(params.keys()), result, sanitize_warnings,

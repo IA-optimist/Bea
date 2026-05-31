@@ -27,7 +27,6 @@ import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -580,8 +579,8 @@ class ExtensionRegistry:
             path.write_text(
                 json.dumps([a.to_dict() for a in self._audit[-500:]], indent=2, default=str),
                 encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='extension_registry.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="audit_log_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load_all(self) -> None:
         for ext_type, cls in _TYPE_MAP.items():
@@ -605,8 +604,8 @@ class ExtensionRegistry:
                 data = json.loads(audit_path.read_text(encoding="utf-8"))
                 for d in data:
                     self._audit.append(AuditEntry(**d))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="audit_log_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -666,8 +665,8 @@ class RuntimeExtensionLoader:
                 creg = get_connector_registry()
                 if hasattr(creg, "register_external"):
                     creg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="capability_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         elif ext_type == "skill":
             # Register skill
@@ -676,8 +675,8 @@ class RuntimeExtensionLoader:
                 sreg = get_skill_registry()
                 if hasattr(sreg, "register_external"):
                     sreg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="skill_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         elif ext_type == "tool":
             # Register tool config
@@ -686,8 +685,8 @@ class RuntimeExtensionLoader:
                 treg = get_tool_registry()
                 if hasattr(treg, "register_external"):
                     treg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_loaded(self) -> dict:
         return dict(self._loaded)
