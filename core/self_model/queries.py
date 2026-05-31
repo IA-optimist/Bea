@@ -7,7 +7,8 @@ All operate on a SelfModel snapshot — no side effects.
 from __future__ import annotations
 
 import structlog
-_silent_log = structlog.get_logger(__name__)
+
+log = structlog.get_logger(__name__)
 
 from core.self_model.model import (
     SelfModel, CapabilityStatus, ComponentStatus, HealthStatus,
@@ -304,8 +305,8 @@ def get_economic_status() -> dict:
         mem = get_strategic_memory()
         status["strategic_memory_active"] = True
         status["strategic_memory_records"] = mem.count
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="strategic_memory_status", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.economic.strategy_evaluation import get_strategy_evaluator
@@ -314,31 +315,31 @@ def get_economic_status() -> dict:
         total_recs = sum(len(e.recommendations) for e in evals)
         status["recommendations_available"] = total_recs > 0
         status["recommendations_count"] = total_recs
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="recommendations_status", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.objectives.objective_horizon import get_horizon_manager
         mgr = get_horizon_manager()
         data = mgr.to_dict()
         status["kpi_tracking_active"] = len(data.get("metrics", {})) > 0
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="kpi_tracking_status", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.economic.playbook_composition import BUILT_IN_CHAINS
         status["playbook_chains_available"] = len(BUILT_IN_CHAINS) > 0
         status["chains_count"] = len(BUILT_IN_CHAINS)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="playbook_chains_status", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from kernel.capabilities.registry import get_capability_registry
         reg = get_capability_registry()
         economic = reg.list_by_category("economic")
         status["economic_capabilities_registered"] = len(economic)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="economic_capabilities_status", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return status
 
@@ -503,8 +504,8 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                 ),
                 "source": "skill_llm",
             })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="skill_llm_capability_suggestion", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 10. Economic intelligence — strategic memory and capability health
     try:
@@ -521,8 +522,8 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                 ),
                 "source": "strategic_memory",
             })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="strategic_memory_capability_suggestion", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.economic.strategy_evaluation import get_strategy_evaluator
@@ -539,8 +540,8 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                     ),
                     "source": "strategy_evaluation",
                 })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='queries.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="strategy_evaluation_capability_suggestion", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Sort by severity (critical > high > medium > low)
     severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
