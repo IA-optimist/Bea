@@ -34,9 +34,9 @@ import uuid
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger("jarvis.governance")
+log = logger  # alias for M3 emitter
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -223,8 +223,8 @@ def validate_persistence_file(path: str) -> dict:
             result["entries"] = len(data)
         result["valid"] = True
         return result
-    except json.JSONDecodeError:
-        _silent_log.debug("suppressed_exception", src='governance.py')
+    except json.JSONDecodeError as _exc:
+        log.warning("swallowed_exception", action="governance_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Try JSONL
     try:
@@ -589,16 +589,16 @@ def get_governance_dashboard() -> dict:
             raw = m.status.value if hasattr(m.status, 'value') else str(m.status)
             cs = map_legacy_mission_status(raw, "mission_system").value
             canonical_status[cs] = canonical_status.get(cs, 0) + 1
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='governance.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="governance_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Memory facade health
     memory_health: dict = {}
     try:
         from core.memory_facade import get_memory_facade
         memory_health = get_memory_facade().health()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='governance.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="governance_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Kill switch status
     kill_switch_active = os.environ.get(
@@ -720,8 +720,8 @@ def safety_checkpoint(
     if mission_id:
         try:
             log_mission_event(mission_id, "safety_checkpoint", str(checks)[:300])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='governance.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="governance_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return {"allowed": True, "reason": "", "checks": checks}
 

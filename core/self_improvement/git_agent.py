@@ -20,7 +20,6 @@ import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -213,8 +212,8 @@ class GitAgent:
         if self.has_worktree_support():
             try:
                 return self._create_worktree(snapshot, patch_id)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='git_agent.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="git_agent_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self._create_tempcopy(snapshot)
 
     def _create_worktree(self, snapshot: WorkspaceSnapshot, patch_id: str) -> WorkspaceSnapshot:
@@ -233,8 +232,8 @@ class GitAgent:
             rc2, commit = _run_git(["rev-parse", "HEAD"], self.project_root)
             if rc2 == 0:
                 snapshot.base_commit = commit.strip()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='git_agent.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="git_agent_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return snapshot
 
     def get_rollback_command(self, snapshot: WorkspaceSnapshot) -> str:
@@ -279,8 +278,8 @@ class GitAgent:
             rc, out = _run_git(["rev-parse", "HEAD"], self.project_root)
             if rc == 0:
                 snapshot.base_commit = out.strip()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='git_agent.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="git_agent_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return snapshot
 
     def _diff_tempcopy(self, snapshot: WorkspaceSnapshot, patch_result: PatchResult) -> PatchResult:
@@ -350,8 +349,8 @@ class GitAgent:
                 import shutil
                 if snapshot.sandbox_path and os.path.exists(snapshot.sandbox_path):
                     shutil.rmtree(snapshot.sandbox_path)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='git_agent.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="git_agent_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             snapshot.active = False
 
     def _get_tempcopy_diff(self, snapshot: WorkspaceSnapshot) -> str:

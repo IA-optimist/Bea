@@ -15,7 +15,6 @@ import structlog
 from typing import Optional
 from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 router = APIRouter()
@@ -148,8 +147,8 @@ async def websocket_stream(
                     _p = _json.loads(data)
                     if isinstance(_p, dict) and _p.get('type') == 'ping':
                         _is_ping = True
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='ws.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="ws_swallow_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
             else:
@@ -219,8 +218,8 @@ async def ws_handler(websocket: WebSocket):
             "message": "WebSocket connected to JarvisMax",
             "active_streams": len(ACTIVE_STREAMS),
         })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='ws.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="ws_swallow_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Keep alive — relay events or wait for disconnect
     try:
@@ -238,8 +237,8 @@ async def ws_handler(websocket: WebSocket):
                     _parsed = _json.loads(data)
                     if isinstance(_parsed, dict) and _parsed.get('type') == 'ping':
                         _is_ping = True
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='ws.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="ws_swallow_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             if _is_ping:
                 await websocket.send_json({"type": "pong"})
@@ -247,8 +246,8 @@ async def ws_handler(websocket: WebSocket):
                 log.debug("ws_handler_msg", msg=data[:200])
     except WebSocketDisconnect:
         log.info("ws_handler_disconnected")
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='ws.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="ws_swallow_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 class RewindRequest(BaseModel):

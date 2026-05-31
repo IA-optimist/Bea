@@ -21,7 +21,6 @@ import structlog
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.deployment")
 
@@ -296,8 +295,8 @@ class DeploymentPipeline:
                 try:
                     from core.execution.artifacts import ArtifactStatus
                     artifact.status = ArtifactStatus.DEPLOYED
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='deployment.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="deployment_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             else:
                 result.status = DeploymentStatus.DEPLOYED  # Deployed but not verified
 
@@ -402,8 +401,8 @@ class DeploymentPipeline:
                 findings={"status": result.status.value, "files": len(result.output_files)},
                 failures={"error": result.error} if result.error else {},
             ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='deployment.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="deployment_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         try:
             # Kernel performance
@@ -415,8 +414,8 @@ class DeploymentPipeline:
                     success=result.verification_passed,
                     duration_ms=result.duration_ms,
                 )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='deployment.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="deployment_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         try:
             # Cognitive journal
@@ -432,5 +431,5 @@ class DeploymentPipeline:
                     "status": result.status.value,
                 },
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='deployment.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="deployment_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

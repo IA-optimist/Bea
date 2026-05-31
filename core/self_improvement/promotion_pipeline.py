@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, Literal, Optional
 
 if TYPE_CHECKING:
     from core.self_improvement.test_runner import ExperimentReport
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -305,8 +304,8 @@ class PromotionPipeline:
                               step_id=patch_id, source="promotion_pipeline",
                               step_name=f"Patch: {getattr(candidate, 'description', '')[:60]}",
                               plan_id="self-improvement")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="promotion_pipeline_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 1. Check protected files
         try:
@@ -323,8 +322,8 @@ class PromotionPipeline:
                         duration_ms=elapsed,
                         risk_level=risk_level,
                     )
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="promotion_pipeline_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 2. Generate patch using CodePatcher
         try:
@@ -509,8 +508,8 @@ class PromotionPipeline:
                     emit_kernel_event("step.completed", step_id=_pid2,
                                       source="promotion_pipeline",
                                       plan_id="self-improvement")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="promotion_pipeline_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return _decision
 
         # Legacy path
@@ -829,8 +828,8 @@ class PromotionPipeline:
                               step_id=run_id, source="promotion_pipeline",
                               plan_id="self-improvement",
                               error=result.error[:100] if result.error else "")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='promotion_pipeline.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="promotion_pipeline_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _record_lesson(self, candidate, result: PromotionResult) -> None:
         """Record lesson learned in improvement memory."""

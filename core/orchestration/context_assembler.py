@@ -10,7 +10,6 @@ import time
 from dataclasses import dataclass, field
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("orchestration.context")
 
@@ -85,8 +84,8 @@ def assemble(
     try:
         from core.skills import get_skill_service
         ctx.prior_skills = get_skill_service().retrieve_for_mission(goal, top_k=3)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='context_assembler.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="context_assembler_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 2. Retrieve relevant memory
     try:
@@ -97,8 +96,8 @@ def assemble(
             {"content": e.content[:200], "type": e.content_type, "score": e.score}
             for e in entries
         ]
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='context_assembler.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="context_assembler_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 3. Recent failures
     try:
@@ -109,8 +108,8 @@ def assemble(
             {"error": e.content[:100], "type": e.content_type}
             for e in failures
         ]
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='context_assembler.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="context_assembler_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 4. System health
     try:
@@ -143,8 +142,8 @@ def assemble(
         try:
             ctx.suggested_approach = "business_structured_analysis"
             ctx.estimated_steps = 4
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='context_assembler.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="context_assembler_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     log.info("context_assembled",
              mission_id=mission_id,

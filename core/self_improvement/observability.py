@@ -20,7 +20,6 @@ Reuses existing metrics_store and observability_helpers when available.
 from __future__ import annotations
 
 import time
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
@@ -69,8 +68,8 @@ class SIObservability:
         try:
             from core.metrics_store import get_metrics
             self._metrics = get_metrics()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='observability.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="si_observability_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Event emitters ──
 
@@ -189,24 +188,24 @@ class SIObservability:
                 self._events = self._events[-300:]
             # Structured log
             log.info(event, **{k: v for k, v in data.items() if not isinstance(v, (list, dict))})
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='observability.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="si_observability_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _inc(self, metric: str, labels: dict | None = None) -> None:
         """Increment a counter — fail-open."""
         try:
             if self._metrics:
                 self._metrics.inc(metric, labels=labels)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='observability.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="si_observability_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _observe(self, metric: str, value: float, labels: dict | None = None) -> None:
         """Observe a histogram value — fail-open."""
         try:
             if self._metrics:
                 self._metrics.observe(metric, value, labels=labels)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='observability.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="si_observability_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ──

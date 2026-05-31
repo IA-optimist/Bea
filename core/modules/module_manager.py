@@ -21,9 +21,9 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 logger = logging.getLogger(__name__)
+log = logger  # alias for M3 emitter
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -292,20 +292,20 @@ class ModuleManager:
             if a["id"] not in self._agents:
                 try:
                     self.create_agent(a)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         for s in _KNOWN_SKILLS:
             if s["id"] not in self._skills:
                 try:
                     self.create_skill(s)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         for m in _KNOWN_MCP:
             if m["id"] not in self._mcp:
                 try:
                     self.create_mcp(m)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Agent CRUD ──
 
@@ -697,8 +697,8 @@ class ModuleManager:
         try:
             from core.tool_config_registry import get_config_registry
             result["dependency_health"] = get_config_registry().stats()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='module_manager.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="module_manager_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return result
 
     # ── Counts ──
