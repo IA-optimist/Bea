@@ -23,6 +23,9 @@ concurrency:
   group: kernel-ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   kernel-architecture:
     name: Kernel Architecture Validation (R1–R10)
@@ -39,11 +42,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -euo pipefail
           pip install structlog fastapi pydantic pydantic-settings uvicorn --quiet
 
       # ── K1 Rule scan ──────────────────────────────────────────
       - name: K1 Rule — kernel/ must not import core/api/agents/tools
         run: |
+          set -euo pipefail
           python - <<'EOF'
           import ast, sys
           from pathlib import Path
@@ -84,8 +89,8 @@ jobs:
           else:
               import subprocess
               count = subprocess.run(
-                  ["python", "-c", "import os; print(sum(1 for r,d,f in os.walk('kernel') for x in f if x.endswith('.py')))"],
-                  capture_output=True, text=True,
+                  ["python", "-c", "import os; print(sum(1 for r,d,f in os.walk('kernel') for x in f if x.endswith('.py')))"]
+                  ,capture_output=True, text=True,
               ).stdout.strip()
               print(f"✅ K1 Rule — {count} kernel files scanned, 0 violations")
           EOF
@@ -93,6 +98,7 @@ jobs:
       # ── security/ layer import ────────────────────────────────
       - name: Security layer imports (R3/R10)
         run: |
+          set -euo pipefail
           python -c "
           import sys; sys.path.insert(0, '.')
           from security import get_security_layer
@@ -106,6 +112,7 @@ jobs:
       # ── interfaces/ layer import ──────────────────────────────
       - name: KernelAdapter imports (R8)
         run: |
+          set -euo pipefail
           python -c "
           import sys; sys.path.insert(0, '.')
           from interfaces.kernel_adapter import KernelAdapter, AdapterResult, get_kernel_adapter
@@ -118,6 +125,7 @@ jobs:
       # ── KernelAgentContract conformance ───────────────────────
       - name: KernelStatusAgent contract conformance (R7)
         run: |
+          set -euo pipefail
           python -c "
           import sys, asyncio; sys.path.insert(0, '.')
           from kernel.contracts.agent import KernelAgentContract, get_agent_registry
@@ -134,6 +142,7 @@ jobs:
       # ── API routes importable ─────────────────────────────────
       - name: New API routes importable (Pass 30/31)
         run: |
+          set -euo pipefail
           python -c "
           import sys; sys.path.insert(0, '.')
           from api.routes.security_audit import router as sr
@@ -154,4 +163,5 @@ jobs:
       # To run all tests including integration: pytest -m integration
       - name: Integration tests — R1-R10 (31 tests)
         run: |
+          set -euo pipefail
           python tests/test_integration_kernel_security_business.py
