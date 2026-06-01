@@ -7,6 +7,9 @@ on:
     types: [completed]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   VPS_HOST: ${{ secrets.VPS_HOST }}
   VPS_USER: root
@@ -26,16 +29,19 @@ jobs:
       
       - name: Setup SSH key
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS1_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
       
       - name: Deploy to VPS1
         id: deploy
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'ENDSSH'
-            set -e
+          set -euo pipefail
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'ENDSSH'
+            set -euo pipefail
             
             echo "=== Starting deployment ==="
             cd ${{ env.DEPLOY_PATH }} || exit 1
@@ -73,8 +79,9 @@ jobs:
       - name: Run smoke tests
         id: smoke_test
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'ENDSSH'
-            set -e
+          set -euo pipefail
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'ENDSSH'
+            set -euo pipefail
             
             echo "=== Running smoke tests ==="
             
