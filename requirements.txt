@@ -14,11 +14,9 @@ redis==5.0.1
 celery==5.3.4
 
 # Web framework
-# fastapi 0.109.0 → 0.109.1 (PYSEC-2024-38)
-# TODO(deferred): bump fastapi 0.109 → 0.115+ pour pull starlette 0.40+
-# (CVE-2024-47874, CVE-2025-54121) — breaking: Pydantic v2 lifecycle,
-# route signatures, OAuth2 flows. À planifier en PR dédiée.
-fastapi==0.109.1
+# fastapi 0.109.1 → 0.133.1 pour compatibilité starlette >=1.0.1 (résorption CVE starlette)
+# migration contrôlée en lot dédié; valider routes/OAuth2, middlewares et lifespan après bump
+fastapi==0.133.1
 uvicorn[standard]==0.42.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)
