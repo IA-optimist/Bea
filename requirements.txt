@@ -31,11 +31,8 @@ pandas==2.2.0
 playwright==1.41.2
 
 # Security
-# cryptography 42.0.2 → 43.0.1 (GHSA-h4gh-qq45-vh27 + PYSEC-2024-225).
-# TODO(deferred): bump to 46.0.6 pour fermer CVE-2024-12797, CVE-2026-26007,
-# CVE-2026-34073 — nécessite validation des breaking changes côté asyncpg/
-# jwt/TLS. À faire dans une PR dédiée avec tests d'intégration.
-cryptography==43.0.1
+# cryptography 43.0.1 → 46.0.7 (PYSEC-2026-35, PYSEC-2026-36, CVE-2024-12797, CVE-2026-26007)
+cryptography==46.0.7
 # pyjwt 2.8.0 → 2.12.0 (CVE-2026-32597)
 pyjwt==2.12.0
 
