@@ -23,6 +23,7 @@
 /security/                     @UniTy01
 /docs/SECURITY_AUDIT.md        @UniTy01
 /.github/workflows/            @UniTy01
+/.github/actions/              @UniTy01
 /.pre-commit-config.yaml       @UniTy01
 /.gitleaks.toml                @UniTy01
 /.secrets.baseline             @UniTy01
