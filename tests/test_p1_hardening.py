@@ -20,6 +20,7 @@ def test_executors_do_not_use_shell_invocation():
         "core/tool_executor.py",
         "executor/runner.py",
         "executor/desktop_env/sandbox.py",
+        "mcp/hexstrike_v2/core/process_manager.py",
     ):
         content = Path(path).read_text(encoding="utf-8")
         assert "shell=True" not in content, path
