@@ -13,7 +13,7 @@ gh api -X PUT -H "Accept: application/vnd.github+json" \
 echo "[2/4] Enforce SHA pinning for Actions"
 gh api -X PUT -H "Accept: application/vnd.github+json" \
   "repos/${REPO}/actions/permissions" \
-  -f enabled=true \
+  -F enabled=true \
   -f allowed_actions='all' \
   -F sha_pinning_required=true >/dev/null
 
