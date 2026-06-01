@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import psutil
+import shlex
 import subprocess
 import threading
 import time
@@ -109,10 +110,14 @@ class ProcessManager:
             )
 
         try:
-            # Start process
+            # Start process without shell expansion to reduce command injection risk
+            argv = shlex.split(command, posix=True)
+            if not argv:
+                raise ValueError("Command vide")
+
             process = subprocess.Popen(
-                command,
-                shell=True,
+                argv,
+                shell=False,
                 stdout=subprocess.PIPE if capture_output else None,
                 stderr=subprocess.PIPE if capture_output else None,
                 text=True,
