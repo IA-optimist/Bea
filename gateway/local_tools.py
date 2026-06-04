@@ -89,18 +89,45 @@ def write_file(args: dict) -> str:
         return f"erreur: {e}"
 
 
+_KB = None  # cache de la KnowledgeBase (évite de recharger le store JSON à chaque appel)
+
+
+def knowledge_search(args: dict) -> str:
+    """RAG : cherche dans la base de connaissances locale de Béa (notes ingérées)."""
+    global _KB
+    query = (args.get("query") or args.get("q") or args.get("question") or "").strip()
+    if not query:
+        return "erreur: argument 'query' manquant"
+    try:
+        if _KB is None:
+            from config.settings import get_settings
+            from memory.knowledge_base import KnowledgeBase
+            _KB = KnowledgeBase(get_settings())
+        hits = _KB.search(query, top_k=4)
+        if not hits:
+            return ("AUCUN_RESULTAT: rien de pertinent dans la base de connaissances. "
+                    "Ne devine pas — dis que l'information n'y est pas.")
+        return "\n\n".join(f"[source: {h['source']} · pertinence {h['score']}]\n{h['text'][:700]}"
+                           for h in hits)
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
 TOOLS = {
     "execute_shell": execute_shell,
     "execute_python": execute_python,
     "read_file": read_file,
     "write_file": write_file,
+    "knowledge_search": knowledge_search,
 }
 
 # Description injectée dans le system prompt (ce que Béa PEUT vraiment faire).
 TOOLS_DOC = (
     "execute_shell{command} : exécute une commande shell (ex. scan réseau via `arp -a`, "
     "`ipconfig`, `nslookup`). | execute_python{code} : exécute du Python. | "
-    "read_file{path} : lit un fichier. | write_file{path,content} : écrit un fichier."
+    "read_file{path} : lit un fichier. | write_file{path,content} : écrit un fichier. | "
+    "knowledge_search{query} : cherche dans la base de connaissances/notes de l'utilisateur "
+    "(RAG) — renvoie des extraits sourcés ou AUCUN_RESULTAT."
 )
 
 _TOOLCALL_RE = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
@@ -162,6 +189,20 @@ def parse_tool_call(text: str) -> dict | None:
             continue
         if isinstance(d, dict) and d.get("tool"):
             return {"tool": d["tool"], "arguments": d.get("arguments", {}) or {}}
+
+    # Raccourci inventé par certains modèles : <nom_outil{...}> (le JSON = les arguments).
+    for mm in re.finditer(r"<([a-zA-Z_][a-zA-Z0-9_]*)\s*(\{)", text):
+        name = mm.group(1)
+        if name in TOOLS:
+            b = _balanced_json(text, mm.start(2))
+            if not b:
+                continue
+            try:
+                args = json.loads(b)
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(args, dict):
+                return {"tool": name, "arguments": args}
     return None
 
 

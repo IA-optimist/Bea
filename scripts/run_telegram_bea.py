@@ -94,6 +94,10 @@ TOOLS_AGENT = (
     "4. Émets UN SEUL <tool_call>{\"tool\":\"...\",\"arguments\":{...}}</tool_call>. Le résultat RÉEL "
     "revient en <tool_result> ; réponds ENSUITE à partir de ce résultat, sans rien inventer.\n"
     "5. N'invente jamais d'outil hors de la liste, ni de résultat, ni de fichier.\n"
+    "6. Pour une question sur les NOTES/connaissances/projets de l'utilisateur (faits précis, "
+    "préférences, contenu personnel), commence par knowledge_search{query}. Réponds À PARTIR "
+    "des extraits sourcés et CITE la source. Si le résultat est AUCUN_RESULTAT ou hors-sujet, "
+    "dis clairement que l'information n'est pas dans la base — n'invente pas.\n"
     "Réponds en français, concise."
 )
 
@@ -174,6 +178,7 @@ def _build_handler(settings):
         tools_run: list[str] = []
         seen: set[str] = set()               # garde anti-boucle (même outil ré-émis)
         answer = ""
+        last_result = ""                     # dernière sortie d'outil (fallback si pas de formulation)
         for _ in range(4):
             resp = await _agent_invoke(msgs)
             answer = getattr(resp, "content", None) or str(resp)
@@ -185,6 +190,7 @@ def _build_handler(settings):
                 break
             seen.add(sig)
             result = await asyncio.to_thread(run_tool, tc)   # exécution hors event-loop
+            last_result = result
             tools_run.append(f"🔧 {tc['tool']}")
             log.info("tool_executed %s -> %s", tc["tool"], result[:120].replace("\n", " "))
             msgs.append(AIMessage(content=answer))
@@ -201,9 +207,22 @@ def _build_handler(settings):
                 answer = getattr(resp, "content", None) or answer
             except Exception:                # noqa: BLE001
                 pass
-        final = _re.sub(r"<tool_call>.*", "", _clean(answer), flags=_re.DOTALL).strip()
-        if not final:
-            final = "(résultats obtenus, mais pas de formulation)" if tools_run else "(pas de réponse)"
+        # Nettoyage : retire tout artefact d'appel d'outil OÙ QU'IL SOIT (balises, raccourci
+        # <nom{…}>, et blob d'arguments JSON {"query":…}/{"command":…} laissé en clair).
+        final = _clean(answer)
+        final = _re.sub(r"</?tool_call>", "", final)
+        final = _re.sub(r"<[a-zA-Z_]\w*(?=\s*\{)", "", final)         # préfixe <nom devant un {
+        final = _re.sub(
+            r'\{\s*"(tool|query|q|question|arguments|command|code|path)"\s*:.*?\}\s*>?',
+            "", final, flags=_re.DOTALL)                              # blob d'arguments d'outil
+        final = _re.sub(r"^(?:🔧\s*\w+\s*)+", "", final).strip()     # écho éventuel du préfixe outil
+        if not final and tools_run:          # modèle qui n'a pas formulé -> repli déterministe
+            if "AUCUN_RESULTAT" in last_result:
+                final = "Je n'ai rien trouvé de pertinent dans tes notes là-dessus."
+            else:
+                final = last_result.strip()[:1500] or "(résultats obtenus)"
+        elif not final:
+            final = "(pas de réponse)"
         if tools_run:
             final = " ".join(dict.fromkeys(tools_run)) + "\n" + final
         # 4. Mémoire court terme + hybride
