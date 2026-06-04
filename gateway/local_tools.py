@@ -89,6 +89,150 @@ def write_file(args: dict) -> str:
         return f"erreur: {e}"
 
 
+def edit_file(args: dict) -> str:
+    """Remplacement ciblé d'une chaîne dans un fichier (comme un éditeur)."""
+    path = (args.get("path") or args.get("file") or "").strip()
+    old = args.get("old", args.get("old_string"))
+    new = args.get("new", args.get("new_string", ""))
+    if not path or old is None:
+        return "erreur: 'path' et 'old' requis"
+    try:
+        p = Path(path).expanduser()
+        content = p.read_text(encoding="utf-8", errors="replace")
+        n = content.count(old)
+        if n == 0:
+            return f"erreur: texte introuvable dans {p.name}"
+        if n > 1 and not args.get("all"):
+            return f"erreur: '{old[:40]}…' apparaît {n}× — ajoute du contexte ou all=true"
+        p.write_text(content.replace(old, str(new)), encoding="utf-8")
+        return f"ok: {n if args.get('all') else 1} remplacement(s) dans {p}"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+def list_dir(args: dict) -> str:
+    """Liste le contenu d'un dossier."""
+    path = (args.get("path") or args.get("dir") or ".").strip()
+    try:
+        p = Path(path).expanduser()
+        if not p.exists():
+            return f"erreur: introuvable: {p}"
+        if p.is_file():
+            return f"📄 {p} ({p.stat().st_size} o)"
+        out = []
+        for c in sorted(p.iterdir(), key=lambda x: (x.is_file(), x.name.lower()))[:300]:
+            out.append(f"📁 {c.name}/" if c.is_dir() else f"📄 {c.name}  ({c.stat().st_size} o)")
+        return "\n".join(out) or "(dossier vide)"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+def grep_search(args: dict) -> str:
+    """Cherche un motif (regex) dans les fichiers d'un dossier."""
+    pattern = (args.get("pattern") or args.get("query") or "").strip()
+    path = (args.get("path") or ".").strip()
+    if not pattern:
+        return "erreur: 'pattern' requis"
+    _skip = ("__pycache__", ".git", "node_modules", ".venv", ".mypy_cache", ".ruff_cache")
+    try:
+        rx = re.compile(pattern, re.IGNORECASE)
+        root = Path(path).expanduser()
+        files = [root] if root.is_file() else list(root.rglob("*"))
+        out, scanned = [], 0
+        for f in files:
+            if not f.is_file() or any(s in str(f) for s in _skip):
+                continue
+            scanned += 1
+            if scanned > 3000:
+                break
+            try:
+                for i, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                    if rx.search(line):
+                        out.append(f"{f}:{i}: {line.strip()[:150]}")
+                        if len(out) >= 60:
+                            return "\n".join(out) + "\n…(tronqué)"
+            except Exception:  # noqa: BLE001
+                continue
+        return "\n".join(out) if out else "AUCUN_RESULTAT"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+def glob_search(args: dict) -> str:
+    """Trouve des fichiers par motif glob (ex. **/*.py)."""
+    pattern = (args.get("pattern") or args.get("glob") or "").strip()
+    path = (args.get("path") or ".").strip()
+    if not pattern:
+        return "erreur: 'pattern' requis"
+    try:
+        root = Path(path).expanduser()
+        hits = [str(p) for p in sorted(root.rglob(pattern))[:150]
+                if not any(s in str(p) for s in ("__pycache__", ".git", ".venv"))]
+        return "\n".join(hits) if hits else "AUCUN_FICHIER"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+
+
+def _ddg_unwrap(href: str) -> str:
+    """Décode les liens de redirection DuckDuckGo //duckduckgo.com/l/?uddg=…"""
+    if "duckduckgo.com/l/" in href and "uddg=" in href:
+        from urllib.parse import parse_qs, unquote, urlparse
+        q = parse_qs(urlparse(href).query).get("uddg")
+        if q:
+            return unquote(q[0])
+    return href if href.startswith("http") else ("https:" + href if href.startswith("//") else href)
+
+
+def web_search(args: dict) -> str:
+    """Recherche web (DuckDuckGo HTML, sans clé). Renvoie titres + URL + extraits."""
+    query = (args.get("query") or args.get("q") or "").strip()
+    if not query:
+        return "erreur: argument 'query' manquant"
+    try:
+        import httpx
+        from bs4 import BeautifulSoup
+        r = httpx.post("https://html.duckduckgo.com/html/", data={"q": query},
+                       headers={"User-Agent": _UA}, timeout=20, follow_redirects=True)
+        soup = BeautifulSoup(r.text, "html.parser")
+        out = []
+        for res in soup.select(".result")[:6]:
+            a = res.select_one(".result__a")
+            if not a:
+                continue
+            title = a.get_text(strip=True)
+            url = _ddg_unwrap(a.get("href", ""))
+            snip = res.select_one(".result__snippet")
+            snippet = snip.get_text(" ", strip=True) if snip else ""
+            out.append(f"- {title}\n  {url}\n  {snippet[:220]}")
+        return "\n".join(out) if out else "AUCUN_RESULTAT_WEB"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+def web_fetch(args: dict) -> str:
+    """Récupère et nettoie le texte d'une page web (lecture)."""
+    url = (args.get("url") or args.get("u") or "").strip()
+    if not url:
+        return "erreur: argument 'url' manquant"
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    try:
+        import httpx
+        from bs4 import BeautifulSoup
+        r = httpx.get(url, headers={"User-Agent": _UA}, timeout=20, follow_redirects=True)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer", "header", "noscript", "form"]):
+            tag.decompose()
+        text = " ".join(soup.get_text(" ", strip=True).split())
+        return _truncate(text or "(page vide)")
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
 _KB = None  # cache de la KnowledgeBase (évite de recharger le store JSON à chaque appel)
 
 
@@ -118,16 +262,27 @@ TOOLS = {
     "execute_python": execute_python,
     "read_file": read_file,
     "write_file": write_file,
+    "edit_file": edit_file,
+    "list_dir": list_dir,
+    "grep_search": grep_search,
+    "glob_search": glob_search,
     "knowledge_search": knowledge_search,
+    "web_search": web_search,
+    "web_fetch": web_fetch,
 }
 
 # Description injectée dans le system prompt (ce que Béa PEUT vraiment faire).
 TOOLS_DOC = (
     "execute_shell{command} : exécute une commande shell (ex. scan réseau via `arp -a`, "
     "`ipconfig`, `nslookup`). | execute_python{code} : exécute du Python. | "
-    "read_file{path} : lit un fichier. | write_file{path,content} : écrit un fichier. | "
+    "read_file{path} : lit un fichier. | write_file{path,content} : écrit/crée un fichier. | "
+    "edit_file{path,old,new} : remplace une chaîne précise dans un fichier (édition ciblée). | "
+    "list_dir{path} : liste un dossier. | grep_search{pattern,path} : cherche un motif regex "
+    "dans des fichiers. | glob_search{pattern,path} : trouve des fichiers (ex. **/*.py). | "
     "knowledge_search{query} : cherche dans la base de connaissances/notes de l'utilisateur "
-    "(RAG) — renvoie des extraits sourcés ou AUCUN_RESULTAT."
+    "(RAG) — renvoie des extraits sourcés ou AUCUN_RESULTAT. | "
+    "web_search{query} : recherche sur INTERNET (actualités, infos récentes, faits externes) "
+    "— renvoie titres+URL+extraits. | web_fetch{url} : lit le contenu texte d'une page web."
 )
 
 _TOOLCALL_RE = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
