@@ -233,6 +233,159 @@ def web_fetch(args: dict) -> str:
         return f"erreur: {e}"
 
 
+_TODOS: list[dict] = []  # liste de tâches en mémoire (mono-utilisateur)
+
+
+def todo(args: dict) -> str:
+    """Suivi de tâches multi-étapes : action=add|list|done|clear."""
+    action = (args.get("action") or "list").strip().lower()
+    if action == "add":
+        text = (args.get("text") or args.get("task") or "").strip()
+        if not text:
+            return "erreur: 'text' requis"
+        _TODOS.append({"text": text, "done": False})
+        return f"ajouté #{len(_TODOS)} : {text}"
+    if action in ("done", "complete", "check"):
+        try:
+            i = int(args.get("id", 0)) - 1
+        except (TypeError, ValueError):
+            return "erreur: 'id' numérique requis"
+        if 0 <= i < len(_TODOS):
+            _TODOS[i]["done"] = True
+            return f"✅ tâche #{i + 1} faite"
+        return "erreur: id invalide"
+    if action == "clear":
+        _TODOS.clear()
+        return "liste vidée"
+    if not _TODOS:
+        return "(aucune tâche)"
+    return "\n".join(f"{i + 1}. [{'x' if t['done'] else ' '}] {t['text']}"
+                     for i, t in enumerate(_TODOS))
+
+
+def image_generate(args: dict) -> str:
+    """Génère une image à partir d'un prompt (Pollinations, sans clé) -> fichier."""
+    prompt = (args.get("prompt") or args.get("description") or "").strip()
+    if not prompt:
+        return "erreur: 'prompt' requis"
+    try:
+        import hashlib
+        import os
+        import time
+        from urllib.parse import quote
+        import httpx
+        # Pollinations : gratuit mais rate-limité (1 req/IP) -> souvent HTTP 402 "queue full".
+        # Un token gratuit (https://enter.pollinations.ai) lève la limite : POLLINATIONS_TOKEN.
+        token = os.getenv("POLLINATIONS_TOKEN", "")
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        url = (f"https://image.pollinations.ai/prompt/{quote(prompt)}"
+               "?width=1024&height=1024&nologo=true")
+        for attempt in range(3):
+            r = httpx.get(url, headers=headers, timeout=90, follow_redirects=True)
+            if r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
+                out = Path.home() / "Pictures" / "bea"
+                out.mkdir(parents=True, exist_ok=True)
+                fp = out / (hashlib.md5(prompt.encode()).hexdigest()[:10] + ".jpg")
+                fp.write_bytes(r.content)
+                return f"ok: image générée -> {fp} ({len(r.content) // 1024} Ko)"
+            if r.status_code == 402 and attempt < 2:
+                time.sleep(4)
+                continue
+            if r.status_code == 402:
+                return ("service image saturé/rate-limité (Pollinations gratuit = 1 req/IP). "
+                        "Pour un accès illimité : token gratuit sur https://enter.pollinations.ai "
+                        "puis POLLINATIONS_TOKEN dans .env.")
+            return f"erreur: génération image HTTP {r.status_code}"
+        return "service image saturé (réessaie dans un instant)."
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: {e}"
+
+
+def delegate_task(args: dict) -> str:
+    """Délègue une sous-tâche à l'agent COMPLET (cognition via l'API)."""
+    task = (args.get("task") or args.get("goal") or args.get("query") or "").strip()
+    if not task:
+        return "erreur: 'task' requis"
+    try:
+        import os
+        import httpx
+        base = os.getenv("BEA_API_URL", "http://127.0.0.1:8000").rstrip("/")
+        token = os.getenv("JARVIS_API_TOKEN", "localdev")
+        r = httpx.post(f"{base}/api/v3/chat",
+                       json={"message": task, "enable_self_correction": True},
+                       headers={"X-Jarvis-Token": token}, timeout=90)
+        if r.status_code == 200:
+            return f"[sous-agent] {(r.json().get('response') or '')[:1500]}"
+        return f"erreur: agent HTTP {r.status_code}"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur: agent indisponible ({e})"
+
+
+import concurrent.futures
+
+# Playwright (API sync) est thread-affine : toutes les ops navigateur passent par UN
+# unique thread dédié, sinon "cannot switch thread". La page persiste entre les appels.
+_BROWSER_EXEC = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="bea-browser")
+_PW: dict = {"pw": None, "browser": None, "page": None}
+
+
+def _browser_page():
+    if _PW["page"] is None:
+        from playwright.sync_api import sync_playwright
+        _PW["pw"] = sync_playwright().start()
+        _PW["browser"] = _PW["pw"].chromium.launch(headless=True)
+        _PW["page"] = _PW["browser"].new_page()
+    return _PW["page"]
+
+
+def _browser_sync(args: dict) -> str:
+    action = (args.get("action") or "navigate").strip().lower()
+    try:
+        page = _browser_page()
+        if action in ("navigate", "goto", "open"):
+            url = (args.get("url") or "").strip()
+            if not url:
+                return "erreur: 'url' requis"
+            if not url.startswith("http"):
+                url = "https://" + url
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            return _truncate(f"[{page.title()}] {page.url}\n{page.inner_text('body')[:1500]}")
+        if action == "click":
+            if args.get("text") and not args.get("selector"):
+                page.get_by_text(args["text"], exact=False).first.click(timeout=10000)
+                return f"cliqué (texte): {args['text']}"
+            page.click(args.get("selector", ""), timeout=10000)
+            return f"cliqué: {args.get('selector')}"
+        if action in ("type", "fill"):
+            page.fill(args.get("selector", ""), args.get("text", ""), timeout=10000)
+            return f"rempli {args.get('selector')} = {str(args.get('text'))[:50]}"
+        if action == "get_text":
+            return _truncate(page.inner_text("body"))
+        if action == "screenshot":
+            out = Path.home() / "Pictures" / "bea"
+            out.mkdir(parents=True, exist_ok=True)
+            fp = out / "screenshot.png"
+            page.screenshot(path=str(fp))
+            return f"ok: capture -> {fp}"
+        if action == "snapshot":
+            links = page.eval_on_selector_all(
+                "a[href]", "els => els.slice(0,15).map(e => e.innerText.trim().slice(0,40)+' -> '+e.href)")
+            inputs = page.eval_on_selector_all(
+                "input,textarea,button", "els => els.slice(0,15).map(e => (e.tagName+' '+(e.name||e.id||e.type||e.innerText||'')).trim().slice(0,50))")
+            return _truncate("Liens:\n" + "\n".join(links) + "\n\nChamps/boutons:\n" + "\n".join(inputs))
+        return f"erreur: action inconnue '{action}' (navigate|click|type|get_text|screenshot|snapshot)"
+    except Exception as e:  # noqa: BLE001
+        return f"erreur browser: {str(e)[:200]}"
+
+
+def browser(args: dict) -> str:
+    """Navigateur réel (Playwright/Chromium headless), session persistante."""
+    try:
+        return _BROWSER_EXEC.submit(_browser_sync, args).result(timeout=70)
+    except Exception as e:  # noqa: BLE001
+        return f"erreur browser: {str(e)[:200]}"
+
+
 _KB = None  # cache de la KnowledgeBase (évite de recharger le store JSON à chaque appel)
 
 
@@ -269,6 +422,10 @@ TOOLS = {
     "knowledge_search": knowledge_search,
     "web_search": web_search,
     "web_fetch": web_fetch,
+    "todo": todo,
+    "image_generate": image_generate,
+    "delegate_task": delegate_task,
+    "browser": browser,
 }
 
 # Description injectée dans le system prompt (ce que Béa PEUT vraiment faire).
@@ -282,7 +439,12 @@ TOOLS_DOC = (
     "knowledge_search{query} : cherche dans la base de connaissances/notes de l'utilisateur "
     "(RAG) — renvoie des extraits sourcés ou AUCUN_RESULTAT. | "
     "web_search{query} : recherche sur INTERNET (actualités, infos récentes, faits externes) "
-    "— renvoie titres+URL+extraits. | web_fetch{url} : lit le contenu texte d'une page web."
+    "— renvoie titres+URL+extraits. | web_fetch{url} : lit le contenu texte d'une page web. | "
+    "todo{action,text,id} : liste de tâches (action=add|list|done|clear). | "
+    "image_generate{prompt} : génère une image (-> fichier). | "
+    "delegate_task{task} : délègue une sous-tâche à l'agent complet (cognition). | "
+    "browser{action,url,selector,text} : navigateur réel (action=navigate|click|type|"
+    "get_text|screenshot|snapshot) pour les sites interactifs/JS."
 )
 
 _TOOLCALL_RE = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
