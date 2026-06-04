@@ -106,7 +106,14 @@ class SelfImprovementMemory:
             consecutive_failures: int,
           }
         """
-        history = self._load()
+        # Ne compter que les VRAIES tentatives d'amélioration : un candidat existe
+        # (candidate_type renseigné) et ce n'est pas une erreur d'infra / un skip de
+        # sécurité (decision in error/skipped/gated). Sinon les records legacy vides
+        # ({timestamp,outcome}) et les erreurs daemon gonflent faussement
+        # consecutive_failures (44) et déclenchent à tort le circuit-breaker (MAX=3).
+        history = [e for e in self._load()
+                   if e.get("candidate_type")
+                   and e.get("decision") not in ("error", "skipped", "gated")]
 
         if not history:
             return {

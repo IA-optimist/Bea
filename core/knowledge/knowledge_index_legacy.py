@@ -20,13 +20,16 @@ Si Qdrant indisponible → log warning + retour sans exception.
 from __future__ import annotations
 
 import logging
+import os
 import random
 import time
 from typing import List
 
 logger = logging.getLogger("jarvis.knowledge.index")
 
-QDRANT_URL = "http://qdrant:6333"
+# Lit QDRANT_URL de l'env (en local : 127.0.0.1 -> échec rapide "connection refused"
+# au lieu du DNS lent sur l'hôte Docker "qdrant"). Dégrade gracieusement si absent.
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 KNOWLEDGE_COLLECTION = "jarvis_knowledge"
 _VECTOR_DIM = 768
 

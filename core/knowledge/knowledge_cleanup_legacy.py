@@ -16,12 +16,13 @@ Timeouts : max 3s par requête Qdrant.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from typing import List
 
 logger = logging.getLogger("jarvis.knowledge.cleanup")
 
-QDRANT_URL = "http://qdrant:6333"
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 KNOWLEDGE_COLLECTION = "jarvis_knowledge"
 
 
