@@ -303,7 +303,9 @@ def run_tests(test_path: str = "tests/", pattern: str = "", timeout: int = 60) -
     """
     t0 = time.monotonic()
     try:
-        cmd = ["python", "-m", "pytest", test_path, "--tb=short", "-q"]
+        # sys.executable = le python du venv (qui a pytest) ; "python" = système (sans pytest).
+        import sys as _sys
+        cmd = [_sys.executable, "-m", "pytest", test_path, "--tb=short", "-q"]
         if pattern:
             # Sanitize: only allow alphanumeric, underscore, dash, dot
             safe_pattern = re.sub(r"[^a-zA-Z0-9_\-.]", "", pattern)

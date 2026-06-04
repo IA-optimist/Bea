@@ -25,9 +25,12 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-_REPO_ROOT = Path(os.environ.get("JARVIS_ROOT", "/app"))
-_WORKSPACE  = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
-_MAX_LINES_PER_FILE = 150  # max lines of context fed to LLM per file
+# Racine du repo : JARVIS_ROOT si défini (Docker=/app), sinon résolue depuis ce module
+# (core/self_improvement/proposal_applicator.py -> remonte de 2 niveaux). Sans ça, le
+# défaut "/app" rendait introuvables tous les fichiers en local (hors Docker).
+_REPO_ROOT = Path(os.environ.get("JARVIS_ROOT") or Path(__file__).resolve().parents[2])
+_WORKSPACE  = Path(os.environ.get("WORKSPACE_DIR") or (_REPO_ROOT / "workspace"))
+_MAX_LINES_PER_FILE = 400  # max lines de contexte par fichier (150 coupait le code cible)
 
 
 @dataclass
@@ -111,7 +114,9 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
                             proposal_id=proposal_id, file=file_path, find=find_text[:60])
                 continue
 
-            backups[file_path] = original
+            # Sauvegarde le VRAI original une seule fois (plusieurs blocs sur le même
+            # fichier ré-écraseraient le backup avec un état déjà patché -> rollback partiel).
+            backups.setdefault(file_path, original)
             modified = original.replace(find_text, replace_text, 1)
 
             # Syntax check (Python only)
@@ -236,13 +241,22 @@ Files that may be modified: {', '.join(files_to_modify[:3])}
 
 Generate the minimal FIND/REPLACE block(s) to fix the problem."""
 
+    msgs = [SystemMessage(content=system), HumanMessage(content=user)]
     try:
-        factory = LLMFactory(get_settings())
-        resp = await factory.safe_invoke(
-            [SystemMessage(content=system), HumanMessage(content=user)],
-            role="director",
-            timeout=60.0,
-        )
+        # Modèle fort qui SUIT le format (le role 'director' -> gateway Hermes/108k ne
+        # produit pas de FIND/REPLACE propre). gpt-oss-120b OpenRouter sinon factory.
+        import os as _os
+        _or_key = _os.getenv("OPENROUTER_API_KEY", "")
+        if _or_key:
+            from langchain_openai import ChatOpenAI
+            llm = ChatOpenAI(
+                model=_os.getenv("AGENT_OR_MODEL", "openai/gpt-oss-120b:free"),
+                base_url="https://openrouter.ai/api/v1", api_key=_or_key,
+                temperature=0.0, timeout=90, max_retries=2)
+            resp = await llm.ainvoke(msgs)
+        else:
+            factory = LLMFactory(get_settings())
+            resp = await factory.safe_invoke(msgs, role="director", timeout=60.0)
         raw = getattr(resp, "content", "") or ""
         return _parse_patch_blocks(raw, files_to_modify)
     except Exception as e:
