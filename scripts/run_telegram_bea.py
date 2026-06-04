@@ -308,6 +308,76 @@ def _build_handler(settings):
                 pass
         return final
 
+    # ── Auto-amélioration avec approbation Telegram (human-in-the-loop) ──
+    _pending_improve: dict[str, dict] = {}   # chat_id -> {candidate, score, weakness}
+
+    async def _propose_improvement(chat_id: str) -> str:
+        """Détecte une faiblesse + propose le meilleur correctif, en attente de ton 'oui'."""
+        def _analyse():
+            from core.self_improvement.candidate_generator import get_candidate_generator
+            from core.self_improvement.improvement_memory import get_improvement_memory
+            from core.self_improvement.improvement_scorer import get_improvement_scorer
+            from core.self_improvement.weakness_detector import get_weakness_detector
+            w = get_weakness_detector().detect()
+            if not w:
+                return None, None, None
+            cands = get_candidate_generator().generate(w)
+            if not cands:
+                return w, None, None
+            scored = get_improvement_scorer().score_and_rank(
+                cands, get_improvement_memory().get_history())
+            return w, scored[0][0], scored[0][1]
+        try:
+            w, top, score = await asyncio.to_thread(_analyse)
+        except Exception as e:                # noqa: BLE001
+            return f"Erreur d'analyse d'auto-amélioration : {str(e)[:120]}"
+        if not w:
+            return "Aucune faiblesse détectée — rien à améliorer pour l'instant. 👍"
+        if top is None:
+            return "Faiblesse détectée mais aucun correctif candidat généré."
+        _pending_improve[chat_id] = {"candidate": top, "score": score}
+        return (f"🔧 Auto-amélioration proposée\n"
+                f"• Faiblesse : {str(w[0])[:110]}\n"
+                f"• Correctif : [{getattr(top, 'type', '?')}] {getattr(top, 'description', '')[:160]}\n"
+                f"• Score : {score:.2f}\n\n"
+                f"J'applique ? Réponds « oui » pour valider, « non » pour annuler.")
+
+    async def _resolve_improvement(chat_id: str, approve: bool) -> str:
+        pend = _pending_improve.pop(chat_id, None)
+        if pend is None:
+            return ""                          # pas de proposition en attente
+        if not approve:
+            return "Auto-amélioration annulée. 🚫"
+        # Ton « oui » via Telegram = approbation OPÉRATEUR -> on lève le garde pour CE changement.
+        os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = "1"
+
+        def _exec():
+            from core.self_improvement.improvement_memory import get_improvement_memory
+            from core.self_improvement.safe_executor import get_safe_executor
+            res = get_safe_executor().execute(pend["candidate"])
+            ok = getattr(res, "success", False)
+            rb = getattr(res, "rollback_triggered", False)
+            outcome = "SUCCESS" if ok else ("ROLLED_BACK" if rb else "FAILURE")
+            get_improvement_memory().record(
+                candidate_type=getattr(pend["candidate"], "type", "UNKNOWN"),
+                description=getattr(pend["candidate"], "description", "")[:200],
+                score=pend["score"], outcome=outcome,
+                applied_change=str(getattr(res, "applied_change", ""))[:200])
+            return ok, str(getattr(res, "applied_change", "") or getattr(res, "error", ""))[:170]
+        try:
+            ok, detail = await asyncio.to_thread(_exec)
+            return (f"✅ Auto-amélioration appliquée : {detail}" if ok
+                    else f"⚠️ Échec/rollback (sécurité a protégé le code) : {detail}")
+        except Exception as e:                # noqa: BLE001
+            return f"Erreur à l'application : {str(e)[:140]}"
+        finally:
+            os.environ.pop("JARVIS_SKIP_IMPROVEMENT_GATE", None)
+
+    _IMPROVE_TRIGGER = _re.compile(
+        r"\b(am[ée]liore[\s-]?toi|auto[\s-]?am[ée]lior|am[ée]liore ton code|/improve)", _re.I)
+    _YES = _re.compile(r"^\s*(oui|ok|vas[\s-]?y|applique|valide|go)\b", _re.I)
+    _NO = _re.compile(r"^\s*(non|annule|stop|laisse)\b", _re.I)
+
     async def handler(event: MessageEvent) -> str:
         text = event.text.strip()
 
@@ -321,6 +391,15 @@ def _build_handler(settings):
         if text.startswith("/reset"):
             history.pop(event.chat_id, None)
             return "Fil de conversation effacé. 🧹"
+
+        # Auto-amélioration : réponse à une proposition en attente (oui/non) — prioritaire.
+        if event.chat_id in _pending_improve and (_YES.match(text) or _NO.match(text)):
+            resolved = await _resolve_improvement(event.chat_id, bool(_YES.match(text)))
+            if resolved:
+                return resolved
+        # Auto-amélioration : déclencheur explicite.
+        if _IMPROVE_TRIGGER.search(text):
+            return await _propose_improvement(event.chat_id)
 
         # Tout le reste -> Béa (mémoire de conversation + mémoire hybride).
         if not text:
