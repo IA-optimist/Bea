@@ -193,6 +193,7 @@ def code_search_multi_file(
                     if len(matches) >= _MAX_RESULTS:
                         break
                 except (PermissionError, OSError):
+                    logger.debug("swallowed_exception", exc_info=True)
                     continue
 
             if len(matches) >= _MAX_RESULTS:

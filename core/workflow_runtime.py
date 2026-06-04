@@ -31,14 +31,14 @@ Zero external dependencies. Fail-open everywhere.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Optional
 
-logger = logging.getLogger("jarvis.workflow_runtime")
+logger = structlog.get_logger("jarvis.workflow_runtime")
 log = logger  # M3 emitter alias
 
 

@@ -201,7 +201,7 @@ def cached_llm_call(
                     _stats["hits"] += 1
                 return result
             except Exception:
-                pass  # corrupted entry → fall through to regeneration
+                log.debug("swallowed_exception", exc_info=True)
 
     # Miss → execute
     with _stats_lock:

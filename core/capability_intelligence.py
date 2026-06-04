@@ -42,8 +42,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
 
@@ -571,6 +570,7 @@ def run_auto_discovery() -> DiscoveryReport:
                                     "line": node.lineno,
                                 })
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
     except Exception as e:
         log.debug("auto_discovery_scan_failed", err=str(e)[:100])
@@ -689,7 +689,7 @@ def record_tool_outcome(
             else:
                 r.avg_duration_ms = r.avg_duration_ms * 0.9 + duration_ms * 0.1
     except Exception:
-        pass  # reliability recording must never crash
+        log.debug("swallowed_exception", exc_info=True)
 
 
 def get_tool_reliability(tool_name: Optional[str] = None) -> dict:

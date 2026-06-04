@@ -10,13 +10,13 @@ Responsibilities:
 from __future__ import annotations
 
 import time
-import logging
+import structlog
 
 from core.schemas.final_output import (
     FinalOutput, AgentOutput, AgentError, DecisionStep, OutputMetrics,
 )
 
-log = logging.getLogger("jarvis.result_aggregator")
+log = structlog.get_logger("jarvis.result_aggregator")
 
 
 def aggregate_mission_result(

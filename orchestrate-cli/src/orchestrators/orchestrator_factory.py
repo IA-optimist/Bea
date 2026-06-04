@@ -18,7 +18,6 @@ Supports:
 """
 
 import asyncio
-import json
 from typing import Dict, List, Any, Optional
 from loguru import logger
 
@@ -30,9 +29,6 @@ from src.frameworks.llamaindex_orchestrator import LlamaIndexOrchestrator
 from src.frameworks.haystack_orchestrator import HaystackOrchestrator
 
 # Import all CLI agents
-from src.agents.langchain_agent import LangChainAgent
-from src.agents.autogen_agent import AutoGenAgent
-from src.agents.crewai_agent import CrewAIAgent
 from src.agents.gemini_cli import GeminiCLI
 from src.agents.codex_cli import CodexCLI
 from src.agents.claude_code import ClaudeCode
@@ -114,7 +110,6 @@ class OrchestratorFactory:
     
     def get_available_agents(self, framework: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
         """Get all available agents for a framework"""
-        framework_config = config or {}
         
         if framework == 'langchain':
             return {

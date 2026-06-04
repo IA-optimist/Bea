@@ -294,10 +294,11 @@ class MissionPersistenceStore:
                         for mid, m in self._missions.items()
                     },
                 }
-            # Atomic write: write to temp then rename
+            # Atomic write: write to temp then replace (replace écrase sur Windows ;
+            # rename y lève FileExistsError quand la cible existe → perte de données).
             tmp = self._persist_file.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
-            tmp.rename(self._persist_file)
+            tmp.replace(self._persist_file)
         except Exception as e:
             log.warning("mission_persist_save_failed", err=str(e)[:100])
 
@@ -311,6 +312,7 @@ class MissionPersistenceStore:
                 try:
                     self._missions[mid] = PersistedMission.from_dict(d)
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
             log.info("mission_persist_loaded", count=len(self._missions))
         except Exception as e:

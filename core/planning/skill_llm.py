@@ -355,7 +355,7 @@ async def _invoke_async(
                 }
                 selected_role = _TASK_TO_ROLE.get(task_class, _LLM_ROLE)
         except Exception:
-            pass  # fail-open: use default role
+            log.debug("swallowed_exception", exc_info=True)
 
         resp = await factory.safe_invoke(
             messages,
@@ -413,7 +413,7 @@ async def _invoke_async(
                 cost_estimate=cost,
             )
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         # Feed auto-update cost tracking
         try:
@@ -428,7 +428,7 @@ async def _invoke_async(
                 cost=cost,
             )
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         log.info("skill_llm_ok", skill_id=skill_id,
                  duration_ms=duration_ms,

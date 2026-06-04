@@ -24,12 +24,12 @@ Minimum data threshold: 5 missions of same type before overriding static routing
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 from dataclasses import dataclass
 from typing import Optional
 
-logger = logging.getLogger("jarvis.dynamic_routing")
+logger = structlog.get_logger("jarvis.dynamic_routing")
 
 # Minimum missions before we trust performance data for a type
 MIN_DATA_THRESHOLD = 5

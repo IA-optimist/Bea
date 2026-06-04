@@ -115,7 +115,7 @@ class RunStateStore:
             path = self._dir / f"{run.run_id}.json"
             tmp = path.with_suffix(".tmp")
             tmp.write_text(json.dumps(run.to_dict(), indent=2, default=str), "utf-8")
-            tmp.rename(path)
+            tmp.replace(path)
         except Exception as e:
             log.debug("run_persist_failed", run_id=run.run_id, err=str(e)[:80])
 

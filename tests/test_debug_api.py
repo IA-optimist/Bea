@@ -3,6 +3,29 @@ tests/test_debug_api.py — Tests for debug and inspection endpoints.
 
 DB01-DB15: Learning memory, model selection, fallback chain, pipeline health.
 """
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+
+
+@contextmanager
+def _pinned_empty_selector():
+    """Épingle le sélecteur de modèles sur un catalogue VIDE.
+
+    La sélection devient déterministe : elle suit la fallback chain hardcodée
+    (BUDGET_FALLBACKS) au lieu du cache OpenRouter de l'environnement (348 modèles,
+    qui évolue → dérive des noms type gpt-4o-mini ↔ gpt-4.1-nano).
+    """
+    import core.model_intelligence.selector as sel_mod
+    from core.model_intelligence.catalog import ModelCatalog
+    from core.model_intelligence.selector import ModelSelector
+    prev = sel_mod._selector
+    sel_mod._selector = ModelSelector(
+        catalog=ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json"))))
+    try:
+        yield
+    finally:
+        sel_mod._selector = prev
 
 
 class TestDebugAPI:
@@ -15,13 +38,15 @@ class TestDebugAPI:
 
     def test_DB02_model_selection_budget(self):
         from api.routes.debug import debug_model_selection
-        r = debug_model_selection("business_reasoning", "budget")
+        with _pinned_empty_selector():
+            r = debug_model_selection("business_reasoning", "budget")
         assert r["ok"]
         assert r["model_id"] == "openai/gpt-4o-mini"
 
     def test_DB03_model_selection_normal(self):
         from api.routes.debug import debug_model_selection
-        r = debug_model_selection("business_reasoning", "normal")
+        with _pinned_empty_selector():
+            r = debug_model_selection("business_reasoning", "normal")
         assert r["ok"]
         assert "claude" in r["model_id"] or "sonnet" in r["model_id"]
 

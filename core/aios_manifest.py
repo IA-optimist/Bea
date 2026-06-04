@@ -5,9 +5,10 @@ Single entry point to query the entire AI OS structure.
 Provides consistency checks and architecture overview.
 """
 from __future__ import annotations
-import logging
 
-log = logging.getLogger("jarvis.aios")
+import structlog
+
+log = structlog.get_logger("jarvis.aios")
 
 AIOS_VERSION = "1.0.0"
 

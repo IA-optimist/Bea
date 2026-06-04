@@ -75,7 +75,7 @@ class VectorStore:
                 try:
                     await conn.execute(_CREATE_INDEX)
                 except Exception:
-                    pass   # index may require data; ignore error
+                    log.debug("swallowed_exception", exc_info=True)   # index may require data; ignore error
 
             self._available = True
             log.info("vector_store_ready", dim=TARGET_DIM)
@@ -233,7 +233,7 @@ class VectorStore:
             from pgvector.asyncpg import register_vector
             await register_vector(conn)
         except Exception:
-            pass   # pgvector Python package not installed — raw list<float> still works
+            log.debug("swallowed_exception", exc_info=True)   # pgvector not installed — raw list<float> still works
 
     @staticmethod
     def _pad_or_truncate(vec: list[float], target: int) -> list[float]:

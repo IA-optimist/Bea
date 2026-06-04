@@ -299,13 +299,13 @@ class GitAgent:
                     rel = sandbox_file.relative_to(sandbox)
                     orig_file = self.project_root / rel
                     if not orig_file.exists():
-                        changed.append(str(rel))
+                        changed.append(rel.as_posix())  # chemins repo en '/' (cross-plateforme)
                         try:
                             total_added += len(sandbox_file.read_text(encoding="utf-8").splitlines())
                         except Exception:
                             total_added += 1
                     elif sandbox_file.read_bytes() != orig_file.read_bytes():
-                        changed.append(str(rel))
+                        changed.append(rel.as_posix())  # chemins repo en '/' (cross-plateforme)
                         try:
                             orig_lines = orig_file.read_text(encoding="utf-8").splitlines()
                             new_lines = sandbox_file.read_text(encoding="utf-8").splitlines()

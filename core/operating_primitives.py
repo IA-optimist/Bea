@@ -17,13 +17,13 @@ Zero external dependencies. Fail-open everywhere.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.operating_primitives")
+logger = structlog.get_logger("jarvis.operating_primitives")
 log = logger  # alias for the M3 swallowed_exception emitter convention
 
 

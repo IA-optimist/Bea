@@ -361,8 +361,10 @@ class CognitiveJournal:
                                 self._events.append(evt)
                             loaded += 1
                         except Exception:
+                            log.debug("swallowed_exception", exc_info=True)
                             continue
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
 
         return loaded

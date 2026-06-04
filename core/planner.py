@@ -133,7 +133,7 @@ def _simplify_plan_if_possible(plan: dict, task: str) -> dict:
                     f"Single tool '{ranked[0]['name']}' highly relevant (score: {ranked[0]['score']})"
                 )
         except Exception:
-            pass  # fail-open
+            logger.debug("swallowed_exception", exc_info=True)
     return plan
 
 

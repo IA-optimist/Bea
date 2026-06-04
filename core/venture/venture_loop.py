@@ -630,22 +630,22 @@ def _record_loop_outcome(result: VentureLoopResult, hypothesis: VentureHypothesi
         from core.economic.strategic_memory import StrategicRecord, get_strategic_memory
         mem = get_strategic_memory()
         mem.record(StrategicRecord(
-            record_type="venture_experiment",
-            score=result.final_confidence,
-            context={
+            strategy_type="venture_experiment",
+            outcome_score=result.final_confidence,
+            context_features={
                 "hypothesis_id": hypothesis.hypothesis_id,
                 "iterations": len(result.iterations),
                 "status": result.status,
                 "target_segment": hypothesis.target_segment,
             },
-            findings={
-                "score_progression": result.score_progression,
-                "final_composite": result.final_evaluation.get("composite_score", 0),
-            },
-            failures={"reason": result.reason} if result.status == "failed" else {},
+            key_findings=[
+                f"score_progression: {result.score_progression}",
+                f"final_composite: {result.final_evaluation.get('composite_score', 0)}",
+            ],
+            failure_reasons=([f"reason: {result.reason}"] if result.status == "failed" else []),
         ))
     except Exception:
-        pass  # Fail-open
+        log.debug("swallowed_exception", exc_info=True)
 
     try:
         from core.cognitive_events.emitter import ce_emit

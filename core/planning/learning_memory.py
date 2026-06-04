@@ -91,7 +91,7 @@ class LearningMemory:
                 "version": 1,
                 "updated_at": time.time(),
             }, default=str))
-            tmp.rename(self._file)
+            tmp.replace(self._file)
         except Exception as e:
             log.debug("learning_memory_save_failed", err=str(e)[:60])
 

@@ -13,7 +13,7 @@ import os
 import yaml
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 from loguru import logger
 
 class ConfigLoader:

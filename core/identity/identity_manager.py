@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import logging
+import structlog
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -30,7 +31,7 @@ from core.identity.identity_policy import (
 from core.identity.identity_graph import IdentityGraph
 from core.identity.identity_audit import IdentityAuditLog, IdentityAction
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # alias for M3 emitter
 
 
@@ -121,7 +122,7 @@ class IdentityManager:
                 raise ValueError(f"Missing required fields for {provider}: {missing}")
 
         # Generate ID
-        iid = f"id-{hashlib.md5(f'{provider}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
+        iid = f"id-{hashlib.md5(f'{provider}{time.time()}{uuid.uuid4()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
 
         # Determine risk and approval
         risk_level = template.risk_level if template else "medium"

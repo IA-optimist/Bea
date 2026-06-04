@@ -320,7 +320,7 @@ class ProactiveAgent:
                 if result.stdout.strip() != "active":
                     down.append(svc)
             except (FileNotFoundError, subprocess.TimeoutExpired):
-                pass  # systemctl non dispo (dev local)
+                logger.debug("swallowed_exception", exc_info=True)
         return down
 
     def _detect_recent_changes(self, minutes: int = 30) -> list[str]:

@@ -18,6 +18,7 @@ import json
 import re
 import copy
 import logging
+import structlog
 from typing import Any, Optional
 from pathlib import Path
 
@@ -26,7 +27,7 @@ try:
 except ImportError:
     raise ImportError("networkx is required: pip install networkx")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # alias for M3 swallowed_exception emitter
 
 

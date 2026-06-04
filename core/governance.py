@@ -27,7 +27,7 @@ Zero external dependencies. Fail-open (except for safety blocks).
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 import uuid
@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.governance")
+logger = structlog.get_logger("jarvis.governance")
 log = logger  # alias for M3 emitter
 
 
@@ -681,7 +681,7 @@ def safety_checkpoint(
     # 3. Danger classification
     if action or connector:
         try:
-            danger = classify_danger(connector_name=connector, action=action, risk_level=risk_level)
+            danger = classify_danger(connector_name=connector, action=action)
             checks["danger_level"] = danger.get("level", "unknown")
             if danger.get("level") == "critical" and danger.get("requires_approval"):
                 checks["danger_approved"] = False

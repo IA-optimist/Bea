@@ -34,8 +34,7 @@ try:
     import structlog
     _log = structlog.get_logger("kernel.improvement.gate")
 except ImportError:
-    import logging
-    _log = logging.getLogger("kernel.improvement.gate")
+    _log = structlog.get_logger("kernel.improvement.gate")
 
 
 # ── Safety invariants — hard-coded, never configurable at runtime ─────────────

@@ -261,6 +261,7 @@ class KnowledgeMemory:
                         e = KnowledgeEntry(**d)
                         self._entries[e.problem_signature] = e
                     except Exception:
+                        logger.debug("swallowed_exception", exc_info=True)
                         continue
             logger.info(f"[KnowledgeMemory] loaded {len(self._entries)} entries from disk")
         except Exception as e:

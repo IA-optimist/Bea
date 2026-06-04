@@ -11,12 +11,12 @@ from __future__ import annotations
 import json
 import time
 import uuid
-import logging
+import structlog
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
 
 HORIZONS = {"immediate", "weekly", "monthly", "permanent"}

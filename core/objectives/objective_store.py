@@ -7,7 +7,7 @@ Objective Engine — Persistance JSON locale + Qdrant secondaire.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 from pathlib import Path
@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
 
-logger = logging.getLogger("jarvis.objective_store")
+logger = structlog.get_logger("jarvis.objective_store")
 log = logger  # M3 emitter alias
 
 # ── Chemins ────────────────────────────────────────────────────────────────────

@@ -7,7 +7,30 @@ execution memory, self-review, mission trace.
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
+
+
+@contextmanager
+def _temp_artifact(content: str, suffix: str):
+    """Écrit `content` dans un fichier temporaire FERMÉ puis yield son chemin.
+
+    Sur Windows, lire/supprimer un NamedTemporaryFile encore ouvert lève
+    PermissionError [WinError 32] (verrou de partage). On ferme donc le handle
+    avant de céder le chemin, et on nettoie dans le finally.
+    """
+    f = tempfile.NamedTemporaryFile(suffix=suffix, mode="w", delete=False, encoding="utf-8")
+    try:
+        f.write(content)
+    finally:
+        f.close()
+    try:
+        yield f.name
+    finally:
+        try:
+            os.unlink(f.name)
+        except OSError:
+            pass
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -306,11 +329,13 @@ class TestModelFallback:
         assert ROLE_PROVIDERS.get("analyst") == "openrouter"
 
     def test_MF11_budget_selector_uses_fallback_chain(self):
-        from core.model_intelligence.selector import get_model_selector
-        sel = get_model_selector()
+        from core.model_intelligence.catalog import ModelCatalog
+        from core.model_intelligence.selector import ModelSelector
+        # Catalogue VIDE => sélection déterministe via la fallback chain hardcodée
+        # (sinon le cache OpenRouter de l'environnement fait dériver les noms de modèles).
+        sel = ModelSelector(catalog=ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json"))))
         budget = sel.select("business_reasoning", "budget")
         normal = sel.select("business_reasoning", "normal")
-        # Budget should use cheaper model when catalog is empty
         assert budget.model_id == "openai/gpt-4o-mini"
         assert "claude" in normal.model_id or normal.model_id == "openai/gpt-4o-mini"
 
@@ -349,33 +374,25 @@ class TestQualityGate:
 
     def test_QG01_valid_html_passes(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("<html><head><title>Test</title></head><body><h1>Hello</h1>" + "x" * 500 + "</body></html>")
-            f.flush()
-            gate = ArtifactQualityGate()
-            r = gate.verify(f.name, "landing_page")
+        content = "<html><head><title>Test</title></head><body><h1>Hello</h1>" + "x" * 500 + "</body></html>"
+        with _temp_artifact(content, ".html") as path:
+            r = ArtifactQualityGate().verify(path, "landing_page")
             assert r.passed
             assert r.score >= 0.8
-            os.unlink(f.name)
 
     def test_QG02_placeholder_html_fails(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("<html><body><h1>TODO: Add title</h1>Lorem ipsum dolor sit amet" + "x" * 500 + "</body></html>")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "landing_page")
+        content = "<html><body><h1>TODO: Add title</h1>Lorem ipsum dolor sit amet" + "x" * 500 + "</body></html>"
+        with _temp_artifact(content, ".html") as path:
+            r = ArtifactQualityGate().verify(path, "landing_page")
             assert len(r.issues) > 0
-            os.unlink(f.name)
 
     def test_QG03_empty_file_critical(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "landing_page")
+        with _temp_artifact("", ".html") as path:
+            r = ArtifactQualityGate().verify(path, "landing_page")
             assert not r.passed
             assert any(i.severity == "critical" for i in r.issues)
-            os.unlink(f.name)
 
     def test_QG04_nonexistent_file(self):
         from core.execution.quality_gate import ArtifactQualityGate
@@ -385,53 +402,41 @@ class TestQualityGate:
 
     def test_QG05_valid_python_passes(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
-            f.write("from fastapi import FastAPI\napp = FastAPI()\n@app.get('/health')\ndef health(): return {'ok': True}\n")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "api_service")
+        content = "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/health')\ndef health(): return {'ok': True}\n"
+        with _temp_artifact(content, ".py") as path:
+            r = ArtifactQualityGate().verify(path, "api_service")
             assert r.passed
-            os.unlink(f.name)
 
     def test_QG06_python_syntax_error(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
-            f.write("def broken(\n  return None\n")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "api_service")
+        with _temp_artifact("def broken(\n  return None\n", ".py") as path:
+            r = ArtifactQualityGate().verify(path, "api_service")
             assert any(i.severity == "critical" for i in r.issues)
-            os.unlink(f.name)
 
     def test_QG07_python_hardcoded_secret(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
-            f.write('api_key = "sk-abcdefghij1234567890abcdefghij"\ndef run(): pass\n')
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "api_service")
+        content = 'api_key = "sk-abcdefghij1234567890abcdefghij"\ndef run(): pass\n'
+        with _temp_artifact(content, ".py") as path:
+            r = ArtifactQualityGate().verify(path, "api_service")
             assert any("secret" in i.description for i in r.issues)
-            os.unlink(f.name)
 
     def test_QG08_auto_correct_placeholder(self):
         from core.execution.quality_gate import ArtifactQualityGate, QualityIssue
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("<h1>TODO: Add content</h1>")
-            f.flush()
+        with _temp_artifact("<h1>TODO: Add content</h1>", ".html") as path:
             gate = ArtifactQualityGate()
             issues = [QualityIssue(category="placeholder", severity="warning",
                                     description="placeholder", auto_correctable=True)]
-            result = gate.auto_correct(f.name, issues)
+            result = gate.auto_correct(path, issues)
             assert result.corrected
-            content = Path(f.name).read_text(encoding="utf-8")
+            content = Path(path).read_text(encoding="utf-8")
             assert "TODO" not in content
-            os.unlink(f.name)
 
     def test_QG09_score_no_issues(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("<html><head></head><body><h1>Real Content</h1>" + "text " * 200 + "</body></html>")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "landing_page")
+        content = "<html><head></head><body><h1>Real Content</h1>" + "text " * 200 + "</body></html>"
+        with _temp_artifact(content, ".html") as path:
+            r = ArtifactQualityGate().verify(path, "landing_page")
             assert r.score >= 0.9
-            os.unlink(f.name)
 
     def test_QG10_score_critical_penalty(self):
         from core.execution.quality_gate import ArtifactQualityGate
@@ -448,30 +453,23 @@ class TestQualityGate:
 
     def test_QG12_content_asset_word_count(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".md", mode="w", delete=False) as f:
-            f.write("Short.")
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "content_asset")
+        with _temp_artifact("Short.", ".md") as path:
+            r = ArtifactQualityGate().verify(path, "content_asset")
             assert any("word" in i.description for i in r.issues)
-            os.unlink(f.name)
 
     def test_QG13_json_workflow_valid(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".json", mode="w", delete=False) as f:
-            json.dump({"trigger": "webhook", "steps": [{"action": "send_email"}]}, f)
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "automation_workflow")
+        content = json.dumps({"trigger": "webhook", "steps": [{"action": "send_email"}]})
+        with _temp_artifact(content, ".json") as path:
+            r = ArtifactQualityGate().verify(path, "automation_workflow")
             assert r.passed
-            os.unlink(f.name)
 
     def test_QG14_correctable_flag(self):
         from core.execution.quality_gate import ArtifactQualityGate
-        with tempfile.NamedTemporaryFile(suffix=".html", mode="w", delete=False) as f:
-            f.write("<html><body>TODO placeholder</body></html>" + "x" * 500)
-            f.flush()
-            r = ArtifactQualityGate().verify(f.name, "landing_page")
+        content = "<html><body>TODO placeholder</body></html>" + "x" * 500
+        with _temp_artifact(content, ".html") as path:
+            r = ArtifactQualityGate().verify(path, "landing_page")
             assert r.correctable  # placeholder issues are auto-correctable
-            os.unlink(f.name)
 
     def test_QG15_quality_gate_in_build_pipeline(self):
         """Verify quality gate is called during build."""

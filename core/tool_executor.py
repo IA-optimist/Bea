@@ -4,8 +4,8 @@ ToolExecutor — exécution RÉELLE des tools pour les agents Jarvis.
 RAM : < 500 bytes au repos (fonctions pures + singleton léger).
 """
 from __future__ import annotations
+import structlog
 
-import logging
 import os
 import subprocess  # nosec B404
 import time
@@ -53,9 +53,28 @@ try:
     _L4_AVAILABLE = True
 except Exception as _l4_err:
     _L4_AVAILABLE = False
-    logging.getLogger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
+    structlog.get_logger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
 
-logger = logging.getLogger("jarvis.tool_executor")
+# Axe 3 (Hermes) — execute_code sandboxé, loose-coupled (n'affecte pas les autres tools)
+try:
+    from core.tools.code_execution_tool import execute_code
+    _EXEC_CODE_AVAILABLE = True
+except Exception:
+    _EXEC_CODE_AVAILABLE = False
+
+try:
+    from core.tools.delegate_tool import delegate
+    _DELEGATE_AVAILABLE = True
+except Exception:
+    _DELEGATE_AVAILABLE = False
+
+try:
+    from core.tools.tool_pipeline_tool import tool_pipeline
+    _TOOL_PIPELINE_AVAILABLE = True
+except Exception:
+    _TOOL_PIPELINE_AVAILABLE = False
+
+logger = structlog.get_logger("jarvis.tool_executor")
 log = logger  # M3 emitter alias
 try:
     import structlog as _structlog
@@ -201,7 +220,7 @@ def write_file_safe(path: str, content: str, force: bool = False) -> dict:
             with open(path, "r", encoding="utf-8", errors="replace") as f:
                 old_content = f.read()
         except FileNotFoundError:
-            pass  # nouveau fichier — pas de backup
+            logger.debug("swallowed_exception", exc_info=True)
 
         with RollbackContext(path) as ctx:
             with open(path, "w", encoding="utf-8") as f:
@@ -340,6 +359,9 @@ class ToolExecutor:
     _tools: dict = {
         "http_get":        execute_http_get,
         "python_snippet":  execute_python_snippet,
+        **({"execute_code": execute_code} if _EXEC_CODE_AVAILABLE else {}),
+        **({"delegate": delegate} if _DELEGATE_AVAILABLE else {}),
+        **({"tool_pipeline": tool_pipeline} if _TOOL_PIPELINE_AVAILABLE else {}),
         "read_file":       read_file_content,
         "write_file_safe": write_file_safe,
         "shell_command":   run_shell_command,
@@ -424,6 +446,9 @@ class ToolExecutor:
         "http_get": 8,
         "read_file": 5,
         "python_snippet": 8,
+        "execute_code": 120,
+        "delegate": 600,
+        "tool_pipeline": 180,
         # "vector_search": 6,  # LEGACY
         # git
         "git_status": 15, "git_diff": 15, "git_log": 15, "git_branch": 15,
@@ -481,6 +506,9 @@ class ToolExecutor:
         "http_get": ["url"],
         "read_file": ["path"],
         "python_snippet": ["code"],
+        "execute_code": ["code"],
+        "delegate": ["task"],
+        "tool_pipeline": ["steps"],
         # "vector_search": ["query"],  # LEGACY
         # git
         "git_status": ["repo_path"], "git_diff": ["repo_path"],
@@ -539,12 +567,15 @@ class ToolExecutor:
         log.warning("swallowed_exception", action="browser_required_params_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Tools qui acceptent un kwarg timeout
-    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet"}
+    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet", "execute_code", "delegate"}
 
     # action_type par tool (pour ExecutionPolicy)
     _action_types: dict[str, str] = {
         "http_get":        "external_api",
         "python_snippet":  "execute",
+        "execute_code":    "execute",
+        "delegate":        "execute",
+        "tool_pipeline":   "execute",
         "read_file":       "read",
         "write_file_safe": "write",
         "shell_command":   "execute",
@@ -617,6 +648,9 @@ class ToolExecutor:
         "http_post_json": "medium",
         # "memory_store_solution": "low", # "memory_store_error": "low", # "memory_store_patch": "low",  # LEGACY
         "write_file_safe": "medium", "shell_command": "medium", "python_snippet": "medium",
+        "execute_code": "medium",
+        "delegate": "medium",
+        "tool_pipeline": "medium",
         "http_get": "low",
         # high risk
         "git_commit": "high", "git_push": "high",
@@ -813,7 +847,7 @@ class ToolExecutor:
                 },
             )
         except Exception:
-            pass  # Journal is non-blocking
+            logger.debug("swallowed_exception", exc_info=True)
 
         # ── Kernel event: tool.invoked (dual emission) ────────────
         try:
@@ -865,7 +899,7 @@ class ToolExecutor:
                     error=result.get("error", "")[:200] if not result.get("ok") else "",
                 )
             except Exception:
-                pass  # Journal is non-blocking
+                logger.debug("swallowed_exception", exc_info=True)
 
             # ── Kernel event: tool.completed or tool.failed (dual emission) ──
             try:
@@ -908,7 +942,7 @@ class ToolExecutor:
                     error_class=error_class,
                 )
             except Exception:
-                pass  # Journal is non-blocking
+                logger.debug("swallowed_exception", exc_info=True)
 
             # ── Kernel event: tool.failed (dual emission) ─────────────
             try:

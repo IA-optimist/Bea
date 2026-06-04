@@ -162,7 +162,7 @@ class MemoryStore:
             )
             await client.delete_collection(name)
         except Exception:
-            pass  # collection inexistante → créer
+            log.debug("swallowed_exception", exc_info=True)
 
         await client.create_collection(
             collection_name=name,

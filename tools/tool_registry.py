@@ -199,7 +199,7 @@ class ToolRegistry:
                 cls = getattr(mod, class_name)
                 self._tools[name] = cls()
             except Exception:
-                pass  # fail-open — skip unavailable tools
+                log.debug("swallowed_exception", exc_info=True)
 
 
 def get_tool_registry() -> ToolRegistry:

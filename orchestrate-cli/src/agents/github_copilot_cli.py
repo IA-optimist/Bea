@@ -13,7 +13,7 @@ Features:
 import asyncio
 import json
 import subprocess
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from loguru import logger
 
 try:

@@ -11,10 +11,10 @@ The bridge adds login detection for automatic approval escalation.
 from __future__ import annotations
 
 import asyncio
-import logging
+import structlog
 import re
 
-logger = logging.getLogger("jarvis.tools.browser_bridge")
+logger = structlog.get_logger("jarvis.tools.browser_bridge")
 log = logger  # M3 emitter alias
 
 # ── Lazy singleton ────────────────────────────────────────────────────────────

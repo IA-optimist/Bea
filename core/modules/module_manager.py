@@ -17,12 +17,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-import logging
+import structlog
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # alias for M3 emitter
 
 
@@ -311,7 +312,7 @@ class ModuleManager:
 
     def create_agent(self, config: dict, mode: str = "simple") -> AgentConfig:
         """Create agent. mode: simple or advanced."""
-        _name_key = (config.get("name") or "") + str(time.time())
+        _name_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
         aid = config.get("id") or f"agent-{hashlib.md5(_name_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
 
         agent = AgentConfig(
@@ -402,7 +403,7 @@ class ModuleManager:
     # ── Skill CRUD ──
 
     def create_skill(self, config: dict) -> SkillConfig:
-        _skill_key = (config.get("name") or "") + str(time.time())
+        _skill_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
         sid = config.get("id") or f"skill-{hashlib.md5(_skill_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         skill = SkillConfig(
             id=sid, name=config.get("name", ""),
@@ -466,7 +467,7 @@ class ModuleManager:
     # ── MCP CRUD ──
 
     def create_mcp(self, config: dict) -> MCPConfig:
-        _mcp_key = (config.get("name") or "") + str(time.time())
+        _mcp_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
         mid = config.get("id") or f"mcp-{hashlib.md5(_mcp_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         mcp = MCPConfig(
             id=mid, display_name=config.get("name", ""),
@@ -533,7 +534,7 @@ class ModuleManager:
     # ── Connector CRUD ──
 
     def create_connector(self, config: dict) -> ConnectorConfig:
-        _conn_key = (config.get("provider") or "") + str(time.time())
+        _conn_key = (config.get("provider") or "") + str(time.time()) + uuid.uuid4().hex
         cid = config.get("id") or f"conn-{hashlib.md5(_conn_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         conn = ConnectorConfig(
             id=cid, provider=config.get("provider", ""),

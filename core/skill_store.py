@@ -199,7 +199,7 @@ class SkillStore:
                         log.info("skill_updated", skill_id=skill_id, success_count=sc)
                         return True
                 except Exception:
-                    pass  # New skill — proceed to insert
+                    log.debug("swallowed_exception", exc_info=True)
 
                 embedding = await _ollama_embed(f"{goal}\n{plan_str[:300]}")
                 skill = Skill(

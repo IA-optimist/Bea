@@ -26,13 +26,13 @@ Zero external dependencies. Fail-open everywhere.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.execution_engine")
+logger = structlog.get_logger("jarvis.execution_engine")
 log = logger  # M3 emitter alias
 
 # ═══════════════════════════════════════════════════════════════
@@ -97,7 +97,7 @@ def check_tool_health(tool_name: str) -> dict:
             result["success_rate"] = round(stats.recent_success_rate, 3)
 
     except Exception:
-        pass  # fail-open: assume healthy
+        logger.debug("swallowed_exception", exc_info=True)
 
     return result
 
@@ -175,7 +175,7 @@ def should_retry(tool_name: str, attempt: int) -> bool:
             return False
 
     except Exception:
-        pass  # fail-open: allow retry
+        logger.debug("swallowed_exception", exc_info=True)
 
     return True
 

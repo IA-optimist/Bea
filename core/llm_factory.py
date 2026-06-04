@@ -178,20 +178,20 @@ def _is_valid_key(key: str | None) -> bool:
 # IMPORTANT : les providers cloud ne sont tentés que si _is_valid_key() est True.
 # En l'absence de clé valide, tous ces rôles basculent automatiquement sur Ollama.
 ROLE_PROVIDERS: dict[str, str] = {
-    "director":  "openrouter",  # Sonnet 4.5 via OpenRouter
-    "builder":   "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
+    "director":  "codex",       # orchestrateur → Codex via gateway Hermes (fallback ollama)
+    "builder":   "ollama",      # worker → Bea v3.1
     "reviewer":  "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
-    "research":  "openrouter",
+    "research":  "ollama",      # worker → Bea v3.1
     "planner":   "openrouter",
     "context":   "openrouter",
     "ops":       "openrouter",
     "improve":   "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
     "analyst":   "openrouter",  # Business analysis, strategy — Sonnet via OpenRouter
     "fast":      "openrouter",  # GPT-4o-mini via OpenRouter
-    "default":   "openrouter",
+    "default":   "ollama",      # worker → Bea v3.1
     "cognition":  "openrouter",  # Phase 3.5: AI cognition needs reliable cloud model
     # Cloud-preferred roles (were ollama-only, now openrouter with ollama fallback)
-    "advisor":    "openrouter",  # shadow-advisor — needs real LLM
+    "advisor":    "ollama",      # worker → Bea v3.1
     "memory":     "openrouter",  # vault-memory — needs real LLM
     # Local-only : jamais de cloud même en fallback
     "code":       "ollama",
@@ -324,6 +324,8 @@ class LLMFactory:
             result = None
             if provider == "openai":
                 result = self._build_openai(role)
+            elif provider == "codex":
+                result = self._build_codex(role)
             elif provider == "anthropic":
                 result = self._build_anthropic(role)
             elif provider == "google":
@@ -352,6 +354,21 @@ class LLMFactory:
             if provider == "ollama":
                 _OLLAMA_CIRCUIT.record_failure()
         return None
+
+    def _build_codex(self, role: str) -> BaseChatModel | None:
+        """Orchestrateur Codex via le gateway OpenAI-compatible de Hermes.
+
+        Hermes détient l'auth Codex (abonnement) ; on route au lieu de dupliquer
+        des credentials. Le gateway expose le modèle virtuel `hermes-agent`.
+        """
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=getattr(self.s, "codex_model", "hermes-agent"),
+            api_key=getattr(self.s, "codex_api_key", "none") or "none",
+            base_url=getattr(self.s, "codex_base_url", "http://127.0.0.1:8642/v1"),
+            temperature=0.3,
+            timeout=120,
+        )
 
     def _build_openai(self, role: str) -> BaseChatModel | None:
         key = getattr(self.s, "openai_api_key", "")
@@ -481,7 +498,7 @@ class LLMFactory:
                     _selector_is_fallback = False
                     _selector_score = round(result.final_score, 3)
             except Exception:
-                pass  # Selector unavailable → use model_map default
+                log.debug("swallowed_exception", exc_info=True)
 
         if _selector_model and _selector_model != model_id:
             log.info(

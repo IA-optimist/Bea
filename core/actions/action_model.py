@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import time
 import uuid
-import logging
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 
-log = logging.getLogger("jarvis.actions")
+import structlog
+
+log = structlog.get_logger("jarvis.actions")
 
 
 # ── Canonical status ──────────────────────────────────────────────────────────

@@ -57,8 +57,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 
@@ -140,8 +139,8 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                                         _m.decision_trace["requires_validation"] = True
                                         _m.decision_trace["requested_risk_level"] = _risk_capture
                                         log.info("mission.validation_flagged", mission_id=_mid_capture)
-                                except Exception:
-                                    pass
+                                except Exception as _exc:
+                                    log.debug("validation_flag_suppressed", exc_type=type(_exc).__name__)
 
                             await mo.run_mission(_goal_capture, mission_id=_mid_capture)
                         except Exception as _exc:

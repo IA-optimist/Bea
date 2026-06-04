@@ -40,8 +40,7 @@ try:
     import structlog
     _log = structlog.get_logger("kernel.routing")
 except ImportError:
-    import logging
-    _log = logging.getLogger("kernel.routing")
+    _log = structlog.get_logger("kernel.routing")
 
 
 # ── Registration slot ─────────────────────────────────────────────────────────

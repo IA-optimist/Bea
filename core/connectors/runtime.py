@@ -1,14 +1,14 @@
 """Connector registry and execution runtime helpers."""
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 import time
 from typing import Optional
 
 from core.connectors.contracts import ConnectorResult
 
-logger = logging.getLogger("jarvis.connectors")
+logger = structlog.get_logger("jarvis.connectors")
 log = logger  # alias for M3 swallowed_exception emitter
 
 

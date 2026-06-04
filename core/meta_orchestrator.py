@@ -198,7 +198,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                     _ms_rec.final_output = str(ctx.result or "")[:5000]
                     _ms._save_mission(_ms_rec)
             except Exception:
-                pass
+                log.debug("swallowed_exception", exc_info=True)
 
     # ── Kernel cognitive pre-computation (Pass 18) ───────────────────────────
 
@@ -391,7 +391,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 if caps_used:
                     bridge.capability_graph.record_mission_usage(mid, caps_used)
         except Exception:
-            pass  # Fail-open
+            log.debug("swallowed_exception", exc_info=True)
         
         # Guardian cleanup
         try:
@@ -413,7 +413,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 duration_ms=_duration,
             )
         except Exception:
-            pass  # Fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
     # ── Phase extraction methods (refactored from run_mission) ───────────────
 
@@ -605,7 +605,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                             requires_approval=_sp.requires_approval if _sp else False,
                         )
                 except Exception:
-                    pass  # Fail-open
+                    log.debug("swallowed_exception", exc_info=True)
 
             # ── Phase 0c-bis: Kernel performance routing enrichment ────
             # Adjust provider reliability scores using real kernel execution outcomes.
@@ -1205,7 +1205,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                         enriched_goal = _p.inject_context(enriched_goal)
                     break
         except Exception:
-            pass
+            log.debug("swallowed_exception", exc_info=True)
         # Cap enriched_goal to avoid overwhelming agents with huge context
         if len(enriched_goal) > 2000:
             enriched_goal = enriched_goal[:2000] + "\n[...context truncated for performance...]"
@@ -1389,7 +1389,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 from core.mission_persistence import get_mission_persistence
                 get_mission_persistence().persist(ctx)
             except Exception:
-                pass
+                log.debug("swallowed_exception", exc_info=True)
             return
 
         if _is_chat_mode and not _fp_skip_risk:
@@ -1406,7 +1406,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                     if _mems:
                         _fp_mem = "\n".join(f"- {m['content'][:150]}" for m in _mems if m.get("content"))
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 _fp_prompt = build_fast_path_prompt(goal, memory=_fp_mem, context=_fp_ctx)
                 _fp_text = await asyncio.wait_for(
                     _fp_llm.complete(_fp_prompt, max_tokens=2000),
@@ -1433,13 +1433,13 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                         execution_policy_decision="fast_path",
                     )
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 # Persist to both stores so UI sees consistent status
                 try:
                     from core.mission_persistence import get_mission_persistence
                     get_mission_persistence().persist(ctx)
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 # Post-mission learning: extract lesson if needed
                 try:
                     from core.orchestration.learning_loop import extract_lesson, store_lesson
@@ -1457,7 +1457,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                         log.info("learning_loop.lesson_stored", mission_id=mid,
                                  confidence=_lesson.confidence)
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 try:
                     # Sync mission_system store to avoid READY/DONE mismatch
                     from core.mission_system import get_mission_system
@@ -1468,11 +1468,11 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                         _ms_rec.final_output = ctx.result
                         _ms._save_mission(_ms_rec)
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 try:
                     self._cleanup_event_stream(mid)
                 except Exception:
-                    pass
+                    log.debug("swallowed_exception", exc_info=True)
                 return
             except Exception as _fe:
                 log.warning("chat_fast_path_fail", err=str(_fe)[:120])
@@ -2284,7 +2284,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 needs_approval = True
                 log.info("mission.approval_forced", mission_id=mid, reason="requires_validation=True in decision_trace")
         except Exception:
-            pass
+            log.debug("swallowed_exception", exc_info=True)
 
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
 

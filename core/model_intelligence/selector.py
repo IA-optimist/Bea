@@ -321,7 +321,7 @@ class ModelPerformanceMemory:
                         "last_used": r.last_used,
                     } for k, r in self._records.items()},
                 }, f)
-            tmp.rename(self._path)
+            tmp.replace(self._path)
         except Exception as _exc:
             log.warning("swallowed_exception", action="selector_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 

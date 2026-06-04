@@ -65,7 +65,7 @@ def emit(
         )
         MissionStateStore.get().append_log(event)
     except Exception:
-        pass  # fail-open — never block execution for observability
+        import logging as _lg; _lg.getLogger(__name__).debug("event_emit_failed", exc_info=True)  # fail-open — never block execution
 
 
 def emit_mission_created(mission_id: str, goal: str) -> None:

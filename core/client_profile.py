@@ -60,7 +60,7 @@ class ClientProfile:
                     flds = ClientProfile.__dataclass_fields__
                     return ClientProfile(**{k: v for k, v in d.items() if k in flds})
             except Exception:
-                pass
+                import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
         return None
 
     @staticmethod
@@ -77,7 +77,7 @@ class ClientProfile:
                     flds = ClientProfile.__dataclass_fields__
                     profiles.append(ClientProfile(**{k: v for k, v in d.items() if k in flds}))
             except Exception:
-                pass
+                import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
         return profiles
 
 

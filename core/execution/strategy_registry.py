@@ -270,7 +270,7 @@ class StrategyRegistry:
             }
             tmp = self._path.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2))
-            tmp.rename(self._path)
+            tmp.replace(self._path)  # atomic overwrite (Windows-safe, unlike rename)
         except Exception as _exc:
             log.warning("swallowed_exception", action="strategy_registry_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 

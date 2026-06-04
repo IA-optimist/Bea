@@ -227,7 +227,7 @@ class OrchestrationGuard:
                 with open(self._log_path, "a", encoding="utf-8") as f:
                     f.write(line)
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
     def get_recent_failures(self, n: int = 20) -> list[dict]:
         """Read last N lines of log file, filter status=='failed'|'timeout'."""

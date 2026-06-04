@@ -96,7 +96,7 @@ def profile_span(name: str, **extra: Any) -> Iterator[None]:
             try:
                 hist.labels(span=name, status=status).observe(duration_s)
             except Exception:
-                pass
+                log.debug("swallowed_exception", exc_info=True)
 
         # Structlog : always DEBUG, WARN if slow
         payload = {"name": name, "duration_ms": round(duration_ms, 1), "status": status, **extra}

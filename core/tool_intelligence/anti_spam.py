@@ -3,11 +3,11 @@ Anti tool-spam protection.
 Tracks per-task tool usage and enforces limits.
 Fail-open: if check fails, always returns (allowed=True).
 """
-import logging
+import structlog
 from collections import defaultdict
 from typing import Dict, List
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
 
 MAX_SAME_TOOL_STREAK = 4

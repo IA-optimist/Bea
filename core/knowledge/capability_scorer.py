@@ -315,6 +315,7 @@ class CapabilityScorer:
                 try:
                     self._scores[domain] = DomainScore(**d)
                 except Exception:
+                    logger.debug("swallowed_exception", exc_info=True)
                     continue
             logger.info(
                 f"[CapabilityScorer] loaded {len(self._scores)} domain scores from disk"

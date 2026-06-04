@@ -204,7 +204,7 @@ class JarvisSession:
             try:
                 asyncio.get_running_loop().create_task(self._notify_subscribers(evt))
             except RuntimeError:
-                pass  # Pas de boucle en cours — contexte synchrone
+                log.debug("swallowed_exception", exc_info=True)
         except Exception as _exc:
             log.warning("swallowed_exception", action="state_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 

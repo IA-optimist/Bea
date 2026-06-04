@@ -10,7 +10,6 @@ Features:
 """
 
 import asyncio
-import json
 import os
 from typing import Dict, List, Any, Optional
 from loguru import logger
@@ -19,10 +18,10 @@ try:
     from haystack import Document, Pipeline
     from haystack.components.retrievers import BM25Retriever, SentenceTransformersRetriever
     from haystack.components.writers import DocumentWriter
-    from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter
+    from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter  # noqa: F401
     from haystack.components.rankers import TransformersRanker
     from haystack.document_stores import InMemoryDocumentStore, FAISSDocumentStore
-    from haystack.nodes import TextConverter, PreProcessor
+    from haystack.nodes import TextConverter, PreProcessor  # noqa: F401
     from haystack.utils import fetch_archive_from_http
     HAYSTACK_AVAILABLE = True
 except ImportError:

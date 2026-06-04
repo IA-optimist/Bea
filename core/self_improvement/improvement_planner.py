@@ -271,4 +271,4 @@ class ImprovementPlanner:
                 json.dumps(combined, indent=2, ensure_ascii=False), "utf-8"
             )
         except Exception:
-            pass  # fail-open
+            import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)

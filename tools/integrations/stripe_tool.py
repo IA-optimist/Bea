@@ -24,7 +24,7 @@ Supported operations:
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import time
 import urllib.request
 import urllib.error
@@ -32,7 +32,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from typing import Any
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
 
 STRIPE_BASE = "https://api.stripe.com/v1"

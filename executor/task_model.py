@@ -62,6 +62,14 @@ class ExecutionTask:
 
     # ── Méthodes ──────────────────────────────────────────────────────────────
 
+    def __lt__(self, other: "ExecutionTask") -> bool:
+        # Départage stable pour le heap (priority, created_at, task) quand priority
+        # ET created_at sont égaux (collision de time.time()) — sinon heapq lève
+        # TypeError en comparant deux ExecutionTask.
+        if not isinstance(other, ExecutionTask):
+            return NotImplemented
+        return (self.created_at, self.id) < (other.created_at, other.id)
+
     def to_dict(self) -> dict:
         rp = None
         if self.retry_policy is not None:

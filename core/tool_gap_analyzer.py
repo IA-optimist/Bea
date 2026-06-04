@@ -19,9 +19,9 @@ Zero external dependencies.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 
-logger = logging.getLogger("jarvis.tool_gap_analyzer")
+logger = structlog.get_logger("jarvis.tool_gap_analyzer")
 log = logger  # alias for M3 emitter
 
 

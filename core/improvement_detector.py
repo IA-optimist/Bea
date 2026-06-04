@@ -18,11 +18,11 @@ All proposals go through the approval queue — nothing auto-executes.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 import time
 
-logger = logging.getLogger("jarvis.improvement_detector")
+logger = structlog.get_logger("jarvis.improvement_detector")
 log = logger  # alias for M3 swallowed_exception emitter
 
 

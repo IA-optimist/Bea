@@ -88,8 +88,14 @@ class TestModelCatalog:
         assert len(results) == 1
         assert results[0].model_id == "anthropic/claude"
 
-    def test_MI06_catalog_fail_open_no_key(self):
+    def test_MI06_catalog_fail_open_no_key(self, monkeypatch):
         """Refresh without API key returns -1 (fail-open)."""
+        # Isolate: sibling tests import modules that call load_dotenv(), which
+        # leaks OPENROUTER_API_KEY into os.environ. refresh(api_key="") falls
+        # back to os.environ, so a leaked key would trigger a real live fetch
+        # (returning a populated count instead of the -1 sentinel). Force the
+        # genuine "no key" precondition this test asserts.
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
         cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
         result = cat.refresh(api_key="")
         assert result == -1

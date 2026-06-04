@@ -622,7 +622,7 @@ class MissionSystem:
             )
             store_memory_entry(me)
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         return r
 

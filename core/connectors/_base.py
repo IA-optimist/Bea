@@ -22,7 +22,7 @@ All connectors fail-open: return ToolResult(success=False) on error.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 
@@ -31,7 +31,7 @@ from core.connectors.contracts import (
     ConnectorSpec as ConnectorSpec,
 )
 
-logger = logging.getLogger("jarvis.connectors")
+logger = structlog.get_logger("jarvis.connectors")
 log = logger  # M3 emitter alias
 
 

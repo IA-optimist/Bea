@@ -85,7 +85,7 @@ class FailureCollector:
             for e in existing:
                 already_seen.add(f"{e.mission_id}:{e.category}")
         except Exception:
-            pass
+            log.debug("swallowed_exception", exc_info=True)
 
         for mission_id, mission in missions_by_id.items():
             events = mission_store.get_log(mission_id)
@@ -277,4 +277,4 @@ class FailureCollector:
 
             _FAILURE_LOG.write_text("\n".join(all_lines) + "\n", "utf-8")
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)

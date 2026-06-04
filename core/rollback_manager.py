@@ -9,13 +9,13 @@ RAM : < 1KB au repos (pas de buffer en mémoire)
 from __future__ import annotations
 
 import difflib
-import logging
+import structlog
 import shutil
 import time
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger("jarvis.rollback")
+logger = structlog.get_logger("jarvis.rollback")
 log = logger  # M3 emitter alias
 
 # Dossier de sauvegarde (relatif au cwd du container)

@@ -42,6 +42,16 @@ def test_router_disabled_by_default():
 def test_router_enabled_no_data():
     """Router falls back to static when no performance data exists."""
     os.environ["JARVIS_DYNAMIC_ROUTING"] = "1"
+    # Isolate from sibling tests (and any persisted workspace/*.jsonl) that
+    # leave debug_task data in the performance tracker singleton. With leaked
+    # data the router enters its rerank path (which iterates a set →
+    # non-deterministic order); injecting a fresh empty tracker guarantees the
+    # "no performance data" precondition this test actually asserts.
+    import core.mission_performance_tracker as mpt_mod
+    saved_tracker = mpt_mod._tracker
+    mpt_mod._tracker = mpt_mod.MissionPerformanceTracker(
+        persist_path="/tmp/test_router_no_data.json"
+    )
     try:
         from core.dynamic_agent_router import route_agents
         result = route_agents(
@@ -51,6 +61,7 @@ def test_router_enabled_no_data():
         assert result == ["forge-builder", "lens-reviewer"]
     finally:
         os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+        mpt_mod._tracker = saved_tracker
 
 
 def test_router_with_performance_data():

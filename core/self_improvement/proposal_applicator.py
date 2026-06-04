@@ -278,6 +278,7 @@ def _parse_patch_blocks(
             if file_line and find_text and file_line in allowed_files:
                 results.append((file_line, find_text, replace_text))
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     return results

@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import time
 import uuid
-import logging
+import structlog
 from dataclasses import dataclass, field, asdict
 from typing import Literal
 
-log = logging.getLogger("jarvis.improvement.loop")
+log = structlog.get_logger("jarvis.improvement.loop")
 
 
 # ── Experiment Result ─────────────────────────────────────────────────────────

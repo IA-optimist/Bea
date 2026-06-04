@@ -7,9 +7,9 @@ All modifications go through policy layer. Core runtime is protected.
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Literal
-import logging
+import structlog
 
-log = logging.getLogger("jarvis.self_improve_safety")
+log = structlog.get_logger("jarvis.self_improve_safety")
 
 ImprovementType = Literal["prompt", "planning", "tool_usage", "capability"]
 

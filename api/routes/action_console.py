@@ -14,13 +14,13 @@ GET  /api/v3/console/budget/{mid}  — Mission budget status
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 
 from api._deps import _check_auth
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
 
 router = APIRouter(prefix="/api/v3/console", tags=["action-console"])

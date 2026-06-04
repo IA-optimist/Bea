@@ -18,7 +18,7 @@ Features:
 import asyncio
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import List
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
@@ -28,8 +28,6 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich import print as rprint
-from loguru import logger
 
 # Import core modules
 from src.orchestrators.orchestrator_factory import OrchestratorFactory

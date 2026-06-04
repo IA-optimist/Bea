@@ -11,12 +11,13 @@ Both produce authorized access. Access tokens have role-based permissions.
 from __future__ import annotations
 
 import hmac
-import logging
 import os
 import time
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 log = logger  # alias for M3 emitter
 
 try:

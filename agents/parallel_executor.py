@@ -239,7 +239,7 @@ class ParallelExecutor:
                 )
                 tasks = tasks[:1]  # n'exécuter qu'un seul agent
         except Exception:
-            pass  # ResourceGuard absent → continuer normalement
+            log.debug("swallowed_exception", exc_info=True)
 
         await _emit(
             f"[ParallelExecutor] Lancement de {len(tasks)} agent(s) en parallèle..."
@@ -438,7 +438,7 @@ class ParallelExecutor:
                     success=False, error=trace.error, trace=trace,
                 )
         except Exception:
-            pass  # ResourceGuard absent → continuer
+            log.debug("swallowed_exception", exc_info=True)
 
         individual_timeout = task.get("timeout", self.agent_timeout)
         retry_count = 0

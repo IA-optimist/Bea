@@ -104,7 +104,9 @@ class TestMultiChoiceWait(unittest.TestCase):
     def setUp(self):
         reset_event_bus()
         reset_multi_choice_store()
-        self._tmp = tempfile.TemporaryDirectory()
+        # ignore_cleanup_errors : sur Windows la suppression du tempdir peut courir
+        # avec la fin d'écriture/threads du store -> WinError 145 (dir non vide).
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.store = MultiChoiceStore(path=Path(self._tmp.name) / "d.json")
 
     def tearDown(self):

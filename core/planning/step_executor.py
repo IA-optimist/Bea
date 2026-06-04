@@ -307,7 +307,7 @@ def _execute_skill(step: PlanStep, context: StepContext) -> StepResult:
                 retry_trace.final_attempt = retry_trace.total_attempts - 1
 
         except Exception:
-            pass  # fail-open: proceed with whatever we have
+            log.debug("swallowed_exception", exc_info=True)
 
         if llm_result and llm_result.get("invoked") and not llm_result.get("error"):
             # LLM produced real output

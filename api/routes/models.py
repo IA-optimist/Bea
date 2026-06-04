@@ -11,10 +11,10 @@ Endpoints under /api/v3/models/:
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-logger = logging.getLogger("jarvis.api.models")
+logger = structlog.get_logger("jarvis.api.models")
 log = logger  # M3 emitter alias
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.

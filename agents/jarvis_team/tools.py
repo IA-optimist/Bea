@@ -520,6 +520,7 @@ def tool_dead_code_detect(path: str = ".") -> ToolResult:
                     elif isinstance(node, ast.Attribute):
                         used.add(node.attr)
             except SyntaxError:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
 
         dead = {name: file for name, file in defined.items() if name not in used}
@@ -714,6 +715,7 @@ def tool_read_logs(log_path: str = "workspace/", pattern: str = "*.log",
                 lines = lf.read_text(encoding="utf-8", errors="replace").splitlines()
                 entries.extend(lines[-tail:])
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
         return ToolResult(
             success=True, tool="read_logs",
@@ -750,6 +752,7 @@ def tool_detect_error_patterns(path: str = ".") -> ToolResult:
                         if len(findings[name]) >= 20:
                             break
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
 
         total = sum(len(v) for v in findings.values())

@@ -15,13 +15,13 @@ Zero external dependencies. Fail-open everywhere.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.tool_performance")
+logger = structlog.get_logger("jarvis.tool_performance")
 
 # ── Data Structures ────────────────────────────────────────────────────────────
 

@@ -103,7 +103,7 @@ class PlanStore:
             path = self._dir / f"{plan.plan_id}.json"
             tmp = path.with_suffix(".tmp")
             tmp.write_text(plan.to_json(), "utf-8")
-            tmp.rename(path)
+            tmp.replace(path)
         except Exception as e:
             log.debug("plan_persist_failed", plan_id=plan.plan_id, err=str(e)[:80])
 

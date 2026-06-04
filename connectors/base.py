@@ -80,7 +80,7 @@ class ConnectorBase(ABC):
             if blocked:
                 return False, f"Policy blocked: {blocked}"
         except Exception:
-            pass  # Fail-open
+            log.debug("swallowed_exception", exc_info=True)
         return True, ""
 
     def _record_trace(self, result: ConnectorResult) -> None:

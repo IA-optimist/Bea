@@ -747,7 +747,7 @@ class ShadowAdvisor(BaseAgent):
                 original = session.mission_summary or session.user_input or ""
                 session.mission_summary = context_text + "\n\n---\n\n" + original
         except Exception:
-            pass  # fail-open: context injection is best-effort
+            log.debug("swallowed_exception", exc_info=True)
         # ─────────────────────────────────────────────────────────────────────
 
         raw = await super().run(session)

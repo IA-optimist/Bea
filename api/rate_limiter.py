@@ -174,7 +174,7 @@ class RateLimiter:
             try:
                 return self._redis_limiter.allow(client_ip, path)
             except Exception:
-                pass  # Fail-open: fall back to in-memory
+                logger.debug("rate_limiter_redis_failed_fallback_memory", exc_info=True)  # Fail-open: fall back to in-memory
         return self._memory_limiter.allow(client_ip, path)
 
 

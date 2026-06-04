@@ -487,7 +487,7 @@ def get_known_limitations(model: SelfModel) -> list[dict]:
                     "source": "kernel_performance",
                 })
     except Exception:
-        pass  # Kernel performance unavailable — not a limitation itself
+        log.debug("swallowed_exception", exc_info=True)
 
     # 9. Skill execution mode — preparation-only if no LLM configured
     try:

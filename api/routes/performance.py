@@ -16,9 +16,10 @@ Endpoints:
 """
 from __future__ import annotations
 
-import logging
 import time
 from typing import Optional
+
+import structlog
 
 try:
     from fastapi import APIRouter, Body, Depends, Header, Query
@@ -32,7 +33,7 @@ from typing import Optional as _Opt
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     _check_auth(x_jarvis_token, authorization)
 
-logger = logging.getLogger("jarvis.api.performance")
+logger = structlog.get_logger("jarvis.api.performance")
 log = logger  # alias for the M3 swallowed_exception emitter convention
 
 
@@ -254,8 +255,9 @@ if router:
     # ── Improvement Proposals ──────────────────────────────────────────────
 
     @router.post("/improvement")
-    def submit_improvement_proposal(body: dict = {}):
+    def submit_improvement_proposal(body: dict | None = None):
         """Submit an improvement proposal for review."""
+        body = body or {}
         try:
             from core.improvement_proposals import get_proposal_store, ImprovementProposal
             proposal = ImprovementProposal(
@@ -312,8 +314,9 @@ if router:
             return _err(str(e)[:200])
 
     @router.post("/improvements/{proposal_id}/reject")
-    def reject_proposal(proposal_id: str, body: dict = {}):
+    def reject_proposal(proposal_id: str, body: dict | None = None):
         """Reject an improvement proposal."""
+        body = body or {}
         try:
             from core.improvement_proposals import get_proposal_store
             ok = get_proposal_store().reject(proposal_id, reason=body.get("reason", ""))
@@ -378,8 +381,9 @@ if router:
             return _err(str(e)[:200])
 
     @router.post("/lifecycle/validate")
-    def validate_lifecycle(body: dict = {}):
+    def validate_lifecycle(body: dict | None = None):
         """Validate mission lifecycle completeness."""
+        body = body or {}
         try:
             from core.safety_controls import validate_lifecycle
             steps = body.get("steps", [])

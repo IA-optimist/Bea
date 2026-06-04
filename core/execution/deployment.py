@@ -391,15 +391,15 @@ class DeploymentPipeline:
             from core.economic.strategic_memory import StrategicRecord, get_strategic_memory
             mem = get_strategic_memory()
             mem.record(StrategicRecord(
-                record_type="deployment_outcome",
-                score=1.0 if result.verification_passed else 0.3,
-                context={
+                strategy_type="deployment_outcome",
+                outcome_score=1.0 if result.verification_passed else 0.3,
+                context_features={
                     "artifact_type": artifact.artifact_type.value,
                     "target_type": result.target.get("target_type", "unknown"),
                     "verified": result.verification_passed,
                 },
-                findings={"status": result.status.value, "files": len(result.output_files)},
-                failures={"error": result.error} if result.error else {},
+                key_findings=[f"status: {result.status.value}", f"files: {len(result.output_files)}"],
+                failure_reasons=([f"error: {result.error}"] if result.error else []),
             ))
         except Exception as _exc:
             log.warning("swallowed_exception", action="deployment_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

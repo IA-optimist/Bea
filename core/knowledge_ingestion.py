@@ -18,10 +18,10 @@ Feature flag: JARVIS_KNOWLEDGE_INGESTION=1 (default ON when knowledge_memory exi
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import time
 
-logger = logging.getLogger("jarvis.knowledge_ingestion")
+logger = structlog.get_logger("jarvis.knowledge_ingestion")
 
 # Recent ingestions for dedup (bounded, in-memory)
 _recent_ingestions: list[dict] = []
@@ -126,10 +126,12 @@ def ingest_mission_outcome(
         km.store_if_useful(
             goal=goal[:300],
             mission_type=mission_type,
-            agents_used=agents_used,
+            solution_summary=reason,
             tools_used=tools_used,
-            success=success,
-            mission_id=mission_id,
+            agents_used=agents_used,
+            confidence_score=1.0 if success else 0.0,
+            fallback_level=0,
+            execution_policy_decision="auto",
         )
         logger.info(
             "knowledge_ingested",

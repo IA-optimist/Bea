@@ -3,10 +3,10 @@ ToolRunner — exécute les tools pertinents AVANT les agents.
 Injecte les résultats dans le contexte comme préfixe de prompt.
 """
 from __future__ import annotations
-import logging
+import structlog
 import time
 
-logger = logging.getLogger("jarvis.tool_runner")
+logger = structlog.get_logger("jarvis.tool_runner")
 log = logger  # alias for M3 emitter
 
 # Pre-execution context gathering tools (READ-ONLY, safe to run before agents)

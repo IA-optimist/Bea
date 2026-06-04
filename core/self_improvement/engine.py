@@ -12,9 +12,9 @@ V3 changes vs V1:
 """
 from __future__ import annotations
 
-import logging
+import structlog
 
-logger = logging.getLogger("jarvis.self_improvement.engine")
+logger = structlog.get_logger("jarvis.self_improvement.engine")
 log = logger  # M3 emitter alias
 
 from core.self_improvement.failure_collector import FailureCollector

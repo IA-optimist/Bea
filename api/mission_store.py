@@ -121,8 +121,8 @@ class MissionStateStore:
             _PERSIST_PATH.write_text(
                 json.dumps(data, indent=2, ensure_ascii=False), "utf-8"
             )
-        except Exception:
-            pass  # fail-open: in-memory state is authoritative
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_store_persist", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])  # fail-open: in-memory authoritative
 
     def _load(self) -> None:
         try:
@@ -168,5 +168,5 @@ class MissionStateStore:
                     )
                 except Exception as _exc:
                     log.warning("swallowed_exception", action="mission_store_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        except Exception:
-            pass  # fresh start on any load error
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_store_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])  # fresh start on any load error

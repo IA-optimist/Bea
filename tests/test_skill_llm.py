@@ -357,8 +357,13 @@ class TestPerformanceCompatibility:
 
 class TestSelfModelEnrichment:
 
-    def test_SL23_limitations_show_skill_mode(self):
+    def test_SL23_limitations_show_skill_mode(self, monkeypatch):
         """Self-model reports when skills are preparation-only."""
+        import core.planning.skill_llm as skill_llm
+        # Précondition du test : aucun LLM configuré. On la force, sinon une clé
+        # fuitée dans os.environ par un test voisin (load_dotenv) rendrait l'LLM
+        # "disponible" et la limitation preparation-only ne serait pas émise.
+        monkeypatch.setattr(skill_llm, "_is_llm_available", lambda: False)
         from core.self_model.model import SelfModel
         from core.self_model.queries import get_known_limitations
         # In CI, no LLM key → should report preparation-only

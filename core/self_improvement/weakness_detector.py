@@ -7,11 +7,11 @@ Works with no historical data (returns [] or LOW-severity results).
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from dataclasses import dataclass, field
 from typing import List
 
-logger = logging.getLogger("jarvis.self_improvement.weakness_detector")
+logger = structlog.get_logger("jarvis.self_improvement.weakness_detector")
 log = logger  # M3 emitter alias
 
 # Severity thresholds for capability score success_rate

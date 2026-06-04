@@ -295,7 +295,7 @@ class PromotionPipeline:
                 risk_level=risk_level,
             )
         except Exception:
-            pass  # Journal is non-blocking
+            log.debug("swallowed_exception", exc_info=True)
 
         # ── Kernel event: patch proposed (dual emission) ──────────────
         try:
@@ -492,7 +492,7 @@ class PromotionPipeline:
                     emit_patch_validated(patch_id=_pid, passed=True,
                                          decision=_dec, files=_files[:10])
             except Exception:
-                pass  # Journal is non-blocking
+                log.debug("swallowed_exception", exc_info=True)
 
             # ── Kernel event: patch decision (dual emission) ──────────
             try:
@@ -818,7 +818,7 @@ class PromotionPipeline:
                 "duration_s": result.duration_s,
             })
         except Exception:
-            pass  # Observability is non-blocking
+            log.debug("swallowed_exception", exc_info=True)
 
         # ── Kernel event: promotion result (dual emission) ────────
         try:
@@ -865,7 +865,7 @@ class PromotionPipeline:
                 risk_level=result.risk_level,
             )
         except Exception:
-            pass  # Journal is non-blocking
+            log.debug("swallowed_exception", exc_info=True)
 
 
 # ── Singleton ──────────────────────────────────────────────────────────────────

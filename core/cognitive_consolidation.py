@@ -47,6 +47,7 @@ def _read_jsonl(path: Path, max_age_hours: int = 24) -> List[Dict[str, Any]]:
                         if ts > cutoff_time:
                             entries.append(entry)
                     except json.JSONDecodeError:
+                        log.debug("swallowed_exception", exc_info=True)
                         continue
     except Exception as e:
         log.warning("cognitive_consolidation.read_error", path=str(path), err=str(e))

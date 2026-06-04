@@ -264,7 +264,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Handle agent commands
                 agent_id = message.get('agent_id')
                 command = message.get('command')
-                params = message.get('params', {})
                 
                 # Simulate command execution
                 await ws_manager.handle_agent_update(agent_id, {

@@ -29,8 +29,7 @@ try:
     import structlog
     _log = structlog.get_logger("kernel.classifier")
 except ImportError:
-    import logging
-    _log = logging.getLogger("kernel.classifier")
+    _log = structlog.get_logger("kernel.classifier")
 
 
 # ── Kernel-level enums (independent of core enums) ──────────────────────────

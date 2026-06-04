@@ -147,6 +147,17 @@ class TestEnforceProductionSecrets:
 
 class TestRequireAuthGuard:
 
+    @pytest.fixture(autouse=True)
+    def _restore_deps(self):
+        # Ces tests font importlib.reload(api._deps) avec un env patché, ce qui
+        # fige les globals module (_REQUIRE_AUTH, _API_TOKEN). patch.dict restaure
+        # l'env mais PAS le module rechargé → fuite vers d'autres tests d'auth
+        # (ex. AC01). On recharge _deps après coup, l'env étant revenu au baseline
+        # conftest (JARVIS_API_TOKEN="test").
+        yield
+        import api._deps as _deps
+        importlib.reload(_deps)
+
     def test_P8_require_auth_no_token_raises_503(self):
         """JARVIS_REQUIRE_AUTH=1 + no JARVIS_API_TOKEN → HTTP 503."""
         from fastapi import HTTPException

@@ -186,7 +186,7 @@ def check_action_readiness(action_id: str) -> dict:
             if tool not in te._tools:
                 missing_tools.append(tool)
     except Exception:
-        pass  # Can't check — assume available
+        log.debug("swallowed_exception", exc_info=True)
 
     return {
         "action_id": action_id,

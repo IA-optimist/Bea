@@ -16,14 +16,14 @@ Registration (at app startup):
 from __future__ import annotations
 
 import uuid
-import logging
+import structlog
 from typing import Callable, Optional
 
 from kernel.planning.goal import (
     KernelGoal, KernelPlan, KernelPlanStep, PlanComplexity,
 )
 
-log = logging.getLogger("kernel.planning")
+log = structlog.get_logger("kernel.planning")
 
 # ── Registration slot ─────────────────────────────────────────────────────────
 _core_planner_fn: Optional[Callable[..., object]] = None

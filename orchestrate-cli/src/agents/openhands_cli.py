@@ -12,11 +12,11 @@ Features:
 import asyncio
 import json
 import subprocess
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from loguru import logger
 
 try:
-    import openhands
+    import openhands  # noqa: F401
     OPENHANDS_AVAILABLE = True
 except ImportError:
     OPENHANDS_AVAILABLE = False

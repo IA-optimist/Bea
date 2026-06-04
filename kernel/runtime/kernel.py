@@ -39,7 +39,6 @@ from __future__ import annotations
 import structlog
 log = structlog.get_logger(__name__)
 
-import logging
 import time
 import uuid
 from dataclasses import dataclass
@@ -52,7 +51,7 @@ try:
     import structlog
     log = structlog.get_logger("kernel.kernel")
 except ImportError:
-    log = logging.getLogger("kernel.kernel")
+    log = structlog.get_logger("kernel.kernel")
 
 # ── Registration slot for execution backend ───────────────────────────────────
 # MetaOrchestrator registers itself here at boot.

@@ -68,8 +68,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -481,7 +480,7 @@ class PatchGenerator:
                 if "except:" in line and i + 1 < len(lines) and "pass" in lines[i + 1].strip():
                     indent = len(line) - len(line.lstrip())
                     new_lines.append(f"{' ' * indent}except Exception as _e:")
-                    new_lines.append(f"{' ' * (indent + 4)}import logging; logging.getLogger(__name__).debug('suppressed: %s', _e)")
+                    new_lines.append(f"{' ' * (indent + 4)}import logging; structlog.get_logger(__name__).debug('suppressed: %s', _e)")
                     i += 2  # skip the pass line
                     changed = True
                 else:
@@ -1129,7 +1128,7 @@ class JarvisImprovementLoop:
                 reason=f"Files: {', '.join(files[:3])} | Score: {score:.2f}",
             )
         except Exception:
-            pass  # Fail-open — notification is best-effort
+            log.debug("swallowed_exception", exc_info=True)
 
     def get_pending_reviews(self) -> list[dict]:
         return list(self._pending_reviews)

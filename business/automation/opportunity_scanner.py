@@ -31,11 +31,12 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import asyncio
 
+import structlog
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
 
 

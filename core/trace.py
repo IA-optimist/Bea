@@ -43,7 +43,7 @@ class MissionTrace:
             with open(self._file, "a") as f:
                 f.write(json.dumps(entry, default=str) + "\n")
         except Exception:
-            pass  # tracing must never crash the system
+            log.debug("swallowed_exception", exc_info=True)
 
     def get_events(self, component: str | None = None, limit: int = 100) -> list[dict]:
         """Read trace events, optionally filtered by component."""
@@ -62,6 +62,7 @@ class MissionTrace:
                             continue
                         events.append(entry)
                     except json.JSONDecodeError:
+                        log.debug("swallowed_exception", exc_info=True)
                         continue
         except Exception as _exc:
             log.warning("swallowed_exception", action="trace_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

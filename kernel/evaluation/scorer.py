@@ -40,8 +40,7 @@ try:
     import structlog
     _log = structlog.get_logger("kernel.evaluation")
 except ImportError:
-    import logging
-    _log = logging.getLogger("kernel.evaluation")
+    _log = structlog.get_logger("kernel.evaluation")
 
 
 # ── KernelScore — unified evaluation result ───────────────────────────────────

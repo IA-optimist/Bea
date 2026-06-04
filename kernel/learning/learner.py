@@ -24,12 +24,12 @@ Registration (at app startup — in main.py):
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from typing import Callable, Optional
 
 from kernel.learning.lesson import KernelLesson
 
-log = logging.getLogger("kernel.learning")
+log = structlog.get_logger("kernel.learning")
 
 # ── Registration slot ─────────────────────────────────────────────────────────
 _lesson_store_fn: Optional[Callable[..., bool]] = None

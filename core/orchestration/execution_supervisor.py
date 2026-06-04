@@ -101,7 +101,7 @@ async def supervise(
             outcome.success = True
             return outcome
     except Exception:
-        pass
+        log.debug("swallowed_exception", exc_info=True)
 
     log.info(
         "mission_started",

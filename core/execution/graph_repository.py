@@ -64,7 +64,7 @@ class GraphRepository:
             path = self._dir / f"{graph.graph_id}.json"
             tmp = path.with_suffix(".tmp")
             tmp.write_text(json.dumps(graph.to_dict(), indent=2))
-            tmp.rename(path)
+            tmp.replace(path)
             self._update_index(graph)
             return True
         except Exception as e:
@@ -155,7 +155,7 @@ class GraphRepository:
                 "graphs": {gid: g.to_dict() for gid, g in self._index.items()},
             }
             tmp.write_text(json.dumps(data, indent=2))
-            tmp.rename(path)
+            tmp.replace(path)
         except Exception as _exc:
             log.warning("swallowed_exception", action="graph_repository_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 

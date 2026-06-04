@@ -13,13 +13,13 @@ from __future__ import annotations
 
 import os
 import re
-import logging
+import structlog
 import subprocess  # nosec B404
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
 
-log = logging.getLogger("jarvis.tools.file")
+log = structlog.get_logger("jarvis.tools.file")
 
 _WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "/app/workspace"))
 _MAX_READ_CHARS = 100_000
@@ -179,6 +179,7 @@ def _search_in_files_python(root: Path, pattern: str) -> str:
                         matches.append("\n[truncated at 200 matches]")
                         return "\n".join(matches)
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     return "\n".join(matches) if matches else f"No matches found for '{pattern}'"
@@ -284,6 +285,7 @@ def count_lines(path: str = "", **kw) -> str:
             total += c
             file_counts.append((str(fpath.relative_to(_WORKSPACE)), c))
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     file_counts.sort(key=lambda x: -x[1])

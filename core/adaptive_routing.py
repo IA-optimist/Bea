@@ -29,8 +29,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 CALIBRATION_INTERVAL = int(__import__("os").environ.get("ROUTING_CALIBRATION_INTERVAL", "50"))

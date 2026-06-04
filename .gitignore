@@ -196,3 +196,7 @@ workspace/*.db
 workspace/*.db-*
 core/causal_graph.json
 .venv-c4-prep/
+
+# Bot Telegram runtime
+scripts/.bea_bot.pid
+*.pid

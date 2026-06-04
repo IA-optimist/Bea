@@ -421,7 +421,7 @@ class CanonicalAgentRuntime:
                 for cap, agent_id in CAPABILITY_TO_AGENT.items()
             }
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
         return self_model_data
 
     def enrich_routing_decision(self, capability: str, decision: dict) -> dict:
@@ -434,7 +434,7 @@ class CanonicalAgentRuntime:
                 decision["canonical_llm_role"] = agent.llm_role
                 decision["canonical_risk_level"] = agent.risk_level
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
         return decision
 
     def should_require_approval(self, capability: str) -> bool:

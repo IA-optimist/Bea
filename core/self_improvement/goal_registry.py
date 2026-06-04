@@ -7,11 +7,11 @@ Rejects vague or unmeasurable goals.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 
-log = logging.getLogger("jarvis.improvement.goals")
+log = structlog.get_logger("jarvis.improvement.goals")
 
 
 @dataclass(frozen=True)

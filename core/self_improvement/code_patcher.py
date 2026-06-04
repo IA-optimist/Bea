@@ -353,7 +353,7 @@ class CodePatcher:
             if consistency_warnings:
                 patch.metadata["consistency_warnings"] = consistency_warnings
         except Exception:
-            pass  # fail-open: don't block patching
+            log.debug("swallowed_exception", exc_info=True)
 
         # Generate rollback instructions
         patch.rollback_instructions = (

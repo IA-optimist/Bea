@@ -123,7 +123,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
                     with open(fpath, "r", encoding="utf-8", errors="replace") as f:
                         for lineno, line in enumerate(f, 1):
                             if compiled.search(line):
-                                rel = os.path.relpath(fpath, _REPO_ROOT)
+                                rel = os.path.relpath(fpath, _REPO_ROOT).replace(os.sep, "/")
                                 matches.append({
                                     "file": rel,
                                     "line": lineno,
@@ -132,6 +132,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
                                 if len(matches) >= _MAX_GREP_RESULTS:
                                     break
                 except (PermissionError, OSError):
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
                 if len(matches) >= _MAX_GREP_RESULTS:
                     break
@@ -212,7 +213,7 @@ def list_directory(path: str = "", max_items: int = 50) -> dict:
         for entry in sorted(target.iterdir())[:max_items]:
             if entry.name.startswith(".") or entry.name in _SKIP_DIRS:
                 continue
-            rel = str(entry.relative_to(_REPO_ROOT))
+            rel = entry.relative_to(_REPO_ROOT).as_posix()
             if entry.is_dir():
                 items.append(f"{rel}/")
             else:
@@ -425,11 +426,11 @@ def build_agent_context(goal: str, max_chars: int = 6000) -> str:
                         fname = pyfile.stem.lower()
                         if any(k in fname for k in keywords):
                             result = read_file(
-                                str(pyfile.relative_to(_REPO_ROOT)),
+                                pyfile.relative_to(_REPO_ROOT).as_posix(),
                                 max_lines=80
                             )
                             if result["ok"]:
-                                rel = str(pyfile.relative_to(_REPO_ROOT))
+                                rel = pyfile.relative_to(_REPO_ROOT).as_posix()
                                 parts.append(
                                     f"### {rel} ({result['total_lines']}L)\n"
                                     f"```python\n{result['content']}\n```"
@@ -438,6 +439,7 @@ def build_agent_context(goal: str, max_chars: int = 6000) -> str:
                                 if len(parts) >= 2 or total_chars > max_chars:
                                     break
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
 
         # 4. Add git status for situational awareness (only for code tasks)

@@ -170,7 +170,7 @@ class ModelCatalog:
                     "model_count": len(self._models),
                     "models": [m.to_dict() for m in self._models.values()],
                 }, f)
-            tmp.rename(self._path)
+            tmp.replace(self._path)
         except Exception as e:
             log.debug("catalog_cache_save_failed", err=str(e)[:80])
 

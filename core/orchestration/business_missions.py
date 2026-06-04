@@ -140,14 +140,19 @@ async def handle_build_product(
     builder = ProductBuilder()
     
     # Create product spec
+    _pain = opportunity.get("pain_points", []) or []
+    _desc = opportunity.get("description", "")
+    if _pain:
+        _desc = (_desc + "\n\nPain points: " + "; ".join(str(p) for p in _pain)).strip()
     spec = ProductSpec(
         name=opportunity.get("title", "Unknown Product"),
-        description=opportunity.get("description", ""),
-        target_market=opportunity.get("tags", []),
-        pain_points=opportunity.get("pain_points", []),
+        tagline="",
+        description=_desc,
         features=features,
-        stack=stack,
+        target_audience=", ".join(opportunity.get("tags", []) or []),
         pricing_model="subscription",
+        pricing_tiers=[],
+        tech_stack=stack if isinstance(stack, dict) else {"stack": str(stack)},
     )
     
     # Build product

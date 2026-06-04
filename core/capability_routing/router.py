@@ -89,7 +89,7 @@ def route_mission(
                 d.metadata["canonical_agent"] = agent_id.value
                 d.metadata["canonical_llm_role"] = runtime.get_llm_role_for_capability(d.capability_id)
     except Exception:
-        pass  # fail-open
+        log.debug("swallowed_exception", exc_info=True)
 
     # Enrich decisions with domain skill context (fail-open)
     try:
@@ -152,7 +152,7 @@ def _route_single(
         from kernel.convergence.performance_routing import enrich_providers
         enrich_providers(candidates)
     except Exception:
-        pass  # Scoring proceeds with original reliability values
+        log.debug("swallowed_exception", exc_info=True)
 
     # Score all candidates
     scored = rank_providers(candidates, requirement)

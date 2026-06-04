@@ -112,14 +112,12 @@ class DockerSandbox(DesktopEnvironment):
                 read_only=True,
             )
         except Exception as _img_e:
-            if "ImageNotFound" not in type(_img_e).__name__: raise
-            _dummy = None  # noqa
+            if "ImageNotFound" not in type(_img_e).__name__:
+                log.error("sandbox_start_failed", err=str(_img_e)[:100])
+                raise
             log.info("sandbox_pulling_image", image=self.image)
             self._client.images.pull(self.image)
             self.start()  # Ré-essaie après pull
-        except Exception as e:
-            log.error("sandbox_start_failed", err=str(e)[:100])
-            raise
 
     def sync_to_host(self) -> None:
         """

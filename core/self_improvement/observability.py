@@ -28,8 +28,7 @@ try:
     import structlog
     log = structlog.get_logger("self_improvement")
 except ImportError:
-    import logging
-    log = logging.getLogger("self_improvement")
+    log = structlog.get_logger("self_improvement")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -158,7 +157,7 @@ class SIObservability:
                 lessons_learned=[f"Patch {patch_id}: {result}"],
             )
         except Exception:
-            pass  # Fail-open: cognitive bridge is optional
+            log.debug("swallowed_exception", exc_info=True)
 
     # ── Query ──
 

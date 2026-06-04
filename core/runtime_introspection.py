@@ -47,8 +47,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -746,7 +745,7 @@ def record_execution_signal(
         if len(_SIGNAL_BUFFER) > _MAX_SIGNALS:
             del _SIGNAL_BUFFER[:_MAX_SIGNALS // 5]  # drop 20%
     except Exception:
-        pass  # signal recording must never crash anything
+        log.debug("swallowed_exception", exc_info=True)
 
 
 def get_execution_signals(

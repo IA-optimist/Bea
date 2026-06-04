@@ -6,11 +6,11 @@ Coexists with existing orchestrator — use USE_LANGGRAPH=true to activate.
 NOTE: AgentRunner.run(agent_name, goal, settings) — adapter la signature.
 """
 from __future__ import annotations
-import logging
+import structlog
 import os
 from typing import Any, Dict, List, Optional
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 log = logger  # alias for M3 emitter
 
 # ── Fail-open imports ─────────────────────────────────────────────────────────
@@ -112,10 +112,7 @@ def planner_node(state: JarvisState) -> JarvisState:
     """Build execution plan using existing planner."""
     try:
         from core.planner import build_plan
-        plan = build_plan(
-            objective=state["user_input"],
-            context={"conversation_history": state.get("conversation_history", [])},
-        )
+        plan = build_plan(goal=state["user_input"])
         state["plan"] = plan if isinstance(plan, dict) else {"steps": plan, "domain": "general"}
     except Exception as e:
         logger.warning("[LangGraph:planner] failed: %s", e)
@@ -162,7 +159,7 @@ async def executor_node(state: JarvisState) -> JarvisState:
             try:
                 from core.agent_runner import AgentRunner
                 runner = AgentRunner()
-                result = await runner.run(state["user_input"])
+                result = await runner.run(agent_name="default", goal=state["user_input"])
                 final_answer = result.get("final_output", "")
                 agent_outputs = result.get("agent_outputs", {})
                 logger.info("[LangGraph] executor_node: AgentRunner fallback OK")

@@ -32,8 +32,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 _silent_log = log
 
 from core.canonical_types import (
@@ -65,6 +64,7 @@ def _default_db_path() -> Path:
             test_path.unlink()
             return db_dir / _DEFAULT_DB_NAME
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     # Last-resort fallback: use /tmp (survives the session but not reboots)
