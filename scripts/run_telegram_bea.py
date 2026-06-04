@@ -102,6 +102,14 @@ TOOLS_AGENT = (
 )
 
 
+# Intention explicite « mes notes/documents » -> force le RAG (le LLM oublie parfois l'outil).
+_NOTES_HINT = _re.compile(
+    r"\b(?:mes|mon|ma)\s+(?:notes?|documents?|docs?|fiches?|projets?)\b|"
+    r"d['’]apr[eè]s mes|selon mes|dans mes notes|ma base de connaissance",
+    _re.IGNORECASE,
+)
+
+
 def _clean(text: str) -> str:
     """Retire le raisonnement interne (<analysis>/<think>) de la réponse affichée."""
     text = _re.sub(r"<analysis>.*?</analysis>", "", text or "", flags=_re.DOTALL)
@@ -156,6 +164,36 @@ def _build_handler(settings):
                 log.warning("agent_brain_failed: %s", str(e)[:160])
         return await factory.get("default").ainvoke(msgs)  # fallback local bea-v31
 
+    # Routage HYBRIDE : question conversationnelle (sans outil) -> AGENT COMPLET (cognition).
+    _api_url = os.getenv("BEA_API_URL", "http://127.0.0.1:8000").rstrip("/")
+    _api_token = os.getenv("JARVIS_API_TOKEN", "localdev")
+    _use_cognition = os.getenv("BEA_USE_COGNITION", "1") not in ("0", "false", "no", "")
+
+    async def _cognition_via_api(message: str, hist) -> dict | None:
+        """POST /api/v3/chat (cognition complète). Renvoie {response, confidence,
+        reasoning} ou None si l'API est indisponible (-> repli local)."""
+        if not _use_cognition:
+            return None
+        payload = {
+            "message": message,
+            "conversation_history": [{"role": r, "content": c} for r, c in list(hist)[-6:]],
+            "enable_self_correction": True,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=75) as c:
+                resp = await c.post(f"{_api_url}/api/v3/chat", json=payload,
+                                    headers={"X-Jarvis-Token": _api_token})
+            if resp.status_code == 200:
+                d = resp.json()
+                txt = (d.get("response") or "").strip()
+                if txt:
+                    return {"response": txt,
+                            "confidence": d.get("confidence_score"),
+                            "reasoning": d.get("reasoning_used")}
+        except Exception as e:               # noqa: BLE001
+            log.info("cognition_api_unavailable (-> local): %s", str(e)[:120])
+        return None
+
     async def _chat(chat_id: str, msg: str) -> str:
         # 1. Rappel mémoire hybride (best-effort)
         ctx = ""
@@ -207,6 +245,33 @@ def _build_handler(settings):
                 answer = getattr(resp, "content", None) or answer
             except Exception:                # noqa: BLE001
                 pass
+        # Routage HYBRIDE quand aucun outil n'a été utilisé :
+        #  - intention explicite « mes notes » -> on FORCE le RAG (le LLM oublie parfois) ;
+        #  - sinon question de raisonnement/conseil -> AGENT COMPLET (cognition).
+        cognition_used = False
+        if not tools_run and _NOTES_HINT.search(msg):
+            kres = await asyncio.to_thread(
+                run_tool, {"tool": "knowledge_search", "arguments": {"query": msg}})
+            tools_run.append("🔧 knowledge_search")
+            last_result = kres
+            if "AUCUN_RESULTAT" in kres:
+                answer = "Je n'ai rien trouvé là-dessus dans tes notes."
+            else:
+                msgs.append(HumanMessage(content=(
+                    f"<tool_result>{kres}</tool_result>\nRéponds en français à partir de ces "
+                    "extraits et cite la source.")))
+                try:
+                    resp = await _agent_invoke(msgs)
+                    answer = getattr(resp, "content", None) or answer
+                except Exception:            # noqa: BLE001
+                    answer = kres[:1500]
+        elif not tools_run:
+            cog = await _cognition_via_api(msg, h)
+            if cog:
+                answer = cog["response"]
+                cognition_used = True
+                log.info("cognition_used conf=%s reasoning=%s",
+                         cog.get("confidence"), cog.get("reasoning"))
         # Nettoyage : retire tout artefact d'appel d'outil OÙ QU'IL SOIT (balises, raccourci
         # <nom{…}>, et blob d'arguments JSON {"query":…}/{"command":…} laissé en clair).
         final = _clean(answer)
@@ -225,6 +290,8 @@ def _build_handler(settings):
             final = "(pas de réponse)"
         if tools_run:
             final = " ".join(dict.fromkeys(tools_run)) + "\n" + final
+        elif cognition_used:
+            final = "🧠 " + final          # réponse de l'agent complet (cognition)
         # 4. Mémoire court terme + hybride
         h.append(("user", msg))
         h.append(("assistant", final))
