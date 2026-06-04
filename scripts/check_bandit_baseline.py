@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         if a > b:
             marker = "!!"
         elif a < b:
-            marker = "↓ "
+            marker = "v "  # ASCII : évite UnicodeEncodeError sur stdout cp1252 (Windows)
         sys.stdout.write(f"  {marker} {tid}: baseline={b}, actual={a}\n")
 
     if not regressions:
