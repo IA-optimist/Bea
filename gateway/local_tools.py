@@ -213,6 +213,33 @@ def web_search(args: dict) -> str:
         return f"erreur: {e}"
 
 
+def _ssrf_block(url: str) -> str:
+    """Anti-SSRF : refuse les URL résolvant vers une IP interne (loopback/privée/
+    link-local/réservée — ex. 127.0.0.1, 10.x, 192.168.x, 169.254.x métadonnées cloud).
+    Renvoie un motif de refus, ou '' si l'URL est publique et autorisée."""
+    import ipaddress
+    import socket
+    from urllib.parse import urlparse
+    host = (urlparse(url if "://" in url else "https://" + url).hostname or "").lower()
+    if not host:
+        return "URL invalide"
+    if host in ("localhost", "localhost.localdomain") or host.endswith(".local"):
+        return f"adresse interne ({host})"
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except Exception:  # noqa: BLE001
+        return ""        # ne résout pas -> l'appel échouera normalement (pas un bypass)
+    for info in infos:
+        try:
+            addr = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if (addr.is_private or addr.is_loopback or addr.is_link_local
+                or addr.is_reserved or addr.is_multicast or addr.is_unspecified):
+            return f"adresse interne ({addr})"
+    return ""
+
+
 def web_fetch(args: dict) -> str:
     """Récupère et nettoie le texte d'une page web (lecture)."""
     url = (args.get("url") or args.get("u") or "").strip()
@@ -220,6 +247,9 @@ def web_fetch(args: dict) -> str:
         return "erreur: argument 'url' manquant"
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
+    _blk = _ssrf_block(url)
+    if _blk:
+        return f"REFUSÉ (SSRF): cible {_blk} — accès aux ressources internes interdit."
     try:
         import httpx
         from bs4 import BeautifulSoup
@@ -348,6 +378,9 @@ def _browser_sync(args: dict) -> str:
                 return "erreur: 'url' requis"
             if not url.startswith("http"):
                 url = "https://" + url
+            _blk = _ssrf_block(url)
+            if _blk:
+                return f"REFUSÉ (SSRF): cible {_blk} — navigation interne interdite."
             page.goto(url, timeout=30000, wait_until="domcontentloaded")
             return _truncate(f"[{page.title()}] {page.url}\n{page.inner_text('body')[:1500]}")
         if action == "click":
