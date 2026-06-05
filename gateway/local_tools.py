@@ -19,7 +19,10 @@ _MAX_OUT = 4000        # chars de sortie renvoyés au modèle
 
 # Commandes manifestement catastrophiques -> refus dur (le modèle n'est pas parfait).
 _BLOCKLIST = re.compile(
-    r"\b(rm\s+-rf\s+/|del\s+/[sq]|format\s+[a-z]:|mkfs|dd\s+if=|"
+    r"(rm\s+-rf\s+/|"
+    r"\bdel\b[^|&\n]*\s/[sq]\b|"          # del ... /s ou /q (flags dans n'importe quel ordre)
+    r"\b(rd|rmdir)\b[^|&\n]*\s/s\b|"      # rd/rmdir /s (récursif)
+    r"format\s+[a-z]:|mkfs|dd\s+if=|"
     r":\(\)\s*\{|shutdown|Remove-Item.*-Recurse.*-Force.*[A-Za-z]:\\)",
     re.IGNORECASE,
 )
