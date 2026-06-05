@@ -15,6 +15,7 @@ from __future__ import annotations
 import ast
 import json
 import os
+import re
 import subprocess  # nosec B404
 import time
 from dataclasses import dataclass, field
@@ -55,6 +56,49 @@ class ApplyResult:
             "changes": self.changes,
             "error": self.error[:300],
         }
+
+
+def _failed_tests(output: str) -> set[str]:
+    """Extrait les identifiants de tests FAILED d'une sortie pytest."""
+    return set(re.findall(r"^FAILED (\S+)", output or "", re.M)) | \
+        set(re.findall(r"(\S+::\S+)\s+FAILED", output or ""))
+
+
+def _tolerant_find_replace(original: str, find: str, replace: str) -> tuple[str, bool]:
+    """Applique find->replace. Exact d'abord, sinon match ligne-à-ligne en ignorant
+    l'indentation/whitespace de bord (le défaut le plus fréquent des FIND générés par LLM)."""
+    if find and find in original:
+        return original.replace(find, replace, 1), True
+    o_lines = original.split("\n")
+    f_lines = [ln for ln in find.strip("\n").split("\n")]
+    fs = [ln.strip() for ln in f_lines]
+    if not any(fs):
+        return original, False
+    n = len(f_lines)
+
+    def _indent(s: str) -> str:
+        return s[:len(s) - len(s.lstrip())]
+    for i in range(len(o_lines) - n + 1):
+        if all(o_lines[i + j].strip() == fs[j] for j in range(n)):
+            r_lines = replace.strip("\n").split("\n")
+            # Ré-indenter le remplacement sur l'indentation du bloc original (le LLM
+            # donne parfois un replace mal/non-indenté -> SyntaxError sinon).
+            orig_ind = _indent(o_lines[i])
+            repl_ind = _indent(next((ln for ln in r_lines if ln.strip()), ""))
+            reind = [(orig_ind + ln[len(repl_ind):]) if ln.strip() else ""
+                     for ln in r_lines]
+            return "\n".join(o_lines[:i] + reind + o_lines[i + n:]), True
+    return original, False
+
+
+def _test_pattern(file_paths: list[str]) -> str:
+    """Construit un motif pytest -k ciblé à partir des fichiers modifiés."""
+    toks: set[str] = set()
+    for fp in file_paths:
+        toks.add(Path(fp).stem)
+        toks.add(Path(fp).parent.name)
+    return " or ".join(sorted(
+        t for t in toks if len(t) > 3 and t not in ("core", "api", "src", "self", "test")))
 
 
 async def apply_proposal(proposal_id: str) -> ApplyResult:
@@ -98,6 +142,17 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
         result.error = "LLM returned no valid FIND/REPLACE blocks"
         return result
 
+    # ── 3b. Baseline tests AVANT patch (delta-gate) ───────────────
+    # On enregistre les tests ciblés déjà en échec sur le code ORIGINAL, pour ne
+    # rejeter ensuite que les NOUVEAUX échecs introduits par le patch (sinon un test
+    # flaky/pré-existant bloquerait toute amélioration valide).
+    from core.tools.repo_inspector import run_tests
+    _pattern = _test_pattern(files_to_modify)
+    try:
+        _baseline_failed = _failed_tests(run_tests("tests/", pattern=_pattern, timeout=115).get("output", ""))
+    except Exception:  # noqa: BLE001
+        _baseline_failed = set()
+
     # ── 4. Backup + apply ─────────────────────────────────────────
     backups: dict[str, str] = {}
     applied_changes = []
@@ -109,7 +164,8 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
                 continue
 
             original = full_path.read_text("utf-8")
-            if find_text not in original:
+            modified, _matched = _tolerant_find_replace(original, find_text, replace_text)
+            if not _matched:
                 log.warning("proposal_apply_find_not_found",
                             proposal_id=proposal_id, file=file_path, find=find_text[:60])
                 continue
@@ -117,7 +173,6 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
             # Sauvegarde le VRAI original une seule fois (plusieurs blocs sur le même
             # fichier ré-écraseraient le backup avec un état déjà patché -> rollback partiel).
             backups.setdefault(file_path, original)
-            modified = original.replace(find_text, replace_text, 1)
 
             # Syntax check (Python only)
             if file_path.endswith(".py"):
@@ -154,22 +209,17 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
 
     result.changes = applied_changes
 
-    # ── 5. Run tests (CIBLÉS sur les fichiers modifiés) ───────────
-    # La suite complète (~5 min) dépasse le timeout -> rollback systématique, donc
-    # aucun patch profond ne peut "land". On lance un subset pytest -k dérivé des
-    # modules touchés (rapide + pertinent). L'AST a déjà validé la syntaxe ; si aucun
-    # test pertinent n'existe, on ne bloque pas sur l'absence de test.
+    # ── 5. Run tests (DELTA-GATE : seuls les NOUVEAUX échecs rejettent) ──
     try:
-        from core.tools.repo_inspector import run_tests
-        _toks = {Path(ch["file"]).stem for ch in applied_changes}
-        _toks |= {Path(ch["file"]).parent.name for ch in applied_changes}
-        _pattern = " or ".join(sorted(
-            t for t in _toks if len(t) > 3 and t not in ("core", "api", "src", "self", "test")))
-        test_result = run_tests("tests/", pattern=_pattern, timeout=115)
-        _out = test_result.get("output", "")
-        _no_tests = ("no tests ran" in _out.lower()) or ("collected 0 items" in _out.lower())
-        result.tests_passed = bool(test_result.get("ok")) or _no_tests
-        result.tests_output = _out[:500]
+        _after = run_tests("tests/", pattern=_pattern, timeout=115)
+        _out = _after.get("output", "")
+        _after_failed = _failed_tests(_out)
+        _new_failures = _after_failed - _baseline_failed
+        # OK si le patch n'introduit AUCUN nouvel échec (les pré-existants sont tolérés).
+        result.tests_passed = not _new_failures
+        result.tests_output = (
+            f"nouveaux échecs introduits: {sorted(_new_failures)}" if _new_failures
+            else f"OK — 0 nouvel échec (baseline pré-existante: {len(_baseline_failed)})")[:500]
     except Exception as e:
         result.tests_passed = False
         result.tests_output = f"Test runner error: {str(e)[:100]}"
@@ -242,26 +292,35 @@ Files that may be modified: {', '.join(files_to_modify[:3])}
 Generate the minimal FIND/REPLACE block(s) to fix the problem."""
 
     msgs = [SystemMessage(content=system), HumanMessage(content=user)]
-    try:
-        # Modèle fort qui SUIT le format (le role 'director' -> gateway Hermes/108k ne
-        # produit pas de FIND/REPLACE propre). gpt-oss-120b OpenRouter sinon factory.
-        import os as _os
-        _or_key = _os.getenv("OPENROUTER_API_KEY", "")
-        if _or_key:
-            from langchain_openai import ChatOpenAI
-            llm = ChatOpenAI(
-                model=_os.getenv("AGENT_OR_MODEL", "openai/gpt-oss-120b:free"),
-                base_url="https://openrouter.ai/api/v1", api_key=_or_key,
-                temperature=0.0, timeout=90, max_retries=2)
-            resp = await llm.ainvoke(msgs)
-        else:
-            factory = LLMFactory(get_settings())
-            resp = await factory.safe_invoke(msgs, role="director", timeout=60.0)
-        raw = getattr(resp, "content", "") or ""
-        return _parse_patch_blocks(raw, files_to_modify)
-    except Exception as e:
-        log.warning("patch_llm_failed", err=str(e)[:80])
-        return []
+    import os as _os
+    _or_key = _os.getenv("OPENROUTER_API_KEY", "")
+    # Le LLM génère parfois un FIND qui ne matche pas exactement (non-déterminisme).
+    # On retente jusqu'à 3 fois et on ne garde que les blocs dont le FIND existe VRAIMENT.
+    for attempt in range(3):
+        try:
+            if _or_key:
+                from langchain_openai import ChatOpenAI
+                llm = ChatOpenAI(
+                    model=_os.getenv("AGENT_OR_MODEL", "openai/gpt-oss-120b:free"),
+                    base_url="https://openrouter.ai/api/v1", api_key=_or_key,
+                    temperature=0.0 if attempt == 0 else 0.4, timeout=90, max_retries=2)
+                resp = await llm.ainvoke(msgs)
+            else:
+                factory = LLMFactory(get_settings())
+                resp = await factory.safe_invoke(msgs, role="director", timeout=60.0)
+            blocks = _parse_patch_blocks(getattr(resp, "content", "") or "", files_to_modify)
+            valid = []
+            for fp, find, repl in blocks:
+                full = _REPO_ROOT / fp
+                if find and full.exists() and _tolerant_find_replace(
+                        full.read_text("utf-8"), find, repl)[1]:
+                    valid.append((fp, find, repl))
+            if valid:
+                return valid
+            log.info("patch_find_mismatch_retry", attempt=attempt, blocks=len(blocks))
+        except Exception as e:  # noqa: BLE001
+            log.warning("patch_llm_failed", err=str(e)[:80])
+    return []
 
 
 def _parse_patch_blocks(
