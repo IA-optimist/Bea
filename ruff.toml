@@ -72,6 +72,7 @@ ignore = [
 "orchestrate-mobile/**" = ["T201"] # mobile backend dev-server prints
 "scripts/ingest_knowledge.py" = ["T201"]  # CLI : ingestion RAG, stdout = interface
 "scripts/run_api_local.py" = ["T201"]     # CLI : launcher API local
+"gateway/codex_provider.py" = ["T201"]    # smoke-test CLI (__main__) : print = sortie
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic

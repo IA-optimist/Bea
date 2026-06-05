@@ -135,9 +135,10 @@ def _build_handler(settings):
     except Exception:                        # noqa: BLE001
         bus = None
 
-    # ── Cerveau agent : gpt-oss-120b -> nemotron-120b (OpenRouter) -> bea-v31 local ──
-    # Codex-gateway écarté par défaut : il boucle sur les outils (= agent Hermes complet,
-    # pas du Codex brut) + traîne ~108k tokens de contexte. Réactivable via AGENT_PRIMARY=codex.
+    # ── Cerveau agent : Codex gpt-5.5 (abonnement ChatGPT) -> gpt-oss-120b -> nemotron -> bea-v31 ──
+    # On tape le backend Codex DIRECTEMENT (gateway/codex_provider), PAS la gateway Hermes :
+    # celle-ci n'expose que l'agent `hermes-agent` complet (harness 108k + boucle d'outils) qui
+    # bouclait. CodexChat = Responses brut + system prompt de Béa. Désactivable: AGENT_PRIMARY=openrouter.
     from langchain_openai import ChatOpenAI
     _or_key = os.getenv("OPENROUTER_API_KEY", "")
 
@@ -146,12 +147,14 @@ def _build_handler(settings):
                           api_key=_or_key, temperature=0.3, timeout=90, max_retries=3)
 
     _chain = []
-    if os.getenv("AGENT_PRIMARY", "openrouter") == "codex":
-        _chain.append(ChatOpenAI(model=getattr(settings, "codex_model", "hermes-agent"),
-                                 base_url=getattr(settings, "codex_base_url",
-                                                  "http://127.0.0.1:8642/v1"),
-                                 api_key=getattr(settings, "codex_api_key", "none") or "none",
-                                 temperature=0.3, timeout=90))
+    if os.getenv("AGENT_PRIMARY", "codex") == "codex":
+        try:
+            from gateway.codex_provider import CodexChat
+            _chain.append(CodexChat(model=os.getenv("CODEX_MODEL", "gpt-5.5")))
+            log.info("cerveau primaire: Codex %s (abonnement ChatGPT Plus)",
+                     os.getenv("CODEX_MODEL", "gpt-5.5"))
+        except Exception as e:               # noqa: BLE001
+            log.warning("codex_provider indisponible (-> openrouter): %s", str(e)[:160])
     if _or_key:
         _chain.append(_or_model(os.getenv("AGENT_OR_MODEL", "openai/gpt-oss-120b:free")))
         _chain.append(_or_model(os.getenv("AGENT_OR_FALLBACK",
