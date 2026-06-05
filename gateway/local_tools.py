@@ -553,6 +553,21 @@ def parse_tool_call(text: str) -> dict | None:
                 continue
             if isinstance(args, dict):
                 return {"tool": name, "arguments": args}
+
+    # Raccourci texte : <nom_outil>valeur</nom_outil> (valeur = argument principal).
+    _PRIMARY = {"web_search": "query", "knowledge_search": "query", "web_fetch": "url",
+                "execute_shell": "command", "execute_python": "code", "read_file": "path",
+                "list_dir": "path", "grep_search": "pattern", "glob_search": "pattern",
+                "image_generate": "prompt", "delegate_task": "task"}
+    for mm in re.finditer(r"<([a-zA-Z_][a-zA-Z0-9_]*)\s*>", text):
+        name = mm.group(1)
+        if name not in _PRIMARY:
+            continue
+        rest = text[mm.end():]
+        end = rest.find(f"</{name}>")
+        content = (rest[:end] if end != -1 else rest.split("<", 1)[0]).strip()
+        if content and not content.startswith("{"):
+            return {"tool": name, "arguments": {_PRIMARY[name]: content}}
     return None
 
 
