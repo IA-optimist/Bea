@@ -157,9 +157,9 @@ class WeaknessDetector:
             tools = registry.list_tools()
 
             high_risk = [
-                t.get("name", "") for t in tools
-                if t.get("action_type", "") in ("execute", "external_api")
-                and t.get("name", "")
+                getattr(t, "name", "") for t in tools
+                if getattr(t, "action_type", "") in ("execute", "external_api")
+                and getattr(t, "name", "")
             ]
 
             if high_risk:
