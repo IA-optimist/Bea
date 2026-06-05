@@ -66,9 +66,11 @@ prometheus-client==0.19.0
 # pytest 7.4.4 → 9.0.3 (CVE-2025-71176). Validated 2026-05-29 in side-venv:
 #   - 94/94 hardening tests pass (conftest pre-imports + JARVIS_API_TOKEN
 #     env injection unchanged)
-#   - pytest-asyncio bumped to 0.25 for pytest 9 compat
+#   - pytest-asyncio 0.25 ne supporte PAS pytest 9 (exige pytest<9) -> build Docker cassé.
+#     Corrigé 2026-06-05 : pytest-asyncio 1.4.0 (1ère branche compatible pytest 9, vérifié
+#     via résolution pip "Would install pytest-9.0.3 pytest-asyncio-1.4.0").
 pytest==9.0.3
-pytest-asyncio==0.25.0
+pytest-asyncio==1.4.0
 
 # Utilities
 psutil==5.9.8
