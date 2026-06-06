@@ -48,7 +48,7 @@ def scan_hardware() -> dict:
     try:
         import psutil
         info["ram_gb"] = round(psutil.virtual_memory().total / (1024 ** 3), 1)
-    except Exception:
+    except Exception:  # nosec B110 — fail-open volontaire (détection best-effort)
         pass
     # VRAM via torch
     try:
@@ -58,12 +58,12 @@ def scan_hardware() -> dict:
             info["vram_gb"] = round(props.total_memory / (1024 ** 3), 1)
             info["gpu"] = props.name
             return info
-    except Exception:
+    except Exception:  # nosec B110 — fail-open volontaire (détection best-effort)
         pass
     # VRAM via nvidia-smi (fallback)
     try:
-        import subprocess
-        out = subprocess.run(
+        import subprocess  # nosec B404 — détection hardware locale, commande fixe
+        out = subprocess.run(  # nosec B603 B607 — argv fixe nvidia-smi, aucune entrée externe
             ["nvidia-smi", "--query-gpu=memory.total,name",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=5,
@@ -73,7 +73,7 @@ def scan_hardware() -> dict:
             mem, _, name = first.partition(",")
             info["vram_gb"] = round(float(mem.strip()) / 1024, 1)
             info["gpu"] = name.strip()
-    except Exception:
+    except Exception:  # nosec B110 — fail-open volontaire (détection best-effort)
         pass
     return info
 
