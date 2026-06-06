@@ -95,7 +95,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_local_notifications:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_local_notifications
       sha256: "674173fd3c9eda9d4c8528da2ce0ea69f161577495a9cc835a2a4ecd7eadeb35"
@@ -119,7 +119,7 @@ packages:
     source: hosted
     version: "7.2.0"
   flutter_markdown:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_markdown
       sha256: "08fb8315236099ff8e90cb87bb2b935e0a724a3af1623000a9cec930468e0f27"
@@ -231,10 +231,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "1741988757a65eb6b36abe716829688cf01910bbf91c34354ff7ec1c3de2b349"
+      sha256: "23f08335362185a5ea2ad3a4e597f1375e78bce8a040df5c600c8d3552ef2394"
       url: "https://pub.dev"
     source: hosted
-    version: "1.18.0"
+    version: "1.17.0"
   nested:
     dependency: transitive
     description:
@@ -497,5 +497,5 @@ packages:
     source: hosted
     version: "6.5.0"
 sdks:
-  dart: ">=3.6.0 <4.0.0"
-  flutter: ">=3.27.0"
+  dart: ">=3.9.0 <4.0.0"
+  flutter: ">=3.35.0"
