@@ -54,6 +54,7 @@ BACKEND_VECTOR   = "vector"
 BACKEND_PATCHES  = "patches"
 BACKEND_FAILURE  = "failures"
 BACKEND_PGVECTOR = "pgvector"
+BACKEND_FTS      = "fts"  # opt-in (JARVIS_FTS_DB), hors BACKEND_ALL
 BACKEND_ALL      = (BACKEND_STORE, BACKEND_VECTOR)
 
 
@@ -350,6 +351,33 @@ class MemoryBus:
 
     # ── Recherche ─────────────────────────────────────────────
 
+    _fts = None
+
+    @property
+    def fts(self):
+        """FTSRecall — rappel plein-texte SQLite, opt-in via env JARVIS_FTS_DB."""
+        if self._fts is None:
+            import os
+            db = os.getenv("JARVIS_FTS_DB")
+            if not db:
+                return None
+            try:
+                from memory.fts_recall import FTSRecall
+                self._fts = FTSRecall(db)
+            except Exception as e:
+                log.warning("memory_bus_fts_init_failed", err=str(e))
+                return None
+        return self._fts
+
+    async def _search_fts(self, query: str, top_k: int) -> list[dict]:
+        hits = self.fts.search(query, limit=top_k)
+        return [
+            {"id": "", "text": h.get("content", ""), "score": 0.5,
+             "metadata": {"kind": h.get("kind", ""),
+                          "session_id": h.get("session_id", "")}}
+            for h in hits
+        ]
+
     async def search(
         self,
         query:    str,
@@ -384,6 +412,9 @@ class MemoryBus:
         # Provides semantic PostgreSQL results alongside local vector results.
         if self.pgvector and self.pgvector.is_available():
             tasks.append((BACKEND_PGVECTOR, self._search_pgvector(query, top_k)))
+
+        if BACKEND_FTS in active and self.fts:
+            tasks.append((BACKEND_FTS, self._search_fts(query, top_k)))
 
         # Exécuter en parallèle
         if tasks:

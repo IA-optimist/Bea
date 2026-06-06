@@ -28,6 +28,34 @@ Tu reprends le projet **Béa / Jarvis Max**. Travaille dans : `C:\Users\maxen\Do
 - Gateway (Axe 4) : `gateway/base.py` + `gateway/runner.py` (squelette ; adaptateur Telegram concret à écrire).
 - 8 bugs `call-arg` (mauvais arguments d'appel) corrigés. Détails dans `docs/AUDIT_ROADMAP_2026-06-01.md` et `docs/ADR_HERMES_INSPIRED_2026-06-01.md`.
 
+### Modules ajoutés (additifs, testés unitairement — 59 tests verts)
+| Capacité | Module | Test |
+|---|---|---|
+| Sandbox code-exec | `core/tools/code_execution_tool.py` | `tests/test_code_execution_tool.py` |
+| Subagent délégué | `core/tools/delegate_tool.py` | `tests/test_delegate_tool.py` |
+| Programmatic tool calling | `core/tools/tool_pipeline_tool.py` | `tests/test_tool_pipeline_tool.py` |
+| Recall FTS5 | `memory/fts_recall.py` | `tests/test_fts_recall.py` |
+| Modèle utilisateur | `memory/user_model.py` | `tests/test_user_model.py` |
+| Mémoire auto-réorg | `memory/consolidator.py` | `tests/test_memory_consolidator.py` |
+| Format agentskills.io | `core/skills/agentskill_format.py` | `tests/test_agentskill_format.py` |
+| Gateway (base+runner) | `gateway/base.py`, `gateway/runner.py` | `tests/test_gateway_runner.py` |
+| Adaptateur webhook | `gateway/platforms/webhook.py` | `tests/test_gateway_webhook.py` |
+| Observabilité LLM | `core/observability/llm_tracer.py` | `tests/test_llm_tracer.py` |
+| Sorties typées | `core/structured_output.py` | `tests/test_structured_output.py` |
+
+### Déjà câblé (sûr)
+- 3 outils Axe 3 enregistrés dans `core/tool_executor.py` (loose-coupled).
+- **FTS dans MemoryBus** : backend `"fts"` dans `MemoryBus.search`, propriété lazy `fts`, **opt-in strict** (actif seulement si env `JARVIS_FTS_DB` défini ET backend `"fts"` demandé). `BACKEND_ALL` inchangé → défaut byte-identique.
+
+### Branchements opt-in RESTANTS — à faire DANS le venv avec tests (chemins chauds, non câblés à l'aveugle)
+Pour chacun : flag désactivé par défaut + fail-open + diff montré + validation avant d'appliquer.
+1. **Observabilité LLM** → `core/llm_factory.py` (`safe_invoke`, ~ligne 654) : envelopper l'appel dans `get_tracer().span(model, mission_id)` ; ajouter un accessor global `get_tracer()`. Flag `JARVIS_LLM_TRACE`.
+2. **Mémoire auto-réorg** → `night_worker/scheduler.py` (`_loop`) : appel périodique de `memory.consolidator.consolidate(...)` sur le store.
+3. **Extraction de skill en fin de mission** → `core/meta_orchestrator.py` (hook fin de mission) : `core.skills.agentskill_format.propose_skill_from_mission(...)` puis persistance via `core/skills/skill_registry.py`.
+4. **Sorties typées** → `agents/agent_output.py` : remplacer le parsing JSON ad hoc par `core.structured_output.parse_structured(...)`.
+5. **Endpoint webhook** → nouveau `api/routes/gateway_webhook.py` + `app.include_router(...)` dans `api/main.py` (~ligne 184+) ; handler = wrapper vers `meta_orchestrator.run_mission`, derrière auth + allowlist (`gateway.runner.GatewayRunner`).
+6. **UserModel dans le prompt** → assemblage du contexte côté orchestrateur : injecter `memory.user_model.UserModel(...).summary()` (tier « context », lecture seule).
+
 ## TA MISSION
 Configurer Béa pour utiliser **mon modèle « Bea v3.1 »** comme modèle de travail, **avec Codex en orchestrateur**, exactement comme c'est configuré dans mon agent **Hermes**.
 

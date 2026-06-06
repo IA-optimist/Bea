@@ -213,6 +213,23 @@ def _build_handler(settings):
         return None
 
     async def _chat(chat_id: str, msg: str) -> str:
+        # 0. Vidéo YouTube -> analyse COMPLÈTE (transcription intégrale + visuel) -> cognition
+        from gateway.youtube_analyzer import analyze_youtube, extract_video_id
+        if extract_video_id(msg):
+            res = await analyze_youtube(msg)
+            if not res.get("ok"):
+                return f"Je n'ai pas pu analyser cette vidéo : {res.get('error', 'inconnu')}"
+            q = _re.sub(r"https?://\S+", "", msg).strip() or "Analyse cette vidéo en détail."
+            ctx_yt = (f"Vidéo YouTube « {res['title']} » ({res.get('duration')}s).\n\n"
+                      f"TRANSCRIPTION INTÉGRALE :\n{res['transcript']}\n\n"
+                      f"OBSERVATIONS VISUELLES (frames réparties sur toute la durée) :\n"
+                      f"{res['visual']}\n\nDemande de l'utilisateur : {q}")
+            h_yt = history.setdefault(chat_id, [])
+            cog = await _cognition_via_api(ctx_yt, h_yt)
+            ans = cog["response"] if cog else f"{res['title']} — {res['transcript'][:1500]}"
+            h_yt.append(("user", msg))
+            h_yt.append(("assistant", ans))
+            return "📹 " + ans
         # 1. Rappel mémoire hybride (best-effort)
         ctx = ""
         if bus is not None:
@@ -492,6 +509,41 @@ async def _send_reply(client, base_url: str, chat_id: str, msg_id, text: str) ->
         await _tg(client, base_url, "sendMessage", {"chat_id": chat_id, "text": chunk})
 
 
+# ── Vision : analyse de photos via modèle multimodal OpenRouter ──
+_VISION_MODEL = os.getenv("VISION_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
+_VISION_FALLBACK = os.getenv("VISION_FALLBACK", "google/gemma-4-31b-it:free")
+
+
+async def _analyze_photo(client, adapter, file_id: str, question: str) -> str:
+    """Télécharge une photo Telegram et l'analyse via un modèle vision OpenRouter."""
+    import base64
+    rf = await client.get(f"{adapter.base_url}/getFile", params={"file_id": file_id})
+    fp = (rf.json().get("result") or {}).get("file_path")
+    if not fp:
+        return "Impossible de récupérer l'image."
+    img = await client.get(f"https://api.telegram.org/file/bot{adapter.token}/{fp}", timeout=30)
+    data_url = "data:image/jpeg;base64," + base64.b64encode(img.content).decode()
+    key = os.getenv("OPENROUTER_API_KEY", "")
+    if not key:
+        return "Clé OpenRouter absente — vision indisponible."
+    content = [{"type": "text", "text": question},
+               {"type": "image_url", "image_url": {"url": data_url}}]
+    for model in (_VISION_MODEL, _VISION_FALLBACK):
+        try:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                json={"model": model, "messages": [{"role": "user", "content": content}]},
+                headers={"Authorization": f"Bearer {key}"}, timeout=90)
+            d = resp.json()
+            txt = (((d.get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
+            if txt:
+                return txt
+            log.warning("vision_no_text %s: %s", model, str(d)[:160])
+        except Exception as e:  # noqa: BLE001
+            log.warning("vision_model_failed %s: %s", model, str(e)[:120])
+    return "Désolée, l'analyse de l'image a échoué (modèles vision indisponibles)."
+
+
 async def main() -> None:
     _load_dotenv()  # avant get_settings() : settings lit os.environ
     # Single-instance : tue l'instance précédente du bot (fin des orphelins en conflit).
@@ -521,7 +573,29 @@ async def main() -> None:
                     event = adapter.parse(upd)
                     if not event:
                         _m = upd.get("message") or upd.get("edited_message") or {}
-                        log.info("update ignoré (pas de texte — vocal/photo/autre ?) : champs=%s",
+                        # Photo -> analyse vision
+                        if _m.get("photo"):
+                            _uid = str((_m.get("from") or {}).get("id", ""))
+                            if not runner.is_authorized(_uid):
+                                continue
+                            _cid = str((_m.get("chat") or {}).get("id", ""))
+                            _q = _m.get("caption") or "Décris et analyse cette image en détail."
+                            _fid = _m["photo"][-1]["file_id"]      # plus haute résolution
+                            log.info("photo from %s (légende: %s)", _uid, _q[:60])
+                            _ph = await _tg(client, adapter.base_url, "sendMessage",
+                                            {"chat_id": _cid, "text": "🖼️ Béa analyse l'image…"})
+                            _typing = asyncio.create_task(
+                                _keep_typing(client, adapter.base_url, _cid))
+                            try:
+                                _ans = await _analyze_photo(client, adapter, _fid, _q)
+                            except Exception as _e:  # noqa: BLE001
+                                _ans = f"Erreur analyse image : {_e}"
+                            finally:
+                                _typing.cancel()
+                            await _send_reply(client, adapter.base_url, _cid,
+                                              _ph.get("message_id") if _ph else None, _ans)
+                            continue
+                        log.info("update ignoré (pas de texte — vocal/autre ?) : champs=%s",
                                  list(_m.keys()))
                         continue
                     log.info("msg from %s: %s", event.user_id, event.text[:80])

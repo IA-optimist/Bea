@@ -59,7 +59,7 @@ class _ModulesScreenState extends State<ModulesScreen>
 
   Future<void> _loadRole() async {
     try {
-      final d = await _api.getJson('/api/v2/session');
+      final d = await _api.getJson('/auth/me');
       final role = d['role']?.toString();
       if (role != null && mounted) {
         setState(() => _userRole = role);

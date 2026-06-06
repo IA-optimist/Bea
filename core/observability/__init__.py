@@ -9,17 +9,18 @@ import os
 from pathlib import Path
 
 from core.observability.llm_tracer import LLMTracer
-
-_tracer: LLMTracer | None = None
+from core.observability.llm_tracer import get_tracer as _llm_get_tracer
 
 
 def get_tracer() -> LLMTracer:
-    """Traceur LLM singleton (DB SQLite dans workspace/, override via BEA_LLM_TRACE_DB)."""
-    global _tracer
-    if _tracer is None:
-        db = os.environ.get(
-            "BEA_LLM_TRACE_DB",
-            str(Path(os.environ.get("JARVIS_ROOT", ".")) / "workspace" / "llm_traces.db"),
-        )
-        _tracer = LLMTracer(db)
-    return _tracer
+    """Traceur LLM singleton UNIQUE et PERSISTANT (workspace/llm_traces.db).
+
+    Délègue au singleton de `llm_tracer.get_tracer()` mais en pointant sa DB
+    (`JARVIS_LLM_TRACE_DB`) sur un fichier persistant, pour que toutes les voies
+    d'accès partagent le même traceur (sinon double singleton :memory:)."""
+    db = os.environ.get(
+        "BEA_LLM_TRACE_DB",
+        str(Path(os.environ.get("JARVIS_ROOT", ".")) / "workspace" / "llm_traces.db"),
+    )
+    os.environ.setdefault("JARVIS_LLM_TRACE_DB", db)
+    return _llm_get_tracer()

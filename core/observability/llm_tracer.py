@@ -104,3 +104,15 @@ class LLMTracer:
 
     def close(self) -> None:
         self._conn.close()
+
+
+_TRACER: "LLMTracer | None" = None
+
+
+def get_tracer() -> "LLMTracer":
+    """Tracer singleton du process (DB via env JARVIS_LLM_TRACE_DB, défaut :memory:)."""
+    global _TRACER
+    if _TRACER is None:
+        import os
+        _TRACER = LLMTracer(os.getenv("JARVIS_LLM_TRACE_DB", ":memory:"))
+    return _TRACER
