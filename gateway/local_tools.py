@@ -571,6 +571,14 @@ def parse_tool_call(text: str) -> dict | None:
         content = (rest[:end] if end != -1 else rest.split("<", 1)[0]).strip()
         if content and not content.startswith("{"):
             return {"tool": name, "arguments": {_PRIMARY[name]: content}}
+    # Dernier recours (structured_output / PydanticAI) : un JSON {"tool":…} noyé dans la prose.
+    try:
+        from core.structured_output import extract_json
+        d = extract_json(text)
+        if isinstance(d, dict) and d.get("tool"):
+            return {"tool": d["tool"], "arguments": d.get("arguments", {}) or {}}
+    except Exception:  # noqa: BLE001
+        pass
     return None
 
 

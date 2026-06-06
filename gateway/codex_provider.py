@@ -174,32 +174,49 @@ class CodexChat:
         if acc:
             headers["ChatGPT-Account-ID"] = acc
         text: list[str] = []
-        async with httpx.AsyncClient(timeout=self.timeout) as c:
-            async with c.stream("POST", _RESP_URL, json=body, headers=headers) as resp:
-                if resp.status_code != 200:
-                    err = (await resp.aread()).decode("utf-8", "replace")[:400]
-                    raise RuntimeError(f"codex HTTP {resp.status_code}: {err}")
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data:"):
-                        continue
-                    payload = line[5:].strip()
-                    if not payload or payload == "[DONE]":
-                        continue
-                    try:
-                        ev = json.loads(payload)
-                    except Exception:  # noqa: BLE001
-                        continue
-                    t = ev.get("type", "")
-                    if t == "response.output_text.delta":
-                        text.append(ev.get("delta", ""))
-                    elif t in ("response.failed", "error"):
-                        raise RuntimeError(f"codex event {t}: {str(ev)[:200]}")
-                    elif t == "response.completed" and not text:
-                        out = (ev.get("response", {}) or {}).get("output", []) or []
-                        for item in out:
-                            for ct in item.get("content", []) or []:
-                                if ct.get("type") == "output_text":
-                                    text.append(ct.get("text", ""))
+        usage: dict = {}
+        # Observabilité (best-effort) : latence + tokens + erreurs tracés par le span.
+        try:
+            from core.observability import get_tracer
+            _span_cm = get_tracer().span(model=self.model, mission_id="bea")
+        except Exception:  # noqa: BLE001
+            from contextlib import nullcontext
+            _span_cm = nullcontext(None)
+        with _span_cm as _sp:
+            async with httpx.AsyncClient(timeout=self.timeout) as c:
+                async with c.stream("POST", _RESP_URL, json=body, headers=headers) as resp:
+                    if resp.status_code != 200:
+                        err = (await resp.aread()).decode("utf-8", "replace")[:400]
+                        raise RuntimeError(f"codex HTTP {resp.status_code}: {err}")
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data:"):
+                            continue
+                        payload = line[5:].strip()
+                        if not payload or payload == "[DONE]":
+                            continue
+                        try:
+                            ev = json.loads(payload)
+                        except Exception:  # noqa: BLE001
+                            continue
+                        t = ev.get("type", "")
+                        if t == "response.output_text.delta":
+                            text.append(ev.get("delta", ""))
+                        elif t in ("response.failed", "error"):
+                            raise RuntimeError(f"codex event {t}: {str(ev)[:200]}")
+                        elif t == "response.completed":
+                            _r = (ev.get("response", {}) or {})
+                            usage = _r.get("usage", {}) or usage
+                            if not text:                  # backfill si pas de delta
+                                for item in _r.get("output", []) or []:
+                                    for ct in item.get("content", []) or []:
+                                        if ct.get("type") == "output_text":
+                                            text.append(ct.get("text", ""))
+            if _sp is not None:
+                try:
+                    _sp.set(prompt_tokens=int(usage.get("input_tokens", 0)),
+                            completion_tokens=int(usage.get("output_tokens", 0)))
+                except Exception:  # noqa: BLE001
+                    pass
         return _Resp("".join(text).strip())
 
 

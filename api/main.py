@@ -232,6 +232,8 @@ except Exception as _e:
 try:
     from api.routes.chat import router as chat_router
     app.include_router(chat_router)
+    from api.routes.webhook import router as webhook_router
+    app.include_router(webhook_router)
 except Exception as _e:
     log.warning("router_import_failed", err=str(_e)[:120])
 

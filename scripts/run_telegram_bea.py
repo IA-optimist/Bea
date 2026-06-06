@@ -122,12 +122,12 @@ def _clean(text: str) -> str:
 
 
 def _build_handler(settings):
-    from collections import deque
-
     from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
     factory = LLMFactory(settings)
-    history: dict[str, deque] = {}          # chat_id -> derniers tours (mémoire court terme)
+    # Liste (pas deque) pour pouvoir replier les vieux tours en synthèse (consolidator)
+    # au lieu de les jeter — mémoire de conversation bornée mais sans perte sèche.
+    history: dict[str, list] = {}           # chat_id -> derniers tours (mémoire court terme)
 
     try:                                     # mémoire hybride (best-effort, fallback gracieux)
         from memory.memory_bus import MemoryBus
@@ -181,9 +181,20 @@ def _build_handler(settings):
         reasoning} ou None si l'API est indisponible (-> repli local)."""
         if not _use_cognition:
             return None
+        # L'orchestrateur de cognition n'utilise que `goal` (=message) et IGNORE le champ
+        # `conversation_history` -> on EMBARQUE le fil récent dans le message, sinon chaque
+        # message repart de zéro (= "nouvelle discussion" à chaque message côté Telegram).
+        turns = list(hist)[-6:]
+        if turns:
+            ctx = "\n".join(
+                f"{'Béa' if r == 'assistant' else 'Utilisateur'}: {c}" for r, c in turns)
+            full = ("Historique récent de NOTRE conversation (contexte — n'y réponds pas "
+                    f"directement) :\n{ctx}\n\nNouveau message de l'utilisateur : {message}")
+        else:
+            full = message
         payload = {
-            "message": message,
-            "conversation_history": [{"role": r, "content": c} for r, c in list(hist)[-6:]],
+            "message": full,
+            "conversation_history": [{"role": r, "content": c} for r, c in turns],
             "enable_self_correction": True,
         }
         try:
@@ -213,7 +224,7 @@ def _build_handler(settings):
             except Exception:                # noqa: BLE001
                 pass
         # 2. Messages : system (avec outils réels) + historique + message courant
-        h = history.setdefault(chat_id, deque(maxlen=12))
+        h = history.setdefault(chat_id, [])
         msgs = [SystemMessage(content=TOOLS_AGENT + ctx)]
         for role, content in h:
             msgs.append(HumanMessage(content=content) if role == "user"
@@ -302,6 +313,20 @@ def _build_handler(settings):
         # 4. Mémoire court terme + hybride
         h.append(("user", msg))
         h.append(("assistant", final))
+        # Mémoire bornée (consolidator) : au-delà de 16 tours, replie les plus vieux en
+        # une synthèse au lieu de les perdre. Bulletproof : repli sûr aux 12 derniers si échec.
+        if len(h) > 16:
+            try:
+                from memory.consolidator import consolidate as _consolidate
+                items = [{"content": c, "ts": i, "role": r} for i, (r, c) in enumerate(h)]
+                folded = _consolidate(
+                    items, max_items=12,
+                    summarizer=lambda parts: "Résumé des échanges précédents : "
+                    + " | ".join(p[:120] for p in parts)[:800])
+                h[:] = [("user", "[" + it["content"] + "]") if it.get("kind") == "summary"
+                        else (it["role"], it["content"]) for it in folded]
+            except Exception:               # noqa: BLE001
+                del h[:len(h) - 12]
         if bus is not None:
             try:
                 bus.remember(f"User: {msg}\nBéa: {final}",
@@ -394,6 +419,16 @@ def _build_handler(settings):
         if text.startswith("/reset"):
             history.pop(event.chat_id, None)
             return "Fil de conversation effacé. 🧹"
+        if text.startswith(("/stats", "/cout")):
+            try:
+                from core.observability import get_tracer
+                st = get_tracer().stats()
+                lines = [f"📊 LLM : {st['calls']} appels · {st['total_tokens']} tokens · "
+                         f"erreurs {int(st['error_rate'] * 100)}% · coût ${st['cost_usd']}"]
+                lines += [f"  • {m}: {d['calls']} appels" for m, d in st["by_model"].items()]
+                return "\n".join(lines)
+            except Exception as e:  # noqa: BLE001
+                return f"stats indisponibles : {e}"
 
         # Auto-amélioration : réponse à une proposition en attente (oui/non) — prioritaire.
         if event.chat_id in _pending_improve and (_YES.match(text) or _NO.match(text)):
@@ -414,6 +449,47 @@ def _build_handler(settings):
             return f"Erreur : {e}"
 
     return handler
+
+
+# ── Indicateur de travail + réponse en UNE bulle (placeholder édité sur place) ──
+_THINKING = "🧠 Béa réfléchit…"
+
+
+async def _tg(client, base_url: str, method: str, payload: dict):
+    """Appel API Telegram ; renvoie le 'result' JSON ou None (best-effort)."""
+    try:
+        r = await client.post(f"{base_url}/{method}", json=payload)
+        d = r.json()
+        return d.get("result") if d.get("ok") else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+async def _keep_typing(client, base_url: str, chat_id: str) -> None:
+    """Maintient l'indicateur '… écrit' tant que Béa travaille (l'action dure ~5 s)."""
+    try:
+        while True:
+            await _tg(client, base_url, "sendChatAction",
+                      {"chat_id": chat_id, "action": "typing"})
+            await asyncio.sleep(4)
+    except asyncio.CancelledError:
+        pass
+
+
+async def _send_reply(client, base_url: str, chat_id: str, msg_id, text: str) -> None:
+    """Édite le placeholder avec la réponse finale (UNE seule bulle).
+    Ne découpe en messages de suite que si la réponse dépasse la limite Telegram."""
+    text = (text or "").strip() or "(aucune réponse)"
+    _MAX = 4000
+    first, rest = text[:_MAX], text[_MAX:]
+    edited = msg_id is not None and await _tg(
+        client, base_url, "editMessageText",
+        {"chat_id": chat_id, "message_id": msg_id, "text": first})
+    if not edited:                       # édition impossible -> message neuf
+        await _tg(client, base_url, "sendMessage", {"chat_id": chat_id, "text": first})
+    while rest:                          # surplus (réponses très longues) en suite
+        chunk, rest = rest[:_MAX], rest[_MAX:]
+        await _tg(client, base_url, "sendMessage", {"chat_id": chat_id, "text": chunk})
 
 
 async def main() -> None:
@@ -443,9 +519,27 @@ async def main() -> None:
                 for upd in r.json().get("result", []):
                     offset = upd["update_id"] + 1
                     event = adapter.parse(upd)
-                    if event:
-                        log.info("msg from %s: %s", event.user_id, event.text[:80])
-                        await runner.dispatch(event)
+                    if not event:
+                        _m = upd.get("message") or upd.get("edited_message") or {}
+                        log.info("update ignoré (pas de texte — vocal/photo/autre ?) : champs=%s",
+                                 list(_m.keys()))
+                        continue
+                    log.info("msg from %s: %s", event.user_id, event.text[:80])
+                    if not runner.is_authorized(event.user_id):
+                        continue                       # allowlist : ignore en silence
+                    # 1) placeholder instantané « réfléchit » (= UNE bulle, éditée ensuite)
+                    ph = await _tg(client, adapter.base_url, "sendMessage",
+                                   {"chat_id": event.chat_id, "text": _THINKING})
+                    # 2) indicateur « … écrit » maintenu pendant tout le traitement
+                    typing = asyncio.create_task(
+                        _keep_typing(client, adapter.base_url, event.chat_id))
+                    try:
+                        response = await runner.handle(event)
+                    finally:
+                        typing.cancel()
+                    # 3) la réponse REMPLACE le placeholder (pas de nouvelle section)
+                    await _send_reply(client, adapter.base_url, event.chat_id,
+                                      ph.get("message_id") if ph else None, response)
             except Exception as e:  # noqa: BLE001
                 log.warning("poll_error: %s", e)
                 await asyncio.sleep(3)
