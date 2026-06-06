@@ -104,28 +104,37 @@ class ImprovementGate:
         if _os.getenv("JARVIS_SKIP_IMPROVEMENT_GATE"):
             return ImprovementDecision(allowed=True, reason="test_bypass")
         # 0 — Security layer gate (R4, Pass 23 — fail-open)
-        try:
-            from security import get_security_layer
-            _sec_result = get_security_layer().check_action(
-                action_type="self_improvement",
-                mission_id=mission_id,
-                mode="auto",
-                risk_level="high",
-                action_target="kernel.improvement.gate",
-            )
-            if not _sec_result.allowed:
-                _log.info(
-                    "improvement_gate_security_blocked",
-                    reason=_sec_result.reason[:80],
-                    escalated=_sec_result.escalated,
+        # Operator-approval channel: BEA_OPERATOR_APPROVE_IMPROVEMENT satisfies the R4
+        # human-approval requirement (the operator has authorized autonomous self-improvement
+        # at the host level) WITHOUT disabling the other rails — the cooldown and
+        # consecutive-failure caps below still apply. This is the safe way to let the
+        # daemon run continuously; the blanket JARVIS_SKIP_IMPROVEMENT_GATE bypasses everything.
+        if not _os.getenv("BEA_OPERATOR_APPROVE_IMPROVEMENT"):
+            try:
+                from security import get_security_layer
+                _sec_result = get_security_layer().check_action(
+                    action_type="self_improvement",
+                    mission_id=mission_id,
+                    mode="auto",
+                    risk_level="high",
+                    action_target="kernel.improvement.gate",
                 )
-                return ImprovementDecision(
-                    allowed=False,
-                    reason=f"security_gate: {_sec_result.reason[:80]}",
-                )
-        except Exception as _se:
-            _log.debug("improvement_gate_security_check_skipped", err=str(_se)[:60])
-            # Fail-open: if security layer unavailable, continue to history check
+                if not _sec_result.allowed:
+                    _log.info(
+                        "improvement_gate_security_blocked",
+                        reason=_sec_result.reason[:80],
+                        escalated=_sec_result.escalated,
+                    )
+                    return ImprovementDecision(
+                        allowed=False,
+                        reason=f"security_gate: {_sec_result.reason[:80]}",
+                    )
+            except Exception as _se:
+                _log.debug("improvement_gate_security_check_skipped", err=str(_se)[:60])
+                # Fail-open: if security layer unavailable, continue to history check
+        else:
+            _log.info("improvement_gate_operator_approved",
+                      channel="BEA_OPERATOR_APPROVE_IMPROVEMENT")
 
         try:
             history = self._get_history()

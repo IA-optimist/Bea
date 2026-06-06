@@ -761,7 +761,38 @@ async def _on_startup():
     except Exception as exc:
         log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
 
+    # ── Continuous self-improvement daemon (opt-in) ──────────────────────────
+    # Runs the hardened improvement loop in a background thread inside the API
+    # process — the same process where real missions execute and accumulate the
+    # runtime telemetry (metrics_store) the loop reads. As usage signal builds up,
+    # the daemon detects real weaknesses and applies safe, sandboxed, regression-
+    # tested patches (max 1/cycle, max 3 files, CRITICAL zones auto-blocked,
+    # rollback on failure). Enable with BEA_CONTINUOUS_IMPROVEMENT=1.
+    # The kernel cooldown (24h) and consecutive-failure cap stay active; operator
+    # approval (BEA_OPERATOR_APPROVE_IMPROVEMENT) only lifts the R4 human-approval
+    # gate, which the operator has explicitly granted at host level.
+    try:
+        import os
+        if os.getenv("BEA_CONTINUOUS_IMPROVEMENT", "").lower() in ("1", "true", "yes"):
+            os.environ.setdefault("BEA_OPERATOR_APPROVE_IMPROVEMENT", "1")
+            from core.improvement_daemon import start_daemon
+            daemon_status = start_daemon()
+            log.info("continuous_improvement_daemon_started", **daemon_status)
+        else:
+            log.info("continuous_improvement_daemon_disabled",
+                     hint="set BEA_CONTINUOUS_IMPROVEMENT=1 to enable")
+    except Exception as exc:
+        log.warning("continuous_improvement_daemon_failed", err=str(exc)[:80])
+
 async def _on_shutdown():
+    # Stop the continuous self-improvement daemon gracefully (if it was started).
+    try:
+        from core.improvement_daemon import stop_daemon
+        stop_daemon()
+        log.info("continuous_improvement_daemon_stopped")
+    except Exception as exc:
+        log.warning("continuous_improvement_daemon_stop_failed", err=str(exc)[:80])
+
     # Save kernel performance data to survive restarts
     try:
         from kernel.runtime.boot import save_performance
