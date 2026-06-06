@@ -31,6 +31,12 @@ class HardcodedConfig {
     'JARVIS_API_PORT',
     defaultValue: 8000,
   );
+  // Schéma configurable (http en LAN ; passer 'https' via --dart-define quand le
+  // backend est exposé derrière le reverse proxy TLS — cf. Caddyfile racine).
+  static const String scheme = String.fromEnvironment(
+    'JARVIS_API_SCHEME',
+    defaultValue: 'http',
+  );
   static const String username = String.fromEnvironment(
     'JARVIS_USERNAME',
     defaultValue: 'admin',

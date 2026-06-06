@@ -721,10 +721,30 @@ class LLMFactory:
                         )
                     except Exception as _exc:
                         log.warning("swallowed_exception", action="gen_ctx_finish_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                # ── Traçage LLMTracer (coût/latence/tokens — flag JARVIS_LLM_TRACE) ──
+                if os.getenv("JARVIS_LLM_TRACE", "1") not in ("0", "false", "no", ""):
+                    try:
+                        from core.observability import get_tracer
+                        _um = getattr(resp, "usage_metadata", None) or {}
+                        _tu = (getattr(resp, "response_metadata", {}) or {}).get("token_usage", {}) or {}
+                        get_tracer().record(
+                            model=str(model_name), latency_ms=ms, ok=True, mission_id=session_id,
+                            prompt_tokens=int(_um.get("input_tokens", 0) or _tu.get("prompt_tokens", 0) or 0),
+                            completion_tokens=int(
+                                _um.get("output_tokens", 0) or _tu.get("completion_tokens", 0) or 0))
+                    except Exception:  # noqa: BLE001
+                        pass
                 return resp
 
             except Exception as first_err:
                 ms         = int((time.monotonic() - t0) * 1000)
+                if os.getenv("JARVIS_LLM_TRACE", "1") not in ("0", "false", "no", ""):
+                    try:
+                        from core.observability import get_tracer
+                        get_tracer().record(model=str(model_name), latency_ms=ms, ok=False,
+                                            error=str(first_err)[:200], mission_id=session_id)
+                    except Exception:  # noqa: BLE001
+                        pass
                 is_timeout = isinstance(first_err, asyncio.TimeoutError)
                 log.warning(
                     "llm_call_failed",

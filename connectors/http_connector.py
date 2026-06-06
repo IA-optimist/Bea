@@ -58,7 +58,8 @@ class HttpConnector(ConnectorBase):
                 headers={"Content-Type": "application/json"},
                 method=method,
             )
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            # nosec B310 — le schéma est validé (http/https uniquement) plus haut (l.50)
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
                 body = resp.read().decode("utf-8", errors="replace")[:1000]
                 result.success = resp.status < 400
                 result.output = {"status": resp.status, "body": body[:500]}

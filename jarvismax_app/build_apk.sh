@@ -30,12 +30,14 @@ flutter build apk --release --no-shrink
 
 APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
 if [ -f "$APK_PATH" ]; then
-    SIZE=$(du -h "$APK_PATH" | cut -f1)
+    OUT_PATH="build/app/outputs/flutter-apk/Bea_app.apk"
+    cp -f "$APK_PATH" "$OUT_PATH"
+    SIZE=$(du -h "$OUT_PATH" | cut -f1)
     echo ""
     echo "================================================================"
-    echo "  APK généré avec succès !"
+    echo "  Bea_app.apk généré avec succès !"
     echo ""
-    echo "  Chemin : $APK_PATH"
+    echo "  Chemin : $OUT_PATH"
     echo "  Taille : $SIZE"
     echo "================================================================"
 else

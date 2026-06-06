@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f17" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Béa — Contrôle</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:#0b0f17; color:#e6edf3; }
+    header { padding:14px 16px; background:#111826; position:sticky; top:0; display:flex; justify-content:space-between; align-items:center; }
+    h1 { font-size:18px; margin:0; }
+    main { padding:16px; max-width:720px; margin:0 auto; }
+    .card { background:#111826; border:1px solid #1e2a3a; border-radius:12px; padding:14px; margin-bottom:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    input { background:#0b0f17; border:1px solid #1e2a3a; color:#e6edf3; border-radius:8px; padding:10px; flex:1; min-width:120px; }
+    button { background:#2563eb; color:#fff; border:0; border-radius:8px; padding:10px 14px; font-weight:600; }
+    button.secondary { background:#1e2a3a; }
+    button.danger { background:#b91c1c; }
+    .pill { font-size:12px; padding:2px 8px; border-radius:999px; background:#1e2a3a; }
+    .muted { color:#8b98a9; font-size:13px; }
+    .mission { border-top:1px solid #1e2a3a; padding:10px 0; }
+    .ok { color:#22c55e; } .err { color:#ef4444; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Béa — Contrôle</h1>
+    <span id="conn" class="pill">déconnecté</span>
+  </header>
+  <main>
+    <div class="card">
+      <div class="row">
+        <input id="base" placeholder="https://mon-bea.example" />
+        <input id="token" placeholder="token (Bearer)" type="password" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="connect">Connecter</button>
+        <button id="refresh" class="secondary">Rafraîchir</button>
+      </div>
+      <p class="muted" id="status">—</p>
+    </div>
+    <div class="card">
+      <strong>Missions</strong>
+      <div id="missions"><p class="muted">Connecte-toi pour charger.</p></div>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -42,11 +42,12 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+copy /Y build\app\outputs\flutter-apk\app-release.apk build\app\outputs\flutter-apk\Bea_app.apk >nul
 echo.
 echo ================================================================
-echo  APK généré avec succès !
+echo  Bea_app.apk généré avec succès !
 echo.
-echo  Chemin : build\app\outputs\flutter-apk\app-release.apk
+echo  Chemin : build\app\outputs\flutter-apk\Bea_app.apk
 echo ================================================================
 echo.
 

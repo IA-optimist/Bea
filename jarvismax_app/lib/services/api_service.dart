@@ -533,6 +533,36 @@ class ApiService extends ChangeNotifier {
     }
   }
 
+  // ── Contrôle de mission (arrêt / pause / reprise) — backend déjà existant ──
+  Future<ApiResult<void>> abortMission(String id) async {
+    try {
+      await _post('/api/v2/missions/$id/abort');      // backend: missions.py
+      await _loadActions();
+      return const ApiResult.success(null);
+    } catch (e) {
+      try { await _loadActions(); } catch (_) {}
+      return ApiResult.failure(_friendly(e));
+    }
+  }
+
+  Future<ApiResult<void>> pauseMission(String id) async {
+    try {
+      await _post('/api/v1/missions/$id/pause');      // backend: mission_control.py (auth)
+      return const ApiResult.success(null);
+    } catch (e) {
+      return ApiResult.failure(_friendly(e));
+    }
+  }
+
+  Future<ApiResult<void>> resumeMission(String id) async {
+    try {
+      await _post('/api/v1/missions/$id/resume');     // backend: mission_control.py (auth)
+      return const ApiResult.success(null);
+    } catch (e) {
+      return ApiResult.failure(_friendly(e));
+    }
+  }
+
   Future<ApiResult<String>> login(String username, String password) async {
     try {
       final resp = await http.post(
