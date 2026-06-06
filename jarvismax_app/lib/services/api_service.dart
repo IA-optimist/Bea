@@ -297,7 +297,7 @@ class ApiService extends ChangeNotifier {
 
     try {
       final resp = await http.get(
-        Uri.parse('\$_base/api/v2/agents'),
+        Uri.parse('$_base/api/v2/agents'),
         headers: _authHeaders,
       ).timeout(const Duration(seconds: 5));
       if (resp.statusCode == 401) {
