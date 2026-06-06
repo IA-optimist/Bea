@@ -15,6 +15,9 @@ Messages are user-friendly (no raw error codes).
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 from api.auth import verify_token, has_permission
 from api.access_tokens import get_token_manager, AccessToken
 
@@ -55,7 +58,6 @@ _PUBLIC_PATHS = {
     "/redoc",
 }
 
-_silent_log = __import__("structlog").get_logger(__name__)
 
 # Paths that match by prefix (static files)
 _PUBLIC_PREFIXES = (
@@ -205,8 +207,8 @@ def record_mission_usage(token: AccessToken | None) -> None:
         try:
             manager = get_token_manager()
             manager._save()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='access_enforcement.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="access_enforcement_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 def get_user_friendly_error(status_code: int, detail: str = "") -> str:

@@ -66,18 +66,18 @@ class TelegramNotificationClient:
                         error_text = await response.text()
                         log.error("telegram_api_error",
                                   status=response.status,
-                                  error=error_text[:200],
+                                  err=error_text[:200],
                                   chat_id=destination)
                         return False
         
         except aiohttp.ClientError as e:
             log.error("telegram_network_error",
-                      error=str(e),
+                      err=str(e),
                       mission_id=payload.mission_id)
             return False
         except Exception as e:
             log.error("telegram_send_error",
-                      error=str(e),
+                      err=str(e),
                       mission_id=payload.mission_id)
             return False
     

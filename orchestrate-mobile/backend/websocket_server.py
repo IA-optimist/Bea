@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime
 from typing import Dict, List, Set, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -15,13 +16,21 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# CORS middleware for mobile app
+# CORS — origines explicites via env CORS_ORIGINS (csv).
+# Hardening (audit critique C1): un `allow_origins=["*"]` + `allow_credentials=True`
+# est non seulement rejeté par les navigateurs modernes, mais reste exploitable
+# depuis tout client non-browser (curl/Postman) qui ré-émet les cookies/headers.
+_cors_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # Data Models
@@ -255,7 +264,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Handle agent commands
                 agent_id = message.get('agent_id')
                 command = message.get('command')
-                params = message.get('params', {})
                 
                 # Simulate command execution
                 await ws_manager.handle_agent_update(agent_id, {

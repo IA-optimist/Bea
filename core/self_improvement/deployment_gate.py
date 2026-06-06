@@ -6,11 +6,13 @@ Module E : DeploymentGate
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 from dataclasses import asdict, dataclass
 
 from core.self_improvement.patch_builder import PatchCandidate
 from core.self_improvement.protected_paths import is_protected
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -145,8 +147,8 @@ class DeploymentGate:
         if m:
             try:
                 return float(m.group(1))
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='deployment_gate.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="deployment_gate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return 0.5
 
     def _extract_risk(self, justification: str) -> str:

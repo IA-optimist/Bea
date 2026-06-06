@@ -34,7 +34,6 @@ from __future__ import annotations
 import asyncio
 from typing import Callable, Awaitable
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -147,8 +146,8 @@ class SelfCriticMixin:
                         session.set_output(agent_name, output, success=True)
                         from api.event_emitter import emit_agent_result
                         emit_agent_result(session.session_id, agent_name, output)
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='self_critic.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="self_critic_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             except Exception as e:
                 log.warning("self_critic_revision_failed",
                             round=round_n, err=str(e))

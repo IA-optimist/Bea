@@ -7,7 +7,7 @@ It showcases the integration of multiple frameworks and AI coding assistants.
 
 import asyncio
 import json
-from typing import Dict, List, Any
+from typing import Dict, Any
 from pathlib import Path
 
 # Add src to path
@@ -240,7 +240,7 @@ class AIOrchestrationWorkflow:
         print("   🧪 Testing code...")
         
         # Use OpenHands CLI for testing
-       openhands_result = await self.orchestrator_factory.run_cli_command(
+        openhands_result = await self.orchestrator_factory.run_cli_command(
             'openhands',
             'run_tests',
             {

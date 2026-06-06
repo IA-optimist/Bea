@@ -20,7 +20,6 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("self_improvement.codebase_awareness")
 
@@ -249,8 +248,8 @@ class CodebaseAwareness:
                 try:
                     content = sibling.read_text(errors="replace")
                     sibling_patterns.append(self._detect_patterns(content))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='codebase_awareness.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="codebase_awareness_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if not sibling_patterns:
             return warnings
@@ -342,8 +341,8 @@ class CodebaseAwareness:
                 tree = ast.parse(content)
                 imports = self._extract_imports(tree)
                 self._import_cache[rel] = imports
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='codebase_awareness.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="codebase_awareness_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _iter_python_files(self):
         """Iterate all Python files in repo, excluding venv/cache."""

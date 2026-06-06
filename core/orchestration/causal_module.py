@@ -18,16 +18,29 @@ import json
 import re
 import copy
 import logging
+import structlog
 from typing import Any, Optional
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import networkx as nx
 except ImportError:
     raise ImportError("networkx is required: pip install networkx")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # alias for M3 swallowed_exception emitter
+
+
+def _demo_log(*args: Any, sep: str = " ", end: str = "\n") -> None:
+    """Structured output for the module validation harness.
+
+    The validation functions are kept for manual smoke checks, but they
+    should still flow through logging instead of writing directly to stdout.
+    """
+    message = sep.join(str(arg) for arg in args)
+    if end and end != "\n":
+        message = f"{message}{end.rstrip()}"
+    logger.warning("%s", message)
 
 
 class CausalGraph:
@@ -172,8 +185,8 @@ class CausalGraph:
             try:
                 for path in nx.all_simple_paths(self.graph, root, effect):
                     all_paths.append(path)
-            except nx.NetworkXNoPath:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except nx.NetworkXNoPath as _exc:
+                log.warning("swallowed_exception", action="path_no_route", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if not all_paths:
             direct = list(self.graph.predecessors(effect))
             return f"'{effect}' is directly caused by: {', '.join(direct)}."
@@ -344,8 +357,8 @@ class CausalLLMWrapper:
         for cause, effect in self.extract_causal_claim(response):
             try:
                 graph.add_edge(cause, effect, 0.6, "auto-extracted:llm")
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_llm", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def build_graph_from_text(self, text: str, graph: Optional[CausalGraph] = None) -> CausalGraph:
         if graph is None:
@@ -353,8 +366,8 @@ class CausalLLMWrapper:
         for cause, effect in self.extract_causal_claim(text):
             try:
                 graph.add_edge(cause, effect, 0.6, "text-extracted")
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_text", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return graph
 
 
@@ -392,8 +405,8 @@ class JarvisMaxCausalIntegration:
             try:
                 self.graph.add_edge(cause, effect, 0.5, "mission-result")
                 added.append((cause, effect))
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='causal_module.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="edge_extract_ingest", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if added:
             self.graph.save(str(self.graph_path))
             if self.qdrant_url:
@@ -415,8 +428,8 @@ class JarvisMaxCausalIntegration:
         """Alias pour ingest_mission_result()"""
         try:
             self.ingest_mission_result(text)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='causal_module.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="ingest_mission_result", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _index_to_qdrant(self, edges: list[tuple[str, str]]) -> None:
         try:
@@ -441,7 +454,7 @@ class JarvisMaxCausalIntegration:
         points = []
         for cause, effect in edges:
             text = f"{cause} causes {effect}"
-            uid = int(hashlib.md5(text.encode()).hexdigest(), 16) % (2**63)
+            uid = int(hashlib.md5(text.encode(), usedforsecurity=False).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
             
             # Generate real embeddings (768-dim) using nomic-embed-text via Ollama
@@ -508,9 +521,9 @@ def test_simpson_paradox() -> bool:
     Test 1: Simpson's Paradox Detector.
     Hospital example: severity confounds hospital<->mortality association.
     """
-    print("\n" + "=" * 60)
-    print("TEST 1: Simpson's Paradox — Hospital Example")
-    print("=" * 60)
+    _demo_log("\n" + "=" * 60)
+    _demo_log("TEST 1: Simpson's Paradox — Hospital Example")
+    _demo_log("=" * 60)
 
     g = CausalGraph()
     g.add_edge("disease_severity", "hospital_admission", 0.9, "sicker people go to hospital")
@@ -518,16 +531,16 @@ def test_simpson_paradox() -> bool:
     g.add_edge("hospital_admission", "mortality", -0.6, "hospitals reduce mortality (true protective effect)")
 
     result = g.simpson_check("hospital_admission", "mortality")
-    print(f"\nChecking: {result['association']}")
-    print(f"\n{result['warning']}")
-    print(f"\nRecommendation: {result['recommendation']}")
+    _demo_log(f"\nChecking: {result['association']}")
+    _demo_log(f"\n{result['warning']}")
+    _demo_log(f"\nRecommendation: {result['recommendation']}")
 
     assert "disease_severity" in result["confounders"], f"Expected confounder, got: {result['confounders']}"
-    print(f"\n[PASS] Confounder correctly identified: {result['confounders']}")
+    _demo_log(f"\n[PASS] Confounder correctly identified: {result['confounders']}")
 
     do_result = g.do("hospital_admission", 1.0)
-    print(f"\ndo(hospital_admission=1.0): {do_result}")
-    print("-> After do(), disease_severity no longer confounds. True effect is protective.")
+    _demo_log(f"\ndo(hospital_admission=1.0): {do_result}")
+    _demo_log("-> After do(), disease_severity no longer confounds. True effect is protective.")
     return True
 
 
@@ -537,9 +550,9 @@ def test_intervention() -> bool:
     Education -> Salary chain, confounded by family_wealth.
     do(university=1) cuts the wealth->university link, isolating the true causal effect.
     """
-    print("\n" + "=" * 60)
-    print("TEST 2: Intervention (do-operator) — Education & Salary")
-    print("=" * 60)
+    _demo_log("\n" + "=" * 60)
+    _demo_log("TEST 2: Intervention (do-operator) — Education & Salary")
+    _demo_log("=" * 60)
 
     g = CausalGraph()
     g.add_edge("family_wealth", "university_access", 0.8, "wealth enables university")
@@ -549,24 +562,24 @@ def test_intervention() -> bool:
 
     g.observe({"family_wealth": 0.2, "university_access": 0.2, "skills": 0.2, "salary": 0.3})
 
-    print("\nObservational state (low wealth):")
+    _demo_log("\nObservational state (low wealth):")
     for var in ["family_wealth", "university_access", "skills", "salary"]:
-        print(f"  {var} = {g.get_value(var)}")
+        _demo_log(f"  {var} = {g.get_value(var)}")
 
     do_result = g.do("university_access", 1.0)
-    print("\nAfter do(university_access=1.0):")
+    _demo_log("\nAfter do(university_access=1.0):")
     for var, val in do_result.items():
-        print(f"  {var} = {val}")
+        _demo_log(f"  {var} = {val}")
 
     assert "skills" in do_result, "skills should propagate downstream"
     assert "salary" in do_result, "salary should propagate downstream"
     assert do_result.get("skills", 0) > 0.5, f"Skills should increase, got: {do_result.get('skills')}"
-    print(f"\n[PASS] Intervention correctly propagates: university -> skills({do_result['skills']}) -> salary({do_result.get('salary', '?')})")
-    print("-> Note: family_wealth no longer influences university_access in this intervention.")
+    _demo_log(f"\n[PASS] Intervention correctly propagates: university -> skills({do_result['skills']}) -> salary({do_result.get('salary', '?')})")
+    _demo_log("-> Note: family_wealth no longer influences university_access in this intervention.")
 
     # Compare: pure observational vs interventional
     wealth_result = g.do("family_wealth", 0.9)
-    print(f"\nFor reference, do(family_wealth=0.9): {wealth_result}")
+    _demo_log(f"\nFor reference, do(family_wealth=0.9): {wealth_result}")
     return True
 
 
@@ -576,9 +589,9 @@ def test_counterfactual() -> bool:
     Scenario: A developer pushed buggy code -> production outage.
     Counterfactual: What if they had run tests first?
     """
-    print("\n" + "=" * 60)
-    print("TEST 3: Counterfactual — Dev Outage Scenario")
-    print("=" * 60)
+    _demo_log("\n" + "=" * 60)
+    _demo_log("TEST 3: Counterfactual — Dev Outage Scenario")
+    _demo_log("=" * 60)
 
     g = CausalGraph()
     g.add_edge("tests_run", "bugs_detected", 0.9, "tests catch bugs")
@@ -601,28 +614,28 @@ def test_counterfactual() -> bool:
     g.observe(observed)
     result = g.counterfactual(observed, alternative)
 
-    print("\nObserved world (no tests):")
+    _demo_log("\nObserved world (no tests):")
     for var, val in result["observed_world"].items():
-        print(f"  {var} = {val}")
+        _demo_log(f"  {var} = {val}")
 
-    print("\nCounterfactual world (if tests had been run):")
+    _demo_log("\nCounterfactual world (if tests had been run):")
     for var, val in result["counterfactual_world"].items():
-        print(f"  {var} = {val}")
+        _demo_log(f"  {var} = {val}")
 
-    print("\nDifferences:")
+    _demo_log("\nDifferences:")
     if result["differences"]:
         for var, diff in result["differences"].items():
-            print(f"  {var}: {diff['observed']} -> {diff['counterfactual']}")
+            _demo_log(f"  {var}: {diff['observed']} -> {diff['counterfactual']}")
     else:
-        print("  (no differences detected in propagated variables)")
+        _demo_log("  (no differences detected in propagated variables)")
 
-    print(f"\nSummary: {result['summary']}")
+    _demo_log(f"\nSummary: {result['summary']}")
 
     # Verify explanation
-    print(f"\n{g.explain('production_outage')}")
+    _demo_log(f"\n{g.explain('production_outage')}")
 
     assert result is not None, "Counterfactual should return a result"
-    print("\n[PASS] Counterfactual reasoning executed successfully.")
+    _demo_log("\n[PASS] Counterfactual reasoning executed successfully.")
     return True
 
 
@@ -630,9 +643,9 @@ def test_causal_extraction() -> bool:
     """
     Bonus Test: Causal claim extraction from natural language.
     """
-    print("\n" + "=" * 60)
-    print("TEST 4: Causal Claim Extraction from Text")
-    print("=" * 60)
+    _demo_log("\n" + "=" * 60)
+    _demo_log("TEST 4: Causal Claim Extraction from Text")
+    _demo_log("=" * 60)
 
     wrapper = CausalLLMWrapper()
     text = """
@@ -643,25 +656,25 @@ def test_causal_extraction() -> bool:
     """
 
     claims = wrapper.extract_causal_claim(text)
-    print(f"\nExtracted {len(claims)} causal claims:")
+    _demo_log(f"\nExtracted {len(claims)} causal claims:")
     for cause, effect in claims:
-        print(f"  {cause} -> {effect}")
+        _demo_log(f"  {cause} -> {effect}")
 
     g = wrapper.build_graph_from_text(text)
-    print(f"\nAuto-built graph: {g}")
-    print(g.to_summary())
+    _demo_log(f"\nAuto-built graph: {g}")
+    _demo_log(g.to_summary())
 
     assert len(claims) >= 4, f"Should extract at least 4 claims, got {len(claims)}"
-    print(f"\n[PASS] Successfully extracted {len(claims)} causal claims and built graph.")
+    _demo_log(f"\n[PASS] Successfully extracted {len(claims)} causal claims and built graph.")
     return True
 
 
 def run_all_tests():
     """Run all validation tests."""
-    print("\n" + "#" * 60)
-    print("# SCM Module — Validation Tests")
-    print("# (No LLM required — pure causal graph reasoning)")
-    print("#" * 60)
+    _demo_log("\n" + "#" * 60)
+    _demo_log("# SCM Module — Validation Tests")
+    _demo_log("# (No LLM required — pure causal graph reasoning)")
+    _demo_log("#" * 60)
 
     results = []
     for test_fn in [test_simpson_paradox, test_intervention, test_counterfactual, test_causal_extraction]:
@@ -669,20 +682,20 @@ def run_all_tests():
             ok = test_fn()
             results.append((test_fn.__name__, ok))
         except AssertionError as e:
-            print(f"\n[FAIL] {test_fn.__name__}: {e}")
+            _demo_log(f"\n[FAIL] {test_fn.__name__}: {e}")
             results.append((test_fn.__name__, False))
         except Exception as e:
-            print(f"\n[ERROR] {test_fn.__name__}: {e}")
+            _demo_log(f"\n[ERROR] {test_fn.__name__}: {e}")
             results.append((test_fn.__name__, False))
 
-    print("\n" + "=" * 60)
-    print("RESULTS SUMMARY")
-    print("=" * 60)
+    _demo_log("\n" + "=" * 60)
+    _demo_log("RESULTS SUMMARY")
+    _demo_log("=" * 60)
     passed = sum(1 for _, ok in results if ok)
     for name, ok in results:
         status = "PASS" if ok else "FAIL"
-        print(f"  [{status}] {name}")
-    print(f"\n{passed}/{len(results)} tests passed.")
+        _demo_log(f"  [{status}] {name}")
+    _demo_log(f"\n{passed}/{len(results)} tests passed.")
     return passed == len(results)
 
 

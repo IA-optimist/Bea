@@ -73,6 +73,7 @@ def load_trace(mission_id: str) -> list[TraceSegment]:
                 data=d.get("data", {}),
             ))
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
     return segments
 

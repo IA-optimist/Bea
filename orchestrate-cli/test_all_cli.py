@@ -15,7 +15,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 from loguru import logger
 
 # Add src to path
@@ -306,22 +306,22 @@ class OrchestrateTester:
             
             # Test 1: Configuration loading performance
             start_time = time.time()
-            config = self.config_loader.load()
+            self.config_loader.load()
             config_load_time = time.time() - start_time
             
             # Test 2: Orchestrator creation performance
             start_time = time.time()
-            orchestrator = self.orchestrator_factory.create('langchain')
+            self.orchestrator_factory.create('langchain')
             orchestrator_creation_time = time.time() - start_time
             
             # Test 3: Tool registry performance
             start_time = time.time()
-            tools = self.tool_registry.list_tools()
+            self.tool_registry.list_tools()
             tool_list_time = time.time() - start_time
             
             # Test 4: CLI agent access performance
             start_time = time.time()
-            agent = self.orchestrator_factory.get_cli_agent('gemini')
+            self.orchestrator_factory.get_cli_agent('gemini')
             agent_access_time = time.time() - start_time
             
             return {

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import time
 import uuid
-import logging
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
-log = logging.getLogger("jarvis.actions")
+import structlog
+
+log = structlog.get_logger("jarvis.actions")
 
 
 # ── Canonical status ──────────────────────────────────────────────────────────
@@ -201,8 +201,8 @@ class CanonicalAction:
                     **(extra or {}),
                 },
             ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='action_model.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="action_model_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Facade for legacy queue access ────────────────────────────────────────────
@@ -217,8 +217,8 @@ def get_canonical_actions(mission_id: str) -> list[CanonicalAction]:
         aq = get_action_queue()
         for a in aq.for_mission(mission_id):
             actions.append(CanonicalAction.from_legacy_action(a))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='action_model.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="action_model_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # From task_queue (if different tasks exist)
     try:
@@ -228,8 +228,8 @@ def get_canonical_actions(mission_id: str) -> list[CanonicalAction]:
         for t in tq.list_tasks():
             if getattr(t, "mission_id", "") == mission_id and t.id not in existing_ids:
                 actions.append(CanonicalAction.from_legacy_task(t))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='action_model.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="action_model_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     actions.sort(key=lambda a: a.created_at)
     return actions

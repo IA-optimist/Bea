@@ -30,7 +30,6 @@ import time
 import uuid
 import structlog
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("jarvis.research_loop")
 
@@ -305,8 +304,8 @@ class RollbackManager:
     @staticmethod
     def _get_git_sha() -> str:
         try:
-            import subprocess
-            r = subprocess.run(["git", "rev-parse", "HEAD"],
+            import subprocess  # nosec B404
+            r = subprocess.run(["git", "rev-parse", "HEAD"],  # nosec B603 B607
                                capture_output=True, text=True, timeout=3)
             return r.stdout.strip()[:12] if r.returncode == 0 else ""
         except Exception:
@@ -321,8 +320,8 @@ def collect_metrics() -> BaselineMetrics:
 
     # Test suite
     try:
-        import subprocess
-        r = subprocess.run(
+        import subprocess  # nosec B404
+        r = subprocess.run(  # nosec B603 B607
             ["python3", "-m", "pytest", "tests/", "-q", "--tb=no",
              "--ignore=tests/aios_full_battery.py", "-x"],
             capture_output=True, text=True, timeout=60, cwd="/app"
@@ -336,14 +335,14 @@ def collect_metrics() -> BaselineMetrics:
                     if p == "passed" and i > 0:
                         try:
                             m.test_count += int(parts[i - 1])
-                        except ValueError:
-                            _silent_log.debug("suppressed_exception", src='research_loop.py')
+                        except ValueError as _exc:
+                            log.warning("swallowed_exception", action="research_loop_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     if p == "failed" and i > 0:
                         try:
                             m.test_failures += int(parts[i - 1])
                             m.test_count += int(parts[i - 1])
-                        except ValueError:
-                            _silent_log.debug("suppressed_exception", src='research_loop.py')
+                        except ValueError as _exc:
+                            log.warning("swallowed_exception", action="research_loop_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         m.test_pass_rate = (m.test_count - m.test_failures) / m.test_count if m.test_count else 1.0
     except Exception as e:
         log.debug("metrics_test_failed", err=str(e)[:60])

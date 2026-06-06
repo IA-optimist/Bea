@@ -3,12 +3,12 @@ Anti tool-spam protection.
 Tracks per-task tool usage and enforces limits.
 Fail-open: if check fails, always returns (allowed=True).
 """
-import logging
+import structlog
 from collections import defaultdict
 from typing import Dict, List
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # M3 emitter alias
 
 MAX_SAME_TOOL_STREAK = 4
 MAX_RETRY_PER_TASK = 3
@@ -67,5 +67,5 @@ def reset_task(task_id: str) -> None:
     """Clear tracking state for a completed/failed task."""
     try:
         _task_tool_history.pop(task_id, None)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='anti_spam.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="anti_spam_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

@@ -18,7 +18,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -66,8 +65,8 @@ class NightScheduler:
             reports = sorted(_REPORTS_DIR.glob("night_report_*.json"), reverse=True)
             if reports:
                 return json.loads(reports[0].read_text("utf-8"))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='scheduler.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="scheduler_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return None
 
     def get_next_run(self) -> str | None:
@@ -174,8 +173,8 @@ class NightScheduler:
             for entry in list(vm._entries.values()):
                 if entry.usage_count > 5 and entry.is_active():
                     entry.boost(success=True)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='scheduler.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="scheduler_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _save_report(self, report: dict) -> None:
         """Sauvegarde le rapport JSON dans workspace/night_reports/."""

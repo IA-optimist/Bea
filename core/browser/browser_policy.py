@@ -31,7 +31,7 @@ class ActionCategory:
     DOWNLOAD = "download"
     SCREENSHOT = "screenshot"
     EXTRACT = "extract"
-    INJECT_SECRET = "inject_secret"
+    INJECT_SECRET = "inject_secret"  # nosec B105 — enum value, not a credential
     SUBMIT_FORM = "submit_form"
     EXECUTE_JS = "execute_js"
     PURCHASE = "purchase"

@@ -21,19 +21,20 @@ Design:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -137,8 +138,8 @@ class MetricsCollector:
             approvals = store.get_counter("approval_requested_total")
             if m.missions_total > 0:
                 m.approval_rate = min(1.0, approvals / max(m.missions_total, 1))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="approval_rate_compute", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _collect_tools(self, m: EvaluationMetrics) -> None:
         try:
@@ -157,8 +158,8 @@ class MetricsCollector:
             # Timeout rate
             if m.missions_total > 0:
                 m.timeout_rate = min(1.0, m.tool_timeout_count / max(m.missions_total, 1))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="timeout_rate_compute", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _collect_performance(self, m: EvaluationMetrics) -> None:
         try:
@@ -172,8 +173,8 @@ class MetricsCollector:
             cost_hist = store.get_histogram("mission_cost_usd")
             if cost_hist and cost_hist.get("count", 0) > 0:
                 m.avg_cost_usd = cost_hist.get("mean", 0)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="avg_cost_compute", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _collect_exceptions(self, m: EvaluationMetrics) -> None:
         try:
@@ -182,8 +183,8 @@ class MetricsCollector:
             failures = store.failures.top_failures(limit=50, window_s=86400)
             m.exception_count = sum(f.get("count", 0) for f in failures)
             m.unique_error_types = len(failures)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="unique_errors_count", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _collect_improvement(self, m: EvaluationMetrics) -> None:
         try:
@@ -194,8 +195,8 @@ class MetricsCollector:
             if all_lessons:
                 successes = sum(1 for l in all_lessons if l.get("result") == "success")
                 m.patch_success_rate = successes / len(all_lessons)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="patch_success_rate_compute", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -617,8 +618,8 @@ class EvaluationMemory:
                     "timestamp": s.timestamp,
                 })
             self._path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="evaluation_snapshot_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if self._path.exists():
@@ -633,8 +634,8 @@ class EvaluationMemory:
                         metrics_summary=d.get("metrics_summary", {}),
                         timestamp=d.get("timestamp", 0),
                     ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='evaluation_engine.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="evaluation_signal_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════

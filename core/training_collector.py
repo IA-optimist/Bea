@@ -238,6 +238,7 @@ def _writer_loop() -> None:
         try:
             record = _queue.get(timeout=0.5)
         except queue.Empty:
+            log.debug("swallowed_exception", exc_info=True)
             continue
         try:
             _atomic_append(_today_file(), json.dumps(record, ensure_ascii=False))
@@ -352,6 +353,7 @@ def iter_records(*, validated_only: bool = False) -> Iterable[Dict[str, Any]]:
                 try:
                     yield json.loads(line)
                 except json.JSONDecodeError:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
 
 
@@ -365,6 +367,7 @@ def validate_record(record_id: str) -> bool:
                 try:
                     rec = json.loads(line)
                 except json.JSONDecodeError:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
                 if rec.get("id") == record_id:
                     found = rec

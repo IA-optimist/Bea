@@ -24,7 +24,6 @@ import threading
 from typing import Any, Dict, List, Optional
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -142,8 +141,8 @@ class CognitiveBridge:
         if self._capability_graph and self._reputation:
             try:
                 self._capability_graph.update_reliability_from_reputation(self._reputation)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='cognitive_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="cognitive_bridge_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ──────────────────────────────────────────────────────────────
     # 1. PRE-MISSION — called before mission execution starts
@@ -302,8 +301,8 @@ class CognitiveBridge:
         if self._reputation:
             try:
                 self._reputation.save()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='cognitive_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="cognitive_bridge_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ──────────────────────────────────────────────────────────────
     # 4. DECISION SCORING — callable from any routing point

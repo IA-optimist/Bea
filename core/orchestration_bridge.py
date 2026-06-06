@@ -34,6 +34,9 @@ No modifications to MissionSystem, MetaOrchestrator, or WorkflowGraph source cod
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
 import time
 from typing import Any, Optional
@@ -42,9 +45,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
-_silent_log = log
+    log = structlog.get_logger(__name__)
 
 from core.canonical_types import (
     CanonicalMissionStatus,
@@ -188,8 +189,8 @@ class OrchestrationBridge:
             import time as _t
             try:
                 duration_ms = (_t.time() - float(ctx.created_at)) * 1000
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="compute_mission_duration_ms", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # quality: 1.0 on success, 0.0 on failure — populates avg_quality for A/B detection
         quality_score = 1.0 if success else 0.0
@@ -317,8 +318,8 @@ class OrchestrationBridge:
                     if mo_canonical.status.value in _LIVE_STATUSES:
                         self._update_cache(mo_canonical)
                         return mo_canonical
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="meta_orchestrator_canonical_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 1. Return cache if available
         if cached is not None:
@@ -333,8 +334,8 @@ class OrchestrationBridge:
                 canonical = self._ms_result_to_canonical(result)
                 self._update_cache(canonical)
                 return canonical
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_system_canonical_fetch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return None
 
@@ -383,8 +384,9 @@ class OrchestrationBridge:
                 try:
                     canonical.transition(CanonicalMissionStatus.READY)
                     self._update_cache(canonical)
-                except TransitionError:
-                    _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+                except TransitionError as _exc:
+                    log.warning("swallowed_exception", action="approve_canonical_transition",
+                                exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             log.info("bridge.approve_ok", mission_id=mission_id, note=note[:80])
             return {
@@ -441,8 +443,9 @@ class OrchestrationBridge:
                 try:
                     canonical.transition(CanonicalMissionStatus.CANCELLED)
                     self._update_cache(canonical)
-                except TransitionError:
-                    _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+                except TransitionError as _exc:
+                    log.warning("swallowed_exception", action="reject_canonical_transition",
+                                exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             log.info("bridge.reject_ok", mission_id=mission_id, note=note[:80])
             return {
@@ -481,8 +484,8 @@ class OrchestrationBridge:
                 if result.mission_id not in missions:
                     canonical = self._ms_result_to_canonical(result)
                     missions[result.mission_id] = canonical.to_dict()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="list_missions_canonical_merge", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # From MetaOrchestrator
         try:
@@ -500,8 +503,8 @@ class OrchestrationBridge:
                         ).value,
                         "source_system": "meta_orchestrator",
                     }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_status_breakdown", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Sort by most recent
         result_list = sorted(missions.values(), key=lambda x: x.get("updated_at", 0), reverse=True)
@@ -590,8 +593,8 @@ def get_orchestration_bridge() -> OrchestrationBridge:
         _bridge = OrchestrationBridge()
         try:
             log.info("orchestration_bridge.created", enabled=_bridge_enabled())
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='orchestration_bridge.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="bridge_creation_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return _bridge
 
 

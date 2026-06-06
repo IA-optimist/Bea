@@ -8,11 +8,11 @@ Does NOT replace memory_schema.py — extends it.
 """
 from __future__ import annotations
 import time
-import logging
+import structlog
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 
-log = logging.getLogger("jarvis.memory_layers")
+log = structlog.get_logger("jarvis.memory_layers")
 
 
 # ── Memory Types ─────────────────────────────────────────────────────────────

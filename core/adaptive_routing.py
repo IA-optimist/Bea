@@ -17,18 +17,19 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import functools
 import threading
 import time
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 CALIBRATION_INTERVAL = int(__import__("os").environ.get("ROUTING_CALIBRATION_INTERVAL", "50"))
@@ -569,8 +570,8 @@ def install_adaptive_routing() -> dict[str, bool]:
                 tracker = get_enhanced_tracker()
                 if tracker.should_calibrate():
                     calibrate_profiles()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='adaptive_routing.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="adaptive_routing_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         policy.record_decision = _calibrating_record
         results["auto_calibration"] = True

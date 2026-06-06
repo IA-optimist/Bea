@@ -163,12 +163,10 @@ async def update_project(
     updates.append("updated_at = NOW()")
     params.append(UUID(project_id))
     
-    query = f"""
-        UPDATE projects
-        SET {', '.join(updates)}
-        WHERE id = ${param_idx} AND deleted_at IS NULL
-        RETURNING *
-    """
+    # `updates` only contains literal column-name fragments built by this
+    # function (`"name = $1"`, etc.); values flow via `params` through
+    # asyncpg's $N placeholders. No user input reaches the f-string.
+    query = f"""UPDATE projects SET {', '.join(updates)} WHERE id = ${param_idx} AND deleted_at IS NULL RETURNING *"""  # nosec B608  # noqa: S608
     
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(query, *params)

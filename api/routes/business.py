@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
-from api._deps import get_db, _check_auth
+from api._deps import get_db, require_auth
 from core.business.portfolio_manager import PortfolioManager
 from core.cognition.lifelong_learning import LifelongLearningEngine
 
@@ -70,7 +70,7 @@ class SkillSuggestionResponse(BaseModel):
 @router.get("/performance", response_model=PortfolioSummaryResponse)
 async def get_portfolio_performance(
     db: Session = Depends(get_db),
-    _auth = Depends(_check_auth)
+    _auth = Depends(require_auth)
 ):
     """
     Get global portfolio performance metrics.
@@ -90,7 +90,7 @@ async def get_portfolio_performance(
 async def get_project_performance(
     project_id: int,
     db: Session = Depends(get_db),
-    _auth = Depends(_check_auth)
+    _auth = Depends(require_auth)
 ):
     """Get performance metrics for a specific project."""
     manager = PortfolioManager(db)
@@ -103,7 +103,7 @@ async def get_skills_library(
     validated: Optional[bool] = None,
     min_success_rate: Optional[float] = None,
     limit: int = 50,
-    _auth = Depends(_check_auth)
+    _auth = Depends(require_auth)
 ):
     """
     Get learned business skills library.
@@ -163,7 +163,7 @@ async def get_skills_library(
 @router.post("/skills/suggest", response_model=SkillSuggestionResponse)
 async def suggest_skills(
     req: SkillSuggestionRequest,
-    _auth = Depends(_check_auth)
+    _auth = Depends(require_auth)
 ):
     """
     Suggest relevant skills for a given goal.
@@ -186,7 +186,7 @@ async def suggest_skills(
 @router.get("/patterns")
 async def get_cross_project_patterns(
     db: Session = Depends(get_db),
-    _auth = Depends(_check_auth)
+    _auth = Depends(require_auth)
 ):
     """
     Get patterns across all projects.

@@ -26,7 +26,7 @@ class OpenHandsAgent(BaseAgent):
 
     async def run(self, session: JarvisSession) -> str:
         t0 = time.monotonic()
-        log.info("openhands_agent_start", sid=session.session_id)
+        log.info("openhands_agent_start", mission_id=session.session_id)
         
         try:
             client = OpenHandsLocalClient()

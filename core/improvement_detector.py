@@ -18,12 +18,12 @@ All proposals go through the approval queue — nothing auto-executes.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 import time
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger("jarvis.improvement_detector")
+logger = structlog.get_logger("jarvis.improvement_detector")
+log = logger  # alias for M3 swallowed_exception emitter
 
 
 # Rate limiter: minimum seconds between detection runs
@@ -64,8 +64,8 @@ def detect_improvements(dry_run: bool = True) -> list[dict]:
         if not is_proposals_enabled():
             logger.info("improvement_detection_disabled_by_safety")
             return []
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="detect_a_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     proposals = []
 
@@ -201,8 +201,8 @@ def _detect_tool_issues() -> list[dict]:
                     "risk_score": 2,
                 })
 
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="detect_b_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     except Exception as e:
         logger.debug("tool_issue_detection_err", err=str(e)[:60])
 
@@ -240,8 +240,8 @@ def _detect_mission_issues() -> list[dict]:
                     "risk_score": 4,
                 })
 
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="detect_c_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     except Exception as e:
         logger.debug("mission_issue_detection_err", err=str(e)[:60])
 
@@ -307,8 +307,8 @@ def _detect_agent_issues() -> list[dict]:
                             "risk_score": 2,
                         })
 
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="detect_d_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     except Exception as e:
         logger.debug("agent_issue_detection_err", err=str(e)[:60])
 
@@ -341,8 +341,8 @@ def _detect_tool_gaps() -> list[dict]:
                     "risk_score": 4,
                 })
 
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='improvement_detector.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="detect_e_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     except Exception as e:
         logger.debug("tool_gap_detection_err", err=str(e)[:60])
 

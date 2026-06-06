@@ -7,16 +7,16 @@ Objective Engine — Persistance JSON locale + Qdrant secondaire.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger("jarvis.objective_store")
+logger = structlog.get_logger("jarvis.objective_store")
+log = logger  # M3 emitter alias
 
 # ── Chemins ────────────────────────────────────────────────────────────────────
 
@@ -29,8 +29,8 @@ def _get_store_path() -> Path:
     path = Path(workspace) / "objectives"
     try:
         path.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='objective_store.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="objective_store_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return path / "objectives.json"
 
 
@@ -55,7 +55,7 @@ def _get_store_path() -> Path:
 
 # def _make_vector(text: str, dim: int = 768) -> List[float]:
 #     """Vecteur pseudo-aléatoire déterministe basé sur le hash du texte."""
-#     seed = int(hashlib.md5(text.encode("utf-8", errors="replace")).hexdigest()[:8], 16)
+#     seed = int(hashlib.md5(text.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()[:8], 16)
 #     rng = random.Random(seed)
 #     vec = [rng.gauss(0, 1) for _ in range(dim)]
 #     norm = sum(x * x for x in vec) ** 0.5

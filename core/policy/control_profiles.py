@@ -7,9 +7,9 @@ Jarvis's autonomy level. Integrates with existing policy_engine.py.
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Literal
-import logging
+import structlog
 
-log = logging.getLogger("jarvis.control")
+log = structlog.get_logger("jarvis.control")
 
 ProfileName = Literal["safe", "balanced", "autonomous"]
 

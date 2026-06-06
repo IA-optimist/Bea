@@ -121,7 +121,7 @@ class StrategicMemoryStore:
                     "records": [r.to_dict() for r in self._records[-500:]],
                     "saved_at": time.time(),
                 }, f, indent=2)
-            tmp.rename(self._path)
+            tmp.replace(self._path)
             return True
         except Exception as e:
             log.debug("strategic_memory_save_failed", err=str(e)[:80])

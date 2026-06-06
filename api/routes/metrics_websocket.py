@@ -59,7 +59,7 @@ def get_missions_metrics() -> dict:
         pending = sum(1 for m in all_missions if getattr(m.status, 'value', str(m.status)) in ('PENDING', 'AWAITING_APPROVAL', 'READY'))
         return {"total": total, "approved": approved, "done": done, "pending": pending}
     except Exception as e:
-        log.warning("missions_metrics_error", error=str(e)[:80])
+        log.warning("missions_metrics_error", err=str(e)[:80])
         return {"total": 0, "approved": 0, "done": 0, "pending": 0}
 
 
@@ -83,7 +83,7 @@ def get_revenue_metrics() -> dict:
             "daily_revenue": round(mrr / 30, 2),
         }
     except Exception as e:
-        log.warning("revenue_metrics_error", error=str(e)[:80])
+        log.warning("revenue_metrics_error", err=str(e)[:80])
         return {
             "mrr": 0,
             "arr": 0,
@@ -151,7 +151,7 @@ async def metrics_websocket(
     except Exception as e:
         log.error(
             "websocket_error",
-            error=str(e),
+            err=str(e),
             error_type=type(e).__name__
         )
     finally:

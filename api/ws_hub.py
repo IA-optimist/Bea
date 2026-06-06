@@ -27,7 +27,6 @@ from typing import Any
 
 import structlog
 from fastapi import WebSocket
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -92,8 +91,8 @@ class WsHub:
     def unsubscribe_session_sse(self, session_id: str, q: asyncio.Queue) -> None:
         try:
             self._sse_sessions[session_id].remove(q)
-        except (ValueError, KeyError):
-            _silent_log.debug("suppressed_exception", src='ws_hub.py')
+        except (ValueError, KeyError) as _exc:
+            log.warning("swallowed_exception", action="ws_hub_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def subscribe_task_sse(self, task_id: str) -> asyncio.Queue:
         q: asyncio.Queue = asyncio.Queue(maxsize=256)
@@ -103,8 +102,8 @@ class WsHub:
     def unsubscribe_task_sse(self, task_id: str, q: asyncio.Queue) -> None:
         try:
             self._sse_tasks[task_id].remove(q)
-        except (ValueError, KeyError):
-            _silent_log.debug("suppressed_exception", src='ws_hub.py')
+        except (ValueError, KeyError) as _exc:
+            log.warning("swallowed_exception", action="ws_hub_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_session_history(self, session_id: str) -> list[dict]:
         return list(self._session_buf.get(session_id, []))

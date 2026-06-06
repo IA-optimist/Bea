@@ -4,7 +4,9 @@ Exporte les interfaces principales.
 Fail-open : si un sous-module manque, les autres restent disponibles.
 """
 from __future__ import annotations
-_silent_log = __import__("structlog").get_logger(__name__)
+
+import structlog
+log = structlog.get_logger(__name__)
 
 try:
     from core.objectives.objective_models import (
@@ -13,8 +15,8 @@ try:
         ObjectiveStatus,
         SubObjectiveStatus,
     )
-except ImportError:
-    _silent_log.debug("suppressed_exception", src='__init__.py')
+except ImportError as _exc:
+    log.warning("swallowed_exception", action="objectives_import_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 try:
     from core.objectives.objective_engine import (
@@ -22,8 +24,8 @@ try:
         get_objective_engine,
         reset_engine,
     )
-except ImportError:
-    _silent_log.debug("suppressed_exception", src='__init__.py')
+except ImportError as _exc:
+    log.warning("swallowed_exception", action="objectives_import_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 try:
     from core.objectives.objective_store import (
@@ -31,13 +33,13 @@ try:
         get_objective_store,
         reset_store,
     )
-except ImportError:
-    _silent_log.debug("suppressed_exception", src='__init__.py')
+except ImportError as _exc:
+    log.warning("swallowed_exception", action="objectives_import_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 try:
     from core.objectives.objective_cleanup import run_cleanup
-except ImportError:
-    _silent_log.debug("suppressed_exception", src='__init__.py')
+except ImportError as _exc:
+    log.warning("swallowed_exception", action="objectives_import_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 __all__ = [
     "Objective",

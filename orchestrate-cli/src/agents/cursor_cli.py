@@ -11,15 +11,14 @@ Features:
 """
 
 import asyncio
-import json
 import subprocess
 from typing import Dict, List, Any, Optional
 from loguru import logger
 
 try:
-    import requests
-    import pydantic
-    from cursor import Cursor
+    import requests  # noqa: F401
+    import pydantic  # noqa: F401
+    from cursor import Cursor  # noqa: F401
     CURSOR_AVAILABLE = True
 except ImportError:
     CURSOR_AVAILABLE = False

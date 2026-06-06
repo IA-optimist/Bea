@@ -14,12 +14,11 @@ This file serves as both documentation and base class.
 from __future__ import annotations
 
 import time
-import logging
+import structlog
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
-_silent_log = __import__("structlog").get_logger(__name__)
 
-log = logging.getLogger("jarvis.tools")
+log = structlog.get_logger("jarvis.tools")
 
 
 @dataclass
@@ -59,7 +58,7 @@ class BaseTool(ABC):
 
     def safe_execute(self, **params) -> ToolResult:
         """Execute with timeout guard, error handling, and idempotency."""
-        start = time.time()
+        start = time.perf_counter()  # haute résolution (time.time() = 0 pour les ops sous-ms)
 
         # Timeout guard
         try:
@@ -71,16 +70,16 @@ class BaseTool(ABC):
         idem_key = ""
         try:
             idem_key = idempotency_key(self.name, params)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_template.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_template_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         try:
             result = self.execute(**params)
-            result.duration_ms = (time.time() - start) * 1000
+            result.duration_ms = (time.perf_counter() - start) * 1000
             result.idempotency_key = idem_key
             return result
         except Exception as exc:
-            duration = (time.time() - start) * 1000
+            duration = (time.perf_counter() - start) * 1000
             try:
                 err = JarvisError.from_exception(exc, component="tool")
                 return ToolResult(

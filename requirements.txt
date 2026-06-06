@@ -1,7 +1,8 @@
 # Core dependencies
-python-dotenv==1.0.0
+# python-dotenv 1.0.0 → 1.2.2 (CVE-2026-28684, quick close: pure-Python lib)
+python-dotenv==1.2.2
 pyyaml==6.0.1
-requests>=2.32.5
+requests==2.34.2
 
 # Database
 psycopg2-binary==2.9.9
@@ -14,11 +15,20 @@ redis==5.0.1
 celery==5.3.4
 
 # Web framework
-# fastapi 0.109.0 → 0.109.1 (PYSEC-2024-38)
-# TODO(deferred): bump fastapi 0.109 → 0.115+ pour pull starlette 0.40+
-# (CVE-2024-47874, CVE-2025-54121) — breaking: Pydantic v2 lifecycle,
-# route signatures, OAuth2 flows. À planifier en PR dédiée.
-fastapi==0.109.1
+# C4 cycle 2 (audit follow-up): bumped 0.115.6 → 0.136.3 to close three
+# more Starlette CVEs that surfaced after the C4 cycle 1 bump:
+#   - PYSEC-2026-161 (fix: starlette 1.0.1)
+#   - CVE-2025-54121 (fix: starlette 0.47.2) — was misreported as closed in C4 cycle 1
+#   - CVE-2025-62727 (fix: starlette 0.49.1)
+# Side-venv dry-run (docs/security/c4-fastapi-115-migration.md) re-ran
+# under 0.136.3 + starlette 1.2.0: 13/13 module imports clean, 84/84
+# hardening tests pass, no concrete breaks. The 1-line projects.py fix
+# from cycle 1 (response_model=None, response_class=Response) still
+# applies and continues to work.
+fastapi==0.136.3
+# Starlette pinned explicitly for supply-chain visibility; FastAPI 0.136.3
+# pulls 1.2.x transitively.
+starlette==1.2.0
 uvicorn[standard]==0.42.0
 websockets==12.0
 # python-multipart 0.0.22 → 0.0.26 (CVE-2026-40347)
@@ -26,16 +36,23 @@ python-multipart==0.0.29
 
 # Data processing
 beautifulsoup4==4.12.3
-lxml==5.1.0
+# lxml 5.1.0 → 6.1.0 (PYSEC-2026-87). Validated 2026-05-29 in side-venv:
+#   - lxml.etree + lxml.html imports clean
+#   - bs4 4.12.3 with `BeautifulSoup(..., "lxml")` parser works
+#   - 94/94 hardening tests pass under lxml 6.1.0
+lxml==6.1.0
 pandas==2.2.0
 playwright==1.41.2
 
 # Security
-# cryptography 42.0.2 → 43.0.1 (GHSA-h4gh-qq45-vh27 + PYSEC-2024-225).
-# TODO(deferred): bump to 46.0.6 pour fermer CVE-2024-12797, CVE-2026-26007,
-# CVE-2026-34073 — nécessite validation des breaking changes côté asyncpg/
-# jwt/TLS. À faire dans une PR dédiée avec tests d'intégration.
-cryptography==43.0.1
+# cryptography 43.0.1 → 46.0.6 (PYSEC-2026-35, CVE-2024-12797, CVE-2026-26007).
+# Validated 2026-05-29 in .venv-c4-prep:
+#   - 94/94 hardening tests pass
+#   - AES-GCM encrypt/decrypt round-trip OK (core/security/secret_crypto.py)
+#   - pyjwt 2.13.0 HS256 round-trip OK
+#   - asyncpg 0.31.0 imports clean (SCRAM uses cryptography ≥ 41 — no break)
+#   - Smoke harness 13/13 module imports clean
+cryptography==46.0.6
 # pyjwt 2.8.0 → 2.12.0 (CVE-2026-32597)
 pyjwt==2.12.0
 
@@ -46,10 +63,14 @@ stripe==8.0.0
 prometheus-client==0.19.0
 
 # Testing
-# TODO(deferred): pytest 7.4.4 → 9.0.3 (CVE-2025-71176). Bump major, risque
-# de breaking sur conftest/plugins ; à planifier avec un run complet ciblé.
-pytest==7.4.4
-pytest-asyncio==0.23.3
+# pytest 7.4.4 → 9.0.3 (CVE-2025-71176). Validated 2026-05-29 in side-venv:
+#   - 94/94 hardening tests pass (conftest pre-imports + JARVIS_API_TOKEN
+#     env injection unchanged)
+#   - pytest-asyncio 0.25 ne supporte PAS pytest 9 (exige pytest<9) -> build Docker cassé.
+#     Corrigé 2026-06-05 : pytest-asyncio 1.4.0 (1ère branche compatible pytest 9, vérifié
+#     via résolution pip "Would install pytest-9.0.3 pytest-asyncio-1.4.0").
+pytest==9.0.3
+pytest-asyncio==1.4.0
 
 # Utilities
 psutil==5.9.8
@@ -57,25 +78,27 @@ psutil==5.9.8
 jinja2==3.1.6
 
 # Graph / causal reasoning
-networkx>=3.2
-numpy>=1.24.0
-openai>=1.0.0
+networkx==3.6.1
+numpy==1.26.4
+openai==2.37.0
 
 # LLM & AI — required at runtime (versions aligned with requirements.lock)
 structlog==25.5.0
-langchain==1.2.15
-# langchain-core 1.2.25 → 1.2.31 (CVE-2026-40087, min requis par langchain-openai 1.1.14)
-langchain-core==1.2.31
-# langchain-openai 1.1.12 → 1.1.14 (GHSA-r7w7-9xr2-qq2r)
-langchain-openai==1.1.14
-langchain-community==0.4.1
-langchain-ollama==1.0.1
-langgraph==1.1.5
+# langchain stack bump 2026-05-30 (closes CVE-2026-44843 in langchain-core).
+# Resolver constraints chained the whole stack — langchain 1.3.2 requires
+# langchain-core >= 1.4.0, which is the CVE fix. Validated in side-venv:
+# 94/94 hardening tests pass, smoke harness 13/13 module imports OK.
+langchain==1.3.2
+langchain-core==1.4.0
+langchain-openai==1.2.2
+langchain-community==0.4.2
+langchain-ollama==1.1.0
+langgraph==1.2.2
 ollama==0.6.1
 qdrant-client==1.17.1
 httpx==0.27.2
 aiohttp==3.13.5
 slowapi==0.1.9
 mcp==1.27.0
-sentence-transformers>=2.7.0
-docker>=7.0.0
+sentence-transformers==5.5.0
+docker==7.1.0

@@ -27,6 +27,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import os
 import re
@@ -34,14 +37,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
 
@@ -569,6 +570,7 @@ def run_auto_discovery() -> DiscoveryReport:
                                     "line": node.lineno,
                                 })
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
     except Exception as e:
         log.debug("auto_discovery_scan_failed", err=str(e)[:100])
@@ -583,8 +585,8 @@ def run_auto_discovery() -> DiscoveryReport:
                     "tools": tools,
                     "count": len(tools),
                 })
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_export_a", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return report
 
@@ -687,7 +689,7 @@ def record_tool_outcome(
             else:
                 r.avg_duration_ms = r.avg_duration_ms * 0.9 + duration_ms * 0.1
     except Exception:
-        pass  # reliability recording must never crash
+        log.debug("swallowed_exception", exc_info=True)
 
 
 def get_tool_reliability(tool_name: Optional[str] = None) -> dict:
@@ -936,8 +938,8 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     affected=[unavail["tool"]],
                     suggestion=f"Install missing dependency for {unavail['tool']}.",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_export_b", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         # 2. Tool failure clusters
@@ -950,8 +952,8 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     affected=[name],
                     suggestion=f"Investigate failures: {rel.last_error[:100]}",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_export_c", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         # 3. Missing capabilities — domains with zero available tools
@@ -970,8 +972,8 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     affected=sorted(domain_tools),
                     suggestion=f"Install dependencies for {domain} domain tools.",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_export_d", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         # 4. Coverage gaps — mission types with few available tools
@@ -988,8 +990,8 @@ def detect_capability_gaps() -> list[CapabilityGap]:
                     affected=tool_names,
                     suggestion=f"Ensure dependencies for {mission} tools are installed.",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_export_e", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return gaps
 
@@ -1068,7 +1070,7 @@ def export_artifacts(output_dir: str = "workspace") -> dict:
 
     try:
         log.info("capability_artifacts_exported", files=list(produced.keys()))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_intelligence.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_artifacts_export", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return produced

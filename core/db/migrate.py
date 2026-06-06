@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -40,7 +39,7 @@ def _get_db_connection():
         )
         return conn
     except Exception as e:
-        log.error("db_connection_failed", error=str(e))
+        log.error("db_connection_failed", err=str(e))
         raise
 
 
@@ -62,7 +61,7 @@ def _ensure_migration_table(conn) -> None:
         log.debug("migration_table_ensured")
     except Exception as e:
         conn.rollback()
-        log.error("migration_table_creation_failed", error=str(e))
+        log.error("migration_table_creation_failed", err=str(e))
         raise
 
 
@@ -74,7 +73,7 @@ def get_applied_migrations(conn) -> set[str]:
         results = cur.fetchall()
         return {row[0] for row in results}
     except Exception as e:
-        log.error("get_applied_migrations_failed", error=str(e))
+        log.error("get_applied_migrations_failed", err=str(e))
         return set()
 
 
@@ -168,7 +167,7 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
     except Exception as e:
         conn.rollback()
         error_msg = str(e)
-        log.error("migration_failed", name=migration_name, error=error_msg)
+        log.error("migration_failed", name=migration_name, err=error_msg)
         
         # Record failure in history
         try:
@@ -180,8 +179,8 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
                 SET success = false, error_message = EXCLUDED.error_message
             """, (migration_name, error_msg))
             conn.commit()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='migrate.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="migrate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         
         return False, error_msg
 
@@ -247,7 +246,7 @@ def run_migrations(dry_run: bool = False, target_migration: Optional[str] = None
         return results
         
     except Exception as e:
-        log.error("migration_run_failed", error=str(e))
+        log.error("migration_run_failed", err=str(e))
         results["errors"].append({"migration": "system", "error": str(e)})
         return results
     finally:
@@ -297,7 +296,7 @@ def get_migration_status() -> dict:
         }
         
     except Exception as e:
-        log.error("get_migration_status_failed", error=str(e))
+        log.error("get_migration_status_failed", err=str(e))
         return {
             "error": str(e),
             "total_migrations": 0,

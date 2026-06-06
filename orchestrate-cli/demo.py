@@ -12,7 +12,7 @@ This script demonstrates the power of Orchestrate CLI by showing:
 import asyncio
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add src to path
 import sys

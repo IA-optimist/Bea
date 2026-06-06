@@ -13,7 +13,6 @@ from enum import Enum
 from typing import Any, Callable
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("orchestration.supervisor")
 
@@ -102,7 +101,7 @@ async def supervise(
             outcome.success = True
             return outcome
     except Exception:
-        pass
+        log.debug("swallowed_exception", exc_info=True)
 
     log.info(
         "mission_started",
@@ -173,8 +172,8 @@ async def supervise(
                     action_type="execution_attempt",
                     reasoning=f"Attempt {attempt + 1} of {1 + _MAX_RETRIES}",
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='execution_supervisor.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="execution_supervisor_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         try:
             # Per-attempt timeout: prevents a hung LLM/delegate from blocking the
@@ -258,8 +257,8 @@ async def supervise(
                         metadata={"success": True, "attempts": attempt + 1,
                                   "duration_ms": outcome.duration_ms},
                     ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='execution_supervisor.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="execution_supervisor_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             log.info(
                 "mission_completed",
@@ -359,7 +358,7 @@ async def supervise(
         duration_ms=outcome.duration_ms,
         retries=outcome.retries,
         error_class=outcome.error_class,
-        error=last_error[:80],
+        err=last_error[:80],
     )
     return outcome
 

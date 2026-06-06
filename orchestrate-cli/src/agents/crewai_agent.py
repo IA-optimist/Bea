@@ -10,14 +10,13 @@ Features:
 """
 
 import asyncio
-import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from loguru import logger
 
 try:
     from crewai import Agent, Task, Crew, Process
-    from crewai.tools import BaseTool, tool
-    from crewai.memory import SharedMemories
+    from crewai.tools import BaseTool, tool  # noqa: F401
+    from crewai.memory import SharedMemories  # noqa: F401
     CREWAI_AVAILABLE = True
 except ImportError:
     CREWAI_AVAILABLE = False

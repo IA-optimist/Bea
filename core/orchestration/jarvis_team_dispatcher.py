@@ -57,7 +57,7 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
             context = f"Previous {agent_name} output:\n{result}\n\nOriginal goal: {goal}"
             log.info("jarvis_team.agent_complete", agent=agent_name, mission_id=mission_id)
         except Exception as e:
-            log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
+            log.warning("jarvis_team.agent_failed", agent=agent_name, err=str(e)[:80])
             chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
             continue
 

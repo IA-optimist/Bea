@@ -17,13 +17,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import logging
+import structlog
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # alias for M3 emitter
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -292,27 +293,27 @@ class ModuleManager:
             if a["id"] not in self._agents:
                 try:
                     self.create_agent(a)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         for s in _KNOWN_SKILLS:
             if s["id"] not in self._skills:
                 try:
                     self.create_skill(s)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         for m in _KNOWN_MCP:
             if m["id"] not in self._mcp:
                 try:
                     self.create_mcp(m)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='module_manager.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="module_manager_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Agent CRUD ──
 
     def create_agent(self, config: dict, mode: str = "simple") -> AgentConfig:
         """Create agent. mode: simple or advanced."""
-        _name_key = (config.get("name") or "") + str(time.time())
-        aid = config.get("id") or f"agent-{hashlib.md5(_name_key.encode()).hexdigest()[:8]}"
+        _name_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
+        aid = config.get("id") or f"agent-{hashlib.md5(_name_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
 
         agent = AgentConfig(
             id=aid,
@@ -379,7 +380,7 @@ class ModuleManager:
         agent = self._agents.get(agent_id)
         if not agent:
             return None
-        new_id = f"agent-{hashlib.md5(f'{agent_id}{time.time()}'.encode()).hexdigest()[:8]}"
+        new_id = f"agent-{hashlib.md5(f'{agent_id}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
         new_agent = AgentConfig(**{k: v for k, v in agent.__dict__.items()})
         new_agent.id = new_id
         new_agent.display_name = f"{agent.display_name} (Copy)"
@@ -402,8 +403,8 @@ class ModuleManager:
     # ── Skill CRUD ──
 
     def create_skill(self, config: dict) -> SkillConfig:
-        _skill_key = (config.get("name") or "") + str(time.time())
-        sid = config.get("id") or f"skill-{hashlib.md5(_skill_key.encode()).hexdigest()[:8]}"
+        _skill_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
+        sid = config.get("id") or f"skill-{hashlib.md5(_skill_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         skill = SkillConfig(
             id=sid, name=config.get("name", ""),
             description=config.get("description", ""),
@@ -466,8 +467,8 @@ class ModuleManager:
     # ── MCP CRUD ──
 
     def create_mcp(self, config: dict) -> MCPConfig:
-        _mcp_key = (config.get("name") or "") + str(time.time())
-        mid = config.get("id") or f"mcp-{hashlib.md5(_mcp_key.encode()).hexdigest()[:8]}"
+        _mcp_key = (config.get("name") or "") + str(time.time()) + uuid.uuid4().hex
+        mid = config.get("id") or f"mcp-{hashlib.md5(_mcp_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         mcp = MCPConfig(
             id=mid, display_name=config.get("name", ""),
             transport=config.get("transport", "http"),
@@ -533,8 +534,8 @@ class ModuleManager:
     # ── Connector CRUD ──
 
     def create_connector(self, config: dict) -> ConnectorConfig:
-        _conn_key = (config.get("provider") or "") + str(time.time())
-        cid = config.get("id") or f"conn-{hashlib.md5(_conn_key.encode()).hexdigest()[:8]}"
+        _conn_key = (config.get("provider") or "") + str(time.time()) + uuid.uuid4().hex
+        cid = config.get("id") or f"conn-{hashlib.md5(_conn_key.encode(), usedforsecurity=False).hexdigest()[:8]}"
         conn = ConnectorConfig(
             id=cid, provider=config.get("provider", ""),
             display_name=config.get("name", ""),
@@ -697,8 +698,8 @@ class ModuleManager:
         try:
             from core.tool_config_registry import get_config_registry
             result["dependency_health"] = get_config_registry().stats()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='module_manager.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="module_manager_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return result
 
     # ── Counts ──

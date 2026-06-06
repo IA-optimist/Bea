@@ -21,7 +21,6 @@ from core.planning.step_context import StepContext
 from core.planning.step_executor import execute_step
 from core.planning.run_state import PlanRun, RunStatus, get_run_store
 from core.planning.plan_serializer import get_plan_store
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.runner")
 
@@ -328,8 +327,8 @@ class PlanRunner:
                 payload=payload,
                 tags=["plan_runner", event],
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='plan_runner.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="plan_runner_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Kernel event emission (dual, fail-open) ──────────────
         try:
@@ -368,8 +367,8 @@ class PlanRunner:
                     kwargs["target_id"] = step.step_id
                     kwargs["action"] = f"Step '{step.name}' requires approval"
                 emit_kernel_event(kernel_type, **kwargs)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='plan_runner.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="plan_runner_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Error helper ──────────────────────────────────────────
 

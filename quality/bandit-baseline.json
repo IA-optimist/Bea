@@ -1,0 +1,31 @@
+{
+  "counts": {
+    "B110": 66,
+    "B112": 15
+  },
+  "notes": [
+    "Per-test-id count budget for Bandit findings in api/core/kernel.",
+    "Initial run on 2026-05-28 locked the current state — every count above the baseline fails CI.",
+    "Goal: ratchet downward by triaging one test-id at a time per follow-up PR.",
+    "",
+    "Test-id legend (https://bandit.readthedocs.io/en/latest/plugins/index.html):",
+    "  B104 hardcoded_bind_all_interfaces — e.g. uvicorn host=\"0.0.0.0\" in tests/scripts. Audit risk: low when bound to loopback in compose (audit Mo7 already enforces).",
+    "  B105 hardcoded_password_string — mostly test fixtures and example strings; needs case-by-case audit.",
+    "  B107 hardcoded_password_funcarg — same.",
+    "  B108 hardcoded_tmp_directory — /tmp paths. Audit risk: low on Linux, prefer tempfile.",
+    "  B110 try_except_pass — the most-suppressed exceptions are the M3 `_silent_log.debug` legacy pattern. Already gated by tests/test_no_new_silent_swallows.py.",
+    "  B112 try_except_continue — same family.",
+    "  B310 urllib_urlopen — direct urlopen calls; audit risk: medium (no SSRF defense). Migrate to httpx where possible.",
+    "  B311 random_for_secrets — `random` instead of `secrets`. Audit: review each call site.",
+    "  B324 hashlib_insecure — MD5/SHA1 in non-security contexts (cache keys, ETags). Usually safe but worth annotating.",
+    "  B404 import_subprocess — flags every `import subprocess`. Audit risk: low (the dangerous form is shell=True which we already block manually).",
+    "  B603 subprocess_without_shell — legitimate subprocess.run with shell=False. Mostly safe; the gate ensures no new shell=True sneaks in (B602).",
+    "  B607 start_process_with_partial_path — subprocess calls without absolute paths. Audit risk: low in containerized runtime.",
+    "  B608 hardcoded_sql_expressions — the two memory/postgres_backend.py f-string SQL sites (Mo1 already validates table_name; the warning persists because Bandit doesn't see the runtime guard).",
+    "  B701 jinja2_autoescape_false — single occurrence; needs review.",
+    "",
+    "To lower a budget: fix N occurrences of test-id X in a dedicated PR,",
+    "then regenerate this baseline with `bandit -r api core kernel -f json` and update the counts.",
+    "Adding a new test-id to the budget requires a written justification in a PR description."
+  ]
+}

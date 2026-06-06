@@ -44,8 +44,8 @@ def _embed(text: str) -> list[float]:
     try:
         from core.capabilities.semantic_router import embed_single
         return embed_single(text)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='vector_memory_legacy.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="vector_memory_legacy_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     # Direct call if semantic_router unavailable
     key = os.getenv("OPENAI_API_KEY", "")
     if not key:
@@ -154,8 +154,8 @@ class QdrantVectorStore:
             r = httpx.get(f"{self._url}/collections/{self._collection}", timeout=3)
             if r.status_code == 200:
                 return r.json()["result"].get("points_count", 0)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='vector_memory_legacy.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="vector_memory_legacy_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return 0
 
     def delete(self, point_ids: list[str]) -> bool:

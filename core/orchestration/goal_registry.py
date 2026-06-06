@@ -11,13 +11,13 @@ from __future__ import annotations
 import json
 import time
 import uuid
-import logging
+import structlog
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # M3 emitter alias
 
 HORIZONS = {"immediate", "weekly", "monthly", "permanent"}
 
@@ -58,8 +58,8 @@ class ProactiveGoal:
                 try:
                     deadline_ts = float(note.split(":", 1)[1])
                     return (deadline_ts - time.time()) / 3600
-                except ValueError:
-                    _silent_log.debug("suppressed_exception", src='goal_registry.py')
+                except ValueError as _exc:
+                    log.warning("swallowed_exception", action="goal_registry_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return None
 
     def set_deadline(self, epoch: float) -> None:

@@ -7,6 +7,9 @@ Persiste dans workspace/failure_log.jsonl (max 1000 lignes, rotation FIFO).
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import os
 import time
@@ -14,7 +17,6 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
-_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from api.mission_store import MissionStateStore
@@ -73,8 +75,8 @@ class FailureCollector:
             ms = get_mission_system()
             for m in ms.list_missions(limit=200):
                 missions_by_id[m.mission_id] = m
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='failure_collector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="failure_collector_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Build set of already-logged (mission_id, category) to avoid duplicates
         already_seen: set = set()
@@ -83,7 +85,7 @@ class FailureCollector:
             for e in existing:
                 already_seen.add(f"{e.mission_id}:{e.category}")
         except Exception:
-            pass
+            log.debug("swallowed_exception", exc_info=True)
 
         for mission_id, mission in missions_by_id.items():
             events = mission_store.get_log(mission_id)
@@ -120,10 +122,10 @@ class FailureCollector:
             for line in lines[-limit:]:
                 try:
                     entries.append(FailureEntry.from_dict(json.loads(line)))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='failure_collector.py')
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='failure_collector.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="failure_collector_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="failure_collector_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return entries
 
     # ── Analyse ───────────────────────────────────────────────────────────────
@@ -275,4 +277,4 @@ class FailureCollector:
 
             _FAILURE_LOG.write_text("\n".join(all_lines) + "\n", "utf-8")
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)

@@ -13,11 +13,13 @@ Preferred import:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -82,8 +84,8 @@ class LessonMemory:
             self._path.write_text(
                 json.dumps([le.to_dict() for le in self._lessons], indent=2, default=str),
                 encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='lesson_memory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="lesson_memory_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if self._path.exists():
@@ -100,5 +102,5 @@ class LessonMemory:
                         lessons_learned=d.get("lessons", ""),
                         timestamp=d.get("timestamp", 0),
                     ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='lesson_memory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="lesson_memory_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

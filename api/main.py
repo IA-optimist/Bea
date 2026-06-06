@@ -25,6 +25,7 @@ load_dotenv()
 
 import os
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 # ── Feature flags ─────────────────────────────────────────────
@@ -41,15 +42,22 @@ from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from api.security_headers import SecurityHeadersMiddleware
-from api.token_utils import strip_bearer
+# Mo3: strip_bearer + OAuth2PasswordRequestForm moved to api/routes/auth.py.
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 log = structlog.get_logger()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await _on_startup()
+    try:
+        yield
+    finally:
+        await _on_shutdown()
 
 
 # ── App ───────────────────────────────────────────────────────
@@ -66,6 +74,7 @@ app = FastAPI(
     redoc_url="/redoc" if _enable_docs else None,
     # Disable default /openapi.json — we override with auth-protected version below
     openapi_url=None,
+    lifespan=lifespan,
 )
 
 # Auth-protected OpenAPI schema endpoint (when docs enabled)
@@ -353,8 +362,8 @@ try:
     from api.routes.token_management import router as token_mgmt_router
     if token_mgmt_router:
         app.include_router(token_mgmt_router)
-except Exception:
-    _silent_log.debug("suppressed_exception", src='main.py')
+except Exception as _exc:
+    log.warning("swallowed_exception", action="main_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 # ── Skills & trace routers ──
 try:
@@ -624,7 +633,7 @@ async def root_redirect():
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, REGISTRY
 
 @app.get("/metrics", include_in_schema=False)
-async def prometheus_metrics():
+async def prometheus_metrics(user: dict = Depends(require_auth)):
     """
     Prometheus-compatible metrics endpoint.
     
@@ -640,7 +649,6 @@ async def prometheus_metrics():
 
 
 # ── Startup : workspace cleanup ────────────────────────────────
-@app.on_event("startup")
 async def _on_startup():
     # SECURITY: Enforce production secrets (JWT, admin password, API token)
     # Raises RuntimeError if JARVIS_PRODUCTION=true and secrets are insecure
@@ -749,7 +757,6 @@ async def _on_startup():
     except Exception as exc:
         log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
 
-@app.on_event("shutdown")
 async def _on_shutdown():
     # Save kernel performance data to survive restarts
     try:
@@ -869,133 +876,23 @@ def _get_monitoring_agent():
 # ── Auth endpoints ────────────────────────────────────────────
 
 
-# HttpOnly cookie config — XSS-safe token storage (CVSS 9.1 mitigation).
-# Secure flag activé uniquement hors dev pour permettre le test en HTTP local.
-_COOKIE_NAME = "jarvis_token"
-_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
-_COOKIE_SECURE = os.environ.get("JARVIS_COOKIE_SECURE", "1") != "0"
+# ── Auth routes ───────────────────────────────────────────────
+#
+# Audit Mo3: the 6 auth endpoints (json_login, json_logout, login_for_access_token,
+# login_alias, auth_me, refresh_token) used to live inline here. They moved to
+# `api/routes/auth.py` so this file shrinks and the auth surface is reviewable
+# in one focused module. Cookie helpers also moved there.
+#
+# Compatibility aliases below let any internal caller that imported the old
+# names from `api.main` continue to work without churn.
+from api.routes import auth as _auth_routes
 
+_COOKIE_NAME = _auth_routes.COOKIE_NAME
+_COOKIE_MAX_AGE = _auth_routes.COOKIE_MAX_AGE
+_COOKIE_SECURE = _auth_routes.COOKIE_SECURE
+_set_auth_cookie = _auth_routes.set_auth_cookie
 
-def _set_auth_cookie(response: Response, token: str) -> None:
-    """Set HttpOnly token cookie (XSS-safe). Additive — token reste aussi en body."""
-    response.set_cookie(
-        key=_COOKIE_NAME,
-        value=token,
-        max_age=_COOKIE_MAX_AGE,
-        httponly=True,
-        secure=_COOKIE_SECURE,
-        samesite="lax",
-        path="/",
-    )
-
-
-@app.post("/api/v2/auth/login", tags=["auth"])
-async def json_login(request: Request, response: Response):
-    """
-    JSON-compatible login endpoint for frontend React dashboard.
-    Accepts: {"email": "...", "password": "..."} or {"username": "...", "password": "..."}
-    Returns: {"ok": true, "data": {"token": "...", "user": {...}}}
-
-    Set aussi un cookie HttpOnly `jarvis_token` — prioritaire sur les
-    headers côté serveur. Les frontends legacy qui utilisent le token du
-    body continuent de fonctionner (backward-compat).
-    """
-    try:
-        body = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON body")
-    username = body.get("username") or body.get("email") or ""
-    password = body.get("password") or ""
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="username/email and password required")
-    from api.auth import _check_auth_password
-    token = _check_auth_password(username, password)
-    if not token:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    _set_auth_cookie(response, token)
-    return {
-        "ok": True,
-        "data": {
-            "token": token,
-            "user": {"username": username, "role": "user"},
-        },
-    }
-
-
-@app.post("/api/v2/auth/logout", tags=["auth"])
-async def json_logout(response: Response):
-    """Clear le cookie HttpOnly. Les headers Bearer/X-Jarvis-Token sont la
-    responsabilité du client (drop côté frontend)."""
-    response.delete_cookie(_COOKIE_NAME, path="/")
-    return {"ok": True, "data": {"message": "logged_out"}}
-
-
-@app.post("/auth/token", tags=["auth"])
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
-    from api.auth import _check_auth_password
-    token = _check_auth_password(form_data.username, form_data.password)
-    if not token:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    if response is not None:
-        _set_auth_cookie(response, token)
-    return {"access_token": token, "token_type": "bearer"}
-
-@app.post("/auth/login", tags=["auth"])
-# Returns: token, role, expires_in, authenticated, permissions
-async def login_alias(form_data: OAuth2PasswordRequestForm = Depends(), response: Response = None):
-    return await login_for_access_token(form_data, response)
-
-@app.get("/auth/me", tags=["auth"])
-async def auth_me(user: dict = Depends(require_auth)):
-    """Retourne l'identité de l'utilisateur authentifié (cookie ou header).
-
-    Le cookie HttpOnly `jarvis_token` est lu en priorité par require_auth,
-    fallback sur Bearer / X-Jarvis-Token pour legacy.
-
-    Permet au frontend de restaurer la session au chargement sans
-    persister aucune info sensible dans localStorage.
-    Retourne 401 si pas authentifié (via Depends).
-    """
-    return {
-        "ok": True,
-        "data": {
-            "authenticated": True,
-            "user": user,
-            "role": user.get("role", "user"),
-            "username": user.get("username", ""),
-        },
-    }
-
-
-@app.post("/auth/refresh", tags=["auth"])
-async def refresh_token(request: Request, response: Response):
-    """Refresh a JWT token.
-
-    Accepts (priorité descendante) : cookie HttpOnly `jarvis_token`,
-    `Authorization: Bearer <token>` header, ou `X-Jarvis-Token` header.
-    Retourne un nouveau token + met à jour le cookie HttpOnly.
-    401 si le token actuel est invalide ou expiré.
-    """
-    from api.auth import create_access_token, verify_token
-
-    # Priorité cookie → Bearer → X-Jarvis-Token (aligne sur require_auth).
-    token_str = (
-        request.cookies.get("jarvis_token")
-        or strip_bearer(request.headers.get("Authorization", ""))
-        or request.headers.get("X-Jarvis-Token", "")
-    )
-    if not token_str:
-        raise HTTPException(status_code=401, detail="No token provided")
-    user = verify_token(token_str)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    new_token = create_access_token({
-        "sub": user.get("username", ""),
-        "role": user.get("role", "user"),
-    })
-    # Refresh le cookie HttpOnly en même temps pour prolonger la session.
-    _set_auth_cookie(response, new_token)
-    return {"access_token": new_token, "token_type": "bearer"}
+app.include_router(_auth_routes.router)
 
 
 # ── WebSocket stream alias ────────────────────────────────────
@@ -1008,15 +905,21 @@ async def ws_stream_alias(websocket: WebSocket):
     except Exception:
         try:
             await websocket.close()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='main.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="main_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── v2 Chat Alias (frontend compatibility) ────────────────────
 
 @app.post("/api/v2/chat", include_in_schema=False)
-async def chat_v2_alias(request: Request):
-    """Alias for /api/v3/chat to maintain frontend compatibility."""
+async def chat_v2_alias(request: Request, user: dict = Depends(require_auth)):
+    """Alias for /api/v3/chat to maintain frontend compatibility.
+
+    Hardening (audit Mo4): auth déclarée explicitement dans la signature.
+    L'auth était précédemment implicite (déléguée à chat() via les headers),
+    ce qui (a) cachait la contrainte d'OpenAPI/Swagger et (b) devenait silencieusement
+    ouverte si chat() était refactorisé.
+    """
     try:
         from api.routes.chat import chat
         body = await request.json()

@@ -29,7 +29,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.planning.execution_plan import ExecutionPlan, PlanStep, PlanStatus, StepType
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.playbook")
 
@@ -367,7 +366,7 @@ def execute_playbook(
                 quality_scores=quality_scores,
             )
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
     # Auto-create strategic record (Phase 2 economic wiring)
     try:
@@ -406,7 +405,7 @@ def execute_playbook(
                 failure_reasons=validation.get("issues", [])[:5],
             ))
     except Exception:
-        pass  # fail-open: strategic memory write never blocks execution
+        log.debug("swallowed_exception", exc_info=True)
 
     # Record execution strategy for comparison/promotion (Phase 1 strategy v2)
     try:
@@ -442,7 +441,7 @@ def execute_playbook(
             duration_ms=run.context.metadata.get("duration_ms", 0.0),
         )
     except Exception:
-        pass  # fail-open
+        log.debug("swallowed_exception", exc_info=True)
 
     result = {
         "ok": run.status.value == "completed",
@@ -459,8 +458,8 @@ def execute_playbook(
             run_result=result,
         )
         result["review"] = review.to_dict()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='playbook.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="playbook_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return result
 

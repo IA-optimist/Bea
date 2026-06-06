@@ -20,13 +20,16 @@ Si Qdrant indisponible → log warning + retour sans exception.
 from __future__ import annotations
 
 import logging
+import os
 import random
 import time
 from typing import List
 
 logger = logging.getLogger("jarvis.knowledge.index")
 
-QDRANT_URL = "http://qdrant:6333"
+# Lit QDRANT_URL de l'env (en local : 127.0.0.1 -> échec rapide "connection refused"
+# au lieu du DNS lent sur l'hôte Docker "qdrant"). Dégrade gracieusement si absent.
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 KNOWLEDGE_COLLECTION = "jarvis_knowledge"
 _VECTOR_DIM = 768
 
@@ -34,9 +37,14 @@ _VECTOR_DIM = 768
 # ── Helpers internes ──────────────────────────────────────────────────────────
 
 def _pseudo_vector(text: str) -> list:
-    """Vecteur pseudo-aléatoire déterministe basé sur hash(text)."""
+    """Vecteur pseudo-aléatoire déterministe basé sur hash(text).
+
+    Bandit B311 nosec: this is a stable hash-based embedding for legacy
+    indexing — same input must always produce the same vector. Using
+    `secrets.SystemRandom` would defeat the purpose. Not security-sensitive.
+    """
     seed = hash(text) % (2 ** 32)
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # nosec B311
     return [rng.gauss(0, 1) for _ in range(_VECTOR_DIM)]
 
 

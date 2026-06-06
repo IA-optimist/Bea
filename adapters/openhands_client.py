@@ -4,6 +4,7 @@ Permet d'invoquer l'immense Agent OpenHands (ex-OpenDevin) sur une tâche ultra 
 en lui cédant temporairement le contrôle d'un workspace précis via CLI ou API.
 """
 import asyncio
+import sys
 import structlog
 from pathlib import Path
 
@@ -31,22 +32,22 @@ class OpenHandsLocalClient:
         """
         log.info("openhands_mission_delegated", prompt_preview=prompt[:50])
         
-        # La commande Headless de OpenHands s'effectue généralement ainsi sur le main:
-        # On tente de voir si uvicorn ou openhands_cli est disponible.
-        # En production, on lance 'python -m openhands.core.main'
-        cmd = (
-            f'python -m openhands.core.main '
-            f'-t "{prompt}" '
-            f'-d "{Path(target_workspace).absolute()}" '
-            f'-i {max_iterations}'
-        )
-        
-        # NOTE MIGRATION : Si l'utilisateur a uv ou poetry, on préfixe.
-        # Par défaut, on laissera le système utiliser l'environnement Python actif.
+        target_path = Path(target_workspace).absolute()
+        args = [
+            sys.executable,
+            "-m",
+            "openhands.core.main",
+            "-t",
+            prompt,
+            "-d",
+            str(target_path),
+            "-i",
+            str(int(max_iterations)),
+        ]
         
         try:
-            process = await asyncio.create_subprocess_shell(
-                cmd,
+            process = await asyncio.create_subprocess_exec(
+                *args,
                 cwd=str(self.openhands_dir),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT # Redirige stderr vers stdout pour un seul flux

@@ -38,7 +38,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -254,8 +253,8 @@ class AgentComm:
         for q in queues:
             try:
                 q.put_nowait(msg)
-            except asyncio.QueueFull:
-                _silent_log.debug("suppressed_exception", src='agent_comm.py')
+            except asyncio.QueueFull as _exc:
+                log.warning("swallowed_exception", action="agent_comm_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         log.debug("agent_comm_message_sent",
                   session=session_id, frm=from_agent, to=to_agent)
@@ -279,8 +278,8 @@ class AgentComm:
         async with self._lock:
             try:
                 self._mailboxes[(session_id, agent_name)].remove(q)
-            except ValueError:
-                _silent_log.debug("suppressed_exception", src='agent_comm.py')
+            except ValueError as _exc:
+                log.warning("swallowed_exception", action="agent_comm_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Cleanup ───────────────────────────────────────────────
 

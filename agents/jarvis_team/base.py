@@ -11,7 +11,7 @@ the operation) rather than crashing the pipeline.
 """
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 import structlog
 from pathlib import Path
 
@@ -49,7 +49,7 @@ class JarvisTeamAgent(BaseAgent):
         """Run a git command, return stdout. Fail-open: returns '' on error."""
         import shlex
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["git"] + shlex.split(cmd),
                 shell=False,
                 cwd=str(cwd or REPO_ROOT),
@@ -121,7 +121,7 @@ class JarvisTeamAgent(BaseAgent):
     def run_tests(test_path: str = "tests/", timeout: int = 120) -> str:
         """Run pytest on a path. Returns stdout+stderr. Fail-open."""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["python", "-m", "pytest", test_path, "-x", "-q", "--tb=short"],
                 shell=False,
                 cwd=str(REPO_ROOT),

@@ -14,6 +14,7 @@ line-length = 120
 exclude = [
   ".git",
   ".venv",
+  ".claude",
   "venv",
   "__pycache__",
   "build",
@@ -25,13 +26,9 @@ exclude = [
   "docs",
   "archive",
   "workspace",
-  # Audit S5.B (2026-05-19): both `orchestrate-*` packages were imported
-  # wholesale from external projects with ~106 F841/unused-variable errors.
-  # They are excluded until a dedicated cleanup PR brings them up to
-  # ruff.toml standards. Do NOT add new code to these dirs without lint
-  # compliance.
-  "orchestrate-cli",
-  "orchestrate-mobile",
+  # orchestrate-cli / orchestrate-mobile: brought into the lint gate
+  # (cleanup 2026-06-01). They are CLI tools, so T201 (print) is allowed
+  # via per-file-ignore below; all other blocking rules must stay clean.
 ]
 
 [lint]
@@ -53,6 +50,7 @@ select = [
   "E722",  # bare-except (cleaned phase 4)
   "E731",  # lambda-assignment (cleaned phase 8 — 5 lambdas converted to def)
   "W605",  # invalid escape sequence (0)
+  "T201",  # print (new runtime prints blocked; legacy baseline below)
 ]
 # TODO as these reach 0 errors, move them into `select` above :
 #   E701 (~78), E702 (~37) one-line multi-statements (intentional in stub
@@ -70,11 +68,70 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
+"orchestrate-cli/**" = ["T201"]    # CLI tool: stdout IS its interface
+"orchestrate-mobile/**" = ["T201"] # mobile backend dev-server prints
+"scripts/ingest_knowledge.py" = ["T201"]  # CLI : ingestion RAG, stdout = interface
+"scripts/run_api_local.py" = ["T201"]     # CLI : launcher API local
+"gateway/codex_provider.py" = ["T201"]    # smoke-test CLI (__main__) : print = sortie
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic
   "E402",  # test-order imports are sometimes intentional
+  "T201",  # proof scripts and tests may print diagnostics
 ]
+# Legacy runtime print() baseline; see quality/legacy_runtime_prints.txt.
+"adapters/openhands_client.py" = ["T201"]
+"agents/autonomous/devin_agent.py" = ["T201"]
+"agents/evaluator.py" = ["T201"]
+"api/routes/agent_builder.py" = ["T201"]
+"api/routes/modules.py" = ["T201"]
+"api/routes/modules_v3.py" = ["T201"]
+"business/automation/opportunity_scanner.py" = ["T201"]
+"business/automation/product_builder.py" = ["T201"]
+"business/business_engine.py" = ["T201"]
+"business/fiscal/tax_optimizer.py" = ["T201"]
+"business/legal/compliance_checker.py" = ["T201"]
+"business/revenue/revenue_engine.py" = ["T201"]
+"business/saas/schema.py" = ["T201"]
+"core/agent_factory.py" = ["T201"]
+"core/client_profile.py" = ["T201"]
+"core/db/migrate.py" = ["T201"]
+"core/hierarchical_planner.py" = ["T201"]
+"core/livrable_export.py" = ["T201"]
+"core/meta_orchestrator.py" = ["T201"]
+"core/mission_system.py" = ["T201"]
+"core/modules/module_manager.py" = ["T201"]
+"core/orchestration/alignment_layer.py" = ["T201"]
+"core/orchestration/comprehension_checker.py" = ["T201"]
+"core/orchestration/continual_memory.py" = ["T201"]
+"core/orchestration/memory_system.py" = ["T201"]
+"core/orchestration/proactive_loop.py" = ["T201"]
+"core/security/secret_crypto.py" = ["T201"]
+"core/security/secret_vault.py" = ["T201"]
+"core/training_collector.py" = ["T201"]
+"core/training_data_collector.py" = ["T201"]
+"data_intelligence/market_intel_service.py" = ["T201"]
+"examples/business_cognition_demo.py" = ["T201"]
+"executor/execution_engine.py" = ["T201"]
+"jarvis_mcp/jarvis_mcp_server.py" = ["T201"]
+"jarvismax_cli.py" = ["T201"]
+"kernel/__main__.py" = ["T201"]
+"learning/learning_loop.py" = ["T201"]
+"mcp/hexstrike_v2/core/cache.py" = ["T201"]
+"mcp/hexstrike_v2/core/executor.py" = ["T201"]
+"memory/legacy_knowledge_memory.py" = ["T201"]
+"metrics_scrape_example.py" = ["T201"]
+"monitoring/telegram_webhook.py" = ["T201"]
+"night_worker/scheduler.py" = ["T201"]
+"scripts/cognition_e2e_manual.py" = ["T201"]
+"scripts/memory_manual_test.py" = ["T201"]
+"scripts/notifications_manual_test.py" = ["T201"]
+"scripts/run_proactive_agent.py" = ["T201"]
+"scripts/safety_check.py" = ["T201"]
+"scripts/suggest_coverage_ratchet.py" = ["T201"]  # CLI reporter, prints are the output.
+"jarvismax" = ["T201"]  # CLI entrypoint script (no .py extension).
+"security/blue_team/soc_service.py" = ["T201"]
+
 # __init__.py re-exports
 "**/__init__.py" = ["F401"]
 # Compat shims : star imports are the whole point

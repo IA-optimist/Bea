@@ -1,4 +1,4 @@
-"""
+﻿"""
 api/_deps.py — Shared auth, getters, and utilities for all route modules.
 """
 from __future__ import annotations
@@ -58,7 +58,7 @@ def require_auth(
         raise HTTPException(status_code=401, detail="Token invalide ou manquant.")
 
     # Static token match
-    if _API_TOKEN and token == _API_TOKEN:
+    if _API_TOKEN and hmac.compare_digest(token.encode(), _API_TOKEN.encode()):
         return {"username": "api", "role": "admin", "auth_type": "static"}
 
     # JWT or access token
@@ -116,7 +116,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             if token_data:
                 return  # Valid access token
         except Exception as e:
-            log.warning(f"access_token_verification_failed token={candidate[:10]}... error={e}")
+            log.warning(f"access_token_verification_failed token={candidate[:10]}... err={e}")
     
     # 2. Check static API token (X-Jarvis-Token or Bearer) if configured
     if _API_TOKEN:
@@ -149,7 +149,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
             _jwt_configured = bool(
                 _jwt_secret
-                and _jwt_secret != "change-me-in-production"
+                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential
                 and not _jwt_secret.startswith("ephemeral-")
             )
         except Exception:
@@ -268,8 +268,8 @@ def _extract_final_output(text: str) -> str:
                 or str(data)
             )
             return str(readable)  # no truncation — full response preserved for the user
-        except (_json.JSONDecodeError, Exception):
-            _silent_log.debug("suppressed_exception", src='_deps.py')
+        except (_json.JSONDecodeError, Exception) as _exc:
+            log.warning("swallowed_exception", action="_deps_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return text
 
 
@@ -279,7 +279,6 @@ def _extract_final_output(text: str) -> str:
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as SQLAlchemySession
-_silent_log = __import__("structlog").get_logger(__name__)
 
 # Lazy init database engine
 _db_engine = None

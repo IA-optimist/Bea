@@ -11,12 +11,14 @@ Both produce authorized access. Access tokens have role-based permissions.
 from __future__ import annotations
 
 import hmac
-import logging
 import os
 import time
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
+log = logger  # alias for M3 emitter
 
 try:
     import jwt as _jwt
@@ -139,8 +141,8 @@ def verify_token(token_str: str) -> Optional[dict]:
                     "token_id": access_token.id,
                     "auth_type": "access_token",
                 }
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='auth.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="auth_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
         import os as _os
         import hmac as _hmac
@@ -153,18 +155,32 @@ def verify_token(token_str: str) -> Optional[dict]:
     jwt_module = _require_jwt()
     try:
         payload = jwt_module.decode(token_str, _secret(), algorithms=["HS256"])
+        # Mo2 wire-up (closes the gap in docs/security/jwt-hardening-v2.md):
+        # if v2 is enabled and the token carries a `jti` claim, consult the
+        # revocation list. Tokens minted by the legacy path do not have a
+        # `jti`, so they pass through unchanged — flipping the feature flag
+        # does not invalidate any existing session.
+        if payload.get("jti"):
+            from api import jwt_v2
+            if jwt_v2.is_v2_enabled():
+                # verify_access_token re-decodes + checks Redis revocation.
+                # Returns None on revoked, the claims dict otherwise.
+                v2_claims = jwt_v2.verify_access_token(token_str, _secret())
+                if v2_claims is None:
+                    return None
         return {
             "username": payload.get("sub", "unknown"),
             "role": payload.get("role", "user"),
             "auth_type": "jwt",
         }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='auth.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="auth_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Path 3: Static API token fallback
     from config.settings import get_settings
     settings = get_settings()
-    if hasattr(settings, 'jarvis_api_token') and token_str == settings.jarvis_api_token:
+    configured_static = getattr(settings, 'jarvis_api_token', '') or ''
+    if configured_static and hmac.compare_digest(token_str.encode(), configured_static.encode()):
         return {"username": "api", "role": "admin", "auth_type": "static"}
 
     return None
@@ -197,7 +213,6 @@ def require_permission(user: dict, permission: str) -> bool:
 # ========================================
 
 from fastapi import Header, HTTPException, status
-_silent_log = __import__("structlog").get_logger(__name__)
 
 async def get_current_user(
     authorization: str = Header(None)

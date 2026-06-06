@@ -5,7 +5,6 @@ Metacognitive awareness - agent evaluates its own output quality.
 from __future__ import annotations
 from typing import Optional, Dict, Any
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -69,7 +68,7 @@ class ConfidenceScorer:
             return result
             
         except Exception as e:
-            log.error("confidence_scoring_failed", error=str(e))
+            log.error("confidence_scoring_failed", err=str(e))
             return {
                 "confidence": 0.5,  # Neutral when scoring fails
                 "reasoning": "Scoring failed",
@@ -93,7 +92,7 @@ class ConfidenceScorer:
                 )
                 return resp.choices[0].message.content
         except Exception as e:
-            log.error("self_confidence_llm_failed", error=str(e))
+            log.error("self_confidence_llm_failed", err=str(e))
             return None
 
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
@@ -142,8 +141,8 @@ SHOULD_RETRY: NO"""
                 try:
                     score = float(line.split(":", 1)[1].strip())
                     result["confidence"] = max(0.0, min(1.0, score))
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='self_confidence.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="self_confidence_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             
             elif line.startswith("REASONING:"):
                 result["reasoning"] = line.split(":", 1)[1].strip()
@@ -262,5 +261,5 @@ Generate an improved version that addresses these issues while maintaining accur
             }
             
         except Exception as e:
-            log.error("self_correction_failed", error=str(e))
+            log.error("self_correction_failed", err=str(e))
             return {"output": output, "corrected": False, "score": score_result}

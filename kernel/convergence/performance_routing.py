@@ -60,7 +60,7 @@ def enrich_providers(providers: list) -> list:
             try:
                 _enrich_single(provider, store)
             except Exception:
-                pass  # Skip this provider, keep original reliability
+                log.debug("swallowed_exception", exc_info=True)
 
     except Exception as e:
         log.debug("performance_enrichment_failed", err=str(e)[:60])

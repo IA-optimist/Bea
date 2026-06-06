@@ -390,14 +390,14 @@ class JarvisOrchestrator:
             session.status = SessionStatus.ERROR
             session.error  = f"Session timeout apres {timeout}s"
             await emit(f"Timeout de session apres {timeout}s. Resultats partiels disponibles.")
-            log.error("session_timeout", sid=session.session_id, timeout=timeout)
+            log.error("session_timeout", mission_id=session.session_id, timeout=timeout)
 
         except asyncio.CancelledError:
             session.status = SessionStatus.CANCELLED
             await emit("Session annulee.")
 
         except Exception as e:
-            log.error("orchestrator_error", sid=session.session_id, err=str(e))
+            log.error("orchestrator_error", mission_id=session.session_id, err=str(e))
             session.status = SessionStatus.ERROR
             session.error  = str(e)
             await emit(f"Erreur interne : {str(e)[:200]}")
@@ -779,7 +779,7 @@ class JarvisOrchestrator:
             session.final_report = msg
             await emit(msg)
         except Exception as e:
-            log.error("chat_llm_error", sid=session.session_id, err=str(e)[:100])
+            log.error("chat_llm_error", mission_id=session.session_id, err=str(e)[:100])
             msg = f"Erreur LLM : {str(e)[:200]}"
             session.final_report = msg
             await emit(msg)

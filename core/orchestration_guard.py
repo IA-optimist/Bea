@@ -4,13 +4,15 @@ Works alongside existing orchestrator without replacing it.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -225,7 +227,7 @@ class OrchestrationGuard:
                 with open(self._log_path, "a", encoding="utf-8") as f:
                     f.write(line)
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
     def get_recent_failures(self, n: int = 20) -> list[dict]:
         """Read last N lines of log file, filter status=='failed'|'timeout'."""
@@ -247,8 +249,8 @@ class OrchestrationGuard:
                     entry = json.loads(line)
                     if entry.get("status") in ("failed", "timeout"):
                         failures.append(entry)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='orchestration_guard.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="orchestration_guard_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return failures[-n:]
         except Exception:

@@ -460,12 +460,18 @@ def temp_storage():
         storage_path.unlink()
 
 
-def test_mission_system_initialization(temp_storage):
+def test_mission_system_initialization(temp_storage, monkeypatch):
     """MissionSystem should initialize properly."""
+    # Isolation : load_missions() préfère le SQLite GLOBAL (workspace/jarvismax.db,
+    # qui accumule de vraies missions) au path fourni. On neutralise le DB global
+    # pour que l'init parte bien du storage isolé et vide.
+    import core.db as db_mod
+    monkeypatch.setattr(db_mod, "get_db", lambda: None)
+
     from core.mission_system import MissionSystem
-    
+
     ms = MissionSystem(storage=temp_storage)
-    
+
     assert ms._path == temp_storage
     assert len(ms._missions) == 0
     print("[OK] test_mission_system_initialization")

@@ -13,6 +13,7 @@ Validates mandatory architecture decisions:
 """
 import pytest
 import os
+import re
 import sys
 import types
 import unittest
@@ -72,7 +73,17 @@ class TestMissionStatusUnified(unittest.TestCase):
         # MissionStatus with different values (lowercase business lifecycle)
         ALLOWED = {"core/state.py", "core/business/mission_schema.py"}
         definitions = [l for l in lines if "import" not in l and "noqa" not in l]
-        found_files = {l.split(":")[0].replace(_ROOT + "/", "") for l in definitions}
+
+        def _relfile(line: str) -> str:
+            # grep -rn => "FILE:LINE:CONTENT". Sur Windows FILE contient "C:\..."
+            # (lettre de lecteur + ':') : on découpe avant ":<num>:" puis on normalise
+            # les séparateurs et on rend le chemin relatif à _ROOT.
+            m = re.match(r"^(.*?):\d+:", line)
+            fp = (m.group(1) if m else line).replace("\\", "/")
+            root = _ROOT.replace("\\", "/").rstrip("/")
+            return fp[len(root):].lstrip("/") if fp.startswith(root) else fp
+
+        found_files = {_relfile(l) for l in definitions}
         unexpected = found_files - ALLOWED
         self.assertEqual(len(unexpected), 0,
                          f"MissionStatus defined in unexpected places: {unexpected}")

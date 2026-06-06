@@ -273,6 +273,7 @@ class ProviderRegistry:
             try:
                 items = getattr(mgr, f"list_{mod_type}")()
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
             for item in items:
                 mid = item.get("id", item.get("name", ""))

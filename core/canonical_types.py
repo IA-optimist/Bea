@@ -27,17 +27,18 @@ to avoid circular dependencies. All mappings are string-based.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -370,5 +371,5 @@ class CanonicalMissionContext:
                 from_status=prev.value,
                 to_status=target.value,
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='canonical_types.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="canonical_types_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

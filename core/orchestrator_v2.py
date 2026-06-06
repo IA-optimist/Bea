@@ -29,7 +29,6 @@ from __future__ import annotations
 # inside core/_legacy/ which ruff excludes, so F821 on `_silent_log` was
 # never surfaced. Now that the module is back at core/orchestrator_v2.py,
 # ruff catches it ; add the import explicitly.
-_silent_log = __import__("structlog").get_logger(__name__)
 
 import asyncio
 import json
@@ -302,8 +301,8 @@ class CheckpointStore:
                         session_id,
                     )
                 return
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="orchestrator_v2_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if self._backend == "sqlite":
             await self._sqlite_mark_done(session_id)
 
@@ -317,8 +316,8 @@ class CheckpointStore:
                         "WHERE done=FALSE ORDER BY created_at;"
                     )
                 return [dict(r) for r in rows]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="orchestrator_v2_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if self._backend == "sqlite":
             return await self._sqlite_list_incomplete()
         return []
@@ -690,8 +689,8 @@ class OrchestratorV2:
                 f"Self-critic: score {cr.overall:.1f}/10 — triggering rerun "
                 f"({cr.rerun_count + 1}/{2}). Feedback: {cr.feedback[:100]}"
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='orchestrator_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="orchestrator_v2_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Rerun with injected feedback ───────────────────────
         augmented = critic.build_rerun_prompt(task, report, cr.feedback, cr.suggestions)

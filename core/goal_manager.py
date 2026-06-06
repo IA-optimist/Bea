@@ -308,7 +308,7 @@ class GoalManager:
             self._active = None
 
         self._archive(goal)
-        log.warning("goal_failed", id=goal.id, error=error[:60])
+        log.warning("goal_failed", id=goal.id, err=error[:60])
         self._save()
         return True
 

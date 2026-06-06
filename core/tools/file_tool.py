@@ -13,14 +13,13 @@ from __future__ import annotations
 
 import os
 import re
-import logging
-import subprocess
+import structlog
+import subprocess  # nosec B404
 from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
-_silent_log = __import__("structlog").get_logger(__name__)
 
-log = logging.getLogger("jarvis.tools.file")
+log = structlog.get_logger("jarvis.tools.file")
 
 _WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "/app/workspace"))
 _MAX_READ_CHARS = 100_000
@@ -131,7 +130,7 @@ def search_in_files(directory: str = ".", pattern: str = "", **kw) -> str:
         return f"error: directory not found: {directory}"
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["grep", "-rn", "--include=*.py", "--include=*.md", "--include=*.txt",
              "--include=*.json", "--include=*.yaml", "--include=*.yml",
              "--include=*.html", "--include=*.js", "--include=*.ts",
@@ -180,6 +179,7 @@ def _search_in_files_python(root: Path, pattern: str) -> str:
                         matches.append("\n[truncated at 200 matches]")
                         return "\n".join(matches)
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     return "\n".join(matches) if matches else f"No matches found for '{pattern}'"
@@ -285,6 +285,7 @@ def count_lines(path: str = "", **kw) -> str:
             total += c
             file_counts.append((str(fpath.relative_to(_WORKSPACE)), c))
         except Exception:
+            log.debug("swallowed_exception", exc_info=True)
             continue
 
     file_counts.sort(key=lambda x: -x[1])
@@ -352,8 +353,8 @@ def workspace_snapshot(**kw) -> str:
             if f.is_dir() and f.name not in {".git", "__pycache__", "node_modules"}:
                 try:
                     dirs.add(str(f.relative_to(_WORKSPACE)).split("/")[0])
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='file_tool.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="file_tool_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return (
             f"Workspace: {_WORKSPACE}\n"

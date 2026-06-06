@@ -19,7 +19,6 @@ import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("model_intelligence.selector")
 
@@ -300,8 +299,8 @@ class ModelPerformanceMemory:
                         quality_count=v.get("quality_count", 0),
                         last_used=v.get("last_used", 0),
                     )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='selector.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="selector_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _save(self) -> None:
         try:
@@ -322,9 +321,9 @@ class ModelPerformanceMemory:
                         "last_used": r.last_used,
                     } for k, r in self._records.items()},
                 }, f)
-            tmp.rename(self._path)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='selector.py')
+            tmp.replace(self._path)
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="selector_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def record(
         self,

@@ -38,6 +38,9 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import asyncio
 import hashlib
 import json
@@ -46,14 +49,12 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -181,21 +182,37 @@ class MemoryFacade:
             content_type = "general"
         tags = tags or []
         metadata = metadata or {}
-        entry_id = hashlib.md5(f"{content[:100]}:{time.time()}".encode()).hexdigest()[:12]
+        entry_id = hashlib.md5(f"{content[:100]}:{time.time()}".encode(), usedforsecurity=False).hexdigest()[:12]
 
-        # Try preferred backends in order
+        # Try preferred backends in order.
         backends = _ROUTING.get(content_type, ["knowledge_jsonl"])
+        chosen_backend: str | None = None
         for backend_name in backends:
             try:
                 ok = self._store_to_backend(backend_name, content, content_type, tags, metadata, entry_id)
                 if ok:
-                    return {"ok": True, "backend": backend_name, "entry_id": entry_id}
+                    chosen_backend = backend_name
+                    break
             except Exception as e:
                 self._backends[backend_name].available = False
                 self._backends[backend_name].error = str(e)[:100]
                 log.debug("memory_facade_store_fallthrough", backend=backend_name, err=str(e)[:80])
 
-        # Fallback to JSONL
+        # Always mirror to the local JSONL index unless the chosen backend *is*
+        # the JSONL store (which already wrote the entry). Some specialized
+        # backends (e.g. decision_memory) store a compact form that drops the
+        # original content, so the JSONL index is the facade's complete record
+        # for get_recent() and JSONL search across *all* content types.
+        if chosen_backend not in (None, "knowledge_jsonl"):
+            try:
+                self._store_jsonl(content, content_type, tags, metadata, entry_id)
+            except Exception as e:
+                log.debug("memory_facade_jsonl_mirror_failed", backend=chosen_backend, err=str(e)[:80])
+
+        if chosen_backend is not None:
+            return {"ok": True, "backend": chosen_backend, "entry_id": entry_id}
+
+        # No preferred backend accepted it — fall back to JSONL only.
         try:
             self._store_jsonl(content, content_type, tags, metadata, entry_id)
             return {"ok": True, "backend": "jsonl_fallback", "entry_id": entry_id}
@@ -298,7 +315,24 @@ class MemoryFacade:
         try:
             from memory.decision_memory import get_decision_memory
             dm = get_decision_memory()
-            dm.record(content=content, decision_type=metadata.get("decision_type", "general"))
+            from memory.decision_memory import DecisionOutcome
+            outcome = DecisionOutcome(
+                ts=int(time.time()),
+                mission_type=str(metadata.get("decision_type", "general")),
+                complexity=str(metadata.get("complexity", "medium")),
+                risk_score=int(metadata.get("risk_score", 0)),
+                confidence_score=float(metadata.get("confidence", 0.5)),
+                selected_agents=list(metadata.get("agents", [])),
+                approval_mode=str(metadata.get("approval_mode", "AUTO")),
+                approval_decision=str(metadata.get("approval_decision", "auto_approved")),
+                fallback_level_used=int(metadata.get("fallback_level", 0)),
+                latency_ms=int(metadata.get("latency_ms", 0)),
+                success=bool(metadata.get("success", True)),
+                user_override=bool(metadata.get("user_override", False)),
+                retry_count=int(metadata.get("retry_count", 0)),
+                error_type=str(metadata.get("error_type", "")),
+            )
+            dm.record(outcome)  # noqa: F841  (content non stocké: DecisionOutcome est compact)
             self._backends["decision_memory"].available = True
             return True
         except ImportError:
@@ -394,8 +428,8 @@ class MemoryFacade:
                                     source="memory_bus",
                                     score=item.get("score", 0.4),
                                 ))
-                    except _queue_module.Empty:
-                        _silent_log.debug("suppressed_exception", src='memory_facade.py')
+                    except _queue_module.Empty as _exc:
+                        log.warning("swallowed_exception", action="queue_drain_empty", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 else:
                     log.debug("memory_bus_search_thread_timeout", query=query[:40])
         except Exception as _exc:
@@ -413,7 +447,7 @@ class MemoryFacade:
         seen = set()
         unique = []
         for r in results:
-            h = hashlib.md5(r.content[:200].encode()).hexdigest()
+            h = hashlib.md5(r.content[:200].encode(), usedforsecurity=False).hexdigest()
             if h not in seen:
                 seen.add(h)
                 unique.append(r)
@@ -461,6 +495,7 @@ class MemoryFacade:
                             entry_id=item.get("id", ""),
                         ))
                 except json.JSONDecodeError:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
         except Exception as _exc:
             log.debug("memory_exception", err=str(_exc)[:120], location="memory_facade:429")
@@ -500,6 +535,7 @@ class MemoryFacade:
                         entry_id=item.get("id", ""),
                     ))
                 except json.JSONDecodeError:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
         except Exception as _exc:
             log.debug("memory_exception", err=str(_exc)[:120], location="memory_facade:467")
@@ -653,8 +689,8 @@ class MemoryFacade:
                                               scope=f"mission:{mission_id}",
                                               tags=["failure", error_class]),
                      mission_id=mission_id, importance=0.8)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="success_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # AI OS vector memory for failure (fail-open)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -663,8 +699,8 @@ class MemoryFacade:
                                source="orchestrator", mission_id=mission_id,
                                importance=0.8, confidence=0.8,
                                tags=["failure", error_class])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="failure_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self.store(
             content=content,
             content_type="failure",
@@ -682,8 +718,8 @@ class MemoryFacade:
                      metadata=MemoryMetadata(source="orchestrator", confidence=0.7,
                                               scope=f"mission:{mission_id}"),
                      mission_id=mission_id, importance=0.6)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="decision_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # AI OS vector memory (fail-open, async-like)
         try:
             from core.memory.vector_memory import get_vector_memory
@@ -691,8 +727,8 @@ class MemoryFacade:
             vm.store_embedding(content[:500], "mission_memory",
                                source="orchestrator", mission_id=mission_id,
                                importance=0.6, confidence=0.7)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory_facade.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="lesson_store", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self.store(
             content=content,
             content_type="mission_outcome",
@@ -725,6 +761,6 @@ def get_memory_facade(settings=None, workspace_dir: str = "workspace") -> Memory
                 _facade = MemoryFacade(settings=settings, workspace_dir=workspace_dir)
                 try:
                     log.info("memory_facade.singleton_created")
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='memory_facade.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="singleton_creation_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return _facade

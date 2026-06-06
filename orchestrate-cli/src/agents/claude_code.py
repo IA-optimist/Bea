@@ -10,7 +10,6 @@ Features:
 """
 
 import asyncio
-import json
 import subprocess
 from typing import Dict, List, Any, Optional
 from loguru import logger
@@ -451,7 +450,7 @@ class ClaudeCode:
             logger.error(f"Code debugging failed: {e}")
             return {'error': str(e)}
     
-    async migrate_code(self, code: str, target_version: str, framework: str = None) -> Dict[str, Any]:
+    async def migrate_code(self, code: str, target_version: str, framework: str = None) -> Dict[str, Any]:
         """Migrate code to a new version or framework using Claude"""
         logger.info(f"Migrating code to {target_version}")
         

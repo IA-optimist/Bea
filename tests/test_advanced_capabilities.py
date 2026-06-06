@@ -42,6 +42,16 @@ def test_router_disabled_by_default():
 def test_router_enabled_no_data():
     """Router falls back to static when no performance data exists."""
     os.environ["JARVIS_DYNAMIC_ROUTING"] = "1"
+    # Isolate from sibling tests (and any persisted workspace/*.jsonl) that
+    # leave debug_task data in the performance tracker singleton. With leaked
+    # data the router enters its rerank path (which iterates a set →
+    # non-deterministic order); injecting a fresh empty tracker guarantees the
+    # "no performance data" precondition this test actually asserts.
+    import core.mission_performance_tracker as mpt_mod
+    saved_tracker = mpt_mod._tracker
+    mpt_mod._tracker = mpt_mod.MissionPerformanceTracker(
+        persist_path="/tmp/test_router_no_data.json"
+    )
     try:
         from core.dynamic_agent_router import route_agents
         result = route_agents(
@@ -51,6 +61,7 @@ def test_router_enabled_no_data():
         assert result == ["forge-builder", "lens-reviewer"]
     finally:
         os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+        mpt_mod._tracker = saved_tracker
 
 
 def test_router_with_performance_data():
@@ -246,11 +257,21 @@ def test_detector_routing_optimization():
 # ═══════════════════════════════════════════════════════════════
 
 def test_crew_has_dynamic_routing():
-    with open("agents/crew.py", encoding="utf-8") as f:
-        src = f.read()
+    """M1: AgentSelector + routing extracted to agents/selector.py.
+    The combined surface still contains dynamic_agent_router."""
+    chunks = []
+    for rel in ("agents/crew.py", "agents/selector.py"):
+        try:
+            with open(rel, encoding="utf-8") as f:
+                chunks.append(f.read())
+        except FileNotFoundError:
+            pass
+    src = "\n".join(chunks)
     assert "dynamic_agent_router" in src
     assert "route_agents" in src
-    ast.parse(src)
+    # Syntax check on crew.py specifically (the file that still owns BaseAgent).
+    with open("agents/crew.py", encoding="utf-8") as f:
+        ast.parse(f.read())
 
 
 def test_planner_has_knowledge_context():

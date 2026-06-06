@@ -148,7 +148,7 @@ async def subscribe_notifications(
     
     except Exception as e:
         log.error("notification_subscription_failed",
-                  error=str(e),
+                  err=str(e),
                   channel=req.channel)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -199,7 +199,7 @@ async def unsubscribe_notifications(
     
     except Exception as e:
         log.error("notification_unsubscribe_failed",
-                  error=str(e),
+                  err=str(e),
                   channel=req.channel)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -296,5 +296,5 @@ async def test_notification(
             }
     
     except Exception as e:
-        log.error("test_notification_failed", error=str(e))
+        log.error("test_notification_failed", err=str(e))
         raise HTTPException(status_code=500, detail=str(e))

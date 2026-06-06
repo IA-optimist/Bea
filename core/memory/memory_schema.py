@@ -262,10 +262,10 @@ class MemoryStore:
             params.append(mission_id)
 
         where = " AND ".join(conditions)
-        rows = self._conn.execute(
-            f"SELECT * FROM memories WHERE {where} ORDER BY importance DESC LIMIT ?",
-            params + [limit]
-        ).fetchall()
+        # `where` only contains literal column-name comparisons
+        # (`"memory_type = ?"`, etc.) ; values pass via SQLite `?` placeholders.
+        _q = f"SELECT * FROM memories WHERE {where} ORDER BY importance DESC LIMIT ?"  # nosec B608  # noqa: S608
+        rows = self._conn.execute(_q, params + [limit]).fetchall()
         return [self._row_to_entry(r) for r in rows if not self._row_to_entry(r).is_expired]
 
     def cleanup(self) -> int:

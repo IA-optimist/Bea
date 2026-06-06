@@ -17,7 +17,6 @@ import contextvars
 import os
 import time
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 try:
     from langchain_core.language_models import BaseChatModel
 except ImportError:
@@ -179,20 +178,20 @@ def _is_valid_key(key: str | None) -> bool:
 # IMPORTANT : les providers cloud ne sont tentés que si _is_valid_key() est True.
 # En l'absence de clé valide, tous ces rôles basculent automatiquement sur Ollama.
 ROLE_PROVIDERS: dict[str, str] = {
-    "director":  "openrouter",  # Sonnet 4.5 via OpenRouter
-    "builder":   "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
+    "director":  "codex",       # orchestrateur → Codex via gateway Hermes (fallback ollama)
+    "builder":   "ollama",      # worker → Bea v3.1
     "reviewer":  "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
-    "research":  "openrouter",
+    "research":  "ollama",      # worker → Bea v3.1
     "planner":   "openrouter",
     "context":   "openrouter",
     "ops":       "openrouter",
     "improve":   "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
     "analyst":   "openrouter",  # Business analysis, strategy — Sonnet via OpenRouter
     "fast":      "openrouter",  # GPT-4o-mini via OpenRouter
-    "default":   "openrouter",
+    "default":   "ollama",      # worker → Bea v3.1
     "cognition":  "openrouter",  # Phase 3.5: AI cognition needs reliable cloud model
     # Cloud-preferred roles (were ollama-only, now openrouter with ollama fallback)
-    "advisor":    "openrouter",  # shadow-advisor — needs real LLM
+    "advisor":    "ollama",      # worker → Bea v3.1
     "memory":     "openrouter",  # vault-memory — needs real LLM
     # Local-only : jamais de cloud même en fallback
     "code":       "ollama",
@@ -325,6 +324,8 @@ class LLMFactory:
             result = None
             if provider == "openai":
                 result = self._build_openai(role)
+            elif provider == "codex":
+                result = self._build_codex(role)
             elif provider == "anthropic":
                 result = self._build_anthropic(role)
             elif provider == "google":
@@ -342,17 +343,32 @@ class LLMFactory:
             if result is not None:
                 try:
                     result._jarvis_provider = provider  # type: ignore[attr-defined]
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="provider_tag_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return result
 
         except Exception as e:
-            log.warning("llm_build_failed", provider=provider, role=role, error=str(e))
+            log.warning("llm_build_failed", provider=provider, role=role, err=str(e))
             # Feedback circuit breaker : échec Ollama → incrémenter les failures
             if provider == "ollama":
                 _OLLAMA_CIRCUIT.record_failure()
         return None
+
+    def _build_codex(self, role: str) -> BaseChatModel | None:
+        """Orchestrateur Codex via le gateway OpenAI-compatible de Hermes.
+
+        Hermes détient l'auth Codex (abonnement) ; on route au lieu de dupliquer
+        des credentials. Le gateway expose le modèle virtuel `hermes-agent`.
+        """
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=getattr(self.s, "codex_model", "hermes-agent"),
+            api_key=getattr(self.s, "codex_api_key", "none") or "none",
+            base_url=getattr(self.s, "codex_base_url", "http://127.0.0.1:8642/v1"),
+            temperature=0.3,
+            timeout=120,
+        )
 
     def _build_openai(self, role: str) -> BaseChatModel | None:
         key = getattr(self.s, "openai_api_key", "")
@@ -482,7 +498,7 @@ class LLMFactory:
                     _selector_is_fallback = False
                     _selector_score = round(result.final_score, 3)
             except Exception:
-                pass  # Selector unavailable → use model_map default
+                log.debug("swallowed_exception", exc_info=True)
 
         if _selector_model and _selector_model != model_id:
             log.info(
@@ -690,8 +706,8 @@ class LLMFactory:
                     m = _get_metrics(self.s)
                     if m:
                         m.record_llm_call(role, latency_s=ms / 1000.0, error=False)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="llm_metrics_record_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 # ── Langfuse : clôturer la generation ─────────
                 if gen_ctx is not None:
                     try:
@@ -703,8 +719,8 @@ class LLMFactory:
                             input_tokens=usage.get("prompt_tokens", 0),
                             output_tokens=usage.get("completion_tokens", 0),
                         )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_finish_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 return resp
 
             except Exception as first_err:
@@ -722,15 +738,15 @@ class LLMFactory:
                 if gen_ctx is not None:
                     try:
                         gen_ctx.finish(error=str(first_err)[:200])
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_finish_err", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             # ── Métriques erreur ──────────────────────────────
             try:
                 m = _get_metrics(self.s)
                 if m:
                     m.record_llm_call(role, latency_s=ms / 1000.0, error=True)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='llm_factory.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="llm_metrics_record_err", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # ── Fallback cloud (uniquement pour rôles non-LOCAL_ONLY) ─
         if role not in LOCAL_ONLY_ROLES:
@@ -768,8 +784,8 @@ class LLMFactory:
                                 latency_s=ms2 / 1000.0,
                                 error=False,
                             )
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='llm_factory.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="gen_ctx_late_finish", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                     return resp2
 
                 except Exception as fb_err:

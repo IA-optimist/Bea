@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 import re
-import subprocess
+import subprocess  # nosec B404
 import time
 from pathlib import Path
 from typing import Optional
@@ -123,7 +123,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
                     with open(fpath, "r", encoding="utf-8", errors="replace") as f:
                         for lineno, line in enumerate(f, 1):
                             if compiled.search(line):
-                                rel = os.path.relpath(fpath, _REPO_ROOT)
+                                rel = os.path.relpath(fpath, _REPO_ROOT).replace(os.sep, "/")
                                 matches.append({
                                     "file": rel,
                                     "line": lineno,
@@ -132,6 +132,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
                                 if len(matches) >= _MAX_GREP_RESULTS:
                                     break
                 except (PermissionError, OSError):
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
                 if len(matches) >= _MAX_GREP_RESULTS:
                     break
@@ -154,7 +155,7 @@ def git_status() -> dict:
     """
     t0 = time.monotonic()
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["git", "status", "--porcelain", "-b"],
             capture_output=True, text=True, timeout=5,
             cwd=str(_REPO_ROOT),
@@ -181,7 +182,7 @@ def git_log(n: int = 5) -> dict:
     t0 = time.monotonic()
     n = min(n, 20)  # cap at 20
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["git", "log", f"-{n}", "--oneline", "--no-decorate"],
             capture_output=True, text=True, timeout=5,
             cwd=str(_REPO_ROOT),
@@ -212,7 +213,7 @@ def list_directory(path: str = "", max_items: int = 50) -> dict:
         for entry in sorted(target.iterdir())[:max_items]:
             if entry.name.startswith(".") or entry.name in _SKIP_DIRS:
                 continue
-            rel = str(entry.relative_to(_REPO_ROOT))
+            rel = entry.relative_to(_REPO_ROOT).as_posix()
             if entry.is_dir():
                 items.append(f"{rel}/")
             else:
@@ -302,13 +303,15 @@ def run_tests(test_path: str = "tests/", pattern: str = "", timeout: int = 60) -
     """
     t0 = time.monotonic()
     try:
-        cmd = ["python", "-m", "pytest", test_path, "--tb=short", "-q"]
+        # sys.executable = le python du venv (qui a pytest) ; "python" = système (sans pytest).
+        import sys as _sys
+        cmd = [_sys.executable, "-m", "pytest", test_path, "--tb=short", "-q"]
         if pattern:
             # Sanitize: only allow alphanumeric, underscore, dash, dot
             safe_pattern = re.sub(r"[^a-zA-Z0-9_\-.]", "", pattern)
             cmd.extend(["-k", safe_pattern])
 
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             cmd,
             capture_output=True, text=True,
             timeout=min(timeout, 120),  # hard cap at 2 min
@@ -425,11 +428,11 @@ def build_agent_context(goal: str, max_chars: int = 6000) -> str:
                         fname = pyfile.stem.lower()
                         if any(k in fname for k in keywords):
                             result = read_file(
-                                str(pyfile.relative_to(_REPO_ROOT)),
+                                pyfile.relative_to(_REPO_ROOT).as_posix(),
                                 max_lines=80
                             )
                             if result["ok"]:
-                                rel = str(pyfile.relative_to(_REPO_ROOT))
+                                rel = pyfile.relative_to(_REPO_ROOT).as_posix()
                                 parts.append(
                                     f"### {rel} ({result['total_lines']}L)\n"
                                     f"```python\n{result['content']}\n```"
@@ -438,6 +441,7 @@ def build_agent_context(goal: str, max_chars: int = 6000) -> str:
                                 if len(parts) >= 2 or total_chars > max_chars:
                                     break
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
 
         # 4. Add git status for situational awareness (only for code tasks)

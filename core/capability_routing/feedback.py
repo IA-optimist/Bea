@@ -16,7 +16,6 @@ from collections import deque
 from dataclasses import dataclass, field
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("capability_routing.feedback")
 
@@ -214,8 +213,8 @@ class RoutingHistory:
                             bridge.agent_reputation.record_success(agent_id, outcome.capability_id)
                         else:
                             bridge.agent_reputation.record_failure(agent_id, outcome.capability_id, error[:100])
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='feedback.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="feedback_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         except Exception as e:
             log.debug("routing_feedback.cognitive_failed", err=str(e)[:60])

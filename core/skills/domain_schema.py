@@ -10,11 +10,13 @@ NOT a prompt. NOT a template. A structured reasoning module.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -149,8 +151,8 @@ class DomainSkill:
         if examples_json.is_file():
             try:
                 skill.examples = json.loads(examples_json.read_text("utf-8"))
-            except json.JSONDecodeError:
-                _silent_log.debug("suppressed_exception", src='domain_schema.py')
+            except json.JSONDecodeError as _exc:
+                log.warning("swallowed_exception", action="domain_schema_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         eval_md = p / "evaluation.md"
         if eval_md.is_file():

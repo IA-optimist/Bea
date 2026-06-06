@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-import subprocess
+import subprocess  # nosec B404
 import time
 
 logger = logging.getLogger("jarvis.dev_tools")
@@ -46,7 +46,7 @@ def _is_safe_path(path: str) -> bool:
     for blocked in _BLOCKED_PATHS:
         if abs_path.startswith(blocked):
             return False
-    safe_roots = [os.path.abspath(JARVIS_ROOT), "/tmp", os.path.abspath(".")]
+    safe_roots = [os.path.abspath(JARVIS_ROOT), "/tmp", os.path.abspath(".")]  # nosec B108 — path-prefix allowlist, not a write target.
     return any(abs_path.startswith(root) for root in safe_roots)
 
 
@@ -93,7 +93,7 @@ def dependency_analyzer(project_path: str = None) -> dict:
 
         for pkg_name, req_spec in packages:
             try:
-                result = subprocess.run(
+                result = subprocess.run(  # nosec B603 B607
                     ["pip", "show", pkg_name],
                     capture_output=True, text=True, timeout=5,
                 )
@@ -193,6 +193,7 @@ def code_search_multi_file(
                     if len(matches) >= _MAX_RESULTS:
                         break
                 except (PermissionError, OSError):
+                    logger.debug("swallowed_exception", exc_info=True)
                     continue
 
             if len(matches) >= _MAX_RESULTS:

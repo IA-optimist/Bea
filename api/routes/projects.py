@@ -15,7 +15,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, HTTPException, Header, Query, Depends
+from fastapi import APIRouter, HTTPException, Header, Query, Depends, Response
 from pydantic import BaseModel, Field
 
 from api._deps import require_auth
@@ -36,7 +36,7 @@ try:
         delete_project
     )
 except ImportError as e:
-    log.error("failed_to_import_project_model", error=str(e))
+    log.error("failed_to_import_project_model", err=str(e))
     raise
 
 # Create router with real auth dependency (uses canonical require_auth from api._deps)
@@ -143,7 +143,7 @@ async def create_project_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        log.error("create_project_endpoint_failed", error=str(e))
+        log.error("create_project_endpoint_failed", err=str(e))
         raise HTTPException(status_code=500, detail="Failed to create project")
 
 
@@ -177,7 +177,7 @@ async def list_projects_endpoint(
             total=len(projects)
         )
     except Exception as e:
-        log.error("list_projects_endpoint_failed", error=str(e))
+        log.error("list_projects_endpoint_failed", err=str(e))
         raise HTTPException(status_code=500, detail="Failed to list projects")
 
 
@@ -216,7 +216,7 @@ async def get_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("get_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("get_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to get project")
 
 
@@ -259,11 +259,22 @@ async def update_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("update_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("update_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to update project")
 
 
-@router.delete("/{project_id}", status_code=204, dependencies=[])
+@router.delete(
+    "/{project_id}",
+    status_code=204,
+    # C4 (FastAPI 0.115 bump): 0.115 asserts that a 204 endpoint cannot
+    # ship a response_model. The default response model is inferred from
+    # the function signature; even with `-> None` the inference can flag
+    # this as needing a body. We pin response_model=None explicitly and
+    # use the body-less Response class so the contract is unambiguous.
+    response_model=None,
+    response_class=Response,
+    dependencies=[],
+)
 async def delete_project_endpoint(
     project_id: str,
     authorization: Optional[str] = Header(None),
@@ -285,7 +296,7 @@ async def delete_project_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        log.error("delete_project_endpoint_failed", project_id=project_id, error=str(e))
+        log.error("delete_project_endpoint_failed", project_id=project_id, err=str(e))
         raise HTTPException(status_code=500, detail="Failed to delete project")
 
 

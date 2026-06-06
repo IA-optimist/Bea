@@ -6,6 +6,14 @@ MD01-MD25: A/B tests, cost tracking, dynamic quality/cost, catalog refresh.
 import pytest
 
 
+def tmp_perf_path():
+    """A guaranteed-empty (non-existent) performance store path for isolation."""
+    import tempfile
+    import uuid
+    from pathlib import Path
+    return Path(tempfile.gettempdir()) / f"bea_perf_empty_{uuid.uuid4().hex}.json"
+
+
 class TestABTest:
     def test_MD01_ab_test_create(self):
         from core.model_intelligence.auto_update import ABTest
@@ -142,8 +150,15 @@ class TestModelAutoUpdate:
         assert stats["total_cost"] == pytest.approx(0.08, abs=0.001)
         assert stats["per_model"]["m2"] == pytest.approx(0.05, abs=0.001)
 
-    def test_MD18_dynamic_quality_cost_ratio_no_data(self):
+    def test_MD18_dynamic_quality_cost_ratio_no_data(self, monkeypatch):
         from core.model_intelligence.auto_update import ModelAutoUpdate
+        import core.model_intelligence.selector as selector
+
+        # Isolate from any persisted/global performance store on disk so that
+        # an unknown model genuinely has no data (the "no_data" contract).
+        empty_store = selector.ModelPerformanceMemory(path=tmp_perf_path())
+        monkeypatch.setattr(selector, "get_model_performance", lambda: empty_store)
+
         e = ModelAutoUpdate()
         assert e.get_dynamic_quality_cost_ratio("unknown") == 0.5
 

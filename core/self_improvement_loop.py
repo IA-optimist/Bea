@@ -48,12 +48,14 @@ Safety:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 # Audit S8 (2026-05-20): silent logger for suppressed exceptions — matches
 # the pattern used elsewhere in core/. Previously this module sat inside
 # core/_legacy/ which ruff excludes, so F821 on `_silent_log` references
 # was never surfaced. Now that the module is back at
 # core/self_improvement_loop.py, ruff catches it ; add the import explicitly.
-_silent_log = __import__("structlog").get_logger(__name__)
 
 import hashlib
 import json
@@ -66,8 +68,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -81,7 +82,7 @@ class SignalType(str, Enum):
     APPROVAL_REJECTION = "approval_rejection"
     EXCEPTION = "exception"
     PERFORMANCE_DEGRADATION = "performance_degradation"
-    TOKEN_ANOMALY = "token_anomaly"
+    TOKEN_ANOMALY = "token_anomaly"  # nosec B105 — enum signal-type label
     TEST_FAILURE = "test_failure"
 
 
@@ -98,7 +99,7 @@ class ImprovementSignal:
 
     @property
     def id(self) -> str:
-        return hashlib.md5(f"{self.type}:{self.component}:{self.stacktrace[:100]}".encode()).hexdigest()[:12]
+        return hashlib.md5(f"{self.type}:{self.component}:{self.stacktrace[:100]}".encode(), usedforsecurity=False).hexdigest()[:12]
 
     def to_dict(self) -> dict:
         return {
@@ -159,8 +160,8 @@ class SignalCollector:
                         frequency=f["count"],
                         context={"category": f.get("category", ""), "message": f.get("last_message", "")},
                     ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_a", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Source 2: tool reliability
         try:
@@ -177,8 +178,8 @@ class SignalCollector:
                             frequency=int(problem.metric_value),
                             context={"problem": problem.problem_type, "detail": problem.detail},
                         ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_b", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Source 3: improvement daemon weaknesses
         try:
@@ -191,8 +192,8 @@ class SignalCollector:
                     frequency=w.count,
                     context={"category": w.category, "metric": w.metric_name, "value": w.metric_value},
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="improvement_signal_emit_c", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         for s in signals:
             self.add(s)
@@ -326,7 +327,7 @@ class CriticAgent:
         # Priority = severity × frequency × confidence
         priority = severity_max * min(total_freq, 20) * confidence / 20
 
-        task_id = hashlib.md5(f"{component}:{strategy}".encode()).hexdigest()[:10]
+        task_id = hashlib.md5(f"{component}:{strategy}".encode(), usedforsecurity=False).hexdigest()[:10]
 
         return ImprovementTask(
             id=f"task-{task_id}",
@@ -479,7 +480,7 @@ class PatchGenerator:
                 if "except:" in line and i + 1 < len(lines) and "pass" in lines[i + 1].strip():
                     indent = len(line) - len(line.lstrip())
                     new_lines.append(f"{' ' * indent}except Exception as _e:")
-                    new_lines.append(f"{' ' * (indent + 4)}import logging; logging.getLogger(__name__).debug('suppressed: %s', _e)")
+                    new_lines.append(f"{' ' * (indent + 4)}import logging; structlog.get_logger(__name__).debug('suppressed: %s', _e)")
                     i += 2  # skip the pass line
                     changed = True
                 else:
@@ -748,8 +749,8 @@ class PromptOptimizer:
                                 "content": v.content[:500], "score": v.score,
                                 "uses": v.uses} for v in versions]
             self._path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="prompt_versions_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if self._path.exists():
@@ -757,8 +758,8 @@ class PromptOptimizer:
                 data = json.loads(self._path.read_text(encoding="utf-8"))
                 for name, versions in data.items():
                     self._prompts[name] = [PromptVersion(**v) for v in versions]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='self_improvement_loop_v2.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="prompt_versions_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1073,7 +1074,7 @@ class JarvisImprovementLoop:
         except Exception as e:
             # Fallback: if pipeline import/execution fails, use legacy path
             # but WITHOUT writing to production (fail-safe)
-            log.warning("pipeline_fallback", error=str(e)[:200])
+            log.warning("pipeline_fallback", err=str(e)[:200])
             details.append({"step": "pipeline_fallback", "error": str(e)[:200]})
 
             sandbox_result = self._sandbox.run(patch)
@@ -1127,7 +1128,7 @@ class JarvisImprovementLoop:
                 reason=f"Files: {', '.join(files[:3])} | Score: {score:.2f}",
             )
         except Exception:
-            pass  # Fail-open — notification is best-effort
+            log.debug("swallowed_exception", exc_info=True)
 
     def get_pending_reviews(self) -> list[dict]:
         return list(self._pending_reviews)

@@ -141,6 +141,6 @@ class V1DeprecationMiddleware(BaseHTTPMiddleware):
                     sunset=_V1_SUNSET_DATE,
                 )
             except Exception:
-                pass
+                import logging as _lg; _lg.getLogger(__name__).debug("deprecation_telemetry_failed", exc_info=True)
 
         return response

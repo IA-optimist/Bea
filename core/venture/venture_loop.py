@@ -19,7 +19,6 @@ import uuid
 import structlog
 from dataclasses import dataclass, field
 from enum import Enum
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("venture.loop")
 
@@ -631,22 +630,22 @@ def _record_loop_outcome(result: VentureLoopResult, hypothesis: VentureHypothesi
         from core.economic.strategic_memory import StrategicRecord, get_strategic_memory
         mem = get_strategic_memory()
         mem.record(StrategicRecord(
-            record_type="venture_experiment",
-            score=result.final_confidence,
-            context={
+            strategy_type="venture_experiment",
+            outcome_score=result.final_confidence,
+            context_features={
                 "hypothesis_id": hypothesis.hypothesis_id,
                 "iterations": len(result.iterations),
                 "status": result.status,
                 "target_segment": hypothesis.target_segment,
             },
-            findings={
-                "score_progression": result.score_progression,
-                "final_composite": result.final_evaluation.get("composite_score", 0),
-            },
-            failures={"reason": result.reason} if result.status == "failed" else {},
+            key_findings=[
+                f"score_progression: {result.score_progression}",
+                f"final_composite: {result.final_evaluation.get('composite_score', 0)}",
+            ],
+            failure_reasons=([f"reason: {result.reason}"] if result.status == "failed" else []),
         ))
     except Exception:
-        pass  # Fail-open
+        log.debug("swallowed_exception", exc_info=True)
 
     try:
         from core.cognitive_events.emitter import ce_emit
@@ -660,5 +659,5 @@ def _record_loop_outcome(result: VentureLoopResult, hypothesis: VentureHypothesi
                 "confidence": result.final_confidence,
             },
         )
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='venture_loop.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="venture_loop_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

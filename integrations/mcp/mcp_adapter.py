@@ -194,4 +194,4 @@ def _trace_mcp_langfuse(
         )
         lf.flush()
     except Exception:
-        pass  # Observability must never break tool invocations
+        log.debug("swallowed_exception", exc_info=True)

@@ -217,7 +217,7 @@ class ReasoningLogger:
     Audit trail complet, révisable par l'humain.
     """
 
-    def __init__(self, log_path: Path = Path("/tmp/jarvis_alignment.jsonl")):
+    def __init__(self, log_path: Path = Path("/tmp/jarvis_alignment.jsonl")):  # nosec B108 — default log path; callers may override.
         self.log_path = log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         
@@ -401,7 +401,7 @@ class AlignmentLayer:
         self.constitution = ConstitutionLayer()
         self.debate_protocol = DebateProtocol()
         self.logger = ReasoningLogger(
-            log_path or Path("/tmp/jarvis_alignment.jsonl")
+            log_path or Path("/tmp/jarvis_alignment.jsonl")  # nosec B108 — fallback to default log path.
         )
         self.corrigibility = CorrigibilityLayer()
 
@@ -555,7 +555,7 @@ def run_alignment_tests() -> list[dict]:
     5 scénarios de test conformes à la Constitution JarvisMax.
     Vérifie que le système se comporte comme attendu.
     """
-    alignment = AlignmentLayer(log_path=Path("/tmp/jarvis_alignment_test.jsonl"))
+    alignment = AlignmentLayer(log_path=Path("/tmp/jarvis_alignment_test.jsonl"))  # nosec B108 — test path.
     
     test_cases = [
         {

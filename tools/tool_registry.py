@@ -26,10 +26,12 @@ NOTE: This file was previously confusingly named identical to core/tool_registry
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import time
 from dataclasses import dataclass
 from typing import Any
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -106,8 +108,8 @@ class ToolRegistry:
             risk = "safe"
             try:
                 risk = tool.risk.value if hasattr(tool, "risk") else "safe"
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_registry_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             if isinstance(raw, dict):
                 success = raw.get("success", True)
@@ -153,8 +155,8 @@ class ToolRegistry:
             defs = _get_defs()
             for td in defs.list_tools():
                 live_names.add(td.name)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_registry.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_registry_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return sorted(live_names)
 
     def get_tool_stats(self) -> dict[str, dict]:
@@ -197,7 +199,7 @@ class ToolRegistry:
                 cls = getattr(mod, class_name)
                 self._tools[name] = cls()
             except Exception:
-                pass  # fail-open — skip unavailable tools
+                log.debug("swallowed_exception", exc_info=True)
 
 
 def get_tool_registry() -> ToolRegistry:

@@ -20,7 +20,7 @@ class ClientProfile:
     def __post_init__(self):
         if not self.profile_id:
             import hashlib
-            self.profile_id = hashlib.md5(f'{self.name}:{self.sector}'.encode()).hexdigest()[:8]
+            self.profile_id = hashlib.md5(f'{self.name}:{self.sector}'.encode(), usedforsecurity=False).hexdigest()[:8]
 
     def inject_context(self, goal: str) -> str:
         """Enrichit un goal avec le contexte client."""
@@ -60,7 +60,7 @@ class ClientProfile:
                     flds = ClientProfile.__dataclass_fields__
                     return ClientProfile(**{k: v for k, v in d.items() if k in flds})
             except Exception:
-                pass
+                import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
         return None
 
     @staticmethod
@@ -77,7 +77,7 @@ class ClientProfile:
                     flds = ClientProfile.__dataclass_fields__
                     profiles.append(ClientProfile(**{k: v for k, v in d.items() if k in flds}))
             except Exception:
-                pass
+                import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
         return profiles
 
 

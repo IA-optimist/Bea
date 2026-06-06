@@ -52,7 +52,7 @@ class EmbeddingProvider:
             if vector:
                 return vector
         except Exception as e:
-            log.warning("sentence_transformer_embed_failed", error=str(e))
+            log.warning("sentence_transformer_embed_failed", err=str(e))
 
         # Try OpenAI second
         if self._use_openai:
@@ -61,7 +61,7 @@ class EmbeddingProvider:
                 if vector:
                     return vector[:EMBEDDING_DIM]  # Truncate to 384
             except Exception as e:
-                log.warning("openai_embed_failed", error=str(e))
+                log.warning("openai_embed_failed", err=str(e))
                 self._use_openai = False  # Disable for session
 
         # Fallback to memory.embeddings.EmbeddingProvider
@@ -70,7 +70,7 @@ class EmbeddingProvider:
             if vector:
                 return vector[:EMBEDDING_DIM]  # Extract first 384
         except Exception as e:
-            log.warning("fallback_embed_failed", error=str(e))
+            log.warning("fallback_embed_failed", err=str(e))
 
         # Final fallback: null vector
         log.error("embed_null_vector", reason="all_providers_failed")
@@ -88,7 +88,7 @@ class EmbeddingProvider:
                 log.warning("sentence_transformers_not_installed")
                 return None
             except Exception as e:
-                log.error("sentence_transformer_load_failed", error=str(e))
+                log.error("sentence_transformer_load_failed", err=str(e))
                 return None
 
         try:
@@ -102,7 +102,7 @@ class EmbeddingProvider:
             log.debug("sentence_transformer_embed_success", dim=len(vector))
             return vector
         except Exception as e:
-            log.error("sentence_transformer_encode_error", error=str(e))
+            log.error("sentence_transformer_encode_error", err=str(e))
             return None
 
     async def _embed_openai(self, text: str) -> list[float] | None:
@@ -124,7 +124,7 @@ class EmbeddingProvider:
             )
             return response.data[0].embedding
         except Exception as e:
-            log.error("openai_embed_error", error=str(e))
+            log.error("openai_embed_error", err=str(e))
             return None
 
     async def _embed_fallback(self, text: str) -> list[float] | None:
@@ -136,7 +136,7 @@ class EmbeddingProvider:
                 settings = Settings()
                 self._fallback_provider = MemoryEmbedder(settings)
             except Exception as e:
-                log.warning("fallback_provider_init_failed", error=str(e))
+                log.warning("fallback_provider_init_failed", err=str(e))
                 return None
 
         try:
@@ -145,7 +145,7 @@ class EmbeddingProvider:
             vector = await self._fallback_provider.embed(text)
             return vector[:EMBEDDING_DIM]
         except Exception as e:
-            log.error("fallback_embed_error", error=str(e))
+            log.error("fallback_embed_error", err=str(e))
             return None
 
 

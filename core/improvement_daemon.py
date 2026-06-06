@@ -31,19 +31,20 @@ Safety:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import os
 import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -107,8 +108,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_target="executor/retry_policy.py",
                     suggested_fix="Increase retry budget or add fallback strategies",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_mission_success_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 2. High tool failure rate per tool
     try:
@@ -132,8 +133,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_target="core/tool_intelligence/selector.py",
                             suggested_fix=f"Deprioritize or add fallback for {tool_name}",
                         ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_tool_failure_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 3. High tool timeout frequency
     try:
@@ -157,8 +158,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_target="core/tool_executor.py",
                 suggested_fix="Increase timeout for affected tools or add circuit breaker",
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_tool_timeout_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 4. Retry storm
     try:
@@ -175,8 +176,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                 suggested_target="executor/retry_policy.py",
                 suggested_fix="Tune backoff parameters or add jitter",
             ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_retry_count_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 5. Expensive model usage
     try:
@@ -200,8 +201,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     suggested_target="core/llm_routing_policy.py",
                     suggested_fix=f"Route to cheaper model for non-critical tasks using {top_model}",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_model_cost_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 6. High model failure rate
     try:
@@ -225,8 +226,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                             suggested_target="core/llm_routing_policy.py",
                             suggested_fix=f"Deprioritize {model_id} in routing policy health tracker",
                         ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_model_failure_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 7. Slow model latency
     try:
@@ -247,8 +248,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                         suggested_target="core/llm_routing_policy.py",
                         suggested_fix=f"Route time-sensitive tasks away from {model_id}",
                     ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_model_latency_weakness", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # 8. Failure pattern aggregation
     try:
@@ -264,8 +265,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     severity="medium" if count < 10 else "high",
                     description=f"Recurring failure pattern: {category} ({count}x in {window_s/3600:.0f}h)",
                 ))
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="detect_recurring_failure_pattern", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Sort by severity
     _severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
@@ -800,8 +801,8 @@ def run_cycle(repo_root: Path | None = None) -> dict:
             emit_experiment(report.decision,
                             report.evaluation.get("composite", 0)
                             if isinstance(report.evaluation, dict) else 0)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='improvement_daemon.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="emit_experiment_metric", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # 8. Set cooldown for this category
         _cooldown_tracker.set_cooldown(chosen_weakness.category, COOLDOWN_CYCLES)

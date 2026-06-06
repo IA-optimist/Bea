@@ -253,7 +253,7 @@ class MemoryGraph:
                 }
                 tmp = self._persist_path.with_suffix(".tmp")
                 tmp.write_text(json.dumps(data, indent=2))
-                tmp.rename(self._persist_path)
+                tmp.replace(self._persist_path)
                 self._dirty = False
             except Exception as e:
                 log.warning("memory_graph_save_failed", err=str(e))

@@ -169,7 +169,7 @@ class SecretVault:
 
     # ── Create ──
 
-    def create_secret(
+    def create_secret(  # nosec B107 — `secret_type` default below is a category label, not a secret value.
         self,
         name: str,
         value: str,
@@ -187,7 +187,7 @@ class SecretVault:
             raise PolicyViolation(f"Role '{role}' cannot create secrets")
 
         # Generate ID
-        secret_id = f"sec-{hashlib.md5(f'{name}{time.time()}'.encode()).hexdigest()[:10]}"
+        secret_id = f"sec-{hashlib.md5(f'{name}{time.time()}'.encode(), usedforsecurity=False).hexdigest()[:10]}"
 
         # Encrypt value
         payload = encrypt(value, self._master_key, self._salt)
@@ -205,7 +205,7 @@ class SecretVault:
         self._metadata[secret_id] = meta
 
         # TOTP config
-        if totp_config and secret_type == "totp":
+        if totp_config and secret_type == "totp":  # nosec B105 — enum-value comparison
             self._totp_configs[secret_id] = TOTPConfig.from_dict(totp_config)
 
         # Persist
@@ -257,7 +257,7 @@ class SecretVault:
 
         # TOTP?
         totp_code = ""
-        if meta.secret_type == "totp" and secret_id in self._totp_configs:
+        if meta.secret_type == "totp" and secret_id in self._totp_configs:  # nosec B105 — enum-value comparison
             cfg = self._totp_configs[secret_id]
             seed_bytes = decode_seed(plaintext)
             totp_code = generate_totp(seed_bytes, digits=cfg.digits, period=cfg.period, algorithm=cfg.algorithm)

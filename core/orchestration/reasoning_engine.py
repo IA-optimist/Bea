@@ -176,7 +176,7 @@ def _classify_complexity(goal: str, words: set) -> str:
         "write", "develop", "setup", "configure",
         # FR equivalents
         "construis", "cree", "implemente", "deploie", "developpe",
-        "migre", "integre", "configure", "ecris", "genere", "crees",
+        "migre", "integre", "ecris", "genere", "crees",
     }
     verb_count = sum(1 for w in words if w in _ACTION_VERBS)
     # 1 action verb in a message > 30 chars already warrants multi_step

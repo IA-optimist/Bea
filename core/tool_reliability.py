@@ -18,15 +18,16 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -388,8 +389,8 @@ def diagnose_tools() -> list[ToolDiagnosis]:
                 m = get_metrics()
                 timeout_count = int(m.get_counter("tool_timeout_total",
                                                    {"tool": tool_name}))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_reliability.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_reliability_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             diagnoses.append(ToolDiagnosis(
                 tool_name=tool_name,

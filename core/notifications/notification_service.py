@@ -58,7 +58,7 @@ class NotificationService:
                         ]
                 log.info("notification_subscriptions_loaded", count=len(self.subscriptions))
         except Exception as e:
-            log.warning("notification_subscriptions_load_failed", error=str(e))
+            log.warning("notification_subscriptions_load_failed", err=str(e))
             self.subscriptions = {}
     
     def _save_subscriptions(self):
@@ -72,7 +72,7 @@ class NotificationService:
             with open(_STORAGE_PATH, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            log.error("notification_subscriptions_save_failed", error=str(e))
+            log.error("notification_subscriptions_save_failed", err=str(e))
     
     def subscribe(
         self,
@@ -216,7 +216,7 @@ class NotificationService:
         except Exception as e:
             log.error("notification_send_error",
                       channel=subscription.channel.value,
-                      error=str(e),
+                      err=str(e),
                       mission_id=payload.mission_id)
             return False
     

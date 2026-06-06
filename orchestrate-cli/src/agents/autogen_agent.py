@@ -10,15 +10,14 @@ Features:
 """
 
 import asyncio
-import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from loguru import logger
 
 try:
     from autogen import AssistantAgent, UserProxyAgent, ConversableAgent
-    from autogen_core.models import FunctionCallingLLM
-    from autogen_agentchat.agents import AssistantAgent as ChatAssistantAgent
-    from autogen_agentchat.agents import UserProxyAgent as ChatUserProxyAgent
+    from autogen_core.models import FunctionCallingLLM  # noqa: F401
+    from autogen_agentchat.agents import AssistantAgent as ChatAssistantAgent  # noqa: F401
+    from autogen_agentchat.agents import UserProxyAgent as ChatUserProxyAgent  # noqa: F401
     AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False

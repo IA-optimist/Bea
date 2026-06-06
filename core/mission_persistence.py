@@ -21,6 +21,10 @@ import time
 import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from core.mission_models import MissionResult
 
 log = structlog.get_logger("mission_persistence")
 
@@ -290,10 +294,11 @@ class MissionPersistenceStore:
                         for mid, m in self._missions.items()
                     },
                 }
-            # Atomic write: write to temp then rename
+            # Atomic write: write to temp then replace (replace écrase sur Windows ;
+            # rename y lève FileExistsError quand la cible existe → perte de données).
             tmp = self._persist_file.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
-            tmp.rename(self._persist_file)
+            tmp.replace(self._persist_file)
         except Exception as e:
             log.warning("mission_persist_save_failed", err=str(e)[:100])
 
@@ -307,6 +312,7 @@ class MissionPersistenceStore:
                 try:
                     self._missions[mid] = PersistedMission.from_dict(d)
                 except Exception:
+                    log.debug("swallowed_exception", exc_info=True)
                     continue
             log.info("mission_persist_loaded", count=len(self._missions))
         except Exception as e:
@@ -339,3 +345,146 @@ def get_mission_persistence() -> MissionPersistenceStore:
             if _store is None:
                 _store = MissionPersistenceStore()
     return _store
+
+# ── MissionSystem v1 persistence helpers ─────────────────────────────────────
+
+def load_missions(path: Path, logger) -> tuple[dict[str, Any], bool]:
+    """Load MissionSystem v1 missions from SQLite when available, else JSON."""
+    from core.mission_models import MissionResult
+    from core.state import MissionStatus
+
+    missions: dict[str, Any] = {}
+    try:
+        from core import db as db_mod
+
+        db = db_mod.get_db()
+        if db is not None:
+            rows = db_mod.fetchall("SELECT * FROM missions ORDER BY created_at DESC LIMIT 200")
+            for row in rows:
+                try:
+                    mission = MissionResult(
+                        mission_id=row["id"],
+                        user_input=row["user_input"] or "",
+                        intent=row["intent"] or "OTHER",
+                        status=row["status"] or MissionStatus.ANALYZING,
+                        plan_summary=row["plan_summary"] or "",
+                        plan_steps=db_mod.loads(row.get("plan_steps"), []),
+                        advisory_score=row["advisory_score"] or 0.0,
+                        advisory_decision=row["advisory_decision"] or "UNKNOWN",
+                        advisory_issues=db_mod.loads(row.get("advisory_issues"), []),
+                        advisory_risks=db_mod.loads(row.get("advisory_risks"), []),
+                        action_ids=db_mod.loads(row.get("action_ids"), []),
+                        requires_validation=bool(row["requires_validation"]),
+                        created_at=row["created_at"] or time.time(),
+                        updated_at=row["updated_at"] or time.time(),
+                        final_output=row.get("final_output") or "",
+                        summary=row.get("summary") or "",
+                        agents_selected=db_mod.loads(row.get("agents_selected"), []),
+                        domain=row.get("domain") or "general",
+                        execution_trace=db_mod.loads(row.get("execution_trace"), []),
+                        decision_trace=db_mod.loads(row.get("decision_trace"), {}),
+                        risk_score=row.get("risk_score") or 0,
+                        complexity=row.get("complexity") or "medium",
+                        error=row.get("error") or "",
+                    )
+                    missions[mission.mission_id] = mission
+                except Exception as exc:
+                    logger.debug(
+                        "silent_exception_caught",
+                        err=str(exc)[:120],
+                        location="mission_persistence:sqlite_row",
+                    )
+            logger.debug("mission_system_loaded_sqlite", count=len(missions))
+            return missions, True
+    except Exception as exc:
+        logger.warning("mission_sqlite_load_failed", err=str(exc))
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            return missions, False
+        data = json.loads(path.read_text("utf-8"))
+        for item in data.get("missions", []):
+            try:
+                mission = MissionResult.from_dict(item)
+                missions[mission.mission_id] = mission
+            except Exception as exc:
+                logger.debug(
+                    "silent_exception_caught",
+                    err=str(exc)[:120],
+                    location="mission_persistence:json_row",
+                )
+    except Exception as exc:
+        logger.warning("mission_system_load_failed", err=str(exc))
+    return missions, False
+
+
+def save_missions(
+    path: Path,
+    missions: dict[str, Any],
+    max_stored: int,
+    logger,
+) -> None:
+    """Persist MissionSystem v1 missions to JSON, evicting old completed entries."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if len(missions) > max_stored:
+            done = [mission for mission in missions.values() if mission.is_done()]
+            for old in sorted(done, key=lambda mission: mission.created_at)[:20]:
+                del missions[old.mission_id]
+        data = {
+            "version": 1,
+            "saved_at": time.time(),
+            "missions": [mission.to_dict() for mission in missions.values()],
+        }
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False), "utf-8")
+    except Exception as exc:
+        logger.warning("mission_system_save_failed", err=str(exc))
+
+
+def sqlite_upsert_mission(result: Any, logger) -> bool:
+    """Upsert one MissionSystem v1 mission into SQLite. Returns False on failure."""
+    try:
+        from core import db as db_mod
+
+        db_mod.execute(
+            """INSERT OR REPLACE INTO missions
+               (id, user_input, intent, status, plan_summary, plan_steps,
+                advisory_score, advisory_decision, advisory_issues, advisory_risks,
+                action_ids, requires_validation, auto_approved, created_at,
+                updated_at, completed_at, note, final_output, summary, agents_selected,
+                domain, execution_trace, decision_trace, risk_score, complexity, error)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                result.mission_id,
+                result.user_input,
+                result.intent,
+                result.status,
+                result.plan_summary,
+                db_mod.dumps(result.plan_steps),
+                result.advisory_score,
+                result.advisory_decision,
+                db_mod.dumps(result.advisory_issues),
+                db_mod.dumps(result.advisory_risks),
+                db_mod.dumps(result.action_ids),
+                1 if result.requires_validation else 0,
+                0,
+                result.created_at,
+                result.updated_at,
+                None,
+                "",
+                result.final_output,
+                result.summary,
+                db_mod.dumps(result.agents_selected),
+                result.domain,
+                db_mod.dumps(result.execution_trace),
+                db_mod.dumps(result.decision_trace),
+                result.risk_score,
+                result.complexity,
+                result.error,
+            ),
+        )
+        return True
+    except Exception as exc:
+        logger.warning("mission_sqlite_upsert_failed", err=str(exc))
+        return False

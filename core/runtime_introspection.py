@@ -29,24 +29,25 @@ Usage:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import importlib
 import os
 import shutil
 import socket
-import subprocess
+import subprocess  # nosec B404
 import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -144,7 +145,7 @@ def _detect_filesystem() -> Capability:
         cwd = os.getcwd()
         home = str(Path.home())
         writable = os.access(cwd, os.W_OK)
-        tmp_writable = os.access("/tmp", os.W_OK)
+        tmp_writable = os.access("/tmp", os.W_OK)  # nosec B108 — probe (no write); just reports whether /tmp is writable.
         disk_usage = shutil.disk_usage(cwd)
         free_gb = round(disk_usage.free / (1024**3), 1)
         return Capability(
@@ -194,7 +195,7 @@ def _detect_network() -> Capability:
 def _detect_docker() -> Capability:
     """Detect Docker availability."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "version", "--format", "{{.Server.Version}}"],
             capture_output=True, text=True, timeout=5,
         )
@@ -224,13 +225,13 @@ def _detect_docker() -> Capability:
 def _detect_git() -> Capability:
     """Detect Git availability and repo state."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["git", "--version"], capture_output=True, text=True, timeout=5,
         )
         if result.returncode == 0:
             version = result.stdout.strip().replace("git version ", "")
             # Check if we're in a repo
-            branch_result = subprocess.run(
+            branch_result = subprocess.run(  # nosec B603 B607
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 capture_output=True, text=True, timeout=5,
             )
@@ -261,8 +262,8 @@ def _detect_optional_modules() -> Capability:
         try:
             importlib.import_module(mod)
             modules[mod] = True
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="runtime_introspection_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     available_count = sum(1 for v in modules.values() if v)
     return Capability(
         name="optional_modules",
@@ -339,8 +340,8 @@ def get_runtime_capabilities() -> dict:
     try:
         log.info("runtime_capabilities_detected",
                  available=available, total=total)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='runtime_introspection.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="runtime_introspection_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return result
 
@@ -419,7 +420,7 @@ def _check_deps(tool_name: str) -> tuple[bool, str]:
 def _check_binary(name: str, timeout: int = 3) -> tuple[bool, str]:
     """Check if a binary is available on PATH."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             [name, "--version"], capture_output=True, text=True, timeout=timeout,
         )
         return result.returncode == 0, result.stdout.strip()[:80]
@@ -744,7 +745,7 @@ def record_execution_signal(
         if len(_SIGNAL_BUFFER) > _MAX_SIGNALS:
             del _SIGNAL_BUFFER[:_MAX_SIGNALS // 5]  # drop 20%
     except Exception:
-        pass  # signal recording must never crash anything
+        log.debug("swallowed_exception", exc_info=True)
 
 
 def get_execution_signals(

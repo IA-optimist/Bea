@@ -121,7 +121,7 @@ class WebScoutResearch(BaseAgent):
 
     async def run(self, session: JarvisSession) -> str:
         t0 = time.monotonic()
-        log.info("web_scout_start", sid=session.session_id)
+        log.info("web_scout_start", mission_id=session.session_id)
 
         query = self._task(session) or session.user_input
 
@@ -131,7 +131,7 @@ class WebScoutResearch(BaseAgent):
                 timeout=self.timeout_s,
             )
         except asyncio.TimeoutError:
-            log.warning("web_scout_timeout", sid=session.session_id)
+            log.warning("web_scout_timeout", mission_id=session.session_id)
             result = await self._run_fallback(session, note="[TIMEOUT web scraping]")
         except Exception as e:
             log.error("web_scout_error", err=str(e), sid=session.session_id)

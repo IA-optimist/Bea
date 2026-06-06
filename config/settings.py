@@ -125,6 +125,13 @@ class Settings:
     ollama_model_uncensored:  str = field(default_factory=lambda: os.environ.get("OLLAMA_MODEL_UNCENSORED", "dolphin-mixtral"))
     uncensored_mode:          bool = field(default_factory=lambda: _b("UNCENSORED_MODE", "false"))
 
+    # ── Codex orchestrateur via gateway Hermes (OpenAI-compatible) ─────────────
+    # L'auth Codex (abonnement) vit dans Hermes ; on route l'orchestrateur de Béa
+    # vers son gateway OpenAI-compatible plutôt que de dupliquer des credentials.
+    codex_base_url: str = field(default_factory=lambda: os.environ.get("CODEX_BASE_URL", "http://127.0.0.1:8642/v1"))
+    codex_model:    str = field(default_factory=lambda: os.environ.get("CODEX_MODEL", "hermes-agent"))
+    codex_api_key:  str = field(default_factory=lambda: os.environ.get("CODEX_API_KEY", "none"))
+
     # ── PostgreSQL ────────────────────────────────────────────
     postgres_host:     str = field(default_factory=lambda: os.environ.get("POSTGRES_HOST", "postgres"))
     postgres_user:     str = field(default_factory=lambda: os.environ.get("POSTGRES_USER", "jarvis"))

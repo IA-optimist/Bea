@@ -1,3 +1,5 @@
+import structlog
+log = structlog.get_logger(__name__)
 """
 continual_memory.py — Replay buffer intelligent pour JarvisMax
 Résout l'oubli catastrophique entre sessions via prioritized experience replay.
@@ -22,8 +24,7 @@ try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:  # structlog not installed (smoke env)
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +115,7 @@ class ContinualMemory:
                     timeout=10,
                 )
         except Exception:
-            pass  # Qdrant unavailable at init — store_experience will handle
+            log.debug("swallowed_exception", exc_info=True)
 
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:
         """Cosine similarity between two vectors."""

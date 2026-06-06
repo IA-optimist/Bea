@@ -1,10 +1,16 @@
 name: CI/CD Pipeline
 
+# Auto-triggers disabled 2026-05-30 to stop GitHub Actions billing. The
+# project is validated locally before every push; this workflow stays
+# defined so it can be run manually from the GitHub Actions UI when
+# needed (e.g. before tagging a release). To re-enable auto-triggers,
+# uncomment the `push` / `pull_request` blocks below.
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main ]
 
 permissions:
   contents: read
@@ -69,6 +75,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio pytest-xdist
       
+      - name: Check requirements lock drift
+        run: python scripts/check_requirements_lock.py requirements.txt requirements.lock
+
       - name: Run linting (ruff, blocking on curated rule set)
         run: |
           set -euo pipefail
@@ -82,18 +91,13 @@ jobs:
           TESTING: true
         run: |
           set -euo pipefail
-          # Coverage threshold = conservative baseline ; raise gradually as
-          # cleanup PRs land. Fails CI if core/ coverage drops below.
-          # 50 → 55 (audit Sprint 4 §6.4). A bump to 60 was attempted in
-          # Sprint 7 tour 1 (commit 6f5f5af) but reality is 56.98% so we
-          # held at 55. Roadmap : add tests for the 0%-coverage modules
-          # (workspace_cleaner, low-coverage workflow_runtime/workflow_playbooks
-          # branches) before the next ratchet.
-          # -n auto runs one worker per CPU core (pytest-xdist) — local suite
-          # time drops from ~6.5min single-threaded to ~2min on a 4-core runner.
+          # Coverage threshold = broad baseline across core/api/kernel. Keep it
+          # ratcheted upward as uncovered modules get tests; do not narrow --cov
+          # back to core-only. -n auto = one worker per CPU core (pytest-xdist).
+          COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-45}"
           pytest tests/ -v -n auto --dist=loadfile \
-            --cov=core --cov-report=xml --cov-report=term \
-            --cov-fail-under=55
+            --cov=core --cov=api --cov=kernel --cov-report=xml --cov-report=term \
+            --cov-fail-under="$COVERAGE_FAIL_UNDER"
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457  # v3
@@ -102,16 +106,94 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  # Audit S8 (2026-05-20): mypy moved out of the test job into its own
-  # informational job. It's still continue-on-error at the job level (so it
-  # doesn't gate the green CI badge), but the run shows up cleanly in the
-  # Actions summary and the conclusion turns into a single signal you can
-  # watch over time. Long-term goal: turn off continue-on-error once
-  # `mypy core/` reaches < 10 errors with a baseline file.
-  mypy:
-    name: mypy (informational, non-blocking)
+  # Security scan: known-CVE check on the locked dependencies.
+  # Delta gate via quality/pip-audit-baseline.json — fails on any CVE not
+  # already acknowledged in the baseline (mirrors the TODO rows in
+  # requirements.txt). Bump the baseline only with a written justification.
+  pip-audit:
+    name: pip-audit (CVE delta gate)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Run pip-audit on requirements.lock
+        # --exit-zero: surface every finding to JSON without short-circuiting
+        # on the first vuln. The delta gate decides what's actually failing.
+        run: |
+          pip-audit -r requirements.lock --format json --output audit.json --strict || true
+          cat audit.json | python -m json.tool | head -60 || true
+
+      - name: Compare to pip-audit baseline
+        run: |
+          python scripts/check_pip_audit_baseline.py audit.json quality/pip-audit-baseline.json
+
+      - name: Upload pip-audit JSON as artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: pip-audit-report
+          path: audit.json
+          retention-days: 30
+
+  # Bandit static analysis on api/core/kernel — catches eval/exec/shell=True/
+  # pickle/hardcoded secrets at PR time. Delta gate via per-test-id count
+  # baseline (quality/bandit-baseline.json). Starts at zero budget; first
+  # baseline bump should be a dedicated cleanup PR per Bandit test-id.
+  bandit:
+    name: bandit (delta gate)
+    runs-on: ubuntu-latest
+    # Non-blocking for the first run-in window; remove continue-on-error
+    # once the team has triaged the initial findings into the baseline.
     continue-on-error: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run bandit on api/core/kernel
+        run: |
+          # --exit-zero so the JSON output is always written;
+          # the delta gate below is what fails the step.
+          # B101 = assert_used; legitimate in dataclasses + tests.
+          bandit -r api core kernel -f json -o bandit.json --exit-zero --skip B101
+
+      - name: Compare to bandit baseline
+        run: |
+          python scripts/check_bandit_baseline.py bandit.json quality/bandit-baseline.json
+
+      - name: Upload bandit JSON as artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: bandit-report
+          path: bandit.json
+          retention-days: 30
+
+  # M6: mypy is blocking through a delta baseline. The job allows the
+  # current legacy error budget, but fails if the count increases.
+  mypy:
+    name: mypy (delta gate)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
@@ -127,8 +209,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install mypy structlog pydantic fastapi pydantic-settings
 
-      - name: Run mypy on core/
-        run: mypy core/ --ignore-missing-imports
+      - name: Run mypy delta gate on core/api/kernel
+        run: |
+          set +e
+          mypy core api kernel --ignore-missing-imports --show-error-codes > mypy-report.txt
+          set -e
+          cat mypy-report.txt
+          python scripts/check_mypy_baseline.py mypy-report.txt quality/mypy-baseline.json
 
   build:
     runs-on: ubuntu-latest
@@ -144,12 +231,33 @@ jobs:
       - name: Build Docker image
         run: |
           set -euo pipefail
-          docker build -t jarvismax-api:latest .
+          docker build -t jarvismax-api:latest -f docker/Dockerfile .
       
       - name: Test Docker image
+        # Hardening (audit Mi4): le step précédent se contentait d'un `sleep 15`
+        # suivi de `docker logs` — il ne validait pas que l'API répond. Ici on
+        # poll `/health` activement avec timeout court, et le step échoue si le
+        # container ne devient pas healthy. La verbose-log reste affichée pour
+        # debug en cas d'échec.
         run: |
           set -euo pipefail
-          docker run -d --name test-api -e DATABASE_URL=sqlite:///test.db jarvismax-api:latest
-          sleep 15
+          docker run -d --name test-api -p 8000:8000 \
+            -e DATABASE_URL=sqlite:///test.db \
+            jarvismax-api:latest
+          # Wait up to 60s for /health to respond 200
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health > /dev/null 2>&1; then
+              ok=1
+              echo "API healthy after ${i}x2=$((i*2))s"
+              break
+            fi
+            sleep 2
+          done
           docker logs test-api
           docker stop test-api || true
+          docker rm test-api || true
+          if [ "$ok" != "1" ]; then
+            echo "::error::Docker image did not become healthy within 60s"
+            exit 1
+          fi

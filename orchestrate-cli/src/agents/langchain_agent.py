@@ -10,24 +10,22 @@ Features:
 """
 
 import asyncio
-import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from loguru import logger
 
 try:
     from langchain.agents import create_agent, Tool
-    from langchain_community.chat_models import ChatOpenRouter, ChatAnthropic, ChatOpenAI
-    from langchain_openai import ChatOpenAI as LangChainOpenAI
+    from langchain_community.chat_models import ChatOpenRouter, ChatAnthropic, ChatOpenAI  # noqa: F401
+    from langchain_openai import ChatOpenAI as LangChainOpenAI  # noqa: F401
     from langchain.memory import ConversationBufferMemory, ConversationSummaryMemory
-    from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-    from langchain_core.runnables import RunnablePassthrough
-    from langchain_core.output_parsers import StrOutputParser
+    from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder  # noqa: F401
+    from langchain_core.messages import SystemMessage, HumanMessage, AIMessage  # noqa: F401
+    from langchain_core.runnables import RunnablePassthrough  # noqa: F401
+    from langchain_core.output_parsers import StrOutputParser  # noqa: F401
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
 
-from src.utils.tool_registry import ToolRegistry
 
 class LangChainAgent:
     """Individual LangChain agent implementation"""
@@ -67,14 +65,6 @@ class LangChainAgent:
         """Create the LangChain agent"""
         # Create prompt template
         system_prompt = self.config.get('system_prompt', f"You are {self.name}, a helpful AI assistant.")
-        human_prompt = self.config.get('human_prompt', "{input}")
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", human_prompt),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
         
         # Create agent
         agent = create_agent(

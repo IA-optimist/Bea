@@ -4,11 +4,11 @@ JARVIS MAX — Voice & Call API Routes (Phase 10)
 POST /api/v2/voice/process          — upload audio → pipeline → response audio
 POST /api/v2/voice/call             — initiate outbound call via Twilio
 POST /api/v2/voice/sms              — send SMS via Twilio
-POST /api/v2/voice/webhook          — Twilio webhook handler (no auth, returns TwiML)
+POST /api/v2/voice/webhook          — Twilio webhook handler (auth-protected, returns TwiML)
 GET  /api/v2/voice/call/{call_sid}  — get call status
 
 Auth: X-Jarvis-Token header (same pattern as other routes).
-      /webhook is intentionally unauthenticated (Twilio signs requests separately).
+      /webhook is auth-protected by the router; do not expose it without signature verification.
 """
 from __future__ import annotations
 
@@ -116,13 +116,13 @@ async def send_sms(
     return {"ok": True, "data": result}
 
 
-# ── Twilio webhook (no auth) ──────────────────────────────────
+# ── Twilio webhook (auth-protected) ──────────────────────────────────
 
 @router.post("/webhook", response_class=PlainTextResponse)
 async def twilio_webhook(request: Request):
     """
     Twilio webhook handler — receives incoming calls / SMS events.
-    Returns TwiML (XML).  No JWT auth — Twilio request signing should be
+    Returns TwiML (XML).  JWT auth is enforced — Twilio request signing should be
     verified in production via X-Twilio-Signature (add middleware as needed).
     """
     try:

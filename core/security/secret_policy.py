@@ -49,7 +49,7 @@ class SecretType(str, Enum):
     COOKIE = "cookie"
     TOTP = "totp"
     PRIVATE_KEY = "private_key"
-    TOKEN = "token"
+    TOKEN = "token"  # nosec B105 — enum category label
 
 
 class PolicyViolation(Exception):

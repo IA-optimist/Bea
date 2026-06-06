@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import structlog
 from fastapi import APIRouter, Depends
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("api.kernel")
 
@@ -281,49 +280,49 @@ async def convergence_status(user=Depends(_auth())):
         from kernel.runtime.boot import get_runtime
         runtime = get_runtime()
         status["kernel_booted"] = runtime.booted_at > 0
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="kernel_booted_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         status["events_dual_emission"] = True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="events_dual_emission_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from kernel.convergence.capability_bridge import ensure_synced
         ensure_synced()
         status["capabilities_synced"] = True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capabilities_sync_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         status["policy_bridge_active"] = True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="policy_bridge_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         status["adapters_available"] = True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="adapters_available_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from kernel.capabilities.performance import get_performance_store
         summary = get_performance_store().get_summary()
         status["performance_tracking"] = summary.get("total_entities", 0) > 0 or True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="performance_tracking_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from kernel.capabilities.identity import get_identity_map
         stats = get_identity_map().stats()
         status["identity_mapping"] = stats.get("tools_mapped", 0) > 0
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="identity_mapping_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         status["performance_routing"] = True
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='kernel.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="performance_routing_check", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     status["convergence_phase"] = "progressive"
     status["convergence_level"] = sum(1 for v in status.values() if v is True)

@@ -6,12 +6,12 @@ Coexists with existing orchestrator — use USE_LANGGRAPH=true to activate.
 NOTE: AgentRunner.run(agent_name, goal, settings) — adapter la signature.
 """
 from __future__ import annotations
-import logging
+import structlog
 import os
 from typing import Any, Dict, List, Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # alias for M3 emitter
 
 # ── Fail-open imports ─────────────────────────────────────────────────────────
 try:
@@ -68,15 +68,15 @@ def _get_llm():
             if base_url:
                 kwargs["base_url"] = base_url
             return ChatOpenAI(**kwargs)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='langgraph_flow.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="langgraph_flow_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     try:
         from langchain_community.llms import Ollama  # type: ignore
         ollama_url = os.getenv("OLLAMA_HOST", "http://ollama:11434")
         model = os.getenv("OLLAMA_MODEL_MAIN", "llama3.1:8b")
         return Ollama(base_url=ollama_url, model=model)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='langgraph_flow.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="langgraph_flow_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     return None
 
 # ── Nodes ─────────────────────────────────────────────────────────────────────
@@ -112,10 +112,7 @@ def planner_node(state: JarvisState) -> JarvisState:
     """Build execution plan using existing planner."""
     try:
         from core.planner import build_plan
-        plan = build_plan(
-            objective=state["user_input"],
-            context={"conversation_history": state.get("conversation_history", [])},
-        )
+        plan = build_plan(goal=state["user_input"])
         state["plan"] = plan if isinstance(plan, dict) else {"steps": plan, "domain": "general"}
     except Exception as e:
         logger.warning("[LangGraph:planner] failed: %s", e)
@@ -162,7 +159,7 @@ async def executor_node(state: JarvisState) -> JarvisState:
             try:
                 from core.agent_runner import AgentRunner
                 runner = AgentRunner()
-                result = await runner.run(state["user_input"])
+                result = await runner.run(agent_name="default", goal=state["user_input"])
                 final_answer = result.get("final_output", "")
                 agent_outputs = result.get("agent_outputs", {})
                 logger.info("[LangGraph] executor_node: AgentRunner fallback OK")

@@ -157,7 +157,7 @@ class LifelongLearningEngine:
         
         # Generate skill hash
         skill_pattern = "|".join(sorted(tools_used))
-        skill_hash = hashlib.md5(skill_pattern.encode()).hexdigest()[:8]
+        skill_hash = hashlib.md5(skill_pattern.encode(), usedforsecurity=False).hexdigest()[:8]
         skill_id = f"skill-{skill_hash}"
         
         # Check if similar skill exists

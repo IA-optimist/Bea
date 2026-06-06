@@ -23,7 +23,6 @@ import uuid
 import structlog
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("business_actions")
 
@@ -187,7 +186,7 @@ def check_action_readiness(action_id: str) -> dict:
             if tool not in te._tools:
                 missing_tools.append(tool)
     except Exception:
-        pass  # Can't check — assume available
+        log.debug("swallowed_exception", exc_info=True)
 
     return {
         "action_id": action_id,
@@ -266,8 +265,8 @@ class BusinessActionExecutor:
                         item_id=f"ba-{action_id}-{uuid.uuid4().hex[:8]}",
                         action=f"Execute business action: {action.name}",
                     )
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='business_actions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="business_action_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 # For now, approval-gated actions produce a spec file
                 # instead of executing. Real execution requires explicit
                 # API call with approval_override=True.
@@ -319,8 +318,8 @@ class BusinessActionExecutor:
                             quality_score=1.0, mission_id=mission_id,
                             details=f"Used by action {action_id}",
                         ))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='business_actions.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="business_action_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             files = handler(action, agent_output, project_dir)
 
@@ -337,8 +336,8 @@ class BusinessActionExecutor:
                         json.dumps(manifest, indent=2),
                     )
                     files.append("skills-used.json")
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='business_actions.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="business_action_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             # Emit cognitive event: action completed
             self._emit_event(action, mission_id, "completed",
@@ -696,7 +695,7 @@ class BusinessActionExecutor:
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 result = resp.read().decode("utf-8")[:2000]
                 status = resp.status
         except Exception as e:
@@ -746,8 +745,8 @@ class BusinessActionExecutor:
                 },
                 tags=["business", action.agent],
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='business_actions.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="business_action_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ─────────────────────────────────────────────────

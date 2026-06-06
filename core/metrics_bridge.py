@@ -26,6 +26,9 @@ Design:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import functools
 import json
 import os
@@ -33,14 +36,12 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 _INSTALLED = False
@@ -136,8 +137,8 @@ def _patch_tool_executor() -> bool:
                 # Update executor gauges
                 get_metrics().set_gauge("executor_active_tasks",
                     len([1 for t in getattr(self, '_tools', {})]))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="executor_gauge_update", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return result
 
@@ -149,8 +150,8 @@ def _patch_tool_executor() -> bool:
                 # If the result has retry indicators
                 if max_retries > 0 and not result.get("ok"):
                     emit_retry("tool_executor")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="executor_retry_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return result
 
         ToolExecutor.execute = instrumented_execute
@@ -178,8 +179,8 @@ def _patch_llm_factory() -> bool:
                 model_name = getattr(llm, "model_name", getattr(llm, "model", provider))
                 locality = "local" if provider == "ollama" else "cloud"
                 emit_model_selected(model_name, locality)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="model_selected_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return llm
 
         @functools.wraps(original_invoke)
@@ -205,16 +206,16 @@ def _patch_llm_factory() -> bool:
                         _extract_cost_from_response(meta, model_name,
                                                      kwargs.get("mission_id", ""))
                     emit_model_latency(model_name, ms)
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="model_latency_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
                 return resp
             except Exception as e:
                 ms = (time.monotonic() - t0) * 1000
                 try:
                     emit_model_failure(role, str(e)[:200])
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="model_failure_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 raise
 
         LLMFactory.get = instrumented_get
@@ -245,8 +246,8 @@ def _patch_memory_facade() -> bool:
                     m.set_gauge("memory_persistence_ok", 1)
                 else:
                     m.set_gauge("memory_persistence_ok", 0)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="memory_persistence_gauge", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return result
 
         @functools.wraps(original_search)
@@ -258,8 +259,8 @@ def _patch_memory_facade() -> bool:
                 ms = (time.monotonic() - t0) * 1000
                 hit = len(results) > 0
                 emit_memory_search(hit, ms)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="memory_search_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return results
 
         MemoryFacade.store = instrumented_store
@@ -289,8 +290,8 @@ def _patch_improvement_loop() -> bool:
                     get_metrics().inc("regressions_blocked_total")
                 if report.decision in ("error", "rejected"):
                     get_metrics().inc("rollback_total")
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="regressions_blocked_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             return report
 
         ImprovementLoop.run_experiment = instrumented_run_experiment
@@ -351,8 +352,8 @@ def process_trace_event(event: dict) -> None:
         handler = _TRACE_EVENT_MAP.get(event_name)
         if handler:
             handler(event)
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="trace_event_dispatch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 def _patch_trace() -> bool:
@@ -366,8 +367,8 @@ def _patch_trace() -> bool:
             original_record(self, component, event, **data)
             try:
                 process_trace_event({"component": component, "event": event, **data})
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="trace_record_wrap", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         MissionTrace.record = instrumented_record
         log.info("metrics_bridge.patched", target="MissionTrace.record")
@@ -438,8 +439,8 @@ def _extract_cost_from_response(response_metadata: dict, model_id: str,
             actual_cost=actual_cost,
         )
 
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="mission_cost_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -464,8 +465,8 @@ def _snapshot_loop(path: Path):
         except Exception as e:
             try:
                 log.debug("snapshot_write_failed", err=str(e)[:80])
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="snapshot_write_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Save kernel performance every 5 cycles (~5 min at default interval)
         cycle += 1
@@ -473,8 +474,8 @@ def _snapshot_loop(path: Path):
             try:
                 from kernel.runtime.boot import save_performance
                 save_performance()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="save_performance_call", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 def start_snapshot_persistence(workspace_dir: str = "workspace") -> None:
@@ -592,8 +593,8 @@ def evaluate_alerts(window_s: float = 3600) -> list[dict]:
             try:
                 log.warning("alert_triggered", **{k: v for k, v in alert.items()
                                                    if k != "recommendation"})
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='metrics_bridge.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="alert_log_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return alerts
 

@@ -1,5 +1,5 @@
 """
-conftest.py — JarvisMax test configuration.
+conftest.py â€” JarvisMax test configuration.
 
 1. Pre-imports core.state so that test files using
    sys.modules.setdefault("core.state", MagicMock()) cannot overwrite it.
@@ -24,18 +24,18 @@ import asyncio
 import os
 import pytest
 
-# Bypass improvement gate security check for all tests — prevents dependency
+# Bypass improvement gate security check for all tests â€” prevents dependency
 # on security layer availability (qdrant, structlog) inside test environments.
 # DISABLED FOR SECURITY TESTS: # os.environ.setdefault("JARVIS_SKIP_IMPROVEMENT_GATE", "1")
 
-# ── Test auth token — accepté par api/_deps._check_auth ─────────────────────
+# â”€â”€ Test auth token â€” acceptÃ© par api/_deps._check_auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # La plupart des tests API envoient "Authorization: Bearer test". On aligne
 # JARVIS_API_TOKEN pour qu'ils passent sans monkeypatch individuel.
 # Tests qui utilisent un autre token (ex. "Bearer t" dans test_mcp_registry)
 # configurent leur propre override via monkeypatch.setenv / setattr.
 os.environ.setdefault("JARVIS_API_TOKEN", "test")
 
-# ── Pre-load key modules so test-level mocks cannot overwrite them ──────────
+# â”€â”€ Pre-load key modules so test-level mocks cannot overwrite them â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Tests that do sys.modules.setdefault("some.module", MagicMock()) can only
 # install their mock if the real module is NOT already in sys.modules.
 # By importing here (conftest is collected before test files), we protect them.
@@ -59,14 +59,14 @@ for _preload in [
         pass  # If missing, tests that need it will handle it themselves
 
 
-# ── Integration test CI gate ─────────────────────────────────────────────────
+# â”€â”€ Integration test CI gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Tests decorated with @pytest.mark.integration or @pytest.mark.infra require
 # a live stack (Qdrant, running server, real LLM API key). They are skipped
 # by default. Pass --run-infra-tests to include them.
 #
 # Marker semantics:
-#   integration — requires a running Jarvis Max server + LLM key
-#   infra       — requires any external infrastructure (Qdrant, Postgres, etc.)
+#   integration â€” requires a running Jarvis Max server + LLM key
+#   infra       â€” requires any external infrastructure (Qdrant, Postgres, etc.)
 #
 # How to mark a test:
 #   @pytest.mark.integration
@@ -101,7 +101,7 @@ def pytest_collection_modifyitems(
 ) -> None:
     if config.getoption("--run-infra-tests", default=False):
         return  # All tests run
-    skip_infra = pytest.mark.skip(reason="requires live infra — run with --run-infra-tests")
+    skip_infra = pytest.mark.skip(reason="requires live infra â€” run with --run-infra-tests")
     for item in items:
         if item.get_closest_marker("integration") or item.get_closest_marker("infra"):
             item.add_marker(skip_infra)
@@ -109,14 +109,11 @@ def pytest_collection_modifyitems(
 
 @pytest.fixture(autouse=True)
 def _ensure_event_loop():
-    """Create a fresh event loop before each test if none exists or it's closed."""
+    """Create a fresh event loop before each sync test if none is running."""
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            raise RuntimeError("closed")
+        asyncio.get_running_loop()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        asyncio.set_event_loop(asyncio.new_event_loop())
     yield
-    # Do not close here — let pytest-asyncio manage its own loops.
+    # Do not close here â€” let pytest-asyncio manage its own loops.
     # Only clean up loops we created (i.e., not the pytest-asyncio-managed ones).

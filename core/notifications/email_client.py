@@ -81,13 +81,13 @@ class EmailNotificationClient:
         
         except smtplib.SMTPException as e:
             log.error("smtp_error",
-                      error=str(e),
+                      err=str(e),
                       mission_id=payload.mission_id,
                       to=destination)
             return False
         except Exception as e:
             log.error("email_send_error",
-                      error=str(e),
+                      err=str(e),
                       mission_id=payload.mission_id,
                       to=destination)
             return False

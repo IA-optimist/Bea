@@ -13,10 +13,12 @@ Design:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import re
 from dataclasses import dataclass, field
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # Schema type normalization
@@ -225,8 +227,8 @@ class OutputEnforcer:
                 parsed = json.loads(value)
                 if isinstance(parsed, dict):
                     return parsed
-            except (json.JSONDecodeError, ValueError):
-                _silent_log.debug("suppressed_exception", src='output_enforcer.py')
+            except (json.JSONDecodeError, ValueError) as _exc:
+                log.warning("swallowed_exception", action="output_enforcer_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if expected == "string" and not isinstance(value, str):
             return str(value)

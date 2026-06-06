@@ -14,14 +14,14 @@ GET  /api/v3/console/budget/{mid}  — Mission budget status
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 
 from api._deps import _check_auth
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+log = logger  # M3 emitter alias
 
 router = APIRouter(prefix="/api/v3/console", tags=["action-console"])
 
@@ -48,8 +48,8 @@ async def list_pending(
             from core.modules.approval_notifier import ApprovalNotifier
             ApprovalNotifier()
             # Module tickets are separate — include if available
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='action_console.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="action_console_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return {"pending": pending, "count": len(pending)}
     except Exception as e:
         logger.warning(f"pending_list_failed: {e}")

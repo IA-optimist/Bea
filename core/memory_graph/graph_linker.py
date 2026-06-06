@@ -9,7 +9,6 @@ from __future__ import annotations
 import structlog
 
 from core.memory_graph.graph_schema import Edge, EdgeType, Node, NodeType
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -76,8 +75,8 @@ class GraphLinker:
                     source=step_nid, target=tool_nid, type=EdgeType.USED_TOOL,
                     weight=1.0 if success else 0.5, metadata=meta,
                 ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_linker.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="link_mission_to_tools", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Patches / bugs ──
 
@@ -106,8 +105,8 @@ class GraphLinker:
             self._ensure_node(src, NodeType.MODULE, source_module)
             self._ensure_node(tgt, NodeType.MODULE, target_module)
             self._graph.add_edge(Edge(source=src, target=tgt, type=EdgeType.DEPENDS_ON, metadata=meta))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_linker.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="link_module_dep_graph", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def link_secret_requirement(self, connector_id: str, secret_key: str) -> None:
         try:
@@ -116,8 +115,8 @@ class GraphLinker:
             self._ensure_node(conn_nid, NodeType.CONNECTOR, connector_id)
             self._ensure_node(sec_nid, NodeType.SECRET, secret_key)
             self._graph.add_edge(Edge(source=conn_nid, target=sec_nid, type=EdgeType.REQUIRES_SECRET))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_linker.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="link_connector_requires_secret", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Lessons ──
 
@@ -129,8 +128,8 @@ class GraphLinker:
                 mission_nid = f"m:{mission_id}"
                 if mission_nid in self._graph._nodes:
                     self._graph.add_edge(Edge(source=lesson_nid, target=mission_nid, type=EdgeType.LEARNED_FROM))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_linker.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="link_lesson_to_mission", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Intent ──
 
@@ -145,8 +144,8 @@ class GraphLinker:
                 wf_nid = f"wf:{workflow_id}"
                 self._ensure_node(wf_nid, NodeType.WORKFLOW, workflow_id)
                 self._graph.add_edge(Edge(source=int_nid, target=wf_nid, type=EdgeType.RESOLVED_VIA))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_linker.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="link_intent_to_workflow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # ── Helpers ──
 

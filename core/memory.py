@@ -6,7 +6,6 @@ des configurations systèmes spécifiques utiles à sa survie.
 import json
 import structlog
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -17,8 +16,8 @@ class MemoryBank:
         self.db_path = Path(db_path).absolute()
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='memory.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="memory_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         self.memories = self._load()
 
     def _load(self) -> list[dict]:
@@ -28,7 +27,7 @@ class MemoryBank:
             with open(self.db_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            log.error("memory_load_failed", error=str(e))
+            log.error("memory_load_failed", err=str(e))
             return []
 
     def _save(self):
@@ -36,7 +35,7 @@ class MemoryBank:
             with open(self.db_path, "w", encoding="utf-8") as f:
                 json.dump(self.memories, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            log.error("memory_save_failed", error=str(e))
+            log.error("memory_save_failed", err=str(e))
 
     def add_lesson(self, error_context: str, successful_solution: str):
         """Mémorise qu'une solution a corrigé un problème spécifique."""

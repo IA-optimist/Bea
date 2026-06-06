@@ -254,9 +254,18 @@ def test_p7_tool_definition_has_required_fields():
 # ═══════════════════════════════════════════════════════════════
 
 def test_p8_multimodal_wired_to_agent_selector():
-    """Agent selector includes multimodal routing overlay."""
-    with open("agents/crew.py", encoding="utf-8") as f:
-        src = f.read()
+    """Agent selector includes multimodal routing overlay.
+
+    M1: AgentSelector extracted from agents/crew.py → agents/selector.py.
+    """
+    chunks = []
+    for rel in ("agents/crew.py", "agents/selector.py"):
+        try:
+            with open(rel, encoding="utf-8") as f:
+                chunks.append(f.read())
+        except FileNotFoundError:
+            pass
+    src = "\n".join(chunks)
     assert "detect_multimodal_type" in src
     assert "get_multimodal_agents" in src
     assert "multimodal_routing" in src

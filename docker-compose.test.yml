@@ -107,7 +107,11 @@ services:
       qdrant:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v3/system/readiness || exit 1"]
+      # /health = sonde de liveness PUBLIQUE (200 dès que l'app sert). On NE peut PAS
+      # utiliser /api/v3/system/readiness : elle est auth-gated par le middleware global
+      # (curl sans token -> 401 -> healthcheck en échec permanent). La readiness avec deps
+      # se vérifie séparément avec un token (cf. scripts/verify_boot.sh).
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10

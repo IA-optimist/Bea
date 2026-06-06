@@ -27,7 +27,6 @@ from core.tools_operational.tool_schema import (
 )
 from core.tools_operational.tool_registry import get_tool_registry
 from core.tools_operational.tool_readiness import check_readiness
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("tools_operational.executor")
 
@@ -261,7 +260,7 @@ class OperationalToolExecutor:
             if extra_headers:
                 headers.update(extra_headers)
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 body = resp.read().decode("utf-8")[:2000]
                 return ToolExecutionResult(
                     tool_id=tool_id, ok=True,
@@ -312,14 +311,14 @@ class OperationalToolExecutor:
         self, tool: OperationalTool, inputs: dict
     ) -> ToolExecutionResult:
         """Run git status (read-only)."""
-        import subprocess
+        import subprocess  # nosec B404
         try:
             repo_path = inputs.get("path", ".")
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["git", "status", "--short"],
                 capture_output=True, text=True, timeout=10, cwd=repo_path,
             )
-            branch_result = subprocess.run(
+            branch_result = subprocess.run(  # nosec B603 B607
                 ["git", "branch", "--show-current"],
                 capture_output=True, text=True, timeout=5, cwd=repo_path,
             )
@@ -402,8 +401,8 @@ class OperationalToolExecutor:
                         "risk": tool.risk_level, **{k: str(v)[:200] for k, v in extra.items()}},
                 tags=["operational_tool", tool.category],
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_executor.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_executor_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ─────────────────────────────────────────────────

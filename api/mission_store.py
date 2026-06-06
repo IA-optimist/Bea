@@ -6,13 +6,15 @@ Singleton pattern.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import os
 import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
-_silent_log = __import__("structlog").get_logger(__name__)
 
 if TYPE_CHECKING:
     from api.models import MissionLogEvent, MissionSummary
@@ -119,8 +121,8 @@ class MissionStateStore:
             _PERSIST_PATH.write_text(
                 json.dumps(data, indent=2, ensure_ascii=False), "utf-8"
             )
-        except Exception:
-            pass  # fail-open: in-memory state is authoritative
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_store_persist", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])  # fail-open: in-memory authoritative
 
     def _load(self) -> None:
         try:
@@ -143,8 +145,8 @@ class MissionStateStore:
                             event_id=e.get("event_id", ""),
                             timestamp=e.get("timestamp", time.time()),
                         ))
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='mission_store.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="mission_store_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 if loaded:
                     self._logs[mid] = loaded
             for mid, s in data.get("summaries", {}).items():
@@ -164,7 +166,7 @@ class MissionStateStore:
                         completed_at=s.get("completed_at", 0.0),
                         metadata=s.get("metadata", {}),
                     )
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='mission_store.py')
-        except Exception:
-            pass  # fresh start on any load error
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="mission_store_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_store_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])  # fresh start on any load error

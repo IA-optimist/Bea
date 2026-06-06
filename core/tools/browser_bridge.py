@@ -11,11 +11,11 @@ The bridge adds login detection for automatic approval escalation.
 from __future__ import annotations
 
 import asyncio
-import logging
+import structlog
 import re
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger("jarvis.tools.browser_bridge")
+logger = structlog.get_logger("jarvis.tools.browser_bridge")
+log = logger  # M3 emitter alias
 
 # ── Lazy singleton ────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ def browser_navigate(url: str = "", **kwargs) -> dict:
         return {"ok": False, "result": "", "error": "url required"}
 
     # Block internal addresses
-    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):
+    for blocked in ("localhost", "127.0.0.1", "0.0.0.0", "169.254.", "10.", "172.16.", "192.168."):  # nosec B104 — SSRF blocklist, not a bind
         if blocked in url:
             return {"ok": False, "result": "", "error": f"blocked: internal address {blocked}"}
 
@@ -186,8 +186,8 @@ def browser_close(**kwargs) -> dict:
     if _browser_tool:
         try:
             _run_async(_browser_tool.close())
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='browser_bridge.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="browser_bridge_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         _browser_tool = None
     return {"ok": True, "result": "browser_closed", "error": ""}
 

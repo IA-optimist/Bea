@@ -11,16 +11,16 @@ Endpoints under /api/v3/models/:
 """
 from __future__ import annotations
 
-import logging
-from fastapi import APIRouter, Depends, Query
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-logger = logging.getLogger("jarvis.api.models")
+logger = structlog.get_logger("jarvis.api.models")
+log = logger  # M3 emitter alias
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.
-from api._deps import _check_auth
-_silent_log = __import__("structlog").get_logger(__name__)
-_auth = Depends(_check_auth)
+from api._deps import require_auth
+_auth = Depends(require_auth)
 
 router = APIRouter(
     prefix="/api/v3/models",
@@ -54,7 +54,8 @@ async def list_catalog(
             "catalog_status": catalog.status(),
         }
     except Exception as e:
-        return {"models": [], "error": str(e)[:100]}
+        logger.exception("model_catalog_list_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.post("/catalog/refresh")
@@ -70,7 +71,8 @@ async def refresh_catalog():
             "status": catalog.status(),
         }
     except Exception as e:
-        return {"refreshed": False, "error": str(e)[:100]}
+        logger.exception("model_catalog_refresh_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/profiles")
@@ -92,7 +94,8 @@ async def list_profiles(task_class: str = "", limit: int = 20):
         )
         return {"profiles": profiles[:limit]}
     except Exception as e:
-        return {"profiles": [], "error": str(e)[:100]}
+        logger.exception("model_profiles_list_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/performance")
@@ -107,7 +110,8 @@ async def list_performance(model_id: str = "", task_class: str = ""):
             return {"stats": perf.get_best_for_task(task_class)}
         return {"stats": perf.get_all()}
     except Exception as e:
-        return {"stats": [], "error": str(e)[:100]}
+        logger.exception("model_performance_list_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/recommendations")
@@ -132,7 +136,8 @@ async def get_recommendations(budget_mode: str = "normal"):
             })
         return {"recommendations": recs, "budget_mode": budget_mode}
     except Exception as e:
-        return {"recommendations": [], "error": str(e)[:100]}
+        logger.exception("model_recommendations_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/status")
@@ -147,8 +152,8 @@ async def model_status():
         try:
             from core.model_intelligence.auto_update import get_model_auto_update
             auto_status = get_model_auto_update().get_status()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='models.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="models_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return {
             "catalog": catalog.status(),
             "performance_records": len(perf.get_all()),
@@ -156,7 +161,8 @@ async def model_status():
             "auto_update": auto_status,
         }
     except Exception as e:
-        return {"error": str(e)[:100]}
+        logger.exception("model_status_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/ab-tests")
@@ -172,7 +178,8 @@ async def list_ab_tests():
             "candidates": engine.detect_ab_candidates(),
         }
     except Exception as e:
-        return {"ok": False, "error": str(e)[:100]}
+        logger.exception("model_auto_update_endpoint_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e
 
 
 @router.get("/costs")
@@ -182,4 +189,5 @@ async def model_costs():
         from core.model_intelligence.auto_update import get_model_auto_update
         return {"ok": True, "costs": get_model_auto_update().get_real_cost_stats()}
     except Exception as e:
-        return {"ok": False, "error": str(e)[:100]}
+        logger.exception("model_costs_failed")
+        raise HTTPException(status_code=500, detail="model_intelligence_error") from e

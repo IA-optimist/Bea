@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Optional
 
 from core.execution.execution_graph import ExecutionGraph
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("execution.graph_repository")
 
@@ -65,11 +64,11 @@ class GraphRepository:
             path = self._dir / f"{graph.graph_id}.json"
             tmp = path.with_suffix(".tmp")
             tmp.write_text(json.dumps(graph.to_dict(), indent=2))
-            tmp.rename(path)
+            tmp.replace(path)
             self._update_index(graph)
             return True
         except Exception as e:
-            log.warning("graph_save_failed", graph_id=graph.graph_id, error=str(e)[:100])
+            log.warning("graph_save_failed", graph_id=graph.graph_id, err=str(e)[:100])
             return False
 
     def load(self, graph_id: str) -> Optional[ExecutionGraph]:
@@ -81,7 +80,7 @@ class GraphRepository:
             data = json.loads(path.read_text())
             return ExecutionGraph.from_dict(data)
         except Exception as e:
-            log.warning("graph_load_failed", graph_id=graph_id, error=str(e)[:100])
+            log.warning("graph_load_failed", graph_id=graph_id, err=str(e)[:100])
             return None
 
     def delete(self, graph_id: str) -> bool:
@@ -156,9 +155,9 @@ class GraphRepository:
                 "graphs": {gid: g.to_dict() for gid, g in self._index.items()},
             }
             tmp.write_text(json.dumps(data, indent=2))
-            tmp.rename(path)
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_repository.py')
+            tmp.replace(path)
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="graph_repository_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load_index(self) -> None:
         try:
@@ -176,8 +175,8 @@ class GraphRepository:
                     progress=gd.get("progress", 0),
                     created_at=gd.get("created_at", 0),
                 )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='graph_repository.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="graph_repository_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ──────────────────────────────────────────────────

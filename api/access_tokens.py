@@ -18,13 +18,15 @@ No external dependencies.
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import hashlib
 import json
 import secrets
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 @dataclass
@@ -310,8 +312,8 @@ class TokenManager:
                 }
             self._path.write_text(
                 json.dumps(data, indent=2, default=str), encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='access_tokens.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="access_tokens_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load(self) -> None:
         if not self._path.exists():
@@ -339,8 +341,8 @@ class TokenManager:
                 self._tokens[tid] = token
                 if token.token_hash:
                     self._hash_index[token.token_hash] = tid
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='access_tokens.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="access_tokens_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ──

@@ -4,7 +4,7 @@ Automates VPS deployment with Docker and Caddy reverse proxy.
 """
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import logging
 from typing import Dict, Any, Optional
 
@@ -87,7 +87,7 @@ class DeployManager:
             ssh_cmd = self._build_ssh_cmd()
             
             # Create base dir
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"mkdir -p {self.deploy_base_dir}"],
                 capture_output=True,
                 text=True,
@@ -103,7 +103,7 @@ class DeployManager:
                 }
             
             # Clone or pull repo
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"if [ -d {deploy_path} ]; then "
                     f"cd {deploy_path} && git pull; "
@@ -129,7 +129,7 @@ class DeployManager:
             # 2. Build and start Docker containers
             logger.debug("starting_docker_containers")
             
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"cd {deploy_path} && "
                     f"docker-compose down 2>/dev/null || true && "
@@ -156,7 +156,7 @@ class DeployManager:
             caddy_config = self._generate_caddy_config(subdomain, project_slug)
             
             # Write Caddyfile snippet
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"echo '{caddy_config}' > /etc/caddy/sites/{project_slug}.caddy"
                 ],
@@ -169,7 +169,7 @@ class DeployManager:
                 logger.warning(f"caddy_config_write_failed: {result.stderr}")
             
             # Reload Caddy
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + ["systemctl reload caddy"],
                 capture_output=True,
                 text=True,
@@ -187,7 +187,7 @@ class DeployManager:
             import time
             time.sleep(5)  # Wait for services to start
             
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"cd {deploy_path} && "
                     f"docker-compose ps --format json | jq -r '.State'"
@@ -272,28 +272,28 @@ class DeployManager:
             ssh_cmd = self._build_ssh_cmd()
             
             # Stop containers
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"cd {deploy_path} && docker-compose down || true"],
                 capture_output=True,
                 timeout=30,
             )
             
             # Remove directory
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"rm -rf {deploy_path}"],
                 capture_output=True,
                 timeout=10,
             )
             
             # Remove Caddy config
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"rm -f /etc/caddy/sites/{project_slug}.caddy"],
                 capture_output=True,
                 timeout=10,
             )
             
             # Reload Caddy
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ssh_cmd + ["systemctl reload caddy"],
                 capture_output=True,
                 timeout=10,

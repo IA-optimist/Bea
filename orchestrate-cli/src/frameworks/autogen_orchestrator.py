@@ -10,22 +10,20 @@ Features:
 """
 
 import asyncio
-import json
 from typing import Dict, List, Any, Optional
 from loguru import logger
 
 try:
     from autogen import AssistantAgent, UserProxyAgent, ConversableAgent
-    from autogen_core.models import FunctionCallingLLM
-    from autogen_agentchat.agents import AssistantAgent as ChatAssistantAgent
-    from autogen_agentchat.agents import UserProxyAgent as ChatUserProxyAgent
+    from autogen_core.models import FunctionCallingLLM  # noqa: F401
+    from autogen_agentchat.agents import AssistantAgent as ChatAssistantAgent  # noqa: F401
+    from autogen_agentchat.agents import UserProxyAgent as ChatUserProxyAgent  # noqa: F401
     from autogen_agentchat.teams import RoundRobinGroupChat
     AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
 
 from src.orchestrators.orchestrator_factory import BaseOrchestrator
-from src.agents.autogen_agent import AutoGenAgent
 
 class AutoGenOrchestrator(BaseOrchestrator):
     """AutoGen orchestrator for multi-agent collaboration"""

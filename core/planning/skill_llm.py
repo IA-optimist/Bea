@@ -27,7 +27,6 @@ import json
 import re
 import time
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("planning.skill_llm")
 
@@ -108,8 +107,8 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
             return parsed
-    except (json.JSONDecodeError, ValueError):
-        _silent_log.debug("suppressed_exception", src='skill_llm.py')
+    except (json.JSONDecodeError, ValueError) as _exc:
+        log.warning("swallowed_exception", action="json_extract_strict", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Strategy 2: extract from markdown fences
     fence_match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
@@ -118,8 +117,8 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             parsed = json.loads(fence_match.group(1).strip())
             if isinstance(parsed, dict):
                 return parsed
-        except (json.JSONDecodeError, ValueError):
-            _silent_log.debug("suppressed_exception", src='skill_llm.py')
+        except (json.JSONDecodeError, ValueError) as _exc:
+            log.warning("swallowed_exception", action="json_extract_relaxed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Strategy 3: balanced brace extraction (find outermost { ... })
     json_text = _extract_outermost_json(text)
@@ -128,8 +127,8 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             parsed = json.loads(json_text)
             if isinstance(parsed, dict):
                 return parsed
-        except (json.JSONDecodeError, ValueError):
-            _silent_log.debug("suppressed_exception", src='skill_llm.py')
+        except (json.JSONDecodeError, ValueError) as _exc:
+            log.warning("swallowed_exception", action="json_extract_codeblock", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Strategy 4: repair truncated JSON (common with long outputs)
     repaired = _repair_truncated_json(text)
@@ -138,8 +137,8 @@ def _parse_llm_output(raw: str, output_schema: list) -> dict:
             parsed = json.loads(repaired)
             if isinstance(parsed, dict):
                 return parsed
-        except (json.JSONDecodeError, ValueError):
-            _silent_log.debug("suppressed_exception", src='skill_llm.py')
+        except (json.JSONDecodeError, ValueError) as _exc:
+            log.warning("swallowed_exception", action="json_extract_repair", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Strategy 5: per-field extraction from text
     # Instead of assigning the entire blob to every field, try to find
@@ -265,8 +264,8 @@ def _extract_field_from_text(text: str, field_name: str) -> object | None:
         if extracted:
             try:
                 return json.loads(extracted)
-            except (json.JSONDecodeError, ValueError):
-                _silent_log.debug("suppressed_exception", src='skill_llm.py')
+            except (json.JSONDecodeError, ValueError) as _exc:
+                log.warning("swallowed_exception", action="json_extract_inline", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     elif remainder.startswith("["):
         # Find matching ]
         depth = 0
@@ -356,7 +355,7 @@ async def _invoke_async(
                 }
                 selected_role = _TASK_TO_ROLE.get(task_class, _LLM_ROLE)
         except Exception:
-            pass  # fail-open: use default role
+            log.debug("swallowed_exception", exc_info=True)
 
         resp = await factory.safe_invoke(
             messages,
@@ -377,8 +376,8 @@ async def _invoke_async(
                 revalidation = enforcer.validate_against_schema(content, output_schema)
                 if revalidation.overall_score < 0.5:
                     pass
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='skill_llm.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="skill_dispatch", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         duration_ms = round((time.time() - t0) * 1000)
 
@@ -403,8 +402,8 @@ async def _invoke_async(
                     or getattr(resp, "response_metadata", {}).get("token_usage", {}).get("total_cost", 0)
                     or 0
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='skill_llm.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="skill_invoke", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             get_model_performance().record(
                 model_id=str(model),
                 task_class=task_class,
@@ -414,7 +413,7 @@ async def _invoke_async(
                 cost_estimate=cost,
             )
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         # Feed auto-update cost tracking
         try:
@@ -429,7 +428,7 @@ async def _invoke_async(
                 cost=cost,
             )
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         log.info("skill_llm_ok", skill_id=skill_id,
                  duration_ms=duration_ms,

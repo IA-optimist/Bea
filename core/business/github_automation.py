@@ -4,7 +4,7 @@ Automates GitHub repository creation and code push for generated MVPs.
 """
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -83,7 +83,7 @@ class GitHubAutomation:
             if self.github_org:
                 create_cmd.insert(3, f"{self.github_org}/{repo_name}")
             
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 create_cmd,
                 cwd=mvp_path,
                 capture_output=True,
@@ -104,9 +104,9 @@ class GitHubAutomation:
             
             # 2. Initialize git
             logger.debug("initializing_git_repo")
-            subprocess.run(["git", "init"], cwd=mvp_path, check=True, capture_output=True)
-            subprocess.run(["git", "add", "."], cwd=mvp_path, check=True, capture_output=True)
-            subprocess.run(
+            subprocess.run(["git", "init"], cwd=mvp_path, check=True, capture_output=True)  # nosec B603 B607
+            subprocess.run(["git", "add", "."], cwd=mvp_path, check=True, capture_output=True)  # nosec B603 B607
+            subprocess.run(  # nosec B603 B607
                 ["git", "commit", "-m", f"Initial commit - {opportunity.title}"],
                 cwd=mvp_path,
                 check=True,
@@ -120,7 +120,7 @@ class GitHubAutomation:
                 remote_url = f"https://github.com/{self.github_org}/{repo_name}.git"
             else:
                 # Get username from gh CLI
-                whoami = subprocess.run(
+                whoami = subprocess.run(  # nosec B603 B607
                     ["gh", "api", "user", "--jq", ".login"],
                     capture_output=True,
                     text=True,
@@ -129,7 +129,7 @@ class GitHubAutomation:
                 username = whoami.stdout.strip()
                 remote_url = f"https://github.com/{username}/{repo_name}.git"
             
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ["git", "remote", "add", "origin", remote_url],
                 cwd=mvp_path,
                 check=True,
@@ -138,7 +138,7 @@ class GitHubAutomation:
             
             # 4. Push code
             logger.debug("pushing_code_to_github")
-            subprocess.run(
+            subprocess.run(  # nosec B603 B607
                 ["git", "push", "-u", "origin", "main"],
                 cwd=mvp_path,
                 check=True,
@@ -149,7 +149,7 @@ class GitHubAutomation:
             logger.info(f"github_push_completed repo={repo_name} url={remote_url}")
             
             # 5. Get repo info
-            repo_info = subprocess.run(
+            repo_info = subprocess.run(  # nosec B603 B607
                 ["gh", "repo", "view", repo_name, "--json", "url,sshUrl,description"],
                 cwd=mvp_path,
                 capture_output=True,
@@ -203,7 +203,7 @@ class GitHubAutomation:
             for key, value in secrets.items():
                 logger.debug(f"setting_secret key={key}")
                 
-                result = subprocess.run(
+                result = subprocess.run(  # nosec B603 B607
                     ["gh", "secret", "set", key, "--repo", repo_name, "--body", value],
                     capture_output=True,
                     text=True,

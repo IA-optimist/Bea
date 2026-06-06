@@ -30,7 +30,6 @@ from core.execution.artifacts import (
     ExecutionArtifact, ArtifactStatus, ArtifactType, ValidationRequirement,
 )
 
-_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("execution.build_pipeline")
 
 _WORKSPACE = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
@@ -575,8 +574,8 @@ Generate a production-quality {artifact.artifact_type.value} artifact.
                              if result.success else [],
                 failure_reasons=result.validation_failed[:5] if not result.success else [],
             ))
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='build_pipeline.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="build_pipeline_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Singleton ─────────────────────────────────────────────────

@@ -33,7 +33,7 @@ class ComponentStatus(str, Enum):
     READY = "ready"
     DISABLED = "disabled"
     NOT_CONFIGURED = "not_configured"
-    MISSING_SECRET = "missing_secret"
+    MISSING_SECRET = "missing_secret"  # nosec B105 — enum status label
     ERROR = "error"
     APPROVAL_REQUIRED = "approval_required"
     UNAVAILABLE = "unavailable"

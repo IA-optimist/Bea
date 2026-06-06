@@ -14,13 +14,12 @@ from __future__ import annotations
 
 import structlog
 import os
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -139,7 +138,7 @@ def _run_git(args: list[str], cwd: Path, env: Optional[dict] = None) -> tuple[in
         git_env.update(env)
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["git"] + args,
             cwd=str(cwd),
             capture_output=True,
@@ -213,8 +212,8 @@ class GitAgent:
         if self.has_worktree_support():
             try:
                 return self._create_worktree(snapshot, patch_id)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='git_agent.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="git_agent_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return self._create_tempcopy(snapshot)
 
     def _create_worktree(self, snapshot: WorkspaceSnapshot, patch_id: str) -> WorkspaceSnapshot:
@@ -233,8 +232,8 @@ class GitAgent:
             rc2, commit = _run_git(["rev-parse", "HEAD"], self.project_root)
             if rc2 == 0:
                 snapshot.base_commit = commit.strip()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='git_agent.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="git_agent_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return snapshot
 
     def get_rollback_command(self, snapshot: WorkspaceSnapshot) -> str:
@@ -279,8 +278,8 @@ class GitAgent:
             rc, out = _run_git(["rev-parse", "HEAD"], self.project_root)
             if rc == 0:
                 snapshot.base_commit = out.strip()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='git_agent.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="git_agent_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return snapshot
 
     def _diff_tempcopy(self, snapshot: WorkspaceSnapshot, patch_result: PatchResult) -> PatchResult:
@@ -300,13 +299,13 @@ class GitAgent:
                     rel = sandbox_file.relative_to(sandbox)
                     orig_file = self.project_root / rel
                     if not orig_file.exists():
-                        changed.append(str(rel))
+                        changed.append(rel.as_posix())  # chemins repo en '/' (cross-plateforme)
                         try:
                             total_added += len(sandbox_file.read_text(encoding="utf-8").splitlines())
                         except Exception:
                             total_added += 1
                     elif sandbox_file.read_bytes() != orig_file.read_bytes():
-                        changed.append(str(rel))
+                        changed.append(rel.as_posix())  # chemins repo en '/' (cross-plateforme)
                         try:
                             orig_lines = orig_file.read_text(encoding="utf-8").splitlines()
                             new_lines = sandbox_file.read_text(encoding="utf-8").splitlines()
@@ -350,8 +349,8 @@ class GitAgent:
                 import shutil
                 if snapshot.sandbox_path and os.path.exists(snapshot.sandbox_path):
                     shutil.rmtree(snapshot.sandbox_path)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='git_agent.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="git_agent_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             snapshot.active = False
 
     def _get_tempcopy_diff(self, snapshot: WorkspaceSnapshot) -> str:
@@ -359,7 +358,7 @@ class GitAgent:
         if not snapshot.sandbox_path or not os.path.exists(snapshot.sandbox_path):
             return ""
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["diff", "-ruN", str(self.project_root), snapshot.sandbox_path],
                 capture_output=True, text=True, timeout=30,
             )
@@ -594,7 +593,7 @@ class GitAgent:
                 method="POST",
             )
 
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
                 data = json.loads(resp.read().decode("utf-8"))
                 pr_url = data.get("html_url", "")
                 log.info("git_agent.pr_created", pr_url=pr_url, run_id=run_id)

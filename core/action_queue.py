@@ -23,7 +23,6 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -307,8 +306,8 @@ class ActionQueue:
                             note=row["note"] or "",
                         )
                         self._actions[a.id] = a
-                    except Exception:
-                        _silent_log.debug("suppressed_exception", src='action_queue.py')
+                    except Exception as _exc:
+                        log.warning("swallowed_exception", action="action_queue_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
                 self._use_sqlite = True
                 log.debug("action_queue_loaded_sqlite", count=len(self._actions))
                 return
@@ -325,8 +324,8 @@ class ActionQueue:
                 try:
                     a = Action.from_dict(item)
                     self._actions[a.id] = a
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='action_queue.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="action_queue_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         except Exception as exc:
             log.warning("action_queue_load_failed", err=str(exc))
 

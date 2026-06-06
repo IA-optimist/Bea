@@ -153,7 +153,7 @@ class ExecutionMemory:
                 data = {"records": [r.to_dict() for r in self._records[-self._max_records:]]}
             tmp = self._path.with_suffix(".tmp")
             tmp.write_text(json.dumps(data, indent=2, default=str), "utf-8")
-            tmp.rename(self._path)
+            tmp.replace(self._path)
         except Exception as e:
             log.debug("execution_memory_persist_failed", err=str(e)[:80])
 

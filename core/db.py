@@ -6,11 +6,13 @@ Utilise sqlite3 stdlib (zéro dépendance externe)
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import json
 import sqlite3
 import threading
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 _DB_PATH = Path("workspace/jarvismax.db")
 _lock = threading.Lock()
@@ -219,6 +221,6 @@ def reset_singleton():
         if _conn is not None:
             try:
                 _conn.close()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='db.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="db_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             _conn = None

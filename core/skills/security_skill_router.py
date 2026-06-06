@@ -142,7 +142,7 @@ class SecuritySkillRouter(BaseDomainRouter):
             if pack:
                 pack_active = pack.active
         except Exception:
-            pass  # fail-open
+            log.debug("swallowed_exception", exc_info=True)
 
         # Red team gate: block if pack not activated
         if domain == "red_team" and not pack_active:

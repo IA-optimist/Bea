@@ -16,6 +16,9 @@ Routes:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import asyncio
 import json
 import os
@@ -29,7 +32,6 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from api.schemas import ok, error as err_resp
 from api._deps import _check_auth
 from typing import Optional as _Opt
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
@@ -230,8 +232,8 @@ async def system_status_v1():
                 count = getattr(bus.store, "count", None)
                 if callable(count):
                     memory_usage["episodic"] = count()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='mission_control.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="episodic_memory_count", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Tool performance (fail-open)
         tool_performance: dict = {}
@@ -239,8 +241,8 @@ async def system_status_v1():
             from tools.performance import ToolPerformanceTracker
             tracker = ToolPerformanceTracker.get()
             tool_performance = tracker.summary() if hasattr(tracker, "summary") else {}
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='mission_control.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_performance_summary", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Queue length (fail-open)
         queue_length = 0
@@ -249,8 +251,8 @@ async def system_status_v1():
             aq = get_action_queue()
             queue_length = len([a for a in aq._actions.values()
                                  if getattr(a, "status", "") == "PENDING"])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='mission_control.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="pending_approval_count", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Memory facade health (fail-open, P5)
         memory_health: dict = {}
@@ -258,8 +260,8 @@ async def system_status_v1():
             from core.memory_facade import get_memory_facade
             facade = get_memory_facade()
             memory_health = facade.health()
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='mission_control.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="memory_facade_health", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return JSONResponse(ok({
             "active_agents":        active_agents,
@@ -365,8 +367,8 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                         else:
                             yield f"data: {json.dumps({'event': 'timeout', 'mission_id': mission_id, 'message': 'Mission found in workspace store'})}\n\n"
                         return
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='mission_control.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="mission_state_stream", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         yield f"data: {json.dumps({'event': 'error', 'message': 'not found'})}\n\n"
         return
 
@@ -403,8 +405,8 @@ async def _sse_generator(mission_id: str) -> AsyncGenerator[str, None]:
                             if ws_status and ws_status != str(mission.status).upper():
                                 yield f"data: {json.dumps({'event': 'status', 'mission_id': mission_id, 'status': ws_status, 'source': 'workspace', 'ts': time.time()})}\n\n"
                             break
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='mission_control.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="mission_iteration_stream", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Stop on terminal status
         if _cs in _TERMINAL_STATUSES or str(mission.status).upper() in _TERMINAL_STATUSES:

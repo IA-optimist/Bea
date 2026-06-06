@@ -18,7 +18,6 @@ from core.cognitive_events.types import (
     CognitiveEvent, EventType, EventSeverity, EventDomain,
 )
 
-_silent_log = __import__("structlog").get_logger(__name__)
 log = structlog.get_logger("cognitive_events.store")
 
 _DEFAULT_MAX_SIZE = 5000
@@ -72,15 +71,15 @@ class CognitiveJournal:
         if self._persist:
             try:
                 self._persist_event(event)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='store.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="store_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Notify subscribers (fail-open, non-blocking)
         for sub in self._subscribers:
             try:
                 sub(event)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='store.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="store_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return event
 
@@ -362,8 +361,10 @@ class CognitiveJournal:
                                 self._events.append(evt)
                             loaded += 1
                         except Exception:
+                            log.debug("swallowed_exception", exc_info=True)
                             continue
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
 
         return loaded

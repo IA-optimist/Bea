@@ -214,7 +214,7 @@ class PolicyEngine:
 
         tracker = SessionPolicy(session_id, limits)
         self._sessions[session_id] = tracker
-        log.debug("policy_session_created", sid=session_id, mode=mode)
+        log.debug("policy_session_created", mission_id=session_id, mode=mode)
         return tracker
 
     def get_session(self, session_id: str) -> SessionPolicy | None:

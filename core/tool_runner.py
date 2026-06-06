@@ -3,11 +3,11 @@ ToolRunner — exécute les tools pertinents AVANT les agents.
 Injecte les résultats dans le contexte comme préfixe de prompt.
 """
 from __future__ import annotations
-import logging
+import structlog
 import time
-_silent_log = __import__("structlog").get_logger(__name__)
 
-logger = logging.getLogger("jarvis.tool_runner")
+logger = structlog.get_logger("jarvis.tool_runner")
+log = logger  # alias for M3 emitter
 
 # Pre-execution context gathering tools (READ-ONLY, safe to run before agents)
 # NOTE: This is DIFFERENT from core.tool_registry._MISSION_TOOLS which maps
@@ -65,8 +65,8 @@ def run_tools_for_mission(
             from core.safety_controls import is_execution_engine_enabled
             if not is_execution_engine_enabled():
                 _use_engine = False
-        except ImportError:
-            _silent_log.debug("suppressed_exception", src='tool_runner.py')
+        except ImportError as _exc:
+            log.warning("swallowed_exception", action="tool_runner_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         if _use_engine:
             try:
                 from core.execution_engine import (
@@ -180,8 +180,8 @@ def _run_with_engine(
         try:
             from core.lifecycle_tracker import get_lifecycle_tracker
             get_lifecycle_tracker().record(mission_id, "tools_executed")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_runner.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_runner_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     context_prefix = "\n".join(context_parts) + "\n[FIN CONTEXT]\n\n"
     return context_prefix, results

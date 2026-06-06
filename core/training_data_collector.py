@@ -189,7 +189,7 @@ async def collect_training_example(
         log.error(
             "training_data.collection_failed",
             mission_id=mission_id,
-            error=str(e)[:200],
+            err=str(e)[:200],
             exc_info=True
         )
         return False
@@ -243,7 +243,7 @@ def get_training_stats() -> Dict[str, Any]:
         }
     
     except Exception as e:
-        log.error("training_stats.failed", error=str(e)[:200])
+        log.error("training_stats.failed", err=str(e)[:200])
         return {
             "total": 0,
             "by_domain": {},

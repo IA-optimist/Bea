@@ -110,13 +110,13 @@ class ProcessManager:
             )
 
         try:
-            # Start process without shell expansion to reduce command injection risk
-            argv = shlex.split(command, posix=True)
-            if not argv:
-                raise ValueError("Command vide")
-
+            # Start process without a shell. Existing callers may pass a command
+            # string; parse it into argv (posix) instead of invoking a shell.
+            args = shlex.split(command, posix=True) if isinstance(command, str) else list(command)
+            if not args:
+                raise ValueError("Command cannot be empty")
             process = subprocess.Popen(
-                argv,
+                args,
                 shell=False,
                 stdout=subprocess.PIPE if capture_output else None,
                 stderr=subprocess.PIPE if capture_output else None,

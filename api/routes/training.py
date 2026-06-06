@@ -48,7 +48,7 @@ async def run_consolidation(user: dict = Depends(require_admin)):
             "message": "Consolidation complete"
         }
     except Exception as e:
-        log.error("consolidation.endpoint_failed", error=str(e)[:200])
+        log.error("consolidation.endpoint_failed", err=str(e)[:200])
         return {
             "ok": False,
             "error": str(e)[:200]
@@ -82,7 +82,7 @@ async def get_workspace_stats(user: dict = Depends(require_auth)):
             "data": stats
         }
     except Exception as e:
-        log.error("workspace_stats.endpoint_failed", error=str(e)[:200])
+        log.error("workspace_stats.endpoint_failed", err=str(e)[:200])
         return {
             "ok": False,
             "error": str(e)[:200]
@@ -125,7 +125,7 @@ async def get_recent_broadcasts(
             }
         }
     except Exception as e:
-        log.error("workspace_recent.endpoint_failed", error=str(e)[:200])
+        log.error("workspace_recent.endpoint_failed", err=str(e)[:200])
         return {
             "ok": False,
             "error": str(e)[:200]
@@ -162,7 +162,7 @@ async def get_high_confidence_broadcasts(
             }
         }
     except Exception as e:
-        log.error("workspace_high_confidence.endpoint_failed", error=str(e)[:200])
+        log.error("workspace_high_confidence.endpoint_failed", err=str(e)[:200])
         return {
             "ok": False,
             "error": str(e)[:200]
@@ -213,7 +213,7 @@ async def get_training_stats(user: dict = Depends(require_auth)):
             "data": stats
         }
     except Exception as e:
-        log.error("training_stats.failed", error=str(e)[:200], exc_info=True)
+        log.error("training_stats.failed", err=str(e)[:200], exc_info=True)
         return {
             "ok": False,
             "error": str(e)[:200],

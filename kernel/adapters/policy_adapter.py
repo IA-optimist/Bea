@@ -67,7 +67,7 @@ def core_check_action_to_kernel(
                 reason=getattr(core_decision, "reason", "core_policy"),
             )
         except Exception:
-            pass  # fall through to kernel-native
+            import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
 
     # 2 — kernel-native evaluation (self-contained, no core dependency)
     from kernel.policy.engine import evaluate_action

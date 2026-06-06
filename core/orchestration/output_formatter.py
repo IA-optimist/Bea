@@ -90,13 +90,13 @@ def try_extract_json(text: str) -> Optional[Any]:
         try:
             return json.loads(m.group(1))
         except json.JSONDecodeError:
-            pass
+            import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
 
     # 2. Direct parse.
     try:
         return json.loads(text.strip())
     except json.JSONDecodeError:
-        pass
+        import logging as _lg; _lg.getLogger(__name__).debug("swallowed_exception", exc_info=True)
 
     # 3. First balanced {...} or [...].
     for open_ch, close_ch in (("{", "}"), ("[", "]")):

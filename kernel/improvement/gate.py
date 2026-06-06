@@ -23,17 +23,18 @@ Constants (anti-loop invariants — never weaken these):
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import time
 from dataclasses import dataclass
 from typing import Callable, List, Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     _log = structlog.get_logger("kernel.improvement.gate")
 except ImportError:
-    import logging
-    _log = logging.getLogger("kernel.improvement.gate")
+    _log = structlog.get_logger("kernel.improvement.gate")
 
 
 # ── Safety invariants — hard-coded, never configurable at runtime ─────────────
@@ -182,8 +183,8 @@ class ImprovementGate:
             p = Path("workspace/self_improvement/history.json")
             if p.exists():
                 return json.loads(p.read_text("utf-8")) or []
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='gate.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="gate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return []
 
     def record(self, outcome: str, metadata: dict | None = None) -> None:

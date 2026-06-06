@@ -26,14 +26,13 @@ import json
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -299,7 +298,7 @@ class RegressionGuard:
                "-w", "/app", "--network", self.network, "-e", "PYTHONPATH=/app",
                self.docker_image, "python", "-m", "pytest", test_path, "--tb=no", "-q"]
         try:
-            r = subprocess.run(cmd, capture_output=True, text=True,
+            r = subprocess.run(cmd, capture_output=True, text=True,  # nosec B603 B607
                                timeout=timeout, cwd=str(self.repo_root))
             output = r.stdout + r.stderr
         except subprocess.TimeoutExpired:
@@ -405,8 +404,8 @@ class LearningMemory:
             try:
                 self._lessons = [Lesson(**d) for d in json.loads(
                     self._path.read_text(encoding="utf-8"))]
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='improvement_loop.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="improvement_loop_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════

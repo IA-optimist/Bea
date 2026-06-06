@@ -220,7 +220,9 @@ def _calculate_backoff(retry_count: int, base: float = 1.0, max_wait: float = 30
     """Exponential backoff with jitter."""
     import random
     wait = min(base * (2 ** retry_count), max_wait)
-    jitter = wait * 0.2 * (random.random() * 2 - 1)  # ±20%
+    # Bandit B311 nosec: backoff jitter is timing, not security; using
+    # `secrets` would be wasteful for this purely operational purpose.
+    jitter = wait * 0.2 * (random.random() * 2 - 1)  # ±20%   # nosec B311
     return max(0.1, wait + jitter)
 
 

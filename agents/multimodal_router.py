@@ -158,7 +158,7 @@ class MultimodalRouter:
             )
             MissionStateStore.get().append_log(event)
         except Exception:
-            pass  # fail-open : le routing continue même si le log échoue
+            log.debug("swallowed_exception", exc_info=True)
 
     # ── Capabilities ──────────────────────────────────────────────────────────
 

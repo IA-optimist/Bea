@@ -8,6 +8,9 @@ MEDIUM -> validation via API (requires approval)
 HIGH   -> validation obligatoire + backup
 """
 from __future__ import annotations
+
+import structlog
+log = structlog.get_logger(__name__)
 import os
 import re
 from dataclasses import dataclass, field
@@ -15,7 +18,6 @@ from pathlib import Path
 
 # SOURCE UNIQUE - ne pas redefinir RiskLevel ici
 from core.state import RiskLevel
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -313,8 +315,8 @@ class RiskEngine:
         try:
             Path(target).resolve().relative_to(WORKSPACE.resolve())
             return True
-        except ValueError:
-            _silent_log.debug("suppressed_exception", src='engine.py')
+        except ValueError as _exc:
+            log.warning("swallowed_exception", action="engine_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # Chemins relatifs commencant par workspace/
         return target.startswith(("workspace/", "./workspace/"))
 

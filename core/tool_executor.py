@@ -4,10 +4,10 @@ ToolExecutor — exécution RÉELLE des tools pour les agents Jarvis.
 RAM : < 500 bytes au repos (fonctions pures + singleton léger).
 """
 from __future__ import annotations
+import structlog
 
-import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import time
 from typing import Optional
 
@@ -53,9 +53,29 @@ try:
     _L4_AVAILABLE = True
 except Exception as _l4_err:
     _L4_AVAILABLE = False
-    logging.getLogger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
+    structlog.get_logger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
 
-logger = logging.getLogger("jarvis.tool_executor")
+# Axe 3 (Hermes) — execute_code sandboxé, loose-coupled (n'affecte pas les autres tools)
+try:
+    from core.tools.code_execution_tool import execute_code
+    _EXEC_CODE_AVAILABLE = True
+except Exception:
+    _EXEC_CODE_AVAILABLE = False
+
+try:
+    from core.tools.delegate_tool import delegate
+    _DELEGATE_AVAILABLE = True
+except Exception:
+    _DELEGATE_AVAILABLE = False
+
+try:
+    from core.tools.tool_pipeline_tool import tool_pipeline
+    _TOOL_PIPELINE_AVAILABLE = True
+except Exception:
+    _TOOL_PIPELINE_AVAILABLE = False
+
+logger = structlog.get_logger("jarvis.tool_executor")
+log = logger  # M3 emitter alias
 try:
     import structlog as _structlog
     log = _structlog.get_logger("jarvis.tool_executor")
@@ -78,7 +98,6 @@ ERROR_CLASSES: dict[str, list[str]] = {
 # ── Résultat standard ─────────────────────────────────────────────────────────
 
 import time as _time
-_silent_log = __import__("structlog").get_logger(__name__)
 
 def _ok(result: str, **meta) -> dict:
     """Structured success result with optional metadata."""
@@ -102,8 +121,8 @@ def _classify_error(error_str) -> str:
         if isinstance(error_str, Exception):
             classified = JarvisExecutionError.from_exception(error_str)
             return classified.error_type
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="classified_error_lookup", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
     # String-based fallback using canonical types
     e = str(error_str).lower()
     if "timeout" in e or "timed out" in e:
@@ -123,7 +142,7 @@ def _classify_error(error_str) -> str:
 
 def execute_http_get(url: str, timeout: int = 8) -> dict:
     """HTTP GET simple. Bloqué sur localhost / réseau interne."""
-    _BLOCKED = ("localhost", "127.0.0.1", "10.0.", "0.0.0.0", "169.254.")
+    _BLOCKED = ("localhost", "127.0.0.1", "10.0.", "0.0.0.0", "169.254.")  # nosec B104 — SSRF blocklist, not a bind
     for blocked in _BLOCKED:
         if blocked in url:
             return _err(f"blocked_url: {blocked} not allowed")
@@ -145,7 +164,7 @@ def execute_python_snippet(code: str, timeout: int = 8) -> dict:
         if banned in code:
             return _err(f"blocked_pattern: '{banned}' interdit")
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 B607
             ["python", "-c", code],
             capture_output=True, text=True, timeout=timeout,
         )
@@ -201,7 +220,7 @@ def write_file_safe(path: str, content: str, force: bool = False) -> dict:
             with open(path, "r", encoding="utf-8", errors="replace") as f:
                 old_content = f.read()
         except FileNotFoundError:
-            pass  # nouveau fichier — pas de backup
+            logger.debug("swallowed_exception", exc_info=True)
 
         with RollbackContext(path) as ctx:
             with open(path, "w", encoding="utf-8") as f:
@@ -260,7 +279,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
             return _err(f"invalid_command: {exc}")
 
         if args and len(args) >= 1:
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec B603 B607
                 args, capture_output=True, text=True,
                 timeout=timeout, cwd=_cwd,
             )
@@ -340,6 +359,9 @@ class ToolExecutor:
     _tools: dict = {
         "http_get":        execute_http_get,
         "python_snippet":  execute_python_snippet,
+        **({"execute_code": execute_code} if _EXEC_CODE_AVAILABLE else {}),
+        **({"delegate": delegate} if _DELEGATE_AVAILABLE else {}),
+        **({"tool_pipeline": tool_pipeline} if _TOOL_PIPELINE_AVAILABLE else {}),
         "read_file":       read_file_content,
         "write_file_safe": write_file_safe,
         "shell_command":   run_shell_command,
@@ -424,6 +446,9 @@ class ToolExecutor:
         "http_get": 8,
         "read_file": 5,
         "python_snippet": 8,
+        "execute_code": 120,
+        "delegate": 600,
+        "tool_pipeline": 180,
         # "vector_search": 6,  # LEGACY
         # git
         "git_status": 15, "git_diff": 15, "git_log": 15, "git_branch": 15,
@@ -472,8 +497,8 @@ class ToolExecutor:
         )
         _tools.update(BROWSER_TOOLS)
         _TOOL_TIMEOUTS.update(BROWSER_TOOL_TIMEOUTS)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_tool_timeouts_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Paramètres requis par tool (validation avant exécution)
     _TOOL_REQUIRED_PARAMS: dict = {
@@ -481,6 +506,9 @@ class ToolExecutor:
         "http_get": ["url"],
         "read_file": ["path"],
         "python_snippet": ["code"],
+        "execute_code": ["code"],
+        "delegate": ["task"],
+        "tool_pipeline": ["steps"],
         # "vector_search": ["query"],  # LEGACY
         # git
         "git_status": ["repo_path"], "git_diff": ["repo_path"],
@@ -535,16 +563,19 @@ class ToolExecutor:
     try:
         from core.tools.browser_bridge import BROWSER_TOOL_REQUIRED_PARAMS
         _TOOL_REQUIRED_PARAMS.update(BROWSER_TOOL_REQUIRED_PARAMS)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_required_params_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Tools qui acceptent un kwarg timeout
-    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet"}
+    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet", "execute_code", "delegate"}
 
     # action_type par tool (pour ExecutionPolicy)
     _action_types: dict[str, str] = {
         "http_get":        "external_api",
         "python_snippet":  "execute",
+        "execute_code":    "execute",
+        "delegate":        "execute",
+        "tool_pipeline":   "execute",
         "read_file":       "read",
         "write_file_safe": "write",
         "shell_command":   "execute",
@@ -593,8 +624,8 @@ class ToolExecutor:
     try:
         from core.tools.browser_bridge import BROWSER_ACTION_TYPES
         _action_types.update(BROWSER_ACTION_TYPES)
-    except ImportError:
-        _silent_log.debug("suppressed_exception", src='tool_executor.py')
+    except ImportError as _exc:
+        log.warning("swallowed_exception", action="browser_action_types_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Niveaux de risque par tool
     _TOOL_RISK_LEVELS: dict[str, str] = {
@@ -617,6 +648,9 @@ class ToolExecutor:
         "http_post_json": "medium",
         # "memory_store_solution": "low", # "memory_store_error": "low", # "memory_store_patch": "low",  # LEGACY
         "write_file_safe": "medium", "shell_command": "medium", "python_snippet": "medium",
+        "execute_code": "medium",
+        "delegate": "medium",
+        "tool_pipeline": "medium",
         "http_get": "low",
         # high risk
         "git_commit": "high", "git_push": "high",
@@ -668,7 +702,7 @@ class ToolExecutor:
             if _perm["requires_approval"] and approval_mode == "SUPERVISED":
                 log.info("tool_requires_approval", tool=tool_name, risk=_perm["capability"]["risk_level"])
         except Exception as _cap_err:
-            log.debug("capability_check_skipped", error=str(_cap_err))
+            log.debug("capability_check_skipped", err=str(_cap_err))
 
         # Per-tool permission gate (P1) — requires approval for dangerous tools
         try:
@@ -689,7 +723,7 @@ class ToolExecutor:
                     "approval_request_id": _req.request_id,
                 }
         except Exception as _tp_err:
-            log.debug("tool_permission_check_skipped", error=str(_tp_err)[:100])
+            log.debug("tool_permission_check_skipped", err=str(_tp_err)[:100])
 
         # Circuit breaker check (fail-closed for broken tools)
         try:
@@ -725,7 +759,7 @@ class ToolExecutor:
                 log.info("policy_requires_approval",
                            tool=tool_name, score=_policy_decision.score)
         except Exception as _pol_err:
-            log.warning("policy_check_failed", error=str(_pol_err)[:200])
+            log.warning("policy_check_failed", err=str(_pol_err)[:200])
             # Fail-CLOSED for HIGH risk tools; fail-open for LOW risk
             try:
                 _high_risk = {"shell_execute", "code_execute"}
@@ -813,7 +847,7 @@ class ToolExecutor:
                 },
             )
         except Exception:
-            pass  # Journal is non-blocking
+            logger.debug("swallowed_exception", exc_info=True)
 
         # ── Kernel event: tool.invoked (dual emission) ────────────
         try:
@@ -823,8 +857,8 @@ class ToolExecutor:
                               mission_id=_mission_id_for_journal,
                               risk_level=self._TOOL_RISK_LEVELS.get(tool_name, "unknown"),
                               param_keys=list(params.keys())[:8] if params else [])
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='tool_executor.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="tool_call_log", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         # Exécution réelle avec retry automatique
         _t0 = _time.time()
@@ -865,7 +899,7 @@ class ToolExecutor:
                     error=result.get("error", "")[:200] if not result.get("ok") else "",
                 )
             except Exception:
-                pass  # Journal is non-blocking
+                logger.debug("swallowed_exception", exc_info=True)
 
             # ── Kernel event: tool.completed or tool.failed (dual emission) ──
             try:
@@ -879,8 +913,8 @@ class ToolExecutor:
                     success=_tool_ok,
                     error=result.get("error", "")[:100] if not _tool_ok else "",
                 )
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_executor.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_metrics_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
             return result
         except Exception as e:
@@ -908,7 +942,7 @@ class ToolExecutor:
                     error_class=error_class,
                 )
             except Exception:
-                pass  # Journal is non-blocking
+                logger.debug("swallowed_exception", exc_info=True)
 
             # ── Kernel event: tool.failed (dual emission) ─────────────
             try:
@@ -919,10 +953,10 @@ class ToolExecutor:
                                   duration_ms=_duration_ms,
                                   error=str(e)[:100],
                                   error_class=error_class)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='tool_executor.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_error_class_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
-            log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} error={e}")
+            log.error(f"[EXECUTE_ERROR] tool={tool_name} class={error_class} err={e}")
             return _err(str(e), error_class=error_class, tool=tool_name, blocked_by_policy=False)
 
     def _validate_params(self, tool_name: str, params: dict) -> Optional[str]:

@@ -20,6 +20,9 @@ Safety:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import ast
 import difflib
 import hashlib
@@ -30,7 +33,6 @@ from pathlib import Path
 
 # PROTECTED_FILES re-exported for backward compat (test_devin_core.py imports it from here)
 from core.self_improvement.protected_paths import is_protected
-_silent_log = __import__("structlog").get_logger(__name__)
 
 MAX_FILES_PER_PATCH = 3
 MAX_LINES_CHANGED = 200
@@ -351,7 +353,7 @@ class CodePatcher:
             if consistency_warnings:
                 patch.metadata["consistency_warnings"] = consistency_warnings
         except Exception:
-            pass  # fail-open: don't block patching
+            log.debug("swallowed_exception", exc_info=True)
 
         # Generate rollback instructions
         patch.rollback_instructions = (
@@ -582,6 +584,6 @@ class CodePatcher:
             for name, count in names.items():
                 if count > 1:
                     duplicates.append(f"{name} (defined {count}x)")
-        except SyntaxError:
-            _silent_log.debug("suppressed_exception", src='code_patcher.py')
+        except SyntaxError as _exc:
+            log.warning("swallowed_exception", action="code_patcher_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return duplicates

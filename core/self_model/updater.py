@@ -21,7 +21,6 @@ from core.self_model.model import (
     AutonomyEnvelope, AutonomyMode,
 )
 from core.self_model import sources
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -71,7 +70,7 @@ def _build_capabilities() -> dict[str, CapabilityEntry]:
                 failure_count=cap.get("failure_count", 0),
             )
     except Exception as e:
-        log.debug("self_model.updater.capabilities_failed", error=str(e)[:80])
+        log.debug("self_model.updater.capabilities_failed", err=str(e)[:80])
     return capabilities
 
 
@@ -119,7 +118,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 trust_level=mcp.get("trust_level", ""),
             )
     except Exception as e:
-        log.debug("self_model.updater.mcp_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.mcp_components_failed", err=str(e)[:80])
 
     # Tool permissions (gated tools)
     try:
@@ -136,7 +135,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 reason="Gated tool" if not approved else "",
             )
     except Exception as e:
-        log.debug("self_model.updater.tool_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.tool_components_failed", err=str(e)[:80])
 
     # Connectors from module manager
     try:
@@ -152,7 +151,7 @@ def _build_components() -> dict[str, ComponentEntry]:
                 status=ComponentStatus.READY if enabled else ComponentStatus.DISABLED,
             )
     except Exception as e:
-        log.debug("self_model.updater.connector_components_failed", error=str(e)[:80])
+        log.debug("self_model.updater.connector_components_failed", err=str(e)[:80])
 
     return components
 
@@ -314,8 +313,8 @@ def build_self_model() -> SelfModel:
         from core.agents.canonical_agents import get_canonical_runtime
         runtime = get_canonical_runtime()
         model.metadata = runtime.enrich_self_model(getattr(model, "metadata", {}) or {})
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='updater.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="updater_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     log.info(
         "self_model.built",

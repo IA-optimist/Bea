@@ -10,21 +10,19 @@ Features:
 """
 
 import asyncio
-import json
 from typing import Dict, List, Any, Optional
 from loguru import logger
 
 try:
     from crewai import Agent, Task, Crew, Process
-    from crewai.tools import BaseTool
+    from crewai.tools import BaseTool  # noqa: F401
     from crewai.tools import tool
-    from crewai.memory import SharedMemories
+    from crewai.memory import SharedMemories  # noqa: F401
     CREWAI_AVAILABLE = True
 except ImportError:
     CREWAI_AVAILABLE = False
 
 from src.orchestrators.orchestrator_factory import BaseOrchestrator
-from src.agents.crewai_agent import CrewAIAgent
 
 class CrewAIOrchestrator(BaseOrchestrator):
     """CrewAI orchestrator for agent team coordination"""

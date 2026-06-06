@@ -19,6 +19,9 @@ Security:
 """
 from __future__ import annotations
 
+import structlog
+log = structlog.get_logger(__name__)
+
 import hashlib
 import json
 import re
@@ -27,14 +30,12 @@ import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-_silent_log = __import__("structlog").get_logger(__name__)
 
 try:
     import structlog
     log = structlog.get_logger(__name__)
 except ImportError:
-    import logging
-    log = logging.getLogger(__name__)
+    log = structlog.get_logger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -328,7 +329,7 @@ class ExtensionRegistry:
         data["created_by"] = actor
 
         # Handle MCP secrets
-        raw_secret = ""
+        raw_secret = ""  # nosec B105 — empty init; assigned below from data
         if ext_type == "mcp" and data.get("_raw_secret"):
             raw_secret = data.pop("_raw_secret")
             data["secret_ref"] = _hash_secret(raw_secret)
@@ -580,8 +581,8 @@ class ExtensionRegistry:
             path.write_text(
                 json.dumps([a.to_dict() for a in self._audit[-500:]], indent=2, default=str),
                 encoding="utf-8")
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='extension_registry.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="audit_log_write", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def _load_all(self) -> None:
         for ext_type, cls in _TYPE_MAP.items():
@@ -605,8 +606,8 @@ class ExtensionRegistry:
                 data = json.loads(audit_path.read_text(encoding="utf-8"))
                 for d in data:
                     self._audit.append(AuditEntry(**d))
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="audit_log_load", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -657,7 +658,7 @@ class RuntimeExtensionLoader:
                 if hasattr(reg, "register_external"):
                     reg.register_external(ext_dict)
             except Exception:
-                pass  # Agent registry not available
+                log.debug("swallowed_exception", exc_info=True)
 
         elif ext_type == "mcp":
             # Register MCP connector
@@ -666,8 +667,8 @@ class RuntimeExtensionLoader:
                 creg = get_connector_registry()
                 if hasattr(creg, "register_external"):
                     creg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="capability_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         elif ext_type == "skill":
             # Register skill
@@ -676,8 +677,8 @@ class RuntimeExtensionLoader:
                 sreg = get_skill_registry()
                 if hasattr(sreg, "register_external"):
                     sreg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="skill_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         elif ext_type == "tool":
             # Register tool config
@@ -686,8 +687,8 @@ class RuntimeExtensionLoader:
                 treg = get_tool_registry()
                 if hasattr(treg, "register_external"):
                     treg.register_external(ext_dict)
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='extension_registry.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="tool_external_register", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def get_loaded(self) -> dict:
         return dict(self._loaded)

@@ -172,6 +172,7 @@ class LearningLoop:
             try:
                 records = await mem.recent(name, limit=50)
             except Exception:
+                log.debug("swallowed_exception", exc_info=True)
                 continue
             for rec in records:
                 feedback = rec.get("feedback", "") or ""

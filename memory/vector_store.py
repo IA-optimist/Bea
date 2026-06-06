@@ -17,7 +17,6 @@ from __future__ import annotations
 import uuid
 
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger(__name__)
 
@@ -76,7 +75,7 @@ class VectorStore:
                 try:
                     await conn.execute(_CREATE_INDEX)
                 except Exception:
-                    pass   # index may require data; ignore error
+                    log.debug("swallowed_exception", exc_info=True)   # index may require data; ignore error
 
             self._available = True
             log.info("vector_store_ready", dim=TARGET_DIM)
@@ -234,7 +233,7 @@ class VectorStore:
             from pgvector.asyncpg import register_vector
             await register_vector(conn)
         except Exception:
-            pass   # pgvector Python package not installed — raw list<float> still works
+            log.debug("swallowed_exception", exc_info=True)   # pgvector not installed — raw list<float> still works
 
     @staticmethod
     def _pad_or_truncate(vec: list[float], target: int) -> list[float]:
@@ -246,6 +245,6 @@ class VectorStore:
         if self._pool:
             try:
                 await self._pool.close()
-            except Exception:
-                _silent_log.debug("suppressed_exception", src='vector_store.py')
+            except Exception as _exc:
+                log.warning("swallowed_exception", action="vector_store_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             self._pool = None

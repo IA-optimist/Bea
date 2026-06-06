@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import threading
 import structlog
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("kernel.convergence.capability")
 
@@ -86,8 +85,8 @@ def resolve_provider(capability_id: str) -> dict | None:
                 "source": "kernel",
                 "requires_approval": cap.requires_approval,
             }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_bridge_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Fallback to core capability routing
     try:
@@ -101,8 +100,8 @@ def resolve_provider(capability_id: str) -> dict | None:
                 "source": "core_routing",
                 "score": result.get("score", 0),
             }
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_bridge_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return None
 
@@ -115,15 +114,15 @@ def get_registry_stats() -> dict:
     try:
         from kernel.capabilities.registry import get_capability_registry
         stats["kernel"] = get_capability_registry().stats()
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_bridge_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     try:
         from core.capability_routing.registry import ProviderRegistry
         pr = ProviderRegistry()
         counts = pr.populate()
         stats["core"] = counts
-    except Exception:
-        _silent_log.debug("suppressed_exception", src='capability_bridge.py')
+    except Exception as _exc:
+        log.warning("swallowed_exception", action="capability_bridge_4", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     return stats

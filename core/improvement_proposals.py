@@ -17,14 +17,14 @@ Zero external dependencies. Fail-open.
 from __future__ import annotations
 
 import json
-import logging
+import structlog
 import os
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.improvement_proposals")
+logger = structlog.get_logger("jarvis.improvement_proposals")
 
 
 @dataclass

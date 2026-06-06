@@ -22,7 +22,6 @@ from typing import Any
 import structlog
 
 from core.contracts import TaskContract, TaskState
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger()
 
@@ -342,8 +341,8 @@ class TaskQueue:
                         self._tasks[qt.task_id] = qt
                         await self._pq.put(qt)
                         count += 1
-                except Exception:
-                    _silent_log.debug("suppressed_exception", src='task_queue.py')
+                except Exception as _exc:
+                    log.warning("swallowed_exception", action="task_queue_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             log.info("task_queue_loaded", count=count)
             return count
         except Exception as e:

@@ -18,7 +18,6 @@ import structlog
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
-_silent_log = __import__("structlog").get_logger(__name__)
 
 log = structlog.get_logger("connectors")
 
@@ -81,7 +80,7 @@ class ConnectorBase(ABC):
             if blocked:
                 return False, f"Policy blocked: {blocked}"
         except Exception:
-            pass  # Fail-open
+            log.debug("swallowed_exception", exc_info=True)
         return True, ""
 
     def _record_trace(self, result: ConnectorResult) -> None:
@@ -98,8 +97,8 @@ class ConnectorBase(ABC):
                     "connector": self.name,
                 },
             )
-        except Exception:
-            _silent_log.debug("suppressed_exception", src='base.py')
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="base_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     def safe_execute(self, action: str, params: dict) -> ConnectorResult:
         """Execute with policy check, tracing, and error handling."""

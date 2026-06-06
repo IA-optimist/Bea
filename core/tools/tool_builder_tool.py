@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 import os
 import structlog
+
+log = structlog.get_logger(__name__)
 _silent_log = structlog.get_logger(__name__)
 import re
 
@@ -313,7 +315,6 @@ def generate_tool_tests(tool_name: str, tool_code: str) -> dict:
 
         test_code = f'''"""Tests unitaires pour {tool_name}."""
 import pytest
-_silent_log = __import__("structlog").get_logger(__name__)
 
 
 def test_{tool_name}_import():
@@ -427,8 +428,8 @@ def register_tool_in_executor(
             try:
                 with open(executor_path, "r", encoding="utf-8") as f:
                     old_content = f.read()
-            except FileNotFoundError:
-                _silent_log.debug("suppressed_exception", src='tool_builder_tool.py')
+            except FileNotFoundError as _exc:
+                log.warning("swallowed_exception", action="tool_builder_tool_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             with RollbackContext(executor_path) as ctx:
                 with open(executor_path, "w", encoding="utf-8") as f:
                     f.write(content)

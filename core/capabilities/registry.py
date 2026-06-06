@@ -6,12 +6,12 @@ Unregistered tools are rejected. HIGH risk tools require approval.
 """
 from __future__ import annotations
 
-import logging
+import structlog
 from typing import Optional
 
 from core.capabilities.schema import Capability
 
-log = logging.getLogger("jarvis.capabilities")
+log = structlog.get_logger("jarvis.capabilities")
 
 
 # ── Core tool capabilities ────────────────────────────────────────────────────

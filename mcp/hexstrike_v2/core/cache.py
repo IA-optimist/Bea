@@ -6,7 +6,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import pickle
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -188,39 +187,63 @@ class CommandCache:
         }
     
     def _save_to_disk(self) -> None:
-        """Persist cache to disk"""
+        """Persist cache to disk as JSON."""
         if not self.persist_path:
             return
-        
+
         try:
             self.persist_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(self.persist_path, 'wb') as f:
-                pickle.dump(self._cache, f)
-            
+            payload = []
+            for entry in self._cache.values():
+                try:
+                    json.dumps(entry.result)
+                except TypeError:
+                    logger.debug("Skipping non-JSON-serializable cache entry", extra={"key": entry.key[:16]})
+                    continue
+                payload.append({
+                    "key": entry.key,
+                    "result": entry.result,
+                    "timestamp": entry.timestamp,
+                    "command": entry.command,
+                    "ttl_seconds": entry.ttl_seconds,
+                })
+
+            self.persist_path.write_text(json.dumps(payload), encoding="utf-8")
+
             logger.debug(f"Cache persisted to {self.persist_path}")
         except Exception as e:
             logger.error(f"Failed to persist cache: {e}")
     
     def _load_from_disk(self) -> None:
-        """Load cache from disk"""
+        """Load cache from disk."""
         if not self.persist_path or not self.persist_path.exists():
             return
-        
+
         try:
-            with open(self.persist_path, 'rb') as f:
-                self._cache = pickle.load(f)
-            
+            raw_entries = json.loads(self.persist_path.read_text(encoding="utf-8"))
+            loaded: OrderedDict[str, CacheEntry] = OrderedDict()
+            for item in raw_entries if isinstance(raw_entries, list) else []:
+                entry = CacheEntry(
+                    key=str(item["key"]),
+                    result=item.get("result"),
+                    timestamp=float(item["timestamp"]),
+                    command=str(item["command"]),
+                    ttl_seconds=int(item["ttl_seconds"]),
+                )
+                loaded[entry.key] = entry
+
+            self._cache = loaded
+
             # Clean expired entries
             now = time.time()
             expired_keys = [
                 key for key, entry in self._cache.items()
                 if (now - entry.timestamp) > entry.ttl_seconds
             ]
-            
+
             for key in expired_keys:
                 del self._cache[key]
-            
+
             logger.info(f"Cache loaded from {self.persist_path} ({len(self._cache)} entries)")
         except Exception as e:
             logger.error(f"Failed to load cache: {e}")
@@ -231,5 +254,5 @@ class CommandCache:
 cache = CommandCache(
     max_size=1000,
     default_ttl=3600,
-    persist_path=Path.home() / ".hexstrike" / "cache.pkl"
+    persist_path=Path.home() / ".hexstrike" / "cache.json"
 )
