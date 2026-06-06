@@ -511,7 +511,8 @@ async def _send_reply(client, base_url: str, chat_id: str, msg_id, text: str) ->
 
 # ── Vision : analyse de photos via modèle multimodal OpenRouter ──
 _VISION_MODEL = os.getenv("VISION_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
-_VISION_FALLBACK = os.getenv("VISION_FALLBACK", "google/gemma-4-31b-it:free")
+_VISION_FALLBACK = os.getenv("VISION_FALLBACK",
+                             "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free")
 
 
 async def _analyze_photo(client, adapter, file_id: str, question: str) -> str:

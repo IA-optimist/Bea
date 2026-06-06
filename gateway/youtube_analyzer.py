@@ -23,7 +23,8 @@ import httpx
 _VIDEO_RE = re.compile(
     r"(?:youtube\.com/(?:watch\?v=|live/|shorts/|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})")
 _VISION_MODEL = os.getenv("VISION_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
-_VISION_FALLBACK = os.getenv("VISION_FALLBACK", "google/gemma-4-31b-it:free")
+_VISION_FALLBACK = os.getenv("VISION_FALLBACK",
+                             "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free")
 
 
 def extract_video_id(url: str) -> str | None:
