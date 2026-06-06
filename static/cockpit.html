@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Béa — Cockpit</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#141925; --panel2:#1b2230; --line:#27303f;
+    --txt:#e6edf3; --sub:#8b97a8; --acc:#4f8cff; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4f8cff,#9b5cff);display:grid;place-items:center;font-weight:700}
+  h1{font-size:16px;margin:0}
+  .sub{color:var(--sub);font-size:12px}
+  .tok{margin-left:auto;display:flex;gap:8px;align-items:center}
+  input,button{font:inherit}
+  .input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 10px}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 12px;cursor:pointer}
+  .btn:hover{border-color:var(--acc)}
+  .btn-ok{background:#16331f;border-color:#2a5}
+  .btn-bad{background:#3a1a1a;border-color:#a33}
+  nav.tabs{display:flex;gap:6px;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .tab{padding:8px 14px;border-radius:8px;cursor:pointer;color:var(--sub)}
+  .tab.active{background:var(--panel2);color:var(--txt)}
+  main{padding:22px;max-width:1200px;margin:0 auto}
+  .screen{display:none}
+  .screen.active{display:block}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .panel h2{font-size:14px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--sub);font-weight:600}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+  .row{display:flex;gap:8px;align-items:center}
+  .muted{color:var(--sub)}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+  .err{color:var(--bad)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand-mark">B</div>
+  <div><h1>Béa — Cockpit</h1><div class="sub">Performance · Auto-amélioration · Pipeline business</div></div>
+  <div class="tok">
+    <input id="token" class="input" placeholder="X-Jarvis-Token (optionnel si cookie)" size="22">
+    <button class="btn" onclick="saveToken()">OK</button>
+    <button class="btn" onclick="refreshAll()">↻ Rafraîchir</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" data-screen="overview" onclick="showScreen('overview')">Vue d'ensemble</div>
+  <div class="tab" data-screen="performance" onclick="showScreen('performance')">Performance</div>
+  <div class="tab" data-screen="improvements" onclick="showScreen('improvements')">Auto-amélioration</div>
+</nav>
+
+<main>
+  <!-- ── Vue d'ensemble : 3 panneaux ── -->
+  <section id="screen-overview" class="screen active">
+    <div class="grid">
+      <div class="panel" id="business-pipeline-panel">
+        <h2>🏭 Pipeline business</h2>
+        <div id="business-pipeline-body" class="muted">Chargement…</div>
+      </div>
+      <div class="panel" id="workflow-runtime-panel">
+        <h2>⚙️ Workflows (runtime)</h2>
+        <div id="workflow-runtime-body" class="muted">Chargement…</div>
+      </div>
+      <div class="panel" id="connectors-panel">
+        <h2>🔌 Connecteurs</h2>
+        <div id="connectors-body" class="muted">Chargement…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Performance des outils ── -->
+  <section id="screen-performance" class="screen">
+    <div class="panel">
+      <h2>📊 Performance des outils <span class="pill muted">/api/v3/performance/tools</span></h2>
+      <div id="performance-body" class="muted">Chargement…</div>
+    </div>
+  </section>
+
+  <!-- ── Propositions d'auto-amélioration ── -->
+  <section id="screen-improvements" class="screen">
+    <div class="panel">
+      <h2>🧠 Propositions d'auto-amélioration</h2>
+      <div id="improvements-body" class="muted">Chargement…</div>
+    </div>
+  </section>
+</main>
+
+<script>
+// ── Auth : token en mémoire + cookie HttpOnly (credentials:'include'), comme app.html ──
+let TOKEN = '';
+function saveToken(){ TOKEN = document.getElementById('token').value.trim(); refreshAll(); }
+function authHeaders(extra){
+  const h = Object.assign({}, extra || {});
+  if (TOKEN){ h['X-Jarvis-Token'] = TOKEN; h['Authorization'] = 'Bearer ' + TOKEN; }
+  return h;
+}
+async function api(path, opts){
+  opts = opts || {};
+  opts.credentials = 'include';
+  opts.headers = authHeaders(opts.headers);
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const ct = r.headers.get('content-type') || '';
+  return ct.includes('json') ? r.json() : r.text();
+}
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fail(id, e){ document.getElementById(id).innerHTML = '<span class="err">Erreur : ' + esc(e.message || e) + '</span>'; }
+
+// ── Navigation ──
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.screen === name));
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+  if (name === 'performance') loadPerformance();
+  else if (name === 'improvements') loadImprovements();
+  else loadOverview();
+}
+
+// ── Écran Performance ── (/api/v3/performance/tools)
+async function loadPerformance(){
+  const body = document.getElementById('performance-body');
+  body.innerHTML = '<span class="muted">Chargement…</span>';
+  try{
+    const data = await api('/api/v3/performance/tools');
+    const tools = data.tools || data.data || (Array.isArray(data) ? data : []);
+    if (!tools.length){ body.innerHTML = '<span class="muted">Aucune donnée de performance pour l\'instant.</span>'; return; }
+    let html = '<table><tr><th>Outil</th><th>Appels</th><th>Succès</th><th>Latence moy. (ms)</th></tr>';
+    for (const t of tools){
+      const name = t.name || t.tool || t.tool_name || '—';
+      const calls = t.calls ?? t.count ?? t.total ?? '—';
+      const sr = t.success_rate != null ? Math.round(t.success_rate * 100) + '%' : (t.successes ?? '—');
+      const lat = t.avg_latency_ms ?? t.latency_ms ?? t.avg_ms ?? '—';
+      html += '<tr><td>' + esc(name) + '</td><td>' + esc(calls) + '</td><td>' + esc(sr) + '</td><td>' + esc(lat) + '</td></tr>';
+    }
+    body.innerHTML = html + '</table>';
+  }catch(e){ fail('performance-body', e); }
+}
+
+// ── Écran Auto-amélioration ── (liste + approve/reject)
+async function loadImprovements(){
+  const body = document.getElementById('improvements-body');
+  body.innerHTML = '<span class="muted">Chargement…</span>';
+  try{
+    const data = await api('/api/v2/self-improvement/proposals');
+    const props = data.proposals || data.data || (Array.isArray(data) ? data : []);
+    if (!props.length){ body.innerHTML = '<span class="muted">Aucune proposition en attente.</span>'; return; }
+    body.innerHTML = props.map(p => {
+      const id = p.id || p.proposal_id || '';
+      const title = p.title || p.description || p.candidate_type || ('Proposition ' + id);
+      const status = p.status || p.decision || 'pending';
+      return '<div class="card" data-id="' + esc(id) + '">' +
+        '<div class="row"><strong>' + esc(title) + '</strong>' +
+        '<span class="pill muted" style="margin-left:auto">' + esc(status) + '</span></div>' +
+        '<div class="muted" style="margin:6px 0">' + esc(p.rationale || p.detail || '') + '</div>' +
+        '<div class="row">' +
+        '<button class="btn btn-ok" onclick="approveProposal(\'' + esc(id) + '\')">✓ Approuver</button>' +
+        '<button class="btn btn-bad" onclick="rejectProposal(\'' + esc(id) + '\')">✗ Rejeter</button>' +
+        '</div></div>';
+    }).join('');
+  }catch(e){ fail('improvements-body', e); }
+}
+async function approveProposal(id){
+  try{
+    await api('/api/v3/performance/improvements/' + encodeURIComponent(id) + '/approve', {method:'POST'});
+    loadImprovements();
+  }catch(e){ alert('Échec approbation : ' + (e.message || e)); }
+}
+async function rejectProposal(id){
+  try{
+    await api('/api/v3/performance/improvements/' + encodeURIComponent(id) + '/reject', {method:'POST'});
+    loadImprovements();
+  }catch(e){ alert('Échec rejet : ' + (e.message || e)); }
+}
+
+// ── Vue d'ensemble : 3 panneaux ──
+async function loadOverview(){
+  // Pipeline business
+  api('/api/v3/business-actions').then(d => {
+    const acts = d.actions || d.data || (Array.isArray(d) ? d : []);
+    document.getElementById('business-pipeline-body').innerHTML = acts.length
+      ? acts.slice(0, 8).map(a => '<div class="row"><span>' + esc(a.name || a.id || a.action_id || a) +
+          '</span><span class="pill muted" style="margin-left:auto">' + esc(a.status || 'ready') + '</span></div>').join('')
+      : '<span class="muted">Aucune action enregistrée.</span>';
+  }).catch(e => fail('business-pipeline-body', e));
+
+  // Workflows runtime
+  api('/api/v3/performance/workflows/dashboard').then(d => {
+    const wf = d.workflows || d.data || d;
+    const running = d.running ?? (wf && wf.running) ?? 0;
+    const total = d.total ?? (wf && wf.total) ?? (Array.isArray(wf) ? wf.length : 0);
+    document.getElementById('workflow-runtime-body').innerHTML =
+      '<div class="row"><span>Actifs</span><strong style="margin-left:auto">' + esc(running) + '</strong></div>' +
+      '<div class="row"><span>Total</span><strong style="margin-left:auto">' + esc(total) + '</strong></div>';
+  }).catch(e => fail('workflow-runtime-body', e));
+
+  // Connecteurs
+  api('/api/v3/connectors').then(d => {
+    const conns = d.connectors || d.data || (Array.isArray(d) ? d : []);
+    document.getElementById('connectors-body').innerHTML = conns.length
+      ? conns.slice(0, 10).map(c => {
+          const ok = c.enabled || c.connected || c.status === 'ok';
+          return '<div class="row"><span>' + esc(c.name || c.id || c.conn_id || c) +
+            '</span><span class="pill" style="margin-left:auto;border-color:' + (ok ? 'var(--ok)' : 'var(--line)') + '">' +
+            (ok ? 'actif' : (c.status || 'inactif')) + '</span></div>';
+        }).join('')
+      : '<span class="muted">Aucun connecteur configuré.</span>';
+  }).catch(e => fail('connectors-body', e));
+}
+
+function refreshAll(){
+  const active = document.querySelector('.screen.active');
+  const name = active ? active.id.replace('screen-', '') : 'overview';
+  showScreen(name);
+}
+
+// Démarrage
+loadOverview();
+</script>
+</body>
+</html>
