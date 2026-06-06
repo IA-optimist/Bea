@@ -39,9 +39,13 @@ sys.path.insert(0, str(ROOT))
 def main() -> None:
     import uvicorn
     port = int(os.environ.get("BEA_API_PORT", "8000"))
-    print(f"Béa API (stack complète, local dégradé) -> http://127.0.0.1:{port}")
+    # Bind configurable : défaut 127.0.0.1 (sûr). Mettre BEA_API_BIND=0.0.0.0 pour
+    # exposer l'API sur toutes les interfaces (ex. accès mobile via Tailscale/LAN) —
+    # protégé par JARVIS_API_TOKEN + l'access-enforcement middleware.
+    bind = os.environ.get("BEA_API_BIND", "127.0.0.1")
+    print(f"Béa API (stack complète, local dégradé) -> http://{bind}:{port}")
     print(f"Token : X-Jarvis-Token: {os.environ['JARVIS_API_TOKEN']}")
-    uvicorn.run("api.main:app", host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run("api.main:app", host=bind, port=port, log_level="warning")
 
 
 if __name__ == "__main__":
