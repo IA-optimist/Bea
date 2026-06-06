@@ -7,7 +7,7 @@ class ApiConfig extends ChangeNotifier {
   // All values come from HardcodedConfig — single source of truth.
   String get host    => HardcodedConfig.apiHost;
   int    get port    => HardcodedConfig.apiPort;
-  String get baseUrl => 'http://${HardcodedConfig.apiHost}:${HardcodedConfig.apiPort}';
+  String get baseUrl => '${HardcodedConfig.scheme}://${HardcodedConfig.apiHost}:${HardcodedConfig.apiPort}';
 
   // No-op update/reset — hardcoded build
   Future<void> update({String? host, int? port}) async {}
