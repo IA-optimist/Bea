@@ -1,5 +1,5 @@
 """
-JARVIS MAX — FailureMemory
+BEA MAX — FailureMemory
 Mémorise les patchs rejetés pour éviter de reproduire les mêmes erreurs.
 
 Persistance : fichier JSON dans workspace/memory/ (zéro dépendance DB).

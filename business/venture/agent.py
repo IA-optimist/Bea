@@ -1,11 +1,11 @@
 """
-JARVIS BUSINESS LAYER — Venture Builder : Agent
+BEA BUSINESS LAYER — Venture Builder : Agent
 Analyse un secteur ou une idée et retourne des opportunités business scorées.
 """
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.venture.schema import parse_venture_report
 
 log = structlog.get_logger()
@@ -78,7 +78,7 @@ class VentureBuilderAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input = session.user_input or session.mission_summary or ""
         context_parts = []
 
@@ -97,7 +97,7 @@ class VentureBuilderAgent(BaseAgent):
             base += "\n\nContexte additionnel :\n" + "\n\n".join(context_parts)
         return base
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         """Override pour retourner aussi le VentureReport parsé dans session."""
         raw = await super().run(session)
         if not raw:

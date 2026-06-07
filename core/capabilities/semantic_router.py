@@ -22,16 +22,16 @@ from typing import Optional
 
 import httpx
 
-log = structlog.get_logger("jarvis.semantic_router")
+log = structlog.get_logger("bea.semantic_router")
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-EMBEDDING_MODEL = os.getenv("JARVIS_EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_MODEL = os.getenv("BEA_EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIM = 1536
-CONFIDENCE_THRESHOLD = float(os.getenv("JARVIS_SEMANTIC_THRESHOLD", "0.25"))
+CONFIDENCE_THRESHOLD = float(os.getenv("BEA_SEMANTIC_THRESHOLD", "0.25"))
 MAX_CANDIDATES = 5
-LLM_RERANK_ENABLED = os.getenv("JARVIS_SEMANTIC_RERANK", "false").lower() == "true"
+LLM_RERANK_ENABLED = os.getenv("BEA_SEMANTIC_RERANK", "false").lower() == "true"
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
 
@@ -258,7 +258,7 @@ def _keyword_fallback(goal: str) -> list[SemanticMatch]:
 
 def rerank_with_llm(goal: str, candidates: list[SemanticMatch]) -> list[SemanticMatch]:
     """Use LLM to rerank semantic matches for better precision.
-    Only called when JARVIS_SEMANTIC_RERANK=true."""
+    Only called when BEA_SEMANTIC_RERANK=true."""
     if not LLM_RERANK_ENABLED or len(candidates) <= 1:
         return candidates
 

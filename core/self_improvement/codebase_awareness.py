@@ -31,7 +31,7 @@ ARCHITECTURE_LAYERS = {
     "planning": ["core/planning/"],
     "api": ["api/"],
     "business": ["business/", "core/business/"],
-    "ui": ["static/", "jarvismax_app/"],
+    "ui": ["static/", "beamax_app/"],
     "test": ["tests/"],
     "config": ["config/"],
     "connector": ["connectors/"],

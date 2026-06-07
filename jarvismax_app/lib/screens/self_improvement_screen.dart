@@ -102,7 +102,7 @@ class _SelfImprovementScreenState extends State<SelfImprovementScreen> {
                                   SizedBox(height: 16),
                                   Text(
                                     'Aucune suggestion — continuez à utiliser '
-                                    'Jarvis pour générer des données.',
+                                    'Bea pour générer des données.',
                                     style: TextStyle(color: JvColors.textMut),
                                     textAlign: TextAlign.center,
                                   ),

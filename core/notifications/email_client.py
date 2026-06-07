@@ -30,7 +30,7 @@ class EmailNotificationClient:
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self.smtp_user = os.getenv("SMTP_USER", "")
         self.smtp_password = os.getenv("SMTP_PASSWORD", "")
-        self.email_from = os.getenv("EMAIL_FROM", "noreply@jarvismax.ai")
+        self.email_from = os.getenv("EMAIL_FROM", "noreply@beamax.ai")
         
         self.enabled = bool(self.smtp_host and self.smtp_user and self.smtp_password)
         
@@ -54,7 +54,7 @@ class EmailNotificationClient:
             return False
         
         try:
-            subject = f"[JarvisMax] Mission {payload.status}: {payload.title[:50]}"
+            subject = f"[BeaMax] Mission {payload.status}: {payload.title[:50]}"
             html_body = self._format_html(payload)
             text_body = self._format_text(payload)
             
@@ -123,7 +123,7 @@ class EmailNotificationClient:
         
         lines.append("")
         lines.append("---")
-        lines.append("JarvisMax Notification System")
+        lines.append("BeaMax Notification System")
         
         return "\n".join(lines)
     
@@ -186,7 +186,7 @@ class EmailNotificationClient:
         html += """
                 </div>
                 <div class="footer">
-                    <p>JarvisMax Notification System</p>
+                    <p>BeaMax Notification System</p>
                 </div>
             </div>
         </body>

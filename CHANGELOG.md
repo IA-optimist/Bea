@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **Jarvismax** are documented here. The format follows
+All notable changes to **Beamax** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the repo uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for tags.
 
@@ -12,12 +12,12 @@ All notable changes to **Jarvismax** are documented here. The format follows
   `no-new-privileges`. Copy-on-write workspace clone now excludes `.env*`,
   `.git`, `*.key`, `*.pem`, `secrets/`, `tokens.json`.
 - `config/settings.py`: dropped `"change-me-in-production"` placeholder.
-  Unset `JARVIS_SECRET_KEY` now yields an ephemeral per-process random key;
+  Unset `BEA_SECRET_KEY` now yields an ephemeral per-process random key;
   `enforce_production_secrets()` rejects ephemeral/placeholder keys in prod.
-- `api/auth.py`: admin login refused when `JARVIS_ADMIN_PASSWORD` is unset
+- `api/auth.py`: admin login refused when `BEA_ADMIN_PASSWORD` is unset
   (no more silent fallback to the JWT signing key).
 - `api/main.py`: production requires `CORS_ORIGINS` explicitly — boot raises
-  if `JARVIS_PRODUCTION=true` and no allowlist is set.
+  if `BEA_PRODUCTION=true` and no allowlist is set.
 - `api/security_headers.py`: CSP `'unsafe-inline'` scoped to `/docs` Swagger
   paths only; main API surface gets a strict CSP.
 - All 18 GitHub Actions pinned by commit SHA (supply-chain hardening).
@@ -36,7 +36,7 @@ All notable changes to **Jarvismax** are documented here. The format follows
   (ToolDefinition / ToolExecutor / OperationalTool / Agent).
 - `tests/test_p0_hardening.py` + `tests/test_p1_hardening.py` — regression
   tests covering the new hardening invariants.
-- `Audit_Jarvismax_2026-05-18.docx` (later moved to `docs/audits/`) — full
+- `Audit_Beamax_2026-05-18.docx` (later moved to `docs/audits/`) — full
   technical audit covering architecture, security, code quality.
 
 ### Changed
@@ -54,7 +54,7 @@ All notable changes to **Jarvismax** are documented here. The format follows
 - `tests/test_skill_system.py::test_duplicate_detection`: `_merge_into()`
   caller was passing a spurious 5th positional argument (`result`).
 - `tests/test_production_hardening_p34.py::TestRequireAuthGuard` (6 tests):
-  `api/_deps.py` now treats ephemeral `JARVIS_SECRET_KEY` defaults as
+  `api/_deps.py` now treats ephemeral `BEA_SECRET_KEY` defaults as
   "not configured" so the no-token-no-jwt path still returns 503.
 - `tests/test_canonical_mission_persistence.py` (10 tests):
   `CanonicalMissionStore` now honours an explicit `db_path` instead of
@@ -89,4 +89,4 @@ sprints (2026-05-18 → 2026-05-19):
 | 8      | 95f10e4 | mypy dedicated job + 5/5 core/_legacy/ shims migrated (issue #15)  |
 | 9      | (this)  | core/_legacy/ deleted entirely + 247 open() encoding fix           |
 
-The full audit document is at `docs/audits/Audit_Jarvismax_2026-05-18.docx`.
+The full audit document is at `docs/audits/Audit_Beamax_2026-05-18.docx`.

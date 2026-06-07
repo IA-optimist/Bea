@@ -36,8 +36,8 @@ Concurrency model :
     and a counter is incremented — never blocks the caller.
 
 Activation :
-    Off by default. Set `JARVIS_TRAINING_COLLECT=1` to enable.
-    `JARVIS_TRAINING_DIR=<path>` overrides the storage root
+    Off by default. Set `BEA_TRAINING_COLLECT=1` to enable.
+    `BEA_TRAINING_DIR=<path>` overrides the storage root
     (default : repo-root/data/training).
 
 CLI :
@@ -169,7 +169,7 @@ def auto_score(instruction: str, response: str, *, expect_json: Optional[bool] =
 
 # ── Storage paths ────────────────────────────────────────────
 def _root() -> Path:
-    return Path(os.getenv("JARVIS_TRAINING_DIR", "data/training"))
+    return Path(os.getenv("BEA_TRAINING_DIR", "data/training"))
 
 
 def _raw_dir() -> Path:
@@ -198,7 +198,7 @@ _stats: Dict[str, Any] = {"written": 0, "dropped_full": 0, "errors": 0}
 
 
 def _is_enabled() -> bool:
-    return os.getenv("JARVIS_TRAINING_COLLECT", "0").lower() in ("1", "true", "yes")
+    return os.getenv("BEA_TRAINING_COLLECT", "0").lower() in ("1", "true", "yes")
 
 
 def _ensure_worker() -> None:

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// JARVIS DESIGN SYSTEM v3
+// BEA DESIGN SYSTEM v3
 // Premium, calm, high-trust. Matches web app.html design tokens.
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -114,8 +114,8 @@ class JDS {
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 
-class JarvisTheme {
-  JarvisTheme._();
+class BeaTheme {
+  BeaTheme._();
 
   static ThemeData get dark => ThemeData(
     brightness: Brightness.dark,

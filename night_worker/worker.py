@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Night Worker Engine
+BEA MAX — Night Worker Engine
 Travaille en cycles autonomes sur une mission longue durée.
 Analyse → Planification → Production → Review → Décision → max 5 cycles.
 """
@@ -12,12 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Awaitable
 
-from core.state import JarvisSession, RiskLevel
+from core.state import BeaSession, RiskLevel
 
 log = structlog.get_logger()
 CB = Callable[[str], Awaitable[None]]
 
-CYCLE_PROMPT = """Tu es le Night Worker de JarvisMax, agent autonome multi-cycles.
+CYCLE_PROMPT = """Tu es le Night Worker de BeaMax, agent autonome multi-cycles.
 
 Dans CE cycle, produis du travail concret et de qualité.
 
@@ -62,7 +62,7 @@ class NightWorkerEngine:
         self.executor = executor
         self.risk     = risk
 
-    async def run(self, session: JarvisSession, emit: CB):
+    async def run(self, session: BeaSession, emit: CB):
         max_cycles  = self.s.night_worker_max_cycles
         timeout     = self.s.night_worker_cycle_timeout
         mission_dir = self.s.missions_dir / session.session_id
@@ -141,7 +141,7 @@ class NightWorkerEngine:
         )
 
     async def _run_cycle(
-        self, session: JarvisSession, cycle: int, max_cycles: int, mission_dir: Path
+        self, session: BeaSession, cycle: int, max_cycles: int, mission_dir: Path
     ) -> CycleResult:
         llm = self.s.get_llm("builder")
         from langchain_core.messages import SystemMessage, HumanMessage

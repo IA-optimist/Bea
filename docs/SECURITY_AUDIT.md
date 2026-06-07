@@ -6,7 +6,7 @@
 
 **Date initiale:** 2026-04-11
 **Dernière mise à jour:** 2026-04-20
-**Repository:** /root/Jarvismax-master
+**Repository:** /root/Beamax-master
 **VPS:** 77.42.40.146
 
 ---
@@ -22,7 +22,7 @@
 ## 1. GIT HISTORY PURGE
 
 ### Files Removed from Git History:
-- ✅ `.env.backup-20260407` (contained JWT_SECRET_KEY, JARVIS_API_TOKEN, POSTGRES_PASSWORD, OPENROUTER_API_KEY)
+- ✅ `.env.backup-20260407` (contained JWT_SECRET_KEY, BEA_API_TOKEN, POSTGRES_PASSWORD, OPENROUTER_API_KEY)
 - ✅ `.env.production-ready` (contained same secrets as above)
 - ✅ `.env.test` (contained test credentials)
 - ✅ `.env.agents` (contained agent environment variables)
@@ -49,7 +49,7 @@ git log --all --full-history -- '.env.backup-20260407'
 ```
 
 ### Backup Created:
-- Full repository backup created at: `/root/Jarvismax-master.backup-before-filter-20260411-*`
+- Full repository backup created at: `/root/Beamax-master.backup-before-filter-20260411-*`
 
 ---
 
@@ -119,13 +119,13 @@ All password references use environment variables or are part of security toolin
 
 ### docker-compose.yml:
 ```yaml
-JARVIS_API_TOKEN: ""  # Empty default (safe)
+BEA_API_TOKEN: ""  # Empty default (safe)
 POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Environment variable (safe)
 ```
 
 ### docker-compose.test.yml:
 ```yaml
-JARVIS_SECRET_KEY: ${JARVIS_SECRET_KEY:-test-secret-key-not-for-production}
+BEA_SECRET_KEY: ${BEA_SECRET_KEY:-test-secret-key-not-for-production}
 # All secrets use ${VAR} or ${VAR:-default} pattern (safe)
 ```
 
@@ -157,7 +157,7 @@ JARVIS_SECRET_KEY: ${JARVIS_SECRET_KEY:-test-secret-key-not-for-production}
 ### 🔴 CRITICAL - IMMEDIATE ACTION REQUIRED:
 1. **ROTATE ALL SECRETS** that were in .env.backup-20260407:
    - `JWT_SECRET_KEY` (currently: 7f8a9b...9f0a)
-   - `JARVIS_API_TOKEN` (was exposed)
+   - `BEA_API_TOKEN` (was exposed)
    - `POSTGRES_PASSWORD` (was exposed)
    - `OPENROUTER_API_KEY` (was exposed)
    
@@ -169,7 +169,7 @@ JARVIS_SECRET_KEY: ${JARVIS_SECRET_KEY:-test-secret-key-not-for-production}
 
 2. **FORCE PUSH** to remote repository:
    ```bash
-   cd /root/Jarvismax-master
+   cd /root/Beamax-master
    git push origin --force --all
    git push origin --force --tags
    ```
@@ -178,7 +178,7 @@ JARVIS_SECRET_KEY: ${JARVIS_SECRET_KEY:-test-secret-key-not-for-production}
 
 3. **NOTIFY ALL COLLABORATORS** to re-clone the repository:
    ```bash
-   git clone https://github.com/UniTy01/Jarvismax-master.git
+   git clone https://github.com/UniTy01/Beamax-master.git
    ```
 
 ### 🟡 RECOMMENDED:
@@ -260,8 +260,8 @@ The critical security vulnerability (.env.backup-20260407 in git history) has be
 - **`.env.example`** : secrets de sample → placeholders `CHANGE_ME_openssl_rand_hex_32`.
 - **CORS wildcard** retiré de `business/automation/product_builder.py` (template code-gen) → origines explicites via `CORS_ALLOWED_ORIGINS`.
 - **`shell=True` non gated** — kill-switches env ajoutés :
-  - `LocalFallbackSandbox` → `JARVIS_ALLOW_LOCAL_SANDBOX=1` requis
-  - `core/tool_executor.run_shell_command` → allowlist **enforcée par défaut** (opt-out `JARVIS_SHELL_ALLOWLIST=0`)
+  - `LocalFallbackSandbox` → `BEA_ALLOW_LOCAL_SANDBOX=1` requis
+  - `core/tool_executor.run_shell_command` → allowlist **enforcée par défaut** (opt-out `BEA_SHELL_ALLOWLIST=0`)
   - `core/orchestration/proactive_loop._run_readonly_shell` → `shell=False` + `shlex.split` + whitelist stricte
   - `mcp/hexstrike-ai/hexstrike_server.py` (2 sites : `_execute_command_internal`, `EnhancedCommandExecutor.execute`) → `HEXSTRIKE_EXEC_ENABLED=1` requis
   - `mcp/hexstrike_v2/core/process_manager.py` → même gate
@@ -294,7 +294,7 @@ Audit des 9 commits master absents de main (branches historiquement disjointes).
 - **feat cookie auth HttpOnly (CVSS 9.1 XSS)** — ❌ manquant → **appliqué** :
   - `api/_deps.require_auth` : cookie prioritaire, fallback headers
   - `api/middleware._extract_token` : idem
-  - `api/main.py` : `/api/v2/auth/login` + `/auth/token` + `/auth/login` set le cookie HttpOnly (Secure via `JARVIS_COOKIE_SECURE`, SameSite=Lax, 7 jours)
+  - `api/main.py` : `/api/v2/auth/login` + `/auth/token` + `/auth/login` set le cookie HttpOnly (Secure via `BEA_COOKIE_SECURE`, SameSite=Lax, 7 jours)
   - Nouveau endpoint `POST /api/v2/auth/logout` qui clear le cookie
 
 ### 8.5 Frontend CVSS 9.1 — migration localStorage → HttpOnly cookie (commit 6a0ab0c)
@@ -309,11 +309,11 @@ Audit des 9 commits master absents de main (branches historiquement disjointes).
 ### 8.6 Auth endpoints — fix bugs + cookie support (commit 970100c)
 - `/auth/me` crashait silencieusement (`await` sur sync) → fixed via `Depends(require_auth)`, retourne correctement 401.
 - `/auth/refresh` : ajout lecture cookie en priorité + refresh du cookie HttpOnly (prolonge session 7j).
-- **5 gate tests** (`tests/test_cookie_auth.py`) : rejects_no_token / accepts_bearer / accepts_jarvis_token / accepts_cookie / logout_clears_cookie.
+- **5 gate tests** (`tests/test_cookie_auth.py`) : rejects_no_token / accepts_bearer / accepts_bea_token / accepts_cookie / logout_clears_cookie.
 
 ### 8.7 Flutter audit — fuite token hardcodé CRITIQUE (commit TBD ce batch)
-- **Découverte** : `jarvismax_app/lib/config/hardcoded_config.dart:9` contenait un token de la forme `jv-uAu...<redacted>...CXPkcfJLg` (56 caractères) en clair. Compilé dans l'APK → extractible par décompilation (ex. `apktool d app.apk`).
-- **Fix** : remplacé par `String.fromEnvironment('JARVIS_API_TOKEN', ...)` avec placeholders inoffensifs. Configuration via `flutter build apk --dart-define=JARVIS_API_TOKEN=jv-xxx`.
+- **Découverte** : `beamax_app/lib/config/hardcoded_config.dart:9` contenait un token de la forme `jv-uAu...<redacted>...CXPkcfJLg` (56 caractères) en clair. Compilé dans l'APK → extractible par décompilation (ex. `apktool d app.apk`).
+- **Fix** : remplacé par `String.fromEnvironment('BEA_API_TOKEN', ...)` avec placeholders inoffensifs. Configuration via `flutter build apk --dart-define=BEA_API_TOKEN=jv-xxx`.
 - **Action humaine URGENTE** : **révoquer** le token `jv-uAu8416X4f_hExqvFUyc2ifeRYypnp36AjQjsEGlu5CuiCXPkcfJLg` côté serveur via `POST /api/v2/tokens/{id}/revoke` avant toute distribution d'APK. L'historique git conserve l'ancienne valeur.
 - Reste du Flutter : OK. Utilise `flutter_secure_storage` (iOS Keychain / Android Keystore encrypted) pour le token runtime, `SharedPreferences` uniquement pour non-sensible.
 
@@ -345,16 +345,16 @@ Audit des 9 commits master absents de main (branches historiquement disjointes).
    - Token admin `tok-ece2f63fdcce` (du `.tokens.json` purgé)
    - Token Flutter `jv-uAu...<redacted>...CXPkcfJLg` (voir commit HEAD pour la valeur à révoquer)
    - `JWT_SECRET_KEY` (si jamais dans `.env.backup-20260407`)
-   - `JARVIS_API_TOKEN` statique si utilisé
+   - `BEA_API_TOKEN` statique si utilisé
    - `OPENROUTER_API_KEY`, `POSTGRES_PASSWORD`, `N8N_ENCRYPTION_KEY`
 2. **Vérifier force-push historique** (ancien audit) : les fichiers sont purgés localement, confirmer remote aligné.
 3. **CI GitHub Actions verts** sur HEAD main.
 4. **Smoke-test manuel cookie auth** en prod :
    ```bash
-   curl -c cookies.txt -X POST https://jarvis.jarvismaxapp.co.uk/api/v2/auth/login \
+   curl -c cookies.txt -X POST https://bea.beamaxapp.co.uk/api/v2/auth/login \
      -H 'Content-Type: application/json' -d '{"username":"admin","password":"..."}'
-   # Vérifier : Set-Cookie: jarvis_token=...; HttpOnly; Secure; SameSite=Lax
-   curl -b cookies.txt https://jarvis.jarvismaxapp.co.uk/auth/me
+   # Vérifier : Set-Cookie: bea_token=...; HttpOnly; Secure; SameSite=Lax
+   curl -b cookies.txt https://bea.beamaxapp.co.uk/auth/me
    ```
 
 **🟡 Non-critique, déférées :**

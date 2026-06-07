@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Runtime Introspection
+BEA MAX — Runtime Introspection
 ====================================
-Unified self-awareness layer for JarvisMax.
+Unified self-awareness layer for BeaMax.
 
 Provides:
 1. get_runtime_capabilities() — full runtime capability map (stable JSON)
@@ -122,7 +122,7 @@ def _detect_packages() -> Capability:
 
 
 def _detect_tools() -> Capability:
-    """Detect available JarvisMax tools from tool registry."""
+    """Detect available BeaMax tools from tool registry."""
     try:
         from core.tool_registry import get_tool_registry
         reg = get_tool_registry()
@@ -251,7 +251,7 @@ def _detect_git() -> Capability:
 
 
 def _detect_optional_modules() -> Capability:
-    """Detect availability of optional Python modules used by JarvisMax."""
+    """Detect availability of optional Python modules used by BeaMax."""
     modules = {
         "structlog": False, "pydantic": False, "requests": False,
         "fastapi": False, "uvicorn": False, "langchain_core": False,

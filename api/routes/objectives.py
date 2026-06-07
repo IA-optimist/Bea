@@ -16,11 +16,11 @@ from api._deps import _check_auth
 from typing import Optional as _Opt
 from fastapi import Header
 
-def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
+    _check_auth(x_bea_token, authorization)
 
 
-logger = logging.getLogger("jarvis.api.objectives")
+logger = logging.getLogger("bea.api.objectives")
 
 router = APIRouter(prefix="/api/v2/objectives", tags=["objectives"], dependencies=[Depends(_auth)])
 
@@ -53,7 +53,7 @@ class CreateObjectiveRequest(BaseModel):
     category:        str             = Field("general")
     priority_score:  float           = Field(0.5, ge=0.0, le=1.0)
     source:          str             = Field("user")
-    owner:           str             = Field("jarvis")
+    owner:           str             = Field("bea")
     success_criteria: str            = Field("")
     depends_on:      List[str]       = Field(default_factory=list)
     auto_breakdown:  bool            = Field(True)

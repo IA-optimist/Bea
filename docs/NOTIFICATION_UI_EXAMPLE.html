@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JarvisMax - Notification Settings</title>
+    <title>BeaMax - Notification Settings</title>
     <style>
         * {
             margin: 0;
@@ -343,7 +343,7 @@
     
     <script>
         const API_BASE = 'http://localhost:8000';
-        const TOKEN = localStorage.getItem('jarvis_token') || 'test-token';
+        const TOKEN = localStorage.getItem('bea_token') || 'test-token';
         
         // Show alert message
         function showAlert(message, type = 'info') {
@@ -363,7 +363,7 @@
             try {
                 const response = await fetch(`${API_BASE}/api/v2/notifications/subscriptions`, {
                     headers: {
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                 });
                 
@@ -422,7 +422,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                     body: JSON.stringify({
                         channel: 'telegram',
@@ -462,7 +462,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                     body: JSON.stringify({
                         channel: 'email',
@@ -491,7 +491,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                     body: JSON.stringify({ channel }),
                 });
@@ -523,7 +523,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                     body: JSON.stringify({
                         channel: 'telegram',
@@ -557,7 +557,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Jarvis-Token': TOKEN,
+                        'X-Bea-Token': TOKEN,
                     },
                     body: JSON.stringify({
                         channel: 'email',

@@ -139,8 +139,8 @@ When the team is ready to execute :
        (see "Break 1" above). Add `from fastapi import Response` to the
        imports of that file.
 4. [ ] Regenerate `requirements.lock` :
-       `docker build -f docker/Dockerfile -t jarvismax-master-jarvis:bumpcheck . && \
-        docker run --rm jarvismax-master-jarvis:bumpcheck pip freeze > requirements.lock`
+       `docker build -f docker/Dockerfile -t beamax-master-bea:bumpcheck . && \
+        docker run --rm beamax-master-bea:bumpcheck pip freeze > requirements.lock`
 5. [ ] Re-run the smoke harness in the new env :
        `python scripts/c4_fastapi_115_smoke.py`
 6. [ ] Run the test suite. Expected : same green as before the bump.

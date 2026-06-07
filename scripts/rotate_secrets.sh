@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────
-# rotate_secrets.sh — Interactive rotation of JarvisMax prod secrets
+# rotate_secrets.sh — Interactive rotation of BeaMax prod secrets
 # ──────────────────────────────────────────────────────────────────
 # Usage (sur VPS1, en tant que root) :
-#   cd /root/Jarvismax-master
+#   cd /root/Beamax-master
 #   git pull origin main
 #   bash scripts/rotate_secrets.sh
 #
@@ -11,12 +11,12 @@
 #   1. Backup /root/.env et .tokens.json actuels (timestampés)
 #   2. Te demande les NOUVELLES valeurs une à une (hidden input pour
 #      les secrets, prompt pour les placeholders à régénérer)
-#   3. Regénère JARVIS_SECRET_KEY + POSTGRES_PASSWORD + N8N_ENCRYPTION_KEY
+#   3. Regénère BEA_SECRET_KEY + POSTGRES_PASSWORD + N8N_ENCRYPTION_KEY
 #      via openssl (tu peux override)
 #   4. Écrit le nouveau .env dans un fichier temporaire
 #   5. Valide la syntaxe (pas de lignes cassées)
 #   6. Swap atomique : backup → temp → .env
-#   7. Restart le container jarvis_core
+#   7. Restart le container bea_core
 #   8. Smoke test : /api/v2/health + auth/me via cookie
 #   9. Si smoke échoue → rollback automatique du .env
 #
@@ -24,14 +24,14 @@
 # ──────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/root/Jarvismax-master}"
+REPO_DIR="${REPO_DIR:-/root/Beamax-master}"
 ENV_FILE="${ENV_FILE:-${REPO_DIR}/.env}"
 TOKENS_FILE="${TOKENS_FILE:-${REPO_DIR}/.tokens.json}"
-CONTAINER="${CONTAINER:-jarvis_core}"
-DOMAIN="${DOMAIN:-jarvis.jarvismaxapp.co.uk}"
+CONTAINER="${CONTAINER:-bea_core}"
+DOMAIN="${DOMAIN:-bea.beamaxapp.co.uk}"
 HEALTH_URL="${HEALTH_URL:-http://localhost:8000/api/v2/health}"
 
-BACKUP_DIR="${BACKUP_DIR:-/root/jarvismax-secrets-backups}"
+BACKUP_DIR="${BACKUP_DIR:-/root/beamax-secrets-backups}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
 red()   { printf '\033[0;31m%s\033[0m\n' "$*" >&2; }
@@ -59,7 +59,7 @@ mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 
 blue "════════════════════════════════════════════════════════════"
-blue "  JarvisMax Secret Rotation — $TS"
+blue "  BeaMax Secret Rotation — $TS"
 blue "════════════════════════════════════════════════════════════"
 echo
 echo "Target VPS      : $(hostname)"
@@ -115,8 +115,8 @@ read_secret() {
   eval "NEW_$varname=\"\$val\""
 }
 
-read_secret JARVIS_SECRET_KEY "JWT signing key"
-read_secret JARVIS_API_TOKEN  "static API token (ex: jv-xxxx)"
+read_secret BEA_SECRET_KEY "JWT signing key"
+read_secret BEA_API_TOKEN  "static API token (ex: jv-xxxx)"
 read_secret POSTGRES_PASSWORD "PostgreSQL password"
 read_secret N8N_ENCRYPTION_KEY "N8N encryption key"
 
@@ -133,14 +133,14 @@ chmod 600 "$NEW_ENV"
 # Copy .env line by line, replacing target vars
 while IFS= read -r line || [[ -n "$line" ]]; do
   case "$line" in
-    JARVIS_SECRET_KEY=*)   echo "JARVIS_SECRET_KEY=$NEW_JARVIS_SECRET_KEY" ;;
-    JARVIS_API_TOKEN=*)    echo "JARVIS_API_TOKEN=$NEW_JARVIS_API_TOKEN" ;;
+    BEA_SECRET_KEY=*)   echo "BEA_SECRET_KEY=$NEW_BEA_SECRET_KEY" ;;
+    BEA_API_TOKEN=*)    echo "BEA_API_TOKEN=$NEW_BEA_API_TOKEN" ;;
     POSTGRES_PASSWORD=*)   echo "POSTGRES_PASSWORD=$NEW_POSTGRES_PASSWORD" ;;
     N8N_ENCRYPTION_KEY=*)  echo "N8N_ENCRYPTION_KEY=$NEW_N8N_ENCRYPTION_KEY" ;;
     OPENROUTER_API_KEY=*)  echo "OPENROUTER_API_KEY=$NEW_OPENROUTER_API_KEY" ;;
     DATABASE_URL=*)
       # Update inline password in DATABASE_URL
-      echo "DATABASE_URL=postgresql://jarvis:${NEW_POSTGRES_PASSWORD}@postgres:5432/jarvismax"
+      echo "DATABASE_URL=postgresql://bea:${NEW_POSTGRES_PASSWORD}@postgres:5432/beamax"
       ;;
     *) echo "$line" ;;
   esac
@@ -149,7 +149,7 @@ green "  ✓ new env prepared ($(wc -l < "$NEW_ENV") lines)"
 
 # ── Step 5: Sanity check ────────────────────────────────────
 blue "[5/9] Sanity check (no CHANGE_ME left, critical vars present)…"
-for required in JARVIS_SECRET_KEY POSTGRES_PASSWORD DATABASE_URL; do
+for required in BEA_SECRET_KEY POSTGRES_PASSWORD DATABASE_URL; do
   grep -q "^${required}=" "$NEW_ENV" || die "missing $required"
 done
 if grep -q "CHANGE_ME" "$NEW_ENV"; then
@@ -213,8 +213,8 @@ green "  • Container restarted  : $CONTAINER"
 green "  • Health               : OK"
 echo
 yellow "  NEXT STEPS (hors-script) :"
-echo "    1. Revoke old JARVIS_API_TOKEN via /api/v2/tokens/{id}/revoke"
-echo "       (use the NEW JARVIS_API_TOKEN as auth for that call)"
+echo "    1. Revoke old BEA_API_TOKEN via /api/v2/tokens/{id}/revoke"
+echo "       (use the NEW BEA_API_TOKEN as auth for that call)"
 echo "    2. If OpenRouter key was rotated, verify LLM provider still works :"
 echo "       curl -b /tmp/c.txt https://$DOMAIN/api/v2/chat ..."
 echo "    3. Log event in audit trail (ops journal)."

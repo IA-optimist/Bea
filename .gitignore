@@ -1,4 +1,4 @@
-# JARVIS MAX — Git ignore
+# BEA MAX — Git ignore
 
 # ── MCP / tool runtime artefacts ────────────────────────────
 sqlite_mcp_server.db
@@ -51,7 +51,7 @@ build/
 pytest-cache-files-*/
 
 # ── Repo hygiene (audit Sprint 1) ────────────────────────────
-snapshots/jarvismax_memory_*/
+snapshots/beamax_memory_*/
 .claude-*.log
 .claude-*.json
 .claude-dispatch-*-debug.log
@@ -101,29 +101,29 @@ workspace/missions.json
 # ── JVM / Android heap dumps ─────────────────────────────────
 *.hprof
 android/java_*.hprof
-jarvismax_app/android/*.hprof
+beamax_app/android/*.hprof
 
 # ── Flutter build artifacts ───────────────────────────────────
-jarvismax_app/build/
-jarvismax_app/.dart_tool/
-jarvismax_app/.flutter-plugins
-jarvismax_app/.flutter-plugins-dependencies
-jarvismax_app/android/.gradle/
-jarvismax_app/android/local.properties
-jarvismax_app/android/app/debug/
-jarvismax_app/android/app/release/
-jarvismax_app/android/app/profile/
-jarvismax_app/android/captures/
-jarvismax_app/android/*.hprof
-jarvismax_app/android/java_*.hprof
-jarvismax_app/ios/Pods/
-jarvismax_app/ios/.symlinks/
-jarvismax_app/ios/Flutter/App.framework/
-jarvismax_app/ios/Flutter/Flutter.framework/
-jarvismax_app/ios/Flutter/Flutter.podspec
-jarvismax_app/ios/Flutter/Generated.xcconfig
-jarvismax_app/ios/Flutter/ephemeral/
-jarvismax_app/ios/Runner/GeneratedPluginRegistrant.*
+beamax_app/build/
+beamax_app/.dart_tool/
+beamax_app/.flutter-plugins
+beamax_app/.flutter-plugins-dependencies
+beamax_app/android/.gradle/
+beamax_app/android/local.properties
+beamax_app/android/app/debug/
+beamax_app/android/app/release/
+beamax_app/android/app/profile/
+beamax_app/android/captures/
+beamax_app/android/*.hprof
+beamax_app/android/java_*.hprof
+beamax_app/ios/Pods/
+beamax_app/ios/.symlinks/
+beamax_app/ios/Flutter/App.framework/
+beamax_app/ios/Flutter/Flutter.framework/
+beamax_app/ios/Flutter/Flutter.podspec
+beamax_app/ios/Flutter/Generated.xcconfig
+beamax_app/ios/Flutter/ephemeral/
+beamax_app/ios/Runner/GeneratedPluginRegistrant.*
 
 # ── Logs généraux ─────────────────────────────────────────────
 logs/

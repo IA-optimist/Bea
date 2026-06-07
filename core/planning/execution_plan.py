@@ -1,7 +1,7 @@
 """
 core/planning/execution_plan.py — Structured execution plans.
 
-An ExecutionPlan describes an ordered sequence of steps Jarvis will execute.
+An ExecutionPlan describes an ordered sequence of steps Bea will execute.
 Each step is either a business_action, a tool invocation, or a skill execution.
 
 Plans are:

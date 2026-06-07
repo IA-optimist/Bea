@@ -1,9 +1,9 @@
 """
-JARVIS MAX v3 — WebSockets & Time-Travel API
+BEA MAX v3 — WebSockets & Time-Travel API
 
 Sécurité :
   - Le token d'authentification est lu depuis le header HTTP
-    `X-Jarvis-Token` ou `Authorization: Bearer <token>`.
+    `X-Bea-Token` ou `Authorization: Bearer <token>`.
   - Les query params ne sont PLUS acceptés pour éviter l'exposition
     du token dans les logs proxy, l'historique navigateur et les
     headers Referer envoyés à des tiers.
@@ -55,14 +55,14 @@ verify_token = _verify_ws_token
 async def websocket_stream(
     websocket: WebSocket,
     mission_id: str,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ):
     """
     Point d'entrée WebSocket — flux d'événements de mission en temps réel.
 
     Authentification :
-      Header X-Jarvis-Token: <token>
+      Header X-Bea-Token: <token>
       — ou —
       Header Authorization: Bearer <token>
 
@@ -74,14 +74,14 @@ async def websocket_stream(
     import hmac as _hmac
     import os as _os
     token: Optional[str] = None
-    if x_jarvis_token:
-        token = x_jarvis_token
+    if x_bea_token:
+        token = x_bea_token
     elif authorization:
         token = strip_bearer(authorization)
 
     # Fast path: header auth (native clients)
     _authorized = _verify_ws_token(token)
-    _api_token = _os.getenv("JARVIS_API_TOKEN", "")
+    _api_token = _os.getenv("BEA_API_TOKEN", "")
 
     # Pre-accept rejection: if header token provided but invalid, reject early
     # NOTE: query params plus acceptés — use headers or first-message auth only
@@ -163,21 +163,21 @@ async def ws_handler(websocket: WebSocket):
     """
     Generic WebSocket handler for /ws/stream.
     Used by the mobile app for general-purpose status streaming.
-    Auth via X-Jarvis-Token or Authorization header.
+    Auth via X-Bea-Token or Authorization header.
     """
     from api.token_utils import strip_bearer
     import os as _os
 
     # Extract token from headers
     headers = dict(websocket.headers) if hasattr(websocket, 'headers') else {}
-    token = headers.get("x-jarvis-token") or ""
+    token = headers.get("x-bea-token") or ""
     if not token:
         auth_header = headers.get("authorization", "")
         if auth_header:
             token = strip_bearer(auth_header)
 
     authorized = _verify_ws_token(token)
-    api_token = _os.getenv("JARVIS_API_TOKEN", "")
+    api_token = _os.getenv("BEA_API_TOKEN", "")
 
     # Pre-accept rejection
     if token and not authorized and api_token:
@@ -215,7 +215,7 @@ async def ws_handler(websocket: WebSocket):
     try:
         await websocket.send_json({
             "type": "connected",
-            "message": "WebSocket connected to JarvisMax",
+            "message": "WebSocket connected to BeaMax",
             "active_streams": len(ACTIVE_STREAMS),
         })
     except Exception as _exc:
@@ -258,12 +258,12 @@ class RewindRequest(BaseModel):
 async def rewind_mission(
     mission_id: str,
     req: RewindRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ):
     """Time-Travel : coupe l'EventStream jusqu'à un événement précis."""
     from api.token_utils import strip_bearer as _sb
-    _rewind_token = x_jarvis_token or _sb(authorization)
+    _rewind_token = x_bea_token or _sb(authorization)
     if not _verify_ws_token(_rewind_token):
         raise HTTPException(status_code=401, detail="Unauthorized")
     """Time-Travel : coupe l'EventStream jusqu'à un événement précis."""

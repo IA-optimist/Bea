@@ -37,7 +37,7 @@ All events are logged as structured JSON with consistent fields:
   "mvp_id": "mvp_1712653062",
   "product": "AI Task Manager",
   "tech_stack": "React/FastAPI",
-  "path": "/root/.jarvismax/business/products/ai-task-manager",
+  "path": "/root/.beamax/business/products/ai-task-manager",
   "duration": 45.678,
   "logger": "business.business_engine",
   "level": "info",
@@ -174,7 +174,7 @@ Add this to your `prometheus.yml`:
 
 ```yaml
 scrape_configs:
-  - job_name: 'jarvismax-business'
+  - job_name: 'beamax-business'
     scrape_interval: 15s
     static_configs:
       - targets: ['localhost:8000']
@@ -230,7 +230,7 @@ Structured logs can be ingested by any JSON-aware log aggregator:
 ### Example Loki Query
 
 ```logql
-{job="jarvismax"} 
+{job="beamax"} 
 | json 
 | event="product_build_complete" 
 | duration > 60

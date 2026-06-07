@@ -1,5 +1,5 @@
 """
-interfaces/ — Adapter boundary between external consumers and JarvisMax kernel (Pass 20).
+interfaces/ — Adapter boundary between external consumers and BeaMax kernel (Pass 20).
 
 R8: The API is an adapter, never a decision-maker.
 

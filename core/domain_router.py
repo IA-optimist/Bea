@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Domain Router V1
+BEA MAX — Domain Router V1
 Détecte le domaine d'une mission et retourne le profil agents + contexte associé.
 Ne crée pas de nouveaux agents — réutilise les agents existants avec un contexte domaine.
 """

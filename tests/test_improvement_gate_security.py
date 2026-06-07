@@ -1,8 +1,8 @@
 """
-JarvisMax — Security Layer: Improvement Gate Enforcement Tests
+BeaMax — Security Layer: Improvement Gate Enforcement Tests
 
 Ces tests vérifient que le gate d'amélioration fonctionne RÉELLEMENT
-quand JARVIS_SKIP_IMPROVEMENT_GATE n'est PAS défini.
+quand BEA_SKIP_IMPROVEMENT_GATE n'est PAS défini.
 
 Ils testent que:
 1. Les modifications du code core/ sont bloquées sans approbation
@@ -27,11 +27,11 @@ if importlib.util.find_spec("security.improvement_gate") is None:
 def enable_security_gate():
     """Force l'activation du security gate pour ce module"""
     # Enlever le skip si présent
-    old_value = os.environ.pop("JARVIS_SKIP_IMPROVEMENT_GATE", None)
+    old_value = os.environ.pop("BEA_SKIP_IMPROVEMENT_GATE", None)
     yield
     # Restaurer après les tests
     if old_value:
-        os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = old_value
+        os.environ["BEA_SKIP_IMPROVEMENT_GATE"] = old_value
 
 
 def test_improvement_gate_blocks_core_modification():
@@ -125,7 +125,7 @@ def test_gate_skip_env_var_actually_bypasses():
     from security.improvement_gate import check_modification_allowed
     
     # Activer le skip temporairement
-    os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = "1"
+    os.environ["BEA_SKIP_IMPROVEMENT_GATE"] = "1"
     
     result = check_modification_allowed(
         target_path="core/meta_orchestrator.py",
@@ -134,7 +134,7 @@ def test_gate_skip_env_var_actually_bypasses():
     )
     
     # Nettoyer
-    os.environ.pop("JARVIS_SKIP_IMPROVEMENT_GATE")
+    os.environ.pop("BEA_SKIP_IMPROVEMENT_GATE")
     
     assert result["allowed"] is True, "SKIP doit bypass le gate"
     assert "bypassed" in result.get("reason", "").lower()

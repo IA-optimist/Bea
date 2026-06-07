@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────
-# ruff configuration — JarvisMax
+# ruff configuration — BeaMax
 #
 # Strategy : block on safe rules that are already clean,
 # with a roadmap to expand coverage as the codebase is cleaned up.
@@ -21,7 +21,7 @@ exclude = [
   "dist",
   "node_modules",
   "frontend/node_modules",
-  "jarvismax_app",           # Dart/Flutter, not Python
+  "beamax_app",           # Dart/Flutter, not Python
   "mcp/hexstrike-ai/_archive_legacy",
   "docs",
   "archive",
@@ -113,8 +113,8 @@ ignore = [
 "data_intelligence/market_intel_service.py" = ["T201"]
 "examples/business_cognition_demo.py" = ["T201"]
 "executor/execution_engine.py" = ["T201"]
-"jarvis_mcp/jarvis_mcp_server.py" = ["T201"]
-"jarvismax_cli.py" = ["T201"]
+"bea_mcp/bea_mcp_server.py" = ["T201"]
+"beamax_cli.py" = ["T201"]
 "kernel/__main__.py" = ["T201"]
 "learning/learning_loop.py" = ["T201"]
 "mcp/hexstrike_v2/core/cache.py" = ["T201"]
@@ -129,7 +129,7 @@ ignore = [
 "scripts/run_proactive_agent.py" = ["T201"]
 "scripts/safety_check.py" = ["T201"]
 "scripts/suggest_coverage_ratchet.py" = ["T201"]  # CLI reporter, prints are the output.
-"jarvismax" = ["T201"]  # CLI entrypoint script (no .py extension).
+"beamax" = ["T201"]  # CLI entrypoint script (no .py extension).
 "security/blue_team/soc_service.py" = ["T201"]
 
 # __init__.py re-exports

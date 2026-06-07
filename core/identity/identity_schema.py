@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity Schema
+BEA MAX — Identity Schema
 ================================
 Core data models for digital identities.
 

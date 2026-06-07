@@ -1,8 +1,8 @@
 """
-goal_registry.py — Système d'objectifs persistants pour JarvisMax
+goal_registry.py — Système d'objectifs persistants pour BeaMax
 Architecture d'autonomie graduée — Niveau 2
 
-Auteur: Jarvis (JarvisMax Research)
+Auteur: Bea (BeaMax Research)
 Date: 2026-04-09
 """
 
@@ -24,7 +24,7 @@ HORIZONS = {"immediate", "weekly", "monthly", "permanent"}
 
 @dataclass
 class ProactiveGoal:
-    """Représente un objectif persistant de Jarvis."""
+    """Représente un objectif persistant de Bea."""
 
     id: str
     description: str
@@ -78,7 +78,7 @@ class ProactiveGoal:
 
 class GoalRegistry:
     """
-    Registre persistant des objectifs de Jarvis.
+    Registre persistant des objectifs de Bea.
 
     Stockage JSON local. Thread-safe pour usage single-process.
     Pour multi-process, préférer une base SQLite ou Redis.
@@ -89,7 +89,7 @@ class GoalRegistry:
         """Resolve a writable default goals path.
 
         Prefer the configured workspace dir (config.settings.workspace_dir);
-        fall back to ~/.jarvismax/proactive_goals.json. The earlier hardcoded
+        fall back to ~/.beamax/proactive_goals.json. The earlier hardcoded
         /root/.openclaw-bestclaw/... path was env-specific and tripped
         PermissionError on CI runners and any non-root host (audit S6.B).
         """
@@ -97,7 +97,7 @@ class GoalRegistry:
             from config.settings import get_settings
             return Path(get_settings().workspace_dir) / "proactive_goals.json"
         except Exception:
-            return Path.home() / ".jarvismax" / "proactive_goals.json"
+            return Path.home() / ".beamax" / "proactive_goals.json"
 
     def __init__(self, storage_path: Optional[Path] = None) -> None:
         self._path = Path(storage_path) if storage_path is not None else self._default_path()

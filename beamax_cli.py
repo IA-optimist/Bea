@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-JarvisMax CLI — Simple command-line interface
+BeaMax CLI — Simple command-line interface
 
 Commands:
-    jarvismax scan              Scan business opportunities
-    jarvismax build <opp_id>    Build product from opportunity
-    jarvismax deploy <dir>      Deploy product
-    jarvismax status            System status
-    jarvismax revenue           Revenue dashboard
-    jarvismax logs [n]          Show last N log entries
+    beamax scan              Scan business opportunities
+    beamax build <opp_id>    Build product from opportunity
+    beamax deploy <dir>      Deploy product
+    beamax status            System status
+    beamax revenue           Revenue dashboard
+    beamax logs [n]          Show last N log entries
 """
 import asyncio
 import sys
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import structlog
 
-log = structlog.get_logger("jarvismax.cli")
+log = structlog.get_logger("beamax.cli")
 
 
 async def cmd_scan(args):
@@ -68,7 +68,7 @@ async def cmd_scan(args):
 async def cmd_build(args):
     """Build product from opportunity."""
     if not args:
-        print("❌ Usage: jarvismax build <opportunity_title>")
+        print("❌ Usage: beamax build <opportunity_title>")
         return
     
     from core.meta_orchestrator import get_meta_orchestrator
@@ -116,7 +116,7 @@ async def cmd_build(args):
 async def cmd_deploy(args):
     """Deploy product."""
     if not args:
-        print("❌ Usage: jarvismax deploy <product_dir> [platform]")
+        print("❌ Usage: beamax deploy <product_dir> [platform]")
         return
     
     from core.meta_orchestrator import get_meta_orchestrator
@@ -154,7 +154,7 @@ async def cmd_status(args):
     """Show system status."""
     from core.meta_orchestrator import get_meta_orchestrator
     
-    print("📊 JarvisMax System Status\n")
+    print("📊 BeaMax System Status\n")
     print("=" * 80)
     
     orchestrator = get_meta_orchestrator()
@@ -215,7 +215,7 @@ async def cmd_logs(args):
     """Show recent logs."""
     n = int(args[0]) if args else 50
     
-    log_file = Path.home() / ".jarvismax" / "logs" / "jarvismax.log"
+    log_file = Path.home() / ".beamax" / "logs" / "beamax.log"
     
     if not log_file.exists():
         print(f"❌ Log file not found: {log_file}")

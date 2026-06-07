@@ -75,7 +75,7 @@ export const DashboardScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Welcome back to JarvisMax
+          Welcome back to BeaMax
         </Text>
       </View>
 

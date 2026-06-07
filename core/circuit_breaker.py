@@ -1,5 +1,5 @@
 """
-JARVIS MAX — CircuitBreaker
+BEA MAX — CircuitBreaker
 Protection contre les cascades de pannes pour Ollama et les APIs cloud.
 
 Pattern standard à 3 états :

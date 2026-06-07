@@ -303,7 +303,7 @@ def test_existing_agents_registry():
     from core.agent_specialization import EXISTING_AGENTS
     assert "forge-builder" in EXISTING_AGENTS
     assert "lens-reviewer" in EXISTING_AGENTS
-    assert "jarvis-architect" in EXISTING_AGENTS
+    assert "bea-architect" in EXISTING_AGENTS
     for name, info in EXISTING_AGENTS.items():
         assert "role" in info
         assert "timeout_s" in info

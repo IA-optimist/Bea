@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Voice & Call API Routes (Phase 10)
+BEA MAX — Voice & Call API Routes (Phase 10)
 
 POST /api/v2/voice/process          — upload audio → pipeline → response audio
 POST /api/v2/voice/call             — initiate outbound call via Twilio
@@ -7,7 +7,7 @@ POST /api/v2/voice/sms              — send SMS via Twilio
 POST /api/v2/voice/webhook          — Twilio webhook handler (auth-protected, returns TwiML)
 GET  /api/v2/voice/call/{call_sid}  — get call status
 
-Auth: X-Jarvis-Token header (same pattern as other routes).
+Auth: X-Bea-Token header (same pattern as other routes).
       /webhook is auth-protected by the router; do not expose it without signature verification.
 """
 from __future__ import annotations
@@ -24,15 +24,15 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/voice", tags=["voice"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
 
 # ── Request models ─────────────────────────────────────────────
@@ -62,7 +62,7 @@ async def process_audio(
     file:           UploadFile       = File(...),
     session_id:     str              = Query("", description="Conversation session ID"),
     language:       str              = Query("fr"),
-    x_jarvis_token: Optional[str]    = Header(None),
+    x_bea_token: Optional[str]    = Header(None),
 ):
     """
     Upload an audio file and run it through the full STT → LLM → TTS pipeline.
@@ -88,7 +88,7 @@ async def process_audio(
 @router.post("/call")
 async def initiate_call(
     req:            CallRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """
     Initiate an outbound call using Twilio TTS.
@@ -106,7 +106,7 @@ async def initiate_call(
 @router.post("/sms")
 async def send_sms(
     req:            SMSRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Send an SMS message via Twilio."""
     from modules.voice.call_manager import get_call_manager
@@ -143,7 +143,7 @@ async def twilio_webhook(request: Request):
 @router.get("/call/{call_sid}")
 async def get_call_status(
     call_sid:       str,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Poll the status of an outbound call by call_sid."""
     from modules.voice.call_manager import get_call_manager

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — API response schema helpers.
+BEA MAX — API response schema helpers.
 """
 from __future__ import annotations
 from typing import Any

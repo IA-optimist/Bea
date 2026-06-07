@@ -19,7 +19,7 @@ Three levels of budget :
      - max $50 USD / day
 3. **Operator overrides** — read from env vars at startup so VPS1
    admins can clamp without code change :
-     `JARVIS_AUTONOMY_DAILY_USD_MAX=20`, etc.
+     `BEA_AUTONOMY_DAILY_USD_MAX=20`, etc.
 
 Usage :
     bt = get_budget_tracker()
@@ -88,8 +88,8 @@ class BudgetTracker:
 
     def __init__(self, daily_budget: Optional[Budget] = None):
         # Read operator overrides
-        env_usd = float(os.getenv("JARVIS_AUTONOMY_DAILY_USD_MAX", "50"))
-        env_tok = int(os.getenv("JARVIS_AUTONOMY_DAILY_TOKENS_MAX", "5000000"))
+        env_usd = float(os.getenv("BEA_AUTONOMY_DAILY_USD_MAX", "50"))
+        env_tok = int(os.getenv("BEA_AUTONOMY_DAILY_TOKENS_MAX", "5000000"))
         self._daily_limit = daily_budget or Budget(
             max_tokens=env_tok,
             max_usd=env_usd,

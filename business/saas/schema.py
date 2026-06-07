@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — SaaS Builder : Schémas de données
+BEA BUSINESS LAYER — SaaS Builder : Schémas de données
 Transforme une idée en spécification MVP SaaS complète avec artifacts.
 """
 from __future__ import annotations

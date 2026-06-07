@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Finance API
+BEA MAX — Finance API
 ============================
 REST endpoints for financial operations.
 

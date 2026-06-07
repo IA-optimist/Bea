@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Knowledge Memory v1
+BEA MAX — Knowledge Memory v1
 Mémoire de connaissances validées.
 
 Stocke UNIQUEMENT :
@@ -311,7 +311,7 @@ class KnowledgeMemory:
         if not entries:
             return ""
 
-        lines = ["## Connaissances validées (mémoire Jarvis)"]
+        lines = ["## Connaissances validées (mémoire Bea)"]
         for e in entries:
             lines.append(e.to_prompt_snippet())
             self.mark_used(e.id)

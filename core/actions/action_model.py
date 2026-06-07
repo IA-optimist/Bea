@@ -14,7 +14,7 @@ from typing import Literal, Optional
 
 import structlog
 
-log = structlog.get_logger("jarvis.actions")
+log = structlog.get_logger("bea.actions")
 
 
 # ── Canonical status ──────────────────────────────────────────────────────────

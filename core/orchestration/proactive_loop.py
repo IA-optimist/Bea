@@ -1,11 +1,11 @@
 """
-proactive_loop.py — Boucle d'initiative asynchrone pour JarvisMax
+proactive_loop.py — Boucle d'initiative asynchrone pour BeaMax
 Architecture d'autonomie graduée — Niveau 2
 
 Gère le cycle proactif : détection → évaluation du risque → action ou signal.
 S'intègre avec HEARTBEAT.md et GoalRegistry.
 
-Auteur: Jarvis (JarvisMax Research)
+Auteur: Bea (BeaMax Research)
 Date: 2026-04-09
 """
 
@@ -43,7 +43,7 @@ def _resolve_workspace_paths() -> tuple[Path, Path]:
         from config.settings import get_settings
         ws = Path(get_settings().workspace_dir)
     except Exception:
-        ws = Path.home() / ".jarvismax" / "workspace"
+        ws = Path.home() / ".beamax" / "workspace"
     return ws / "HEARTBEAT.md", ws
 
 
@@ -213,7 +213,7 @@ class ProactiveAgent:
 
     def should_act_now(self, goal: ProactiveGoal, context: dict) -> bool:
         """
-        Décide si Jarvis doit agir maintenant (vs juste signaler).
+        Décide si Bea doit agir maintenant (vs juste signaler).
 
         Critères :
         - Priorité haute (≥7) → agir
@@ -309,7 +309,7 @@ class ProactiveAgent:
 
     async def _check_services_down(self) -> list[str]:
         """Liste les services systemd qui sont down (lecture seule)."""
-        known_services = ["jarvis_core", "caddy", "postgresql", "redis"]
+        known_services = ["bea_core", "caddy", "postgresql", "redis"]
         down: list[str] = []
         for svc in known_services:
             try:
@@ -471,7 +471,7 @@ async def _main():
     # Objectifs de démo si vide
     if not registry.get_active_goals():
         g1 = registry.create_goal(
-            "Surveiller la santé des services JarvisMax",
+            "Surveiller la santé des services BeaMax",
             horizon="permanent", priority=9, tags=["monitoring"],
             next_action="Vérifier systemctl status des services core",
         )

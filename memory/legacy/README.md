@@ -1,4 +1,4 @@
-# Legacy Memory Files — JarvisMax
+# Legacy Memory Files — BeaMax
 
 **STATUS:** ⚠️ DEPRECATED — No longer used in production
 
@@ -104,7 +104,7 @@ vm.store(
 If you discover a file is still needed:
 
 ```bash
-cd ~/Jarvismax-master
+cd ~/Beamax-master
 git mv memory/legacy/<file>.py memory/
 git commit -m "restore: Move <file> back to memory/ (production usage found)"
 ```

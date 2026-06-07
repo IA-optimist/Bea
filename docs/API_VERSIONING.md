@@ -2,7 +2,7 @@
 
 ## Current State (2026-04-21)
 
-The JarvisMax API exposes endpoints across three coexisting versions.
+The BeaMax API exposes endpoints across three coexisting versions.
 This doc maps them out, explains the coexistence rationale, and tracks
 deprecation roadmap.
 
@@ -30,7 +30,7 @@ deprecation roadmap.
   - `GET /api/v1/trace/{id}` (no callers)
   - `GET /api/v1/trace/mission/{id}` (no callers)
 - **TODO** — ship `/api/v3/missions/{id}/stream` (SSE) and migrate
-  `jarvismax_app/lib/services/api_service.dart:677` to it. Once mobile rollout
+  `beamax_app/lib/services/api_service.dart:677` to it. Once mobile rollout
   is at 100%, remove the last v1 endpoints.
 
 ## v1 endpoints (DEPRECATED — do not add new ones)
@@ -85,7 +85,7 @@ Routers (35 total, see `grep -rn 'prefix="/api/v3' api/` for the live list).
 
 ## Cross-version rules
 
-- **Auth headers** : same `Authorization: Bearer` / `X-Jarvis-Token` / cookie
+- **Auth headers** : same `Authorization: Bearer` / `X-Bea-Token` / cookie
   across all versions. The auth dependency (`api._deps._check_auth`) is
   version-agnostic.
 - **Rate limiting** : applied uniformly to `/api/*` at middleware level.

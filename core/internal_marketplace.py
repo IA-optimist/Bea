@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Internal Skill/Module Marketplace
+BEA MAX — Internal Skill/Module Marketplace
 ==================================================
 Local catalog of installable modules (agents, skills, connectors, MCP).
 No external service dependency — self-contained.
@@ -47,7 +47,7 @@ class CatalogEntry:
     type: str = ""  # agent, skill, connector, mcp
     version: str = "1.0.0"
     description: str = ""
-    author: str = "jarvis"
+    author: str = "bea"
     category: str = "general"
     tags: List[str] = field(default_factory=list)
     dependencies: List[str] = field(default_factory=list)
@@ -71,7 +71,7 @@ class CatalogEntry:
 
 
 class InternalMarketplace:
-    """Self-contained local marketplace for JarvisMax modules."""
+    """Self-contained local marketplace for BeaMax modules."""
 
     def __init__(self, catalog_path: str = _CATALOG_PATH):
         self._lock = threading.RLock()

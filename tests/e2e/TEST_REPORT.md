@@ -1,4 +1,4 @@
-# Rapport de Tests E2E - JarvisMax
+# Rapport de Tests E2E - BeaMax
 **Date**: 2026-04-09  
 **Framework**: Playwright v1.59.1  
 **Navigateurs**: Chromium, Firefox, WebKit

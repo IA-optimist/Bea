@@ -1,7 +1,7 @@
 """
 comprehension_checker.py
-Diagnostic de comprehension reelle pour JarvisMax (Mistral-7B via Ollama).
-Auteur: JarvisMax Research Lab | 2026-04-09
+Diagnostic de comprehension reelle pour BeaMax (Mistral-7B via Ollama).
+Auteur: BeaMax Research Lab | 2026-04-09
 """
 
 import json
@@ -237,7 +237,7 @@ class ComprehensionChecker:
             Dictionnaire rapport complet avec scores, comparaisons, verdict.
         """
         print(f"\n{'='*60}")
-        print(f"  DIAGNOSTIC JarvisMax | {self.model} @ {self.ollama_url}")
+        print(f"  DIAGNOSTIC BeaMax | {self.model} @ {self.ollama_url}")
         print(f"{'='*60}")
 
         R = {}

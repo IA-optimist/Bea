@@ -11,7 +11,7 @@ from typing import List
 
 from core.objectives.objective_models import Objective, ObjectiveStatus, SubObjectiveStatus
 
-logger = logging.getLogger("jarvis.objective_scoring")
+logger = logging.getLogger("bea.objective_scoring")
 
 # ── Poids des facteurs ─────────────────────────────────────────────────────────
 

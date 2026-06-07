@@ -37,7 +37,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
 
-logger = logging.getLogger("jarvis.self_improvement.improvement_memory")
+logger = logging.getLogger("bea.self_improvement.improvement_memory")
 
 _HISTORY_DIR = Path("workspace/self_improvement")
 _HISTORY_PATH = _HISTORY_DIR / "history.json"

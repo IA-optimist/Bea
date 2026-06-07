@@ -1,12 +1,12 @@
 """
-JARVIS MAX — WorkflowAgent
+BEA MAX — WorkflowAgent
 Agent spécialisé dans la création et la gestion des workflows.
 
 Deux rôles :
   1. Parser le message utilisateur pour extraire une définition de workflow
   2. Déléguer la création + exécution à WorkflowEngine
 
-Utilisé par JarvisOrchestrator quand l'intent est "workflow" (manuel)
+Utilisé par BeaOrchestrator quand l'intent est "workflow" (manuel)
 ou en réponse à des commandes /workflow.
 
 Interface :

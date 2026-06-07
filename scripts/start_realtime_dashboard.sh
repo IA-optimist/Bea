@@ -1,10 +1,10 @@
 #!/bin/bash
-# Script to start JarvisMax with real-time dashboard
+# Script to start BeaMax with real-time dashboard
 
 set -e
 
 echo "=================================================="
-echo "🚀 JarvisMax Real-Time Dashboard Startup"
+echo "🚀 BeaMax Real-Time Dashboard Startup"
 echo "=================================================="
 echo ""
 
@@ -118,7 +118,7 @@ cd "$PROJECT_ROOT"
 
 echo ""
 echo "=================================================="
-echo -e "${GREEN}✅ JarvisMax Real-Time Dashboard Started!${NC}"
+echo -e "${GREEN}✅ BeaMax Real-Time Dashboard Started!${NC}"
 echo "=================================================="
 echo ""
 echo "📊 Dashboard: http://localhost:3000"

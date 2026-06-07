@@ -1,7 +1,7 @@
 """Naming gate for Prometheus metrics.
 
 Audit follow-up (observability): the repo currently has two metric
-prefixes (`jarvis_*` and `business_*`); see
+prefixes (`bea_*` and `business_*`); see
 ``docs/security/observability-audit.md`` for the full discussion.
 
 This test enforces the GOING-FORWARD convention without breaking existing
@@ -11,10 +11,10 @@ or be added to the allowlist with a written justification in the PR.
 
 Convention:
 
-  - Counter: ``jarvis_<subsystem>_<thing>_total``
-  - Histogram: ``jarvis_<subsystem>_<thing>_<unit>`` (`_seconds`,
+  - Counter: ``bea_<subsystem>_<thing>_total``
+  - Histogram: ``bea_<subsystem>_<thing>_<unit>`` (`_seconds`,
     `_bytes`, `_ratio`)
-  - Gauge: ``jarvis_<subsystem>_<thing>`` (suffix optional, but
+  - Gauge: ``bea_<subsystem>_<thing>`` (suffix optional, but
     `_count`/`_ratio` recommended)
   - Summary: same as Histogram
 
@@ -35,9 +35,9 @@ _SCAN_ROOTS = ("api", "core", "kernel", "agents", "business", "memory")
 # justified by a comment line. Don't remove without a coordination PR
 # that swaps the matching dashboards / alerts.
 _GRANDFATHERED = {
-    # business/business_engine.py — predates the jarvis_ prefix. Tracked
+    # business/business_engine.py — predates the bea_ prefix. Tracked
     # in docs/security/observability-audit.md item P1, recommendation:
-    # dual-emit jarvis_business_* and retire these after dashboard swap.
+    # dual-emit bea_business_* and retire these after dashboard swap.
     "business_opportunity_scans_total",
     "business_opportunities_found",
     "business_scan_duration_seconds",
@@ -47,11 +47,11 @@ _GRANDFATHERED = {
     "business_pipeline_runs_total",
 }
 
-_COUNTER_RE = re.compile(r"^jarvis_[a-z][a-z0-9_]*_total$")
+_COUNTER_RE = re.compile(r"^bea_[a-z][a-z0-9_]*_total$")
 _HISTOGRAM_RE = re.compile(
-    r"^jarvis_[a-z][a-z0-9_]*_(seconds|bytes|ratio)$"
+    r"^bea_[a-z][a-z0-9_]*_(seconds|bytes|ratio)$"
 )
-_GAUGE_RE = re.compile(r"^jarvis_[a-z][a-z0-9_]*$")
+_GAUGE_RE = re.compile(r"^bea_[a-z][a-z0-9_]*$")
 
 _METRIC_CLASSES = {"Counter", "Histogram", "Gauge", "Summary"}
 
@@ -128,15 +128,15 @@ def test_metric_definitions_discovered():
     metrics = _collect_metrics()
     names = {m[2] for m in metrics}
     # Must find at least one from each of the three known subsystems.
-    assert any(n.startswith("jarvis_jwt_v2_") for n in names), names
-    assert "jarvis_profile_duration_seconds" in names, names
+    assert any(n.startswith("bea_jwt_v2_") for n in names), names
+    assert "bea_profile_duration_seconds" in names, names
     assert "business_opportunity_scans_total" in names, names
 
 
 def test_no_new_metric_violates_convention():
     """Every new metric must follow the convention or be allowlisted.
     Existing `business_*` are grandfathered ; future business_ metrics
-    must use `jarvis_business_*` instead."""
+    must use `bea_business_*` instead."""
     metrics = _collect_metrics()
     offenders: list[tuple[str, str, str]] = []
     for path, cls, name in metrics:

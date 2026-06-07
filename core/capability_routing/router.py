@@ -198,7 +198,7 @@ def _fuzzy_match(cap_id: str, registry) -> list[ProviderSpec]:
     """
     Fuzzy capability matching: if exact ID not found, try prefix match.
 
-    E.g., "code.patch" might match providers registered under "cap-jarvis-coder"
+    E.g., "code.patch" might match providers registered under "cap-bea-coder"
     if their category is "coding" and keywords overlap.
     """
     candidates = []

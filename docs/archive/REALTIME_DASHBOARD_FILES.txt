@@ -154,7 +154,7 @@ TESTS ET OUTILS
 STRUCTURE COMPLÈTE
 ================================================================================
 
-/root/Jarvismax-master/
+/root/Beamax-master/
 ├── api/
 │   ├── main.py                                    [MODIFIÉ]
 │   └── routes/

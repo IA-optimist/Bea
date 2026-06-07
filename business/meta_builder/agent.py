@@ -1,12 +1,12 @@
 """
-JARVIS BUSINESS LAYER — Meta Builder : Agent
+BEA BUSINESS LAYER — Meta Builder : Agent
 Clone et adapte un système multi-agents pour un nouveau contexte métier.
 Permet de dupliquer tout ou partie de la Business Layer vers un nouveau secteur.
 """
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.meta_builder.schema import parse_meta_build_plan
 
 log = structlog.get_logger()
@@ -81,9 +81,9 @@ class MetaBuilderAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input   = session.user_input or session.mission_summary or ""
-        source       = session.metadata.get("meta_source", "jarvis-business-layer")
+        source       = session.metadata.get("meta_source", "bea-business-layer")
         target       = session.metadata.get("meta_target", "nouveau secteur")
 
         agents_list  = "\n".join(f"- {a}" for a in _AVAILABLE_AGENTS)
@@ -97,12 +97,12 @@ class MetaBuilderAgent(BaseAgent):
             "Réponds UNIQUEMENT en JSON valide selon le format demandé."
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
             return ""
 
-        source = session.metadata.get("meta_source", "jarvis-business-layer")
+        source = session.metadata.get("meta_source", "bea-business-layer")
         target = session.metadata.get("meta_target",
                                        session.user_input or session.mission_summary or "")
         plan   = parse_meta_build_plan(raw, source, target)

@@ -1,7 +1,7 @@
 """
 core/orchestration/reasoning_engine.py — Practical Reasoning Engine.
 
-The intelligence upgrade: before acting, Jarvis reasons about WHAT matters.
+The intelligence upgrade: before acting, Bea reasons about WHAT matters.
 
 This module provides:
 1. Problem Framing — identify the real task, bottleneck, success criteria
@@ -807,7 +807,7 @@ class RepoAwareness:
         }
 
 
-# Layer classification for JarvisMax
+# Layer classification for BeaMax
 _LAYER_MAP = {
     "kernel/": "kernel",
     "core/orchestration/": "orchestration",

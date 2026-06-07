@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Secret Audit Logger
+BEA MAX — Secret Audit Logger
 ===================================
 Immutable audit trail for all vault operations.
 

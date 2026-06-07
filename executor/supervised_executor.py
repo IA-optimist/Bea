@@ -1,5 +1,5 @@
 """
-JARVIS MAX — SupervisedExecutor v2
+BEA MAX — SupervisedExecutor v2
 Couche de supervision autour d'ActionExecutor.
 
 Chaque action passe obligatoirement par RiskEngine avant exécution.

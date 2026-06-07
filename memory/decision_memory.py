@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Decision Memory
+BEA MAX — Decision Memory
 Mémoire légère FIFO (max 1000 entrées) pour apprendre des patterns décisionnels.
 stdlib uniquement : json, os, time, collections, dataclasses, pathlib.
 """

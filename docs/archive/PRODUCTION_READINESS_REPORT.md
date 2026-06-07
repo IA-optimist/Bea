@@ -1,4 +1,4 @@
-# JarvisMax Production Readiness Report
+# BeaMax Production Readiness Report
 
 **DATE:** 2026-04-10  
 **SESSIONS:** 7 (bulldozer mode)  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-JarvisMax has been transformed from a **4.9/10 prototype** with critical security vulnerabilities to a **9.8/10 production-ready AI operating system** with world-class architecture, comprehensive test coverage, and robust security.
+BeaMax has been transformed from a **4.9/10 prototype** with critical security vulnerabilities to a **9.8/10 production-ready AI operating system** with world-class architecture, comprehensive test coverage, and robust security.
 
 **Key Achievements:**
 - ✅ **10/10 critical security issues resolved**
@@ -39,13 +39,13 @@ JarvisMax has been transformed from a **4.9/10 prototype** with critical securit
 ### Critical Issues Resolved (10/10)
 
 1. ✅ **.env.backup-20260407 removed** — Secrets purged from git history
-2. ✅ **Auth fail-closed by default** — JARVIS_REQUIRE_AUTH=true enforced
+2. ✅ **Auth fail-closed by default** — BEA_REQUIRE_AUTH=true enforced
 3. ✅ **projects.py token validation fixed** — Real JWT validation (was startswith("jv-"))
 4. ✅ **Stripe webhook authenticated** — WEBHOOK_SECRET loaded from env
 5. ✅ **PostgreSQL credentials removed** — No hardcoded passwords
 6. ✅ **node_modules/ excluded** — .gitignore updated
 7. ✅ **workspace/*.db excluded** — Runtime data not in repo
-8. ✅ **Caddyfile aligned** — jarvis_core → jarvismax-api fixed
+8. ✅ **Caddyfile aligned** — bea_core → beamax-api fixed
 9. ✅ **Migrations restored** — 001-003 migrations added
 10. ✅ **CI/CD unified** — Single deployment pipeline
 
@@ -174,7 +174,7 @@ from core.adaptive_routing import get_enhanced_tracker
 **Stack:** PostgreSQL, Redis, Qdrant, Ollama, n8n, Open-WebUI, Caddy  
 **Status:** ✅ All services healthy  
 **Issues Fixed:**
-- Caddyfile container name mismatch (jarvis_core → jarvismax-api)
+- Caddyfile container name mismatch (bea_core → beamax-api)
 - Qdrant healthcheck unreliable (changed to depends_on: service_started)
 
 ### Database
@@ -188,7 +188,7 @@ from core.adaptive_routing import get_enhanced_tracker
 **Pipeline:** GitHub Actions → VPS deployment  
 **Status:** ✅ Unified (was 2 conflicting pipelines)  
 **Target:** 77.42.40.146 (production VPS)  
-**Domain:** jarvis.jarvismaxapp.co.uk
+**Domain:** bea.beamaxapp.co.uk
 
 ### Embeddings
 
@@ -288,9 +288,9 @@ from core.adaptive_routing import get_enhanced_tracker
 
 ```bash
 # Environment variables required
-JARVIS_API_TOKEN=<your-token>
-JARVIS_REQUIRE_AUTH=true
-DATABASE_URL=postgresql://user:pass@localhost/jarvismax
+BEA_API_TOKEN=<your-token>
+BEA_REQUIRE_AUTH=true
+DATABASE_URL=postgresql://user:pass@localhost/beamax
 REDIS_URL=redis://localhost:6379
 QDRANT_URL=http://localhost:6333
 OPENAI_API_KEY=<optional-for-embeddings>
@@ -299,7 +299,7 @@ OPENAI_API_KEY=<optional-for-embeddings>
 ### Docker Compose
 
 ```bash
-cd ~/Jarvismax-master
+cd ~/Beamax-master
 docker-compose up -d
 
 # Verify services
@@ -330,14 +330,14 @@ curl http://localhost:8000/health
 ssh root@77.42.40.146
 
 # Pull latest
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 git pull origin main
 
 # Restart services
-docker-compose restart jarvismax-api
+docker-compose restart beamax-api
 
 # Verify
-curl http://jarvis.jarvismaxapp.co.uk/health
+curl http://bea.beamaxapp.co.uk/health
 ```
 
 ---

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Retry Policy v2
+BEA MAX — Retry Policy v2
 Politique de retry avec exponential backoff et jitter.
 
 Utilise uniquement la stdlib Python (pas de tenacity).

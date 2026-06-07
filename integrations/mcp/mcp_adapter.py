@@ -179,7 +179,7 @@ def _trace_mcp_langfuse(
         from langfuse import Langfuse
         lf = Langfuse()
         provider = (server.metadata or {}).get("provider", server.server_id)
-        trace = lf.trace(name="mcp_tool_call", metadata={"source": "jarvis_mcp_adapter"})
+        trace = lf.trace(name="mcp_tool_call", metadata={"source": "bea_mcp_adapter"})
         trace.span(
             name=tool.tool_id,
             input={"tool": tool.name, "params_keys": list(params.keys())},

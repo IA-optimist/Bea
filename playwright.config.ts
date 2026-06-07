@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Configuration Playwright pour JarvisMax
+ * Configuration Playwright pour BeaMax
  * Tests E2E pour API et Frontend
  */
 export default defineConfig({

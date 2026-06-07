@@ -70,7 +70,7 @@ export const Logo = ({ size = 'md', showText = true, animated = false }: LogoPro
       {showText && (
         <div>
           <h1 className={`${textSizeClasses[size]} font-bold bg-gradient-to-r from-primary-600 via-purple-600 to-blue-600 bg-clip-text text-transparent`}>
-            JarvisMax
+            BeaMax
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider">
             AI OPERATING SYSTEM

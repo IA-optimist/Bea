@@ -1,5 +1,5 @@
 """
-JARVIS MAX — n8n Automation Bridge
+BEA MAX — n8n Automation Bridge
 Crée, met à jour, exécute et supprime des workflows n8n via l'API REST.
 """
 from __future__ import annotations
@@ -137,7 +137,7 @@ class N8nBridge:
         Pour une génération avancée, appeler un LLM avec ce template.
         """
         return {
-            "name": f"Jarvis — {description[:40]}",
+            "name": f"Bea — {description[:40]}",
             "nodes": [
                 {
                     "id": "1",
@@ -150,5 +150,5 @@ class N8nBridge:
             ],
             "connections": {},
             "_description": description,
-            "_generated_by": "JarvisMax",
+            "_generated_by": "BeaMax",
         }

@@ -1,5 +1,5 @@
 """
-JarvisMax - Project CRUD Operations
+BeaMax - Project CRUD Operations
 Async PostgreSQL operations for projects table.
 """
 from __future__ import annotations

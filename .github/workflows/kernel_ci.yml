@@ -1,5 +1,5 @@
 # ================================================================
-# JARVIS MAX — Kernel Architecture CI (Pass 32)
+# BEA MAX — Kernel Architecture CI (Pass 32)
 # Runs on every push/PR to validate:
 #   1. K1 Rule — kernel never imports core/api/agents/tools
 #   2. Integration tests — all R1-R10 architectural rules

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# JarvisMax Production Deployment Script
+# BeaMax Production Deployment Script
 # ========================================
 #
 # TARGET: 77.42.40.146 (production VPS)
-# DOMAIN: jarvis.jarvismaxapp.co.uk
+# DOMAIN: bea.beamaxapp.co.uk
 # STACK: Docker Compose (PostgreSQL, Redis, Qdrant, API, Frontend)
 #
 # USAGE:
@@ -16,10 +16,10 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-REPO_DIR="/root/Jarvismax-master"
+REPO_DIR="/root/Beamax-master"
 BRANCH="main"
 COMPOSE_FILE="docker-compose.yml"
-API_CONTAINER="jarvismax-api"
+API_CONTAINER="beamax-api"
 HEALTH_ENDPOINT="http://localhost:8000/health"
 MAX_RETRIES=30
 RETRY_DELAY=2
@@ -190,7 +190,7 @@ run_smoke_tests() {
     fi
     
     # Test 3: Redis connection
-    if docker exec jarvismax-redis redis-cli ping | grep -q "PONG"; then
+    if docker exec beamax-redis redis-cli ping | grep -q "PONG"; then
         success "Redis connection OK"
     else
         warning "Redis connection failed (non-critical)"
@@ -233,7 +233,7 @@ deploy() {
     
     echo ""
     log "════════════════════════════════════════════════════════════"
-    log "  JarvisMax Production Deployment"
+    log "  BeaMax Production Deployment"
     log "════════════════════════════════════════════════════════════"
     echo ""
     
@@ -262,7 +262,7 @@ deploy() {
     success "═══════════════════════════════════════════════════════════"
     success "  Deployment Complete!"
     success "═══════════════════════════════════════════════════════════"
-    success "API:    http://jarvis.jarvismaxapp.co.uk"
+    success "API:    http://bea.beamaxapp.co.uk"
     success "Health: $HEALTH_ENDPOINT"
     success "SHA:    $(git rev-parse HEAD)"
     echo ""
@@ -294,7 +294,7 @@ main() {
             ;;
         help|--help|-h)
             cat << EOF
-JarvisMax Production Deployment Script
+BeaMax Production Deployment Script
 
 USAGE:
     ./deploy.sh              Full deployment (with tests)

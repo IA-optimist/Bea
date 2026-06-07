@@ -1,9 +1,9 @@
-"""core/resilience — Reliability guards for Jarvis v1.
+"""core/resilience — Reliability guards for Bea v1.
 Re-exports from _base for backward compatibility.
 """
 from core.resilience._base import (  # noqa: F401
-    JarvisError,
-    JarvisExecutionError, 
+    BeaError,
+    BeaExecutionError, 
     CircuitBreaker,
     guard_context,
     estimate_tokens,

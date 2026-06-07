@@ -4,14 +4,14 @@
 
 ---
 
-Tu reprends le projet **Béa / Jarvis Max**. Travaille dans : `C:\Users\maxen\Documents\Béa`
+Tu reprends le projet **Béa / Bea Max**. Travaille dans : `C:\Users\maxen\Documents\Béa`
 (branche git actuelle : `hardening/critical-fixes`, remote `origin = git@github.com:IA-optimist/Bea.git`).
 
 ## Préférences de travail (à respecter strictement)
 - Ingénieur senior Python / IA autonome / Docker / agents LLM.
 - Analyse avant d'agir ; explique brièvement le raisonnement.
 - Solutions **robustes et minimales** ; pas de refactor inutile.
-- Ne modifie jamais plusieurs fichiers si un seul suffit ; ne crée pas d'arborescence ni de dossiers dupliqués (ex. `jarvismax/jarvismax`).
+- Ne modifie jamais plusieurs fichiers si un seul suffit ; ne crée pas d'arborescence ni de dossiers dupliqués (ex. `beamax/beamax`).
 - Vérifie : compat Docker/Linux, imports réellement existants, chemins corrects, non-régression.
 - Pour toute modif : (1) explique le bug, (2) correctif minimal, (3) montre le diff, (4) **attends ma validation** avant d'appliquer.
 
@@ -45,11 +45,11 @@ Tu reprends le projet **Béa / Jarvis Max**. Travaille dans : `C:\Users\maxen\Do
 
 ### Déjà câblé (sûr)
 - 3 outils Axe 3 enregistrés dans `core/tool_executor.py` (loose-coupled).
-- **FTS dans MemoryBus** : backend `"fts"` dans `MemoryBus.search`, propriété lazy `fts`, **opt-in strict** (actif seulement si env `JARVIS_FTS_DB` défini ET backend `"fts"` demandé). `BACKEND_ALL` inchangé → défaut byte-identique.
+- **FTS dans MemoryBus** : backend `"fts"` dans `MemoryBus.search`, propriété lazy `fts`, **opt-in strict** (actif seulement si env `BEA_FTS_DB` défini ET backend `"fts"` demandé). `BACKEND_ALL` inchangé → défaut byte-identique.
 
 ### Branchements opt-in RESTANTS — à faire DANS le venv avec tests (chemins chauds, non câblés à l'aveugle)
 Pour chacun : flag désactivé par défaut + fail-open + diff montré + validation avant d'appliquer.
-1. **Observabilité LLM** → `core/llm_factory.py` (`safe_invoke`, ~ligne 654) : envelopper l'appel dans `get_tracer().span(model, mission_id)` ; ajouter un accessor global `get_tracer()`. Flag `JARVIS_LLM_TRACE`.
+1. **Observabilité LLM** → `core/llm_factory.py` (`safe_invoke`, ~ligne 654) : envelopper l'appel dans `get_tracer().span(model, mission_id)` ; ajouter un accessor global `get_tracer()`. Flag `BEA_LLM_TRACE`.
 2. **Mémoire auto-réorg** → `night_worker/scheduler.py` (`_loop`) : appel périodique de `memory.consolidator.consolidate(...)` sur le store.
 3. **Extraction de skill en fin de mission** → `core/meta_orchestrator.py` (hook fin de mission) : `core.skills.agentskill_format.propose_skill_from_mission(...)` puis persistance via `core/skills/skill_registry.py`.
 4. **Sorties typées** → `agents/agent_output.py` : remplacer le parsing JSON ad hoc par `core.structured_output.parse_structured(...)`.

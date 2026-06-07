@@ -1,10 +1,10 @@
 """
-JARVIS MAX — Startup Environment Checks
+BEA MAX — Startup Environment Checks
 ==========================================
 Validates required environment variables at startup.
 
 Policy:
-- Core secrets (JARVIS_SECRET_KEY): always required, always strict
+- Core secrets (BEA_SECRET_KEY): always required, always strict
 - Conditional secrets (Langfuse): only validated when their feature is enabled
 - Dev mode: warns instead of blocking on non-critical checks
 - Production mode: strict on all enabled features
@@ -77,14 +77,14 @@ def run_startup_checks(env: dict | None = None) -> StartupReport:
     report = StartupReport()
 
     # ── Core secrets (always required) ──
-    secret_key = e.get("JARVIS_SECRET_KEY", "")
+    secret_key = e.get("BEA_SECRET_KEY", "")
     if _is_weak(secret_key):
         report.checks.append(CheckResult(
-            "JARVIS_SECRET_KEY", False,
+            "BEA_SECRET_KEY", False,
             "Missing or weak — set with: openssl rand -hex 32", True,
         ))
     else:
-        report.checks.append(CheckResult("JARVIS_SECRET_KEY", True, "Configured"))
+        report.checks.append(CheckResult("BEA_SECRET_KEY", True, "Configured"))
 
     # ── Langfuse (conditional — only when enabled) ──
     langfuse_enabled = _is_truthy(e.get("LANGFUSE_ENABLED", "false"))
@@ -150,7 +150,7 @@ def register_mcp_adapters(settings=None) -> dict:
 
     # ── Qdrant MCP sidecar ──────────────────────────────────────────────
     try:
-        from jarvis_mcp.qdrant_mcp_adapter import register_qdrant_mcp
+        from bea_mcp.qdrant_mcp_adapter import register_qdrant_mcp
         registered = register_qdrant_mcp(registry, settings)
         result["qdrant_mcp"] = registered
         if registered:
@@ -162,7 +162,7 @@ def register_mcp_adapters(settings=None) -> dict:
 
     # ── GitHub MCP sidecar ──────────────────────────────────────────────
     try:
-        from jarvis_mcp.github_mcp_adapter import register_github_mcp
+        from bea_mcp.github_mcp_adapter import register_github_mcp
         registered = register_github_mcp(registry, settings)
         result["github_mcp"] = registered
         if registered:

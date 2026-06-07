@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Web Surfer
+BEA MAX v3 — Web Surfer
 Ajoute les yeux sur internet à l'Agent Autonome. Mieux vaut un parser léger 
 qu'un lourd navigateur Headless pour 90% des lectures de doc.
 """
@@ -24,7 +24,7 @@ class WebSurfer:
         try:
             # Header très permissif pour éviter les bloqueurs basiques
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) JarvisMax-v3"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) BeaMax-v3"
             }
             r = requests.get(url, headers=headers, timeout=15)
             r.raise_for_status()
@@ -48,7 +48,7 @@ class WebSurfer:
             
             # Limite de sécurité pour Context Window LLM (~ 8000 chars)
             if len(text) > 8000:
-                text = text[:4000] + "\n\n... [TRONQUÉ PAR JARVIS] ...\n\n" + text[-4000:]
+                text = text[:4000] + "\n\n... [TRONQUÉ PAR BEA] ...\n\n" + text[-4000:]
                 
             return text
             

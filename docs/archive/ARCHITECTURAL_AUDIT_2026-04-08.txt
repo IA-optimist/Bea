@@ -1,8 +1,8 @@
 ================================================================================
-JARVISMAX ARCHITECTURAL AUDIT REPORT
+BEAMAX ARCHITECTURAL AUDIT REPORT
 ================================================================================
 Generated: 2026-04-08
-Repository: /root/Jarvismax-master
+Repository: /root/Beamax-master
 Git SHA: e6d34d6
 VPS: vps1 (77.42.40.146)
 
@@ -239,7 +239,7 @@ Pattern:          Role-based agents (CEO, Architect, Engineer, Analyst, Operator
 
 Agents Directory:
   - agents/autonomous/
-  - agents/jarvis_team/
+  - agents/bea_team/
   - agents/shadow_advisor/
 
 Business Agents:

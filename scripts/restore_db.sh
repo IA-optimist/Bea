@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────
-# restore_db.sh — Restore JarvisMax databases from a backup
+# restore_db.sh — Restore BeaMax databases from a backup
 # ──────────────────────────────────────────────────────────────────
 # Usage :
 #   bash scripts/restore_db.sh <backup_timestamp>
@@ -12,12 +12,12 @@
 #   bash scripts/restore_db.sh latest
 #
 # What it does :
-#   1. Stops jarvis_core container (avoid writes during restore)
+#   1. Stops bea_core container (avoid writes during restore)
 #   2. Restores PostgreSQL from pg_dump
 #   3. Restores Redis from RDB
 #   4. Restores canonical.db from SQLite dump
 #   5. (Does NOT restore .env automatically ; operator must decide)
-#   6. Restarts jarvis_core + verifies health
+#   6. Restarts bea_core + verifies health
 #
 # Safety :
 #   - Requires explicit confirmation
@@ -26,11 +26,11 @@
 # ──────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-BACKUP_DIR="${BACKUP_DIR:-/root/jarvismax-backups}"
+BACKUP_DIR="${BACKUP_DIR:-/root/beamax-backups}"
 CONTAINER_PG="${CONTAINER_PG:-postgres}"
 CONTAINER_REDIS="${CONTAINER_REDIS:-redis}"
-CONTAINER_CORE="${CONTAINER_CORE:-jarvis_core}"
-DATA_DIR="${DATA_DIR:-/root/.jarvismax}"
+CONTAINER_CORE="${CONTAINER_CORE:-bea_core}"
+DATA_DIR="${DATA_DIR:-/root/.beamax}"
 HEALTH_URL="${HEALTH_URL:-http://localhost:8000/api/v2/health}"
 
 red()    { printf '\033[0;31m%s\033[0m\n' "$*" >&2; }
@@ -63,7 +63,7 @@ REDIS_DUMP="$BACKUP_DIR/daily/redis_${TS}.rdb"
 CANON_DUMP="$BACKUP_DIR/daily/canonical_${TS}.db.gz"
 
 blue "════════════════════════════════════════════════════════════"
-blue "  JarvisMax Restore — target=$TS"
+blue "  BeaMax Restore — target=$TS"
 blue "════════════════════════════════════════════════════════════"
 echo
 echo "Will attempt to restore :"
@@ -77,7 +77,7 @@ confirm "Proceed ?"
 
 # ── Pre-restore snapshot ─────────────────────────────────────
 PRE_TS="$(date +%Y%m%d-%H%M%S)-pre-restore"
-PRE_LOG="/tmp/jarvis-pre-restore-${PRE_TS}.log"
+PRE_LOG="/tmp/bea-pre-restore-${PRE_TS}.log"
 blue "[0/5] Taking pre-restore snapshot tagged $PRE_TS (log: $PRE_LOG)..."
 # Capture stderr to a log so the operator can inspect a failed pre-snapshot
 # without losing the rollback safety net silently.
@@ -94,10 +94,10 @@ docker stop "$CONTAINER_CORE" >/dev/null 2>&1 || yellow "  (not running)"
 # ── Restore PostgreSQL ───────────────────────────────────────
 if [[ -f "$PG_DUMP" ]]; then
   blue "[2/5] Restoring PostgreSQL..."
-  confirm "  DROP + recreate jarvismax DB ?"
-  docker exec "$CONTAINER_PG" psql -U jarvis -c "DROP DATABASE IF EXISTS jarvismax;"
-  docker exec "$CONTAINER_PG" psql -U jarvis -c "CREATE DATABASE jarvismax;"
-  gunzip -c "$PG_DUMP" | docker exec -i "$CONTAINER_PG" psql -U jarvis jarvismax >/dev/null
+  confirm "  DROP + recreate beamax DB ?"
+  docker exec "$CONTAINER_PG" psql -U bea -c "DROP DATABASE IF EXISTS beamax;"
+  docker exec "$CONTAINER_PG" psql -U bea -c "CREATE DATABASE beamax;"
+  gunzip -c "$PG_DUMP" | docker exec -i "$CONTAINER_PG" psql -U bea beamax >/dev/null
   green "  ✓ restored"
 else
   yellow "[2/5] Skipped (no pg dump)"

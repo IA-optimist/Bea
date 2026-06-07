@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ModelSelector
+BEA MAX — ModelSelector
 Sélection adaptative du modèle LLM selon la tâche et les performances passées.
 
 Règle fondamentale :

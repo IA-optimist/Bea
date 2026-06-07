@@ -12,7 +12,7 @@ from typing import List
 from core.objectives.objective_models import Objective, ObjectiveStatus
 from core.objectives.objective_store import ObjectiveStore, get_objective_store
 
-logger = logging.getLogger("jarvis.objective_cleanup")
+logger = logging.getLogger("bea.objective_cleanup")
 
 # ── Configuration (surchargeables via env) ─────────────────────────────────────
 

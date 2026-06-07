@@ -49,4 +49,4 @@ aren't maintained.
 - `CHANGELOG.md` (repo root) — release notes
 - Per-module `README.md` in `agents/`, `business/`, `monitoring/`, `mcp/`,
   etc. — module-specific docs
-- `jarvismax_app/BUILD_INSTRUCTIONS.md` — Flutter app build
+- `beamax_app/BUILD_INSTRUCTIONS.md` — Flutter app build

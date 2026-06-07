@@ -1,21 +1,21 @@
 {
-    email admin@jarvismaxapp.co.uk
+    email admin@beamaxapp.co.uk
 }
 
-jarvis.jarvismaxapp.co.uk {
+bea.beamaxapp.co.uk {
     handle /api/* {
-        reverse_proxy jarvismax-api:8000
+        reverse_proxy beamax-api:8000
     }
     handle /ws/* {
-        reverse_proxy jarvismax-api:8000
+        reverse_proxy beamax-api:8000
     }
     handle {
-        reverse_proxy jarvismax-api:8000
+        reverse_proxy beamax-api:8000
     }
 }
 
 :8080 {
     handle {
-        reverse_proxy jarvismax-api:8000
+        reverse_proxy beamax-api:8000
     }
 }

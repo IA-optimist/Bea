@@ -26,7 +26,7 @@ import logging
 import re
 from typing import List, Optional, Tuple
 
-logger = logging.getLogger("jarvis.knowledge.difficulty")
+logger = logging.getLogger("bea.knowledge.difficulty")
 
 # ── Labels ─────────────────────────────────────────────────────────────────────
 LABEL_LOW = "LOW"

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — BrowserTool (Phase 8)
+BEA MAX — BrowserTool (Phase 8)
 Playwright-based browser automation with risk classification.
 
 Risk levels per operation:
@@ -127,7 +127,7 @@ class BrowserTool(BaseTool):
         try:
             page      = await self._get_page()
             save_path = path or os.path.join(
-                tempfile.gettempdir(), "jarvis_screenshot.png"
+                tempfile.gettempdir(), "bea_screenshot.png"
             )
             await page.screenshot(path=save_path, full_page=False)
             size = os.path.getsize(save_path)

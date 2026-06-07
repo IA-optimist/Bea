@@ -59,8 +59,8 @@ def settings_all_mcp_off(monkeypatch):
 @pytest.fixture()
 def populated_registry(fresh_registry, settings_all_mcp_on):
     """Registry with both Qdrant + GitHub adapters registered."""
-    from jarvis_mcp.qdrant_mcp_adapter import register_qdrant_mcp
-    from jarvis_mcp.github_mcp_adapter import register_github_mcp
+    from bea_mcp.qdrant_mcp_adapter import register_qdrant_mcp
+    from bea_mcp.github_mcp_adapter import register_github_mcp
     register_qdrant_mcp(fresh_registry, settings_all_mcp_on)
     register_github_mcp(fresh_registry, settings_all_mcp_on)
     return fresh_registry
@@ -93,8 +93,8 @@ def test_clean_registry_flags_off(monkeypatch):
     monkeypatch.delenv("GITHUB_MCP_ENABLED", raising=False)
 
     from integrations.mcp.mcp_registry import MCPRegistry
-    from jarvis_mcp.qdrant_mcp_adapter import register_qdrant_mcp
-    from jarvis_mcp.github_mcp_adapter import register_github_mcp
+    from bea_mcp.qdrant_mcp_adapter import register_qdrant_mcp
+    from bea_mcp.github_mcp_adapter import register_github_mcp
     from config.settings import Settings
 
     reg = MCPRegistry()
@@ -235,7 +235,7 @@ def test_qdrant_vector_memory_add_falls_back(monkeypatch, tmp_path):
     qvm._encoder = None
     qvm._qdrant_url = "http://qdrant-unreachable-test:6333"
     qvm._qdrant_key = None
-    qvm.COLLECTION = "jarvis_memory"
+    qvm.COLLECTION = "bea_memory"
     qvm.VECTOR_DIM = 384
 
     # Should not raise — falls back to local
@@ -262,7 +262,7 @@ def test_qdrant_vector_memory_search_falls_back(monkeypatch, tmp_path):
     qvm._encoder = None
     qvm._qdrant_url = "http://qdrant-unreachable-test:6333"
     qvm._qdrant_key = None
-    qvm.COLLECTION = "jarvis_memory"
+    qvm.COLLECTION = "bea_memory"
     qvm.VECTOR_DIM = 384
 
     # Should not raise — falls back to local (empty list, no docs added)

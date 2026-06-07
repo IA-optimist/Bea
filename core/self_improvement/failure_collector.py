@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Improvement Controller V1
+BEA MAX — Self-Improvement Controller V1
 Module A : FailureCollector
 
 Analyse le MissionStateStore et la MissionSystem pour produire des FailureEntry.

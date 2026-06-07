@@ -57,7 +57,7 @@ class TestAgentRegistry:
         reg = AgentRegistry()
         agent = reg.best_agent_for_role("planner")
         assert agent is not None
-        assert agent in ("atlas-director", "map-planner", "jarvis-architect")
+        assert agent in ("atlas-director", "map-planner", "bea-architect")
 
     def test_best_agent_prefers_success(self):
         from core.agents.agent_registry import AgentRegistry

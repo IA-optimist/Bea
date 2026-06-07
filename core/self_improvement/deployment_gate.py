@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Improvement Controller V1
+BEA MAX — Self-Improvement Controller V1
 Module E : DeploymentGate
 
 Évalue si un PatchCandidate peut être déployé selon le mode système.

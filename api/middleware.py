@@ -1,11 +1,11 @@
 """
-JARVIS MAX — Global Access Enforcement Middleware
+BEA MAX — Global Access Enforcement Middleware
 ===================================================
 Wires access_enforcement into every HTTP request.
 
 Extracts token from:
   1. Authorization: Bearer <token>
-  2. X-Jarvis-Token header
+  2. X-Bea-Token header
   3. ?token= query parameter (for websocket upgrades)
 
 Blocks unauthorized requests with user-friendly JSON errors.
@@ -23,13 +23,13 @@ from api.access_enforcement import check_access, is_public_path
 def _extract_token(request: Request) -> str | None:
     """Extract auth token from request (priorité descendante).
 
-    1. cookie ``jarvis_token`` — HttpOnly, XSS-safe (nouveau frontend)
+    1. cookie ``bea_token`` — HttpOnly, XSS-safe (nouveau frontend)
     2. ``Authorization: Bearer <token>`` — OAuth2-style
-    3. ``X-Jarvis-Token`` header — legacy frontend (localStorage)
+    3. ``X-Bea-Token`` header — legacy frontend (localStorage)
     4. ``?token=`` query param — WebSocket upgrades uniquement
     """
     # 1. HttpOnly cookie (nouveau frontend, XSS-safe)
-    cookie_token = request.cookies.get("jarvis_token")
+    cookie_token = request.cookies.get("bea_token")
     if cookie_token:
         return cookie_token
 
@@ -40,10 +40,10 @@ def _extract_token(request: Request) -> str | None:
     if bearer_token:
         return bearer_token
 
-    # 3. X-Jarvis-Token header (legacy)
-    jarvis_token = request.headers.get("x-jarvis-token", "")
-    if jarvis_token:
-        return jarvis_token
+    # 3. X-Bea-Token header (legacy)
+    bea_token = request.headers.get("x-bea-token", "")
+    if bea_token:
+        return bea_token
 
     # 4. Query parameter (for websocket upgrades)
     token_param = request.query_params.get("token", "")
@@ -109,7 +109,7 @@ class AccessEnforcementMiddleware(BaseHTTPMiddleware):
 # log the call site for telemetry-driven removal.
 
 _V1_SUNSET_DATE = "2026-10-01T00:00:00Z"
-_V1_DOC_LINK = '<https://github.com/UniTy01/Jarvismax-master/blob/main/docs/API_VERSIONING.md>; rel="deprecation"'
+_V1_DOC_LINK = '<https://github.com/UniTy01/Beamax-master/blob/main/docs/API_VERSIONING.md>; rel="deprecation"'
 
 
 class V1DeprecationMiddleware(BaseHTTPMiddleware):

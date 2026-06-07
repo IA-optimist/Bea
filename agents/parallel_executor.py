@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ParallelExecutor
+BEA MAX — ParallelExecutor
 Exécution simultanée de plusieurs agents via asyncio.gather().
 
 Architecture :
@@ -30,7 +30,7 @@ from typing import Callable, Awaitable
 
 import structlog
 
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -183,7 +183,7 @@ class ParallelExecutor:
     async def run(
         self,
         tasks: list[dict],
-        session: JarvisSession,
+        session: BeaSession,
         emit: CB | None = None,
     ) -> dict[str, AgentResult]:
         """
@@ -307,7 +307,7 @@ class ParallelExecutor:
 
     async def run_with_plan(
         self,
-        session: JarvisSession,
+        session: BeaSession,
         emit: CB | None = None,
     ) -> dict[str, AgentResult]:
         """
@@ -320,7 +320,7 @@ class ParallelExecutor:
     async def run_with_replan(
         self,
         tasks:   list[dict],
-        session: JarvisSession,
+        session: BeaSession,
         emit:    CB | None = None,
         max_replan_rounds: int = 1,
     ) -> dict[str, AgentResult]:
@@ -398,7 +398,7 @@ class ParallelExecutor:
     async def _run_one(
         self,
         task: dict,
-        session: JarvisSession,
+        session: BeaSession,
     ) -> AgentResult:
         """
         Lance un agent avec timeout individuel.

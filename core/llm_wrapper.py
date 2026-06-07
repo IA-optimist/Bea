@@ -9,7 +9,7 @@ extra fire-and-forget call is added at the end of a successful
 invocation.
 
 Activation :
-    Set `JARVIS_TRAINING_COLLECT=1` in the environment of the API
+    Set `BEA_TRAINING_COLLECT=1` in the environment of the API
     process. With the flag off the wrapper is a transparent no-op
     (no extra cost beyond a `bool` check).
 
@@ -31,7 +31,7 @@ import structlog
 log = structlog.get_logger(__name__)
 
 # Marker attribute set on the patched method to detect re-wrap attempts.
-_PATCHED_FLAG = "_jarvis_training_wrapped"
+_PATCHED_FLAG = "_bea_training_wrapped"
 
 
 def _extract_text(messages: Any) -> str:

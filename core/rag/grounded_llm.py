@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Grounded LLM
+BEA MAX — Grounded LLM
 Combines RAG retrieval with LLM generation for grounded answers.
 
 Usage:

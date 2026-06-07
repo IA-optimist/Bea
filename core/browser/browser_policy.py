@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Policy Engine
+BEA MAX — Browser Policy Engine
 ======================================
 Controls what the browser agent can and cannot do.
 

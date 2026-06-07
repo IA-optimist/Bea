@@ -123,7 +123,7 @@ class TelegramNotificationClient:
             mission_id="test-notification",
             user_id="test",
             status="DONE",
-            title="Test Notification from JarvisMax",
+            title="Test Notification from BeaMax",
             result="If you see this message, Telegram notifications are working correctly!",
         )
         return await self.send(chat_id, test_payload)

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Agent Registry
+BEA MAX — Agent Registry
 Point d'entrée centralisé pour l'instanciation et la résolution des agents.
 
 Utilisation :
@@ -7,7 +7,7 @@ Utilisation :
     registry = build_registry(settings)
     agent    = registry["scout-research"]
 
-Le registre est indépendant de JarvisOrchestrator :
+Le registre est indépendant de BeaOrchestrator :
 il peut être utilisé directement par tout composant du pipeline.
 """
 from __future__ import annotations
@@ -66,7 +66,7 @@ def build_registry(settings) -> dict:
     Instancie tous les agents avec les settings fournis.
     Retourne un dict {nom: instance}.
 
-    Chaque agent reçoit settings pour accéder à get_llm(), jarvis_root, etc.
+    Chaque agent reçoit settings pour accéder à get_llm(), bea_root, etc.
     Aucun LLM n'est instancié ici — les agents le font en lazy à la première invocation.
     """
     return {name: cls(settings) for name, cls in AGENT_CLASSES.items()}

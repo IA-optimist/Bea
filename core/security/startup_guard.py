@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import logging
 
-log = logging.getLogger("jarvis.security")
+log = logging.getLogger("bea.security")
 
 
 class StartupGuardError(RuntimeError):
@@ -19,12 +19,12 @@ class StartupGuardError(RuntimeError):
 
 def _is_production() -> bool:
     """Check if running in production mode. Reads live from env."""
-    env = os.getenv("JARVIS_ENV", os.getenv("ENV", "development")).lower()
+    env = os.getenv("BEA_ENV", os.getenv("ENV", "development")).lower()
     return env in ("production", "prod")
 
 
 def get_environment() -> str:
-    return os.getenv("JARVIS_ENV", os.getenv("ENV", "development")).lower()
+    return os.getenv("BEA_ENV", os.getenv("ENV", "development")).lower()
 
 
 def is_production() -> bool:
@@ -51,37 +51,37 @@ def check_required_dependencies() -> bool:
 
 
 def check_auth_token() -> bool:
-    """Verify JARVIS_API_TOKEN is set. Fatal in production."""
-    token = os.getenv("JARVIS_API_TOKEN", "").strip()
+    """Verify BEA_API_TOKEN is set. Fatal in production."""
+    token = os.getenv("BEA_API_TOKEN", "").strip()
     if not token:
         if _is_production():
             raise StartupGuardError(
-                "FATAL: JARVIS_API_TOKEN is not set. "
+                "FATAL: BEA_API_TOKEN is not set. "
                 "Production mode requires authentication. "
-                "Set JARVIS_API_TOKEN in .env or environment."
+                "Set BEA_API_TOKEN in .env or environment."
             )
-        log.warning("startup_guard: JARVIS_API_TOKEN not set — auth disabled (dev mode)")
+        log.warning("startup_guard: BEA_API_TOKEN not set — auth disabled (dev mode)")
         return False
     if len(token) < 16:
         if _is_production():
             raise StartupGuardError(
-                "FATAL: JARVIS_API_TOKEN is too short (min 16 chars). "
+                "FATAL: BEA_API_TOKEN is too short (min 16 chars). "
                 "Use a strong random token for production."
             )
-        log.warning("startup_guard: JARVIS_API_TOKEN is short — consider a stronger token")
+        log.warning("startup_guard: BEA_API_TOKEN is short — consider a stronger token")
     return True
 
 
 def check_secret_key() -> bool:
-    """Verify JARVIS_SECRET_KEY is set. Warning in dev, fatal in prod."""
-    key = os.getenv("JARVIS_SECRET_KEY", "").strip()
+    """Verify BEA_SECRET_KEY is set. Warning in dev, fatal in prod."""
+    key = os.getenv("BEA_SECRET_KEY", "").strip()
     if not key:
         if _is_production():
             raise StartupGuardError(
-                "FATAL: JARVIS_SECRET_KEY is not set. "
+                "FATAL: BEA_SECRET_KEY is not set. "
                 "Required for JWT signing in production."
             )
-        log.warning("startup_guard: JARVIS_SECRET_KEY not set (dev mode)")
+        log.warning("startup_guard: BEA_SECRET_KEY not set (dev mode)")
         return False
     return True
 
@@ -90,11 +90,11 @@ def check_no_hardcoded_credentials() -> bool:
     """Verify no test/default credentials are used in production."""
     if not _is_production():
         return True
-    token = os.getenv("JARVIS_API_TOKEN", "")
+    token = os.getenv("BEA_API_TOKEN", "")
     banned = {"test", "password", "admin", "123456", "secret", "token", "default"}
     if token.lower() in banned:
         raise StartupGuardError(
-            "FATAL: JARVIS_API_TOKEN appears to be a default/test value. "
+            "FATAL: BEA_API_TOKEN appears to be a default/test value. "
             "Use a strong random token for production."
         )
     return True

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Cognitive Security + Integration Tests
+BEA MAX — Cognitive Security + Integration Tests
 =======================================================
 Verifies:
   - No secret leakage into graph, traces, playbooks, reputation
@@ -18,7 +18,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ADMIN_PASSWORD_HASH", "test-hash")
-os.environ.setdefault("JARVISMAX_DATA_DIR", tempfile.mkdtemp())
+os.environ.setdefault("BEAMAX_DATA_DIR", tempfile.mkdtemp())
 
 
 
@@ -284,7 +284,7 @@ class TestModuleToggleDeps:
 class TestSIObservabilityBridge:
 
     def setup_method(self):
-        os.environ["JARVISMAX_DATA_DIR"] = tempfile.mkdtemp()
+        os.environ["BEAMAX_DATA_DIR"] = tempfile.mkdtemp()
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
 
@@ -319,7 +319,7 @@ class TestSIObservabilityBridge:
         """If cognitive bridge fails, SI observability still works."""
         from core.self_improvement.observability import SIObservability
         # Force bridge to fail by corrupting data dir
-        os.environ["JARVISMAX_DATA_DIR"] = "/nonexistent/path"
+        os.environ["BEAMAX_DATA_DIR"] = "/nonexistent/path"
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
         obs = SIObservability()

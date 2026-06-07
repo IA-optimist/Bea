@@ -1,6 +1,6 @@
 """
-JARVIS MAX — État de session partagé
-Source unique pour tous les types : RiskLevel, ActionSpec, JarvisSession.
+BEA MAX — État de session partagé
+Source unique pour tous les types : RiskLevel, ActionSpec, BeaSession.
 Règle : aucun autre module ne redéfinit RiskLevel.
 """
 from __future__ import annotations
@@ -128,11 +128,11 @@ class ActionSpec:
 
 
 # ══════════════════════════════════════════════════════════════
-# JARVIS SESSION
+# BEA SESSION
 # ══════════════════════════════════════════════════════════════
 
 @dataclass
-class JarvisSession:
+class BeaSession:
     """
     Etat complet d une session. Passe a travers tout le pipeline.
     Tous les attributs doivent etre declares ici (pas d attributs dynamiques).

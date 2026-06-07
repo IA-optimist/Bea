@@ -1,7 +1,7 @@
 """
-Jarvis Team — Base class for meta-level agents.
+Bea Team — Base class for meta-level agents.
 
-All jarvis-team agents inherit from JarvisTeamAgent, which extends BaseAgent
+All bea-team agents inherit from BeaTeamAgent, which extends BaseAgent
 with codebase-aware tooling: git operations, file I/O, test execution,
 and branch management.
 
@@ -19,14 +19,14 @@ from agents.crew import BaseAgent
 
 log = structlog.get_logger(__name__)
 
-# Root of the JarvisMax repo — resolved at import time, overridable via env.
+# Root of the BeaMax repo — resolved at import time, overridable via env.
 import os
-REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
+REPO_ROOT = Path(os.environ.get("BEAMAX_REPO", ".")).resolve()
 
 
-class JarvisTeamAgent(BaseAgent):
+class BeaTeamAgent(BaseAgent):
     """
-    Base for all jarvis-team agents.
+    Base for all bea-team agents.
 
     Provides:
         - git helpers (branch, diff, status)
@@ -38,7 +38,7 @@ class JarvisTeamAgent(BaseAgent):
     """
 
     # Subclasses override these
-    name:      str = "jarvis-team-base"
+    name:      str = "bea-team-base"
     role:      str = "builder"
     timeout_s: int = 180
 
@@ -59,7 +59,7 @@ class JarvisTeamAgent(BaseAgent):
             )
             return result.stdout.strip()
         except Exception as e:
-            log.warning("jarvis_team_git_failed", cmd=cmd[:80], err=str(e)[:100])
+            log.warning("bea_team_git_failed", cmd=cmd[:80], err=str(e)[:100])
             return ""
 
     def git_current_branch(self) -> str:
@@ -101,7 +101,7 @@ class JarvisTeamAgent(BaseAgent):
             content = p.read_text(encoding="utf-8", errors="replace")
             return content[:max_chars]
         except Exception as e:
-            log.debug("jarvis_team_read_failed", path=str(path)[:100], err=str(e)[:80])
+            log.debug("bea_team_read_failed", path=str(path)[:100], err=str(e)[:80])
             return ""
 
     @staticmethod
@@ -143,16 +143,16 @@ class JarvisTeamAgent(BaseAgent):
         Uses the AGENT_TOOL_ACCESS matrix from tools.py. Fail-open.
         """
         try:
-            from agents.jarvis_team.tools import get_tools_for_agent
+            from agents.bea_team.tools import get_tools_for_agent
             return get_tools_for_agent(self.name)
         except Exception as e:
-            log.debug("jarvis_team_tools_unavailable", agent=self.name, err=str(e)[:80])
+            log.debug("bea_team_tools_unavailable", agent=self.name, err=str(e)[:80])
             return {}
 
     def tool_summary(self) -> str:
         """Human-readable summary of available tools for this agent."""
         try:
-            from agents.jarvis_team.tools import AGENT_TOOL_ACCESS, TOOL_CATALOG
+            from agents.bea_team.tools import AGENT_TOOL_ACCESS, TOOL_CATALOG
             allowed = AGENT_TOOL_ACCESS.get(self.name, set())
             lines = [f"## Tools available to {self.name}"]
             for entry in TOOL_CATALOG:

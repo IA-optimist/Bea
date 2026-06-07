@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Token Parsing Utilities
+BEA MAX — Token Parsing Utilities
 ========================================
 Central, reusable token extraction functions.
 

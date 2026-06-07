@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const API_BASE_URL = 'http://72.62.177.55:8000';
 
-test.describe('JarvisMax API Tests', () => {
+test.describe('BeaMax API Tests', () => {
   
   test('Health check endpoint should return 200', async ({ request }) => {
     const response = await request.get(`${API_BASE_URL}/health`);
@@ -12,7 +12,7 @@ test.describe('JarvisMax API Tests', () => {
     expect(data).toHaveProperty('status');
     expect(data.status).toBe('ok');
     expect(data).toHaveProperty('service');
-    expect(data.service).toBe('jarvismax');
+    expect(data.service).toBe('beamax');
   });
 
   test('Mission submit endpoint should accept valid mission', async ({ request }) => {

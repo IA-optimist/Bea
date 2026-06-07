@@ -1,18 +1,18 @@
 """
 DEPRECATED: Use core.actions.action_model.CanonicalAction for new code.
 
-JARVIS MAX — Action Queue v1
-File d'attente centrale des actions de Jarvis.
+BEA MAX — Action Queue v1
+File d'attente centrale des actions de Bea.
 
-Chaque action est un ordre concret que Jarvis veut exécuter.
-L'utilisateur approuve, rejette ou laisse Jarvis décider selon le mode.
+Chaque action est un ordre concret que Bea veut exécuter.
+L'utilisateur approuve, rejette ou laisse Bea décider selon le mode.
 
 Cycle de vie :
   PENDING → APPROVED → EXECUTED
   PENDING → REJECTED
   PENDING → APPROVED → FAILED  (erreur à l'exécution)
 
-Persistance : SQLite (workspace/jarvismax.db) avec fallback JSON
+Persistance : SQLite (workspace/beamax.db) avec fallback JSON
 """
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ class ActionStatus(str, Enum):
 @dataclass
 class Action:
     """
-    Une action concrète que Jarvis veut exécuter.
+    Une action concrète que Bea veut exécuter.
 
     Champs obligatoires : description, risk, target, impact
     """

@@ -1,10 +1,10 @@
 """
-JARVIS — Mission Memory Layer
+BEA — Mission Memory Layer
 =================================
 Cross-mission learning: tracks execution patterns, subtask reuse,
 strategy effectiveness across related missions.
 
-This is the "long-horizon" intelligence — Jarvis gets better at
+This is the "long-horizon" intelligence — Bea gets better at
 sequences of related work, not just individual missions.
 
 Called from:
@@ -29,7 +29,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-logger = logging.getLogger("jarvis.mission_memory")
+logger = logging.getLogger("bea.mission_memory")
 
 
 @dataclass

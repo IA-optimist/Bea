@@ -7,8 +7,8 @@
 #
 # Usage:
 #   bash scripts/generate_requirements_lock.sh
-#   bash scripts/generate_requirements_lock.sh --image jarvismax-lock:py312
-#   bash scripts/generate_requirements_lock.sh --no-build --image jarvismax-lock:py312
+#   bash scripts/generate_requirements_lock.sh --image beamax-lock:py312
+#   bash scripts/generate_requirements_lock.sh --no-build --image beamax-lock:py312
 #
 # Output:
 #   requirements.lock  (commit this file)
@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-IMAGE="jarvismax-lock:py312"
+IMAGE="beamax-lock:py312"
 LOCKFILE="requirements.lock"
 BUILD=1
 

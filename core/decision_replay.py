@@ -1,5 +1,5 @@
 """
-JARVIS MAX — DecisionReplay
+BEA MAX — DecisionReplay
 Permet de rejouer une session, comprendre les décisions et analyser les erreurs.
 
 Rôle :
@@ -106,7 +106,7 @@ class DecisionEvent:
 
 class DecisionReplay:
     """
-    Enregistreur et analyseur de décisions JarvisMax.
+    Enregistreur et analyseur de décisions BeaMax.
     Persiste dans workspace/decision_replay.json.
     """
 

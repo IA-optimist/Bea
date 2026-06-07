@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Access Enforcement Middleware
+BEA MAX — Access Enforcement Middleware
 ============================================
 Server-side token gating enforced on ALL protected endpoints.
 
@@ -87,7 +87,7 @@ def check_access(raw_token: str | None, path: str = "",
     Server-side access check.
 
     Args:
-        raw_token: the Bearer token or X-Jarvis-Token header value
+        raw_token: the Bearer token or X-Bea-Token header value
         path: the request path (for public path bypass)
         permission: required permission level
 

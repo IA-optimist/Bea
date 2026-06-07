@@ -7,7 +7,7 @@ import '../models/mission.dart';
 import '../theme/design_system.dart';
 import 'mission_detail_screen.dart';
 
-/// Home — the primary Jarvis interface.
+/// Home — the primary Bea interface.
 /// Shows: greeting, quick input, system status, approvals, recent missions.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ))),
                   ),
                   const SizedBox(width: 10),
-                  const Text('Jarvis', style: TextStyle(
+                  const Text('Bea', style: TextStyle(
                     fontSize: 22, fontWeight: FontWeight.w700,
                     color: JDS.textPrimary, letterSpacing: -0.5,
                   )),
@@ -251,7 +251,7 @@ class _ApprovalAlert extends StatelessWidget {
           children: [
             Text('$count élément${count > 1 ? 's' : ''} attend${count == 1 ? '' : 'ent'} votre décision',
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: JDS.amber)),
-            const Text('Jarvis attend votre validation avant de continuer',
+            const Text('Bea attend votre validation avant de continuer',
                 style: TextStyle(fontSize: 12, color: JDS.textSecondary)),
           ],
         )),

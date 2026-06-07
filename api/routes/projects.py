@@ -1,5 +1,5 @@
 """
-JarvisMax - Projects API Routes
+BeaMax - Projects API Routes
 RESTful API for project management with Bearer token authentication.
 
 Endpoints:

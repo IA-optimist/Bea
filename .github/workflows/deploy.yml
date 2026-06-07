@@ -15,9 +15,9 @@ permissions:
 env:
   VPS_HOST: ${{ secrets.VPS_HOST }}
   VPS_USER: root
-  DEPLOY_PATH: /root/Jarvismax-master
-  CONTAINER_NAME: jarvis_core
-  DOMAIN: jarvis.jarvismaxapp.co.uk
+  DEPLOY_PATH: /root/Beamax-master
+  CONTAINER_NAME: bea_core
+  DOMAIN: bea.beamaxapp.co.uk
 
 jobs:
   deploy:
@@ -53,7 +53,7 @@ jobs:
             git reset --hard origin/main
             
             echo "=== Rebuilding Docker image (canonical non-root) ==="
-            docker build -t jarvismax:latest -f docker/Dockerfile .
+            docker build -t beamax:latest -f docker/Dockerfile .
 
             echo "=== Stopping old container ==="
             docker stop ${{ env.CONTAINER_NAME }} || true
@@ -63,10 +63,10 @@ jobs:
             docker run -d \
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
-              -v /root/jarvismax-data:/app/data \
-              -v /root/Jarvismax-master/.env:/app/.env:ro \
+              -v /root/beamax-data:/app/data \
+              -v /root/Beamax-master/.env:/app/.env:ro \
               -p 8000:8000 \
-              jarvismax:latest
+              beamax:latest
             
             echo "=== Waiting for container to be healthy ==="
             sleep 15
@@ -151,7 +151,7 @@ jobs:
           Commit: ${{ github.sha }}
           Author: ${{ github.actor }}
           
-          🌐 Jarvis is now live at ${{ env.DOMAIN }}"
+          🌐 Bea is now live at ${{ env.DOMAIN }}"
           
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \

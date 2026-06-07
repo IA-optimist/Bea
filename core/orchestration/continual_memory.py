@@ -1,7 +1,7 @@
 import structlog
 log = structlog.get_logger(__name__)
 """
-continual_memory.py — Replay buffer intelligent pour JarvisMax
+continual_memory.py — Replay buffer intelligent pour BeaMax
 Résout l'oubli catastrophique entre sessions via prioritized experience replay.
 
 Stratégie :
@@ -65,7 +65,7 @@ class ContinualMemory:
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
         self.llm_model = llm_model
-        self.collection = "jarvis_continual_memory"
+        self.collection = "bea_continual_memory"
         self._embed_dim = 768  # nomic-embed-text outputs 768; fallback is 384
         self._ensure_collection()
 

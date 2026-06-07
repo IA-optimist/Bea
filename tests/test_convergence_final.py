@@ -110,11 +110,11 @@ def test_execution_limits_configurable():
 def test_execution_limits_env_override():
     """Execution limits can be overridden via environment."""
     import importlib
-    os.environ["JARVIS_MAX_RETRIES"] = "7"
+    os.environ["BEA_MAX_RETRIES"] = "7"
     import core.execution_engine as ee
     importlib.reload(ee)
     assert ee.MAX_RETRIES == 7
-    os.environ.pop("JARVIS_MAX_RETRIES")
+    os.environ.pop("BEA_MAX_RETRIES")
     importlib.reload(ee)
 
 

@@ -1,14 +1,14 @@
 """
-JARVIS MAX — OpenHandsAgent (Phase 11)
+BEA MAX — OpenHandsAgent (Phase 11)
 Agent Worker Délégué.
-Permet à l'orchestrateur JarvisMax de déporter l'écriture du code
+Permet à l'orchestrateur BeaMax de déporter l'écriture du code
 vers le système OpenHands (Official Repo) via son interface CLI Headless.
 """
 from __future__ import annotations
 import time
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from adapters.openhands_client import OpenHandsLocalClient
 
 log = structlog.get_logger()
@@ -21,21 +21,21 @@ class OpenHandsAgent(BaseAgent):
     def system_prompt(self) -> str:
         return "" # Géré nativement par OpenHands
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         return "" # Géré nativement par OpenHands
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         t0 = time.monotonic()
         log.info("openhands_agent_start", mission_id=session.session_id)
         
         try:
             client = OpenHandsLocalClient()
             # On prend la mission globale s'il n'y a pas d'instruction hyper spécifique
-            # Idéalement, le Planner de JarvisMax devrait populer session.metadata["openhands_prompt"]
+            # Idéalement, le Planner de BeaMax devrait populer session.metadata["openhands_prompt"]
             mission_prompt = session.metadata.get("openhands_prompt", session.mission_summary or session.user_input)
             
             # Récupération du workspace commun
-            workspace = session.metadata.get("workspace_path", "C:/Users/maxen/Documents/jarvismax/workspace")
+            workspace = session.metadata.get("workspace_path", "C:/Users/maxen/Documents/beamax/workspace")
             
             # Délégation de la tâche à OpenHands
             success, raw_output = await client.run_delegated_mission(mission_prompt, workspace)

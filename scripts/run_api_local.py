@@ -6,10 +6,10 @@ MetaOrchestrator, la persistance des missions et les 57 routers fonctionnent.
 
 Usage (venv local) :
     python scripts/run_api_local.py
-    # puis :  curl -H "X-Jarvis-Token: localdev" http://127.0.0.1:8000/health
+    # puis :  curl -H "X-Bea-Token: localdev" http://127.0.0.1:8000/health
 
 Variables (surchargeables) :
-    BEA_API_PORT (def 8000), JARVIS_API_TOKEN (def "localdev").
+    BEA_API_PORT (def 8000), BEA_API_TOKEN (def "localdev").
 Pour rendre ça permanent : tâche planifiée (comme Hermes_Gateway).
 """
 from __future__ import annotations
@@ -29,8 +29,8 @@ if env.exists():
             k, _, v = line.partition("=")
             os.environ.setdefault(k.strip(), v.strip())
 
-os.environ.setdefault("JARVIS_API_TOKEN", "localdev")
-os.environ.setdefault("JARVIS_REQUIRE_AUTH", "true")
+os.environ.setdefault("BEA_API_TOKEN", "localdev")
+os.environ.setdefault("BEA_REQUIRE_AUTH", "true")
 os.environ.setdefault("QDRANT_URL", "http://127.0.0.1:6333")  # échec rapide -> fallback local
 
 sys.path.insert(0, str(ROOT))
@@ -41,10 +41,10 @@ def main() -> None:
     port = int(os.environ.get("BEA_API_PORT", "8000"))
     # Bind configurable : défaut 127.0.0.1 (sûr). Mettre BEA_API_BIND=0.0.0.0 pour
     # exposer l'API sur toutes les interfaces (ex. accès mobile via Tailscale/LAN) —
-    # protégé par JARVIS_API_TOKEN + l'access-enforcement middleware.
+    # protégé par BEA_API_TOKEN + l'access-enforcement middleware.
     bind = os.environ.get("BEA_API_BIND", "127.0.0.1")
     print(f"Béa API (stack complète, local dégradé) -> http://{bind}:{port}")
-    print(f"Token : X-Jarvis-Token: {os.environ['JARVIS_API_TOKEN']}")
+    print(f"Token : X-Bea-Token: {os.environ['BEA_API_TOKEN']}")
     uvicorn.run("api.main:app", host=bind, port=port, log_level="warning")
 
 

@@ -17,7 +17,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
-EMAIL_FROM=noreply@jarvismax.ai
+EMAIL_FROM=noreply@beamax.ai
 ```
 
 ## Quick Test
@@ -26,7 +26,7 @@ EMAIL_FROM=noreply@jarvismax.ai
 # 1. Subscribe
 curl -X POST http://localhost:8000/api/v2/notifications/subscribe \
   -H "Content-Type: application/json" \
-  -H "X-Jarvis-Token: test-token" \
+  -H "X-Bea-Token: test-token" \
   -d '{
     "channel": "telegram",
     "destination": "YOUR_CHAT_ID"
@@ -35,7 +35,7 @@ curl -X POST http://localhost:8000/api/v2/notifications/subscribe \
 # 2. Send test notification
 curl -X POST http://localhost:8000/api/v2/notifications/test \
   -H "Content-Type: application/json" \
-  -H "X-Jarvis-Token: test-token" \
+  -H "X-Bea-Token: test-token" \
   -d '{
     "channel": "telegram",
     "destination": "YOUR_CHAT_ID"

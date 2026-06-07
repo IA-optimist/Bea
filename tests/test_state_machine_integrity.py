@@ -1,5 +1,5 @@
 """
-JARVIS MAX — State Machine Integrity Test Suite (Pass 4)
+BEA MAX — State Machine Integrity Test Suite (Pass 4)
 ========================================================
 
 Verifies deterministic state machine behavior:
@@ -278,7 +278,7 @@ class TestBackgroundTaskTracking(unittest.TestCase):
 
     @pytest.mark.xfail(reason="orchestrator shim — _bg_tasks moved", strict=False)
     def test_bg_tasks_set_in_init(self):
-        """JarvisOrchestrator must initialize _bg_tasks set in __init__."""
+        """BeaOrchestrator must initialize _bg_tasks set in __init__."""
         src = pathlib.Path("core/orchestrator.py").read_text(encoding="utf-8")
         self.assertIn("_bg_tasks", src,
                       "orchestrator.py must have _bg_tasks set for task tracking")

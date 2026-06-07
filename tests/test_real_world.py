@@ -1,7 +1,7 @@
 """
 Real-World Readiness Tests
 =============================
-Verifies Jarvis can handle actual usage scenarios.
+Verifies Bea can handle actual usage scenarios.
 """
 import ast
 import os
@@ -345,8 +345,8 @@ def test_improvement_detection_rate_limited():
     """Detect improvements is rate-limited (no self-amplifying loops)."""
     import core.improvement_detector as det
     det._last_detection_time = 0  # reset
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
 
     # First call: should run
     r1 = det.detect_improvements(dry_run=False)

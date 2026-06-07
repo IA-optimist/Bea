@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Architectural Integration Hardening Test Suite
+BEA MAX — Architectural Integration Hardening Test Suite
 ===========================================================
 
 Regression and coverage tests for all changes made during the

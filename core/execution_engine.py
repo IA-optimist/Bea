@@ -1,5 +1,5 @@
 """
-JARVIS — Execution Engine (core/ version)
+BEA — Execution Engine (core/ version)
 =============================
 NOTE: A parallel executor/execution_engine.py (542L) also exists.
   - core/execution_engine.py (this file) — higher-level wrapper
@@ -32,7 +32,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.execution_engine")
+logger = structlog.get_logger("bea.execution_engine")
 log = logger  # M3 emitter alias
 
 # ═══════════════════════════════════════════════════════════════
@@ -40,16 +40,16 @@ log = logger  # M3 emitter alias
 # ═══════════════════════════════════════════════════════════════
 
 # Max seconds a single tool execution can take before timeout
-MAX_TOOL_TIMEOUT_S = int(os.environ.get("JARVIS_MAX_TOOL_TIMEOUT", "120"))
+MAX_TOOL_TIMEOUT_S = int(os.environ.get("BEA_MAX_TOOL_TIMEOUT", "120"))
 
 # Max retries per tool invocation (overridable via env)
-MAX_RETRIES = int(os.environ.get("JARVIS_MAX_RETRIES", "3"))
+MAX_RETRIES = int(os.environ.get("BEA_MAX_RETRIES", "3"))
 
 # Max total execution time for a mission (seconds)
-MAX_MISSION_DURATION_S = int(os.environ.get("JARVIS_MAX_MISSION_DURATION", "600"))
+MAX_MISSION_DURATION_S = int(os.environ.get("BEA_MAX_MISSION_DURATION", "600"))
 
 # Max steps per mission (prevent runaway decomposition)
-MAX_MISSION_STEPS = int(os.environ.get("JARVIS_MAX_MISSION_STEPS", "20"))
+MAX_MISSION_STEPS = int(os.environ.get("BEA_MAX_MISSION_STEPS", "20"))
 
 
 def get_execution_limits() -> dict:

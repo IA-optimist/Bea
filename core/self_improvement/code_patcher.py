@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Code Patcher (production-grade source modification)
+BEA MAX — Code Patcher (production-grade source modification)
 ===================================================================
 Takes structured patch intent and transforms source code safely.
 

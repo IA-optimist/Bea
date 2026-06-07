@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Secret Vault
+BEA MAX — Secret Vault
 ============================
 Production-grade secret management for AI agents.
 

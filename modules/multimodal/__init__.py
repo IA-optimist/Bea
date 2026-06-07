@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Multimodal module
+BEA MAX — Multimodal module
 Exports all public functions and classes.
 """
 from modules.multimodal.image import (

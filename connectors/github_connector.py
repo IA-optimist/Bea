@@ -68,7 +68,7 @@ class GitHubConnector(ConnectorBase):
 
     def _commit_files(self, params: dict, result: ConnectorResult) -> ConnectorResult:
         repo_dir = params.get("repo_dir", "")
-        message = params.get("message", "Update from Jarvis")
+        message = params.get("message", "Update from Bea")
         files = params.get("files", [])
 
         if not repo_dir:

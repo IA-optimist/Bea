@@ -7,7 +7,7 @@ Pipeline:
   3. Backup affected files
   4. Apply patch (with syntax validation)
   5. Run tests
-  6. If tests pass → commit to jarvis/si-<id> branch, mark proposal "applied"
+  6. If tests pass → commit to bea/si-<id> branch, mark proposal "applied"
   7. If tests fail → restore backups, mark proposal "failed", return error
 """
 from __future__ import annotations
@@ -26,10 +26,10 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-# Racine du repo : JARVIS_ROOT si défini (Docker=/app), sinon résolue depuis ce module
+# Racine du repo : BEA_ROOT si défini (Docker=/app), sinon résolue depuis ce module
 # (core/self_improvement/proposal_applicator.py -> remonte de 2 niveaux). Sans ça, le
 # défaut "/app" rendait introuvables tous les fichiers en local (hors Docker).
-_REPO_ROOT = Path(os.environ.get("JARVIS_ROOT") or Path(__file__).resolve().parents[2])
+_REPO_ROOT = Path(os.environ.get("BEA_ROOT") or Path(__file__).resolve().parents[2])
 _WORKSPACE  = Path(os.environ.get("WORKSPACE_DIR") or (_REPO_ROOT / "workspace"))
 _MAX_LINES_PER_FILE = 400  # max lines de contexte par fichier (150 coupait le code cible)
 
@@ -233,7 +233,7 @@ async def apply_proposal(proposal_id: str) -> ApplyResult:
         return result
 
     # ── 6. Commit ─────────────────────────────────────────────────
-    branch = f"jarvis/si-{proposal_id[:8]}"
+    branch = f"bea/si-{proposal_id[:8]}"
     try:
         _git_commit(branch, proposal, applied_changes)
         result.committed = True
@@ -264,7 +264,7 @@ async def _generate_patch_via_llm(
     from core.llm_factory import LLMFactory
     from langchain_core.messages import SystemMessage, HumanMessage
 
-    system = """You are a precise code editor for the JarvisMax project.
+    system = """You are a precise code editor for the BeaMax project.
 Given a problem description and relevant file contents, produce the minimal code change.
 
 Respond ONLY with blocks in this exact format:

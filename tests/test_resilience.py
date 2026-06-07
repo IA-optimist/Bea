@@ -20,30 +20,30 @@ if 'structlog' not in sys.modules:
     sys.modules['structlog'] = _sl
 
 
-class TestJarvisError(unittest.TestCase):
+class TestBeaError(unittest.TestCase):
 
     def test_from_exception(self):
-        from core.resilience import JarvisError
-        err = JarvisError.from_exception(TimeoutError("connection timed out"), "tool")
+        from core.resilience import BeaError
+        err = BeaError.from_exception(TimeoutError("connection timed out"), "tool")
         self.assertEqual(err.code, "TOOL_TIMEOUT")
         self.assertEqual(err.component, "tool")
         self.assertTrue(err.retryable)
 
     def test_permission_error(self):
-        from core.resilience import JarvisError
-        err = JarvisError.from_exception(PermissionError("access denied"), "executor")
+        from core.resilience import BeaError
+        err = BeaError.from_exception(PermissionError("access denied"), "executor")
         self.assertEqual(err.code, "PERMISSION_DENIED")
         self.assertFalse(err.retryable)
         self.assertEqual(err.severity, "HIGH")
 
     def test_parse_error(self):
-        from core.resilience import JarvisError
-        err = JarvisError.from_exception(ValueError("json parse failed"), "api")
+        from core.resilience import BeaError
+        err = BeaError.from_exception(ValueError("json parse failed"), "api")
         self.assertEqual(err.code, "PARSE_ERROR")
 
     def test_to_dict(self):
-        from core.resilience import JarvisError
-        err = JarvisError(code="TEST", message="test error", component="test")
+        from core.resilience import BeaError
+        err = BeaError(code="TEST", message="test error", component="test")
         d = err.to_dict()
         self.assertIn("code", d)
         self.assertIn("message", d)

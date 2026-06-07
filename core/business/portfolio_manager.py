@@ -17,7 +17,7 @@ log = structlog.get_logger(__name__)
 
 
 class PortfolioManager:
-    """Manage business portfolio across multiple JarvisMax projects."""
+    """Manage business portfolio across multiple BeaMax projects."""
     
     def __init__(self, db_session: Session):
         self.db = db_session

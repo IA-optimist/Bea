@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestProblemFraming(unittest.TestCase):
-    """Phase 1: Does Jarvis correctly identify what actually matters?"""
+    """Phase 1: Does Bea correctly identify what actually matters?"""
 
     def test_RE01_direct_question_complexity(self):
         """Direct questions should be classified as direct_answer."""
@@ -110,7 +110,7 @@ class TestProblemFraming(unittest.TestCase):
 
 
 class TestPrioritization(unittest.TestCase):
-    """Phase 2: Does Jarvis prioritize correctly?"""
+    """Phase 2: Does Bea prioritize correctly?"""
 
     def test_RE12_crash_is_critical(self):
         """Crashes should be critical blockers."""
@@ -159,7 +159,7 @@ class TestPrioritization(unittest.TestCase):
 
 
 class TestOutputShapeSelection(unittest.TestCase):
-    """Phase 3: Does Jarvis pick the right response format?"""
+    """Phase 3: Does Bea pick the right response format?"""
 
     def test_RE18_question_gets_direct_answer(self):
         """Questions should get direct answers."""
@@ -198,7 +198,7 @@ class TestOutputShapeSelection(unittest.TestCase):
 
 
 class TestSelfCritique(unittest.TestCase):
-    """Phase 4: Does Jarvis detect weak outputs?"""
+    """Phase 4: Does Bea detect weak outputs?"""
 
     def test_RE23_empty_output_is_weak(self):
         """Empty output should be flagged as weak."""
@@ -276,7 +276,7 @@ class TestSelfCritique(unittest.TestCase):
 
 
 class TestRepoAwareness(unittest.TestCase):
-    """Phase 5: Does Jarvis reason about the codebase?"""
+    """Phase 5: Does Bea reason about the codebase?"""
 
     def test_RE30_kernel_risk_detection(self):
         """Changes to kernel should be high risk."""

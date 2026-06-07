@@ -735,7 +735,7 @@ class SandboxExecutor:
                 improvements=["no_change_required"],
             )
 
-        with tempfile.TemporaryDirectory(prefix="jarvis_sandbox_") as tmp_dir:
+        with tempfile.TemporaryDirectory(prefix="bea_sandbox_") as tmp_dir:
             work_dir = Path(tmp_dir) / "workspace"
 
             # Copy project to temp dir (exclude .git, __pycache__, node_modules)

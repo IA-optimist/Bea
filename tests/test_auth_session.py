@@ -158,18 +158,18 @@ class TestWebSessionContracts:
             content = f.read()
         assert "SessionStore" in content
         assert "save(" in content
-        assert "jarvis_token" in content
-        assert "jarvis_login_mode" in content
-        assert "jarvis_remember_me" in content
+        assert "bea_token" in content
+        assert "bea_login_mode" in content
+        assert "bea_remember_me" in content
 
-    @pytest.mark.xfail(reason="jarvis_admin_pw storage non-implémenté (feature drift)", strict=False)
+    @pytest.mark.xfail(reason="bea_admin_pw storage non-implémenté (feature drift)", strict=False)
     def test_session_clear_in_html(self):
         """A14: SessionStore.clear removes all keys."""
         with open("static/app.html", encoding="utf-8") as f:
             content = f.read()
         assert "clear()" in content
         # Must clear all storage keys
-        assert "jarvis_admin_pw" in content
+        assert "bea_admin_pw" in content
 
     @pytest.mark.xfail(reason="remember-me checkbox non-implémenté (feature drift)", strict=False)
     def test_remember_me_checkbox(self):
@@ -188,16 +188,16 @@ class TestMobileSessionContracts:
 
     def test_session_manager_exists(self):
         """A16: SessionManager uses FlutterSecureStorage."""
-        path = "jarvismax_app/lib/services/session_manager.dart"
+        path = "beamax_app/lib/services/session_manager.dart"
         with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "FlutterSecureStorage" in content
-        assert "jarvis_auth_token" in content
+        assert "bea_auth_token" in content
         assert "encryptedSharedPreferences" in content
 
     def test_logout_wipes_all(self):
         """A17: Logout deletes all secure storage entries."""
-        path = "jarvismax_app/lib/services/session_manager.dart"
+        path = "beamax_app/lib/services/session_manager.dart"
         with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "delete(key: _keyToken)" in content
@@ -207,7 +207,7 @@ class TestMobileSessionContracts:
 
     def test_restore_returns_null_when_empty(self):
         """A18: restoreSession handles empty storage."""
-        path = "jarvismax_app/lib/services/session_manager.dart"
+        path = "beamax_app/lib/services/session_manager.dart"
         with open(path, encoding="utf-8") as f:
             content = f.read()
         assert "return null" in content

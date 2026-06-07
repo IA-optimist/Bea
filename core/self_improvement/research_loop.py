@@ -31,7 +31,7 @@ import uuid
 import structlog
 from dataclasses import dataclass, field
 
-log = structlog.get_logger("jarvis.research_loop")
+log = structlog.get_logger("bea.research_loop")
 
 SANDBOX_ROOT = "workspace/sandbox"
 REPORT_DIR = "workspace/reports/experiments"

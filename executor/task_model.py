@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ExecutionTask & ExecutionResult models
+BEA MAX — ExecutionTask & ExecutionResult models
 Modèles de données pour la couche d'exécution v2.
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ TERMINAL_STATUSES = frozenset({
 @dataclass
 class ExecutionTask:
     """
-    Tâche d'exécution dans le moteur JarvisMax.
+    Tâche d'exécution dans le moteur BeaMax.
 
     Cycle de vie : PENDING → RUNNING → SUCCEEDED / FAILED / CANCELLED / TIMED_OUT
     """

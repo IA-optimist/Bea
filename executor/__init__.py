@@ -1,5 +1,5 @@
 """
-JARVIS MAX — executor package
+BEA MAX — executor package
 Canonical execution layer.
 
 CANONICAL EXPORTS:

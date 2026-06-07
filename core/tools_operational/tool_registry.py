@@ -19,7 +19,7 @@ _TOOL_DEFS_DIR = Path(os.path.dirname(__file__)).parent.parent / "business" / "t
 
 
 class OperationalToolRegistry:
-    """Registry of external tools Jarvis can invoke."""
+    """Registry of external tools Bea can invoke."""
 
     def __init__(self):
         self._lock = threading.RLock()

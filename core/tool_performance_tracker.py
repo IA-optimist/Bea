@@ -1,5 +1,5 @@
 """
-JARVIS — Tool Performance Tracker
+BEA — Tool Performance Tracker
 ====================================
 Tracks real execution signals from ToolExecutor: success/failure rates,
 latency, error patterns, per-tool reliability scores.
@@ -7,7 +7,7 @@ latency, error patterns, per-tool reliability scores.
 This is NOT another isolated intelligence layer. It:
 1. Gets called FROM tool_executor._execute_with_retry()
 2. Feeds data TO tool_registry for smart tool selection
-3. Exposes data TO the Jarvis app via API
+3. Exposes data TO the Bea app via API
 4. Persists TO workspace/tool_performance.jsonl
 
 Zero external dependencies. Fail-open everywhere.
@@ -21,7 +21,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.tool_performance")
+logger = structlog.get_logger("bea.tool_performance")
 
 # ── Data Structures ────────────────────────────────────────────────────────────
 
@@ -272,7 +272,7 @@ class ToolPerformanceTracker:
         )
 
     def get_dashboard_data(self) -> dict:
-        """Full dashboard payload for Jarvis app."""
+        """Full dashboard payload for Bea app."""
         all_stats = [s.to_dict() for s in self._stats.values()]
         healthy = sum(1 for s in self._stats.values() if s.health_status == "healthy")
         degraded = sum(1 for s in self._stats.values() if s.health_status == "degraded")

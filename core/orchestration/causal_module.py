@@ -1,12 +1,12 @@
 """
-causal_module.py — Structural Causal Model (SCM) for JarvisMax
+causal_module.py — Structural Causal Model (SCM) for BeaMax
 ===============================================================
 Gives LLMs the ability to reason causally using Pearl's do-calculus.
 
 Architecture:
   - CausalGraph       : maintains a DAG of causal relations + do() + counterfactual()
   - CausalLLMWrapper  : injects causal context into LLM prompts + extracts claims
-  - JarvisMaxCausalIntegration : persistent layer for JarvisMax core/
+  - BeaMaxCausalIntegration : persistent layer for BeaMax core/
 
 Requirements: networkx (pip install networkx), requests (for Ollama)
 Python 3.10+
@@ -371,9 +371,9 @@ class CausalLLMWrapper:
         return graph
 
 
-class JarvisMaxCausalIntegration:
+class BeaMaxCausalIntegration:
     """
-    Persistent integration layer for JarvisMax core/.
+    Persistent integration layer for BeaMax core/.
     - Loads/saves causal graph from core/causal_graph.json
     - Auto-enriches graph after each mission result
     - Optionally indexes edges into Qdrant for semantic search

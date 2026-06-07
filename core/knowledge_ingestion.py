@@ -1,5 +1,5 @@
 """
-JARVIS — Knowledge Ingestion Filter
+BEA — Knowledge Ingestion Filter
 =======================================
 Controls what gets stored in knowledge memory to avoid noise.
 
@@ -14,14 +14,14 @@ Prioritizes:
 - Missions with high plan complexity that succeeded
 - Failures with identifiable error patterns
 
-Feature flag: JARVIS_KNOWLEDGE_INGESTION=1 (default ON when knowledge_memory exists)
+Feature flag: BEA_KNOWLEDGE_INGESTION=1 (default ON when knowledge_memory exists)
 """
 from __future__ import annotations
 
 import structlog
 import time
 
-logger = structlog.get_logger("jarvis.knowledge_ingestion")
+logger = structlog.get_logger("bea.knowledge_ingestion")
 
 # Recent ingestions for dedup (bounded, in-memory)
 _recent_ingestions: list[dict] = []

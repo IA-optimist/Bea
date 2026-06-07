@@ -14,7 +14,7 @@ import asyncio
 import structlog
 import re
 
-logger = structlog.get_logger("jarvis.tools.browser_bridge")
+logger = structlog.get_logger("bea.tools.browser_bridge")
 log = logger  # M3 emitter alias
 
 # ── Lazy singleton ────────────────────────────────────────────────────────────

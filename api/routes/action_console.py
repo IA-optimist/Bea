@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Action Console API
+BEA MAX — Action Console API
 ===================================
 Operator-facing approval console for pending tool/mission actions.
 
@@ -34,11 +34,11 @@ class FeedbackRequest(BaseModel):
 
 @router.get("/pending")
 async def list_pending(
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """List all pending tool/action approval requests."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_permissions import get_tool_permissions
         reg = get_tool_permissions()
@@ -59,11 +59,11 @@ async def list_pending(
 @router.get("/history")
 async def approval_history(
     limit: int = 50,
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Recent approval decisions."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_permissions import get_tool_permissions
         return {"history": get_tool_permissions().get_history(limit=limit)}
@@ -75,11 +75,11 @@ async def approval_history(
 async def approve_request(
     request_id: str,
     body: FeedbackRequest = FeedbackRequest(),
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Approve a pending tool execution request."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_permissions import get_tool_permissions
         success = get_tool_permissions().approve(request_id, feedback=body.feedback)
@@ -97,11 +97,11 @@ async def approve_request(
 async def deny_request(
     request_id: str,
     body: FeedbackRequest = FeedbackRequest(),
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Deny a pending tool execution request."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_permissions import get_tool_permissions
         success = get_tool_permissions().deny(request_id, feedback=body.feedback)
@@ -117,11 +117,11 @@ async def deny_request(
 
 @router.get("/stats")
 async def console_stats(
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Approval system statistics."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     result = {}
     try:
         from core.tool_permissions import get_tool_permissions
@@ -143,11 +143,11 @@ async def console_stats(
 
 @router.get("/permissions")
 async def list_permissions(
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """List all tool permission declarations."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_permissions import get_tool_permissions
         return {"permissions": get_tool_permissions().list_all()}
@@ -157,11 +157,11 @@ async def list_permissions(
 
 @router.get("/deps")
 async def dependency_health(
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Module dependency health overview."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.tool_config_registry import get_config_registry
         return {"dependencies": get_config_registry().check_all(),
@@ -173,11 +173,11 @@ async def dependency_health(
 @router.get("/budget/{mission_id}")
 async def mission_budget(
     mission_id: str,
-    x_jarvis_token: str | None = Header(None),
+    x_bea_token: str | None = Header(None),
     authorization: str | None = Header(None)
 ):
     """Get budget status for a running mission."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from core.mission_guards import get_guardian
         budget = get_guardian().get_budget(mission_id)

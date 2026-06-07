@@ -1,5 +1,5 @@
 """
-JarvisMax — Opportunities API
+BeaMax — Opportunities API
 REST endpoints for SaaS opportunity management (Phase 3)
 """
 from __future__ import annotations
@@ -327,7 +327,7 @@ async def analyze_feasibility(
     opportunity_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    project_id: int = Query(1, description="JarvisMax project ID"),
+    project_id: int = Query(1, description="BeaMax project ID"),
 ):
     """
     Analyze technical feasibility of an opportunity (cognition-powered)
@@ -525,7 +525,7 @@ async def generate_mvp(
     
     Args:
         opportunity_id: Opportunity ID
-        project_id: JarvisMax project ID (default: 1)
+        project_id: BeaMax project ID (default: 1)
         db: Database session
     
     Returns:
@@ -647,7 +647,7 @@ async def get_mvp_status(
             "data": {
                 "opportunity_id": 1,
                 "mvp_generated": true,
-                "output_dir": f"{tempfile.gettempdir()}/jarvismax_mvp/ai-powered-code-review-tool",
+                "output_dir": f"{tempfile.gettempdir()}/beamax_mvp/ai-powered-code-review-tool",
                 "project_slug": "ai-powered-code-review-tool",
                 "files_created": 8
             }
@@ -701,7 +701,7 @@ async def get_mvp_status(
 async def deploy_mvp(
     opportunity_id: int,
     background_tasks: BackgroundTasks,
-    project_id: int = Query(1, description="JarvisMax project ID"),
+    project_id: int = Query(1, description="BeaMax project ID"),
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
@@ -777,7 +777,7 @@ async def deploy_mvp(
             generator = MVPGenerator()
             project_slug = generator._slugify(opportunity.title)
             # Create secure temp directory
-            base_dir = Path(tempfile.gettempdir()) / "jarvismax_mvp"
+            base_dir = Path(tempfile.gettempdir()) / "beamax_mvp"
             base_dir.mkdir(parents=True, exist_ok=True)
             mvp_dir = str(base_dir / project_slug)
             

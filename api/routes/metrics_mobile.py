@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mobile Metrics API
+BEA MAX — Mobile Metrics API
 ==================================
 Lightweight, structured endpoints optimized for the mobile dashboard.
 
@@ -11,7 +11,7 @@ Routes (all under /api/v3/metrics):
   GET /failures        — recent failure patterns
 
 All responses follow: {"ok": true, "data": {...}}
-Auth: JARVIS_API_TOKEN if set. No secrets in responses.
+Auth: BEA_API_TOKEN if set. No secrets in responses.
 """
 from __future__ import annotations
 
@@ -30,13 +30,13 @@ if APIRouter:
     router = APIRouter(prefix="/api/v3/metrics", tags=["metrics-mobile"])
 
     def _auth(token: str | None = None, authorization: str | None = None) -> None:
-        """Accept X-Jarvis-Token (static) OR Authorization: Bearer (JWT).
+        """Accept X-Bea-Token (static) OR Authorization: Bearer (JWT).
 
         Fail-closed: always raises 401 if no valid auth provided.
-        Previously had a silent bypass when JARVIS_API_TOKEN was unset.
+        Previously had a silent bypass when BEA_API_TOKEN was unset.
         """
         # Try static token first
-        t = os.getenv("JARVIS_API_TOKEN", "")
+        t = os.getenv("BEA_API_TOKEN", "")
         if token and t and token == t:
             return
         # Try JWT from Authorization header
@@ -61,9 +61,9 @@ if APIRouter:
     # ── Summary ───────────────────────────────────────────────
 
     @router.get("/summary")
-    async def metrics_summary(x_jarvis_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_summary(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
         """System health overview for mobile dashboard."""
-        _auth(x_jarvis_token, authorization)
+        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -115,9 +115,9 @@ if APIRouter:
     # ── Routing ───────────────────────────────────────────────
 
     @router.get("/routing")
-    async def metrics_routing(x_jarvis_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_routing(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
         """Model routing performance for mobile dashboard."""
-        _auth(x_jarvis_token, authorization)
+        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -171,9 +171,9 @@ if APIRouter:
     # ── Tools ─────────────────────────────────────────────────
 
     @router.get("/tools")
-    async def metrics_tools(x_jarvis_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_tools(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
         """Tool reliability and latency for mobile dashboard."""
-        _auth(x_jarvis_token, authorization)
+        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -217,9 +217,9 @@ if APIRouter:
     # ── Improvement ───────────────────────────────────────────
 
     @router.get("/improvement")
-    async def metrics_improvement(x_jarvis_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_improvement(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
         """Self-improvement experiment stats for mobile dashboard."""
-        _auth(x_jarvis_token, authorization)
+        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -258,9 +258,9 @@ if APIRouter:
     # ── Failures ──────────────────────────────────────────────
 
     @router.get("/failures")
-    async def metrics_failures(x_jarvis_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_failures(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
         """Recent failure patterns for mobile dashboard."""
-        _auth(x_jarvis_token, authorization)
+        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()

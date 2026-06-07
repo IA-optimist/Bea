@@ -30,7 +30,7 @@ sys.path.insert(0, '.')
 
 def test_router_disabled_by_default():
     """Router returns static candidates when flag is OFF."""
-    os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+    os.environ.pop("BEA_DYNAMIC_ROUTING", None)
     from core.dynamic_agent_router import route_agents
     result = route_agents(
         goal="fix bug", mission_type="debug_task", complexity="medium",
@@ -41,7 +41,7 @@ def test_router_disabled_by_default():
 
 def test_router_enabled_no_data():
     """Router falls back to static when no performance data exists."""
-    os.environ["JARVIS_DYNAMIC_ROUTING"] = "1"
+    os.environ["BEA_DYNAMIC_ROUTING"] = "1"
     # Isolate from sibling tests (and any persisted workspace/*.jsonl) that
     # leave debug_task data in the performance tracker singleton. With leaked
     # data the router enters its rerank path (which iterates a set →
@@ -60,13 +60,13 @@ def test_router_enabled_no_data():
         )
         assert result == ["forge-builder", "lens-reviewer"]
     finally:
-        os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+        os.environ.pop("BEA_DYNAMIC_ROUTING", None)
         mpt_mod._tracker = saved_tracker
 
 
 def test_router_with_performance_data():
     """Router reranks agents based on real performance data."""
-    os.environ["JARVIS_DYNAMIC_ROUTING"] = "1"
+    os.environ["BEA_DYNAMIC_ROUTING"] = "1"
     try:
         from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
         import core.mission_performance_tracker as mpt_mod
@@ -99,12 +99,12 @@ def test_router_with_performance_data():
         finally:
             mpt_mod._tracker = old
     finally:
-        os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+        os.environ.pop("BEA_DYNAMIC_ROUTING", None)
 
 
 def test_router_complexity_cap():
     """Router respects complexity caps when data exists."""
-    os.environ["JARVIS_DYNAMIC_ROUTING"] = "1"
+    os.environ["BEA_DYNAMIC_ROUTING"] = "1"
     try:
         from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
         import core.mission_performance_tracker as mpt_mod
@@ -128,7 +128,7 @@ def test_router_complexity_cap():
         finally:
             mpt_mod._tracker = old
     finally:
-        os.environ.pop("JARVIS_DYNAMIC_ROUTING", None)
+        os.environ.pop("BEA_DYNAMIC_ROUTING", None)
 
 
 def test_agent_specialization_map():

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Multimodal API Routes
+BEA MAX — Multimodal API Routes
 
 POST /api/v2/multimodal/image/generate  — generate image from prompt
 POST /api/v2/multimodal/image/describe  — describe image (URL or upload)
@@ -22,15 +22,15 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/multimodal", tags=["multimodal"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
 
 # ── Request models ────────────────────────────────────────────
@@ -60,7 +60,7 @@ class TTSRequest(BaseModel):
 @router.post("/image/generate")
 async def image_generate(
     req: ImageGenerateRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Generate an image from a text prompt (DALL-E 3 / HuggingFace / stub)."""
     from modules.multimodal.image import generate_image
@@ -84,7 +84,7 @@ async def image_generate(
 async def image_describe(
     req: Optional[ImageDescribeRequest] = None,
     file: Optional[UploadFile]          = File(None),
-    x_jarvis_token: Optional[str]       = Header(None),
+    x_bea_token: Optional[str]       = Header(None),
 ):
     """Describe/analyze an image using GPT-4o Vision."""
     from modules.multimodal.image import describe_image
@@ -113,7 +113,7 @@ async def image_describe(
 async def voice_stt(
     file:           UploadFile            = File(...),
     language:       str                   = Query("fr"),
-    x_jarvis_token: Optional[str]         = Header(None),
+    x_bea_token: Optional[str]         = Header(None),
 ):
     """Speech-to-text transcription (Whisper API / local / stub)."""
     from modules.multimodal.voice import speech_to_text
@@ -133,7 +133,7 @@ async def voice_stt(
 @router.post("/voice/tts")
 async def voice_tts(
     req:            TTSRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Text-to-speech synthesis. Returns MP3 audio bytes on success."""
     from modules.multimodal.voice import text_to_speech
@@ -166,7 +166,7 @@ async def voice_tts(
 # ── Capabilities endpoint ─────────────────────────────────────
 
 @router.get("/capabilities")
-async def capabilities(x_jarvis_token: Optional[str] = Header(None)):
+async def capabilities(x_bea_token: Optional[str] = Header(None)):
     """Returns which multimodal providers are currently available."""
     from modules.multimodal.image import image_capabilities
     from modules.multimodal.voice import voice_capabilities

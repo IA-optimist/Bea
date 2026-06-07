@@ -16,7 +16,7 @@ from fastapi import APIRouter
 from core.security.rbac import require_role, CurrentUser
 from fastapi import Depends
 
-logger = logging.getLogger("jarvis.api.self_improvement")
+logger = logging.getLogger("bea.api.self_improvement")
 
 # Routes en lecture (viewer+) et routes mutantes (admin only) séparées ci-dessous.
 router = APIRouter(

@@ -22,7 +22,7 @@ from core.agents.role_definitions import (
     ROLE_DEFINITIONS,
 )
 
-log = structlog.get_logger("jarvis.agent_registry")
+log = structlog.get_logger("bea.agent_registry")
 
 
 # ── Agent Message Protocol ───────────────────────────────────────────────────

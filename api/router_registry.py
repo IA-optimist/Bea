@@ -2,7 +2,7 @@
 api/router_registry.py — Canonical router registration system.
 
 Provides structured registration, status tracking, and dependency loading
-for all API routers in JarvisMax.
+for all API routers in BeaMax.
 
 Design:
   - register_router(name, router): register with metadata

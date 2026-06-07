@@ -1,7 +1,7 @@
 """
 core/self_improvement/safety_boundary.py — AI OS Self-Improvement Safety.
 
-Defines what Jarvis may and may not self-improve.
+Defines what Bea may and may not self-improve.
 All modifications go through policy layer. Core runtime is protected.
 """
 from __future__ import annotations
@@ -9,7 +9,7 @@ from dataclasses import dataclass, asdict
 from typing import Literal
 import structlog
 
-log = structlog.get_logger("jarvis.self_improve_safety")
+log = structlog.get_logger("bea.self_improve_safety")
 
 ImprovementType = Literal["prompt", "planning", "tool_usage", "capability"]
 
@@ -128,14 +128,14 @@ def validate_proposal(proposal: ImprovementProposal) -> tuple[bool, str]:
 
 import os as _os
 import tempfile as _tempfile
-# Use JARVIS_STAGING_DIR env var if set, fall back to a writable temp dir.
+# Use BEA_STAGING_DIR env var if set, fall back to a writable temp dir.
 # workspace/dev/ is the logical staging area but may not allow deletions in
 # sandboxed/container environments; /tmp is always writable+deletable.
 STAGING_DIR = _os.environ.get(
-    "JARVIS_STAGING_DIR",
-    _os.path.join(_tempfile.gettempdir(), "jarvismax_staging") + _os.sep,
+    "BEA_STAGING_DIR",
+    _os.path.join(_tempfile.gettempdir(), "beamax_staging") + _os.sep,
 )
-PRODUCTION_DIR = _os.environ.get("JARVIS_PROD_DIR", "workspace/prod/")
+PRODUCTION_DIR = _os.environ.get("BEA_PROD_DIR", "workspace/prod/")
 
 # Additional protected categories
 NEVER_MODIFY = frozenset({

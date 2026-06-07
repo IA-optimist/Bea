@@ -1,4 +1,4 @@
-"""app_sync_toolkit — vérification et synchronisation des champs API Jarvis."""
+"""app_sync_toolkit — vérification et synchronisation des champs API Bea."""
 from __future__ import annotations
 
 _REQUIRED_FIELDS = [

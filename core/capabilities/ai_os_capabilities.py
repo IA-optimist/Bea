@@ -1,7 +1,7 @@
 """
 core/capabilities/ai_os_capabilities.py — AI OS Capability Registry.
 
-Structured capability descriptions that define what Jarvis can do.
+Structured capability descriptions that define what Bea can do.
 Each capability maps to tool chains, agent types, schemas, and policies.
 Integrates with MetaOrchestrator for plan generation.
 

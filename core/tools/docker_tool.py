@@ -3,9 +3,9 @@ from __future__ import annotations
 import subprocess  # nosec B404
 import logging
 
-logger = logging.getLogger("jarvis.docker_tool")
+logger = logging.getLogger("bea.docker_tool")
 
-ALLOWED_CONTAINERS = ["jarvis_core", "jarvis_qdrant", "jarvis_redis"]
+ALLOWED_CONTAINERS = ["bea_core", "bea_qdrant", "bea_redis"]
 
 
 def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:

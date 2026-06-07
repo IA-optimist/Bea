@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Vault API Routes
+BEA MAX — Vault API Routes
 ================================
 REST endpoints for Secret Vault management.
 

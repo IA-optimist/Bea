@@ -17,8 +17,8 @@ from api._deps import _check_auth
 from typing import Optional as _Opt
 from fastapi import Header
 
-def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
+    _check_auth(x_bea_token, authorization)
 
 
 router = APIRouter(tags=["dashboard"], dependencies=[Depends(_auth)])
@@ -134,7 +134,7 @@ async def dashboard_status():
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "api_health": {
             "status": "ok",
-            "version": os.getenv("JARVIS_VERSION", "unknown"),
+            "version": os.getenv("BEA_VERSION", "unknown"),
             "uptime_seconds": round(uptime, 1),
         },
         "feature_flags": _feature_flags(),

@@ -6,7 +6,7 @@ similarity search. Integrates with MemoryLayer for type-aware retrieval.
 
 Architecture:
   - Embeddings via OpenAI text-embedding-3-small (same as semantic_router)
-  - Qdrant collection: jarvis_aios_memory
+  - Qdrant collection: bea_aios_memory
   - Hybrid retrieval: semantic similarity + recency + importance
   - Automatic embedding on store, similarity search on retrieve
 """
@@ -27,14 +27,14 @@ import httpx
 # shim points), ruff catches it.
 _silent_log = structlog.get_logger(__name__)
 
-log = structlog.get_logger("jarvis.vector_memory")
+log = structlog.get_logger("bea.vector_memory")
 
 # ── Config ───────────────────────────────────────────────────────────────────
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")
-COLLECTION = "jarvis_aios_memory"
+COLLECTION = "bea_aios_memory"
 EMBEDDING_DIM = 1536
-EMBEDDING_MODEL = os.getenv("JARVIS_EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_MODEL = os.getenv("BEA_EMBEDDING_MODEL", "text-embedding-3-small")
 
 
 # ── Embedding (shared with semantic_router) ──────────────────────────────────

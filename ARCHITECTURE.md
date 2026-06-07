@@ -1,4 +1,4 @@
-# Jarvismax — Architecture & Top-Level Layout
+# Beamax — Architecture & Top-Level Layout
 
 This document is intentionally short. It exists to remove a single source of
 confusion flagged by the audit (Sprint 3 §3.1): the parallel `business/` and

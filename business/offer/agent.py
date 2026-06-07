@@ -1,12 +1,12 @@
 """
-JARVIS BUSINESS LAYER — Offer Designer : Agent
+BEA BUSINESS LAYER — Offer Designer : Agent
 Transforme une opportunité business en offre commerciale structurée et vendable.
 Peut travailler depuis le VentureReport d'un cycle précédent ou d'une demande directe.
 """
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.offer.schema import parse_offer_report
 
 log = structlog.get_logger()
@@ -75,7 +75,7 @@ class OfferDesignerAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input = session.user_input or session.mission_summary or ""
 
         # Récupère le VentureReport du cycle précédent si disponible
@@ -107,7 +107,7 @@ class OfferDesignerAgent(BaseAgent):
             "Réponds UNIQUEMENT en JSON valide selon le format demandé."
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
             return ""

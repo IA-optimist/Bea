@@ -1,5 +1,5 @@
 """
-PolicyMode — contrôle global du comportement de Jarvis.
+PolicyMode — contrôle global du comportement de Bea.
 Désactivé par défaut (BALANCED). UNCENSORED agit sur raisonnement uniquement,
 jamais sur ExecutionPolicy rules.
 RAM : < 200 bytes (enum + singleton).
@@ -50,7 +50,7 @@ class PolicyModeStore:
             logger.info(f"[PolicyMode] changed to {self._mode.value}")
             if mode.upper() == "UNCENSORED":
                 self._uncensored_activations += 1
-                logging.getLogger("jarvis.policy").warning(
+                logging.getLogger("bea.policy").warning(
                     f"UNCENSORED mode activated (total activations: {self._uncensored_activations})"
                 )
             return True

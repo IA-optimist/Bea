@@ -1,5 +1,5 @@
 """
-Multi-Project Context Manager for JarvisMax (Phase 5.2)
+Multi-Project Context Manager for BeaMax (Phase 5.2)
 ========================================================
 Manages project-specific memory, context, and cognitive state.
 

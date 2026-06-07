@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity Manager
+BEA MAX — Identity Manager
 =================================
 Manages digital identities across services.
 

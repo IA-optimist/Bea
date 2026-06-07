@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Événements et Actions (Event Sourcing)
+BEA MAX v3 — Événements et Actions (Event Sourcing)
 Schémas Pydantic immuables pour modéliser tout l'historique d'une mission.
 """
 import uuid

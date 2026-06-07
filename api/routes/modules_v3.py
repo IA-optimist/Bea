@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Modules v3 API Routes
+BEA MAX — Modules v3 API Routes
 ======================================
 Versioned REST API with RBAC, audit, dependency validation, health.
 

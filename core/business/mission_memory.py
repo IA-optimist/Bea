@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mission Memory
+BEA MAX — Mission Memory
 ===============================
 Stores results, lessons, failures, durations, and decisions
 from business mission execution.

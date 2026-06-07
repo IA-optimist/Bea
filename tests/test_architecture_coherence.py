@@ -258,8 +258,8 @@ def test_stress_concurrent_lifecycle_tracking():
 
 def test_stress_proposal_detection_no_crash():
     """Detector runs cleanly even with large performance data."""
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
     from core.tool_performance_tracker import ToolPerformanceTracker, ToolExecution
     from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
     import core.tool_performance_tracker as tpt_mod
@@ -316,12 +316,12 @@ def test_feature_flags_documented():
     with open("core/safety_controls.py", encoding="utf-8") as f:
         src = f.read()
     flags = [
-        "JARVIS_DISABLE_ALL_INTELLIGENCE",
-        "JARVIS_DISABLE_PROPOSALS",
-        "JARVIS_DISABLE_EXECUTION_ENGINE",
-        "JARVIS_DYNAMIC_ROUTING",
-        "JARVIS_USE_CANONICAL_ORCHESTRATOR",
-        "JARVIS_INTELLIGENCE_HOOKS",
+        "BEA_DISABLE_ALL_INTELLIGENCE",
+        "BEA_DISABLE_PROPOSALS",
+        "BEA_DISABLE_EXECUTION_ENGINE",
+        "BEA_DYNAMIC_ROUTING",
+        "BEA_USE_CANONICAL_ORCHESTRATOR",
+        "BEA_INTELLIGENCE_HOOKS",
     ]
     for flag in flags:
         assert flag in src, f"Flag not documented: {flag}"

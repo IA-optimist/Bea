@@ -246,7 +246,7 @@ class TestAPICanonicalStatus(unittest.TestCase):
         self.assertAlmostEqual(_estimate_progress(FakeMission("BLOCKED")), 0.0)
 
     def test_terminal_statuses_cover_all(self):
-        # Jarvis lifecycle invariant:
+        # Bea lifecycle invariant:
         # canonical states must NEVER be removed
         self.assertIn("COMPLETED", _TERMINAL_STATUSES)
         self.assertIn("FAILED", _TERMINAL_STATUSES)
@@ -258,7 +258,7 @@ class TestAPICanonicalStatus(unittest.TestCase):
 
     def test_terminal_states_are_stable(self):
         """Terminal states must never shrink. Fail loudly if modified."""
-        # Jarvis lifecycle invariant: minimum required terminal states
+        # Bea lifecycle invariant: minimum required terminal states
         REQUIRED_TERMINAL = {"COMPLETED", "FAILED", "CANCELLED", "DONE", "REJECTED", "BLOCKED"}
         missing = REQUIRED_TERMINAL - _TERMINAL_STATUSES
         self.assertEqual(missing, set(),
@@ -269,8 +269,8 @@ class TestMemoryFacadeSingleton(unittest.TestCase):
 
     def test_singleton_returns_same(self):
         from core.memory_facade import get_memory_facade
-        f1 = get_memory_facade(workspace_dir="/tmp/jarvis_test_mf")
-        f2 = get_memory_facade(workspace_dir="/tmp/jarvis_test_mf")
+        f1 = get_memory_facade(workspace_dir="/tmp/bea_test_mf")
+        f2 = get_memory_facade(workspace_dir="/tmp/bea_test_mf")
         self.assertIs(f1, f2)
 
 
@@ -279,7 +279,7 @@ class TestMemoryFacadeStore(unittest.TestCase):
 
     def setUp(self):
         import shutil
-        self._ws = "/tmp/jarvis_test_mf_store"
+        self._ws = "/tmp/bea_test_mf_store"
         shutil.rmtree(self._ws, ignore_errors=True)
         os.makedirs(self._ws, exist_ok=True)
         # Reset singleton

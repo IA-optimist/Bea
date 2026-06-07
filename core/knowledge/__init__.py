@@ -1,8 +1,8 @@
 """
-core/knowledge — Knowledge & Capability Engine pour Jarvis.
+core/knowledge — Knowledge & Capability Engine pour Bea.
 
 Modules:
-  knowledge_index      — Enregistrement entrées + indexation Qdrant (jarvis_knowledge)
+  knowledge_index      — Enregistrement entrées + indexation Qdrant (bea_knowledge)
   pattern_detector     — Détection similarités + séquences efficaces
   capability_scorer    — Score par domaine (coding, debugging, planning…)
   knowledge_cleanup    — Merge/suppression patterns obsolètes

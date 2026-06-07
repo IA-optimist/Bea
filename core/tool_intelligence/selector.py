@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Tool Intelligence: Smart Selector
+BEA MAX — Tool Intelligence: Smart Selector
 
 TF-IDF based tool selection, confidence scoring, tool chains.
 See module docstring in the original tool_intelligence.py for full design.

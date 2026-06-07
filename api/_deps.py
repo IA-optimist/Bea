@@ -14,20 +14,20 @@ from fastapi import Depends, Header, HTTPException, Request
 
 log = structlog.get_logger()
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 _start_time = time.time()
 
 
 def require_auth(
     request: Request,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ) -> dict:
     """Canonical auth dependency for FastAPI handlers.
 
     Reads token (priorité descendante) :
-      1. cookie `jarvis_token` (HttpOnly — XSS-safe)
-      2. header `X-Jarvis-Token`
+      1. cookie `bea_token` (HttpOnly — XSS-safe)
+      2. header `X-Bea-Token`
       3. header `Authorization: Bearer`
 
     Returns user dict on success, raises 401 on failure.
@@ -47,10 +47,10 @@ def require_auth(
     from api.auth import verify_token
 
     # Cookie first (XSS-safe HttpOnly), then headers.
-    cookie_token = request.cookies.get("jarvis_token") if request else None
+    cookie_token = request.cookies.get("bea_token") if request else None
     token = (
         cookie_token
-        or x_jarvis_token
+        or x_bea_token
         or (strip_bearer(authorization) if authorization else None)
     )
 
@@ -88,17 +88,17 @@ def get_start_time() -> float:
 
 
 # SECURITY: Auth REQUIRED by default (fail-closed)
-# Set JARVIS_REQUIRE_AUTH=false ONLY in local development (never in production)
-_REQUIRE_AUTH: bool = os.getenv("JARVIS_REQUIRE_AUTH", "true").lower() in ("1", "true", "yes")
+# Set BEA_REQUIRE_AUTH=false ONLY in local development (never in production)
+_REQUIRE_AUTH: bool = os.getenv("BEA_REQUIRE_AUTH", "true").lower() in ("1", "true", "yes")
 
 
 def _check_auth(token: str | None, authorization: str | None = None) -> None:
-    """Validate API token or JWT. Accepts X-Jarvis-Token or Authorization: Bearer.
+    """Validate API token or JWT. Accepts X-Bea-Token or Authorization: Bearer.
 
     SECURITY: Fail-closed by default.
     Auth enforcement matrix:
       - Access tokens (jv-*) ALWAYS validated (from TokenManager)
-      - JARVIS_API_TOKEN (static) validated if set
+      - BEA_API_TOKEN (static) validated if set
       - JWT tokens validated if set
       - If NO tokens configured AND _REQUIRE_AUTH=false → allow (dev only)
       - If NO tokens configured AND _REQUIRE_AUTH=true → refuse (503)
@@ -118,7 +118,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
         except Exception as e:
             log.warning(f"access_token_verification_failed token={candidate[:10]}... err={e}")
     
-    # 2. Check static API token (X-Jarvis-Token or Bearer) if configured
+    # 2. Check static API token (X-Bea-Token or Bearer) if configured
     if _API_TOKEN:
         _api_bytes = _API_TOKEN.encode()
         if token and hmac.compare_digest(token.encode(), _api_bytes):
@@ -134,7 +134,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     
     # 5. Final fallback: if _REQUIRE_AUTH=false, allow unauthenticated (dev only)
     if not _REQUIRE_AUTH:
-        log.warning("auth_disabled", reason="JARVIS_REQUIRE_AUTH=false — dev mode active")
+        log.warning("auth_disabled", reason="BEA_REQUIRE_AUTH=false — dev mode active")
         return
 
     # 6. Auth required mais AUCUN système configuré → 503 (config error).
@@ -146,7 +146,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if not _API_TOKEN:
         try:
             from config.settings import get_settings
-            _jwt_secret = (get_settings().jarvis_secret_key or "").strip()
+            _jwt_secret = (get_settings().bea_secret_key or "").strip()
             _jwt_configured = bool(
                 _jwt_secret
                 and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential
@@ -157,13 +157,13 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
         if not _jwt_configured:
             log.critical(
                 "auth_misconfigured",
-                reason="JARVIS_REQUIRE_AUTH=true but no JARVIS_API_TOKEN nor JARVIS_SECRET_KEY",
+                reason="BEA_REQUIRE_AUTH=true but no BEA_API_TOKEN nor BEA_SECRET_KEY",
             )
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "Authentication system not configured: set JARVIS_API_TOKEN "
-                    "or JARVIS_SECRET_KEY (JWT) in the environment."
+                    "Authentication system not configured: set BEA_API_TOKEN "
+                    "or BEA_SECRET_KEY (JWT) in the environment."
                 ),
             )
 
@@ -176,7 +176,7 @@ def _verify_jwt(token_str: str) -> bool:
     try:
         import jwt as _jwt
         from config.settings import get_settings
-        secret = get_settings().jarvis_secret_key
+        secret = get_settings().bea_secret_key
         _jwt.decode(token_str, secret, algorithms=["HS256"])
         return True
     except ImportError:
@@ -194,7 +194,7 @@ def _get_orchestrator():
 
 def _get_kernel():
     """
-    Return the JarvisKernel singleton (Pass 14).
+    Return the BeaKernel singleton (Pass 14).
     Use for kernel.execute() — the authoritative execution entry point.
     Fail-open: returns None if kernel is not booted.
 

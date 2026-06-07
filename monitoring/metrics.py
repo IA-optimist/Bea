@@ -1,5 +1,5 @@
 """
-JARVIS MAX — MetricsCollector
+BEA MAX — MetricsCollector
 Observabilité légère : collecte et exposition des métriques système.
 
 Persistance :
@@ -191,7 +191,7 @@ class MetricsCollector:
         """Rapport texte lisible des métriques actuelles."""
         s = self.get_snapshot()
         lines = [
-            "=== Métriques JarvisMax ===",
+            "=== Métriques BeaMax ===",
             f"Runs total    : {s['runs_total']}  (succès:{s['runs_success']} erreurs:{s['runs_error']})",
             f"Patch rate    : {round(s['patch_success_rate']*100)}%  ({s['patch_approved']}/{s['patch_total']})",
             f"WF failures   : {s['workflow_failures']}",

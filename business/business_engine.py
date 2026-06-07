@@ -113,7 +113,7 @@ class BusinessEngine:
     """
     
     def __init__(self, workspace: Optional[Path] = None):
-        self.workspace = workspace or Path.home() / ".jarvismax" / "business"
+        self.workspace = workspace or Path.home() / ".beamax" / "business"
         self.workspace.mkdir(parents=True, exist_ok=True)
         
         self.scanner = OpportunityScanner(cache_dir=self.workspace / "opportunities")

@@ -1,5 +1,5 @@
 """
-JarvisMax — Feasibility Analyzer (P3.2)
+BeaMax — Feasibility Analyzer (P3.2)
 Cognition-powered technical feasibility analysis for SaaS opportunities
 
 Uses CognitionOrchestrator with Tree-of-Thought for multi-path analysis
@@ -46,7 +46,7 @@ class FeasibilityAnalyzer:
         
         Args:
             opportunity: Opportunity object from database
-            project_id: JarvisMax project ID (default: 1 = Central Chat)
+            project_id: BeaMax project ID (default: 1 = Central Chat)
         
         Returns:
             Dict with analysis results:

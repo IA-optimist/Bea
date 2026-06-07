@@ -66,7 +66,7 @@ from core.self_improvement_loop import (
     PatchValidator, PatchDecision, PromotionPolicy,
     Lesson, LessonMemory,
     PromptOptimizer,
-    JarvisImprovementLoop, CycleReport,
+    BeaImprovementLoop, CycleReport,
 )
 from core.self_improvement.code_patch_generator import _is_protected
 
@@ -430,7 +430,7 @@ class TestFullLoop:
 
     def test_run_cycle(self, tmp_path):
         """S30: Run cycle end-to-end."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_path,
             lesson_path=tmp_path / "lessons.json",
             prompt_path=tmp_path / "prompts.json",
@@ -441,7 +441,7 @@ class TestFullLoop:
 
     def test_cycle_report_structure(self, tmp_path):
         """S31: Report has correct structure."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_path,
             lesson_path=tmp_path / "lessons.json",
             prompt_path=tmp_path / "prompts.json",
@@ -457,7 +457,7 @@ class TestFullLoop:
 
     def test_pending_reviews(self, tmp_path):
         """S32: Pending reviews tracked."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_path,
             lesson_path=tmp_path / "lessons.json",
         )
@@ -465,7 +465,7 @@ class TestFullLoop:
 
     def test_memory_stats(self, tmp_path):
         """S33: Memory stats available."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_path,
             lesson_path=tmp_path / "lessons.json",
         )

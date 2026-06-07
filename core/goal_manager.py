@@ -1,9 +1,9 @@
 """
-JARVIS MAX — GoalManager
+BEA MAX — GoalManager
 Gestion des objectifs, missions en cours, priorités et historique.
 
 Problème résolu :
-    Jarvis traite chaque session comme isolée. GoalManager maintient
+    Bea traite chaque session comme isolée. GoalManager maintient
     une continuité entre les sessions :
     - quelles missions sont en cours
     - quelles sont terminées
@@ -67,7 +67,7 @@ class GoalPriority(int, Enum):
 @dataclass
 class Goal:
     """
-    Représente un objectif/mission de Jarvis.
+    Représente un objectif/mission de Bea.
     """
     id:           str
     text:         str
@@ -140,7 +140,7 @@ class Goal:
 
 class GoalManager:
     """
-    Gestionnaire de missions JarvisMax.
+    Gestionnaire de missions BeaMax.
 
     Persiste l'historique dans workspace/goals.json.
     Thread-safe pour usage dans l'orchestrateur async.

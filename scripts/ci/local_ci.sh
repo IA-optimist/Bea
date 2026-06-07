@@ -17,7 +17,7 @@ echo "[3/4] Lint (same blocking linter as CI)"
 ruff check .
 
 echo "[4/4] Test with coverage gate (same as CI)"
-DATABASE_URL="${DATABASE_URL:-postgresql://localhost:5432/jarvismax_test}" \
+DATABASE_URL="${DATABASE_URL:-postgresql://localhost:5432/beamax_test}" \
 REDIS_URL="${REDIS_URL:-redis://localhost:6379}" \
 TESTING="${TESTING:-true}" \
 pytest tests/ -v -n auto --dist=loadfile \

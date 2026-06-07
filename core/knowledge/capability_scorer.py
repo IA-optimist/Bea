@@ -1,5 +1,5 @@
 """
-capability_scorer — Score de compétence de Jarvis par domaine.
+capability_scorer — Score de compétence de Bea par domaine.
 
 Domaines suivis :
   coding       — génération et modification de code
@@ -27,7 +27,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Dict, Optional
 
-logger = logging.getLogger("jarvis.knowledge.capability")
+logger = logging.getLogger("bea.knowledge.capability")
 
 _PERSIST_PATH = "workspace/capability_scores.json"
 

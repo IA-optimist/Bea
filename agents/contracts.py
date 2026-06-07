@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Agent Contracts (Phase 3)
+BEA MAX — Agent Contracts (Phase 3)
 ========================================
-Schéma I/O standardisé pour tous les agents de JarvisMax.
+Schéma I/O standardisé pour tous les agents de BeaMax.
 
 Règle : tout agent doit pouvoir produire un AgentContract via run_structured().
 Les méthodes run() existantes sont conservées — run_structured() est additif.
@@ -37,7 +37,7 @@ class AgentStatus(str, Enum):
 @dataclass
 class AgentContract:
     """
-    Sortie structurée canonique de tout agent JarvisMax.
+    Sortie structurée canonique de tout agent BeaMax.
 
     Champs obligatoires :
         agent_id    - nom de l'agent (ex: "scout-research")

@@ -1,12 +1,12 @@
 """
-conftest.py â€” JarvisMax test configuration.
+conftest.py â€” BeaMax test configuration.
 
 1. Pre-imports core.state so that test files using
    sys.modules.setdefault("core.state", MagicMock()) cannot overwrite it.
 2. Ensures a fresh event loop for each test (pytest-asyncio asyncio_mode=auto
    closes loops after async tests, breaking sync tests that call
    asyncio.get_event_loop().run_until_complete()).
-3. Sets JARVIS_SKIP_IMPROVEMENT_GATE=1 for the full test session so that
+3. Sets BEA_SKIP_IMPROVEMENT_GATE=1 for the full test session so that
    kernel.improvement.gate bypasses security checks. This replaces the
    old reset_daemon_state() side-effect that permanently set this env var
    mid-test, which could cause cross-test contamination.
@@ -26,14 +26,14 @@ import pytest
 
 # Bypass improvement gate security check for all tests â€” prevents dependency
 # on security layer availability (qdrant, structlog) inside test environments.
-# DISABLED FOR SECURITY TESTS: # os.environ.setdefault("JARVIS_SKIP_IMPROVEMENT_GATE", "1")
+# DISABLED FOR SECURITY TESTS: # os.environ.setdefault("BEA_SKIP_IMPROVEMENT_GATE", "1")
 
 # â”€â”€ Test auth token â€” acceptÃ© par api/_deps._check_auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # La plupart des tests API envoient "Authorization: Bearer test". On aligne
-# JARVIS_API_TOKEN pour qu'ils passent sans monkeypatch individuel.
+# BEA_API_TOKEN pour qu'ils passent sans monkeypatch individuel.
 # Tests qui utilisent un autre token (ex. "Bearer t" dans test_mcp_registry)
 # configurent leur propre override via monkeypatch.setenv / setattr.
-os.environ.setdefault("JARVIS_API_TOKEN", "test")
+os.environ.setdefault("BEA_API_TOKEN", "test")
 
 # â”€â”€ Pre-load key modules so test-level mocks cannot overwrite them â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Tests that do sys.modules.setdefault("some.module", MagicMock()) can only
@@ -65,7 +65,7 @@ for _preload in [
 # by default. Pass --run-infra-tests to include them.
 #
 # Marker semantics:
-#   integration â€” requires a running Jarvis Max server + LLM key
+#   integration â€” requires a running Bea Max server + LLM key
 #   infra       â€” requires any external infrastructure (Qdrant, Postgres, etc.)
 #
 # How to mark a test:
@@ -88,7 +88,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
-        "integration: marks tests that require a running Jarvis Max server and LLM key",
+        "integration: marks tests that require a running Bea Max server and LLM key",
     )
     config.addinivalue_line(
         "markers",

@@ -52,7 +52,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from core.self_improvement_loop import (
-    JarvisImprovementLoop,
+    BeaImprovementLoop,
     ImprovementTask, PatchProposal, ImprovementSignal, SignalType,
     PromotionPolicy,
     CycleReport,
@@ -76,8 +76,8 @@ def tmp_repo(tmp_path):
 
 @pytest.fixture
 def loop(tmp_path):
-    """JarvisImprovementLoop with temp paths."""
-    return JarvisImprovementLoop(
+    """BeaImprovementLoop with temp paths."""
+    return BeaImprovementLoop(
         repo_root=tmp_path,
         policy=PromotionPolicy.REVIEW_ALL,
         lesson_path=tmp_path / "lessons.json",
@@ -114,7 +114,7 @@ class TestBridgeConversion:
 
     def test_patch_to_candidate(self, tmp_repo):
         """SB1."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task()
         patch = _make_patch()
         # Test the conversion happens without error by calling the method
@@ -134,7 +134,7 @@ class TestBridgeConversion:
 
     def test_risk_propagated(self, tmp_repo):
         """SB3."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task(risk="high")
         patch = _make_patch()
         details = []
@@ -157,7 +157,7 @@ class TestBridgeConversion:
                 "core/helper.py": "x = 2\n",
             },
         )
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         details = []
         result = loop._execute_via_pipeline(_make_task(), patch, details)
         assert isinstance(result, dict)
@@ -171,7 +171,7 @@ class TestPipelineIntegration:
 
     def test_protected_reject(self, tmp_repo):
         """SB6."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task()
         task.target_files = ["api/auth.py"]
         patch = PatchProposal(task_id="task-bad", diff={"api/auth.py": "hacked"})
@@ -181,14 +181,14 @@ class TestPipelineIntegration:
 
     def test_valid_patch_reaches_decision(self, tmp_repo):
         """SB7."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         details = []
         result = loop._execute_via_pipeline(_make_task(), _make_patch(), details)
         assert result["lesson_result"] in ("success", "pending", "failure")
 
     def test_medium_risk_review(self, tmp_repo):
         """SB8."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task(risk="medium")
         details = []
         result = loop._execute_via_pipeline(task, _make_patch(), details)
@@ -200,7 +200,7 @@ class TestPipelineIntegration:
 
     def test_pipeline_error_fallback(self, tmp_repo):
         """SB9."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         # Force pipeline to fail by setting broken repo root
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
@@ -212,7 +212,7 @@ class TestPipelineIntegration:
     def test_fallback_never_writes(self, tmp_repo):
         """SB10."""
         original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         # Force fallback
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
@@ -231,7 +231,7 @@ class TestDecisionMapping:
 
     def _mock_pipeline_decision(self, tmp_repo, decision, reason="test", score=0.8, risk="low"):
         from core.self_improvement.promotion_pipeline import PromotionDecision
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipeline = MagicMock()
         mock_decision = PromotionDecision(
             decision=decision, reason=reason, patch_id="fix-001",
@@ -318,7 +318,7 @@ class TestLessonRecording:
 
     def test_lesson_includes_strategy(self, tmp_repo):
         """SB19."""
-        JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task()
         assert task.suggested_strategy == "timeout_tuning"
 
@@ -348,7 +348,7 @@ class TestSafetyGuarantees:
     def test_no_write_on_fallback(self, tmp_repo):
         """SB22."""
         original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = Exception("fail")
         details = []
@@ -358,7 +358,7 @@ class TestSafetyGuarantees:
 
     def test_protected_blocked_pipeline(self, tmp_repo):
         """SB23."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         task = _make_task()
         patch = PatchProposal(task_id="bad", diff={"core/meta_orchestrator.py": "hacked"})
         details = []
@@ -392,7 +392,7 @@ class TestFullCycle:
 
     def test_cycle_valid_report(self, tmp_repo):
         """SB26."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_repo, lesson_path=tmp_repo / "l.json",
             prompt_path=tmp_repo / "p.json",
         )
@@ -402,7 +402,7 @@ class TestFullCycle:
 
     def test_cycle_no_signals(self, tmp_repo):
         """SB27."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_repo, lesson_path=tmp_repo / "l.json",
             prompt_path=tmp_repo / "p.json",
         )
@@ -412,7 +412,7 @@ class TestFullCycle:
 
     def test_cycle_details_include_pipeline(self, tmp_repo):
         """SB28."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_repo, lesson_path=tmp_repo / "l.json",
             prompt_path=tmp_repo / "p.json",
         )
@@ -433,7 +433,7 @@ class TestFullCycle:
 
     def test_memory_stats_updated(self, tmp_repo):
         """SB29."""
-        loop = JarvisImprovementLoop(
+        loop = BeaImprovementLoop(
             repo_root=tmp_repo, lesson_path=tmp_repo / "l.json",
             prompt_path=tmp_repo / "p.json",
         )

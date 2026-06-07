@@ -84,8 +84,8 @@ server {
 Build and run:
 
 ```bash
-docker build -t jarvismax-frontend .
-docker run -p 3000:80 jarvismax-frontend
+docker build -t beamax-frontend .
+docker run -p 3000:80 beamax-frontend
 ```
 
 ## Vercel Deployment

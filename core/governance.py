@@ -1,5 +1,5 @@
 """
-JARVIS — Governance & Multi-Business Operations
+BEA — Governance & Multi-Business Operations
 ===================================================
 Safety hardening, multi-business isolation, and operational governance.
 
@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.governance")
+logger = structlog.get_logger("bea.governance")
 log = logger  # alias for M3 emitter
 
 
@@ -45,8 +45,8 @@ log = logger  # alias for M3 emitter
 
 _connector_call_log: dict[str, list[float]] = {}
 _CONNECTOR_RATE_WINDOW = 60  # seconds
-_CONNECTOR_RATE_MAX = int(os.environ.get("JARVIS_CONNECTOR_RATE_MAX", "30"))
-_GLOBAL_RATE_MAX = int(os.environ.get("JARVIS_GLOBAL_RATE_MAX", "100"))
+_CONNECTOR_RATE_MAX = int(os.environ.get("BEA_CONNECTOR_RATE_MAX", "30"))
+_GLOBAL_RATE_MAX = int(os.environ.get("BEA_GLOBAL_RATE_MAX", "100"))
 _global_call_log: list[float] = []
 
 
@@ -602,7 +602,7 @@ def get_governance_dashboard() -> dict:
 
     # Kill switch status
     kill_switch_active = os.environ.get(
-        "JARVIS_EXECUTION_DISABLED", ""
+        "BEA_EXECUTION_DISABLED", ""
     ).lower() in ("1", "true", "yes")
 
     return {
@@ -662,7 +662,7 @@ def safety_checkpoint(
 
     # 1. Kill switch
     kill_switch = os.environ.get(
-        "JARVIS_EXECUTION_DISABLED", ""
+        "BEA_EXECUTION_DISABLED", ""
     ).lower() in ("1", "true", "yes")
     checks["kill_switch"] = not kill_switch
     if kill_switch:

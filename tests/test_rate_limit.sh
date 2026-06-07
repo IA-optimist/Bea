@@ -5,7 +5,7 @@ API_URL="${1:-http://localhost:8000}"
 ENDPOINT="${2:-/api/v2/health}"
 NUM_REQUESTS="${3:-150}"
 
-echo "=== JarvisMax Rate Limit Test ==="
+echo "=== BeaMax Rate Limit Test ==="
 echo "API: $API_URL"
 echo "Endpoint: $ENDPOINT"
 echo "Requests: $NUM_REQUESTS"

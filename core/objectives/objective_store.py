@@ -1,7 +1,7 @@
 """
 Objective Engine — Persistance JSON locale + Qdrant secondaire.
 - Primaire  : workspace/objectives/objectives.json (atomique)
-- Secondaire: Qdrant collection "jarvis_objectives" (fail-open si down)
+- Secondaire: Qdrant collection "bea_objectives" (fail-open si down)
 - Toute erreur est loguée et ignorée (fail-open total)
 """
 from __future__ import annotations
@@ -15,15 +15,15 @@ from typing import Dict, List, Optional
 
 from core.objectives.objective_models import Objective, ObjectiveStatus
 
-logger = structlog.get_logger("jarvis.objective_store")
+logger = structlog.get_logger("bea.objective_store")
 log = logger  # M3 emitter alias
 
 # ── Chemins ────────────────────────────────────────────────────────────────────
 
 def _get_store_path() -> Path:
-    """Résout le chemin du store. Configurable via JARVIS_WORKSPACE."""
+    """Résout le chemin du store. Configurable via BEA_WORKSPACE."""
     workspace = os.environ.get(
-        "JARVIS_WORKSPACE",
+        "BEA_WORKSPACE",
         str(Path(__file__).parents[2] / "workspace"),
     )
     path = Path(workspace) / "objectives"
@@ -43,7 +43,7 @@ def _get_store_path() -> Path:
 #     _QDRANT_HOST = os.environ.get("QDRANT_HOST", "qdrant")
 #     _QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
 #     _QDRANT_URL  = f"http://{_QDRANT_HOST}:{_QDRANT_PORT}"
-#     _QDRANT_COLLECTION = "jarvis_objectives"
+#     _QDRANT_COLLECTION = "bea_objectives"
 #     _QDRANT_DIM = 768
 #     _QDRANT_API_KEY=os.environ.get("QDRANT_API_KEY", "")
 #     if _QDRANT_API_KEY:

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Configuration centrale
+BEA MAX — Configuration centrale
 Toutes les variables chargées depuis l'environnement via stdlib os.environ.
 Un seul import : from config.settings import get_settings
 """
@@ -13,8 +13,8 @@ from pathlib import Path
 _EPHEMERAL_KEY_PREFIX = "ephemeral-"  # pragma: allowlist secret
 
 
-def _default_jarvis_secret() -> str:
-    explicit = os.environ.get("JARVIS_SECRET_KEY", "")
+def _default_bea_secret() -> str:
+    explicit = os.environ.get("BEA_SECRET_KEY", "")
     if explicit:
         return explicit
     return f"{_EPHEMERAL_KEY_PREFIX}{secrets.token_urlsafe(32)}"
@@ -22,11 +22,11 @@ def _default_jarvis_secret() -> str:
 
 def _detect_workspace() -> Path:
     """Détecte le répertoire workspace selon l'environnement.
-    Priorité : env WORKSPACE_DIR > JARVIS_ROOT/workspace > chemin relatif au projet > /app/workspace
+    Priorité : env WORKSPACE_DIR > BEA_ROOT/workspace > chemin relatif au projet > /app/workspace
     """
     if ws := os.getenv("WORKSPACE_DIR"):
         return Path(ws)
-    if root := os.getenv("JARVIS_ROOT"):
+    if root := os.getenv("BEA_ROOT"):
         return Path(root) / "workspace"
     # Dev local : remonter depuis config/settings.py → racine projet → workspace/
     here = Path(__file__).resolve().parent.parent
@@ -50,17 +50,17 @@ def _i(key: str, default: int) -> int:
 class Settings:
 
     # ── Identité ──────────────────────────────────────────────
-    jarvis_name:       str = field(default_factory=lambda: os.environ.get("JARVIS_NAME", "JarvisMax"))
-    jarvis_version:    str = field(default_factory=lambda: os.environ.get("JARVIS_VERSION", "1.0.0"))
-    jarvis_secret_key: str = field(default_factory=_default_jarvis_secret)
-    jarvis_admin_password: str = field(default_factory=lambda: os.environ.get("JARVIS_ADMIN_PASSWORD", ""))
-    jarvis_api_token: str = field(default_factory=lambda: os.environ.get("JARVIS_API_TOKEN", ""))
+    bea_name:       str = field(default_factory=lambda: os.environ.get("BEA_NAME", "BeaMax"))
+    bea_version:    str = field(default_factory=lambda: os.environ.get("BEA_VERSION", "1.0.0"))
+    bea_secret_key: str = field(default_factory=_default_bea_secret)
+    bea_admin_password: str = field(default_factory=lambda: os.environ.get("BEA_ADMIN_PASSWORD", ""))
+    bea_api_token: str = field(default_factory=lambda: os.environ.get("BEA_API_TOKEN", ""))
     qdrant_api_key: str = field(default_factory=lambda: os.environ.get("QDRANT_API_KEY", ""))
 
     # ── Chemins ───────────────────────────────────────────────
     workspace_dir: Path = field(default_factory=_detect_workspace)
     logs_dir:      Path = field(default_factory=lambda: _detect_workspace().parent / "logs")
-    jarvis_root:   Path = field(default_factory=lambda: _detect_workspace().parent)
+    bea_root:   Path = field(default_factory=lambda: _detect_workspace().parent)
 
     @property
     def projects_dir(self) -> Path: return self.workspace_dir / "projects"
@@ -134,9 +134,9 @@ class Settings:
 
     # ── PostgreSQL ────────────────────────────────────────────
     postgres_host:     str = field(default_factory=lambda: os.environ.get("POSTGRES_HOST", "postgres"))
-    postgres_user:     str = field(default_factory=lambda: os.environ.get("POSTGRES_USER", "jarvis"))
+    postgres_user:     str = field(default_factory=lambda: os.environ.get("POSTGRES_USER", "bea"))
     postgres_password: str = field(default_factory=lambda: os.environ.get("POSTGRES_PASSWORD", ""))
-    postgres_db:       str = field(default_factory=lambda: os.environ.get("POSTGRES_DB", "jarvis"))
+    postgres_db:       str = field(default_factory=lambda: os.environ.get("POSTGRES_DB", "bea"))
 
     @property
     def database_url(self) -> str | None:
@@ -192,7 +192,7 @@ class Settings:
     n8n_basic_auth_user:     str = field(default_factory=lambda: os.environ.get("N8N_BASIC_AUTH_USER", "admin"))
     n8n_basic_auth_password: str = field(default_factory=lambda: os.environ.get("N8N_BASIC_AUTH_PASSWORD", ""))
 
-    # ── MCP Server (expose Jarvis tools via MCP protocol) ────────────────────
+    # ── MCP Server (expose Bea tools via MCP protocol) ────────────────────
     # MCP_SERVER_ENABLED=true  → démarrer le serveur FastMCP sur MCP_SERVER_PORT
     # Dépendance : pip install mcp>=1.0.0
     mcp_server_enabled: bool = field(default_factory=lambda: _b("MCP_SERVER_ENABLED"))
@@ -242,8 +242,8 @@ class Settings:
     # ── Mode d'exécution (local | vps) ────────────────────────
     # local : 2 agents max, séquentiel favorisé, pas de Docker obligatoire
     # vps   : 5 agents max, parallélisme contrôlé
-    jarvis_mode:      str  = field(default_factory=lambda: os.environ.get("JARVIS_MODE", "local"))
-    jarvis_safe_mode: bool = field(default_factory=lambda: _b("JARVIS_SAFE_MODE"))
+    bea_mode:      str  = field(default_factory=lambda: os.environ.get("BEA_MODE", "local"))
+    bea_safe_mode: bool = field(default_factory=lambda: _b("BEA_SAFE_MODE"))
 
     # ── ResourceGuard — overrides seuils mémoire (MB libres) ──
     resource_soft_ram_mb: int = field(default_factory=lambda: _i("RESOURCE_SOFT_RAM_MB", 0))
@@ -257,8 +257,8 @@ class Settings:
 
     @property
     def production_mode(self) -> bool:
-        """True when JARVIS_PRODUCTION=true/1/yes is set."""
-        return _b("JARVIS_PRODUCTION")
+        """True when BEA_PRODUCTION=true/1/yes is set."""
+        return _b("BEA_PRODUCTION")
 
     @property
     def has_llm_key(self) -> bool:
@@ -280,7 +280,7 @@ class Settings:
             return  # DRY_RUN=true: stubs LLM calls, no key needed
         if not self.has_llm_key:
             raise RuntimeError(
-                "NO LLM KEY CONFIGURED — Jarvis Max cannot serve any mission.\n"
+                "NO LLM KEY CONFIGURED — Bea Max cannot serve any mission.\n"
                 "Set at least one of:\n"
                 "  OPENAI_API_KEY=sk-...\n"
                 "  ANTHROPIC_API_KEY=sk-ant-...\n"
@@ -294,35 +294,35 @@ class Settings:
 
         Call this ONCE at startup, before accepting any request.
         Raises RuntimeError with a clear human-readable message.
-        Controlled by JARVIS_PRODUCTION=true env var — never raises in dev.
+        Controlled by BEA_PRODUCTION=true env var — never raises in dev.
         """
         if not self.production_mode:
             return
         errors: list[str] = []
         if (
-            not self.jarvis_secret_key
-            or self.jarvis_secret_key == "change-me-in-production"
-            or self.jarvis_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
+            not self.bea_secret_key
+            or self.bea_secret_key == "change-me-in-production"
+            or self.bea_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
         ):
             errors.append(
-                "JARVIS_SECRET_KEY is not set (or is an ephemeral default). "
+                "BEA_SECRET_KEY is not set (or is an ephemeral default). "
                 "Set a cryptographically random value in your .env file."
             )
-        if not self.jarvis_admin_password:
+        if not self.bea_admin_password:
             errors.append(
-                "JARVIS_ADMIN_PASSWORD is not set. "
-                "Admin auth falls back to JARVIS_SECRET_KEY — set an explicit admin password."
+                "BEA_ADMIN_PASSWORD is not set. "
+                "Admin auth falls back to BEA_SECRET_KEY — set an explicit admin password."
             )
-        if not self.jarvis_api_token:
+        if not self.bea_api_token:
             errors.append(
-                "JARVIS_API_TOKEN is not set. "
+                "BEA_API_TOKEN is not set. "
                 "All API endpoints are unauthenticated in production."
             )
         if errors:
             raise RuntimeError(
                 "PRODUCTION STARTUP BLOCKED — insecure configuration detected:\n"
                 + "\n".join(f"  • {e}" for e in errors)
-                + "\nFix these issues or unset JARVIS_PRODUCTION to run in dev mode."
+                + "\nFix these issues or unset BEA_PRODUCTION to run in dev mode."
             )
 
     def validate_security(self) -> list[str]:
@@ -331,20 +331,20 @@ class Settings:
         Pour un hard-fail en production, appeler enforce_production_secrets()."""
         warnings: list[str] = []
         if (
-            not self.jarvis_secret_key
-            or self.jarvis_secret_key == "change-me-in-production"
-            or self.jarvis_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
+            not self.bea_secret_key
+            or self.bea_secret_key == "change-me-in-production"
+            or self.bea_secret_key.startswith(_EPHEMERAL_KEY_PREFIX)
         ):
-            warnings.append("JARVIS_SECRET_KEY is not set (ephemeral default in use) — override it in production")
-        if not self.jarvis_admin_password:
+            warnings.append("BEA_SECRET_KEY is not set (ephemeral default in use) — override it in production")
+        if not self.bea_admin_password:
             warnings.append(
-                "JARVIS_ADMIN_PASSWORD is not set — admin login falls back to JARVIS_SECRET_KEY. "
-                "Set JARVIS_ADMIN_PASSWORD explicitly for production."
+                "BEA_ADMIN_PASSWORD is not set — admin login falls back to BEA_SECRET_KEY. "
+                "Set BEA_ADMIN_PASSWORD explicitly for production."
             )
-        if not self.jarvis_api_token:
+        if not self.bea_api_token:
             warnings.append(
-                "JARVIS_API_TOKEN is not set — all API endpoints are unauthenticated. "
-                "Set JARVIS_API_TOKEN in .env for any non-local deployment."
+                "BEA_API_TOKEN is not set — all API endpoints are unauthenticated. "
+                "Set BEA_API_TOKEN in .env for any non-local deployment."
             )
         if not self.openai_api_key and not self.anthropic_api_key and not self.openrouter_api_key:
             warnings.append("No LLM API key configured (OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)")

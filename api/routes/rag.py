@@ -1,5 +1,5 @@
 """
-JARVIS MAX — RAG API Routes
+BEA MAX — RAG API Routes
 
 POST /api/v2/rag/index    — index a file or text
 POST /api/v2/rag/query    — semantic search
@@ -19,15 +19,15 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/rag", tags=["rag"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
 
 # ── Request models ────────────────────────────────────────────
@@ -56,7 +56,7 @@ class AskRequest(BaseModel):
 @router.post("/index")
 async def rag_index(
     req: IndexRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Index a file (by path) or inline text into the vector store."""
     from core.rag.pipeline import get_rag_pipeline
@@ -80,7 +80,7 @@ async def rag_index(
 @router.post("/query")
 async def rag_query(
     req: QueryRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Semantic search over indexed documents."""
     from core.rag.pipeline import get_rag_pipeline
@@ -98,7 +98,7 @@ async def rag_query(
 @router.post("/ask")
 async def rag_ask(
     req: AskRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Full grounded QA: retrieve context + LLM answer."""
     from core.rag.grounded_llm import ask_codebase
@@ -112,7 +112,7 @@ async def rag_ask(
 
 
 @router.get("/status")
-async def rag_status(x_jarvis_token: Optional[str] = Header(None)):
+async def rag_status(x_bea_token: Optional[str] = Header(None)):
     """Index statistics."""
     from core.rag.pipeline import get_rag_pipeline
 

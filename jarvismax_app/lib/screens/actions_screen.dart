@@ -71,7 +71,7 @@ class _ActionsScreenState extends State<ActionsScreen>
               _ActionList(
                 actions: pending,
                 showControls: true,
-                emptyText: 'Aucune action en attente.\nEn mode AUTO, Jarvis exécute directement.\nVoir onglet EXÉCUTÉES.',
+                emptyText: 'Aucune action en attente.\nEn mode AUTO, Bea exécute directement.\nVoir onglet EXÉCUTÉES.',
               ),
               _ActionList(
                 actions: executed,

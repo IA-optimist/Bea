@@ -448,7 +448,7 @@ def rank_tools_for_task(task: str, top_k: int = 5, success_history: dict = None)
 
 def should_create_tool(task: str, success_history: dict = None, recent_failures: list = None) -> dict:
     """
-    Détermine si Jarvis doit créer un nouveau tool plutôt qu'utiliser les existants.
+    Détermine si Bea doit créer un nouveau tool plutôt qu'utiliser les existants.
 
     Conditions:
     1. Aucun tool existant avec score > 0.65

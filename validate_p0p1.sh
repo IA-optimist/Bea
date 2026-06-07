@@ -7,7 +7,7 @@ echo ""
 # Test 1: Python compilation
 echo "1. Testing Python compilation..."
 python3 -m py_compile \
-  core/orchestration/jarvis_team_dispatcher.py \
+  core/orchestration/bea_team_dispatcher.py \
   core/meta_orchestrator.py \
   core/cognition/orchestrator.py \
   api/routes/vault.py 2>&1

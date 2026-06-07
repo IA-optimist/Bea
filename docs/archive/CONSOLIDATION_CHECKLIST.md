@@ -1,6 +1,6 @@
 # Memory Consolidation - Implementation Checklist
 
-**Project:** JarvisMax Memory System Consolidation  
+**Project:** BeaMax Memory System Consolidation  
 **Date:** 2026-04-11  
 **Target:** Reduce 26 files → 5-7 core modules
 

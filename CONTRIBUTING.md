@@ -1,4 +1,4 @@
-# Contributing to JarvisMax
+# Contributing to BeaMax
 
 Thanks for your interest. This doc is the one-page onboarding for new
 contributors (or for yourself six months from now).
@@ -7,14 +7,14 @@ contributors (or for yourself six months from now).
 
 - **Python 3.11+** (CI matches this exactly — `3.11`)
 - **Docker + docker-compose** (local stack : Postgres, Redis, Qdrant)
-- **Flutter 3.22.3** (only if touching `jarvismax_app/`)
+- **Flutter 3.22.3** (only if touching `beamax_app/`)
 - **Node 20+** (only if touching `frontend/`)
 
 ## 2. One-time setup
 
 ```bash
-git clone https://github.com/UniTy01/Jarvismax-master.git
-cd Jarvismax-master
+git clone https://github.com/UniTy01/Beamax-master.git
+cd Beamax-master
 python3.11 -m venv venv && . venv/bin/activate
 pip install -r requirements.txt
 pip install pytest pytest-cov pytest-asyncio pytest-xdist ruff mypy pre-commit
@@ -117,11 +117,11 @@ Prefix conventions : `feat`, `fix`, `docs`, `test`, `refactor`, `ops`,
 | LLM factory          | `core/llm_factory.py`                       |
 | Memory (RAG)         | `memory/`, `core/memory_facade.py`          |
 | Self-improvement     | `core/self_improvement/`                    |
-| Agents               | `agents/`, `agents/jarvis_team/`            |
+| Agents               | `agents/`, `agents/bea_team/`            |
 | Business automation  | `business/`, `core/business/`               |
 | Security (hex)       | `mcp/hexstrike-ai/`, `mcp/hexstrike_v2/`    |
 | Frontend React       | `frontend/`                                 |
-| Mobile Flutter       | `jarvismax_app/`                            |
+| Mobile Flutter       | `beamax_app/`                            |
 | Tests                | `tests/`                                    |
 | Infrastructure docs  | `docs/DEPLOYMENT_GUIDE.md`                  |
 | API versioning       | `docs/API_VERSIONING.md`                    |

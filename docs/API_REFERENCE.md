@@ -1,4 +1,4 @@
-# JarvisMax API Reference
+# BeaMax API Reference
 
 > Generated from `api/main.py` and `api/routes/*.py` at SHA `889a1c3`.
 > **548 endpoints** across **53 router files** + **8 inline routes** in `main.py`.
@@ -19,7 +19,7 @@ All routes (except those listed in **Public paths** below) require authenticatio
 curl -H "Authorization: Bearer <jwt-token>" http://localhost:8000/api/v3/missions
 
 # Static API token
-curl -H "X-Jarvis-Token: <jarvis-api-token>" http://localhost:8000/api/v3/missions
+curl -H "X-Bea-Token: <bea-api-token>" http://localhost:8000/api/v3/missions
 
 # Access token (jv-* prefix)
 curl -H "Authorization: Bearer jv-xxxx-yyyy" http://localhost:8000/api/v3/missions
@@ -65,7 +65,7 @@ Login with admin credentials. Returns a JWT.
 **Request** (form-data):
 ```
 username=admin
-password=<JARVIS_ADMIN_PASSWORD>
+password=<BEA_ADMIN_PASSWORD>
 ```
 
 **Response**:
@@ -423,7 +423,7 @@ ws.send(JSON.stringify({type: 'auth', token: '<jwt>'}));
 
 Or via header (for non-browser clients):
 ```
-X-Jarvis-Token: <token>
+X-Bea-Token: <token>
 ```
 or
 ```
@@ -485,13 +485,13 @@ See [QUICKSTART.md](QUICKSTART.md) for the full list. Critical ones:
 
 | Variable | Purpose | Required |
 |----------|---------|----------|
-| `JARVIS_SECRET_KEY` | JWT signing | YES (production) |
-| `JARVIS_ADMIN_PASSWORD` | Admin login | YES (production) |
-| `JARVIS_API_TOKEN` | Static API token | YES (production) |
+| `BEA_SECRET_KEY` | JWT signing | YES (production) |
+| `BEA_ADMIN_PASSWORD` | Admin login | YES (production) |
+| `BEA_API_TOKEN` | Static API token | YES (production) |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` | LLM provider | At least one |
 | `QDRANT_HOST`, `QDRANT_PORT` | Vector store | YES |
 | `POSTGRES_*` | Database (optional, falls back to SQLite) | NO |
-| `JARVIS_PRODUCTION` | Hard-fail on insecure config | Recommended |
+| `BEA_PRODUCTION` | Hard-fail on insecure config | Recommended |
 | `ENABLE_STUB_ROUTES` | Mount finance/browser/voice routes | NO |
 | `CORS_ORIGINS` | Comma-separated allowed origins | NO |
 

@@ -381,8 +381,8 @@ class TestManagerIntegration:
         mgr = self._manager(tmp_path)
         identity = mgr.create_identity(
             provider="github",
-            fields={"username": "jarvis-bot"},
-            display_name="Jarvis GitHub",
+            fields={"username": "bea-bot"},
+            display_name="Bea GitHub",
         )
         assert identity.identity_id.startswith("id-")
         assert identity.provider == "github"
@@ -394,7 +394,7 @@ class TestManagerIntegration:
         mgr = self._manager(tmp_path, vault=vault)
         identity = mgr.create_identity(
             provider="github",
-            fields={"username": "jarvis"},
+            fields={"username": "bea"},
             secrets={"token": "ghp_test123"},
         )
         vault.create_secret.assert_called_once()

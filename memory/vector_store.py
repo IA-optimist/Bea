@@ -1,5 +1,5 @@
 """
-JARVIS MAX — VectorStore (pgvector backend)
+BEA MAX — VectorStore (pgvector backend)
 Stockage et recherche de similarité vectorielle via PostgreSQL + pgvector.
 
 Usage :

@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Devin Agent
+BEA MAX v3 — Devin Agent
 Le cerveau autonome. Prend l'Event Stream complet et décide de la prochaine
 action à l'aide d'un appel structuré LLM (Function Calling / JSON Schema).
 """
@@ -23,7 +23,7 @@ except ImportError:
 
 log = structlog.get_logger()
 
-SYSTEM_PROMPT = """Tu es JarvisMax, un Ingénieur Logiciel Autonome expert.
+SYSTEM_PROMPT = """Tu es BeaMax, un Ingénieur Logiciel Autonome expert.
 Tu opères dans une boucle infinie : Réflexion -> Action -> Observation -> Réflexion.
 Tu as accès à une machine virtuelle avec un terminal persistant et un éditeur de fichiers.
 Règle 1 : Tu dois TOUJOURS utiliser tes outils pour résoudre le problème étape par étape.

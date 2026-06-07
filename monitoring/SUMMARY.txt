@@ -1,5 +1,5 @@
 ================================================================================
-        STACK MONITORING JARVISMAX - DÉPLOIEMENT COMPLET
+        STACK MONITORING BEAMAX - DÉPLOIEMENT COMPLET
 ================================================================================
 
 📅 Date: 2026-04-09 21:20 UTC
@@ -35,13 +35,13 @@
                          DASHBOARDS GRAFANA
 ================================================================================
 
-1. System Monitoring (jarvismax-system)
+1. System Monitoring (beamax-system)
    → CPU, Memory, Disk, Network, Container Status
 
-2. API Monitoring (jarvismax-api)
+2. API Monitoring (beamax-api)
    → Request Rate, Response Time, Error Rate, Top Endpoints
 
-3. Business Metrics (jarvismax-business)
+3. Business Metrics (beamax-business)
    → Tasks, Agents, Revenue, LLM Calls, Cache Performance
 
 ================================================================================
@@ -80,7 +80,7 @@ Code:
 ================================================================================
 
 # Statut
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 docker compose -f docker-compose-monitoring.yml ps
 
 # Logs
@@ -120,7 +120,7 @@ docker compose -f docker-compose-monitoring.yml up -d
 📊 VALIDATION:
 1. Ouvrir http://MONITORING_HOST:3002
 2. Login: admin / ${GRAFANA_ADMIN_PASSWORD}
-3. Naviguer vers Dashboards > JarvisMax
+3. Naviguer vers Dashboards > BeaMax
 4. Vérifier que les métriques s'affichent
 
 ================================================================================

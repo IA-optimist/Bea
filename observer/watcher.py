@@ -1,5 +1,5 @@
 """
-JARVIS MAX — System Observer
+BEA MAX — System Observer
 Surveille atlas_workspace, analyse les logs, détecte les changements.
 """
 from __future__ import annotations

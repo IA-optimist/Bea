@@ -1,5 +1,5 @@
 """
-JARVIS — Operating Primitives
+BEA — Operating Primitives
 =================================
 Minimal capability layer enabling real-world economic workflows.
 
@@ -23,7 +23,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.operating_primitives")
+logger = structlog.get_logger("bea.operating_primitives")
 log = logger  # alias for the M3 swallowed_exception emitter convention
 
 
@@ -426,7 +426,7 @@ def get_objective_tracker() -> ObjectiveTracker:
 # 5. MISSION COORDINATION
 # ═══════════════════════════════════════════════════════════════
 
-MAX_CONCURRENT_MISSIONS = int(os.environ.get("JARVIS_MAX_CONCURRENT", "5"))
+MAX_CONCURRENT_MISSIONS = int(os.environ.get("BEA_MAX_CONCURRENT", "5"))
 
 
 def can_accept_mission(current_active: int) -> bool:
@@ -936,7 +936,7 @@ def requires_approval(action_type: str, risk_level: str = "low") -> bool:
     if risk_level in ("high", "critical"):
         return True
     # Read-only mode requires approval for everything
-    if os.environ.get("JARVIS_DISABLE_READ_ONLY_MODE", "").lower() in ("1", "true"):
+    if os.environ.get("BEA_DISABLE_READ_ONLY_MODE", "").lower() in ("1", "true"):
         return True
     return False
 
@@ -1014,8 +1014,8 @@ def get_approval_status() -> dict:
     """Return approval gating state for cockpit."""
     return {
         "approval_required_actions": list(APPROVAL_REQUIRED_ACTIONS),
-        "read_only_mode": os.environ.get("JARVIS_DISABLE_READ_ONLY_MODE", "") in ("1", "true"),
-        "auto_approve_low_risk": not os.environ.get("JARVIS_REQUIRE_ALL_APPROVAL", ""),
+        "read_only_mode": os.environ.get("BEA_DISABLE_READ_ONLY_MODE", "") in ("1", "true"),
+        "auto_approve_low_risk": not os.environ.get("BEA_REQUIRE_ALL_APPROVAL", ""),
     }
 
 
@@ -1025,7 +1025,7 @@ def get_approval_status() -> dict:
 
 @dataclass
 class FocusRecommendation:
-    """What Jarvis recommends the user focus on."""
+    """What Bea recommends the user focus on."""
     action: str = ""          # continue | slow_down | stop | reallocate | automate | outreach
     objective_id: str = ""
     reason: str = ""

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — SelfCriticMixin
+BEA MAX — SelfCriticMixin
 Mixin d'auto-évaluation intra-agent (max 2 rounds de révision).
 
 Un agent qui hérite de SelfCriticMixin peut s'auto-évaluer et se corriger

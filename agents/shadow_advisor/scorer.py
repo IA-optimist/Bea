@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Shadow-Advisor V2 Scorer
+BEA MAX — Shadow-Advisor V2 Scorer
 Calcul du score final d'un AdvisoryReport.
 
 Logique opérationnelle :

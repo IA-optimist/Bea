@@ -1,5 +1,5 @@
 """
-core/resilience.py — Reliability guards for Jarvis v1.
+core/resilience.py — Reliability guards for Bea v1.
 
 Provides:
 - Standardized error envelopes
@@ -21,14 +21,14 @@ import time
 from dataclasses import dataclass, field, asdict
 from typing import Any, Literal, Optional
 
-log = logging.getLogger("jarvis.resilience")
+log = logging.getLogger("bea.resilience")
 
 
 # ── Standardized Error Envelope ───────────────────────────────────────────────
 
 @dataclass
-class JarvisError:
-    """Standardized error across all Jarvis components."""
+class BeaError:
+    """Standardized error across all Bea components."""
     code: str                    # machine-readable: TOOL_TIMEOUT, POLICY_BLOCKED, etc.
     message: str                 # human-readable
     component: str               # orchestrator, executor, policy, tool, memory, api
@@ -43,7 +43,7 @@ class JarvisError:
 
     @classmethod
     def from_exception(cls, exc: Exception, component: str = "unknown",
-                       trace_id: str = "", mission_id: str = "") -> "JarvisError":
+                       trace_id: str = "", mission_id: str = "") -> "BeaError":
         """Build error from an exception."""
         code = _classify_exception(exc)
         return cls(
@@ -86,10 +86,10 @@ def _severity_for_code(code: str) -> str:
 
 # ── Structured Error Types ────────────────────────────────────────────────
 
-class JarvisExecutionError(Exception):
+class BeaExecutionError(Exception):
     """Structured execution error with canonical taxonomy.
     
-    Standalone class (not inheriting JarvisError dataclass) to avoid
+    Standalone class (not inheriting BeaError dataclass) to avoid
     dataclass __init__ conflicts.
     """
     
@@ -117,7 +117,7 @@ class JarvisExecutionError(Exception):
 
     @classmethod
     def from_exception(cls, exc: Exception, tool: str = "", stage: str = "execution"):
-        """Classify any exception into a structured JarvisExecutionError."""
+        """Classify any exception into a structured BeaExecutionError."""
         exc_name = type(exc).__name__
         
         # Classification map — order matters (specific before general)

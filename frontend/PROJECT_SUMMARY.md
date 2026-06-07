@@ -1,8 +1,8 @@
-# JarvisMax AI OS Frontend - Project Summary
+# BeaMax AI OS Frontend - Project Summary
 
 ## Overview
 
-A complete, production-ready React TypeScript frontend built with Vite and Tailwind CSS for JarvisMax AI OS. Features a premium UI/UX with dark mode, smooth animations, and responsive design.
+A complete, production-ready React TypeScript frontend built with Vite and Tailwind CSS for BeaMax AI OS. Features a premium UI/UX with dark mode, smooth animations, and responsive design.
 
 ## ✅ Completed Features
 

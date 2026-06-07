@@ -1,6 +1,6 @@
-# JarvisMax Kernel Specification
+# BeaMax Kernel Specification
 
-> Canonical specification for the JarvisMax kernel layer.
+> Canonical specification for the BeaMax kernel layer.
 > Source of truth: `kernel/contracts/types.py` and `kernel/runtime/`.
 
 ---
@@ -188,7 +188,7 @@ The `KernelRuntime` handle exposes: `capabilities`, `memory`, `events`, `policy`
 api/routes/missions.py → MetaOrchestrator.run_mission()
                       → kernel.submit(goal, mode, session_id)
                       → kernel._orchestrator_fn(goal, ...)   # registered at boot
-                      → JarvisOrchestrator.run()             # delegate
+                      → BeaOrchestrator.run()             # delegate
                       → agents.crew (LLM calls via llm_factory)
                       → executor.runner.ActionExecutor       # side effects
                       → kernel.learn(score, lesson)          # feedback

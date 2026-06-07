@@ -1,7 +1,7 @@
 """
 core/orchestration/mission_reasoning_state.py — Mission Reasoning State Model
 ==============================================================================
-Phase 1 cognitive upgrade: before execution, Jarvis builds an explicit
+Phase 1 cognitive upgrade: before execution, Bea builds an explicit
 reasoning model of the mission — not just lifecycle status, but:
 
   - initial_state   : what is true now before action

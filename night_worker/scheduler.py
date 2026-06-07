@@ -42,7 +42,7 @@ class NightScheduler:
         self._thread = threading.Thread(
             target=self._loop,
             daemon=True,
-            name="jarvis-night-scheduler",
+            name="bea-night-scheduler",
         )
         self._thread.start()
         log.info("night_scheduler_started", interval_hours=INTERVAL_HOURS)

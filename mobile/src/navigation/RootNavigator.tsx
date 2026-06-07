@@ -15,7 +15,7 @@ const AuthScreen: React.FC<{ onAuthenticate: () => void }> = ({ onAuthenticate }
 
   return (
     <View style={[styles.authContainer, { backgroundColor: colors.background }]}>
-      <Text style={[styles.authTitle, { color: colors.text }]}>JarvisMax</Text>
+      <Text style={[styles.authTitle, { color: colors.text }]}>BeaMax</Text>
       <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
         Autonomous Business Builder
       </Text>

@@ -2,13 +2,13 @@
 tests/smoke/test_e2e_smoke.py — End-to-end smoke test
 
 Purpose:
-    Prove that a running Jarvis Max instance can accept a real mission,
+    Prove that a running Bea Max instance can accept a real mission,
     route it through the canonical API path, and produce a terminal result.
 
 Requirements:
-    - A running Jarvis Max stack (docker-compose.test.yml or python main.py)
+    - A running Bea Max stack (docker-compose.test.yml or python main.py)
     - At least one real LLM API key in the environment
-    - JARVIS_BASE_URL set, or default http://localhost:8000
+    - BEA_BASE_URL set, or default http://localhost:8000
 
 Usage:
     # Against local dev server:
@@ -38,19 +38,19 @@ except ImportError:
     pytest.skip("httpx required: pip install httpx", allow_module_level=True)
 
 # ─── Marker — skipped in CI unless --run-infra-tests is passed ───────────────
-# These tests require a running Jarvis Max server + LLM key.
+# These tests require a running Bea Max server + LLM key.
 # Run with: pytest tests/smoke/ --run-infra-tests -v
 pytestmark = pytest.mark.integration
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-BASE_URL: str = os.environ.get("JARVIS_BASE_URL", "http://localhost:8000")
-API_TOKEN: str = os.environ.get("JARVIS_API_TOKEN", "")
+BASE_URL: str = os.environ.get("BEA_BASE_URL", "http://localhost:8000")
+API_TOKEN: str = os.environ.get("BEA_API_TOKEN", "")
 
 # Mission timeout: how long to wait for a mission to reach a terminal state.
 # Simple 1-sentence LLM task should complete in < 30s on any provider.
 # Increase to 120 if running with a slow provider or rate-limited key.
-MISSION_TIMEOUT_S: int = int(os.environ.get("JARVIS_SMOKE_TIMEOUT", "60"))
+MISSION_TIMEOUT_S: int = int(os.environ.get("BEA_SMOKE_TIMEOUT", "60"))
 POLL_INTERVAL_S: float = 2.0
 
 TERMINAL_STATES = {"DONE", "FAILED", "CANCELLED", "REJECTED"}
@@ -82,7 +82,7 @@ def assert_server_reachable():
         assert r.status_code < 500, f"/health returned {r.status_code}"
     except httpx.ConnectError:
         pytest.fail(
-            f"Cannot connect to Jarvis Max at {BASE_URL}.\n"
+            f"Cannot connect to Bea Max at {BASE_URL}.\n"
             "Start the server first:\n"
             "  python main.py\n"
             "  OR: docker compose -f docker-compose.test.yml up -d"
@@ -144,7 +144,7 @@ def test_S2_mission_submit_returns_201():
 def test_S3_mission_reaches_terminal_state():
     """
     A submitted mission must reach a terminal state (DONE or FAILED) within
-    JARVIS_SMOKE_TIMEOUT seconds.
+    BEA_SMOKE_TIMEOUT seconds.
 
     This is the core E2E proof:
     - POST /api/v3/missions → returns mission_id
@@ -185,7 +185,7 @@ def test_S3_mission_reaches_terminal_state():
         f"Mission '{mission_id}' did not reach a terminal state within {MISSION_TIMEOUT_S}s.\n"
         f"Last status: {status}\n"
         f"Last body: {str(last_body)[:500]}\n"
-        "Check server logs: docker logs jarvis_test_core"
+        "Check server logs: docker logs bea_test_core"
     )
 
     # We accept DONE or FAILED — both are terminal.

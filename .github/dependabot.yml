@@ -4,7 +4,7 @@
 # Monitors:
 #   - Python (pip)       : requirements.txt
 #   - GitHub Actions     : .github/workflows/*.yml
-#   - Flutter/Dart (pub) : jarvismax_app/pubspec.yaml
+#   - Flutter/Dart (pub) : beamax_app/pubspec.yaml
 #
 # PRs are rate-limited and grouped to avoid noise.
 # Review + merge manually; CI must pass before merge.
@@ -59,7 +59,7 @@ updates:
 
   # ── Flutter / Dart ─────────────────────────────────────────
   - package-ecosystem: "pub"
-    directory: "/jarvismax_app"
+    directory: "/beamax_app"
     schedule:
       interval: "weekly"
       day: "monday"

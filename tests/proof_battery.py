@@ -44,7 +44,7 @@ print()
 
 # ── T2: Retryable Classification ──────────────────────────────────────
 print("━━━ T2: RETRYABLE CLASSIFICATION ━━━")
-from core.resilience import JarvisExecutionError
+from core.resilience import BeaExecutionError
 tests_t2 = [
     (TimeoutError("x"), True),
     (ConnectionError("x"), True),
@@ -55,7 +55,7 @@ tests_t2 = [
 ]
 t2_pass = True
 for exc, expected_retryable in tests_t2:
-    r = JarvisExecutionError.from_exception(exc)
+    r = BeaExecutionError.from_exception(exc)
     ok = r.retryable == expected_retryable
     if not ok: t2_pass = False
     status = "✅" if ok else "❌"
@@ -111,9 +111,9 @@ for label, ok in checks:
 print(f"  Result: {'ALL PASS' if t4_pass else 'FAILURES'}  ({len(checks)} checks)")
 print()
 
-# ── T5: JarvisExecutionError to_dict Structure ────────────────────────
+# ── T5: BeaExecutionError to_dict Structure ────────────────────────
 print("━━━ T5: STRUCTURED ERROR PAYLOAD ━━━")
-err = JarvisExecutionError.from_exception(TimeoutError("tool timed out"), tool="web_search", stage="execution")
+err = BeaExecutionError.from_exception(TimeoutError("tool timed out"), tool="web_search", stage="execution")
 d = err.to_dict()
 required_fields = ["type", "retryable", "message", "tool", "stage", "severity", "cause"]
 t5_pass = True
@@ -181,7 +181,7 @@ print()
 
 # ── T9: WebSocket State Machine (code audit) ──────────────────────────
 print("━━━ T9: WEBSOCKET STATE MACHINE ━━━")
-ws_path = "jarvismax_app/lib/services/websocket_service.dart"
+ws_path = "beamax_app/lib/services/websocket_service.dart"
 with open(ws_path, encoding="utf-8") as f:
     ws_code = f.read()
 
@@ -205,7 +205,7 @@ print()
 
 # ── T10: Token Refresh Integration ────────────────────────────────────
 print("━━━ T10: TOKEN REFRESH → WS RECONNECT ━━━")
-api_path = "jarvismax_app/lib/services/api_service.dart"
+api_path = "beamax_app/lib/services/api_service.dart"
 with open(api_path, encoding="utf-8") as f:
     api_code = f.read()
 

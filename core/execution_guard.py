@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ExecutionGuard                             v1.0
+BEA MAX — ExecutionGuard                             v1.0
 Niveau 1 : vérification formelle de chaque action critique.
 
 Principe : pour CHAQUE action, la preuve de l'effet est obligatoire.

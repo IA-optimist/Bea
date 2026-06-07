@@ -9,7 +9,7 @@ from core.rollback_manager import (
 )
 from core.tool_executor import write_file_safe
 
-_TEST_FILE = "/tmp/jarvis_rollback_test.py"
+_TEST_FILE = "/tmp/bea_rollback_test.py"
 
 def _write(content: str):
     with open(_TEST_FILE, "w") as f:

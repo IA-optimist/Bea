@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Multimodal Voice Module
+BEA MAX — Multimodal Voice Module
 STT:  OpenAI Whisper API (primary) → HuggingFace Whisper (secondary) → local whisper library (fallback)
 TTS:  OpenAI TTS (primary) → HuggingFace MMS-TTS (secondary) → Coqui TTS stub (fallback)
 VoiceSession: full STT → LLM → TTS pipeline.
@@ -337,13 +337,13 @@ class VoiceSession:
     Manages a full STT → LLM → TTS pipeline for voice interactions.
 
     Usage:
-        session = VoiceSession(system_prompt="Tu es Jarvis...")
+        session = VoiceSession(system_prompt="Tu es Bea...")
         audio_out = await session.process(audio_bytes)
     """
 
     def __init__(
         self,
-        system_prompt: str = "Tu es Jarvis, un assistant IA. Réponds de façon concise.",
+        system_prompt: str = "Tu es Bea, un assistant IA. Réponds de façon concise.",
         language:      str = "fr",
         tts_voice:     str = "alloy",
         model:         str = "gpt-4o-mini",

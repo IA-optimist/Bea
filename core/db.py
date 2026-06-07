@@ -1,7 +1,7 @@
 """
-JARVIS MAX — SQLite Central Database
+BEA MAX — SQLite Central Database
 Singleton SQLite avec 4 tables : vault_entries, actions, missions, goals
-Chemin : workspace/jarvismax.db
+Chemin : workspace/beamax.db
 Utilise sqlite3 stdlib (zéro dépendance externe)
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ import sqlite3
 import threading
 from pathlib import Path
 
-_DB_PATH = Path("workspace/jarvismax.db")
+_DB_PATH = Path("workspace/beamax.db")
 _lock = threading.Lock()
 _conn: sqlite3.Connection | None = None
 
@@ -35,7 +35,7 @@ def _get_connection() -> sqlite3.Connection:
                     import os
                     if os.environ.get("PRODUCTION_MODE", "").lower() in ("1", "true", "yes"):
                         import logging
-                        logging.getLogger("jarvis.db").warning(
+                        logging.getLogger("bea.db").warning(
                             "SQLite fallback active in PRODUCTION_MODE. "
                             "Set DATABASE_URL for PostgreSQL."
                         )

@@ -39,12 +39,12 @@ async def _cognition_handler(event) -> str:
 @router.post("/webhook")
 async def webhook(
     payload: dict,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Entrée générique. Payload mappé (`user_id`/`chat_id`/`text` par défaut) puis
     routé via GatewayRunner -> cognition. Renvoie {ok, response, platform}."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     adapter = WebhookAdapter()
     runner = GatewayRunner(handler=_cognition_handler, allowlist=None)
     runner.register(adapter)

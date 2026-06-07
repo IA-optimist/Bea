@@ -1,7 +1,7 @@
 """Gate test — cookie HttpOnly auth (CVSS 9.1 XSS mitigation).
 
 Valide que :
-  1. POST /api/v2/auth/login set le cookie `jarvis_token` (HttpOnly + Secure
+  1. POST /api/v2/auth/login set le cookie `bea_token` (HttpOnly + Secure
      + SameSite=Lax) ET retourne le token dans le body (backward-compat).
   2. GET /auth/me reconnaît le cookie et retourne l'user.
   3. POST /api/v2/auth/logout clear le cookie.
@@ -19,10 +19,10 @@ import pytest
 @pytest.fixture
 def app(monkeypatch):
     """App FastAPI minimal avec juste les endpoints auth."""
-    monkeypatch.setenv("JARVIS_API_TOKEN", "test-static-token")
-    monkeypatch.setenv("JARVIS_REQUIRE_AUTH", "true")
+    monkeypatch.setenv("BEA_API_TOKEN", "test-static-token")
+    monkeypatch.setenv("BEA_REQUIRE_AUTH", "true")
     # Cookie non-Secure pour les tests en HTTP.
-    monkeypatch.setenv("JARVIS_COOKIE_SECURE", "0")
+    monkeypatch.setenv("BEA_COOKIE_SECURE", "0")
     import importlib
     import api._deps as _deps_mod
     importlib.reload(_deps_mod)
@@ -40,7 +40,7 @@ def app(monkeypatch):
     @app.post("/api/v2/auth/logout")
     async def logout():
         resp = JSONResponse({"ok": True})
-        resp.delete_cookie("jarvis_token", path="/")
+        resp.delete_cookie("bea_token", path="/")
         return resp
 
     return app
@@ -63,10 +63,10 @@ def test_auth_me_accepts_bearer_header(app):
     assert data["data"]["user"]["username"] == "api"
 
 
-def test_auth_me_accepts_jarvis_token_header(app):
+def test_auth_me_accepts_bea_token_header(app):
     from fastapi.testclient import TestClient
     c = TestClient(app)
-    r = c.get("/auth/me", headers={"X-Jarvis-Token": "test-static-token"})
+    r = c.get("/auth/me", headers={"X-Bea-Token": "test-static-token"})
     assert r.status_code == 200
     assert r.json()["ok"] is True
 
@@ -74,7 +74,7 @@ def test_auth_me_accepts_jarvis_token_header(app):
 def test_auth_me_accepts_cookie(app):
     from fastapi.testclient import TestClient
     c = TestClient(app)
-    c.cookies.set("jarvis_token", "test-static-token")
+    c.cookies.set("bea_token", "test-static-token")
     r = c.get("/auth/me")
     assert r.status_code == 200, r.text
     assert r.json()["ok"] is True
@@ -83,11 +83,11 @@ def test_auth_me_accepts_cookie(app):
 def test_logout_clears_cookie(app):
     from fastapi.testclient import TestClient
     c = TestClient(app)
-    c.cookies.set("jarvis_token", "test-static-token")
+    c.cookies.set("bea_token", "test-static-token")
     r = c.post("/api/v2/auth/logout")
     assert r.status_code == 200
     # Le set-cookie header doit contenir une directive d'expiration.
     set_cookie = r.headers.get("set-cookie", "")
-    assert "jarvis_token=" in set_cookie
+    assert "bea_token=" in set_cookie
     # Expires=Thu, 01 Jan 1970... ou Max-Age=0 — les deux invalident.
-    assert "Max-Age=0" in set_cookie or "1970" in set_cookie or 'jarvis_token=""' in set_cookie
+    assert "Max-Age=0" in set_cookie or "1970" in set_cookie or 'bea_token=""' in set_cookie

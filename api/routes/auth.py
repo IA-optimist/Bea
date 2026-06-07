@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 # ── HttpOnly cookie config (XSS-safe token storage, CVSS 9.1 mitigation) ──
 # Secure flag activé uniquement hors dev pour permettre le test en HTTP local.
-COOKIE_NAME = "jarvis_token"
+COOKIE_NAME = "bea_token"
 COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
-COOKIE_SECURE = os.environ.get("JARVIS_COOKIE_SECURE", "1") != "0"
+COOKIE_SECURE = os.environ.get("BEA_COOKIE_SECURE", "1") != "0"
 
 
 def set_auth_cookie(response: Response, token: str) -> None:
@@ -63,7 +63,7 @@ async def json_login(request: Request, response: Response):
              ``{"username": "...", "password": "..."}``.
     Returns: ``{"ok": true, "data": {"token": "...", "user": {...}}}``.
 
-    Sets the HttpOnly cookie ``jarvis_token`` — prioritized over headers
+    Sets the HttpOnly cookie ``bea_token`` — prioritized over headers
     server-side. Legacy frontends using the body token still work.
     """
     try:
@@ -90,10 +90,10 @@ async def json_login(request: Request, response: Response):
 
 @router.post("/api/v2/auth/logout")
 async def json_logout(request: Request, response: Response):
-    """Clear the HttpOnly cookie. Header-borne Bearer/X-Jarvis-Token tokens
+    """Clear the HttpOnly cookie. Header-borne Bearer/X-Bea-Token tokens
     are the client's responsibility to drop.
 
-    When ``JARVIS_JWT_HARDENING_V2`` is on, this also actively revokes the
+    When ``BEA_JWT_HARDENING_V2`` is on, this also actively revokes the
     access token's ``jti`` and the refresh token (if provided) server-side,
     so the tokens are immediately unusable even before they expire.
     """
@@ -107,7 +107,7 @@ async def json_logout(request: Request, response: Response):
         token_str = (
             request.cookies.get(COOKIE_NAME)
             or _strip(request.headers.get("Authorization", ""))
-            or request.headers.get("X-Jarvis-Token", "")
+            or request.headers.get("X-Bea-Token", "")
         )
         if token_str:
             try:
@@ -145,7 +145,7 @@ async def json_logout(request: Request, response: Response):
 # ── OAuth2 form login + legacy aliases ────────────────────────────
 
 def _maybe_issue_v2_pair(username: str, role: str) -> dict | None:
-    """If JARVIS_JWT_HARDENING_V2 is on, return a v2 (access, refresh) pair
+    """If BEA_JWT_HARDENING_V2 is on, return a v2 (access, refresh) pair
     payload. Returns ``None`` when the flag is off so the legacy code path
     runs unchanged.
 
@@ -203,8 +203,8 @@ async def login_alias(
 async def auth_me(user: dict = Depends(require_auth)):
     """Return the authenticated user's identity (from cookie or header).
 
-    The HttpOnly cookie ``jarvis_token`` is read first by ``require_auth``,
-    with Bearer / X-Jarvis-Token fallback for legacy clients.
+    The HttpOnly cookie ``bea_token`` is read first by ``require_auth``,
+    with Bearer / X-Bea-Token fallback for legacy clients.
 
     Lets the frontend restore the session on page load without persisting
     sensitive info in ``localStorage``. Returns 401 if not authenticated.
@@ -224,7 +224,7 @@ async def auth_me(user: dict = Depends(require_auth)):
 async def refresh_token(request: Request, response: Response):
     """Refresh a JWT token.
 
-    Two paths depending on ``JARVIS_JWT_HARDENING_V2``:
+    Two paths depending on ``BEA_JWT_HARDENING_V2``:
 
     * **v2 on** (audit Mo2 prep): expects a ``refresh_token`` field in the
       JSON body or as ``X-Refresh-Token`` header. Performs single-use
@@ -233,7 +233,7 @@ async def refresh_token(request: Request, response: Response):
       refresh_expires_in}``.
 
     * **v2 off** (legacy): accepts the old long-lived access token from
-      cookie / Authorization / X-Jarvis-Token, verifies it, issues a new
+      cookie / Authorization / X-Bea-Token, verifies it, issues a new
       one. Behavior unchanged from before Mo2.
     """
     from api import jwt_v2
@@ -272,7 +272,7 @@ async def refresh_token(request: Request, response: Response):
     token_str = (
         request.cookies.get(COOKIE_NAME)
         or strip_bearer(request.headers.get("Authorization", ""))
-        or request.headers.get("X-Jarvis-Token", "")
+        or request.headers.get("X-Bea-Token", "")
     )
     if not token_str:
         raise HTTPException(status_code=401, detail="No token provided")

@@ -259,15 +259,15 @@ class TestPersistenceWiring:
         assert "strategy_registry.json" in content
 
     def test_CV44_dead_flutter_screens_removed(self):
-        flutter_screens = Path("jarvismax_app/lib/screens")
+        flutter_screens = Path("beamax_app/lib/screens")
         for dead in ["history_screen_v2", "insights_screen", "mode_screen",
                       "settings_screen_v2", "validation_screen"]:
             assert not (flutter_screens / f"{dead}.dart").exists(), f"Dead screen: {dead}"
 
     def test_CV45_dead_flutter_main_variants_removed(self):
-        flutter_lib = Path("jarvismax_app/lib")
+        flutter_lib = Path("beamax_app/lib")
         assert not (flutter_lib / "main_v1.dart").exists()
         assert not (flutter_lib / "main_v2.dart").exists()
 
     def test_CV46_dead_flutter_theme_v2_removed(self):
-        assert not Path("jarvismax_app/lib/theme/app_theme_v2.dart").exists()
+        assert not Path("beamax_app/lib/theme/app_theme_v2.dart").exists()

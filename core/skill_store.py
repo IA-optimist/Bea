@@ -1,5 +1,5 @@
 """
-core/skill_store.py — Voyager-pattern Skill Store for JarvisMax
+core/skill_store.py — Voyager-pattern Skill Store for BeaMax
 ================================================================
 Stores and retrieves successful mission patterns as reusable skills.
 
@@ -8,7 +8,7 @@ Memory scoring inspired by: Generative Agents (Park et al., 2023) — arxiv:2304
 
 Design:
   - Skills = successful mission plans with confidence > 0.7
-  - Stored in Qdrant collection 'jarvis_skills' with vector embeddings
+  - Stored in Qdrant collection 'bea_skills' with vector embeddings
   - Retrieved by semantic similarity at mission planning time
   - Importance score = success_count × avg_confidence (higher = more valuable)
   - Fail-open: if Qdrant unavailable, retrieve() returns [] silently
@@ -36,12 +36,12 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger("jarvis.skill_store")
+log = structlog.get_logger("bea.skill_store")
 
 _QDRANT_URL  = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 _QDRANT_KEY  = os.environ.get("QDRANT_API_KEY", "")
 _OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
-_COLLECTION  = "jarvis_skills"
+_COLLECTION  = "bea_skills"
 _VECTOR_SIZE = 768   # nomic-embed-text standard dimension
 _MIN_CONFIDENCE_TO_STORE = float(os.environ.get("SKILL_MIN_CONFIDENCE", "0.70"))
 _MAX_SKILLS  = int(os.environ.get("SKILL_MAX_STORE", "500"))

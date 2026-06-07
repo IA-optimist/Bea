@@ -1,6 +1,6 @@
-# JarvisMax — Quick Start
+# BeaMax — Quick Start
 
-> Get JarvisMax running locally in 5 minutes.
+> Get BeaMax running locally in 5 minutes.
 
 ---
 
@@ -15,8 +15,8 @@
 ## 1. Clone and configure
 
 ```bash
-git clone https://github.com/UniTy01/Jarvismax-master.git
-cd Jarvismax-master
+git clone https://github.com/UniTy01/Beamax-master.git
+cd Beamax-master
 cp .env.example .env
 ```
 
@@ -38,9 +38,9 @@ MODEL_FALLBACK=anthropic
 # MODEL_STRATEGY=openrouter
 
 # Auth (REQUIRED in production)
-JARVIS_SECRET_KEY=$(openssl rand -hex 32)
-JARVIS_ADMIN_PASSWORD=admin
-JARVIS_API_TOKEN=$(openssl rand -hex 32)
+BEA_SECRET_KEY=$(openssl rand -hex 32)
+BEA_ADMIN_PASSWORD=admin
+BEA_API_TOKEN=$(openssl rand -hex 32)
 
 # Vector store
 QDRANT_HOST=localhost
@@ -176,7 +176,7 @@ http://localhost:8000/
 
 Login with:
 - Username: `admin`
-- Password: (whatever you set in `JARVIS_ADMIN_PASSWORD`)
+- Password: (whatever you set in `BEA_ADMIN_PASSWORD`)
 
 ---
 
@@ -189,7 +189,7 @@ docker-compose up -d
 ```
 
 Services:
-- `jarvismax-api` (port 8000)
+- `beamax-api` (port 8000)
 - `postgres` (with pgvector)
 - `redis` (rate limiting + cache)
 - `qdrant` (port 6333, vector memory)
@@ -203,18 +203,18 @@ docker-compose down
 
 Logs:
 ```bash
-docker-compose logs -f jarvismax-api
+docker-compose logs -f beamax-api
 ```
 
 ---
 
 ## Production checklist
 
-Before deploying to production, set `JARVIS_PRODUCTION=true` and ensure:
+Before deploying to production, set `BEA_PRODUCTION=true` and ensure:
 
-- [ ] `JARVIS_SECRET_KEY` is a real random value (not `change-me-in-production`)
-- [ ] `JARVIS_ADMIN_PASSWORD` is set
-- [ ] `JARVIS_API_TOKEN` is set
+- [ ] `BEA_SECRET_KEY` is a real random value (not `change-me-in-production`)
+- [ ] `BEA_ADMIN_PASSWORD` is set
+- [ ] `BEA_API_TOKEN` is set
 - [ ] At least one LLM provider key is configured
 - [ ] `QDRANT_API_KEY` is set (for production Qdrant)
 - [ ] `POSTGRES_PASSWORD` is set (if using Postgres)

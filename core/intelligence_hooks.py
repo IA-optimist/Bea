@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Intelligence Hooks
+BEA MAX — Intelligence Hooks
 ===================================
 Wires observability, capability, and self-improvement intelligence
 into the runtime execution path without modifying existing code.
@@ -8,7 +8,7 @@ These hooks are called from the convergence API layer and optionally
 from the orchestration bridge. Each hook is fail-open (never blocks
 the main execution path).
 
-Feature flag: JARVIS_INTELLIGENCE_HOOKS=1 (default OFF)
+Feature flag: BEA_INTELLIGENCE_HOOKS=1 (default OFF)
 
 Hooks:
     1. post_mission_submit  — after mission creation
@@ -31,7 +31,7 @@ except ImportError:
 
 
 def _hooks_enabled() -> bool:
-    return os.environ.get("JARVIS_INTELLIGENCE_HOOKS", "").lower() in ("1", "true", "yes")
+    return os.environ.get("BEA_INTELLIGENCE_HOOKS", "").lower() in ("1", "true", "yes")
 
 
 def post_mission_submit(mission_id: str, goal: str, **kwargs) -> dict:

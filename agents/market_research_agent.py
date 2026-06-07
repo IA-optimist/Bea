@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Market Research Agent
+BEA MAX — Market Research Agent
 =====================================
 Studies a market from A to Z: TAM/SAM/SOM, competitors, personas, pricing.
 

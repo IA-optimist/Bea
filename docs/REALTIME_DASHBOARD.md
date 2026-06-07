@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Le dashboard JarvisMax dispose d'un système de métriques en temps réel basé sur WebSocket qui diffuse des données live du serveur vers le frontend toutes les 2 secondes (configurable).
+Le dashboard BeaMax dispose d'un système de métriques en temps réel basé sur WebSocket qui diffuse des données live du serveur vers le frontend toutes les 2 secondes (configurable).
 
 ## Architecture
 
@@ -216,7 +216,7 @@ except Exception as _e:
 
 **Démarrage**:
 ```bash
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -224,7 +224,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 **Build de production**:
 ```bash
-cd /root/Jarvismax-master/frontend
+cd /root/Beamax-master/frontend
 npm run build
 ```
 

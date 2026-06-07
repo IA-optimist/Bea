@@ -1,5 +1,5 @@
 """
-JARVIS MAX — LLM Factory
+BEA MAX — LLM Factory
 Routing intelligent par rôle avec cascade de fallback.
 
 Règles :
@@ -342,7 +342,7 @@ class LLMFactory:
             # Tagger le provider pour que safe_invoke() puisse remonter les métriques
             if result is not None:
                 try:
-                    result._jarvis_provider = provider  # type: ignore[attr-defined]
+                    result._bea_provider = provider  # type: ignore[attr-defined]
                 except Exception as _exc:
                     log.warning("swallowed_exception", action="provider_tag_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
@@ -528,8 +528,8 @@ class LLMFactory:
             temperature=0.3,
             timeout=90,
             default_headers={
-                "HTTP-Referer": "https://jarvis.jarvismaxapp.co.uk",
-                "X-Title": "JarvisMax",
+                "HTTP-Referer": "https://bea.beamaxapp.co.uk",
+                "X-Title": "BeaMax",
             },
         )
 
@@ -673,7 +673,7 @@ class LLMFactory:
         - Log structuré à chaque étape : llm_call_ok / llm_call_failed / llm_fallback_*
 
         Paramètres optionnels :
-            session_id : ID de session JarvisSession (pour grouper les traces)
+            session_id : ID de session BeaSession (pour grouper les traces)
             agent_name : nom de l'agent appelant (pour le tag Langfuse)
 
         Usage :
@@ -682,7 +682,7 @@ class LLMFactory:
             text = resp.content
         """
         llm       = self.get(role)
-        provider  = getattr(llm, "_jarvis_provider", "unknown")
+        provider  = getattr(llm, "_bea_provider", "unknown")
         model_name = getattr(llm, "model_name", getattr(llm, "model", provider))
         t0        = time.monotonic()
 
@@ -721,8 +721,8 @@ class LLMFactory:
                         )
                     except Exception as _exc:
                         log.warning("swallowed_exception", action="gen_ctx_finish_ok", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-                # ── Traçage LLMTracer (coût/latence/tokens — flag JARVIS_LLM_TRACE) ──
-                if os.getenv("JARVIS_LLM_TRACE", "1") not in ("0", "false", "no", ""):
+                # ── Traçage LLMTracer (coût/latence/tokens — flag BEA_LLM_TRACE) ──
+                if os.getenv("BEA_LLM_TRACE", "1") not in ("0", "false", "no", ""):
                     try:
                         from core.observability import get_tracer
                         _um = getattr(resp, "usage_metadata", None) or {}
@@ -738,7 +738,7 @@ class LLMFactory:
 
             except Exception as first_err:
                 ms         = int((time.monotonic() - t0) * 1000)
-                if os.getenv("JARVIS_LLM_TRACE", "1") not in ("0", "false", "no", ""):
+                if os.getenv("BEA_LLM_TRACE", "1") not in ("0", "false", "no", ""):
                     try:
                         from core.observability import get_tracer
                         get_tracer().record(model=str(model_name), latency_ms=ms, ok=False,

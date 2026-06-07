@@ -1,1 +1,1 @@
-"""JARVIS MAX — Business Mission Engine."""
+"""BEA MAX — Business Mission Engine."""

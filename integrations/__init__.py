@@ -1,1 +1,1 @@
-"""JarvisMax external integrations."""
+"""BeaMax external integrations."""

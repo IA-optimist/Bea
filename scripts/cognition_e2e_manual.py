@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-End-to-end test for JarvisMax cognition pipeline.
+End-to-end test for BeaMax cognition pipeline.
 Tests ToT + self-confidence + active learning integration.
 """
 import asyncio
@@ -18,7 +18,7 @@ from openai import OpenAI
 async def test_cognition_pipeline():
     """Run E2E cognition test."""
     
-    print("=== JarvisMax Cognition E2E Test ===\n")
+    print("=== BeaMax Cognition E2E Test ===\n")
     
     # Setup LLM client
     api_key = os.getenv("OPENROUTER_API_KEY")

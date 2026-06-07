@@ -1,5 +1,5 @@
 """
-JarvisMax Notification System
+BeaMax Notification System
 Push notifications for mission status changes (DONE/FAILED)
 """
 from .notification_service import (

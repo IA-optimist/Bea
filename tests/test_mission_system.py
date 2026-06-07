@@ -462,7 +462,7 @@ def temp_storage():
 
 def test_mission_system_initialization(temp_storage, monkeypatch):
     """MissionSystem should initialize properly."""
-    # Isolation : load_missions() préfère le SQLite GLOBAL (workspace/jarvismax.db,
+    # Isolation : load_missions() préfère le SQLite GLOBAL (workspace/beamax.db,
     # qui accumule de vraies missions) au path fourni. On neutralise le DB global
     # pour que l'init parte bien du storage isolé et vide.
     import core.db as db_mod

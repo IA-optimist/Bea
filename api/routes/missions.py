@@ -63,10 +63,10 @@ _running_missions_lock = asyncio.Lock()
 async def submit_task(
     req: TaskRequest,
     background_tasks: BackgroundTasks,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Soumettre une nouvelle tâche/mission."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     ms      = _get_mission_system()
     result  = ms.submit(req.input)
 
@@ -280,7 +280,7 @@ async def submit_task(
                 log.debug("api_kernel_execute_fallback", mission_id=result.mission_id)
 
             # ── Handle AWAITING_APPROVAL (MetaOrchestrator paused for human review) ──
-            # AdapterResult.status is a lowercase string; JarvisSession has an enum.
+            # AdapterResult.status is a lowercase string; BeaSession has an enum.
             _sess_status = getattr(session, "status", None)
             _status_val  = (_sess_status.value
                             if hasattr(_sess_status, "value")
@@ -303,7 +303,7 @@ async def submit_task(
             _fallback_level = 0
             _final_source = "agent"
             if hasattr(session, "get_output"):
-                # JarvisSession — pipeline multi-agents avec outputs nommés
+                # BeaSession — pipeline multi-agents avec outputs nommés
                 for _agent in ("lens-reviewer", "shadow-advisor", "map-planner",
                                "scout-research", "forge-builder"):
                     _out = session.get_output(_agent)
@@ -628,12 +628,12 @@ async def submit_task(
         "created_at": result.created_at,
     }}
 
-    return JSONResponse(content=_response_data, headers={"X-Jarvis-Stack": "jarvis_core", "X-Trace-Time": str(time.time())})
+    return JSONResponse(content=_response_data, headers={"X-Bea-Stack": "bea_core", "X-Trace-Time": str(time.time())})
 
 @router.get("/api/v2/task/{task_id}")
-async def get_task(task_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+async def get_task(task_id: str, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Statut d'une tâche."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     ms = _get_mission_system()
     r  = ms.get(task_id)
     if not r:
@@ -647,10 +647,10 @@ async def list_tasks(
     limit:  int           = Query(20, ge=1, le=200),
     source: str           = Query("missions", description="'missions' or 'queue'"),
     offset: int           = Query(0, ge=0),
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Lister les tâches — source='missions' (MissionSystem) ou source='queue' (CoreTaskQueue)."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     if source == "queue":
         from core.task_queue import get_core_task_queue, TaskState
         q = get_core_task_queue()
@@ -687,10 +687,10 @@ async def list_tasks(
 @router.get("/api/v2/tasks/{task_id}")
 async def get_background_task(
     task_id: str,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Statut et résultat d'une tâche de fond (CoreTaskQueue)."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     from core.task_queue import get_core_task_queue
     q    = get_core_task_queue()
     task = await q.get(task_id)
@@ -702,10 +702,10 @@ async def get_background_task(
 @router.delete("/api/v2/tasks/{task_id}", status_code=200)
 async def cancel_background_task(
     task_id: str,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Annuler une tâche de fond (CoreTaskQueue)."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     from core.task_queue import get_core_task_queue
     q  = get_core_task_queue()
     ok = await q.cancel(task_id)
@@ -718,10 +718,10 @@ async def cancel_background_task(
 async def abort_mission(
     mission_id: str,
     req: AbortRequest,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Annuler une mission en cours."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     queue = _get_task_queue()
     await queue.cancel_mission(mission_id)
     ms = _get_mission_system()
@@ -739,24 +739,24 @@ async def abort_mission(
 async def submit_mission(
     req: MissionSubmitRequest,
     background_tasks: BackgroundTasks,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Soumettre une mission (interface Flutter — champ `goal` + `mode`)."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         task_req = TaskRequest(input=req.goal, mode=req.mode)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-    return await submit_task(task_req, background_tasks, x_jarvis_token, authorization)
+    return await submit_task(task_req, background_tasks, x_bea_token, authorization)
 
 
 @router.get("/api/v2/missions")
 async def list_missions(
     status: Optional[str] = Query(None),
     limit:  int           = Query(20, ge=1, le=200),
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     ms       = _get_mission_system()
     missions = ms.list_missions(status=status, limit=limit)
     stats    = ms.stats()
@@ -767,8 +767,8 @@ async def list_missions(
 
 
 @router.get("/api/v2/missions/{mission_id}")
-async def get_mission(mission_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
-    _check_auth(x_jarvis_token, authorization)
+async def get_mission(mission_id: str, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+    _check_auth(x_bea_token, authorization)
     ms = _get_mission_system()
     r  = ms.get(mission_id)
     if not r:
@@ -782,9 +782,9 @@ async def get_mission(mission_id: str, x_jarvis_token: Annotated[Optional[str], 
 # ══════════════════════════════════════════════════════════════
 
 @router.get("/api/v2/agents")
-async def list_agents(x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+async def list_agents(x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Liste tous les agents enregistrés."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     return list_registered_agents()
 
 
@@ -794,10 +794,10 @@ async def trigger_agent(
     agent_id: str,
     req: TriggerRequest,
     background_tasks: BackgroundTasks,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Déclencher un agent manuellement."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
     return schedule_agent_trigger(
         background_tasks=background_tasks,
@@ -815,11 +815,11 @@ async def trigger_agent(
 async def legacy_post_mission(
     req: TaskRequest,
     background_tasks: BackgroundTasks,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Alias v1 → POST /api/v2/task"""
-    return await submit_task(req, background_tasks, x_jarvis_token, authorization)
+    return await submit_task(req, background_tasks, x_bea_token, authorization)
 
 
 @router.get("/api/health")
@@ -832,14 +832,14 @@ async def legacy_health():
 async def legacy_missions(
     status: Optional[str] = Query(None),
     limit: int = Query(20, ge=1, le=200),
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Alias v1 → GET /api/v2/missions"""
     return await list_missions(
         status=status,
         limit=limit,
-        x_jarvis_token=x_jarvis_token,
+        x_bea_token=x_bea_token,
         authorization=authorization,
     )
 
@@ -853,19 +853,19 @@ async def legacy_stats():
 # ── Task approve/reject (Flutter uses these) ──────────────────
 
 @router.post("/api/v2/tasks/{task_id}/approve")
-async def approve_task(task_id: str, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+async def approve_task(task_id: str, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Approve a pending action/task."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     return approve_task_payload(task_id)
 
 @router.post("/api/v2/tasks/{task_id}/reject")
 async def reject_task(
     task_id: str,
     req: Optional[AbortRequest] = None,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Reject a pending action/task."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     note = req.reason if req else "Rejected via API"
     return reject_task_payload(task_id, note)
 
@@ -876,14 +876,14 @@ async def approve_mission(
     mission_id: str,
     background_tasks: BackgroundTasks,
     req: Optional[ApproveRequest] = None,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
     Approve a mission that is PENDING_VALIDATION and resume its execution.
     The approval gate is bypassed on re-run (force_approved=True).
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     note = (req.note if req else None) or "Approved by human supervisor"
     return approve_mission_for_resume(
         mission_id=mission_id,
@@ -899,11 +899,11 @@ async def approve_mission(
 async def reject_mission(
     mission_id: str,
     req: Optional[AbortRequest] = None,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Reject a mission that is PENDING_VALIDATION."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     note = (req.reason if req else None) or "Rejected by human supervisor"
     return reject_mission_payload(
         mission_id=mission_id,
@@ -915,16 +915,16 @@ async def reject_mission(
 
 # ── System mode (Flutter setMode uses POST /api/system/mode) ──
 @router.get("/api/system/mode")
-async def get_system_mode(x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+async def get_system_mode(x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Get current system operation mode."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     return get_system_mode_payload()
 
 
 @router.post("/api/system/mode")
-async def set_system_mode(req: ModeRequest, x_jarvis_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
+async def set_system_mode(req: ModeRequest, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Change system operation mode (MANUAL / SUPERVISED / AUTO)."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         return set_system_mode_payload(req.mode, req.changed_by)
     except ValueError as exc:
@@ -948,7 +948,7 @@ async def stream_mission_compat(mission_id: str):
 async def get_mission_livrable(
     mission_id: str,
     fmt: str = "markdown",  # "markdown" ou "html"
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
@@ -956,10 +956,10 @@ async def get_mission_livrable(
     fmt=markdown -> texte .md
     fmt=html     -> HTML complet pour impression/PDF
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     try:
         from pathlib import Path
-        livrable_dir = Path('/opt/jarvismax-app/workspace/livrables')
+        livrable_dir = Path('/opt/beamax-app/workspace/livrables')
         # Chercher un fichier contenant le mission_id court
         mid_short = mission_id[:8]
         candidates = list(livrable_dir.glob(f'*{mid_short}*.md'))

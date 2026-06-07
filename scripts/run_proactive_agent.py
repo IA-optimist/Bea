@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Lance la boucle proactive de JarvisMax en arrière-plan.
+Lance la boucle proactive de BeaMax en arrière-plan.
 Usage: python scripts/run_proactive_agent.py
 """
 import asyncio

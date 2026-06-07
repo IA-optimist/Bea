@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Canonical Types
+BEA MAX — Canonical Types
 ==============================
 Single source of truth for mission lifecycle, risk levels, and enum mappings.
 

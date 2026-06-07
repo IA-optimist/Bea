@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Phase 9 Mission Control models.
+BEA MAX — Phase 9 Mission Control models.
 MissionLogEvent and MissionSummary dataclasses.
 """
 from __future__ import annotations

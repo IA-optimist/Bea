@@ -19,9 +19,9 @@
 # ──────────────────────────────────────────────────────────────────
 set -uo pipefail
 
-DOMAIN="${DOMAIN:-jarvis.jarvismaxapp.co.uk}"
-CONTAINER="${CONTAINER:-jarvis_core}"
-REPO_DIR="${REPO_DIR:-/root/Jarvismax-master}"
+DOMAIN="${DOMAIN:-bea.beamaxapp.co.uk}"
+CONTAINER="${CONTAINER:-bea_core}"
+REPO_DIR="${REPO_DIR:-/root/Beamax-master}"
 LOCAL_HEALTH="http://localhost:8000/api/v2/health"
 PUBLIC_HEALTH="https://${DOMAIN}/api/v2/health"
 VERBOSE=0
@@ -111,8 +111,8 @@ probe_http "https://${DOMAIN}/auth/login"           "public /auth/login"
 # ── C. Cookie auth flow ───────────────────────────────────
 section "[C] Cookie auth flow"
 
-if [[ -z "${JARVIS_TEST_USER:-}" || -z "${JARVIS_TEST_PASSWORD:-}" ]]; then
-  info "skipped (set JARVIS_TEST_USER + JARVIS_TEST_PASSWORD to run)"
+if [[ -z "${BEA_TEST_USER:-}" || -z "${BEA_TEST_PASSWORD:-}" ]]; then
+  info "skipped (set BEA_TEST_USER + BEA_TEST_PASSWORD to run)"
 else
   COOKIE_JAR=$(mktemp)
   trap 'rm -f "$COOKIE_JAR"' EXIT
@@ -120,21 +120,21 @@ else
   LOGIN_CODE=$(curl -s -c "$COOKIE_JAR" -o /dev/null -w '%{http_code}' --max-time 5 \
     -X POST "https://${DOMAIN}/api/v2/auth/login" \
     -H 'Content-Type: application/json' \
-    -d "{\"username\":\"$JARVIS_TEST_USER\",\"password\":\"$JARVIS_TEST_PASSWORD\"}" \
+    -d "{\"username\":\"$BEA_TEST_USER\",\"password\":\"$BEA_TEST_PASSWORD\"}" \
     2>/dev/null || echo "000")
 
   if [[ "$LOGIN_CODE" == "200" ]]; then
     ok "login → 200"
-    if grep -q "jarvis_token" "$COOKIE_JAR" 2>/dev/null; then
-      ok "Set-Cookie jarvis_token received"
+    if grep -q "bea_token" "$COOKIE_JAR" 2>/dev/null; then
+      ok "Set-Cookie bea_token received"
       # Check HttpOnly flag
-      if grep "jarvis_token" "$COOKIE_JAR" 2>/dev/null | awk '{print $7}' | grep -qE "TRUE|true"; then
+      if grep "bea_token" "$COOKIE_JAR" 2>/dev/null | awk '{print $7}' | grep -qE "TRUE|true"; then
         ok "HttpOnly flag set"
       else
         warn "HttpOnly flag not set (XSS risk)"
       fi
     else
-      fail "no jarvis_token cookie in response"
+      fail "no bea_token cookie in response"
     fi
 
     ME_CODE=$(curl -s -b "$COOKIE_JAR" -o /dev/null -w '%{http_code}' --max-time 5 \
@@ -159,9 +159,9 @@ section "[D] GitHub Actions (last 5 runs)"
 if command -v gh >/dev/null 2>&1; then
   if gh auth status >/dev/null 2>&1; then
     if [[ $VERBOSE -eq 1 ]]; then
-      gh run list --limit 5 --repo UniTy01/Jarvismax-master 2>&1 | sed 's/^/    /'
+      gh run list --limit 5 --repo UniTy01/Beamax-master 2>&1 | sed 's/^/    /'
     else
-      FAILED_RUNS=$(gh run list --limit 5 --repo UniTy01/Jarvismax-master --json conclusion --jq '[.[] | select(.conclusion == "failure")] | length' 2>/dev/null || echo "?")
+      FAILED_RUNS=$(gh run list --limit 5 --repo UniTy01/Beamax-master --json conclusion --jq '[.[] | select(.conclusion == "failure")] | length' 2>/dev/null || echo "?")
       if [[ "$FAILED_RUNS" == "0" ]]; then
         ok "last 5 runs : all green"
       elif [[ "$FAILED_RUNS" == "?" ]]; then

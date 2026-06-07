@@ -172,7 +172,7 @@ class TestFilesystemConnector:
         from connectors.filesystem_connector import FilesystemConnector
         # tmp_path + '/absent' guarantees the dir does not exist (unique per
         # test). Previous hardcoded /nonexistent was polluted by
-        # test_cognitive_security.test_SO04 which sets JARVISMAX_DATA_DIR
+        # test_cognitive_security.test_SO04 which sets BEAMAX_DATA_DIR
         # there.
         missing = tmp_path / "absent"
         result = FilesystemConnector().execute("list_outputs", {"dir": str(missing)})

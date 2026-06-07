@@ -8,7 +8,7 @@ class BiometricService {
     return compatible && enrolled;
   }
 
-  async authenticate(reason: string = 'Authenticate to access JarvisMax'): Promise<boolean> {
+  async authenticate(reason: string = 'Authenticate to access BeaMax'): Promise<boolean> {
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: reason,

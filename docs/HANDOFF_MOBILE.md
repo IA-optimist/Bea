@@ -2,10 +2,10 @@
 
 > À exécuter **dans un environnement Flutter** (SDK Dart + Android SDK). Chaque tâche
 > n'est « finie » qu'après `flutter analyze` propre + `flutter build apk` OK + smoke test.
-> Plan complet & contexte : `docs/MOBILE_HARDENING.md`. App : `jarvismax_app/`.
+> Plan complet & contexte : `docs/MOBILE_HARDENING.md`. App : `beamax_app/`.
 
 ## Prompt à coller dans Claude Code
-Tu reprends l'app de contrôle Flutter de Béa (`jarvismax_app/`). Objectif : app propre,
+Tu reprends l'app de contrôle Flutter de Béa (`beamax_app/`). Objectif : app propre,
 stable, robuste pour piloter ET monitorer Béa. Respecte : modifications minimales,
 diff montré + validation, et **valide chaque changement par `flutter analyze` +
 `flutter build apk`** (impossible à prouver sans build). Audit déjà fait : 24/25
@@ -16,7 +16,7 @@ l'ordre de `docs/MOBILE_HARDENING.md`. Demande-moi host/credentials si besoin.
 
 ## Code prêt à coller
 
-### A. Contrôle de mission — `jarvismax_app/lib/services/api_service.dart`
+### A. Contrôle de mission — `beamax_app/lib/services/api_service.dart`
 Ajouter (calqué sur `approveAction`, routes backend déjà existantes) :
 ```dart
 Future<ApiResult<void>> abortMission(String id) async {
@@ -73,7 +73,7 @@ from api.routes.metrics_llm import router as metrics_llm_router
 app.include_router(metrics_llm_router)
 ```
 Pour que les chiffres soient réels, brancher le tracer dans `core/llm_factory.py`
-(`safe_invoke`, ~ligne 654), flag `JARVIS_LLM_TRACE` :
+(`safe_invoke`, ~ligne 654), flag `BEA_LLM_TRACE` :
 ```python
 from core.observability.llm_tracer import get_tracer
 with get_tracer().span(model=<model>, mission_id=<mission_id>) as _s:
@@ -83,7 +83,7 @@ with get_tracer().span(model=<model>, mission_id=<mission_id>) as _s:
 Côté app : écran « Monitoring » consommant `/api/v3/metrics/llm` + le `websocket_service`
 existant (flux `metrics_websocket`/`observability`) → coût cumulé, taux d'erreur, live.
 
-### C. Accès distant sécurisé — `jarvismax_app/lib/config/hardcoded_config.dart`
+### C. Accès distant sécurisé — `beamax_app/lib/config/hardcoded_config.dart`
 Supporter HTTPS + endpoint configurable (aujourd'hui : `http://host:port` en dur) :
 ```dart
 // scheme configurable; défaut https en prod
@@ -94,7 +94,7 @@ static String get scheme => 'https';
 Exposer le backend derrière le reverse proxy TLS (`Caddyfile` racine), réactiver un
 champ host/port dans `settings_screen.dart` (persisté via `shared_preferences`).
 
-### D. Push notifications (FCM) — `jarvismax_app`
+### D. Push notifications (FCM) — `beamax_app`
 - `pubspec.yaml` : ajouter `firebase_messaging` (+ config Firebase Android).
 - `lib/services/notification_service.dart` : enregistrer le token device au login,
   l'envoyer au backend ; afficher les push (approbation requise / mission finie / erreur).

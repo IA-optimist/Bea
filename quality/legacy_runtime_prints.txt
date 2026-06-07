@@ -33,8 +33,8 @@ core/training_data_collector.py
 data_intelligence/market_intel_service.py
 examples/business_cognition_demo.py
 executor/execution_engine.py
-jarvis_mcp/jarvis_mcp_server.py
-jarvismax_cli.py
+bea_mcp/bea_mcp_server.py
+beamax_cli.py
 kernel/__main__.py
 learning/learning_loop.py
 mcp/hexstrike_v2/core/cache.py

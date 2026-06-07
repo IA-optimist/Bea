@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Agent Self-Improvement Bridge
+BEA MAX — Business Agent Self-Improvement Bridge
 =====================================================
 Ensures business agents can be safely improved by the core
 self-improvement loop.

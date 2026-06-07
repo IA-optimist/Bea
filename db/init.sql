@@ -1,4 +1,4 @@
--- JarvisMax Database Schema
+-- BeaMax Database Schema
 -- PostgreSQL 16+
 
 -- Enable extensions
@@ -158,4 +158,4 @@ INSERT INTO modules (name, description, version, status) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Done
-SELECT 'JarvisMax database initialized successfully' AS status;
+SELECT 'BeaMax database initialized successfully' AS status;

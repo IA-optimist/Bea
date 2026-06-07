@@ -211,32 +211,32 @@ class TestStartupGuard(unittest.TestCase):
 
     def test_dev_mode_passes_without_token(self):
         from core.security.startup_guard import run_all_checks
-        old_env = os.environ.get("JARVIS_ENV")
-        old_token = os.environ.get("JARVIS_API_TOKEN")
-        os.environ["JARVIS_ENV"] = "development"
-        os.environ.pop("JARVIS_API_TOKEN", None)
+        old_env = os.environ.get("BEA_ENV")
+        old_token = os.environ.get("BEA_API_TOKEN")
+        os.environ["BEA_ENV"] = "development"
+        os.environ.pop("BEA_API_TOKEN", None)
         try:
             result = run_all_checks()
             self.assertFalse(result["auth_token"])
             self.assertFalse(result["is_production"])
         finally:
-            if old_env: os.environ["JARVIS_ENV"] = old_env
-            else: os.environ.pop("JARVIS_ENV", None)
-            if old_token: os.environ["JARVIS_API_TOKEN"] = old_token
+            if old_env: os.environ["BEA_ENV"] = old_env
+            else: os.environ.pop("BEA_ENV", None)
+            if old_token: os.environ["BEA_API_TOKEN"] = old_token
 
     def test_prod_mode_fails_without_token(self):
         from core.security.startup_guard import run_all_checks, StartupGuardError
-        old_env = os.environ.get("JARVIS_ENV")
-        old_token = os.environ.get("JARVIS_API_TOKEN")
-        os.environ["JARVIS_ENV"] = "production"
-        os.environ.pop("JARVIS_API_TOKEN", None)
+        old_env = os.environ.get("BEA_ENV")
+        old_token = os.environ.get("BEA_API_TOKEN")
+        os.environ["BEA_ENV"] = "production"
+        os.environ.pop("BEA_API_TOKEN", None)
         try:
             with self.assertRaises(StartupGuardError):
                 run_all_checks()
         finally:
-            if old_env: os.environ["JARVIS_ENV"] = old_env
-            else: os.environ.pop("JARVIS_ENV", None)
-            if old_token: os.environ["JARVIS_API_TOKEN"] = old_token
+            if old_env: os.environ["BEA_ENV"] = old_env
+            else: os.environ.pop("BEA_ENV", None)
+            if old_token: os.environ["BEA_API_TOKEN"] = old_token
 
 
 if __name__ == "__main__":

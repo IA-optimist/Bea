@@ -1,8 +1,8 @@
 """
-jarvis_mcp/jarvis_mcp_server.py — Jarvis MCP server (FastMCP).
+bea_mcp/bea_mcp_server.py — Bea MCP server (FastMCP).
 
-Expose Jarvis tools via the MCP protocol so any MCP-compatible client
-(Claude Desktop, Claude Code, other agents) can call Jarvis directly.
+Expose Bea tools via the MCP protocol so any MCP-compatible client
+(Claude Desktop, Claude Code, other agents) can call Bea directly.
 
 Feature flag : MCP_SERVER_ENABLED=true
 Dependency   : mcp>=1.0.0  (pip install mcp)
@@ -14,14 +14,14 @@ Tools exposed (read-safe, no state mutation):
   - list_missions(limit)          → list recent missions
 
 Startup (standalone):
-    python -m jarvis_mcp.jarvis_mcp_server
+    python -m bea_mcp.bea_mcp_server
 
 Or use stdio transport with Claude Desktop / Claude Code:
     {
       "mcpServers": {
-        "jarvis": {
+        "bea": {
           "command": "python3",
-          "args": ["/app/jarvis_mcp/jarvis_mcp_server.py"],
+          "args": ["/app/bea_mcp/bea_mcp_server.py"],
           "env": { "PYTHONPATH": "/app" }
         }
       }
@@ -29,7 +29,7 @@ Or use stdio transport with Claude Desktop / Claude Code:
 
 Security:
   - Read-only tools only (no mission submission, no action execution)
-  - JARVIS_MCP_ALLOWED_ORIGINS env var for SSE CORS (default: localhost only)
+  - BEA_MCP_ALLOWED_ORIGINS env var for SSE CORS (default: localhost only)
   - No secrets exposed via tool responses
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger("jarvis_mcp.jarvis_server")
+log = structlog.get_logger("bea_mcp.bea_server")
 
 # ── FastMCP import guard ──────────────────────────────────────────────────────
 try:
@@ -58,15 +58,15 @@ _MISSIONS_DIR = _WORKSPACE / "missions"
 
 
 def _build_server() -> Any:
-    """Build the FastMCP server with all Jarvis tools."""
+    """Build the FastMCP server with all Bea tools."""
     if not _MCP_AVAILABLE:
         raise RuntimeError(
             "mcp package not installed. Run: pip install 'mcp>=1.0.0'"
         )
 
     mcp = FastMCP(
-        name="jarvis",
-        description="Jarvis Max — Autonomous AI agent system",
+        name="bea",
+        description="Bea Max — Autonomous AI agent system",
         version="1.0.0",
     )
 
@@ -75,7 +75,7 @@ def _build_server() -> Any:
     @mcp.tool()
     def memory_search(query: str, top_k: int = 5) -> str:
         """
-        Search Jarvis vector memory for relevant context.
+        Search Bea vector memory for relevant context.
 
         Args:
             query:  The search query (natural language).
@@ -105,7 +105,7 @@ def _build_server() -> Any:
     @mcp.tool()
     def mission_status(mission_id: str) -> str:
         """
-        Get the current status and result of a Jarvis mission.
+        Get the current status and result of a Bea mission.
 
         Args:
             mission_id: The mission ID (e.g. "mission_abc123").
@@ -143,7 +143,7 @@ def _build_server() -> Any:
     @mcp.tool()
     def list_missions(limit: int = 10) -> str:
         """
-        List the most recent Jarvis missions.
+        List the most recent Bea missions.
 
         Args:
             limit: Maximum number of missions to return (1-50).

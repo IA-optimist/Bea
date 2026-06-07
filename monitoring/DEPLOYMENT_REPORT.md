@@ -1,4 +1,4 @@
-# 📊 Rapport de Déploiement - Stack Monitoring JarvisMax
+# 📊 Rapport de Déploiement - Stack Monitoring BeaMax
 
 **Date**: 2026-04-09  
 **Serveur**: VPS1 (MONITORING_HOST)
@@ -21,16 +21,16 @@ Stack de monitoring complète déployée avec succès incluant:
 
 | Service | Container | Port | Statut | Health |
 |---------|-----------|------|--------|--------|
-| **Prometheus** | jarvismax-prometheus | 9090 | ✅ Running | ✅ Healthy |
-| **Grafana** | jarvismax-grafana | 3002 | ✅ Running | ✅ Healthy |
-| **Node Exporter** | jarvismax-node-exporter | 9100 | ✅ Running | ✅ Running |
-| **Alertmanager** | jarvismax-alertmanager | 9093 | ✅ Running | ✅ Healthy |
+| **Prometheus** | beamax-prometheus | 9090 | ✅ Running | ✅ Healthy |
+| **Grafana** | beamax-grafana | 3002 | ✅ Running | ✅ Healthy |
+| **Node Exporter** | beamax-node-exporter | 9100 | ✅ Running | ✅ Running |
+| **Alertmanager** | beamax-alertmanager | 9093 | ✅ Running | ✅ Healthy |
 
 ### Targets Prometheus
 
 | Job | Health | Description |
 |-----|--------|-------------|
-| jarvismax-api | ✅ UP | API metrics sur /metrics |
+| beamax-api | ✅ UP | API metrics sur /metrics |
 | node-exporter | ✅ UP | Métriques système |
 | prometheus | ✅ UP | Self-monitoring |
 | qdrant | ✅ UP | Vector database |
@@ -46,7 +46,7 @@ Stack de monitoring complète déployée avec succès incluant:
 Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWORD})
 
 ### 1. System Monitoring Dashboard
-**UID**: `jarvismax-system`  
+**UID**: `beamax-system`  
 **Métriques**:
 - CPU Usage (temps réel + alertes > 80%)
 - Memory Usage (avec seuils d'alerte)
@@ -56,7 +56,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 - Container Status (UP/DOWN pour chaque service)
 
 ### 2. API Monitoring Dashboard
-**UID**: `jarvismax-api`  
+**UID**: `beamax-api`  
 **Métriques**:
 - Request Rate (par endpoint et méthode)
 - Response Time (P50, P95, P99)
@@ -70,7 +70,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 - Average Response Time
 
 ### 3. Business Metrics Dashboard
-**UID**: `jarvismax-business`  
+**UID**: `beamax-business`  
 **Métriques**:
 - Business Tasks (total, completed, failed)
 - Task Success Rate (gauge)
@@ -138,7 +138,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 ## 📁 Structure des Fichiers
 
 ```
-/root/Jarvismax-master/monitoring/
+/root/Beamax-master/monitoring/
 ├── docker-compose-monitoring.yml    # Compose file principal
 ├── prometheus/
 │   ├── prometheus.yml              # Config Prometheus
@@ -174,7 +174,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 - ✅ 9100/tcp (Node Exporter)
 
 ### Network Docker
-- **Nom**: `jarvismax-master_jarvismax-network`
+- **Nom**: `beamax-master_beamax-network`
 - **Type**: bridge
 - **Services connectés**: 8 (API, DB, Redis, Qdrant, Caddy, Frontend, Ollama + Monitoring stack)
 
@@ -221,7 +221,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
    ```
 
 ### Webhook Alertmanager
-- **Endpoint**: `http://jarvismax-api:8000/api/v2/webhooks/alertmanager`
+- **Endpoint**: `http://beamax-api:8000/api/v2/webhooks/alertmanager`
 - **Méthode**: POST
 - **Format**: JSON (Alertmanager v4)
 - **Priorités**: default, critical, info
@@ -231,7 +231,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 ## ✅ Checklist de Validation
 
 - [x] Stack déployée et tous les conteneurs healthy
-- [x] Prometheus scrape l'API JarvisMax avec succès
+- [x] Prometheus scrape l'API BeaMax avec succès
 - [x] Node Exporter expose les métriques système
 - [x] Grafana accessible sur port 3002
 - [x] 3 dashboards créés et provisionnés
@@ -248,7 +248,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 
 ### Démarrer/Arrêter la Stack
 ```bash
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 
 # Démarrer
 docker compose -f docker-compose-monitoring.yml up -d
@@ -304,12 +304,12 @@ curl -X POST http://localhost:9093/-/reload
 
 ### Alerte ne fonctionne pas
 - Vérifier Alertmanager: http://MONITORING_HOST:9093
-- Vérifier les logs: `docker logs jarvismax-alertmanager`
+- Vérifier les logs: `docker logs beamax-alertmanager`
 - Tester manuellement l'endpoint webhook
 
 ### Grafana inaccessible
 - Vérifier le conteneur: `docker ps | grep grafana`
-- Vérifier les logs: `docker logs jarvismax-grafana`
+- Vérifier les logs: `docker logs beamax-grafana`
 - Vérifier le firewall: `ufw status | grep 3002`
 
 ---

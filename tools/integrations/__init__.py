@@ -1,1 +1,1 @@
-"""JARVIS MAX — External service integrations."""
+"""BEA MAX — External service integrations."""

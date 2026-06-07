@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Finance Memory
+BEA MAX — Finance Memory
 ===============================
 Stores financial events, subscriptions, and customer data safely.
 

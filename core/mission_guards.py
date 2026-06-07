@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mission Guards (P10 + P5)
+BEA MAX — Mission Guards (P10 + P5)
 ==========================================
 Iteration limit and token/cost budget enforcement for missions.
 

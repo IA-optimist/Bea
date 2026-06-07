@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const FRONTEND_URL = 'http://72.62.177.55:3001';
 const API_BASE_URL = 'http://72.62.177.55:8000';
 
-test.describe('JarvisMax Frontend Tests', () => {
+test.describe('BeaMax Frontend Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     // Navigate to frontend before each test
@@ -14,7 +14,7 @@ test.describe('JarvisMax Frontend Tests', () => {
     await page.goto(`${FRONTEND_URL}/login`);
     
     // Check if page loaded
-    await expect(page).toHaveTitle(/JarvisMax|Login/i);
+    await expect(page).toHaveTitle(/BeaMax|Login/i);
     
     // Look for common login page elements
     const loginButton = page.getByRole('button', { name: /login|sign in|connexion/i });

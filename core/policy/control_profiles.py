@@ -2,14 +2,14 @@
 core/policy/control_profiles.py — AI OS Human Control Layer.
 
 Defines 3 policy profiles (safe, balanced, autonomous) that control
-Jarvis's autonomy level. Integrates with existing policy_engine.py.
+Bea's autonomy level. Integrates with existing policy_engine.py.
 """
 from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Literal
 import structlog
 
-log = structlog.get_logger("jarvis.control")
+log = structlog.get_logger("bea.control")
 
 ProfileName = Literal["safe", "balanced", "autonomous"]
 

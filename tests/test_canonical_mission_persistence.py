@@ -146,9 +146,9 @@ class TestCanonicalMissionStore(unittest.TestCase):
         """
         import os
         import shutil
-        Path("/tmp/jarvis_bad_path_test.XXXXXX")
+        Path("/tmp/bea_bad_path_test.XXXXXX")
         # Create a read-only parent directory so the probe inside the store fails.
-        ro_parent = Path("/tmp/jarvis_bad_path_ro")
+        ro_parent = Path("/tmp/bea_bad_path_ro")
         if ro_parent.exists():
             os.chmod(str(ro_parent), 0o755)
             shutil.rmtree(str(ro_parent), ignore_errors=True)

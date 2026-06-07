@@ -1,8 +1,8 @@
-# JarvisMax Production Deployment Guide
+# BeaMax Production Deployment Guide
 
 **Last Updated:** 2026-04-10  
 **Target VPS:** 77.42.40.146  
-**Domain:** jarvis.jarvismaxapp.co.uk  
+**Domain:** bea.beamaxapp.co.uk  
 **Status:** ✅ PRODUCTION READY (Score 9.8/10)
 
 ---
@@ -14,11 +14,11 @@
 ssh root@77.42.40.146
 
 # Run deployment
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 ./deploy.sh
 
 # Verify
-curl http://jarvis.jarvismaxapp.co.uk/health
+curl http://bea.beamaxapp.co.uk/health
 ```
 
 **Expected output:**
@@ -49,14 +49,14 @@ ssh root@77.42.40.146 "docker --version && docker-compose --version"
 
 **3. Environment Variables:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && cat .env"
+ssh root@77.42.40.146 "cd /root/Beamax-master && cat .env"
 ```
 
 **Required variables:**
 ```bash
-JARVIS_API_TOKEN=<your-token>
-JARVIS_REQUIRE_AUTH=true
-DATABASE_URL=postgresql://jarvis:jarvis123@postgres:5432/jarvismax
+BEA_API_TOKEN=<your-token>
+BEA_REQUIRE_AUTH=true
+DATABASE_URL=postgresql://bea:bea123@postgres:5432/beamax
 REDIS_URL=redis://redis:6379
 QDRANT_URL=http://qdrant:6333
 OPENAI_API_KEY=<optional-for-embeddings>
@@ -65,12 +65,12 @@ STRIPE_WEBHOOK_SECRET=<if-using-stripe>
 
 **4. Repository Cloned:**
 ```bash
-ssh root@77.42.40.146 "ls -la /root/Jarvismax-master"
+ssh root@77.42.40.146 "ls -la /root/Beamax-master"
 ```
 
 If not cloned:
 ```bash
-ssh root@77.42.40.146 "cd /root && git clone https://github.com/UniTy01/Jarvismax-master.git"
+ssh root@77.42.40.146 "cd /root && git clone https://github.com/UniTy01/Beamax-master.git"
 ```
 
 ---
@@ -81,27 +81,27 @@ ssh root@77.42.40.146 "cd /root && git clone https://github.com/UniTy01/Jarvisma
 
 **Full deployment with tests (5-7 minutes):**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh"
 ```
 
 **Fast deployment without tests (2-3 minutes):**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh --fast"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh --fast"
 ```
 
 **Rollback to previous version:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh rollback"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh rollback"
 ```
 
 **Check status:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh status"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh status"
 ```
 
 **View logs:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh logs"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh logs"
 ```
 
 ---
@@ -111,7 +111,7 @@ ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh logs"
 **1. SSH to VPS:**
 ```bash
 ssh root@77.42.40.146
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 ```
 
 **2. Backup current version:**
@@ -128,12 +128,12 @@ git pull origin main
 
 **4. Build containers:**
 ```bash
-docker-compose build --no-cache jarvismax-api
+docker-compose build --no-cache beamax-api
 ```
 
 **5. Restart services:**
 ```bash
-docker-compose stop jarvismax-api
+docker-compose stop beamax-api
 docker-compose up -d
 ```
 
@@ -149,7 +149,7 @@ done
 ```bash
 curl http://localhost:8000/health
 docker-compose ps
-docker logs --tail 50 jarvismax-api
+docker logs --tail 50 beamax-api
 ```
 
 ---
@@ -162,7 +162,7 @@ docker logs --tail 50 jarvismax-api
 **Manual trigger:**
 ```bash
 # From local machine
-cd ~/Jarvismax-master
+cd ~/Beamax-master
 git push origin main
 ```
 
@@ -175,7 +175,7 @@ git push origin main
 
 **Monitor workflow:**
 ```
-https://github.com/UniTy01/Jarvismax-master/actions
+https://github.com/UniTy01/Beamax-master/actions
 ```
 
 ---
@@ -185,7 +185,7 @@ https://github.com/UniTy01/Jarvismax-master/actions
 ### Automated (via deploy.sh)
 
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh"
 ```
 
 **Tests run automatically:**
@@ -200,7 +200,7 @@ ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh"
 
 **1. Health Check:**
 ```bash
-curl http://jarvis.jarvismaxapp.co.uk/health
+curl http://bea.beamaxapp.co.uk/health
 ```
 
 **Expected:**
@@ -211,14 +211,14 @@ curl http://jarvis.jarvismaxapp.co.uk/health
 **2. API Authentication:**
 ```bash
 curl -H "Authorization: Bearer jv-test-token" \
-     http://jarvis.jarvismaxapp.co.uk/api/projects
+     http://bea.beamaxapp.co.uk/api/projects
 ```
 
 **Expected:** 401 Unauthorized (auth enforced) OR 200 OK (if token valid)
 
 **3. Database Connection:**
 ```bash
-docker exec jarvismax-api python3 -c "
+docker exec beamax-api python3 -c "
 from memory.postgres_backend import PostgreSQLBackend
 backend = PostgreSQLBackend()
 print('Database:', backend.health_check())
@@ -229,22 +229,22 @@ print('Database:', backend.health_check())
 
 **4. Redis Connection:**
 ```bash
-docker exec jarvismax-redis redis-cli ping
+docker exec beamax-redis redis-cli ping
 ```
 
 **Expected:** `PONG`
 
 **5. Qdrant Connection:**
 ```bash
-curl http://jarvis.jarvismaxapp.co.uk:6333/health
+curl http://bea.beamaxapp.co.uk:6333/health
 ```
 
 **Expected:** `{"status": "ok"}`
 
 **6. Mission Execution (End-to-End):**
 ```bash
-curl -X POST http://jarvis.jarvismaxapp.co.uk/api/missions \
-  -H "Authorization: Bearer $JARVIS_API_TOKEN" \
+curl -X POST http://bea.beamaxapp.co.uk/api/missions \
+  -H "Authorization: Bearer $BEA_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "objective": "Test mission - verify deployment",
@@ -262,17 +262,17 @@ curl -X POST http://jarvis.jarvismaxapp.co.uk/api/missions \
 
 **API logs (live):**
 ```bash
-ssh root@77.42.40.146 "docker logs -f jarvismax-api"
+ssh root@77.42.40.146 "docker logs -f beamax-api"
 ```
 
 **All services:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && docker-compose logs -f"
+ssh root@77.42.40.146 "cd /root/Beamax-master && docker-compose logs -f"
 ```
 
 **Last 100 lines:**
 ```bash
-ssh root@77.42.40.146 "docker logs --tail 100 jarvismax-api"
+ssh root@77.42.40.146 "docker logs --tail 100 beamax-api"
 ```
 
 ---
@@ -281,16 +281,16 @@ ssh root@77.42.40.146 "docker logs --tail 100 jarvismax-api"
 
 **Docker Compose:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && docker-compose ps"
+ssh root@77.42.40.146 "cd /root/Beamax-master && docker-compose ps"
 ```
 
 **Expected output:**
 ```
 NAME                STATUS         PORTS
-jarvismax-api       Up 10 minutes  0.0.0.0:8000->8000/tcp
-jarvismax-postgres  Up 10 minutes  5432/tcp
-jarvismax-redis     Up 10 minutes  6379/tcp
-jarvismax-qdrant    Up 10 minutes  6333/tcp
+beamax-api       Up 10 minutes  0.0.0.0:8000->8000/tcp
+beamax-postgres  Up 10 minutes  5432/tcp
+beamax-redis     Up 10 minutes  6379/tcp
+beamax-qdrant    Up 10 minutes  6333/tcp
 ```
 
 ---
@@ -301,8 +301,8 @@ jarvismax-qdrant    Up 10 minutes  6333/tcp
 |---------|----------|----------|
 | API | http://localhost:8000/health | `{"status":"healthy"}` |
 | Qdrant | http://localhost:6333/health | `{"status":"ok"}` |
-| PostgreSQL | `docker exec jarvismax-postgres pg_isready` | `accepting connections` |
-| Redis | `docker exec jarvismax-redis redis-cli ping` | `PONG` |
+| PostgreSQL | `docker exec beamax-postgres pg_isready` | `accepting connections` |
+| Redis | `docker exec beamax-redis redis-cli ping` | `PONG` |
 
 ---
 
@@ -311,7 +311,7 @@ jarvismax-qdrant    Up 10 minutes  6333/tcp
 ### Automatic Rollback (via deploy.sh)
 
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh rollback"
+ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh rollback"
 ```
 
 **What it does:**
@@ -326,22 +326,22 @@ ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh rollback"
 
 **1. Find previous SHA:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && cat .last_deploy_sha"
+ssh root@77.42.40.146 "cd /root/Beamax-master && cat .last_deploy_sha"
 ```
 
 **2. Checkout previous version:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && git checkout <sha>"
+ssh root@77.42.40.146 "cd /root/Beamax-master && git checkout <sha>"
 ```
 
 **3. Restart services:**
 ```bash
-ssh root@77.42.40.146 "cd /root/Jarvismax-master && docker-compose restart jarvismax-api"
+ssh root@77.42.40.146 "cd /root/Beamax-master && docker-compose restart beamax-api"
 ```
 
 **4. Verify:**
 ```bash
-curl http://jarvis.jarvismaxapp.co.uk/health
+curl http://bea.beamaxapp.co.uk/health
 ```
 
 ---
@@ -351,7 +351,7 @@ curl http://jarvis.jarvismaxapp.co.uk/health
 **If API is completely broken:**
 ```bash
 ssh root@77.42.40.146 "
-cd /root/Jarvismax-master &&
+cd /root/Beamax-master &&
 git checkout \$(cat .last_deploy_sha) &&
 docker-compose down &&
 docker-compose up -d
@@ -361,7 +361,7 @@ docker-compose up -d
 **Nuclear option (rebuild from scratch):**
 ```bash
 ssh root@77.42.40.146 "
-cd /root/Jarvismax-master &&
+cd /root/Beamax-master &&
 docker-compose down -v &&
 docker-compose build --no-cache &&
 docker-compose up -d
@@ -378,7 +378,7 @@ docker-compose up -d
 
 **Check logs:**
 ```bash
-docker logs jarvismax-api
+docker logs beamax-api
 ```
 
 **Common causes:**
@@ -389,10 +389,10 @@ docker logs jarvismax-api
 **Fix:**
 ```bash
 # Verify .env
-cat /root/Jarvismax-master/.env
+cat /root/Beamax-master/.env
 
 # Restart services
-docker-compose restart jarvismax-api
+docker-compose restart beamax-api
 
 # Check port 8000
 netstat -tlnp | grep 8000
@@ -404,15 +404,15 @@ netstat -tlnp | grep 8000
 
 **Check PostgreSQL:**
 ```bash
-docker exec jarvismax-postgres pg_isready
-docker logs jarvismax-postgres
+docker exec beamax-postgres pg_isready
+docker logs beamax-postgres
 ```
 
 **Test connection:**
 ```bash
-docker exec jarvismax-api python3 -c "
+docker exec beamax-api python3 -c "
 import psycopg2
-conn = psycopg2.connect('postgresql://jarvis:jarvis123@postgres:5432/jarvismax')
+conn = psycopg2.connect('postgresql://bea:bea123@postgres:5432/beamax')
 print('Connected:', conn.status)
 "
 ```
@@ -420,12 +420,12 @@ print('Connected:', conn.status)
 **Fix:**
 ```bash
 # Restart PostgreSQL
-docker-compose restart jarvismax-postgres
+docker-compose restart beamax-postgres
 
 # Recreate database (⚠️ DELETES DATA)
-docker-compose down jarvismax-postgres
-docker volume rm jarvismax-master_postgres_data
-docker-compose up -d jarvismax-postgres
+docker-compose down beamax-postgres
+docker volume rm beamax-master_postgres_data
+docker-compose up -d beamax-postgres
 ```
 
 ---
@@ -439,22 +439,22 @@ curl -v http://localhost:8000/health
 
 **Check if API is running:**
 ```bash
-docker ps | grep jarvismax-api
+docker ps | grep beamax-api
 ```
 
 **Check API logs for errors:**
 ```bash
-docker logs --tail 100 jarvismax-api | grep -i error
+docker logs --tail 100 beamax-api | grep -i error
 ```
 
 **Fix:**
 ```bash
 # Restart API
-docker-compose restart jarvismax-api
+docker-compose restart beamax-api
 
 # Rebuild if code changed
-docker-compose build jarvismax-api
-docker-compose up -d jarvismax-api
+docker-compose build beamax-api
+docker-compose up -d beamax-api
 ```
 
 ---
@@ -463,17 +463,17 @@ docker-compose up -d jarvismax-api
 
 **Check Redis:**
 ```bash
-docker exec jarvismax-redis redis-cli ping
-docker logs jarvismax-redis
+docker exec beamax-redis redis-cli ping
+docker logs beamax-redis
 ```
 
 **Fix:**
 ```bash
 # Restart Redis
-docker-compose restart jarvismax-redis
+docker-compose restart beamax-redis
 
 # Clear Redis data (⚠️ DELETES CACHE)
-docker exec jarvismax-redis redis-cli FLUSHALL
+docker exec beamax-redis redis-cli FLUSHALL
 ```
 
 ---
@@ -483,18 +483,18 @@ docker exec jarvismax-redis redis-cli FLUSHALL
 **Check Qdrant:**
 ```bash
 curl http://localhost:6333/health
-docker logs jarvismax-qdrant
+docker logs beamax-qdrant
 ```
 
 **Fix:**
 ```bash
 # Restart Qdrant
-docker-compose restart jarvismax-qdrant
+docker-compose restart beamax-qdrant
 
 # Recreate Qdrant (⚠️ DELETES VECTORS)
-docker-compose down jarvismax-qdrant
-docker volume rm jarvismax-master_qdrant_data
-docker-compose up -d jarvismax-qdrant
+docker-compose down beamax-qdrant
+docker volume rm beamax-master_qdrant_data
+docker-compose up -d beamax-qdrant
 ```
 
 ---
@@ -511,12 +511,12 @@ docker stats --no-stream
 **Disk usage:**
 ```bash
 docker system df
-df -h /root/Jarvismax-master
+df -h /root/Beamax-master
 ```
 
 **Network:**
 ```bash
-docker exec jarvismax-api netstat -tlnp
+docker exec beamax-api netstat -tlnp
 ```
 
 ---
@@ -525,14 +525,14 @@ docker exec jarvismax-api netstat -tlnp
 
 **Connection count:**
 ```bash
-docker exec jarvismax-postgres psql -U jarvis -d jarvismax -c "
+docker exec beamax-postgres psql -U bea -d beamax -c "
 SELECT count(*) FROM pg_stat_activity;
 "
 ```
 
 **Slow queries:**
 ```bash
-docker exec jarvismax-postgres psql -U jarvis -d jarvismax -c "
+docker exec beamax-postgres psql -U bea -d beamax -c "
 SELECT query, calls, mean_exec_time
 FROM pg_stat_statements
 ORDER BY mean_exec_time DESC
@@ -545,14 +545,14 @@ LIMIT 10;
 ### Redis Cache Stats
 
 ```bash
-docker exec jarvismax-redis redis-cli INFO stats
-docker exec jarvismax-redis redis-cli INFO memory
+docker exec beamax-redis redis-cli INFO stats
+docker exec beamax-redis redis-cli INFO memory
 ```
 
 **Cache hit rate:**
 ```bash
-docker exec jarvismax-redis redis-cli INFO stats | grep keyspace_hits
-docker exec jarvismax-redis redis-cli INFO stats | grep keyspace_misses
+docker exec beamax-redis redis-cli INFO stats | grep keyspace_hits
+docker exec beamax-redis redis-cli INFO stats | grep keyspace_misses
 ```
 
 ---
@@ -561,8 +561,8 @@ docker exec jarvismax-redis redis-cli INFO stats | grep keyspace_misses
 
 **Pre-deployment verification:**
 
-- [ ] `JARVIS_REQUIRE_AUTH=true` in .env
-- [ ] `JARVIS_API_TOKEN` set to secure random string
+- [ ] `BEA_REQUIRE_AUTH=true` in .env
+- [ ] `BEA_API_TOKEN` set to secure random string
 - [ ] No secrets in git history (`git log --all --source -- .env`)
 - [ ] PostgreSQL password not hardcoded (DATABASE_URL only)
 - [ ] Stripe webhook secret loaded from env (if using)
@@ -614,12 +614,12 @@ docker exec jarvismax-redis redis-cli INFO stats | grep keyspace_misses
 ## Contact & Support
 
 **Production Issues:**
-- **Logs:** `ssh root@77.42.40.146 "docker logs jarvismax-api"`
+- **Logs:** `ssh root@77.42.40.146 "docker logs beamax-api"`
 - **Status:** `./deploy.sh status`
 - **Rollback:** `./deploy.sh rollback`
 
 **Emergency Contact:**
-- **GitHub Issues:** https://github.com/UniTy01/Jarvismax-master/issues
+- **GitHub Issues:** https://github.com/UniTy01/Beamax-master/issues
 - **Deployment Docs:** This file (`docs/DEPLOYMENT_GUIDE.md`)
 
 ---
@@ -641,4 +641,4 @@ docker exec jarvismax-redis redis-cli INFO stats | grep keyspace_misses
 **Last Updated:** 2026-04-10  
 **Status:** ✅ PRODUCTION READY  
 **Score:** 9.8/10  
-**Deploy Command:** `ssh root@77.42.40.146 "cd /root/Jarvismax-master && ./deploy.sh"`
+**Deploy Command:** `ssh root@77.42.40.146 "cd /root/Beamax-master && ./deploy.sh"`

@@ -16,7 +16,7 @@ def test_invoke_returns_dict():
         from core.orchestrator_lg.langgraph_flow import invoke
     except ImportError:
         pytest.skip("langgraph not installed")
-    result = invoke("Test: qu'est-ce que Jarvis ?", mission_id="test-001")
+    result = invoke("Test: qu'est-ce que Bea ?", mission_id="test-001")
     assert isinstance(result, dict)
     assert "final_answer" in result
     assert isinstance(result["final_answer"], str)
@@ -33,14 +33,14 @@ def test_invoke_never_raises():
 
 
 def test_state_structure():
-    """JarvisState a les bons champs obligatoires."""
+    """BeaState a les bons champs obligatoires."""
     try:
-        from core.orchestrator_lg.langgraph_flow import JarvisState
+        from core.orchestrator_lg.langgraph_flow import BeaState
     except ImportError:
         pytest.skip("langgraph not installed")
     required = {"user_input", "final_answer", "errors", "plan", "retry_count",
                 "tool_calls", "tool_results", "requires_approval", "mission_id"}
-    assert required.issubset(set(JarvisState.__annotations__.keys()))
+    assert required.issubset(set(BeaState.__annotations__.keys()))
 
 
 def test_tools_registry():
@@ -59,9 +59,9 @@ def test_graph_compiled():
         import langgraph  # noqa: F401
     except ImportError:
         pytest.skip("langgraph not installed")
-    from core.orchestrator_lg.langgraph_flow import jarvis_graph
+    from core.orchestrator_lg.langgraph_flow import bea_graph
     # Peut être None si LLM absent, ne doit jamais lever d'exception à l'import
-    assert jarvis_graph is not None or jarvis_graph is None  # toujours vrai
+    assert bea_graph is not None or bea_graph is None  # toujours vrai
 
 
 def test_result_keys():

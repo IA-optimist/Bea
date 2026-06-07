@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: 'JarvisMax Dashboards'
+  - name: 'BeaMax Dashboards'
     orgId: 1
-    folder: 'JarvisMax'
+    folder: 'BeaMax'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30

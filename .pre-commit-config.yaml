@@ -1,4 +1,4 @@
-# Pre-commit hooks — JarvisMax
+# Pre-commit hooks — BeaMax
 # Sécurité & détection (pas d'auto-formatage pour éviter les churns massifs).
 #
 # Installation locale :
@@ -27,7 +27,7 @@ repos:
             .*\.lock|
             .*/migrations/.*|
             docs/archive/.*|
-            jarvismax_app/.*|
+            beamax_app/.*|
             frontend/.*|
             mobile/.*|
             .*\.min\.(js|css)|
@@ -60,7 +60,7 @@ repos:
         exclude: |
           (?x)^(
             docs/archive/.*|
-            jarvismax_app/.*
+            beamax_app/.*
           )$
 
   # ── Ruff (lint only, NO autofix to avoid massive churn) ─────────

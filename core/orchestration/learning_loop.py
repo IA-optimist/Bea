@@ -5,7 +5,7 @@ After each mission completes, the learning loop:
 1. Reviews the reflection verdict
 2. If low confidence or retry: extracts lesson
 3. Feeds lesson into memory and skills
-4. Over time, Jarvis learns from its own failures
+4. Over time, Bea learns from its own failures
 
 Inspired by Hermes Agent's skill improvement + ARC's refinement loops.
 """

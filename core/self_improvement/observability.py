@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Improvement Observability
+BEA MAX — Self-Improvement Observability
 ===============================================
 Structured events + metrics for the autonomous code patching pipeline.
 

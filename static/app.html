@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Jarvis — AI Operating System</title>
+<title>Bea — AI Operating System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -146,7 +146,7 @@ input,textarea,select{font-family:inherit;color:var(--t1)}
   <div class="login-box">
     <div class="login-brand">
       <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--violet));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px">J</div>
-      <h1>Jarvis</h1>
+      <h1>Bea</h1>
       <p>AI Operating System</p>
     </div>
     <div id="login-err" class="login-err hidden"></div>
@@ -173,7 +173,7 @@ input,textarea,select{font-family:inherit;color:var(--t1)}
   <!-- Sidebar -->
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-hdr">
-      <div class="brand"><div class="brand-mark">J</div><div><div class="brand-name">Jarvis</div><div class="brand-sub">AI Operating System</div></div></div>
+      <div class="brand"><div class="brand-mark">J</div><div><div class="brand-name">Bea</div><div class="brand-sub">AI Operating System</div></div></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-group">
@@ -216,7 +216,7 @@ input,textarea,select{font-family:inherit;color:var(--t1)}
         </div>
         <div id="home-alert" class="hidden" style="background:var(--amber-s);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-md);padding:14px;margin-bottom:20px;cursor:pointer" onclick="nav(document.querySelector('[data-v=approvals]'))">
           <strong id="home-alert-n" style="color:var(--amber)"></strong>
-          <span style="font-size:12px;color:var(--t2)"> — Jarvis attend votre décision</span>
+          <span style="font-size:12px;color:var(--t2)"> — Bea attend votre décision</span>
         </div>
         <div class="card" style="margin-bottom:20px">
           <textarea id="home-input" class="input textarea" placeholder="Que voulez-vous faire ? Recherche, analyse, code, stratégie…" rows="3"></textarea>
@@ -313,14 +313,14 @@ input,textarea,select{font-family:inherit;color:var(--t1)}
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
-// JARVIS — Web Application (PROVEN endpoints only)
+// BEA — Web Application (PROVEN endpoints only)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let TOKEN='',ROLE='user',MISSIONS=[],CURRENT_MOD_TAB='agents';
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 // XSS-hardening : le token n'est PLUS persisté en localStorage. Le backend
-// set un cookie HttpOnly `jarvis_token` (Secure, SameSite=Lax, 7 jours).
+// set un cookie HttpOnly `bea_token` (Secure, SameSite=Lax, 7 jours).
 // Tous les fetch() utilisent credentials:'include' pour envoyer le cookie.
 // Le token reste en mémoire uniquement pour le fallback header (legacy).
 
@@ -415,14 +415,14 @@ async function doLogin(){
   if(tok){
     // Static token login — test against real endpoint (+ cookie auto si supported)
     try{
-      const r=await fetch('/api/v3/system/status',{headers:{'X-Jarvis-Token':tok},credentials:'include'});
+      const r=await fetch('/api/v3/system/status',{headers:{'X-Bea-Token':tok},credentials:'include'});
       if(r.ok){setToken(tok,'admin');enterApp();return}
     }catch(e){}
     errEl.textContent='Token invalide';errEl.classList.remove('hidden');return;
   }
   if(!user||!pass){errEl.textContent='Remplissez les champs';errEl.classList.remove('hidden');return}
   try{
-    // JSON endpoint qui set aussi le cookie HttpOnly jarvis_token.
+    // JSON endpoint qui set aussi le cookie HttpOnly bea_token.
     // credentials:'include' pour stocker le cookie dans le navigateur.
     const r=await fetch('/api/v2/auth/login',{
       method:'POST',
@@ -490,10 +490,10 @@ function enterApp(){
 // ── API helper ──────────────────────────────────────────────────────────────
 
 async function api(path,opts={}){
-  // credentials:'include' → envoie le cookie HttpOnly jarvis_token.
+  // credentials:'include' → envoie le cookie HttpOnly bea_token.
   // Headers maintenus comme fallback legacy (WebSocket, tests).
   const h={};
-  if(TOKEN){h['X-Jarvis-Token']=TOKEN;h['Authorization']='Bearer '+TOKEN;}
+  if(TOKEN){h['X-Bea-Token']=TOKEN;h['Authorization']='Bearer '+TOKEN;}
   if(opts.body)h['Content-Type']='application/json';
   opts.credentials=opts.credentials||'include';
   try{

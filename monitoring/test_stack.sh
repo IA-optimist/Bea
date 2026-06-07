@@ -1,10 +1,10 @@
 #!/bin/bash
-# Test de la stack monitoring JarvisMax
+# Test de la stack monitoring BeaMax
 
 set -e
 
 echo "=========================================="
-echo "🧪 Test de la Stack Monitoring JarvisMax"
+echo "🧪 Test de la Stack Monitoring BeaMax"
 echo "=========================================="
 echo ""
 
@@ -54,7 +54,7 @@ test_health() {
 
 echo "1️⃣  Checking Docker containers..."
 echo "-----------------------------------"
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 docker compose -f docker-compose-monitoring.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
@@ -110,10 +110,10 @@ echo ""
 echo "8️⃣  Checking Grafana Dashboards..."
 echo "-----------------------------------"
 # This requires authentication, so we just check if provisioning directory exists
-if [ -d "/root/Jarvismax-master/monitoring/grafana/dashboards" ]; then
-    dashboard_count=$(ls -1 /root/Jarvismax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | wc -l)
+if [ -d "/root/Beamax-master/monitoring/grafana/dashboards" ]; then
+    dashboard_count=$(ls -1 /root/Beamax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | wc -l)
     echo -e "${GREEN}✓${NC} $dashboard_count dashboard files found"
-    ls -1 /root/Jarvismax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | xargs -n1 basename
+    ls -1 /root/Beamax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | xargs -n1 basename
 else
     echo -e "${RED}✗${NC} Dashboard directory not found"
 fi
@@ -158,7 +158,7 @@ echo "📝 Next Steps:"
 echo "=========================================="
 echo "1. Open Grafana in browser: http://MONITORING_HOST:3002"
 echo "2. Login with admin / ${GRAFANA_ADMIN_PASSWORD}"
-echo "3. Navigate to Dashboards > JarvisMax folder"
+echo "3. Navigate to Dashboards > BeaMax folder"
 echo "4. Open any dashboard to see metrics"
 echo ""
 echo "For Telegram alerts:"

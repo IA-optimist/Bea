@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Orchestrator
+BEA MAX — Business Orchestrator
 =====================================
 Orchestrates the full business lifecycle: Discover → Build → Operate.
 
@@ -29,7 +29,7 @@ class BusinessPhase(str, Enum):
 
 @dataclass
 class Business:
-    """A business being created/operated by Jarvis."""
+    """A business being created/operated by Bea."""
     id: str
     name: str
     opportunity: str

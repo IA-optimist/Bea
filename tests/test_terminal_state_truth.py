@@ -47,7 +47,7 @@ class _AgentOutput:
 
 @dataclass
 class _Session:
-    """Minimal JarvisSession-like stub for supervisor tests."""
+    """Minimal BeaSession-like stub for supervisor tests."""
     session_id: str = "test-session"
     final_report: str = ""
     error: str | None = None

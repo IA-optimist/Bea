@@ -1,5 +1,5 @@
 """
-core/memory/memory_schema.py — Standardized memory schema for Jarvis AI-OS.
+core/memory/memory_schema.py — Standardized memory schema for Bea AI-OS.
 
 Defines three memory tiers with SQLite persistence:
 - Short-term (working memory): current mission context, expires after mission
@@ -68,8 +68,8 @@ TIER_DEFAULTS: dict[MemoryTier, dict] = {
 
 # Persistence path — in workspace volume so it survives container recreate
 _DB_PATH = os.environ.get(
-    "JARVIS_MEMORY_DB",
-    os.path.join(os.environ.get("JARVIS_ROOT", "/opt/jarvismax"), "workspace", "memory.db")
+    "BEA_MEMORY_DB",
+    os.path.join(os.environ.get("BEA_ROOT", "/opt/beamax"), "workspace", "memory.db")
 )
 
 

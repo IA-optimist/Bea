@@ -8,8 +8,8 @@ def _ao(name, result):
 
 def test_valid_output():
     """final_output explicite → retourné tel quel."""
-    out = build_safe_final_output("Bonjour, je suis Jarvis.", [], "m1")
-    assert out == "Bonjour, je suis Jarvis."
+    out = build_safe_final_output("Bonjour, je suis Bea.", [], "m1")
+    assert out == "Bonjour, je suis Bea."
 
 
 def test_synthesis_from_agents():

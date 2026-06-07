@@ -1,5 +1,5 @@
 """
-JARVIS MAX — AgentEvaluator
+BEA MAX — AgentEvaluator
 LLM-as-judge pour évaluer la qualité des sorties des agents.
 
 Évalue chaque sortie sur 5 dimensions (score 0–10) :
@@ -41,7 +41,7 @@ from pathlib import Path
 import structlog
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -166,7 +166,7 @@ Réponds UNIQUEMENT en JSON strict :
 
 class AgentEvaluator:
     """
-    LLM-as-judge pour évaluer les sorties des agents JarvisMax.
+    LLM-as-judge pour évaluer les sorties des agents BeaMax.
 
     Usage asynchrone :
         evaluator = AgentEvaluator(settings)
@@ -226,7 +226,7 @@ class AgentEvaluator:
         agent_name:  str,
         task:        str,
         output:      str,
-        session:     JarvisSession | None = None,
+        session:     BeaSession | None = None,
         timeout_s:   int                  = 30,
     ) -> EvalResult:
         """
@@ -291,7 +291,7 @@ class AgentEvaluator:
 
     async def evaluate_session(
         self,
-        session:   JarvisSession,
+        session:   BeaSession,
         timeout_s: int = 30,
     ) -> SessionEvalReport:
         """
@@ -353,7 +353,7 @@ class AgentEvaluator:
         agent_name:  str,
         task:        str,
         output:      str,
-        session:     JarvisSession | None,
+        session:     BeaSession | None,
         latency_ms:  int,
     ) -> EvalResult:
         """Parse la réponse JSON du LLM-judge."""
@@ -406,7 +406,7 @@ class AgentEvaluator:
         agent_name:  str,
         task:        str,
         output:      str,
-        session:     JarvisSession | None,
+        session:     BeaSession | None,
         latency_ms:  int = 0,
     ) -> EvalResult:
         """Évaluation heuristique sans LLM (fallback si timeout/erreur)."""

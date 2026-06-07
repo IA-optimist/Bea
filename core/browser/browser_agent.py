@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Agent
+BEA MAX — Browser Agent
 ==============================
 Production-grade browser automation with safety guarantees.
 

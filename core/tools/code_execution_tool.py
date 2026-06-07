@@ -6,7 +6,7 @@ de chaînes fragile) en faisant tourner le code dans `executor.desktop_env` :
 
 - `DockerSandbox` : `network_mode=none`, `read_only`, `cap_drop=["ALL"]`,
   `no-new-privileges`, mem/pids limités, workspace cloné en copy-on-write ;
-- `LocalFallbackSandbox` si Docker indisponible (opt-in `JARVIS_ALLOW_LOCAL_SANDBOX=1`).
+- `LocalFallbackSandbox` si Docker indisponible (opt-in `BEA_ALLOW_LOCAL_SANDBOX=1`).
 
 OPT-IN : ce module n'est PAS câblé dans `core/tool_executor`. Il s'active en
 l'ajoutant au bloc d'import des outils une fois validé + suite de tests verte.
@@ -70,7 +70,7 @@ def execute_code(
         timeout = _DEFAULT_TIMEOUT
 
     workspace_path = workspace_path or os.getcwd()
-    script_name = f".jarvis_exec_{uuid.uuid4().hex[:8]}.py"
+    script_name = f".bea_exec_{uuid.uuid4().hex[:8]}.py"
     script_path = Path(workspace_path) / script_name
 
     sandbox = None

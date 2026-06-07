@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Finance Agent
+BEA MAX — Finance Agent
 ==============================
 Autonomous finance operations with mandatory approval gates.
 

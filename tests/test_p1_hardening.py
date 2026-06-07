@@ -6,8 +6,8 @@ import pytest
 def test_tool_executor_rejects_shell_metacharacters(monkeypatch):
     from core.tool_executor import run_shell_command
 
-    monkeypatch.delenv("JARVIS_EXECUTION_DISABLED", raising=False)
-    monkeypatch.setenv("JARVIS_SHELL_ALLOWLIST", "1")
+    monkeypatch.delenv("BEA_EXECUTION_DISABLED", raising=False)
+    monkeypatch.setenv("BEA_SHELL_ALLOWLIST", "1")
 
     result = run_shell_command("ls | whoami")
 
@@ -64,7 +64,7 @@ def test_local_fallback_sandbox_rejects_shell_metacharacters(monkeypatch, tmp_pa
 
     workspace = tmp_path / "p1-local-sandbox"
     workspace.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setenv("JARVIS_ALLOW_LOCAL_SANDBOX", "1")
+    monkeypatch.setenv("BEA_ALLOW_LOCAL_SANDBOX", "1")
 
     sandbox = LocalFallbackSandbox(str(workspace))
     code, output = sandbox.execute("echo ok && echo pwned")
@@ -134,7 +134,7 @@ def test_api_main_uses_lifespan_instead_of_on_event():
 def test_readiness_is_fail_fast_in_production(monkeypatch):
     from api.routes import system_readiness
 
-    monkeypatch.setenv("JARVIS_PRODUCTION", "true")
+    monkeypatch.setenv("BEA_PRODUCTION", "true")
     payload = system_readiness.build_readiness_payload(
         mounted_paths={"/health"},
         expected_components={"health": "/health", "missing": "/missing"},
@@ -157,7 +157,7 @@ def test_docker_configs_use_canonical_dockerfile():
     assert "-f docker/Dockerfile" in deploy
     assert "-f docker/Dockerfile" in ci
     assert "Dockerfile.nonroot" not in deploy
-    assert "~/.jarvismax:/root/.jarvismax" not in compose
+    assert "~/.beamax:/root/.beamax" not in compose
 
 
 def test_requirements_txt_is_fully_pinned_and_lock_matches_direct_pins():
@@ -188,7 +188,7 @@ def test_requirements_txt_is_fully_pinned_and_lock_matches_direct_pins():
 def test_static_api_token_uses_constant_time_compare():
     content = Path("api/auth.py").read_text(encoding="utf-8")
 
-    assert "token_str == settings.jarvis_api_token" not in content
+    assert "token_str == settings.bea_api_token" not in content
     assert "compare_digest" in content
 
 

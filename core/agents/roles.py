@@ -1,5 +1,5 @@
 """
-core/agents/roles.py — Canonical agent role definitions for JarvisMax.
+core/agents/roles.py — Canonical agent role definitions for BeaMax.
 
 Defines the 6 structured agent roles with clear responsibilities,
 capabilities, and communication contracts.

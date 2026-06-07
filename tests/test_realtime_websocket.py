@@ -102,7 +102,7 @@ async def test_http_endpoints():
 async def main():
     """Run all tests."""
     print("=" * 80)
-    print("JarvisMax Real-Time WebSocket Test")
+    print("BeaMax Real-Time WebSocket Test")
     print("=" * 80)
     
     # Test HTTP endpoints first

@@ -1,5 +1,5 @@
 """
-JARVIS — Autonomous Workflow Runtime
+BEA — Autonomous Workflow Runtime
 ========================================
 Persistent structured workflows that execute across time with
 bounded autonomy, full observability, and interruptibility.
@@ -38,7 +38,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Optional
 
-logger = structlog.get_logger("jarvis.workflow_runtime")
+logger = structlog.get_logger("bea.workflow_runtime")
 log = logger  # M3 emitter alias
 
 
@@ -46,12 +46,12 @@ log = logger  # M3 emitter alias
 # AUTONOMY BOUNDARIES (Phase 6 — defined first, enforced everywhere)
 # ═══════════════════════════════════════════════════════════════
 
-MAX_CONCURRENT_WORKFLOWS = int(os.environ.get("JARVIS_MAX_WORKFLOWS", "10"))
-MAX_WORKFLOW_DEPTH = int(os.environ.get("JARVIS_MAX_WORKFLOW_DEPTH", "20"))
-MAX_TRIGGER_FREQUENCY_S = int(os.environ.get("JARVIS_MIN_TRIGGER_INTERVAL", "60"))
-MAX_RETRY_CYCLES = int(os.environ.get("JARVIS_MAX_RETRY_CYCLES", "5"))
-MAX_SCHEDULED_TASKS = int(os.environ.get("JARVIS_MAX_SCHEDULED_TASKS", "50"))
-MAX_EVENT_HANDLERS = int(os.environ.get("JARVIS_MAX_EVENT_HANDLERS", "30"))
+MAX_CONCURRENT_WORKFLOWS = int(os.environ.get("BEA_MAX_WORKFLOWS", "10"))
+MAX_WORKFLOW_DEPTH = int(os.environ.get("BEA_MAX_WORKFLOW_DEPTH", "20"))
+MAX_TRIGGER_FREQUENCY_S = int(os.environ.get("BEA_MIN_TRIGGER_INTERVAL", "60"))
+MAX_RETRY_CYCLES = int(os.environ.get("BEA_MAX_RETRY_CYCLES", "5"))
+MAX_SCHEDULED_TASKS = int(os.environ.get("BEA_MAX_SCHEDULED_TASKS", "50"))
+MAX_EVENT_HANDLERS = int(os.environ.get("BEA_MAX_EVENT_HANDLERS", "30"))
 MAX_WORKFLOW_HISTORY = 200
 MAX_EVENT_LOG = 500
 MAX_VERSION_HISTORY = 50

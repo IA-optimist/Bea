@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Agent Evaluation Engine
+BEA MAX — Agent Evaluation Engine
 =======================================
 Structured scoring of agent quality to guide self-improvement priorities.
 
@@ -707,7 +707,7 @@ class AgentEvaluationEngine:
     Integration with self-improvement loop:
     - evaluate() returns EvaluationReport with priorities
     - get_improvement_signals() converts priorities to ImprovementSignals
-    - Feed into JarvisImprovementLoop.collector.add()
+    - Feed into BeaImprovementLoop.collector.add()
     """
 
     def __init__(self,
@@ -766,7 +766,7 @@ class AgentEvaluationEngine:
     def get_improvement_signals(self, report: EvaluationReport) -> list[dict]:
         """
         Convert evaluation priorities to ImprovementSignal-compatible dicts.
-        Feed these into JarvisImprovementLoop.collector.add().
+        Feed these into BeaImprovementLoop.collector.add().
         """
         signals = []
         for p in report.priorities:

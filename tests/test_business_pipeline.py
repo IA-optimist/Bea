@@ -27,7 +27,7 @@ sys.path.insert(0, '.')
 
 def test_add_lead():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_{int(time.time()*1000)}.json")
     lead = lt.add_lead("Acme Corp", source="cold_outreach", value_estimate=5000,
                        tags=["saas", "b2b"], notes="Potential client for automation")
     assert lead.lead_id
@@ -37,7 +37,7 @@ def test_add_lead():
 
 def test_advance_lead():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_adv_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_adv_{int(time.time()*1000)}.json")
     lead = lt.add_lead("TechStart Inc", value_estimate=3000)
     lt.advance_lead(lead.lead_id, "qualified", "Fits our ICP")
     lt.advance_lead(lead.lead_id, "proposal_sent", "Proposal delivered")
@@ -48,7 +48,7 @@ def test_advance_lead():
 
 def test_lead_invalid_stage():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_inv_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_inv_{int(time.time()*1000)}.json")
     lead = lt.add_lead("BadStage Co")
     result = lt.advance_lead(lead.lead_id, "nonexistent_stage")
     assert result is None
@@ -56,7 +56,7 @@ def test_lead_invalid_stage():
 
 def test_lead_pipeline_summary():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_sum_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_sum_{int(time.time()*1000)}.json")
     lt.add_lead("A", value_estimate=1000)
     lt.add_lead("B", value_estimate=2000)
     lead_c = lt.add_lead("C", value_estimate=3000)
@@ -71,7 +71,7 @@ def test_lead_pipeline_summary():
 
 def test_lead_conversion_rate():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_conv_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_conv_{int(time.time()*1000)}.json")
     for i in range(4):
         lead = lt.add_lead(f"Lead_{i}")
         if i < 2:
@@ -87,7 +87,7 @@ def test_lead_conversion_rate():
 
 def test_lead_persistence():
     from core.business_pipeline import LeadTracker
-    path = f"/tmp/jarvis_leads_pers_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_leads_pers_{int(time.time()*1000)}.json"
     lt1 = LeadTracker(persist_path=path)
     lt1.add_lead("Persistent Lead", value_estimate=999)
 
@@ -101,7 +101,7 @@ def test_lead_persistence():
 
 def test_lead_update():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_upd_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_upd_{int(time.time()*1000)}.json")
     lead = lt.add_lead("Update Test", value_estimate=100)
     lt.update_lead(lead.lead_id, value_estimate=500, notes="Revised estimate")
     updated = lt.get_lead(lead.lead_id)
@@ -111,7 +111,7 @@ def test_lead_update():
 
 def test_lead_bounded():
     from core.business_pipeline import LeadTracker, MAX_LEADS
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_bound_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_bound_{int(time.time()*1000)}.json")
     lt._loaded = True
     # Fill with closed leads (evictable)
     for i in range(MAX_LEADS):
@@ -125,7 +125,7 @@ def test_lead_bounded():
 
 def test_lead_list_filtering():
     from core.business_pipeline import LeadTracker
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_leads_filt_{int(time.time()*1000)}.json")
+    lt = LeadTracker(persist_path=f"/tmp/bea_leads_filt_{int(time.time()*1000)}.json")
     lt.add_lead("A", tags=["saas"])
     lt.add_lead("B", tags=["ecom"])
     lead_c = lt.add_lead("C", tags=["saas"])
@@ -143,7 +143,7 @@ def test_lead_list_filtering():
 
 def test_create_content():
     from core.business_pipeline import ContentPipeline
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_content_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_content_{int(time.time()*1000)}.json")
     item = cp.create("How to Automate X", content_type="article",
                      body="Introduction to automation...", tags=["automation"])
     assert item.content_id
@@ -153,7 +153,7 @@ def test_create_content():
 
 def test_content_advance():
     from core.business_pipeline import ContentPipeline
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_content_adv_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_content_adv_{int(time.time()*1000)}.json")
     item = cp.create("Blog Post", body="Draft content here")
     cp.advance(item.content_id, "draft")
     cp.advance(item.content_id, "review")
@@ -164,7 +164,7 @@ def test_content_advance():
 
 def test_content_update_body():
     from core.business_pipeline import ContentPipeline
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_content_body_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_content_body_{int(time.time()*1000)}.json")
     item = cp.create("Draft Post")
     cp.update_body(item.content_id, "This is the full content with more words now")
     updated = cp.get(item.content_id)
@@ -174,7 +174,7 @@ def test_content_update_body():
 
 def test_content_summary():
     from core.business_pipeline import ContentPipeline
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_content_sum_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_content_sum_{int(time.time()*1000)}.json")
     cp.create("A", content_type="article")
     cp.create("B", content_type="proposal")
     item_c = cp.create("C", content_type="article")
@@ -188,7 +188,7 @@ def test_content_summary():
 
 def test_content_persistence():
     from core.business_pipeline import ContentPipeline
-    path = f"/tmp/jarvis_content_pers_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_content_pers_{int(time.time()*1000)}.json"
     cp1 = ContentPipeline(persist_path=path)
     cp1.create("Persistent Article", body="Content here")
 
@@ -203,7 +203,7 @@ def test_content_persistence():
 
 def test_budget_record():
     from core.business_pipeline import BudgetTracker
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_budget_{int(time.time()*1000)}.jsonl")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_budget_{int(time.time()*1000)}.jsonl")
     entry = bt.record("api_cost", -5.50, "OpenAI API calls")
     assert entry.amount == -5.50
     assert entry.category == "api_cost"
@@ -211,7 +211,7 @@ def test_budget_record():
 
 def test_budget_summary():
     from core.business_pipeline import BudgetTracker
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_budget_sum_{int(time.time()*1000)}.jsonl")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_budget_sum_{int(time.time()*1000)}.jsonl")
     bt.record("revenue", 100.0, "Client payment", objective_id="obj-1")
     bt.record("api_cost", -20.0, "LLM costs", objective_id="obj-1")
     bt.record("tool_cost", -5.0, "Hosting")
@@ -226,7 +226,7 @@ def test_budget_summary():
 
 def test_budget_per_objective():
     from core.business_pipeline import BudgetTracker
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_budget_obj_{int(time.time()*1000)}.jsonl")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_budget_obj_{int(time.time()*1000)}.jsonl")
     bt.record("revenue", 500.0, "Sale", objective_id="proj-a")
     bt.record("api_cost", -50.0, "Costs", objective_id="proj-a")
     bt.record("revenue", 200.0, "Sale", objective_id="proj-b")
@@ -238,7 +238,7 @@ def test_budget_per_objective():
 
 def test_budget_bounded():
     from core.business_pipeline import BudgetTracker, MAX_BUDGET_ENTRIES
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_budget_bound_{int(time.time()*1000)}.jsonl")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_budget_bound_{int(time.time()*1000)}.jsonl")
     bt._loaded = True
     for i in range(MAX_BUDGET_ENTRIES + 100):
         bt.record("test", -0.01, f"Entry {i}")
@@ -247,7 +247,7 @@ def test_budget_bounded():
 
 def test_budget_persistence():
     from core.business_pipeline import BudgetTracker
-    path = f"/tmp/jarvis_budget_pers_{int(time.time()*1000)}.jsonl"
+    path = f"/tmp/bea_budget_pers_{int(time.time()*1000)}.jsonl"
     bt1 = BudgetTracker(persist_path=path)
     bt1.record("revenue", 42.0, "Test")
 
@@ -265,9 +265,9 @@ def test_business_dashboard():
     from core.business_pipeline import (
         LeadTracker, ContentPipeline, BudgetTracker, get_business_dashboard,
     )
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_bd_leads_{int(time.time()*1000)}.json")
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_bd_content_{int(time.time()*1000)}.json")
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_bd_budget_{int(time.time()*1000)}.jsonl")
+    lt = LeadTracker(persist_path=f"/tmp/bea_bd_leads_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_bd_content_{int(time.time()*1000)}.json")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_bd_budget_{int(time.time()*1000)}.jsonl")
 
     lt.add_lead("Test Client", value_estimate=1000)
     cp.create("Test Article")
@@ -287,9 +287,9 @@ def test_actions_detection():
         LeadTracker, ContentPipeline, BudgetTracker, get_business_dashboard,
     )
     # Empty pipeline → should suggest prospecting
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_bd_act_{int(time.time()*1000)}.json")
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_bd_act_c_{int(time.time()*1000)}.json")
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_bd_act_b_{int(time.time()*1000)}.jsonl")
+    lt = LeadTracker(persist_path=f"/tmp/bea_bd_act_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_bd_act_c_{int(time.time()*1000)}.json")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_bd_act_b_{int(time.time()*1000)}.jsonl")
 
     dashboard = get_business_dashboard(lt, cp, bt)
     actions = dashboard["actions_needed"]
@@ -304,9 +304,9 @@ def test_scenario_full_business_cycle():
     """Complete business cycle: lead → qualify → proposal → deliver → revenue."""
     from core.business_pipeline import LeadTracker, ContentPipeline, BudgetTracker
 
-    lt = LeadTracker(persist_path=f"/tmp/jarvis_cycle_leads_{int(time.time()*1000)}.json")
-    cp = ContentPipeline(persist_path=f"/tmp/jarvis_cycle_content_{int(time.time()*1000)}.json")
-    bt = BudgetTracker(persist_path=f"/tmp/jarvis_cycle_budget_{int(time.time()*1000)}.jsonl")
+    lt = LeadTracker(persist_path=f"/tmp/bea_cycle_leads_{int(time.time()*1000)}.json")
+    cp = ContentPipeline(persist_path=f"/tmp/bea_cycle_content_{int(time.time()*1000)}.json")
+    bt = BudgetTracker(persist_path=f"/tmp/bea_cycle_budget_{int(time.time()*1000)}.jsonl")
 
     # 1. New lead comes in
     lead = lt.add_lead("BigCo", source="inbound", value_estimate=10000, tags=["enterprise"])

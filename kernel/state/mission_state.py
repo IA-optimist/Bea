@@ -79,7 +79,7 @@ class MissionContext:
     project_id: str | None = None  # Phase 2: Multi-project isolation
 
     def get_output(self, agent: str) -> str:
-        """Get agent output — compatibility with JarvisSession interface."""
+        """Get agent output — compatibility with BeaSession interface."""
         outputs = self.metadata.get("agent_outputs", {})
         if isinstance(outputs, dict):
             out = outputs.get(agent, "")

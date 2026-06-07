@@ -1,5 +1,5 @@
 """
-ToolExecutor — exécution RÉELLE des tools pour les agents Jarvis.
+ToolExecutor — exécution RÉELLE des tools pour les agents Bea.
 5 tools prioritaires avec isolation, timeout, et respect de l'ExecutionPolicy.
 RAM : < 500 bytes au repos (fonctions pures + singleton léger).
 """
@@ -53,7 +53,7 @@ try:
     _L4_AVAILABLE = True
 except Exception as _l4_err:
     _L4_AVAILABLE = False
-    structlog.get_logger("jarvis.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
+    structlog.get_logger("bea.tool_executor").warning(f"L4 tools unavailable: {_l4_err}")
 
 # Axe 3 (Hermes) — execute_code sandboxé, loose-coupled (n'affecte pas les autres tools)
 try:
@@ -74,11 +74,11 @@ try:
 except Exception:
     _TOOL_PIPELINE_AVAILABLE = False
 
-logger = structlog.get_logger("jarvis.tool_executor")
+logger = structlog.get_logger("bea.tool_executor")
 log = logger  # M3 emitter alias
 try:
     import structlog as _structlog
-    log = _structlog.get_logger("jarvis.tool_executor")
+    log = _structlog.get_logger("bea.tool_executor")
 except ImportError:
     log = logger  # fallback
 
@@ -117,9 +117,9 @@ def _classify_error(error_str) -> str:
     """Classify error into canonical taxonomy: TRANSIENT, USER_INPUT, TOOL_ERROR,
     POLICY_BLOCKED, TIMEOUT, SYSTEM_ERROR. Falls back to TOOL_ERROR."""
     try:
-        from core.resilience import JarvisExecutionError
+        from core.resilience import BeaExecutionError
         if isinstance(error_str, Exception):
-            classified = JarvisExecutionError.from_exception(error_str)
+            classified = BeaExecutionError.from_exception(error_str)
             return classified.error_type
     except Exception as _exc:
         log.warning("swallowed_exception", action="classified_error_lookup", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
@@ -242,10 +242,10 @@ _SHELL_ALLOWED_PREFIXES = ("ls", "cat", "head", "tail", "grep", "find", "echo", 
 _SHELL_METACHARS = ("|", "&&", "||", ";", ">", "<", "`", "$(", "\n", "\r")
 
 def run_shell_command(cmd: str, timeout: int = 8) -> dict:
-    """Exécute une commande shell dans /opt/jarvismax avec validation stricte."""
+    """Exécute une commande shell dans /opt/beamax avec validation stricte."""
     # Global kill switch
     import os as _os
-    if _os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
+    if _os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
         return _err("EXECUTION_DISABLED")
 
     # Block dangerous commands
@@ -257,8 +257,8 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
         return _err("shell_metacharacters_not_allowed")
 
     # Allowlist enforced by default — opt-out uniquement via
-    # JARVIS_SHELL_ALLOWLIST=0 dans un contexte explicitement trusté.
-    if _os.environ.get("JARVIS_SHELL_ALLOWLIST", "1").lower() not in ("0", "false", "no"):
+    # BEA_SHELL_ALLOWLIST=0 dans un contexte explicitement trusté.
+    if _os.environ.get("BEA_SHELL_ALLOWLIST", "1").lower() not in ("0", "false", "no"):
         cmd_stripped = cmd.strip()
         if not any(cmd_stripped.startswith(prefix) for prefix in _SHELL_ALLOWED_PREFIXES):
             return _err("shell_not_allowed: command not in allowlist")
@@ -270,7 +270,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
     except Exception as _exc:
         log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
     try:
-        _cwd = _os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+        _cwd = _os.environ.get("BEA_ROOT", "/opt/beamax")
         # Use shlex for safer argument handling and execute without a shell.
         import shlex
         try:
@@ -782,7 +782,7 @@ class ToolExecutor:
         except Exception as _exc:
             log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
         # Global kill switch check
-        if os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
+        if os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
             return {"ok": False, "result": "", "error": "EXECUTION_DISABLED", "blocked_by_policy": True}
 
         # Approval gating for dangerous actions
@@ -1038,7 +1038,7 @@ class ToolExecutor:
                 break
             if _thread_exc[0]:
                 # Classify before re-raising for structured error in outer handler
-                _thread_exc[0]._jarvis_tool = tool_name
+                _thread_exc[0]._bea_tool = tool_name
                 raise _thread_exc[0]
             result = _thread_result[0]
             if result.get("ok"):
@@ -1095,7 +1095,7 @@ class ToolExecutor:
         except Exception as _exc:
             log.warning("exception_caught", err=str(_exc)[:200], stage="tool_executor")
             policy_ok = False
-        kill_switch = os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
+        kill_switch = os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
         return {
             "total_tools": len(self._tools),
             "risk_distribution": risk_dist,

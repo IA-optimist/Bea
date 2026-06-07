@@ -1,5 +1,5 @@
 -- Migration 004: Multi-Project Foundation
--- JarvisMax Phase 2.1 - Project isolation architecture
+-- BeaMax Phase 2.1 - Project isolation architecture
 -- PostgreSQL 13+ compatible
 -- Run date: 2026-04-08
 

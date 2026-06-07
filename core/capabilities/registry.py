@@ -11,7 +11,7 @@ from typing import Optional
 
 from core.capabilities.schema import Capability
 
-log = structlog.get_logger("jarvis.capabilities")
+log = structlog.get_logger("bea.capabilities")
 
 
 # ── Core tool capabilities ────────────────────────────────────────────────────
@@ -57,14 +57,14 @@ _CORE_CAPABILITIES: list[Capability] = [
         risk_level="MEDIUM",
         requires_approval=False,
         timeout_seconds=10,
-        description="Write to Jarvis memory (vault, skills)",
+        description="Write to Bea memory (vault, skills)",
     ),
     Capability(
         name="memory_read",
         risk_level="LOW",
         requires_approval=False,
         timeout_seconds=10,
-        description="Read from Jarvis memory",
+        description="Read from Bea memory",
     ),
     Capability(
         name="api_call",

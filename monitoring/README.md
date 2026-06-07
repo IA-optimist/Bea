@@ -1,6 +1,6 @@
-# JarvisMax Monitoring Stack
+# BeaMax Monitoring Stack
 
-Stack de monitoring complète pour JarvisMax incluant Prometheus, Grafana, Node Exporter et Alertmanager avec intégration Telegram.
+Stack de monitoring complète pour BeaMax incluant Prometheus, Grafana, Node Exporter et Alertmanager avec intégration Telegram.
 
 ## 📊 Architecture
 
@@ -11,7 +11,7 @@ Stack de monitoring complète pour JarvisMax incluant Prometheus, Grafana, Node 
 └──────────────┘  │
                   │
 ┌──────────────┐  │    ┌──────────────┐
-│ JarvisMax API│──┼───▶│  Prometheus  │
+│ BeaMax API│──┼───▶│  Prometheus  │
 │ (Port 8000)  │  │    │  (Port 9090) │
 └──────────────┘  │    └──────┬───────┘
                   │           │
@@ -35,8 +35,8 @@ Stack de monitoring complète pour JarvisMax incluant Prometheus, Grafana, Node 
 ### 1. Prérequis
 
 - Docker et Docker Compose installés
-- Network Docker `jarvismax-network` créé
-- API JarvisMax avec endpoint `/metrics` exposé
+- Network Docker `beamax-network` créé
+- API BeaMax avec endpoint `/metrics` exposé
 - (Optionnel) Bot Telegram pour les alertes
 
 ### 2. Configuration Telegram (Optionnel mais recommandé)
@@ -56,7 +56,7 @@ Stack de monitoring complète pour JarvisMax incluant Prometheus, Grafana, Node 
 #### Ajouter au .env
 
 ```bash
-# Ajouter à /root/Jarvismax-master/.env
+# Ajouter à /root/Beamax-master/.env
 TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=123456789
 ```
@@ -64,7 +64,7 @@ TELEGRAM_CHAT_ID=123456789
 ### 3. Lancer la Stack
 
 ```bash
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 
 # Lancer tous les services
 docker-compose -f docker-compose-monitoring.yml up -d
@@ -88,7 +88,7 @@ docker-compose -f docker-compose-monitoring.yml logs -f
 ## 📈 Dashboards Grafana
 
 ### 1. System Monitoring Dashboard
-**UID:** `jarvismax-system`
+**UID:** `beamax-system`
 
 Métriques système et infrastructure:
 - **CPU Usage**: Utilisation CPU en temps réel avec alertes > 80%
@@ -99,7 +99,7 @@ Métriques système et infrastructure:
 - **Container Status**: État des conteneurs Docker
 
 ### 2. API Monitoring Dashboard
-**UID:** `jarvismax-api`
+**UID:** `beamax-api`
 
 Métriques de performance API:
 - **Request Rate**: Requêtes par seconde par endpoint
@@ -114,7 +114,7 @@ Métriques de performance API:
 - **Average Response Time**: Temps de réponse moyen
 
 ### 3. Business Metrics Dashboard
-**UID:** `jarvismax-business`
+**UID:** `beamax-business`
 
 Métriques métier et analytics:
 - **Business Tasks**: Total, completed, failed
@@ -183,7 +183,7 @@ async def alertmanager_webhook(request: Request, priority: str = Query(default="
 
 3. **Tester le webhook**:
 ```bash
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 python3 telegram_webhook.py
 ```
 
@@ -339,7 +339,7 @@ docker run --rm -v monitoring_prometheus_data:/data -v $(pwd):/backup alpine tar
 curl http://localhost:8000/metrics
 
 # Vérifier la config Prometheus
-docker exec jarvismax-prometheus cat /etc/prometheus/prometheus.yml
+docker exec beamax-prometheus cat /etc/prometheus/prometheus.yml
 
 # Vérifier les targets dans Prometheus UI
 # http://MONITORING_HOST:9090/targets
@@ -348,7 +348,7 @@ docker exec jarvismax-prometheus cat /etc/prometheus/prometheus.yml
 ### Grafana ne se connecte pas à Prometheus
 ```bash
 # Vérifier que Prometheus est accessible
-docker exec jarvismax-grafana wget -O- http://prometheus:9090/api/v1/status/config
+docker exec beamax-grafana wget -O- http://prometheus:9090/api/v1/status/config
 
 # Vérifier les datasources dans Grafana UI
 # Configuration > Data Sources
@@ -370,7 +370,7 @@ curl -X POST http://localhost:8000/api/v2/webhooks/alertmanager \
 
 ## 📝 Checklist de Déploiement
 
-- [ ] Network Docker `jarvismax-network` créé
+- [ ] Network Docker `beamax-network` créé
 - [ ] Configuration Telegram dans `.env` (optionnel)
 - [ ] Services lancés: `docker-compose up -d`
 - [ ] Tous les services "healthy": `docker-compose ps`

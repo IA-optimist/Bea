@@ -6,7 +6,7 @@ import '../theme/design_system.dart';
 import 'decisions_screen.dart';
 
 /// Approvals — premium, touch-friendly approval flow.
-/// Each card: what Jarvis wants to do, why, risk, impact, approve/deny.
+/// Each card: what Bea wants to do, why, risk, impact, approve/deny.
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
 
@@ -73,7 +73,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                   SliverFillRemaining(child: JEmptyState(
                     icon: Icons.check_circle_outline_rounded,
                     title: 'Tout est bon',
-                    subtitle: 'Aucune approbation requise pour l\'instant.\nJarvis gère tout automatiquement.',
+                    subtitle: 'Aucune approbation requise pour l\'instant.\nBea gère tout automatiquement.',
                   )),
 
                 // ── Pending section ──
@@ -156,7 +156,7 @@ class _ApprovalCardState extends State<_ApprovalCard> {
         const SizedBox(height: 14),
 
         // What
-        const Text('Jarvis veut :', style: TextStyle(
+        const Text('Bea veut :', style: TextStyle(
           fontSize: 11, fontWeight: FontWeight.w600, color: JDS.textMuted,
           letterSpacing: 0.5,
         )),
@@ -204,7 +204,7 @@ class _ApprovalCardState extends State<_ApprovalCard> {
               )),
               const SizedBox(width: 8),
               const Text('Si approuvé : ', style: TextStyle(fontSize: 12, color: JDS.green, fontWeight: FontWeight.w500)),
-              const Expanded(child: Text('Jarvis exécute cette action', style: TextStyle(
+              const Expanded(child: Text('Bea exécute cette action', style: TextStyle(
                 fontSize: 12, color: JDS.textSecondary,
               ))),
             ]),

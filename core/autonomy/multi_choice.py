@@ -91,7 +91,7 @@ class Decision:
 
 # ── Store ────────────────────────────────────────────────────
 _STORE_PATH = Path(os.environ.get(
-    "JARVIS_MULTI_CHOICE_STORE",
+    "BEA_MULTI_CHOICE_STORE",
     "workspace/multi_choice_decisions.json",
 ))
 

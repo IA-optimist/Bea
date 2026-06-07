@@ -1,5 +1,5 @@
 """
-JARVIS MAX — EmbeddingProvider
+BEA MAX — EmbeddingProvider
 Génération d'embeddings via nomic-embed-text (768 dimensions).
 
 Cascade :

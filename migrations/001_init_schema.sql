@@ -1,5 +1,5 @@
 -- Migration 001: Initialize Core Schema
--- JarvisMax Phase 0 - Bootstrap database
+-- BeaMax Phase 0 - Bootstrap database
 -- PostgreSQL 13+ compatible
 -- Run date: 2026-04-10
 
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS canonical_missions (
     context_json JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
-COMMENT ON TABLE canonical_missions IS 'Core mission tracking - canonical state for all JarvisMax missions';
+COMMENT ON TABLE canonical_missions IS 'Core mission tracking - canonical state for all BeaMax missions';
 COMMENT ON COLUMN canonical_missions.risk_level IS 'Risk level: READ_ONLY, WRITE_LOW, WRITE_HIGH';
 COMMENT ON COLUMN canonical_missions.status IS 'Mission status: pending, running, completed, failed, cancelled';
 COMMENT ON COLUMN canonical_missions.context_json IS 'Mission context and metadata (serialized JSON)';

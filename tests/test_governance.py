@@ -126,7 +126,7 @@ def test_classify_combined():
 
 def test_validate_valid_json():
     from core.governance import validate_persistence_file
-    path = f"/tmp/jarvis_valid_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_valid_{int(time.time()*1000)}.json"
     with open(path, "w") as f:
         json.dump({"a": 1, "b": 2}, f)
     r = validate_persistence_file(path)
@@ -137,7 +137,7 @@ def test_validate_valid_json():
 
 def test_validate_valid_jsonl():
     from core.governance import validate_persistence_file
-    path = f"/tmp/jarvis_valid_{int(time.time()*1000)}.jsonl"
+    path = f"/tmp/bea_valid_{int(time.time()*1000)}.jsonl"
     with open(path, "w") as f:
         f.write('{"a": 1}\n{"b": 2}\n')
     r = validate_persistence_file(path)
@@ -148,14 +148,14 @@ def test_validate_valid_jsonl():
 
 def test_validate_missing_file():
     from core.governance import validate_persistence_file
-    r = validate_persistence_file("/tmp/nonexistent_jarvis_file.json")
+    r = validate_persistence_file("/tmp/nonexistent_bea_file.json")
     assert not r["valid"]
     assert "does not exist" in r["issues"][0]
 
 
 def test_validate_empty_file():
     from core.governance import validate_persistence_file
-    path = f"/tmp/jarvis_empty_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_empty_{int(time.time()*1000)}.json"
     with open(path, "w"):
         pass
     r = validate_persistence_file(path)
@@ -174,7 +174,7 @@ def test_validate_all():
 
 def test_create_domain():
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_{int(time.time()*1000)}.json")
     d = dm.create_domain("SaaS Project", "B2B automation SaaS", lead_tags=["saas"])
     assert d.domain_id
     assert d.name == "SaaS Project"
@@ -183,7 +183,7 @@ def test_create_domain():
 
 def test_domain_record_mission():
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_mis_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_mis_{int(time.time()*1000)}.json")
     d = dm.create_domain("Test Business")
     dm.record_mission(d.domain_id, True, cost=10.0, revenue=50.0)
     dm.record_mission(d.domain_id, True, cost=5.0, revenue=30.0)
@@ -198,7 +198,7 @@ def test_domain_record_mission():
 
 def test_domain_health_score():
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_health_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_health_{int(time.time()*1000)}.json")
     d = dm.create_domain("Health Test")
     for i in range(10):
         dm.record_mission(d.domain_id, True, cost=1.0, revenue=5.0)
@@ -208,7 +208,7 @@ def test_domain_health_score():
 
 def test_domain_slot_allocation():
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_slot_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_slot_{int(time.time()*1000)}.json")
 
     d1 = dm.create_domain("Winner", slot_allocation=0.3)
     for _ in range(5):
@@ -229,7 +229,7 @@ def test_domain_slot_allocation():
 
 def test_domain_portfolio_dashboard():
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_dash_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_dash_{int(time.time()*1000)}.json")
     dm.create_domain("Biz A")
     dm.create_domain("Biz B")
 
@@ -243,7 +243,7 @@ def test_domain_portfolio_dashboard():
 
 def test_domain_bounded():
     from core.governance import DomainManager, MAX_DOMAINS
-    dm = DomainManager(persist_path=f"/tmp/jarvis_dom_bound_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_dom_bound_{int(time.time()*1000)}.json")
     dm._loaded = True
     for i in range(MAX_DOMAINS):
         d = dm.create_domain(f"Domain_{i}")
@@ -258,7 +258,7 @@ def test_domain_bounded():
 
 def test_domain_persistence():
     from core.governance import DomainManager
-    path = f"/tmp/jarvis_dom_pers_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_dom_pers_{int(time.time()*1000)}.json"
     dm1 = DomainManager(persist_path=path)
     dm1.create_domain("Persistent Biz")
 
@@ -323,7 +323,7 @@ def test_scenario_business_with_approval():
 def test_scenario_multi_business_lifecycle():
     """Create 2 businesses, run missions, verify portfolio signals."""
     from core.governance import DomainManager
-    dm = DomainManager(persist_path=f"/tmp/jarvis_scen_multi_{int(time.time()*1000)}.json")
+    dm = DomainManager(persist_path=f"/tmp/bea_scen_multi_{int(time.time()*1000)}.json")
 
     saas = dm.create_domain("SaaS", lead_tags=["saas"])
     freelance = dm.create_domain("Freelance", lead_tags=["freelance"])

@@ -1,4 +1,4 @@
-/// JarvisMax UI modes — progressive disclosure.
+/// BeaMax UI modes — progressive disclosure.
 enum AppMode {
   lite,   // simple daily use
   full,   // power-user

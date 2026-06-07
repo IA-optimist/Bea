@@ -1,5 +1,5 @@
 """
-core/skills — Procedural Skill Memory for JarvisMax.
+core/skills — Procedural Skill Memory for BeaMax.
 
 Stores, retrieves, and manages reusable problem-solving procedures
 learned from successful mission executions.

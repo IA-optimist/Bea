@@ -1,5 +1,5 @@
 [
-  "Admin login attempted but JARVIS_ADMIN_PASSWORD is not set — refusing.",
+  "Admin login attempted but BEA_ADMIN_PASSWORD is not set — refusing.",
   "Aucun fichier goals existant — démarrage à vide",
   "Aucune opportunité détectée ce cycle",
   "CLOUD_ESCALATION_DISABLED_NO_KEY",
@@ -48,9 +48,9 @@
   "redis not installed — working-memory will use in-process dict",
   "sandbox.docker_unavailable — falling back to in-process",
   "sandbox.no_diff — skipping execution",
-  "startup_guard: JARVIS_API_TOKEN is short — consider a stronger token",
-  "startup_guard: JARVIS_API_TOKEN not set — auth disabled (dev mode)",
-  "startup_guard: JARVIS_SECRET_KEY not set (dev mode)",
+  "startup_guard: BEA_API_TOKEN is short — consider a stronger token",
+  "startup_guard: BEA_API_TOKEN not set — auth disabled (dev mode)",
+  "startup_guard: BEA_SECRET_KEY not set (dev mode)",
   "startup_guard: QDRANT_API_KEY not set — Qdrant has no auth (dev mode)",
   "startup_guard: all checks passed"
 ]

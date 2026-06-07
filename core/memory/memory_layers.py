@@ -12,7 +12,7 @@ import structlog
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 
-log = structlog.get_logger("jarvis.memory_layers")
+log = structlog.get_logger("bea.memory_layers")
 
 
 # ── Memory Types ─────────────────────────────────────────────────────────────

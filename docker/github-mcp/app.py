@@ -1,8 +1,8 @@
 """
 docker/github-mcp/app.py — GitHub MCP HTTP sidecar (read-only).
 
-Exposes Jarvis /invoke endpoint protocol (POST /invoke) backed by gh CLI.
-Compatible with Jarvis MCPAdapter.
+Exposes Bea /invoke endpoint protocol (POST /invoke) backed by gh CLI.
+Compatible with Bea MCPAdapter.
 
 Tools (read-only — write tools are NOT implemented, approval required):
   github_search_code  — search code across repositories
@@ -17,8 +17,8 @@ Env:
   GITHUB_PERSONAL_ACCESS_TOKEN  (required)
 
 Usage:
-  docker build -t jarvis-github-mcp .
-  docker run -p 3000:3000 -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx jarvis-github-mcp
+  docker build -t bea-github-mcp .
+  docker run -p 3000:3000 -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx bea-github-mcp
 """
 from __future__ import annotations
 

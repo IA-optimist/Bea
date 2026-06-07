@@ -1,7 +1,7 @@
 """
-JARVIS — Performance Intelligence API
+BEA — Performance Intelligence API
 =========================================
-Exposes tool and mission performance data to the Jarvis app.
+Exposes tool and mission performance data to the Bea app.
 All endpoints fail-open with sensible defaults.
 
 Endpoints:
@@ -30,10 +30,10 @@ except ImportError:
 from api._deps import _check_auth
 from typing import Optional as _Opt
 
-def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
+    _check_auth(x_bea_token, authorization)
 
-logger = structlog.get_logger("jarvis.api.performance")
+logger = structlog.get_logger("bea.api.performance")
 log = logger  # alias for the M3 swallowed_exception emitter convention
 
 

@@ -97,7 +97,7 @@ class TestFlutterPortConfig(unittest.TestCase):
     """Verify Flutter app uses canonical port 8000."""
 
     def test_api_config_profiles_use_port_8000(self):
-        with open("jarvismax_app/lib/config/api_config.dart", encoding="utf-8") as f:
+        with open("beamax_app/lib/config/api_config.dart", encoding="utf-8") as f:
             content = f.read()
         # All profiles must use 8000
         for match in re.findall(r"'[^']+'\s*,\s*(\d+)", content):
@@ -106,7 +106,7 @@ class TestFlutterPortConfig(unittest.TestCase):
 
     def test_no_port_7070_in_flutter(self):
         """Port 7070 was the legacy control_api port — should not appear."""
-        for root, dirs, files in os.walk("jarvismax_app/lib"):
+        for root, dirs, files in os.walk("beamax_app/lib"):
             for f in files:
                 if f.endswith(".dart"):
                     path = os.path.join(root, f)
@@ -130,7 +130,7 @@ class TestDocumentation(unittest.TestCase):
         with open("ARCHITECTURE.md", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("primary", content.lower())
-        self.assertIn("Jarvis App", content)
+        self.assertIn("Bea App", content)
 
     def test_no_report_files_at_root(self):
         """Reports should be in docs/, not cluttering root."""
@@ -222,9 +222,9 @@ class TestCIConfig(unittest.TestCase):
 class TestTelegramRemoved(unittest.TestCase):
     """Verify Telegram is fully removed from runtime."""
 
-    def test_no_jarvis_bot_dir(self):
-        self.assertFalse(os.path.isdir("jarvis_bot"),
-                         "jarvis_bot/ should be deleted")
+    def test_no_bea_bot_dir(self):
+        self.assertFalse(os.path.isdir("bea_bot"),
+                         "bea_bot/ should be deleted")
 
     def test_no_telegram_in_requirements(self):
         with open("requirements.txt", encoding="utf-8") as f:

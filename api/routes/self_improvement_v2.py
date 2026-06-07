@@ -21,7 +21,7 @@ import os
 import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 
-logger = logging.getLogger("jarvis.api.self_improvement_v2")
+logger = logging.getLogger("bea.api.self_improvement_v2")
 
 # Fail-hard on auth import: silent fail-open (_auth = None) would make
 # every route parameter default to None, bypassing Depends entirely.
@@ -113,7 +113,7 @@ async def self_improve_run(
     _user: dict = _auth,
 ):
     """Launch full self-improvement analysis cycle."""
-    if os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
         return {"ok": False, "error": "execution_disabled"}
     try:
         # Audit S8 / issue #15: migrated from deprecated

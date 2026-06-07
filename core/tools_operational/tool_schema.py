@@ -1,7 +1,7 @@
 """
 core/tools_operational/tool_schema.py — Schema for external operational tools.
 
-An operational tool represents an external system Jarvis can invoke:
+An operational tool represents an external system Bea can invoke:
 webhooks, APIs, automation platforms, notification services, etc.
 
 Each tool declares its contract: inputs, outputs, risk, secrets, retry policy.
@@ -43,7 +43,7 @@ class RetryPolicy:
 @dataclass
 class OperationalTool:
     """
-    An external tool that Jarvis can invoke as part of business workflows.
+    An external tool that Bea can invoke as part of business workflows.
 
     Unlike internal agent tools (read_file, shell), operational tools
     represent external system integrations with real-world side effects.

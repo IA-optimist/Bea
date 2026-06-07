@@ -1,5 +1,5 @@
 """
-Self-Confidence Scoring for JarvisMax
+Self-Confidence Scoring for BeaMax
 Metacognitive awareness - agent evaluates its own output quality.
 """
 from __future__ import annotations

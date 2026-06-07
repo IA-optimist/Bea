@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Orchestration Bridge
+BEA MAX — Orchestration Bridge
 ====================================
 Safe migration layer that routes mission operations through MetaOrchestrator
 as the canonical authority, while preserving MissionSystem as a facade.
@@ -27,8 +27,8 @@ Usage:
     canonical = get_mission_canonical(mission_id)
 
 Feature Flags:
-    JARVIS_USE_CANONICAL_ORCHESTRATOR=true  → bridge active, MetaOrchestrator owns lifecycle
-    JARVIS_USE_CANONICAL_ORCHESTRATOR=false → bridge passthrough, MissionSystem unchanged
+    BEA_USE_CANONICAL_ORCHESTRATOR=true  → bridge active, MetaOrchestrator owns lifecycle
+    BEA_USE_CANONICAL_ORCHESTRATOR=false → bridge passthrough, MissionSystem unchanged
 
 No modifications to MissionSystem, MetaOrchestrator, or WorkflowGraph source code.
 """
@@ -64,9 +64,9 @@ def _bridge_enabled() -> bool:
     """Check if canonical orchestration bridge is active.
 
     Default TRUE — matches convergence._use_canonical() default.
-    Opt-out via JARVIS_USE_CANONICAL_ORCHESTRATOR=0|false|no.
+    Opt-out via BEA_USE_CANONICAL_ORCHESTRATOR=0|false|no.
     """
-    val = os.environ.get("JARVIS_USE_CANONICAL_ORCHESTRATOR", "1").lower()
+    val = os.environ.get("BEA_USE_CANONICAL_ORCHESTRATOR", "1").lower()
     return val not in ("0", "false", "no")
 
 

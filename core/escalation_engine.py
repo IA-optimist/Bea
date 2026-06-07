@@ -1,5 +1,5 @@
 """
-JARVIS MAX — EscalationEngine
+BEA MAX — EscalationEngine
 Préparation de l'escalade intelligente vers les modèles cloud (OpenAI / Claude).
 
 IMPORTANT : Les API cloud sont DÉSACTIVÉES par défaut.

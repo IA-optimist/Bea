@@ -13,7 +13,7 @@ from typing import Literal
 import time
 import logging
 
-log = logging.getLogger("jarvis.decision_pipeline")
+log = logging.getLogger("bea.decision_pipeline")
 
 PipelinePhase = Literal[
     "intent_classification",

@@ -1,4 +1,4 @@
-# JarvisMax — Component Status
+# BeaMax — Component Status
 
 > Honest per-component maturity rating. Last verified: 2026-04-08, SHA `889a1c3`.
 > Verified by direct code reading + 5 audit agents + gate test results.
@@ -32,7 +32,7 @@
 | Component | File | Evidence |
 |-----------|------|----------|
 | Boot sequence | `kernel/runtime/boot.py` | 11 registrations at startup |
-| JarvisKernel singleton | `kernel/runtime/kernel.py` | `run_cognitive_cycle()` is the cognitive brain |
+| BeaKernel singleton | `kernel/runtime/kernel.py` | `run_cognitive_cycle()` is the cognitive brain |
 | Memory interfaces | `kernel/memory/interfaces.py` | 5 typed memory categories with registration slots |
 | Capability registry | `kernel/capabilities/registry.py` | 19 capabilities registered |
 | Evaluator | `kernel/evaluation/scorer.py` | Real heuristic + core reflection/critique vote |
@@ -56,7 +56,7 @@
 | JWT auth | `api/auth.py` | HS256 with `hmac.compare_digest`, PyJWT |
 | Per-route auth (require_auth) | `api/_deps.py` | Used by 46/53 route files |
 | Rate limiter | `api/rate_limiter.py` | Sliding window, Redis-backed (in-memory fallback) |
-| Production secret enforcement | `config/settings.py:enforce_production_secrets` | Hard-fails on insecure defaults if `JARVIS_PRODUCTION=true` |
+| Production secret enforcement | `config/settings.py:enforce_production_secrets` | Hard-fails on insecure defaults if `BEA_PRODUCTION=true` |
 
 ### Tests & CI
 | Component | Status |
@@ -91,7 +91,7 @@
 ### Mobile canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
-| Flutter app | `jarvismax_app/` (~7,400 lines) | Documented as canonical in all docs (ROADMAP, RUNTIME_TRUTH, etc.). Secure storage, token refresh, WS reconnect. |
+| Flutter app | `beamax_app/` (~7,400 lines) | Documented as canonical in all docs (ROADMAP, RUNTIME_TRUTH, etc.). Secure storage, token refresh, WS reconnect. |
 
 ---
 
@@ -100,7 +100,7 @@
 | Component | File | Why wired vs proven |
 |-----------|------|---------------------|
 | MemoryFacade | `core/memory_facade.py` | Registered in main.py:189-218 with K1 wrapper. Used by retrieval. Not stress-tested with live Qdrant. |
-| MCP server (jarvis_mcp) | `jarvis_mcp/jarvis_mcp_server.py` | 3 read-only tools (memory_search, mission_status, list_missions). Untested with live MCP clients. |
+| MCP server (bea_mcp) | `bea_mcp/bea_mcp_server.py` | 3 read-only tools (memory_search, mission_status, list_missions). Untested with live MCP clients. |
 | MCP registry | `core/mcp/mcp_registry.py` | Infrastructure ready, sidecars defined, not actively called by orchestrator |
 | Adapters | `kernel/adapters/*.py` | 5 adapter modules (capability/event/plan/mission/result/policy). Used at boot. |
 | Connectors (filesystem, HTTP, GitHub) | `connectors/*.py` | Code exists, agents use direct tools instead |
@@ -192,7 +192,7 @@
 2,767 lines. Expo SDK 50.
 - **Status**: 🔵 Scaffolding, secondary to Flutter
 - Same broken API client as frontend (`/api/v2/*` mismatch)
-- Not documented anywhere — Flutter (`jarvismax_app/`) remains canonical
+- Not documented anywhere — Flutter (`beamax_app/`) remains canonical
 - **Action needed**: Decide canonical mobile (Flutter or React Native) or document coexistence
 
 ---
@@ -204,7 +204,7 @@
 |---|------|-------|----------|
 | 1 | `api/routes/extensions.py` | No `Depends()` at router level — relies entirely on middleware | HIGH |
 | 2 | `api/routes/venture.py:26-29` | `_auth = None` if import fails → fail-open | HIGH |
-| 3 | `api/routes/metrics_mobile.py:52-54` | `if t:` — silent bypass when `JARVIS_API_TOKEN` not set | HIGH |
+| 3 | `api/routes/metrics_mobile.py:52-54` | `if t:` — silent bypass when `BEA_API_TOKEN` not set | HIGH |
 | 4 | `api/main.py:75-81` | Middleware ImportError logged but app starts in degraded mode | MEDIUM |
 
 ### Code quality
@@ -245,7 +245,7 @@
 | 🔴 STUB | HexStrike v2 tools, multimodal endpoints, voice, browser | ~2,000 |
 | ⚫ PLANNED | Full HexStrike v2 (139 tools), Stripe integration, deploy automation | — |
 
-**Bottom line**: The Jarvis cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. The system is honest about this distinction in this STATUS.md (READMEs from earlier merges may overclaim — defer to this file).
+**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. The system is honest about this distinction in this STATUS.md (READMEs from earlier merges may overclaim — defer to this file).
 
 ---
 

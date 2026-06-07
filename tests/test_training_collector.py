@@ -74,8 +74,8 @@ class TestRecordingLifecycle(unittest.TestCase):
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
-        os.environ["JARVIS_TRAINING_COLLECT"] = "1"
-        os.environ["JARVIS_TRAINING_DIR"] = self._tmp.name
+        os.environ["BEA_TRAINING_COLLECT"] = "1"
+        os.environ["BEA_TRAINING_DIR"] = self._tmp.name
         # Reset writer + counters
         with tc._collector_lock:
             for k in tc._stats:
@@ -85,12 +85,12 @@ class TestRecordingLifecycle(unittest.TestCase):
         tc._worker = None
 
     def tearDown(self):
-        os.environ.pop("JARVIS_TRAINING_COLLECT", None)
-        os.environ.pop("JARVIS_TRAINING_DIR", None)
+        os.environ.pop("BEA_TRAINING_COLLECT", None)
+        os.environ.pop("BEA_TRAINING_DIR", None)
         self._tmp.cleanup()
 
     def test_disabled_returns_none(self):
-        os.environ["JARVIS_TRAINING_COLLECT"] = "0"
+        os.environ["BEA_TRAINING_COLLECT"] = "0"
         rid = tc.record_llm_interaction(
             instruction="hi", response="hello", model="m"
         )
@@ -147,8 +147,8 @@ class TestRecordingLifecycle(unittest.TestCase):
 class TestExportFormats(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
-        os.environ["JARVIS_TRAINING_COLLECT"] = "1"
-        os.environ["JARVIS_TRAINING_DIR"] = self._tmp.name
+        os.environ["BEA_TRAINING_COLLECT"] = "1"
+        os.environ["BEA_TRAINING_DIR"] = self._tmp.name
         tc._stop_event.set()
         tc._worker = None
 
@@ -161,8 +161,8 @@ class TestExportFormats(unittest.TestCase):
         self.assertTrue(tc.flush(timeout_s=2.0))
 
     def tearDown(self):
-        os.environ.pop("JARVIS_TRAINING_COLLECT", None)
-        os.environ.pop("JARVIS_TRAINING_DIR", None)
+        os.environ.pop("BEA_TRAINING_COLLECT", None)
+        os.environ.pop("BEA_TRAINING_DIR", None)
         self._tmp.cleanup()
 
     def test_alpaca_format(self):
@@ -204,11 +204,11 @@ class TestAtomicWrite(unittest.TestCase):
 class TestLLMWrapperHelpers(unittest.TestCase):
     def test_extract_text_dict_messages(self):
         msgs = [
-            {"role": "system", "content": "you are jarvis"},
+            {"role": "system", "content": "you are bea"},
             {"role": "user", "content": "hi"},
         ]
         text = _extract_text(msgs)
-        self.assertIn("you are jarvis", text)
+        self.assertIn("you are bea", text)
         self.assertIn("hi", text)
 
     def test_extract_tokens_from_response_metadata(self):

@@ -1,5 +1,5 @@
 """
-JARVIS MAX - Risk Engine
+BEA MAX - Risk Engine
 Classifie chaque action : LOW / MEDIUM / HIGH.
 Importe RiskLevel depuis core.state (source unique).
 
@@ -113,10 +113,10 @@ _CONFIG_FILES = re.compile(
     re.IGNORECASE,
 )
 
-# Repertoires core Jarvis
+# Repertoires core Bea
 _CORE_DIRS = (
     "core/", "agents/", "risk/", "executor/",
-    "night_worker/", "self_improve/", "jarvis_bot/",
+    "night_worker/", "self_improve/", "bea_bot/",
     "tools/", "observer/", "memory/", "config/",
 )
 
@@ -167,19 +167,19 @@ class RiskEngine:
                               reversible=False, backup=True,
                               reasons=["Fichier secrets / credentials"])
 
-        # 3b. Fichiers config Jarvis proteges -> HIGH
-        _JARVIS_CONFIG_FILES = frozenset({
+        # 3b. Fichiers config Bea proteges -> HIGH
+        _BEA_CONFIG_FILES = frozenset({
             "config/settings.py", ".env", "docker-compose.yml",
             "risk/engine.py", "self_improve/engine.py",
         })
         if target and any(
             target == f or target.endswith("/" + f) or target.endswith(os.sep + f)
-            for f in _JARVIS_CONFIG_FILES
+            for f in _BEA_CONFIG_FILES
         ):
             return self._high(at, target,
-                              "Fichier de configuration Jarvis protege",
+                              "Fichier de configuration Bea protege",
                               reversible=False, backup=True,
-                              reasons=["Config / guard-rails Jarvis"])
+                              reasons=["Config / guard-rails Bea"])
 
         # ── 4. Chemins systeme → HIGH ─────────────────────────
         if target and _SYS_PATHS.search(target):
@@ -225,7 +225,7 @@ class RiskEngine:
                                   reasons=["Chemin systeme protege"])
             if target and self._is_core(target):
                 return self._medium(at, target,
-                                    "Patch sur code core Jarvis",
+                                    "Patch sur code core Bea",
                                     backup=True,
                                     reasons=["Modification core - backup requis"])
             if target and self._in_workspace(target):

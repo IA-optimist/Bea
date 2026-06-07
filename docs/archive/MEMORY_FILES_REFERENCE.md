@@ -1,6 +1,6 @@
 # Memory System Files - Quick Reference
 
-Complete inventory of all 26 memory-related files in JarvisMax.
+Complete inventory of all 26 memory-related files in BeaMax.
 
 ---
 
@@ -229,7 +229,7 @@ Complete inventory of all 26 memory-related files in JarvisMax.
 - **LOC:** 76
 - **Imports:** Unknown (superseded)
 - **Purpose:** Simple JSON memory bank (RAG-lite)
-- **Backend:** JSON file (`workspace/.jarvis_memory.json`)
+- **Backend:** JSON file (`workspace/.bea_memory.json`)
 - **Key Features:** Basic lesson storage, Jaccard query
 - **Status:** Early implementation, superseded by memory_facade
 - **Action:** DEPRECATE (add warning, redirect to memory_facade)
@@ -323,8 +323,8 @@ Complete inventory of all 26 memory-related files in JarvisMax.
 | business/mission_memory | JSON | `workspace/business_mission_memory.json` |
 | self_improvement/improvement_memory | JSON | `workspace/self_improvement/history.json` |
 | self_improvement/lesson_memory | JSON | `workspace/self_improvement/lessons.json` |
-| continual_memory | Qdrant | Collection: `jarvis_continual_memory` |
-| memory_system | Qdrant + Redis | Collections: `jarvis_episodes`, `jarvis_semantic` |
+| continual_memory | Qdrant | Collection: `bea_continual_memory` |
+| memory_system | Qdrant + Redis | Collections: `bea_episodes`, `bea_semantic` |
 
 ---
 

@@ -1,5 +1,5 @@
 """
-Unified Router Namespace — JarvisMax
+Unified Router Namespace — BeaMax
 ════════════════════════════════════
 
 Centralized import entry point for all routing systems.

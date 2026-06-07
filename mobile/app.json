@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "JarvisMax",
-    "slug": "jarvismax-mobile",
+    "name": "BeaMax",
+    "slug": "beamax-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jarvismax.mobile",
+      "bundleIdentifier": "com.beamax.mobile",
       "infoPlist": {
         "NSFaceIDUsageDescription": "We use Face ID to secure your account and provide quick access."
       }
@@ -26,7 +26,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.jarvismax.mobile",
+      "package": "com.beamax.mobile",
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",

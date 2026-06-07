@@ -1,5 +1,5 @@
 """
-JARVIS MAX — AgentFactory
+BEA MAX — AgentFactory
 Création dynamique et enregistrement d'agents spécialisés.
 
 Problème résolu :
@@ -117,7 +117,7 @@ class DynamicAgent(BaseAgent):
 
 class AgentFactory:
     """
-    Fabrique d'agents JarvisMax.
+    Fabrique d'agents BeaMax.
     Gère un registre local (statique + dynamique).
     """
 
@@ -191,7 +191,7 @@ class AgentFactory:
         """
         if not system_prompt:
             system_prompt = (
-                f"Tu es {name}, un agent spécialisé de JarvisMax.\n"
+                f"Tu es {name}, un agent spécialisé de BeaMax.\n"
                 f"Tu analyses et traites les demandes avec expertise.\n"
                 f"Sois précis, structuré et actionnable."
             )

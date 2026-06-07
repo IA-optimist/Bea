@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import structlog
 
-logger = structlog.get_logger("jarvis.self_improvement.engine")
+logger = structlog.get_logger("bea.self_improvement.engine")
 log = logger  # M3 emitter alias
 
 from core.self_improvement.failure_collector import FailureCollector

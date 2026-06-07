@@ -38,8 +38,8 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: jarvismax_test
-          POSTGRES_USER: jarvis
+          POSTGRES_DB: beamax_test
+          POSTGRES_USER: bea
           POSTGRES_PASSWORD: test123
         options: >-
           --health-cmd pg_isready
@@ -86,7 +86,7 @@ jobs:
 
       - name: Run tests with coverage gate
         env:
-          DATABASE_URL: postgresql://jarvis:test123@localhost:5432/jarvismax_test
+          DATABASE_URL: postgresql://bea:test123@localhost:5432/beamax_test
           REDIS_URL: redis://localhost:6379
           TESTING: true
         run: |
@@ -231,7 +231,7 @@ jobs:
       - name: Build Docker image
         run: |
           set -euo pipefail
-          docker build -t jarvismax-api:latest -f docker/Dockerfile .
+          docker build -t beamax-api:latest -f docker/Dockerfile .
       
       - name: Test Docker image
         # Hardening (audit Mi4): le step précédent se contentait d'un `sleep 15`
@@ -243,7 +243,7 @@ jobs:
           set -euo pipefail
           docker run -d --name test-api -p 8000:8000 \
             -e DATABASE_URL=sqlite:///test.db \
-            jarvismax-api:latest
+            beamax-api:latest
           # Wait up to 60s for /health to respond 200
           ok=0
           for i in $(seq 1 30); do

@@ -138,8 +138,8 @@ def test_p3_full_loop_simulation():
         assert strategy["sample_size"] >= 10
 
         # Improvement detector should find issues
-        os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-        os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+        os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+        os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
         from core.improvement_detector import detect_improvements
         proposals = detect_improvements(dry_run=True)
         assert isinstance(proposals, list)
@@ -177,22 +177,22 @@ def test_p4_execution_engine_flag_gates_tool_runner():
 
 
 def test_p4_dynamic_routing_flag():
-    """Dynamic routing is gated by JARVIS_DYNAMIC_ROUTING."""
+    """Dynamic routing is gated by BEA_DYNAMIC_ROUTING."""
     with open("core/dynamic_agent_router.py", encoding="utf-8") as f:
         src = f.read()
-    assert "JARVIS_DYNAMIC_ROUTING" in src
+    assert "BEA_DYNAMIC_ROUTING" in src
     assert "is_enabled" in src
 
 
 def test_p4_kill_switch_actually_works():
     """Disable all intelligence via env var."""
-    os.environ["JARVIS_DISABLE_ALL_INTELLIGENCE"] = "1"
+    os.environ["BEA_DISABLE_ALL_INTELLIGENCE"] = "1"
     try:
         from core.safety_controls import is_intelligence_enabled, is_proposals_enabled
         assert not is_intelligence_enabled()
         assert not is_proposals_enabled()
     finally:
-        os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE")
+        os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -461,8 +461,8 @@ def test_e2e_memory_reuse_improves_success():
 
 def test_e2e_improvement_proposals_triggered():
     """Verify proposals are triggered from real performance data."""
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
     from core.tool_performance_tracker import ToolPerformanceTracker, ToolExecution
     import core.tool_performance_tracker as tpt_mod
 

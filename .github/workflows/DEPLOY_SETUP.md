@@ -1,6 +1,6 @@
 # GitHub Actions Auto-Deploy Setup
 
-This document explains how to configure the auto-deployment workflow for Jarvis Core on VPS1.
+This document explains how to configure the auto-deployment workflow for Bea Core on VPS1.
 
 ## Required GitHub Secrets
 
@@ -12,7 +12,7 @@ You need to add the following secrets to your GitHub repository:
 
 ### How to Add Secrets
 
-1. Go to your GitHub repository: https://github.com/UniTy01/Jarvismax-master
+1. Go to your GitHub repository: https://github.com/UniTy01/Beamax-master
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
 4. Add each secret with its respective value
@@ -37,7 +37,7 @@ If you already have a Telegram bot configured:
 
 1. **TELEGRAM_BOT_TOKEN**: Check your `.env` file on VPS1:
    ```bash
-   grep TELEGRAM_BOT_TOKEN /root/Jarvismax-master/.env
+   grep TELEGRAM_BOT_TOKEN /root/Beamax-master/.env
    ```
 
 2. **TELEGRAM_CHAT_ID**: 
@@ -58,7 +58,7 @@ The deployment workflow (`deploy.yml`) triggers on every push to the `main` bran
 
 1. ✅ Connects to VPS1 (77.42.40.146) via SSH
 2. ✅ Pulls the latest code from GitHub
-3. ✅ Rebuilds the Docker image (`jarvismax:latest`)
+3. ✅ Rebuilds the Docker image (`beamax:latest`)
 4. ✅ Stops and removes the old container
 5. ✅ Starts the new container with proper volumes and networking
 6. ✅ Runs comprehensive smoke tests:
@@ -74,16 +74,16 @@ The workflow uses these environment variables (configured in deploy.yml):
 
 - **VPS_HOST**: 77.42.40.146
 - **VPS_USER**: root
-- **DEPLOY_PATH**: /root/Jarvismax-master
-- **CONTAINER_NAME**: jarvis_core
-- **DOMAIN**: jarvis.jarvismaxapp.co.uk
+- **DEPLOY_PATH**: /root/Beamax-master
+- **CONTAINER_NAME**: bea_core
+- **DOMAIN**: bea.beamaxapp.co.uk
 
 ## Testing the Workflow
 
 After setting up the secrets, test the workflow by pushing a commit:
 
 ```bash
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 
 # Make a small change
 echo "# Test deployment - $(date)" >> README.md
@@ -95,9 +95,9 @@ git push origin main
 ```
 
 Then check:
-- **GitHub Actions tab**: https://github.com/UniTy01/Jarvismax-master/actions
+- **GitHub Actions tab**: https://github.com/UniTy01/Beamax-master/actions
 - **Your Telegram**: You should receive a deployment notification
-- **VPS1**: Verify the container is running: `docker ps | grep jarvis_core`
+- **VPS1**: Verify the container is running: `docker ps | grep bea_core`
 
 ## Troubleshooting
 
@@ -114,9 +114,9 @@ Then check:
 - Review build logs in GitHub Actions
 
 ### Container Won't Start
-- Check Docker logs: `docker logs jarvis_core`
+- Check Docker logs: `docker logs bea_core`
 - Verify environment variables in `.env` file
-- Ensure required volumes exist: `ls -la /root/jarvismax-data`
+- Ensure required volumes exist: `ls -la /root/beamax-data`
 - Check port conflicts: `netstat -tuln | grep 8000`
 
 ### Telegram Notifications Not Sending
@@ -131,7 +131,7 @@ Then check:
 
 ### Deployment Succeeds but Service Not Working
 - Check if the container is healthy: `docker ps`
-- Review application logs: `docker logs jarvis_core --tail 100`
+- Review application logs: `docker logs bea_core --tail 100`
 - Verify database connections and other dependencies
 - Check Caddy/reverse proxy configuration
 - Test directly: `curl http://localhost:8000/health`
@@ -142,16 +142,16 @@ If you need to deploy manually (bypassing CI/CD):
 
 ```bash
 ssh root@77.42.40.146
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 git pull origin main
-docker build -t jarvismax:latest .
-docker stop jarvis_core && docker rm jarvis_core
-docker run -d --name jarvis_core --restart unless-stopped \
-  -v /root/jarvismax-data:/app/data \
-  -v /root/Jarvismax-master/.env:/app/.env:ro \
+docker build -t beamax:latest .
+docker stop bea_core && docker rm bea_core
+docker run -d --name bea_core --restart unless-stopped \
+  -v /root/beamax-data:/app/data \
+  -v /root/Beamax-master/.env:/app/.env:ro \
   --network host \
-  jarvismax:latest
-docker logs jarvis_core --tail 50
+  beamax:latest
+docker logs bea_core --tail 50
 ```
 
 ## Rollback Procedure
@@ -162,17 +162,17 @@ If a deployment breaks production:
 ssh root@77.42.40.146
 
 # Option 1: Revert to previous image
-docker stop jarvis_core
-docker rm jarvis_core
-docker images | grep jarvismax  # Find previous image tag
-docker tag jarvismax:<previous_tag> jarvismax:latest
+docker stop bea_core
+docker rm bea_core
+docker images | grep beamax  # Find previous image tag
+docker tag beamax:<previous_tag> beamax:latest
 # Then restart container
 
 # Option 2: Rollback code and rebuild
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 git log --oneline -5  # Find previous commit hash
 git reset --hard <previous_commit_hash>
-docker build -t jarvismax:latest .
-docker stop jarvis_core && docker rm jarvis_core
+docker build -t beamax:latest .
+docker stop bea_core && docker rm bea_core
 # Then restart container
 ```

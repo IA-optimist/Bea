@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Memory Facade
+BEA MAX — Memory Facade
 ============================
 Single memory interface for the orchestrator and all agents.
 
@@ -137,7 +137,7 @@ _ROUTING: dict[str, list[str]] = {
 
 class MemoryFacade:
     """
-    Unified memory interface for JarvisMax.
+    Unified memory interface for BeaMax.
 
     Wraps existing memory backends. All operations fail-open.
     If primary backend is unavailable, falls back to JSONL.

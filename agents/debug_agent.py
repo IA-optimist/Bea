@@ -1,5 +1,5 @@
 """
-JARVIS MAX — DebugAgent
+BEA MAX — DebugAgent
 Analyse les erreurs agents et propose des corrections ciblées.
 
 Déclenché automatiquement par l'orchestrateur quand :
@@ -26,7 +26,7 @@ from agents.crew import BaseAgent
 from core.contracts import (
     ErrorReport
 )
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -36,7 +36,7 @@ class DebugAgent(BaseAgent):
     role     = "builder"   # LLM puissant requis pour l'analyse
     timeout_s= 90
 
-    _SYSTEM = """Tu es DebugAgent, expert en analyse de pannes pour JarvisMax.
+    _SYSTEM = """Tu es DebugAgent, expert en analyse de pannes pour BeaMax.
 
 MISSION : Analyser les erreurs et proposer des corrections précises.
 
@@ -66,7 +66,7 @@ RÈGLES :
     def system_prompt(self) -> str:
         return self._SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         # Récupère l'ErrorReport depuis session.metadata si disponible
         error_report: dict = session.metadata.get("debug_target_error", {})
         failed_agent = error_report.get("agent", "inconnu")
@@ -85,7 +85,7 @@ RÈGLES :
             + f"\n\nMission globale : {session.mission_summary or session.user_input}"
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         t0  = time.monotonic()
         log.info("debug_agent_start",
                  sid=session.session_id,
@@ -148,7 +148,7 @@ RÈGLES :
             return ""
 
     @classmethod
-    def from_error_report(cls, report: ErrorReport, session: JarvisSession) -> None:
+    def from_error_report(cls, report: ErrorReport, session: BeaSession) -> None:
         """Injecte un ErrorReport dans les metadata de session pour l'analyse."""
         session.metadata["debug_target_error"] = {
             "agent":       report.agent,

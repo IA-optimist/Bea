@@ -12,7 +12,7 @@ import structlog
 
 if TYPE_CHECKING:
     from agents.crew import BaseAgent
-    from core.state import JarvisSession
+    from core.state import BeaSession
 
 log = structlog.get_logger()
 class AgentCrew:
@@ -73,20 +73,20 @@ class AgentCrew:
                 log.info("agent_registered", name=agent_name)
             except Exception as e:
                 log.warning("agent_register_failed", name=agent_name, err=str(e)[:80])
-        self._register_jarvis_team(settings)
+        self._register_bea_team(settings)
 
-    def _register_jarvis_team(self, settings) -> None:
-        """Register jarvis-team agents (meta-level codebase agents). Fail-open."""
+    def _register_bea_team(self, settings) -> None:
+        """Register bea-team agents (meta-level codebase agents). Fail-open."""
         try:
-            from agents.jarvis_team import JARVIS_TEAM_AGENTS
-            for agent_name, agent_cls in JARVIS_TEAM_AGENTS.items():
+            from agents.bea_team import BEA_TEAM_AGENTS
+            for agent_name, agent_cls in BEA_TEAM_AGENTS.items():
                 try:
                     self.registry[agent_name] = agent_cls(settings)
-                    log.info("agent_registered", name=agent_name, team="jarvis")
+                    log.info("agent_registered", name=agent_name, team="bea")
                 except Exception as e:
-                    log.warning("jarvis_team_agent_failed", name=agent_name, err=str(e)[:80])
+                    log.warning("bea_team_agent_failed", name=agent_name, err=str(e)[:80])
         except Exception as e:
-            log.debug("jarvis_team_import_skipped", err=str(e)[:80])
+            log.debug("bea_team_import_skipped", err=str(e)[:80])
 
     def discover(self, extra_agents=None) -> None:
         """Enregistre des agents supplementaires dynamiquement."""
@@ -101,7 +101,7 @@ class AgentCrew:
             for name, a in self.registry.items()
         ]
 
-    async def run(self, name: str, session: JarvisSession) -> str:
+    async def run(self, name: str, session: BeaSession) -> str:
         agent = self.registry.get(name)
         if not agent:
             log.warning("unknown_agent", name=name)

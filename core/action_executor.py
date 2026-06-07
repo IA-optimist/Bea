@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ActionExecutor v1
+BEA MAX — ActionExecutor v1
 Worker backend qui exécute automatiquement les actions APPROVED.
 
 Architecture :
@@ -116,7 +116,7 @@ class ActionExecutor:
         self._started_at = time.time()
         self._thread = threading.Thread(
             target=self._worker_loop,
-            name="JarvisActionExecutor",
+            name="BeaActionExecutor",
             daemon=True,
         )
         self._thread.start()
@@ -396,12 +396,12 @@ class ActionExecutor:
         out_file  = output_path / f"{safe_name}_{int(time.time())}.txt"
 
         content = (
-            f"# Jarvis Output — {ts}\n"
+            f"# Bea Output — {ts}\n"
             f"Action    : {action.description}\n"
             f"Target    : {target}\n"
             f"Impact    : {action.impact}\n\n"
             f"## Contenu généré\n\n"
-            f"Jarvis a traité cette action de type BUILD.\n"
+            f"Bea a traité cette action de type BUILD.\n"
             f"Résultat structuré enregistré dans : {out_file}\n"
         )
         try:
@@ -456,7 +456,7 @@ class ActionExecutor:
 
         # Check 3 : SQLite DB
         try:
-            db_path = Path("workspace/jarvismax.db")
+            db_path = Path("workspace/beamax.db")
             if db_path.exists():
                 size_kb = db_path.stat().st_size // 1024
                 checks.append(("✅", "SQLite DB", f"{size_kb} Ko"))

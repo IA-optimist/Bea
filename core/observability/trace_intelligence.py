@@ -10,7 +10,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
-log = logging.getLogger("jarvis.trace_intel")
+log = logging.getLogger("bea.trace_intel")
 
 TRACE_DIR = Path("workspace/traces")
 

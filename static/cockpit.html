@@ -46,7 +46,7 @@
   <div class="brand-mark">B</div>
   <div><h1>Béa — Cockpit</h1><div class="sub">Performance · Auto-amélioration · Pipeline business</div></div>
   <div class="tok">
-    <input id="token" class="input" placeholder="X-Jarvis-Token (optionnel si cookie)" size="22">
+    <input id="token" class="input" placeholder="X-Bea-Token (optionnel si cookie)" size="22">
     <button class="btn" onclick="saveToken()">OK</button>
     <button class="btn" onclick="refreshAll()">↻ Rafraîchir</button>
   </div>
@@ -100,7 +100,7 @@ let TOKEN = '';
 function saveToken(){ TOKEN = document.getElementById('token').value.trim(); refreshAll(); }
 function authHeaders(extra){
   const h = Object.assign({}, extra || {});
-  if (TOKEN){ h['X-Jarvis-Token'] = TOKEN; h['Authorization'] = 'Bearer ' + TOKEN; }
+  if (TOKEN){ h['X-Bea-Token'] = TOKEN; h['Authorization'] = 'Bearer ' + TOKEN; }
   return h;
 }
 async function api(path, opts){

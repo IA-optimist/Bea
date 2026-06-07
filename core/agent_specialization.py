@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Agent Specialization Engine
+BEA MAX — Agent Specialization Engine
 ==========================================
-Enables Jarvis to dynamically determine which agent type should handle
+Enables Bea to dynamically determine which agent type should handle
 which task class.
 
 Parts:
@@ -43,7 +43,7 @@ try:
 except ImportError:
     log = structlog.get_logger(__name__)
 
-REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
+REPO_ROOT = Path(os.environ.get("BEAMAX_REPO", ".")).resolve()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -72,13 +72,13 @@ EXISTING_AGENTS: dict[str, dict] = {
     "debug-agent":      {"role": "builder",   "timeout_s": 180, "description": "Debug analysis and automated fix generation"},
     "recovery-agent":   {"role": "advisor",   "timeout_s": 120, "description": "Failure recovery and rollback strategies"},
     "monitoring-agent":  {"role": "default",  "timeout_s": 120, "description": "System monitoring and anomaly detection"},
-    # Jarvis team (meta-level)
-    "jarvis-architect":  {"role": "planner",   "timeout_s": 180, "description": "System architecture decisions for JarvisMax"},
-    "jarvis-coder":      {"role": "builder",   "timeout_s": 240, "description": "Implementation of JarvisMax changes"},
-    "jarvis-reviewer":   {"role": "reviewer",  "timeout_s": 150, "description": "Code review for JarvisMax changes"},
-    "jarvis-qa":         {"role": "builder",   "timeout_s": 240, "description": "Test creation and execution for JarvisMax"},
-    "jarvis-devops":     {"role": "builder",   "timeout_s": 180, "description": "Deployment and environment validation"},
-    "jarvis-watcher":    {"role": "default",   "timeout_s": 120, "description": "Log monitoring and anomaly detection"},
+    # Bea team (meta-level)
+    "bea-architect":  {"role": "planner",   "timeout_s": 180, "description": "System architecture decisions for BeaMax"},
+    "bea-coder":      {"role": "builder",   "timeout_s": 240, "description": "Implementation of BeaMax changes"},
+    "bea-reviewer":   {"role": "reviewer",  "timeout_s": 150, "description": "Code review for BeaMax changes"},
+    "bea-qa":         {"role": "builder",   "timeout_s": 240, "description": "Test creation and execution for BeaMax"},
+    "bea-devops":     {"role": "builder",   "timeout_s": 180, "description": "Deployment and environment validation"},
+    "bea-watcher":    {"role": "default",   "timeout_s": 120, "description": "Log monitoring and anomaly detection"},
 }
 
 # Current mission routing (TaskMode → agent plan)
@@ -265,11 +265,11 @@ _TASK_CLUSTERS: list[TaskCluster] = [
     ),
     TaskCluster(
         name="self_improvement",
-        description="Improving Jarvis itself: code quality, capabilities, performance",
-        intent_patterns=[r"(?:improve|optimize|enhance|upgrade|strengthen)\s+(?:yourself|jarvis|system|performance|capability)"],
+        description="Improving Bea itself: code quality, capabilities, performance",
+        intent_patterns=[r"(?:improve|optimize|enhance|upgrade|strengthen)\s+(?:yourself|bea|system|performance|capability)"],
         typical_tools=["read_file", "write_file", "search_in_files", "run_unit_tests",
                         "dependency_analyzer", "check_logs"],
-        typical_agents=["jarvis-architect", "jarvis-coder", "jarvis-reviewer", "jarvis-qa"],
+        typical_agents=["bea-architect", "bea-coder", "bea-reviewer", "bea-qa"],
         plan_depth=4,
         risk_level="medium",
         examples=["Improve test coverage", "Optimize the retry logic", "Enhance error handling"],
@@ -281,7 +281,7 @@ _TASK_CLUSTERS: list[TaskCluster] = [
         intent_patterns=[r"(?:monitor|check|watch|observe|inspect)\s+(?:health|logs|status|metrics|system|anomaly)"],
         typical_tools=["check_logs", "api_healthcheck", "docker_ps", "docker_logs",
                         "env_checker", "system_health_check"],
-        typical_agents=["monitoring-agent", "jarvis-watcher", "pulse-ops"],
+        typical_agents=["monitoring-agent", "bea-watcher", "pulse-ops"],
         plan_depth=1,
         risk_level="low",
         examples=["Check system health", "Monitor error rates", "Inspect recent logs"],
@@ -403,7 +403,7 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
         primary_clusters=["planning", "repo_analysis"],
         required_capabilities=["filesystem_read", "filesystem_search", "code_analyze"],
         reasoning_depth=5, tool_density=2, risk_tolerance=1, code_impact=0,
-        existing_agents=["map-planner", "shadow-advisor", "jarvis-architect"],
+        existing_agents=["map-planner", "shadow-advisor", "bea-architect"],
         coverage_status="covered",
     ),
     AgentArchetype(
@@ -412,7 +412,7 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
         primary_clusters=["code_modification", "tool_building"],
         required_capabilities=["filesystem_write", "filesystem_read", "code_generate", "test_execute"],
         reasoning_depth=3, tool_density=4, risk_tolerance=3, code_impact=5,
-        existing_agents=["forge-builder", "night-worker", "jarvis-coder"],
+        existing_agents=["forge-builder", "night-worker", "bea-coder"],
         coverage_status="covered",
     ),
     AgentArchetype(
@@ -421,7 +421,7 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
         primary_clusters=["repo_analysis", "testing"],
         required_capabilities=["filesystem_read", "filesystem_search", "code_analyze", "test_execute"],
         reasoning_depth=4, tool_density=3, risk_tolerance=1, code_impact=0,
-        existing_agents=["lens-reviewer", "jarvis-reviewer"],
+        existing_agents=["lens-reviewer", "bea-reviewer"],
         coverage_status="covered",
     ),
     AgentArchetype(
@@ -448,8 +448,8 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
         primary_clusters=["testing"],
         required_capabilities=["test_execute", "filesystem_write", "filesystem_read", "code_analyze"],
         reasoning_depth=2, tool_density=3, risk_tolerance=1, code_impact=2,
-        existing_agents=["jarvis-qa"],
-        coverage_status="partial",  # only jarvis-qa, no general test agent
+        existing_agents=["bea-qa"],
+        coverage_status="partial",  # only bea-qa, no general test agent
     ),
     AgentArchetype(
         name="operator",
@@ -475,7 +475,7 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
         primary_clusters=["monitoring"],
         required_capabilities=["filesystem_read", "env_inspect", "container_inspect", "http_read"],
         reasoning_depth=2, tool_density=3, risk_tolerance=1, code_impact=0,
-        existing_agents=["monitoring-agent", "jarvis-watcher"],
+        existing_agents=["monitoring-agent", "bea-watcher"],
         coverage_status="covered",
     ),
     AgentArchetype(
@@ -489,11 +489,11 @@ _AGENT_ARCHETYPES: list[AgentArchetype] = [
     ),
     AgentArchetype(
         name="meta_improver",
-        description="Self-improvement specialist — analyzes Jarvis's own code and suggests improvements.",
+        description="Self-improvement specialist — analyzes Bea's own code and suggests improvements.",
         primary_clusters=["self_improvement", "repo_analysis"],
         required_capabilities=["filesystem_read", "filesystem_write", "code_analyze", "test_execute", "vcs_mutate"],
         reasoning_depth=5, tool_density=5, risk_tolerance=2, code_impact=4,
-        existing_agents=["jarvis-architect", "jarvis-coder", "jarvis-reviewer", "jarvis-qa"],
+        existing_agents=["bea-architect", "bea-coder", "bea-reviewer", "bea-qa"],
         coverage_status="covered",
     ),
 ]

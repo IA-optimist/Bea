@@ -1,5 +1,5 @@
 """
-JARVIS MAX — RAG Ingestion
+BEA MAX — RAG Ingestion
 Extracts text from PDF, DOCX, TXT, MD, PY, JSON files.
 Returns Document objects ready for chunking and embedding.
 

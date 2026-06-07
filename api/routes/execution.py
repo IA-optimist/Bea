@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-logger = logging.getLogger("jarvis.api.execution")
+logger = logging.getLogger("bea.api.execution")
 
 # Fail-hard on auth import: if _check_auth is unavailable, the router
 # must NOT register — silent fail-open to no-auth is a HIGH severity bug.

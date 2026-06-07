@@ -1,5 +1,5 @@
 """
-JarvisMax Conversational Chat API (Phase 5.3 - Clean Rewrite)
+BeaMax Conversational Chat API (Phase 5.3 - Clean Rewrite)
 ==============================================================
 Natural conversation endpoint with AGI cognition.
 
@@ -99,11 +99,11 @@ def _get_orchestrator() -> CognitionOrchestrator:
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     req: ChatRequest,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Conversational chat with AGI cognition."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     
     orchestrator = _get_orchestrator()
     
@@ -178,11 +178,11 @@ async def chat(
 @router.get("/chat/projects/{project_id}/performance")
 async def get_project_performance(
     project_id: int,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Get cognitive performance metrics for a project."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     
     orchestrator = _get_orchestrator()
     perf_summary = orchestrator.get_project_performance()

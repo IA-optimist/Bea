@@ -2,20 +2,20 @@
 tests/test_production_hardening_p34.py — Pass 34 Security Hardening Tests
 
 Covers:
-  P1.  enforce_production_secrets() — passes in dev mode (no JARVIS_PRODUCTION)
+  P1.  enforce_production_secrets() — passes in dev mode (no BEA_PRODUCTION)
   P2.  enforce_production_secrets() — raises RuntimeError on default secret key
   P3.  enforce_production_secrets() — raises RuntimeError on missing admin password
   P4.  enforce_production_secrets() — raises RuntimeError on missing API token
   P5.  enforce_production_secrets() — accumulates all errors before raising
   P6.  enforce_production_secrets() — passes with all secrets properly set
-  P7.  JARVIS_REQUIRE_AUTH — valid token passes even with flag set
-  P7b. JARVIS_REQUIRE_AUTH — wrong token raises 401, not 503
-  P8.  JARVIS_REQUIRE_AUTH — HTTP 503 when flag set + no token configured
-  P9.  JARVIS_REQUIRE_AUTH — auth disabled (pass-through) when neither flag nor token
+  P7.  BEA_REQUIRE_AUTH — valid token passes even with flag set
+  P7b. BEA_REQUIRE_AUTH — wrong token raises 401, not 503
+  P8.  BEA_REQUIRE_AUTH — HTTP 503 when flag set + no token configured
+  P9.  BEA_REQUIRE_AUTH — auth disabled (pass-through) when neither flag nor token
   P10. is_path_protected() — protected paths correctly identified
   P11. is_path_allowed() — protected paths blocked even if in ALLOWED_SCOPE
   P12. is_path_allowed() — workspace/ allowed when not protected
-  P13. production_mode property — False without env, True with JARVIS_PRODUCTION=1
+  P13. production_mode property — False without env, True with BEA_PRODUCTION=1
 """
 from __future__ import annotations
 
@@ -65,69 +65,69 @@ class TestEnforceProductionSecrets:
             s.enforce_production_secrets()  # called while patch is still active
 
     def test_P1_dev_mode_no_raise(self):
-        """No JARVIS_PRODUCTION → no-op regardless of secret quality."""
+        """No BEA_PRODUCTION → no-op regardless of secret quality."""
         self._run_enforce({
-            "JARVIS_PRODUCTION": "",
-            "JARVIS_SECRET_KEY": "change-me-in-production",
-            "JARVIS_ADMIN_PASSWORD": "",
-            "JARVIS_API_TOKEN": "",
+            "BEA_PRODUCTION": "",
+            "BEA_SECRET_KEY": "change-me-in-production",
+            "BEA_ADMIN_PASSWORD": "",
+            "BEA_API_TOKEN": "",
         })
 
     def test_P2_production_default_secret_raises(self):
-        """JARVIS_PRODUCTION=1 + default secret → RuntimeError."""
+        """BEA_PRODUCTION=1 + default secret → RuntimeError."""
         with pytest.raises(RuntimeError, match="PRODUCTION STARTUP BLOCKED"):
             self._run_enforce({
-                "JARVIS_PRODUCTION": "1",
-                "JARVIS_SECRET_KEY": "change-me-in-production",
-                "JARVIS_ADMIN_PASSWORD": "secure-pw",
-                "JARVIS_API_TOKEN": "secure-token",
+                "BEA_PRODUCTION": "1",
+                "BEA_SECRET_KEY": "change-me-in-production",
+                "BEA_ADMIN_PASSWORD": "secure-pw",
+                "BEA_API_TOKEN": "secure-token",
             })
 
     def test_P3_production_no_admin_password_raises(self):
-        """JARVIS_PRODUCTION=1 + missing admin password → RuntimeError."""
-        with pytest.raises(RuntimeError, match="JARVIS_ADMIN_PASSWORD"):
+        """BEA_PRODUCTION=1 + missing admin password → RuntimeError."""
+        with pytest.raises(RuntimeError, match="BEA_ADMIN_PASSWORD"):
             self._run_enforce({
-                "JARVIS_PRODUCTION": "1",
-                "JARVIS_SECRET_KEY": "x" * 40,
-                "JARVIS_ADMIN_PASSWORD": "",
-                "JARVIS_API_TOKEN": "secure-token",
+                "BEA_PRODUCTION": "1",
+                "BEA_SECRET_KEY": "x" * 40,
+                "BEA_ADMIN_PASSWORD": "",
+                "BEA_API_TOKEN": "secure-token",
             })
 
     def test_P4_production_no_api_token_raises(self):
-        """JARVIS_PRODUCTION=1 + missing API token → RuntimeError."""
-        with pytest.raises(RuntimeError, match="JARVIS_API_TOKEN"):
+        """BEA_PRODUCTION=1 + missing API token → RuntimeError."""
+        with pytest.raises(RuntimeError, match="BEA_API_TOKEN"):
             self._run_enforce({
-                "JARVIS_PRODUCTION": "1",
-                "JARVIS_SECRET_KEY": "x" * 40,
-                "JARVIS_ADMIN_PASSWORD": "secure-pw",
-                "JARVIS_API_TOKEN": "",
+                "BEA_PRODUCTION": "1",
+                "BEA_SECRET_KEY": "x" * 40,
+                "BEA_ADMIN_PASSWORD": "secure-pw",
+                "BEA_API_TOKEN": "",
             })
 
     def test_P5_accumulates_all_errors(self):
         """All three issues → RuntimeError listing all of them in one message."""
         with pytest.raises(RuntimeError) as exc_info:
             self._run_enforce({
-                "JARVIS_PRODUCTION": "1",
-                "JARVIS_SECRET_KEY": "change-me-in-production",
-                "JARVIS_ADMIN_PASSWORD": "",
-                "JARVIS_API_TOKEN": "",
+                "BEA_PRODUCTION": "1",
+                "BEA_SECRET_KEY": "change-me-in-production",
+                "BEA_ADMIN_PASSWORD": "",
+                "BEA_API_TOKEN": "",
             })
         msg = str(exc_info.value)
-        assert "JARVIS_ADMIN_PASSWORD" in msg
-        assert "JARVIS_API_TOKEN" in msg
+        assert "BEA_ADMIN_PASSWORD" in msg
+        assert "BEA_API_TOKEN" in msg
 
     def test_P6_all_secrets_set_no_raise(self):
-        """JARVIS_PRODUCTION=1 + all secrets properly set → no error."""
+        """BEA_PRODUCTION=1 + all secrets properly set → no error."""
         self._run_enforce({
-            "JARVIS_PRODUCTION": "1",
-            "JARVIS_SECRET_KEY": "a-very-secure-secret-key-that-is-long-enough",
-            "JARVIS_ADMIN_PASSWORD": "$ecureP@ssw0rd!",
-            "JARVIS_API_TOKEN": "prod-token-abc123",
+            "BEA_PRODUCTION": "1",
+            "BEA_SECRET_KEY": "a-very-secure-secret-key-that-is-long-enough",
+            "BEA_ADMIN_PASSWORD": "$ecureP@ssw0rd!",
+            "BEA_API_TOKEN": "prod-token-abc123",
         })
 
     def test_P13_production_mode_property_false(self):
-        """production_mode returns False when JARVIS_PRODUCTION not set."""
-        with patch.dict(os.environ, {"JARVIS_PRODUCTION": ""}, clear=False):
+        """production_mode returns False when BEA_PRODUCTION not set."""
+        with patch.dict(os.environ, {"BEA_PRODUCTION": ""}, clear=False):
             import config.settings as _mod
             s = _mod.Settings()
             assert s.production_mode is False
@@ -135,14 +135,14 @@ class TestEnforceProductionSecrets:
     @pytest.mark.parametrize("val", ["1", "true", "True", "yes"])
     def test_P13_production_mode_property_true(self, val):
         """production_mode returns True for various truthy values."""
-        with patch.dict(os.environ, {"JARVIS_PRODUCTION": val}, clear=False):
+        with patch.dict(os.environ, {"BEA_PRODUCTION": val}, clear=False):
             import config.settings as _mod
             s = _mod.Settings()
-            assert s.production_mode is True, f"Expected True for JARVIS_PRODUCTION={val}"
+            assert s.production_mode is True, f"Expected True for BEA_PRODUCTION={val}"
 
 
 # ═══════════════════════════════════════════════════════════════════
-# P7–P9: JARVIS_REQUIRE_AUTH guard in _check_auth()
+# P7–P9: BEA_REQUIRE_AUTH guard in _check_auth()
 # ═══════════════════════════════════════════════════════════════════
 
 class TestRequireAuthGuard:
@@ -153,26 +153,26 @@ class TestRequireAuthGuard:
         # fige les globals module (_REQUIRE_AUTH, _API_TOKEN). patch.dict restaure
         # l'env mais PAS le module rechargé → fuite vers d'autres tests d'auth
         # (ex. AC01). On recharge _deps après coup, l'env étant revenu au baseline
-        # conftest (JARVIS_API_TOKEN="test").
+        # conftest (BEA_API_TOKEN="test").
         yield
         import api._deps as _deps
         importlib.reload(_deps)
 
     def test_P8_require_auth_no_token_raises_503(self):
-        """JARVIS_REQUIRE_AUTH=1 + no JARVIS_API_TOKEN → HTTP 503."""
+        """BEA_REQUIRE_AUTH=1 + no BEA_API_TOKEN → HTTP 503."""
         from fastapi import HTTPException
-        env = {"JARVIS_REQUIRE_AUTH": "1", "JARVIS_API_TOKEN": ""}
+        env = {"BEA_REQUIRE_AUTH": "1", "BEA_API_TOKEN": ""}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)
             with pytest.raises(HTTPException) as exc_info:
                 _deps._check_auth(token=None, authorization=None)
         assert exc_info.value.status_code == 503
-        assert "JARVIS_API_TOKEN" in exc_info.value.detail
+        assert "BEA_API_TOKEN" in exc_info.value.detail
 
     def test_P9_no_token_no_flag_passes(self):
-        """No JARVIS_API_TOKEN + no JARVIS_REQUIRE_AUTH → auth disabled, no raise."""
-        env = {"JARVIS_REQUIRE_AUTH": "", "JARVIS_API_TOKEN": ""}
+        """No BEA_API_TOKEN + no BEA_REQUIRE_AUTH → auth disabled, no raise."""
+        env = {"BEA_REQUIRE_AUTH": "", "BEA_API_TOKEN": ""}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)
@@ -182,7 +182,7 @@ class TestRequireAuthGuard:
         """Valid static token → no raise even with REQUIRE_AUTH set."""
         from fastapi import HTTPException
         token = "my-static-api-token"
-        env = {"JARVIS_API_TOKEN": token, "JARVIS_REQUIRE_AUTH": "1"}
+        env = {"BEA_API_TOKEN": token, "BEA_REQUIRE_AUTH": "1"}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)
@@ -194,7 +194,7 @@ class TestRequireAuthGuard:
     def test_P7b_wrong_token_raises_401(self):
         """Configured token + wrong submitted token → 401, not 503."""
         from fastapi import HTTPException
-        env = {"JARVIS_API_TOKEN": "correct-token", "JARVIS_REQUIRE_AUTH": "1"}
+        env = {"BEA_API_TOKEN": "correct-token", "BEA_REQUIRE_AUTH": "1"}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)
@@ -204,20 +204,20 @@ class TestRequireAuthGuard:
 
     @pytest.mark.parametrize("val", ["1", "true", "True", "yes", "YES"])
     def test_require_auth_truthy_values(self, val):
-        """JARVIS_REQUIRE_AUTH accepts '1', 'true', 'yes' (case-insensitive)."""
+        """BEA_REQUIRE_AUTH accepts '1', 'true', 'yes' (case-insensitive)."""
         from fastapi import HTTPException
-        env = {"JARVIS_REQUIRE_AUTH": val, "JARVIS_API_TOKEN": ""}
+        env = {"BEA_REQUIRE_AUTH": val, "BEA_API_TOKEN": ""}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)
             with pytest.raises(HTTPException) as exc_info:
                 _deps._check_auth(token=None, authorization=None)
-        assert exc_info.value.status_code == 503, f"Failed for JARVIS_REQUIRE_AUTH={val}"
+        assert exc_info.value.status_code == 503, f"Failed for BEA_REQUIRE_AUTH={val}"
 
     @pytest.mark.parametrize("val", ["false", "False", "0", "no", ""])
     def test_require_auth_falsy_values_pass(self, val):
-        """JARVIS_REQUIRE_AUTH=false/0/'' → auth disabled, no raise."""
-        env = {"JARVIS_REQUIRE_AUTH": val, "JARVIS_API_TOKEN": ""}
+        """BEA_REQUIRE_AUTH=false/0/'' → auth disabled, no raise."""
+        env = {"BEA_REQUIRE_AUTH": val, "BEA_API_TOKEN": ""}
         with patch.dict(os.environ, env, clear=False):
             import api._deps as _deps
             importlib.reload(_deps)

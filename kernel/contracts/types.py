@@ -1,5 +1,5 @@
 """
-kernel/contracts/types.py — Canonical domain types for JarvisMax kernel.
+kernel/contracts/types.py — Canonical domain types for BeaMax kernel.
 
 All kernel-level communication uses these contracts. They define:
   - Required fields

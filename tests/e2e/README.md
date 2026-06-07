@@ -1,6 +1,6 @@
-# Tests E2E Playwright - JarvisMax
+# Tests E2E Playwright - BeaMax
 
-Suite de tests End-to-End complète pour JarvisMax utilisant Playwright.
+Suite de tests End-to-End complète pour BeaMax utilisant Playwright.
 
 ## Structure
 
@@ -15,8 +15,8 @@ tests/e2e/
 ## Prérequis
 
 - Node.js 18+ installé
-- API JarvisMax en cours d'exécution sur http://72.62.177.55:8000
-- Frontend JarvisMax en cours d'exécution sur http://72.62.177.55:3001
+- API BeaMax en cours d'exécution sur http://72.62.177.55:8000
+- Frontend BeaMax en cours d'exécution sur http://72.62.177.55:3001
 
 ## Installation
 
@@ -218,7 +218,7 @@ npx playwright install
 
 Pour toute question ou problème :
 - Documentation Playwright : https://playwright.dev
-- Issues GitHub JarvisMax : [lien vers repo]
+- Issues GitHub BeaMax : [lien vers repo]
 
 ---
 

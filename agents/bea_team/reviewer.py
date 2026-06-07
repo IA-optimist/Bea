@@ -1,5 +1,5 @@
 """
-jarvis-reviewer — Validate diffs and detect regressions.
+bea-reviewer — Validate diffs and detect regressions.
 
 Responsibilities:
     - Review code diffs for correctness, style, and safety
@@ -16,21 +16,21 @@ Tool access:
 Does NOT:
     - Write code (suggests changes, doesn't implement them)
     - Merge or push
-    - Override BLOCK decisions from jarvis-qa
+    - Override BLOCK decisions from bea-qa
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
-class JarvisReviewer(JarvisTeamAgent):
-    name      = "jarvis-reviewer"
+class BeaReviewer(BeaTeamAgent):
+    name      = "bea-reviewer"
     role      = "reviewer"
     timeout_s = 150
 
     def system_prompt(self) -> str:
-        return """You are jarvis-reviewer, the code review agent for JarvisMax.
+        return """You are bea-reviewer, the code review agent for BeaMax.
 
 Your job: catch bugs, regressions, and safety violations before they reach master.
 
@@ -65,7 +65,7 @@ One paragraph overview.
 
 Be thorough but fair. Don't block on style nits — focus on correctness and safety."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
         diff = self.git_diff()

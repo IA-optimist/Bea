@@ -1,13 +1,13 @@
 """
-jarvis_mcp/qdrant_mcp_adapter.py — Qdrant MCP sidecar adapter.
+bea_mcp/qdrant_mcp_adapter.py — Qdrant MCP sidecar adapter.
 
-Registers the qdrant-mcp sidecar into Jarvis's MCPRegistry so that
+Registers the qdrant-mcp sidecar into Bea's MCPRegistry so that
 agents can query/upsert vectors via the standard MCP tool invocation path.
 
 Feature flag : QDRANT_MCP_ENABLED=true
 Sidecar URL  : QDRANT_MCP_URL (default: http://qdrant-mcp:8000)
 
-NOTE: This module is in jarvis_mcp/ (not mcp/) to avoid namespace collision
+NOTE: This module is in bea_mcp/ (not mcp/) to avoid namespace collision
 with the mcp pip package (MCP SDK).
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ log = structlog.get_logger("mcp.qdrant_adapter")
 
 def register_qdrant_mcp(registry, settings) -> bool:
     """
-    Register the Qdrant MCP sidecar in the Jarvis MCPRegistry.
+    Register the Qdrant MCP sidecar in the Bea MCPRegistry.
 
     Args:
         registry: MCPRegistry instance (from integrations.mcp.mcp_registry)
@@ -53,7 +53,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
         requires_approval=False,
         metadata={
             "provider": "qdrant/mcp-server-qdrant",
-            "collection": "jarvis_unified_memory",
+            "collection": "bea_unified_memory",
             "docs": "https://github.com/qdrant/mcp-server-qdrant",
         },
     )
@@ -65,7 +65,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
         server_id="qdrant-mcp",
         name="qdrant_search",
         description=(
-            "Search Jarvis's Qdrant vector memory. "
+            "Search Bea's Qdrant vector memory. "
             "Returns the top_k most similar documents to the query."
         ),
         input_schema={
@@ -78,7 +78,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
                 "collection": {
                     "type": "string",
                     "description": "Qdrant collection name",
-                    "default": "jarvis_unified_memory",
+                    "default": "bea_unified_memory",
                 },
                 "top_k": {
                     "type": "integer",
@@ -101,7 +101,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
         server_id="qdrant-mcp",
         name="qdrant_upsert",
         description=(
-            "Store a document in Jarvis's Qdrant vector memory. "
+            "Store a document in Bea's Qdrant vector memory. "
             "The document is embedded and persisted for future searches."
         ),
         input_schema={
@@ -119,7 +119,7 @@ def register_qdrant_mcp(registry, settings) -> bool:
                 "collection": {
                     "type": "string",
                     "description": "Qdrant collection name",
-                    "default": "jarvis_unified_memory",
+                    "default": "bea_unified_memory",
                 },
             },
             "required": ["text"],

@@ -1,5 +1,5 @@
 """
-tests/test_stress.py — End-to-end stress tests for JarvisMax.
+tests/test_stress.py — End-to-end stress tests for BeaMax.
 
 Validates chained execution paths under realistic conditions.
 
@@ -260,7 +260,7 @@ class TestScenarioG_UI:
     def test_ST26_mode_system_present(self):
         html = Path("static/app.html").read_text(encoding="utf-8")
         assert "setMode" in html
-        assert "jarvis_mode" in html
+        assert "bea_mode" in html
 
 
 class TestSafety:

@@ -1,8 +1,8 @@
 """
-JARVIS MAX — Knowledge Quality Filter v1
+BEA MAX — Knowledge Quality Filter v1
 Filtre qualité pour toute connaissance externe.
 
-But : ne jamais laisser Jarvis apprendre du bruit.
+But : ne jamais laisser Bea apprendre du bruit.
 
 Score de confiance composite :
   source_type      → trust_score   (0.0 → 1.0)

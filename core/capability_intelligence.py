@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Capability Intelligence Layer
+BEA MAX — Capability Intelligence Layer
 =============================================
-Foundational system for Jarvis to understand what it CAN do.
+Foundational system for Bea to understand what it CAN do.
 
 Parts:
 1. Tool Semantic Profiling — structured tool descriptions with semantic tags
@@ -44,7 +44,7 @@ try:
 except ImportError:
     log = structlog.get_logger(__name__)
 
-REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
+REPO_ROOT = Path(os.environ.get("BEAMAX_REPO", ".")).resolve()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -895,7 +895,7 @@ def match_capabilities(
 
 @dataclass
 class CapabilityGap:
-    """A detected gap in Jarvis's capabilities."""
+    """A detected gap in Bea's capabilities."""
     gap_type:    str   # "missing_dependency" | "tool_failure_cluster" | "missing_capability" | "coverage_gap"
     description: str
     severity:    str = "medium"  # low | medium | high

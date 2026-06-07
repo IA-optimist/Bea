@@ -1,5 +1,5 @@
 {
-  "name": "jarvismax",
+  "name": "beamax",
   "version": "1.0.0",
   "scripts": {
     "test:e2e": "playwright test",

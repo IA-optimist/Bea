@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Agent Factory
+BEA MAX — Business Agent Factory
 =====================================
 Instantiates business agents from templates with business-specific config.
 

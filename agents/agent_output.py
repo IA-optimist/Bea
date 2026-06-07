@@ -1,5 +1,5 @@
 """
-JARVIS MAX — AgentOutput
+BEA MAX — AgentOutput
 Structure de sortie standardisée pour tous les agents.
 
 Contrat uniforme exposable par l'API :

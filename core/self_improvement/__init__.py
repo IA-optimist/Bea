@@ -37,7 +37,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-logger = logging.getLogger("jarvis.self_improvement")
+logger = logging.getLogger("bea.self_improvement")
 
 # ── Anti-loop constants (enforced here, exported for callers) ────────────────
 MAX_IMPROVEMENTS_PER_RUN = 1

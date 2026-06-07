@@ -36,9 +36,9 @@ def test_successful_execution(monkeypatch, tmp_path):
     assert res["ok"] is True
     assert "42" in res["output"]
     assert fake.started and fake.stopped
-    assert fake.executed.startswith("python .jarvis_exec_")
+    assert fake.executed.startswith("python .bea_exec_")
     # le script temporaire est nettoyé
-    assert not any(p.name.startswith(".jarvis_exec_") for p in tmp_path.iterdir())
+    assert not any(p.name.startswith(".bea_exec_") for p in tmp_path.iterdir())
 
 
 def test_nonzero_exit_is_error(monkeypatch, tmp_path):

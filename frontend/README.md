@@ -1,6 +1,6 @@
-# JarvisMax AI OS - Frontend
+# BeaMax AI OS - Frontend
 
-A production-ready React TypeScript frontend for JarvisMax AI OS with Vite, Tailwind CSS, and premium UI/UX.
+A production-ready React TypeScript frontend for BeaMax AI OS with Vite, Tailwind CSS, and premium UI/UX.
 
 ## Features
 

@@ -69,7 +69,7 @@ def build_readiness_payload(
             failed.append(name)
 
     total_routes = len(mounted_paths)
-    production = os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes")
+    production = os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
     allowed_failures = 0 if production else 5
     ready = len(failed) <= allowed_failures
 

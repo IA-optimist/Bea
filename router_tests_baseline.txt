@@ -1,7 +1,7 @@
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.6.0 -- /usr/bin/python3
 cachedir: .pytest_cache
-rootdir: /root/Jarvismax-master
+rootdir: /root/Beamax-master
 configfile: pytest.ini
 plugins: anyio-4.13.0, asyncio-0.23.3, langsmith-0.7.26
 asyncio: mode=Mode.AUTO

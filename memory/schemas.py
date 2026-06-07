@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Memory Schemas
+BEA MAX — Memory Schemas
 ============================
-Schéma de métadonnées unifié pour toutes les entrées mémoire de JarvisMax.
+Schéma de métadonnées unifié pour toutes les entrées mémoire de BeaMax.
 
 Règle d'or : TOUTE entrée mémoire doit être normalisable en MemoryEntry.
 Les modules mémoire existants gardent leur stockage interne, mais

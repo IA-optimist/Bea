@@ -73,8 +73,8 @@ class TestSICanonicalPath:
 
     def test_run_cycle_uses_pipeline(self, tmp_path):
         """CS1. run_cycle calls _execute_via_pipeline."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(
             repo_root=tmp_path,
             lesson_path=tmp_path / "l.json",
             prompt_path=tmp_path / "p.json",
@@ -127,9 +127,9 @@ class TestSICanonicalPath:
         original = (tmp_path / "core" / "test.py").read_text(encoding="utf-8")
 
         from core.self_improvement_loop import (
-            JarvisImprovementLoop, ImprovementTask, PatchProposal,
+            BeaImprovementLoop, ImprovementTask, PatchProposal,
         )
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         # Force pipeline to fail → fallback path
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
@@ -150,8 +150,8 @@ class TestSICanonicalPath:
 
     def test_pipeline_is_canonical(self, tmp_path):
         """CS6. Pipeline path is the single canonical execution path."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         mock_pipe = MagicMock()
         from core.self_improvement.promotion_pipeline import PromotionDecision
         mock_pipe.execute.return_value = PromotionDecision(
@@ -173,8 +173,8 @@ class TestSICanonicalPath:
     def test_promote_not_applied(self, tmp_path):
         """CS7. PROMOTE = stored for review."""
         (tmp_path / "test.py").write_text("x = 1\n")
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         from core.self_improvement.promotion_pipeline import PromotionDecision
         mock_pipe = MagicMock()
         mock_pipe.execute.return_value = PromotionDecision(
@@ -196,8 +196,8 @@ class TestSICanonicalPath:
 
     def test_reject_traceable(self, tmp_path):
         """CS8. REJECT is traceable in details."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         from core.self_improvement.promotion_pipeline import PromotionDecision
         mock_pipe = MagicMock()
         mock_pipe.execute.return_value = PromotionDecision(
@@ -217,8 +217,8 @@ class TestSICanonicalPath:
 
     def test_record_lesson_called(self, tmp_path):
         """CS9. record_lesson() called on pipeline path."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         from core.self_improvement.promotion_pipeline import PromotionDecision
         mock_pipe = MagicMock()
         mock_pipe.execute.return_value = PromotionDecision(
@@ -246,8 +246,8 @@ class TestSICanonicalPath:
 
     def test_rollback_in_promote(self, tmp_path):
         """CS11. Rollback instructions in PROMOTE decisions."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        from core.self_improvement_loop import BeaImprovementLoop
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         from core.self_improvement.promotion_pipeline import PromotionDecision
         mock_pipe = MagicMock()
         mock_pipe.execute.return_value = PromotionDecision(
@@ -294,9 +294,9 @@ class TestSICanonicalPath:
         original = (tmp_path / "core" / "x.py").read_text(encoding="utf-8")
 
         from core.self_improvement_loop import (
-            JarvisImprovementLoop, ImprovementTask, PatchProposal,
+            BeaImprovementLoop, ImprovementTask, PatchProposal,
         )
-        loop = JarvisImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_path, lesson_path=tmp_path / "l.json")
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = Exception("fail")
 
@@ -310,8 +310,8 @@ class TestSICanonicalPath:
     def test_no_write_text_in_active_path(self):
         """CS15. No write_text to repo in active code path."""
         import inspect
-        from core.self_improvement_loop import JarvisImprovementLoop
-        source = inspect.getsource(JarvisImprovementLoop._execute_via_pipeline)
+        from core.self_improvement_loop import BeaImprovementLoop
+        source = inspect.getsource(BeaImprovementLoop._execute_via_pipeline)
         assert "write_text" not in source
 
 
@@ -373,18 +373,18 @@ class TestAPIRoutes:
                 return
 
     def test_legacy_mission_has_auth(self):
-        """CS24. Legacy POST /api/mission has auth (via x_jarvis_token or authorization)."""
+        """CS24. Legacy POST /api/mission has auth (via x_bea_token or authorization)."""
         import inspect
         from api.routes.missions import legacy_post_mission
         sig = inspect.signature(legacy_post_mission)
-        assert "x_jarvis_token" in sig.parameters or "authorization" in sig.parameters
+        assert "x_bea_token" in sig.parameters or "authorization" in sig.parameters
 
     def test_legacy_missions_has_auth(self):
         """CS25. Legacy GET /api/missions has auth."""
         import inspect
         from api.routes.missions import legacy_missions
         sig = inspect.signature(legacy_missions)
-        assert "x_jarvis_token" in sig.parameters or "authorization" in sig.parameters
+        assert "x_bea_token" in sig.parameters or "authorization" in sig.parameters
 
     @pytest.mark.xfail(reason="legacy_stats auth config drift", strict=False)
     def test_legacy_stats_has_auth(self):
@@ -432,7 +432,7 @@ class TestArchitectureCoherence:
         """CS32."""
         from core.meta_orchestrator import MetaOrchestrator
         orch = MetaOrchestrator()
-        assert hasattr(orch, 'jarvis')  # v1
+        assert hasattr(orch, 'bea')  # v1
         assert hasattr(orch, 'v2')      # v2
 
     def test_state_machine(self):
@@ -471,7 +471,7 @@ class TestSecurity:
         # _check_auth moved from api.main to api._deps (single source).
         from api._deps import _check_auth
         import os
-        if os.environ.get("JARVIS_API_TOKEN"):
+        if os.environ.get("BEA_API_TOKEN"):
             from fastapi import HTTPException
             with pytest.raises(HTTPException):
                 _check_auth(None, None)
@@ -558,8 +558,8 @@ class TestSICompleteness:
     def test_no_auto_apply(self):
         """CS45. No write_text to repo in _execute_via_pipeline."""
         import inspect
-        from core.self_improvement_loop import JarvisImprovementLoop
-        source = inspect.getsource(JarvisImprovementLoop._execute_via_pipeline)
+        from core.self_improvement_loop import BeaImprovementLoop
+        source = inspect.getsource(BeaImprovementLoop._execute_via_pipeline)
         assert "write_text" not in source
         # Also verify SandboxRunner.run() doesn't write
         from core.self_improvement_loop import SandboxRunner

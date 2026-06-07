@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Shadow Gate v1
+BEA MAX — Shadow Gate v1
 Vérrou mandatory devant le ShadowAdvisor.
 
 Règles d'intégration :

@@ -60,7 +60,7 @@ loads `quality/legacy_log_event_names.json` — a 54-entry baseline of
 the event names that DID NOT pass when this gate was first added
 (audit 2026-05-29). The top-30 frequency leaders already comply ; the
 long tail contains sentences accidentally used as event names
-("Admin login attempted but JARVIS_ADMIN_PASSWORD is not set…") and
+("Admin login attempted but BEA_ADMIN_PASSWORD is not set…") and
 prefixed lines that mix message + key ("rate_limit.memory_storage —
 REDIS_URL not set…").
 

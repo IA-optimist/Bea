@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Meta-Cognition Layer
+BEA MAX — Meta-Cognition Layer
 =====================================
 Structured pre-action analysis for important missions or risky steps.
 

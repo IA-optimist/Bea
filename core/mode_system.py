@@ -1,10 +1,10 @@
 """
-JARVIS MAX — Mode System v1
-Contrôle du niveau d'autonomie de Jarvis.
+BEA MAX — Mode System v1
+Contrôle du niveau d'autonomie de Bea.
 
 3 modes :
 
-  MANUAL     → Jarvis ne fait rien sans validation explicite.
+  MANUAL     → Bea ne fait rien sans validation explicite.
                Chaque action, même LOW risk, attend approbation.
 
   SUPERVISED → Mode par défaut.
@@ -13,7 +13,7 @@ Contrôle du niveau d'autonomie de Jarvis.
                HIGH      → validation requise.
                CRITICAL  → validation requise + avertissement fort.
 
-  AUTO       → Jarvis agit seul.
+  AUTO       → Bea agit seul.
                LOW / MEDIUM / HIGH → auto.
                CRITICAL → validation requise (toujours).
 
@@ -144,7 +144,7 @@ class ModeSystem:
                 "SUPERVISED — LOW auto / MEDIUM auto si score≥7 / HIGH+CRITICAL : validation."
             ),
             SystemMode.AUTO: (
-                "AUTO — Jarvis agit seul. Seules les actions CRITICAL demandent validation."
+                "AUTO — Bea agit seul. Seules les actions CRITICAL demandent validation."
             ),
         }
         return descriptions[self._mode]

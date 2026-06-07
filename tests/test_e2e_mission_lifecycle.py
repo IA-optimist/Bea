@@ -539,7 +539,7 @@ class TestMemoryFacadeE2E(unittest.TestCase):
     """Full store → search → health cycle."""
 
     def setUp(self):
-        self._ws = "/tmp/jarvis_e2e_mf_test"
+        self._ws = "/tmp/bea_e2e_mf_test"
         shutil.rmtree(self._ws, ignore_errors=True)
         os.makedirs(self._ws, exist_ok=True)
         import core.memory_facade as mf
@@ -641,17 +641,17 @@ class TestSafetyControlsIntegration(unittest.TestCase):
         self.assertIsInstance(result, bool)
 
     def test_kill_switch_env_var(self):
-        """JARVIS_EXECUTION_DISABLED=1 should disable execution."""
+        """BEA_EXECUTION_DISABLED=1 should disable execution."""
         try:
             from core.safety_controls import is_execution_enabled
         except ImportError:
             self.skipTest("safety_controls not available")
-        os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+        os.environ["BEA_EXECUTION_DISABLED"] = "1"
         try:
             result = is_execution_enabled()
             self.assertFalse(result)
         finally:
-            os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+            os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
 
 if __name__ == "__main__":

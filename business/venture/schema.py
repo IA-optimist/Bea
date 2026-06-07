@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Venture Builder : Schémas de données
+BEA BUSINESS LAYER — Venture Builder : Schémas de données
 Source unique des types pour l'analyse d'opportunités business.
 """
 from __future__ import annotations

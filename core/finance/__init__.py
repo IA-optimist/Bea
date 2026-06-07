@@ -1,1 +1,1 @@
-"""JARVIS MAX — Financial Layer."""
+"""BEA MAX — Financial Layer."""

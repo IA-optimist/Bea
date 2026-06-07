@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Automation (Playwright)
+BEA MAX — Browser Automation (Playwright)
 Capacités : navigation, scraping, formulaires, screenshots.
 """
 from __future__ import annotations

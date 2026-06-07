@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Agent Test Harness
+BEA MAX — Business Agent Test Harness
 ==========================================
 Tests every generated business agent against its template's
 evaluation rules and expected behaviors.

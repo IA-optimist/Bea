@@ -1,5 +1,5 @@
 """
-JARVIS MAX — WorkflowEngine v1
+BEA MAX — WorkflowEngine v1
 Création, persistance et exécution de workflows multi-étapes.
 
 Un workflow est une séquence d'étapes (steps) déclenchées par un trigger.
@@ -184,8 +184,8 @@ class WorkflowEngine:
         log.info("workflow_start", id=wf_id, name=wf["name"])
 
         # ── Préparer session factice pour les agents ─────────
-        from core.state import JarvisSession
-        session = JarvisSession(
+        from core.state import BeaSession
+        session = BeaSession(
             session_id=f"wf_{wf_id[:8]}_{uuid.uuid4().hex[:4]}",
             user_input=wf.get("description") or wf["name"],
         )

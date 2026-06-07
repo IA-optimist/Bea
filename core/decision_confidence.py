@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Decision Confidence Scoring
+BEA MAX — Decision Confidence Scoring
 ============================================
 Scores the confidence of routing/execution decisions with structured reasoning.
 

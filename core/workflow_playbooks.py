@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Intelligent Workflow Playbooks
+BEA MAX — Intelligent Workflow Playbooks
 ==============================================
 Template-driven workflow execution with adaptive step sequencing.
 

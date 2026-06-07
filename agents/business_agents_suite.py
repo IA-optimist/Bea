@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Agents Suite (Sprint 3+4)
+BEA MAX — Business Agents Suite (Sprint 3+4)
 =================================================
 6 business agents for Build + Operate phases.
 

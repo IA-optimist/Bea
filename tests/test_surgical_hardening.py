@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Surgical Hardening Test Suite
+BEA MAX — Surgical Hardening Test Suite
 ==========================================
 
 Regression and coverage tests for all changes made during the

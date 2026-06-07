@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Phase 9 MissionStateStore
+BEA MAX — Phase 9 MissionStateStore
 Thread-safe in-memory store for mission logs and summaries.
 Persists to workspace/mission_store.json on writes.
 Singleton pattern.

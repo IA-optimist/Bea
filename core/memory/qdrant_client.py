@@ -2,9 +2,9 @@ import os
 QDRANT_URL = os.environ.get('QDRANT_URL', 'http://qdrant:6333')
 QDRANT_API_KEY = os.environ.get('QDRANT_API_KEY', '')
 COLLECTIONS = {
-    'jarvismax_memory_384': {'size': 384, 'distance': 'Cosine'},
-    'jarvis_continual_memory': {'size': 768, 'distance': 'Cosine'},
-    'jarvismax_knowledge': {'size': 768, 'distance': 'Cosine'},
+    'beamax_memory_384': {'size': 384, 'distance': 'Cosine'},
+    'bea_continual_memory': {'size': 768, 'distance': 'Cosine'},
+    'beamax_knowledge': {'size': 768, 'distance': 'Cosine'},
 }
 
 class QdrantWrapper:

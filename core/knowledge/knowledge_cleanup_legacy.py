@@ -1,5 +1,5 @@
 """
-knowledge_cleanup — Maintenance de la collection jarvis_knowledge dans Qdrant.
+knowledge_cleanup — Maintenance de la collection bea_knowledge dans Qdrant.
 
 Opérations :
   merge_similar_patterns   — fusionne patterns avec overlap Jaccard élevé
@@ -7,7 +7,7 @@ Opérations :
   summarize_experiences    — garde seulement les N meilleures entrées
 
 S'appuie sur :
-  - Qdrant jarvis_knowledge (scroll + delete)
+  - Qdrant bea_knowledge (scroll + delete)
   - core.knowledge_memory   (deduplicate local)
 
 Fail-open : aucun appel ne peut planter le système.
@@ -20,10 +20,10 @@ import os
 import time
 from typing import List
 
-logger = logging.getLogger("jarvis.knowledge.cleanup")
+logger = logging.getLogger("bea.knowledge.cleanup")
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
-KNOWLEDGE_COLLECTION = "jarvis_knowledge"
+KNOWLEDGE_COLLECTION = "bea_knowledge"
 
 
 # ── Imports fail-open ──────────────────────────────────────────────────────────

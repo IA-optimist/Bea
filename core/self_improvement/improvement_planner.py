@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Improvement Controller V1
+BEA MAX — Self-Improvement Controller V1
 Module B : ImprovementPlanner
 
 Analyse les FailureEntry et génère des ImprovementProposal rule-based (sans LLM).

@@ -206,7 +206,7 @@ async def test_convenience_function():
 async def main():
     """Run all tests"""
     print("╔═══════════════════════════════════════════════════╗")
-    print("║   JarvisMax Notification System - Test Suite     ║")
+    print("║   BeaMax Notification System - Test Suite     ║")
     print("╚═══════════════════════════════════════════════════╝")
     
     tests = [

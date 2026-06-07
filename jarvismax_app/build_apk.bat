@@ -1,9 +1,9 @@
 @echo off
 REM ================================================================
-REM  JARVIS MAX — Build APK Release
+REM  BEA MAX — Build APK Release
 REM ================================================================
 echo.
-echo  JarvisMax — Build APK Release
+echo  BeaMax — Build APK Release
 echo  ==============================
 echo.
 

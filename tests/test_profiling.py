@@ -6,7 +6,7 @@ import os
 import unittest
 
 # Ensure profiling is enabled for these tests regardless of host env
-os.environ["JARVIS_PROFILING"] = "1"
+os.environ["BEA_PROFILING"] = "1"
 
 from core.profiling import profile_fn, profile_span  # noqa: E402
 
@@ -24,7 +24,7 @@ class TestProfileSpan(unittest.TestCase):
 
     def test_disabled_mode_is_noop(self):
         import importlib
-        os.environ["JARVIS_PROFILING"] = "0"
+        os.environ["BEA_PROFILING"] = "0"
         import core.profiling as prof
         importlib.reload(prof)
         try:
@@ -32,7 +32,7 @@ class TestProfileSpan(unittest.TestCase):
                 x = 42
             self.assertEqual(x, 42)
         finally:
-            os.environ["JARVIS_PROFILING"] = "1"
+            os.environ["BEA_PROFILING"] = "1"
             importlib.reload(prof)
 
 

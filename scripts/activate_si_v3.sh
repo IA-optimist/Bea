@@ -65,37 +65,37 @@ echo ""
 
 # Redémarrer
 echo "🔄 Redémarrage container..."
-docker compose up -d jarvis --force-recreate
+docker compose up -d bea --force-recreate
 
 echo "⏳ Attente healthy (15s)..."
 sleep 15
 
 # Vérifier
-if docker compose ps jarvis | grep -q "healthy"; then
+if docker compose ps bea | grep -q "healthy"; then
     echo "✅ Container healthy"
     
     echo ""
     echo "📊 Logs de démarrage:"
-    docker logs jarvis_core --tail=30 | grep -E "jarvismax_starting|self_improv" || true
+    docker logs bea_core --tail=30 | grep -E "beamax_starting|self_improv" || true
     
     echo ""
     echo "✅ ACTIVATION COMPLÉTÉE"
     echo ""
     echo "📝 Prochaines étapes:"
-    echo "  1. Monitorer logs: docker logs -f jarvis_core"
+    echo "  1. Monitorer logs: docker logs -f bea_core"
     echo "  2. Chercher: 'Self-improvement cycle started'"
     echo "  3. Vérifier workspace/self_improvement/ après 1er cycle"
     echo ""
     echo "⚠️  Rollback si problème:"
-    echo "  docker compose stop jarvis"
+    echo "  docker compose stop bea"
     echo "  cp $BACKUP_FILE .env"
-    echo "  docker compose up -d jarvis"
+    echo "  docker compose up -d bea"
 else
     echo "❌ Container non-healthy - vérifier logs:"
-    docker logs jarvis_core --tail=50
+    docker logs bea_core --tail=50
     echo ""
     echo "🔙 Rollback automatique..."
     cp "$BACKUP_FILE" .env
-    docker compose up -d jarvis --force-recreate
+    docker compose up -d bea --force-recreate
     exit 1
 fi

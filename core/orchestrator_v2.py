@@ -1,5 +1,5 @@
 """
-JARVIS MAX — OrchestratorV2 — BUDGET/DAG DELEGATE
+BEA MAX — OrchestratorV2 — BUDGET/DAG DELEGATE
 ===================================================
 STATUS: ACTIVE INTERNAL DELEGATE — used by MetaOrchestrator for budget-constrained missions.
 
@@ -10,7 +10,7 @@ DO NOT INSTANTIATE DIRECTLY. Use:
 
 MetaOrchestrator.v2 lazy-loads this class automatically when use_budget=True.
 
-RESPONSIBILITY: Adds three capabilities ON TOP of JarvisOrchestrator:
+RESPONSIBILITY: Adds three capabilities ON TOP of BeaOrchestrator:
   1. BudgetGuard  — max_tokens / max_time_s / max_cost_usd enforcement
   2. TaskDAG      — topological-sort parallel execution layers
   3. CheckpointStore — resume interrupted DAGs (asyncpg + SQLite fallback)
@@ -360,7 +360,7 @@ class CheckpointStore:
         except Exception:
             import os
             import tempfile
-            self._sqlite_path = os.path.join(tempfile.gettempdir(), "jarvis_checkpoints.db")
+            self._sqlite_path = os.path.join(tempfile.gettempdir(), "bea_checkpoints.db")
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._sqlite_create_table)
@@ -465,15 +465,15 @@ _CONTEXT_PROVIDERS = frozenset({
 class OrchestratorV2:
     """
     Thin wrapper adding BudgetGuard + TaskDAG + CheckpointStore
-    around JarvisOrchestrator, plus multi-agent context sharing.
+    around BeaOrchestrator, plus multi-agent context sharing.
 
-    Falls back gracefully if JarvisOrchestrator is unavailable.
+    Falls back gracefully if BeaOrchestrator is unavailable.
     """
 
     def __init__(self, settings):
         self.s            = settings
         self._checkpoints = CheckpointStore(settings)
-        self._inner       = None   # lazy JarvisOrchestrator
+        self._inner       = None   # lazy BeaOrchestrator
         self._comm        = None   # lazy AgentComm
 
     def _get_comm(self):
@@ -484,8 +484,8 @@ class OrchestratorV2:
 
     def _get_inner(self):
         if self._inner is None:
-            from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
-            self._inner = JarvisOrchestrator(self.s)
+            from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
+            self._inner = BeaOrchestrator(self.s)
         return self._inner
 
     async def run(
@@ -498,7 +498,7 @@ class OrchestratorV2:
     ):
         """
         Run a mission with optional budget enforcement.
-        Delegates to JarvisOrchestrator.run(); wraps with BudgetGuard.
+        Delegates to BeaOrchestrator.run(); wraps with BudgetGuard.
         """
         cfg   = budget or BudgetConfig()
         guard = BudgetGuard(cfg)

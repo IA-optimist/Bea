@@ -1,1 +1,1 @@
-"""JarvisMax Cognition - AGI-like reasoning patterns."""
+"""BeaMax Cognition - AGI-like reasoning patterns."""

@@ -1,5 +1,5 @@
 """
-core/autonomy/builtin_skills.py — Default skills shipped with JarvisMax.
+core/autonomy/builtin_skills.py — Default skills shipped with BeaMax.
 
 These wrap existing prod functions in the SkillRegistry so the daemon /
 operator can invoke them by name. Each skill is small and well-typed ;

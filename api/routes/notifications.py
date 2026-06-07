@@ -76,7 +76,7 @@ class TestNotificationRequest(BaseModel):
 @router.post("/api/v2/notifications/subscribe")
 async def subscribe_notifications(
     req: SubscribeRequest,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
@@ -114,7 +114,7 @@ async def subscribe_notifications(
     Configure SMTP settings in .env:
     - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     
     # Extract user_id from token (simplified - use "default" for now)
     # In production, parse JWT token to get actual user_id
@@ -156,7 +156,7 @@ async def subscribe_notifications(
 @router.post("/api/v2/notifications/unsubscribe")
 async def unsubscribe_notifications(
     req: UnsubscribeRequest,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
@@ -171,7 +171,7 @@ async def unsubscribe_notifications(
     }
     ```
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     user_id = "default"
     
     service = get_notification_service()
@@ -206,7 +206,7 @@ async def unsubscribe_notifications(
 
 @router.get("/api/v2/notifications/subscriptions")
 async def get_subscriptions(
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
@@ -214,7 +214,7 @@ async def get_subscriptions(
     
     Returns list of active subscriptions with channels and destinations.
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     user_id = "default"
     
     service = get_notification_service()
@@ -240,7 +240,7 @@ async def get_subscriptions(
 @router.post("/api/v2/notifications/test")
 async def test_notification(
     req: TestNotificationRequest,
-    x_jarvis_token: Annotated[Optional[str], Header()] = None,
+    x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
@@ -257,7 +257,7 @@ async def test_notification(
     }
     ```
     """
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
     
     try:
         from core.notifications.models import NotificationPayload
@@ -266,7 +266,7 @@ async def test_notification(
             mission_id="test-notification",
             user_id="test",
             status="DONE",
-            title="Test Notification from JarvisMax",
+            title="Test Notification from BeaMax",
             result="If you receive this message, your notification setup is working correctly!",
         )
         

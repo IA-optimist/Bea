@@ -1,5 +1,5 @@
 """
-jarvis-devops — Deployment and environment validation.
+bea-devops — Deployment and environment validation.
 
 Responsibilities:
     - Validate Docker configurations (docker-compose.yml, Dockerfiles)
@@ -23,17 +23,17 @@ Does NOT:
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
-class JarvisDevOps(JarvisTeamAgent):
-    name      = "jarvis-devops"
+class BeaDevOps(BeaTeamAgent):
+    name      = "bea-devops"
     role      = "builder"
     timeout_s = 180
 
     def system_prompt(self) -> str:
-        return """You are jarvis-devops, the deployment and infrastructure agent for JarvisMax.
+        return """You are bea-devops, the deployment and infrastructure agent for BeaMax.
 
 Your job: ensure the system can be built, deployed, and run reliably.
 
@@ -71,7 +71,7 @@ Output format:
 
 Never run destructive commands. Read-only inspection only unless explicitly asked."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
 

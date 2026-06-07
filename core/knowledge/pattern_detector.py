@@ -1,5 +1,5 @@
 """
-pattern_detector — Détection de patterns efficaces dans les expériences de Jarvis.
+pattern_detector — Détection de patterns efficaces dans les expériences de Bea.
 
 Identifie :
   - Tâches similaires aux nouvelles requêtes
@@ -9,7 +9,7 @@ Identifie :
   - Améliorations possibles basées sur l'historique
 
 S'appuie sur :
-  - core.knowledge.knowledge_index  (Qdrant jarvis_knowledge)
+  - core.knowledge.knowledge_index  (Qdrant bea_knowledge)
   - core.knowledge_memory           (KnowledgeMemory locale, Jaccard)
 
 Fail-open : tous imports en try/except.
@@ -20,7 +20,7 @@ import logging
 from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple
 
-logger = logging.getLogger("jarvis.knowledge.patterns")
+logger = logging.getLogger("bea.knowledge.patterns")
 
 
 # ── Imports fail-open ──────────────────────────────────────────────────────────

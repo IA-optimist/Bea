@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Streaming Router
+BEA MAX — Streaming Router
 SSE (Server-Sent Events) endpoints for clients that can't use WebSocket.
 
 Routes:
@@ -46,7 +46,7 @@ def _sse_comment(msg: str) -> str:
 
 def _check_sse_auth(token: str | None):
     import os
-    api_token = os.getenv("JARVIS_API_TOKEN", "")
+    api_token = os.getenv("BEA_API_TOKEN", "")
     if not api_token:
         return  # No token configured
     from api.token_utils import strip_bearer
@@ -61,10 +61,10 @@ async def session_stream(
     session_id: str,
     request:    Request,
     replay:     bool = Query(True, description="Replay buffered events on connect"),
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ):
-    _check_sse_auth(x_jarvis_token or authorization)
+    _check_sse_auth(x_bea_token or authorization)
     """
     SSE stream for a specific session.
     Replays recent buffered events then streams live events as they arrive.
@@ -114,10 +114,10 @@ async def task_progress_stream(
     task_id: str,
     request: Request,
     replay:  bool = Query(True, description="Replay buffered progress events on connect"),
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ):
-    _check_sse_auth(x_jarvis_token or authorization)
+    _check_sse_auth(x_bea_token or authorization)
     """
     SSE progress stream for a background task.
     Streams task_progress events (percent 0→100) until DONE or FAILED.

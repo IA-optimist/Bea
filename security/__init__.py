@@ -1,5 +1,5 @@
 """
-security/ — Native security governance layer for JarvisMax (Pass 17).
+security/ — Native security governance layer for BeaMax (Pass 17).
 
 Architecture:
     security/

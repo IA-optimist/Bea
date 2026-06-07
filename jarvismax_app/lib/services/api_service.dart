@@ -31,7 +31,7 @@ class ApiService extends ChangeNotifier {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  static const _jwtKey = 'jarvis_jwt_token';
+  static const _jwtKey = 'bea_jwt_token';
 
   String _jwtToken = '';
   String get jwtToken => _jwtToken;
@@ -938,7 +938,7 @@ class ApiService extends ChangeNotifier {
   String _friendly(Object e) {
     final msg = e.toString();
     if (msg.contains('SocketException') || msg.contains('Connection refused')) {
-      return 'Impossible de joindre le serveur Jarvis.\nVérifiez que l\'API tourne sur $_base';
+      return 'Impossible de joindre le serveur Bea.\nVérifiez que l\'API tourne sur $_base';
     }
     if (msg.contains('TimeoutException')) {
       return 'Délai dépassé. Le serveur ne répond pas.';

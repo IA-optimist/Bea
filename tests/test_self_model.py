@@ -812,7 +812,7 @@ class TestExtendedAPIRoutes:
         path = os.path.join(os.path.dirname(__file__), "..", "static", "self-model.html")
         with open(path, encoding="utf-8") as f:
             html = f.read()
-        assert "jarvis_token" in html
+        assert "bea_token" in html
         assert "Authorization" in html
 
     @pytest.mark.skipif(

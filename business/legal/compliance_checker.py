@@ -363,7 +363,7 @@ class ComplianceChecker:
     def save_report(self, report: ComplianceReport, product_name: str, output_dir: Optional[Path] = None) -> Path:
         """Save compliance report"""
         if not output_dir:
-            output_dir = Path.home() / ".jarvismax" / "compliance"
+            output_dir = Path.home() / ".beamax" / "compliance"
         
         output_dir.mkdir(parents=True, exist_ok=True)
         

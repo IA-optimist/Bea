@@ -182,13 +182,13 @@ class TestResultAdapter:
 
         route_result = {
             "capability_id": "code_generation",
-            "provider": {"id": "agent:jarvis-coder", "type": "agent"},
+            "provider": {"id": "agent:bea-coder", "type": "agent"},
             "score": 0.91,
         }
         decision = routing_decision_to_kernel(route_result)
         assert decision.decision_type.value == "approve"
         assert decision.confidence == 0.91
-        assert "jarvis-coder" in decision.reason
+        assert "bea-coder" in decision.reason
         assert decision.decided_by == "capability_router"
 
 

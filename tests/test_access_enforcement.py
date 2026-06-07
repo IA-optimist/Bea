@@ -298,7 +298,7 @@ class TestSessionUX:
 
     def test_mobile_login_screen(self):
         """E21: Mobile login screen exists."""
-        content = (REPO / "jarvismax_app/lib/screens/login_screen.dart").read_text(encoding="utf-8")
+        content = (REPO / "beamax_app/lib/screens/login_screen.dart").read_text(encoding="utf-8")
         assert 'LoginScreen' in content
         assert 'token' in content.lower()  # UI is French: "Token invalide" / "token login"
         assert 'onLoginSuccess' in content  # Login success callback present

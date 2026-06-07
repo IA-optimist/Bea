@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Hardened Improvement Loop (V3)
+BEA MAX — Hardened Improvement Loop (V3)
 
 Production-safe autonomous improvement cycle:
   observe → detect → hypothesize → sandbox → patch → test → evaluate → promote/reject → learn
@@ -59,8 +59,8 @@ _SAFETY_RULES: list[tuple[str, str]] = [
     ("core/memory",                SafetyZone.HIGH),
     ("core/orchestrator.py",       SafetyZone.HIGH),
     ("core/orchestrator_",         SafetyZone.HIGH),
-    ("jarvismax_app/lib/services/api_service", SafetyZone.HIGH),
-    ("jarvismax_app/lib/services/websocket",   SafetyZone.HIGH),
+    ("beamax_app/lib/services/api_service", SafetyZone.HIGH),
+    ("beamax_app/lib/services/websocket",   SafetyZone.HIGH),
     ("executor/",                  SafetyZone.MEDIUM),
     ("core/observability",         SafetyZone.MEDIUM),
     ("core/planner",               SafetyZone.MEDIUM),
@@ -103,7 +103,7 @@ def check_safety_violations(files: list[str]) -> list[str]:
 class ExperimentSpec:
     id: str = field(default_factory=lambda: f"exp-{uuid.uuid4().hex[:10]}")
     target_subsystem: str = ""
-    target_repo: str = "jarvismax"
+    target_repo: str = "beamax"
     weakness_detected: str = ""
     hypothesis: str = ""
     files_allowed: list[str] = field(default_factory=list)
@@ -247,7 +247,7 @@ def _si_enabled() -> bool:
     """
     Self-improvement (SI) is disabled by default.
 
-    Requires explicit opt-in: JARVIS_ENABLE_SI=1
+    Requires explicit opt-in: BEA_ENABLE_SI=1
     Must NOT be set in production unless the operator has:
       1. Mounted /var/run/docker.sock into the container (required by RegressionGuard)
       2. Accepted the privilege escalation risk that entails
@@ -256,12 +256,12 @@ def _si_enabled() -> bool:
     Risk: /var/run/docker.sock access grants container-escape-level privileges.
     Default: DISABLED (fail-closed).
     """
-    return os.environ.get("JARVIS_ENABLE_SI", "0").strip().lower() in ("1", "true", "yes")
+    return os.environ.get("BEA_ENABLE_SI", "0").strip().lower() in ("1", "true", "yes")
 
 
 class RegressionGuard:
-    def __init__(self, repo_root: Path, docker_image: str = "jarvismax-jarvis:latest",
-                 network: str = "jarvismax_jarvis_net"):
+    def __init__(self, repo_root: Path, docker_image: str = "beamax-bea:latest",
+                 network: str = "beamax_bea_net"):
         self.repo_root = repo_root
         self.docker_image = docker_image
         self.network = network
@@ -269,7 +269,7 @@ class RegressionGuard:
         # The hard raise happens in run_tests() — evaluate() is pure logic and safe to call always.
         if not _si_enabled():
             log.warning("regression_guard.disabled",
-                        reason="JARVIS_ENABLE_SI not set",
+                        reason="BEA_ENABLE_SI not set",
                         action="run_tests() will raise if called without enabling SI")
         elif not os.path.exists(_DOCKER_SOCKET):
             log.warning("regression_guard.no_socket",
@@ -286,7 +286,7 @@ class RegressionGuard:
         if not _si_enabled():
             raise RuntimeError(
                 "RegressionGuard.run_tests() is disabled. "
-                "Set JARVIS_ENABLE_SI=1 to enable self-improvement. "
+                "Set BEA_ENABLE_SI=1 to enable self-improvement. "
                 "WARNING: this requires /var/run/docker.sock mounted and grants Docker privilege."
             )
         if not os.path.exists(_DOCKER_SOCKET):
@@ -452,11 +452,11 @@ class ExperimentReport:
 # ═══════════════════════════════════════════════════════════════
 
 class ImprovementLoop:
-    def __init__(self, repo_root: Path, docker_image: str = "jarvismax-jarvis:latest",
-                 network: str = "jarvismax_jarvis_net"):
+    def __init__(self, repo_root: Path, docker_image: str = "beamax-bea:latest",
+                 network: str = "beamax_bea_net"):
         self.repo_root = Path(repo_root)
         self.sandbox = SandboxManager(self.repo_root)
-        # RegressionGuard raises RuntimeError if JARVIS_ENABLE_SI!=1 or Docker socket absent.
+        # RegressionGuard raises RuntimeError if BEA_ENABLE_SI!=1 or Docker socket absent.
         # Let the exception propagate — callers must handle it or not instantiate ImprovementLoop.
         self.guard = RegressionGuard(self.repo_root, docker_image, network)
         self.memory = LearningMemory(self.repo_root / "workspace" / ".improvement_lessons.json")

@@ -2,7 +2,7 @@
 
 ## What it is
 
-The autonomy layer turns JarvisMax from "reactive mission-runner" into
+The autonomy layer turns BeaMax from "reactive mission-runner" into
 "goal-driven actor". It runs a daemon thread that picks the next
 concrete action toward an objective, executes it via the existing
 MetaOrchestrator, and stops when it hits a budget / failure / time
@@ -11,9 +11,9 @@ cap.
 Designed to stay **safe by default** :
 
 - Risky actions still flow through `core.approval_queue` (no bypass)
-- Hard daily budget caps via env vars (`JARVIS_AUTONOMY_DAILY_USD_MAX`)
-- Operator emergency halt : `export JARVIS_AUTONOMY_PAUSED=1`
-- Real-orchestrator mode is opt-in : `JARVIS_AUTONOMY_USE_REAL=1`
+- Hard daily budget caps via env vars (`BEA_AUTONOMY_DAILY_USD_MAX`)
+- Operator emergency halt : `export BEA_AUTONOMY_PAUSED=1`
+- Real-orchestrator mode is opt-in : `BEA_AUTONOMY_USE_REAL=1`
 - The daemon publishes every iteration on the event bus — full audit trail
 
 ## Architecture
@@ -36,40 +36,40 @@ core/autonomy/
 ## Operator flow
 
 1. **Boot once** : `bash scripts/install_autonomy.sh` (on VPS1, root).
-   This installs the systemd unit + `/etc/jarvismax/autonomy.env`.
+   This installs the systemd unit + `/etc/beamax/autonomy.env`.
 
-2. **Edit the objective** : `vim /etc/jarvismax/autonomy_objective.txt`.
+2. **Edit the objective** : `vim /etc/beamax/autonomy_objective.txt`.
 
 3. **Set the API process env var** : in `docker-compose.yml`
    ```yaml
    services:
-     jarvis_core:
+     bea_core:
        environment:
-         JARVIS_AUTONOMY_USE_REAL: "1"
-         JARVIS_AUTONOMY_DAILY_USD_MAX: "20"
+         BEA_AUTONOMY_USE_REAL: "1"
+         BEA_AUTONOMY_DAILY_USD_MAX: "20"
    ```
    Then `docker compose up -d` to restart.
 
 4. **Start the daemon** :
    ```bash
-   systemctl start jarvis-autonomy
+   systemctl start bea-autonomy
    # OR via API directly :
-   curl -X POST https://jarvis.../api/v3/autonomy/start \
+   curl -X POST https://bea.../api/v3/autonomy/start \
      -H "Authorization: Bearer $TOKEN" \
      -d '{"objective": "...", "max_iters": 20, "sleep_s": 30}'
    ```
 
 5. **Monitor** :
    ```bash
-   curl https://jarvis.../api/v3/autonomy/status
+   curl https://bea.../api/v3/autonomy/status
    # OR open the mobile app → Approbations → ⊕ icon → Decisions
    ```
 
 6. **Halt** :
    ```bash
-   curl -X POST https://jarvis.../api/v3/autonomy/stop -d '{"reason":"manual"}'
+   curl -X POST https://bea.../api/v3/autonomy/stop -d '{"reason":"manual"}'
    # Emergency kill switch :
-   docker exec jarvis_core sh -c 'export JARVIS_AUTONOMY_PAUSED=1'
+   docker exec bea_core sh -c 'export BEA_AUTONOMY_PAUSED=1'
    ```
 
 ## REST API
@@ -123,8 +123,8 @@ Defaults (daily, process-wide) :
 
 | Limit | Default | Override env var |
 |---|---|---|
-| Tokens | 5M | `JARVIS_AUTONOMY_DAILY_TOKENS_MAX` |
-| USD | $50 | `JARVIS_AUTONOMY_DAILY_USD_MAX` |
+| Tokens | 5M | `BEA_AUTONOMY_DAILY_TOKENS_MAX` |
+| USD | $50 | `BEA_AUTONOMY_DAILY_USD_MAX` |
 
 The daemon halts as soon as ANY limit is hit and emits
 `autonomy.halted` with the reason.
@@ -171,7 +171,7 @@ from core.autonomy.skills import register_skill, SkillContext, SkillResult
 def health_check_prod(ctx: SkillContext) -> SkillResult:
     import requests
     try:
-        r = requests.get("https://jarvis.../api/v2/health", timeout=5)
+        r = requests.get("https://bea.../api/v2/health", timeout=5)
         return SkillResult(success=r.ok, output={"status_code": r.status_code})
     except Exception as exc:
         return SkillResult(success=False, error=str(exc))
@@ -206,8 +206,8 @@ print(learner.snapshot())
 | Repeated failures | Stop after 3 consecutive failures |
 | Risky action without operator OK | ApprovalQueue + MultiChoice gate |
 | Process crash | systemd Restart=on-failure with 30 s back-off |
-| Real-mode accidentally on | Off by default ; needs `JARVIS_AUTONOMY_USE_REAL=1` |
-| Need emergency halt | `export JARVIS_AUTONOMY_PAUSED=1` ; effective at next iteration |
+| Real-mode accidentally on | Off by default ; needs `BEA_AUTONOMY_USE_REAL=1` |
+| Need emergency halt | `export BEA_AUTONOMY_PAUSED=1` ; effective at next iteration |
 
 ## Tests
 
@@ -242,7 +242,7 @@ pytest tests/test_autonomy_*.py -v
 | ObjectiveEngine planner | ✅ (feature-flagged) |
 | REST control plane | ✅ |
 | Mobile UI | ✅ (DecisionsScreen) |
-| systemd auto-start | ✅ (deploy/jarvis-autonomy.service) |
+| systemd auto-start | ✅ (deploy/bea-autonomy.service) |
 
 The next big work is **product**, not code : define real objectives,
 populate the ObjectiveEngine, and observe how the daemon behaves with

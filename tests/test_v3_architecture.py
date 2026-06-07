@@ -1,5 +1,5 @@
 """
-Tests Jarvis OS v3 — architecture auto tool builder, memory TTL, planner anti-loop, dev tools.
+Tests Bea OS v3 — architecture auto tool builder, memory TTL, planner anti-loop, dev tools.
 Tous les tests sont fail-safe (pytest.skip si dépendance externe absente).
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ pytestmark = pytest.mark.integration
 # Ensure project root on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-JARVIS_ROOT = os.environ.get("JARVIS_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BEA_ROOT = os.environ.get("BEA_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # ── ÉTAPE 6 : dev_tools ───────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ def test_dependency_analyzer():
     except ImportError as e:
         pytest.skip(f"dev_tools unavailable: {e}")
 
-    result = dependency_analyzer(project_path=JARVIS_ROOT)
+    result = dependency_analyzer(project_path=BEA_ROOT)
     assert isinstance(result, dict)
     # On vérifie que la fonction retourne sans crash
     assert "status" in result or "ok" in result
@@ -57,7 +57,7 @@ def test_requirements_validator():
     except ImportError as e:
         pytest.skip(f"dev_tools unavailable: {e}")
 
-    req_path = os.path.join(JARVIS_ROOT, "requirements.txt")
+    req_path = os.path.join(BEA_ROOT, "requirements.txt")
     if not os.path.exists(req_path):
         pytest.skip("requirements.txt not found")
 
@@ -71,14 +71,14 @@ def test_requirements_validator():
 
 
 def test_code_search_multi():
-    """code_search_multi_file(JARVIS_ROOT, 'def execute') → matches."""
+    """code_search_multi_file(BEA_ROOT, 'def execute') → matches."""
     try:
         from core.tools.dev_tools import code_search_multi_file
     except ImportError as e:
         pytest.skip(f"dev_tools unavailable: {e}")
 
     result = code_search_multi_file(
-        directory=JARVIS_ROOT,
+        directory=BEA_ROOT,
         pattern="def execute",
         file_extensions=[".py"],
     )

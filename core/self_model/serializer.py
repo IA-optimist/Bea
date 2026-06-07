@@ -64,7 +64,7 @@ def to_llm_context(model: SelfModel) -> str:
     This is the key output: a structured text block that an LLM can
     use to reason about what the system can and cannot do.
     """
-    lines = ["## JarvisMax Self-Model (Current State)", ""]
+    lines = ["## BeaMax Self-Model (Current State)", ""]
 
     # Readiness
     score = queries.readiness_score(model)

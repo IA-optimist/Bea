@@ -67,9 +67,9 @@ def test_canonical_status_coverage():
 
 
 def test_bridge_feature_flag():
-    """Bridge respects JARVIS_USE_CANONICAL_ORCHESTRATOR flag."""
+    """Bridge respects BEA_USE_CANONICAL_ORCHESTRATOR flag."""
     source = Path("core/orchestration_bridge.py").read_text(encoding="utf-8")
-    assert "JARVIS_USE_CANONICAL_ORCHESTRATOR" in source
+    assert "BEA_USE_CANONICAL_ORCHESTRATOR" in source
 
 
 @pytest.mark.skipif(not Path("static/cockpit.html").exists(),

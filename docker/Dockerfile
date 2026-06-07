@@ -1,10 +1,10 @@
 # ================================================================
-# JARVIS MAX — Dockerfile (multi-stage production build)
+# BEA MAX — Dockerfile (multi-stage production build)
 #
 # Build chain: requirements.txt → pip install → image
 # requirements.lock = exact pinned versions generated from live image
 #   (reference only — regenerate with:
-#    docker run --rm jarvismax-master-jarvis:latest pip freeze > requirements.lock)
+#    docker run --rm beamax-master-bea:latest pip freeze > requirements.lock)
 # ================================================================
 
 FROM python:3.12-slim AS builder
@@ -65,8 +65,8 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Non-root user
-RUN useradd -m jarvis && chown -R jarvis:jarvis /app
-USER jarvis
+RUN useradd -m bea && chown -R bea:bea /app
+USER bea
 
 EXPOSE 8000
 

@@ -62,7 +62,7 @@ def _format_slack_message(
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "🤖 JarvisMax SI — Review Required",
+                "text": "🤖 BeaMax SI — Review Required",
             },
         },
         {
@@ -104,7 +104,7 @@ def _format_slack_message(
         },
     ]
 
-    return {"blocks": blocks, "text": f"JarvisMax SI Review Required — {run_id}"}
+    return {"blocks": blocks, "text": f"BeaMax SI Review Required — {run_id}"}
 
 
 def _format_telegram_message(
@@ -128,7 +128,7 @@ def _format_telegram_message(
     pr_line = f"\n🔗 [View PR]({pr_url})" if pr_url else ""
 
     return (
-        f"🤖 *JarvisMax SI — Review Required*\n\n"
+        f"🤖 *BeaMax SI — Review Required*\n\n"
         f"*Run ID:* `{run_id}`\n"
         f"*Domain:* {domain}\n"
         f"*Risk:* {risk_icon} {risk_level}\n"

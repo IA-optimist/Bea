@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────
-# backup_db.sh — Daily backup of JarvisMax databases
+# backup_db.sh — Daily backup of BeaMax databases
 # ──────────────────────────────────────────────────────────────────
 # Usage (sur VPS1, root) :
 #   bash scripts/backup_db.sh                     # run once
 #   # or install via cron :
-#   (crontab -l 2>/dev/null; echo "0 3 * * * /root/Jarvismax-master/scripts/backup_db.sh >> /var/log/jarvis_backup.log 2>&1") | crontab -
+#   (crontab -l 2>/dev/null; echo "0 3 * * * /root/Beamax-master/scripts/backup_db.sh >> /var/log/bea_backup.log 2>&1") | crontab -
 #
 # What it backs up :
-#   1. PostgreSQL (jarvismax database) → pg_dump (compressed)
+#   1. PostgreSQL (beamax database) → pg_dump (compressed)
 #   2. Redis (if persistent data present) → RDB dump
-#   3. Canonical missions SQLite (~/.jarvismax/canonical.db)
+#   3. Canonical missions SQLite (~/.beamax/canonical.db)
 #   4. .env (encrypted with age if age keypair present ; else restrictive perms)
 #
 # Retention : keeps 7 daily + 4 weekly + 3 monthly locally.
@@ -18,12 +18,12 @@
 # ──────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-BACKUP_DIR="${BACKUP_DIR:-/root/jarvismax-backups}"
+BACKUP_DIR="${BACKUP_DIR:-/root/beamax-backups}"
 CONTAINER_PG="${CONTAINER_PG:-postgres}"
 CONTAINER_REDIS="${CONTAINER_REDIS:-redis}"
-DATA_DIR="${DATA_DIR:-/root/.jarvismax}"
-ENV_FILE="${ENV_FILE:-/root/Jarvismax-master/.env}"
-REPO_DIR="${REPO_DIR:-/root/Jarvismax-master}"
+DATA_DIR="${DATA_DIR:-/root/.beamax}"
+ENV_FILE="${ENV_FILE:-/root/Beamax-master/.env}"
+REPO_DIR="${REPO_DIR:-/root/Beamax-master}"
 TS="$(date +%Y%m%d-%H%M%S)"
 DATE_TAG="$(date +%Y%m%d)"
 DOW="$(date +%u)"          # 1=Mon … 7=Sun
@@ -48,7 +48,7 @@ RUNNING_CONTAINERS="$(docker ps --format '{{.Names}}')"
 log "Backing up PostgreSQL..."
 PG_DUMP="$BACKUP_DIR/daily/pg_${TS}.sql.gz"
 if grep -q "^${CONTAINER_PG}$" <<< "$RUNNING_CONTAINERS"; then
-  docker exec "$CONTAINER_PG" pg_dump -U jarvis jarvismax 2>/dev/null | gzip > "$PG_DUMP" \
+  docker exec "$CONTAINER_PG" pg_dump -U bea beamax 2>/dev/null | gzip > "$PG_DUMP" \
     && log "  ✓ $PG_DUMP ($(du -h "$PG_DUMP" | cut -f1))" \
     || die "pg_dump failed"
   chmod 600 "$PG_DUMP"
@@ -129,7 +129,7 @@ find "$BACKUP_DIR/monthly" -type f -mtime +$((31 * RETENTION_MONTHLY)) -delete 2
 if [[ -n "${BACKUP_REMOTE:-}" ]]; then
   log "Syncing to off-site: $BACKUP_REMOTE"
   if command -v rclone >/dev/null && [[ "$BACKUP_REMOTE" == *:* ]]; then
-    rclone sync "$BACKUP_DIR" "$BACKUP_REMOTE/jarvismax-backups" --checksum --transfers 4 || log "  ⚠ rclone sync failed"
+    rclone sync "$BACKUP_DIR" "$BACKUP_REMOTE/beamax-backups" --checksum --transfers 4 || log "  ⚠ rclone sync failed"
   elif command -v rsync >/dev/null; then
     rsync -az --delete "$BACKUP_DIR/" "$BACKUP_REMOTE" || log "  ⚠ rsync failed"
   else

@@ -1,9 +1,9 @@
-# Caddyfile for JarvisMax Real-Time Dashboard with WebSocket
+# Caddyfile for BeaMax Real-Time Dashboard with WebSocket
 # Caddy automatically handles HTTPS with Let's Encrypt
 # Much simpler than NGINX for WebSocket + TLS
 
 # Replace with your domain (or use localhost for dev)
-jarvismax.example.com {
+beamax.example.com {
     # Automatic HTTPS with Let's Encrypt
     # Remove this line for localhost development
     # tls internal  # Use internal CA for localhost

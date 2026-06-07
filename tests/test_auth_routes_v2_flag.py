@@ -24,11 +24,11 @@ from tests.test_jwt_v2 import FakeRedis
 # ── Fixtures ─────────────────────────────────────────────────────
 
 @pytest.fixture
-def jarvis_secret(monkeypatch: pytest.MonkeyPatch) -> str:
+def bea_secret(monkeypatch: pytest.MonkeyPatch) -> str:
     """Patch api.auth._secret to bypass the @lru_cache on get_settings()."""
     s = "test-secret-32-bytes-or-more-please"
-    monkeypatch.setenv("JARVIS_SECRET_KEY", s)
-    monkeypatch.setenv("JARVIS_ADMIN_PASSWORD", "admin-password-for-test")
+    monkeypatch.setenv("BEA_SECRET_KEY", s)
+    monkeypatch.setenv("BEA_ADMIN_PASSWORD", "admin-password-for-test")
     monkeypatch.setattr("api.auth._secret", lambda: s)
     return s
 
@@ -54,8 +54,8 @@ def app() -> FastAPI:
 # ── Flag OFF: legacy behavior unchanged ──────────────────────────
 
 def test_login_flag_off_returns_single_token(monkeypatch: pytest.MonkeyPatch,
-                                              app: FastAPI, jarvis_secret: str):
-    monkeypatch.delenv("JARVIS_JWT_HARDENING_V2", raising=False)
+                                              app: FastAPI, bea_secret: str):
+    monkeypatch.delenv("BEA_JWT_HARDENING_V2", raising=False)
     client = TestClient(app)
     r = client.post("/auth/token", data={
         "username": "admin", "password": "admin-password-for-test",
@@ -71,9 +71,9 @@ def test_login_flag_off_returns_single_token(monkeypatch: pytest.MonkeyPatch,
 # ── Flag ON: v2 contract ─────────────────────────────────────────
 
 def test_login_flag_on_returns_pair(monkeypatch: pytest.MonkeyPatch,
-                                     app: FastAPI, jarvis_secret: str,
+                                     app: FastAPI, bea_secret: str,
                                      fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     r = client.post("/auth/token", data={
         "username": "admin", "password": "admin-password-for-test",
@@ -88,9 +88,9 @@ def test_login_flag_on_returns_pair(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_login_flag_on_rejects_bad_password(monkeypatch: pytest.MonkeyPatch,
-                                              app: FastAPI, jarvis_secret: str,
+                                              app: FastAPI, bea_secret: str,
                                               fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     r = client.post("/auth/token", data={
         "username": "admin", "password": "wrong-password",
@@ -99,9 +99,9 @@ def test_login_flag_on_rejects_bad_password(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_refresh_flag_on_rotates(monkeypatch: pytest.MonkeyPatch,
-                                  app: FastAPI, jarvis_secret: str,
+                                  app: FastAPI, bea_secret: str,
                                   fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     login = client.post("/auth/token", data={
         "username": "admin", "password": "admin-password-for-test",
@@ -117,9 +117,9 @@ def test_refresh_flag_on_rotates(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_refresh_flag_on_detects_replay(monkeypatch: pytest.MonkeyPatch,
-                                         app: FastAPI, jarvis_secret: str,
+                                         app: FastAPI, bea_secret: str,
                                          fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     login = client.post("/auth/token", data={
         "username": "admin", "password": "admin-password-for-test",
@@ -140,9 +140,9 @@ def test_refresh_flag_on_detects_replay(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_refresh_flag_on_missing_token(monkeypatch: pytest.MonkeyPatch,
-                                        app: FastAPI, jarvis_secret: str,
+                                        app: FastAPI, bea_secret: str,
                                         fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     r = client.post("/auth/refresh", json={})
     assert r.status_code == 401
@@ -150,28 +150,28 @@ def test_refresh_flag_on_missing_token(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_logout_flag_on_revokes_jti(monkeypatch: pytest.MonkeyPatch,
-                                     app: FastAPI, jarvis_secret: str,
+                                     app: FastAPI, bea_secret: str,
                                      fake_redis: FakeRedis):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", "1")
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", "1")
     client = TestClient(app)
     login = client.post("/auth/token", data={
         "username": "admin", "password": "admin-password-for-test",
     }).json()
 
     # Verify token works before logout
-    pre = jwt_v2.verify_access_token(login["access_token"], jarvis_secret)
+    pre = jwt_v2.verify_access_token(login["access_token"], bea_secret)
     assert pre is not None
 
     # Logout: must mark JTI revoked.
     r = client.post(
         "/api/v2/auth/logout",
         json={"refresh_token": login["refresh_token"]},
-        cookies={"jarvis_token": login["access_token"]},
+        cookies={"bea_token": login["access_token"]},
     )
     assert r.status_code == 200
 
     # Token must now fail verification (jti is revoked).
-    post = jwt_v2.verify_access_token(login["access_token"], jarvis_secret)
+    post = jwt_v2.verify_access_token(login["access_token"], bea_secret)
     assert post is None
 
     # And the refresh must be unusable.
@@ -182,10 +182,10 @@ def test_logout_flag_on_revokes_jti(monkeypatch: pytest.MonkeyPatch,
 
 
 def test_legacy_refresh_path_still_works_when_flag_off(
-    monkeypatch: pytest.MonkeyPatch, app: FastAPI, jarvis_secret: str,
+    monkeypatch: pytest.MonkeyPatch, app: FastAPI, bea_secret: str,
 ):
     """Deploying the v2 module must not break the legacy refresh path."""
-    monkeypatch.delenv("JARVIS_JWT_HARDENING_V2", raising=False)
+    monkeypatch.delenv("BEA_JWT_HARDENING_V2", raising=False)
     client = TestClient(app)
 
     login = client.post("/auth/token", data={
@@ -196,7 +196,7 @@ def test_legacy_refresh_path_still_works_when_flag_off(
     # Legacy refresh expects the old token from cookie / Authorization.
     r = client.post(
         "/auth/refresh",
-        cookies={"jarvis_token": legacy_token},
+        cookies={"bea_token": legacy_token},
     )
     assert r.status_code == 200, r.text
     body = r.json()

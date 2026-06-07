@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Rate Limiter (Redis + In-Memory fallback)
+BEA MAX — Rate Limiter (Redis + In-Memory fallback)
 ========================================================
 Sliding-window rate limiting per IP+path.
 

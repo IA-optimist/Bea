@@ -1,11 +1,11 @@
-# jarvis_team — Agent Definitions
+# bea_team — Agent Definitions
 
-Les 6 agents de l'équipe JarvisMax en format Claude Code (Markdown + frontmatter YAML).
+Les 6 agents de l'équipe BeaMax en format Claude Code (Markdown + frontmatter YAML).
 
 ## Structure
 
 ```
-jarvis_team/
+bea_team/
 ├── architect.md   # Analyse + specs. Read-only, jamais de code.
 ├── coder.md       # Implémentation selon specs précises.
 ├── reviewer.md    # Code review adversarial (Anthropic VerificationAgent style).
@@ -66,13 +66,13 @@ claude --agent architect "Analyse l'impact d'ajouter un cache Redis pour les ses
 claude --agent coder "Implémenter le cache Redis selon la spec de architect (voir workspace/specs/redis-cache.md)"
 
 # Review du diff produit
-claude --agent reviewer "Review du diff sur la branche jarvis/redis-cache"
+claude --agent reviewer "Review du diff sur la branche bea/redis-cache"
 
 # QA avant merge
-claude --agent qa "Valider les tests pour jarvis/redis-cache"
+claude --agent qa "Valider les tests pour bea/redis-cache"
 
 # Déployer
-claude --agent devops "Déployer jarvis/redis-cache en production"
+claude --agent devops "Déployer bea/redis-cache en production"
 
 # Check de santé
 claude --agent watcher "Rapport de surveillance post-déploiement"

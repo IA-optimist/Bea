@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk/api/v2';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://bea.beamaxapp.co.uk/api/v2';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -19,7 +19,7 @@ class ApiClient {
     this.client = axios.create({
       baseURL: BASE_URL,
       timeout: 30000,
-      // withCredentials=true : envoie le cookie HttpOnly `jarvis_token` sur
+      // withCredentials=true : envoie le cookie HttpOnly `bea_token` sur
       // chaque requête. Le backend (api/_deps.require_auth + middleware)
       // lit le cookie en priorité, fallback headers pour compat legacy.
       withCredentials: true,
@@ -34,7 +34,7 @@ class ApiClient {
     // de transition (une session post-migration n'écrit plus dans localStorage).
     this.client.interceptors.request.use(
       (config) => {
-        const legacyToken = localStorage.getItem('jarvis_token');
+        const legacyToken = localStorage.getItem('bea_token');
         if (legacyToken) {
           config.headers.Authorization = `Bearer ${legacyToken}`;
         }
@@ -50,8 +50,8 @@ class ApiClient {
         if (error.response?.status === 401) {
           // Nettoie l'éventuel token legacy et l'user cache côté client.
           // Le cookie HttpOnly est déjà invalidé serveur-side via /auth/logout.
-          localStorage.removeItem('jarvis_token');
-          localStorage.removeItem('jarvis_user');
+          localStorage.removeItem('bea_token');
+          localStorage.removeItem('bea_user');
           window.location.href = '/login';
         }
         return Promise.reject(error);
@@ -69,8 +69,8 @@ class ApiClient {
       // Logout doit être idempotent — on nettoie le client même si le
       // serveur ne répond pas.
     }
-    localStorage.removeItem('jarvis_token');
-    localStorage.removeItem('jarvis_user');
+    localStorage.removeItem('bea_token');
+    localStorage.removeItem('bea_user');
   }
 
   // System endpoints
@@ -179,7 +179,7 @@ class ApiClient {
   // Missions endpoints
   async getMissions(params?: { limit?: number; status?: string }): Promise<any[]> {
     const { data } = await this.client.get('/api/v3/missions', {
-      baseURL: import.meta.env.VITE_API_URL || 'https://jarvis.jarvismaxapp.co.uk',
+      baseURL: import.meta.env.VITE_API_URL || 'https://bea.beamaxapp.co.uk',
       params,
     });
     return data.data?.missions || [];

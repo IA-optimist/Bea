@@ -124,7 +124,7 @@ class OpportunityScanner:
     """
     
     def __init__(self, cache_dir: Optional[Path] = None, headless: bool = True):
-        self.cache_dir = cache_dir or Path.home() / ".jarvismax" / "opportunities"
+        self.cache_dir = cache_dir or Path.home() / ".beamax" / "opportunities"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.headless = headless
         

@@ -1,5 +1,5 @@
 """
-LLM Agent Helper — Wrapper pour appels LLM agents JarvisMax
+LLM Agent Helper — Wrapper pour appels LLM agents BeaMax
 Créé: 2026-04-08 | Hermes Agent
 """
 import asyncio
@@ -14,7 +14,7 @@ class LLMAgentHelper:
     
     # System prompts par agent type
     AGENT_PROMPTS = {
-        "scout-research": """Tu es WebScout, agent de recherche JarvisMax.
+        "scout-research": """Tu es WebScout, agent de recherche BeaMax.
 Mission: Analyser une demande et produire une synthèse structurée.
 Tu as accès à:
 - Vault memory (mémoire durable)
@@ -41,7 +41,7 @@ Conclusion :
 [Synthèse et recommandations]
 """,
         
-        "shadow-advisor": """Tu es ShadowAdvisor, agent critique et validateur JarvisMax.
+        "shadow-advisor": """Tu es ShadowAdvisor, agent critique et validateur BeaMax.
 Mission: Reviewer une sortie/décision et identifier les faiblesses.
 Tu dois:
 - Pointer les erreurs factuelles
@@ -72,7 +72,7 @@ Recommandations :
 Score de confiance : X/10
 """,
         
-        "map-planner": """Tu es MapPlanner, agent de planification JarvisMax.
+        "map-planner": """Tu es MapPlanner, agent de planification BeaMax.
 Mission: Décomposer une tâche complexe en étapes exécutables.
 Tu dois:
 - Identifier les dépendances
@@ -140,7 +140,7 @@ Durée estimée : [estimation]
         """
         system_prompt = self.AGENT_PROMPTS.get(
             agent_type,
-            f"Tu es un agent JarvisMax de type {agent_type}. Réponds de manière structurée."
+            f"Tu es un agent BeaMax de type {agent_type}. Réponds de manière structurée."
         )
         
         # Construction du prompt utilisateur

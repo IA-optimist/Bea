@@ -1,8 +1,8 @@
 {
   "dashboard": {
-    "title": "JarvisMax - API Monitoring",
-    "uid": "jarvismax-api",
-    "tags": ["jarvismax", "api", "performance"],
+    "title": "BeaMax - API Monitoring",
+    "uid": "beamax-api",
+    "tags": ["beamax", "api", "performance"],
     "timezone": "browser",
     "schemaVersion": 38,
     "version": 1,
@@ -188,7 +188,7 @@
         "gridPos": {"x": 0, "y": 24, "w": 6, "h": 4},
         "targets": [
           {
-            "expr": "up{job=\"jarvismax-api\"}",
+            "expr": "up{job=\"beamax-api\"}",
             "refId": "A"
           }
         ],

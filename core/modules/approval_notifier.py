@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Approval Notifier
+BEA MAX — Approval Notifier
 =================================
 Sends approval requests to Telegram and handles callbacks.
 

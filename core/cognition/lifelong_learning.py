@@ -1,5 +1,5 @@
 """
-Lifelong Learning Engine for JarvisMax (Phase 5.4)
+Lifelong Learning Engine for BeaMax (Phase 5.4)
 ===================================================
 Voyager-style automatic skill discovery and persistence.
 
@@ -70,7 +70,7 @@ class LifelongLearningEngine:
             try:
                 from core.memory.qdrant_client import get_qdrant
                 q = get_qdrant()
-                results = q.search('jarvis_skills', [0.0] * 768, limit=200, score_threshold=0.0)
+                results = q.search('bea_skills', [0.0] * 768, limit=200, score_threshold=0.0)
                 for hit in results:
                     p = hit.get('payload', {})
                     if p.get('skill_id'):
@@ -217,8 +217,8 @@ class LifelongLearningEngine:
             text = skill.name + ' ' + skill.description + ' ' + (skill.code or '')
             vec = ep.embed(text)
             q = get_qdrant()
-            q.ensure_collection('jarvis_skills', size=len(vec))
-            q.upsert('jarvis_skills', skill.skill_id, vec, {
+            q.ensure_collection('bea_skills', size=len(vec))
+            q.upsert('bea_skills', skill.skill_id, vec, {
                 'skill_id': skill.skill_id,
                 'name': skill.name,
                 'description': skill.description,
@@ -245,7 +245,7 @@ class LifelongLearningEngine:
                 ep = EmbeddingProvider()
                 vec = ep.embed(goal)
                 q = get_qdrant()
-                results = q.search('jarvis_skills', vec, limit=limit, score_threshold=0.4)
+                results = q.search('bea_skills', vec, limit=limit, score_threshold=0.4)
                 found = []
                 for hit in results:
                     sid = hit.get('payload', {}).get('skill_id', '')

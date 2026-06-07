@@ -1,6 +1,6 @@
 """
 Tree-of-Thought wrapper for mission planning.
-Integrates ToT with JarvisMax LLM client.
+Integrates ToT with BeaMax LLM client.
 """
 import os
 import structlog

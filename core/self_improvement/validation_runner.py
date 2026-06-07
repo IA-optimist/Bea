@@ -1,8 +1,8 @@
 """
-JARVIS MAX — Self-Improvement Controller V1
+BEA MAX — Self-Improvement Controller V1
 Module D : ValidationRunner
 
-Lance une suite de tests HTTP réels contre le VPS Jarvis.
+Lance une suite de tests HTTP réels contre le VPS Bea.
 Timeout : 30s par test, retry 0 (fail fast).
 """
 from __future__ import annotations
@@ -45,7 +45,7 @@ class ValidationReport:
 
 class ValidationRunner:
     """
-    Exécute une suite de tests HTTP contre l'API JarvisMax.
+    Exécute une suite de tests HTTP contre l'API BeaMax.
     Timeout par test : 30s. Pas de retry.
     """
 

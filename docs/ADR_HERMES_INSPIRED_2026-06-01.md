@@ -1,21 +1,21 @@
-# ADR — Évolution de Jarvis Max inspirée de Hermes Agent
+# ADR — Évolution de Bea Max inspirée de Hermes Agent
 
 _Statut : PROPOSITION (à valider avant implémentation) · 2026-06-01_
 
 ## Contexte
 
-Hermes Agent (Nous Research) vise le même but que Jarvis Max : un agent autonome
-auto-améliorant. Cet ADR mappe les 4 patterns Hermes demandés sur le code Jarvis
+Hermes Agent (Nous Research) vise le même but que Bea Max : un agent autonome
+auto-améliorant. Cet ADR mappe les 4 patterns Hermes demandés sur le code Bea
 **existant** et propose un plan **incrémental et minimal**. Principe directeur :
 **on étend l'existant, on ne reconstruit pas, on ne crée pas d'arborescence
-parallèle** (Jarvis a déjà la plupart des briques).
+parallèle** (Bea a déjà la plupart des briques).
 
 ### Principes Hermes transverses à adopter
 - **Cœur agnostique** : une seule classe agent sert CLI / gateway / cron / API
-  (chez Hermes `AIAgent`). Chez Jarvis : converger vers `core/meta_orchestrator`
+  (chez Hermes `AIAgent`). Chez Bea : converger vers `core/meta_orchestrator`
   comme point unique, les entrées (api, cron, futur gateway) n'étant que des adaptateurs.
 - **Loose coupling** : registres + `check_fn` de disponibilité, pas de dépendances dures
-  (Jarvis a déjà `agents/registry.py`, `core/skills/skill_registry.py`, `ConnectorRegistry`).
+  (Bea a déjà `agents/registry.py`, `core/skills/skill_registry.py`, `ConnectorRegistry`).
 - **Observable + interruptible** : chaque appel d'outil visible ; annulable.
 - **Profile isolation** : un profil = home/config/mémoire/sessions isolés.
 
@@ -23,7 +23,7 @@ parallèle** (Jarvis a déjà la plupart des briques).
 
 ## Axe 1 — Boucle d'apprentissage & skills auto-améliorants
 
-**Existant Jarvis** : `core/self_improvement/` (engine, improvement_loop,
+**Existant Bea** : `core/self_improvement/` (engine, improvement_loop,
 candidate_generator, code_patcher, deployment_gate, lesson_memory, safe_executor,
 human_gate…) + `core/skills/` (skill_builder, skill_registry, skill_retriever,
 skill_feedback, skill_chain, skill_discovery, skill_service). Très complet côté
@@ -33,7 +33,7 @@ skill_feedback, skill_chain, skill_discovery, skill_service). Très complet côt
 (1) créer un skill depuis une expérience réussie, (2) l'améliorer pendant l'usage,
 (3) nudges périodiques pour persister, (4) format de skill **portable** (agentskills.io).
 
-**Écart** : Jarvis améliore surtout son *code* ; la boucle « expérience → skill →
+**Écart** : Bea améliore surtout son *code* ; la boucle « expérience → skill →
 réutilisation → amélioration à l'usage » est moins explicite, et le format de skill
 n'est pas aligné sur un standard partageable.
 
@@ -53,7 +53,7 @@ n'est pas aligné sur un standard partageable.
 
 ## Axe 2 — Mémoire inter-sessions & modèle utilisateur
 
-**Existant Jarvis** : `memory/` (MemoryBus : recall/remember/search, postgres_backend,
+**Existant Bea** : `memory/` (MemoryBus : recall/remember/search, postgres_backend,
 redis_cache, decision_memory, vault_memory, embeddings) + `core/memory/` (qdrant,
 vector_memory, memory_layers) + `core/memory_graph/`. Vectoriel + couches déjà là.
 
@@ -62,7 +62,7 @@ vector_memory, memory_layers) + `core/memory_graph/`. Vectoriel + couches déjà
 et **modèle dialectique de l'utilisateur** (Honcho : qui est l'utilisateur, ses
 préférences, à travers les sessions).
 
-**Écart** : Jarvis a le vectoriel mais (a) pas de recall plein-texte léger type FTS5
+**Écart** : Bea a le vectoriel mais (a) pas de recall plein-texte léger type FTS5
 en complément, (b) pas de **user-model** explicite et persistant, (c) pas de résumé
 de session systématique pour le rappel.
 
@@ -81,7 +81,7 @@ couche additive et le user-model en lecture seule au prompt.
 
 ## Axe 3 — Subagents & Programmatic Tool Calling
 
-**Existant Jarvis** : `agents/parallel_executor.py` (`ParallelExecutor`,
+**Existant Bea** : `agents/parallel_executor.py` (`ParallelExecutor`,
 `run_python_script`), `executor/` (execution_engine, supervised_executor,
 capability_dispatch, task_queue, **desktop_env sandbox** déjà durci).
 
@@ -90,7 +90,7 @@ subagent isolé pour un workstream parallèle) et `execute_code` (le modèle éc
 code qui orchestre plusieurs appels d'outils en **une seule inférence**, au lieu d'un
 aller-retour par outil).
 
-**Écart** : Jarvis a la mécanique d'exécution parallèle + sandbox, mais **pas d'outils
+**Écart** : Bea a la mécanique d'exécution parallèle + sandbox, mais **pas d'outils
 `delegate`/`execute_code` exposés au LLM** dans le set d'outils.
 
 **Plan minimal**
@@ -108,7 +108,7 @@ mais le sandbox durci existe déjà. Exiger : sandbox obligatoire, budgets, audi
 
 ## Axe 4 — Gateway de messagerie unifié
 
-**Existant Jarvis** : `connectors/` ne fait que `http_connector` (webhook/notif) +
+**Existant Bea** : `connectors/` ne fait que `http_connector` (webhook/notif) +
 `filesystem`/`github` ; `interfaces/kernel_adapter.py`. **Aucun adaptateur de
 plateforme de messagerie.** C'est l'axe le plus neuf.
 

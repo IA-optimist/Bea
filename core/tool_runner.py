@@ -6,7 +6,7 @@ from __future__ import annotations
 import structlog
 import time
 
-logger = structlog.get_logger("jarvis.tool_runner")
+logger = structlog.get_logger("bea.tool_runner")
 log = logger  # alias for M3 emitter
 
 # Pre-execution context gathering tools (READ-ONLY, safe to run before agents)
@@ -35,7 +35,7 @@ def _default_params(tool_name: str, goal: str) -> dict:
     if tool_name == "http_get":
         return {"url": "https://httpbin.org/get?q=" + goal[:50].replace(" ", "+")}
     if tool_name == "vector_search":
-        return {"query": goal[:200], "collection": "jarvis_memory", "top_k": 3}
+        return {"query": goal[:200], "collection": "bea_memory", "top_k": 3}
     return {}
 
 

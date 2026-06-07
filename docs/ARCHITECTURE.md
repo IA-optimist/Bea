@@ -1,19 +1,19 @@
-# JarvisMax Architecture
+# BeaMax Architecture
 
-> Single source of truth for the JarvisMax architecture as of SHA `889a1c3`.
+> Single source of truth for the BeaMax architecture as of SHA `889a1c3`.
 > Verified by direct code reading + 5 audit agents on 2026-04-08.
 
 ---
 
 ## Overview
 
-JarvisMax is a layered AI orchestration system built on FastAPI + a custom kernel + Python cognitive core. Its main interface is the **mission lifecycle**: a goal goes in, a structured result comes out, and the system learns from every execution.
+BeaMax is a layered AI orchestration system built on FastAPI + a custom kernel + Python cognitive core. Its main interface is the **mission lifecycle**: a goal goes in, a structured result comes out, and the system learns from every execution.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  CLIENTS                                                     │
 │  • static/app.html (web SPA, French)                        │
-│  • jarvismax_app/ (Flutter mobile, canonical)               │
+│  • beamax_app/ (Flutter mobile, canonical)               │
 │  • mobile/ (React Native, secondary, WIP)                   │
 │  • frontend/ (React web dashboard, WIP)                     │
 └─────────────────────────────────────────────────────────────┘
@@ -42,14 +42,14 @@ JarvisMax is a layered AI orchestration system built on FastAPI + a custom kerne
 │  │  8. Confidence policy (5-tier gate)                 │   │
 │  │  9. Decompose if needed                             │   │
 │  │ 10. Security layer check                            │   │
-│  │ 11. Execute via delegate (JarvisOrchestrator)       │   │
+│  │ 11. Execute via delegate (BeaOrchestrator)       │   │
 │  │ 12. Post-execution: update state, learn lessons     │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  KERNEL LAYER (kernel/)                                      │
-│  JarvisKernel singleton — boot at startup                   │
+│  BeaKernel singleton — boot at startup                   │
 │  • 19 capabilities (planning, execution, memory, policy…)   │
 │  • 5 memory types (working, episodic, execution, etc.)      │
 │  • Real evaluator + learner + planner (heuristic + core)    │
@@ -151,7 +151,7 @@ outcome = await asyncio.wait_for(
     timeout=mission_timeout_s,
 )
 ```
-The delegate is `JarvisOrchestrator` (real LLM agents from `agents/crew.py`). The supervise wrapper handles approval gating + retry (MAX_RETRIES=2, 180s per attempt).
+The delegate is `BeaOrchestrator` (real LLM agents from `agents/crew.py`). The supervise wrapper handles approval gating + retry (MAX_RETRIES=2, 180s per attempt).
 
 ### Phase 12: Post-execution learning
 **File**: `core/meta_orchestrator.py:1251-1268`  
@@ -169,7 +169,7 @@ The delegate is `JarvisOrchestrator` (real LLM agents from `agents/crew.py`). Th
 2. CORSMiddleware (allow_origins from CORS_ORIGINS env var)
    ↓
 3. AccessEnforcementMiddleware (api/middleware.py)
-   • Extracts token from: Authorization: Bearer | X-Jarvis-Token | ?token=
+   • Extracts token from: Authorization: Bearer | X-Bea-Token | ?token=
    • Calls check_access(raw_token, path, permission)
    • If is_public_path(path): allow
    • Otherwise: validate via verify_token()
@@ -204,7 +204,7 @@ The delegate is `JarvisOrchestrator` (real LLM agents from `agents/crew.py`). Th
 
 ## Kernel layer
 
-**Singleton**: `kernel/runtime/kernel.py:JarvisKernel` initialized at startup via `kernel/runtime/boot.py:boot_kernel()`.
+**Singleton**: `kernel/runtime/kernel.py:BeaKernel` initialized at startup via `kernel/runtime/boot.py:boot_kernel()`.
 
 ### Subsystems (registered at boot)
 
@@ -327,7 +327,7 @@ States: `CLOSED` (normal) → `OPEN` (fast-fail) → `HALF` (recovery probe).
 - Sandbox runs with `--network=none`
 - Secret scrubbing before returning results
 - Test regression detection
-- Disabled by default in `JARVIS_PRODUCTION=true` mode
+- Disabled by default in `BEA_PRODUCTION=true` mode
 
 ---
 
@@ -352,10 +352,10 @@ Registered at startup via `register_business_handlers()` (called from `main.py:1
 
 **File**: `config/settings.py`
 
-All settings read from environment variables with sensible defaults. Production hard-fails via `enforce_production_secrets()` if `JARVIS_PRODUCTION=true` and:
-- `JARVIS_SECRET_KEY` is the default placeholder
-- `JARVIS_ADMIN_PASSWORD` is empty
-- `JARVIS_API_TOKEN` is empty
+All settings read from environment variables with sensible defaults. Production hard-fails via `enforce_production_secrets()` if `BEA_PRODUCTION=true` and:
+- `BEA_SECRET_KEY` is the default placeholder
+- `BEA_ADMIN_PASSWORD` is empty
+- `BEA_API_TOKEN` is empty
 
 `enforce_llm_key()` raises `RuntimeError` at startup if no LLM provider key is configured (unless `DRY_RUN=true`).
 
@@ -399,7 +399,7 @@ docker-compose up -d
 ```
 
 Services started:
-- `jarvismax-api` (port 8000)
+- `beamax-api` (port 8000)
 - `postgres` (vector + relational)
 - `redis` (cache + rate limiting)
 - `qdrant` (vector memory, port 6333)

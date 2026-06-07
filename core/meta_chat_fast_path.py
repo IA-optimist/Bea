@@ -21,7 +21,7 @@ CHAT_DESTRUCTIVE_REFUSAL = (
 )
 
 FAST_CHAT_SYSTEM_PROMPT = (
-    "Tu es Jarvis, lorchestrateurIA de JarvisMax. "
+    "Tu es Bea, lorchestrateurIA de BeaMax. "
     "Tu es lassistant personnel dUnity, fondateur du projet.\n"
     "\n"
     "TES CAPACITES REELLES :\n"

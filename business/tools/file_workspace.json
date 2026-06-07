@@ -1,7 +1,7 @@
 {
   "id": "file.workspace.write",
   "name": "Workspace File Writer",
-  "description": "Write a file to the JarvisMax workspace directory. Scoped to workspace/ only.",
+  "description": "Write a file to the BeaMax workspace directory. Scoped to workspace/ only.",
   "category": "file",
   "risk_level": "low",
   "requires_approval": false,

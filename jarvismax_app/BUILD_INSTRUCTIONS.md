@@ -1,4 +1,4 @@
-# Build JarvisMax Mobile App
+# Build BeaMax Mobile App
 
 ## Environment
 - Flutter SDK 3.19+ required
@@ -16,7 +16,7 @@
 
 ### Debug (for testing)
 ```
-cd jarvismax_app
+cd beamax_app
 flutter pub get
 flutter build apk --debug
 ```
@@ -43,4 +43,4 @@ adb install build/app/outputs/flutter-apk/app-release.apk
 
 ## API keys needed
 - Start backend: `uvicorn api.main:app --port 8000`
-- Login: username `admin`, password = your `JARVIS_SECRET_KEY` from `.env`
+- Login: username `admin`, password = your `BEA_SECRET_KEY` from `.env`

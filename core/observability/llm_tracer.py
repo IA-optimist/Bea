@@ -110,9 +110,9 @@ _TRACER: "LLMTracer | None" = None
 
 
 def get_tracer() -> "LLMTracer":
-    """Tracer singleton du process (DB via env JARVIS_LLM_TRACE_DB, défaut :memory:)."""
+    """Tracer singleton du process (DB via env BEA_LLM_TRACE_DB, défaut :memory:)."""
     global _TRACER
     if _TRACER is None:
         import os
-        _TRACER = LLMTracer(os.getenv("JARVIS_LLM_TRACE_DB", ":memory:"))
+        _TRACER = LLMTracer(os.getenv("BEA_LLM_TRACE_DB", ":memory:"))
     return _TRACER

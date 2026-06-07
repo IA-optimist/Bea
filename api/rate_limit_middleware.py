@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Rate Limiting Middleware (Phase 4 Security)
+BEA MAX — Rate Limiting Middleware (Phase 4 Security)
 ==========================================================
 Protects API endpoints from DDoS and brute force attacks.
 
@@ -65,14 +65,14 @@ else:
         "rate limiting (single-worker only)."
     )
 
-# Production safety: if JARVIS_PRODUCTION is set, refuse to start with
+# Production safety: if BEA_PRODUCTION is set, refuse to start with
 # memory:// storage (silently allows bypassing rate limits by adding workers).
-if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes") \
+if os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes") \
         and _STORAGE_URI == "memory://":
     raise RuntimeError(
         "PRODUCTION STARTUP BLOCKED — rate limiter falling back to memory:// "
         "storage. Set REDIS_URL and install redis>=3.0, or unset "
-        "JARVIS_PRODUCTION to run in dev mode."
+        "BEA_PRODUCTION to run in dev mode."
     )
 
 limiter = Limiter(

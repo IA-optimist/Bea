@@ -1,5 +1,5 @@
 """
-JARVIS — Connector Layer
+BEA — Connector Layer
 ============================
 High-leverage connectors enabling real-world execution.
 
@@ -31,7 +31,7 @@ from core.connectors.contracts import (
     ConnectorSpec as ConnectorSpec,
 )
 
-logger = structlog.get_logger("jarvis.connectors")
+logger = structlog.get_logger("bea.connectors")
 log = logger  # M3 emitter alias
 
 
@@ -121,7 +121,7 @@ def web_search(params: dict) -> ConnectorResult:
         import urllib.parse
         import re
         url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Jarvis/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Bea/1.0"})
         with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
             html = resp.read(200_000).decode("utf-8", errors="replace")
         # Extract results from DDG HTML
@@ -154,7 +154,7 @@ JSON_STORAGE_SPEC = ConnectorSpec(
     failure_modes=["disk_full", "permission_error"],
 )
 
-_JSON_STORAGE_DIR = os.environ.get("JARVIS_STORAGE_DIR", "workspace/storage")
+_JSON_STORAGE_DIR = os.environ.get("BEA_STORAGE_DIR", "workspace/storage")
 _MAX_STORAGE_KEYS = 500
 _MAX_VALUE_SIZE = 100_000  # 100KB per value
 
@@ -223,7 +223,7 @@ DOC_WRITER_SPEC = ConnectorSpec(
     failure_modes=["disk_full", "permission_error"],
 )
 
-_DOC_OUTPUT_DIR = os.environ.get("JARVIS_DOC_DIR", "workspace/documents")
+_DOC_OUTPUT_DIR = os.environ.get("BEA_DOC_DIR", "workspace/documents")
 _MAX_DOC_SIZE = 500_000  # 500KB
 
 
@@ -360,7 +360,7 @@ TASK_LIST_SPEC = ConnectorSpec(
     failure_modes=["disk_full"],
 )
 
-_TASK_DIR = os.environ.get("JARVIS_TASK_DIR", "workspace/tasks")
+_TASK_DIR = os.environ.get("BEA_TASK_DIR", "workspace/tasks")
 _MAX_TASKS_PER_LIST = 200
 _MAX_TASK_LISTS = 50
 
@@ -540,14 +540,14 @@ def email_connector(params: dict) -> ConnectorResult:
 
     # --- Real Send ---
     if action == "send":
-        smtp_host = os.environ.get("JARVIS_SMTP_HOST", "")
-        smtp_port = int(os.environ.get("JARVIS_SMTP_PORT", "587"))
-        smtp_user = os.environ.get("JARVIS_SMTP_USER", "")
-        smtp_pass = os.environ.get("JARVIS_SMTP_PASS", "")
+        smtp_host = os.environ.get("BEA_SMTP_HOST", "")
+        smtp_port = int(os.environ.get("BEA_SMTP_PORT", "587"))
+        smtp_user = os.environ.get("BEA_SMTP_USER", "")
+        smtp_pass = os.environ.get("BEA_SMTP_PASS", "")
 
         if not smtp_host or not smtp_user:
             return ConnectorResult(
-                error="SMTP not configured (set JARVIS_SMTP_HOST, JARVIS_SMTP_USER, JARVIS_SMTP_PASS)",
+                error="SMTP not configured (set BEA_SMTP_HOST, BEA_SMTP_USER, BEA_SMTP_PASS)",
                 data={"draft": draft, "status": "smtp_not_configured"},
                 latency_ms=_latency(), connector="email",
             )
@@ -787,7 +787,7 @@ API_CONNECTOR_SPEC = ConnectorSpec(
 # Rate limiter: per api_name
 _api_rate_limits: dict[str, list[float]] = {}
 _API_RATE_WINDOW = 60  # seconds
-_API_RATE_MAX = int(os.environ.get("JARVIS_API_RATE_MAX", "30"))  # max calls per window
+_API_RATE_MAX = int(os.environ.get("BEA_API_RATE_MAX", "30"))  # max calls per window
 
 
 def api_connector(params: dict) -> ConnectorResult:

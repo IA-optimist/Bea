@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Critic
+BEA MAX — Self-Critic
 CriticAgent evaluates agent outputs and triggers reruns when quality is insufficient.
 
 Scoring dimensions (0–10 each):

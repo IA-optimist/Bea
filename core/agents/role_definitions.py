@@ -34,7 +34,7 @@ ROLE_DEFINITIONS: dict[CoreRole, RoleDefinition] = {
         input_type="goal: str, context: dict",
         output_type="plan: list[Step], estimated_duration: int",
         success_criteria="Plan is executable, all steps map to known capabilities",
-        assigned_agents=("atlas-director", "map-planner", "jarvis-architect"),
+        assigned_agents=("atlas-director", "map-planner", "bea-architect"),
     ),
     "researcher": RoleDefinition(
         role="researcher",
@@ -50,7 +50,7 @@ ROLE_DEFINITIONS: dict[CoreRole, RoleDefinition] = {
         input_type="artifact: str, criteria: list[str]",
         output_type="verdict: str, issues: list[str], score: float",
         success_criteria="Issues are specific, actionable, and severity-ranked",
-        assigned_agents=("shadow-advisor", "lens-reviewer", "jarvis-reviewer"),
+        assigned_agents=("shadow-advisor", "lens-reviewer", "bea-reviewer"),
     ),
     "reviewer": RoleDefinition(
         role="reviewer",
@@ -58,7 +58,7 @@ ROLE_DEFINITIONS: dict[CoreRole, RoleDefinition] = {
         input_type="result: str, goal: str",
         output_type="approved: bool, feedback: str",
         success_criteria="Result meets goal, no hallucinations, format correct",
-        assigned_agents=("lens-reviewer", "jarvis-qa"),
+        assigned_agents=("lens-reviewer", "bea-qa"),
     ),
     "operator": RoleDefinition(
         role="operator",
@@ -67,7 +67,7 @@ ROLE_DEFINITIONS: dict[CoreRole, RoleDefinition] = {
         output_type="result: dict, artifacts: list[str]",
         success_criteria="Action completed successfully, output matches spec",
         assigned_agents=("forge-builder", "pulse-ops", "night-worker",
-                         "jarvis-coder", "jarvis-devops"),
+                         "bea-coder", "bea-devops"),
     ),
     "memory_curator": RoleDefinition(
         role="memory_curator",
@@ -75,7 +75,7 @@ ROLE_DEFINITIONS: dict[CoreRole, RoleDefinition] = {
         input_type="memory_action: str, content: str?",
         output_type="updated: bool, entries_affected: int",
         success_criteria="Memory is relevant, bounded, and up-to-date",
-        assigned_agents=("vault-memory", "jarvis-watcher"),
+        assigned_agents=("vault-memory", "bea-watcher"),
     ),
 }
 

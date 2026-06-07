@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Agent Builder API Routes
+BEA MAX — Agent Builder API Routes
 
 POST /api/v2/agents/create        — create from blueprint or objective (auto-design)
 GET  /api/v2/agents               — list all agents (static + dynamic)
@@ -18,15 +18,15 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/agents", tags=["agents"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
 
 # ── Request models ────────────────────────────────────────────
@@ -48,7 +48,7 @@ class CreateAgentRequest(BaseModel):
 @router.post("/create", status_code=201)
 async def create_agent(
     req: CreateAgentRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """
     Create a dynamic agent.
@@ -103,7 +103,7 @@ async def create_agent(
 
 
 @router.get("")
-async def list_agents(x_jarvis_token: Optional[str] = Header(None)):
+async def list_agents(x_bea_token: Optional[str] = Header(None)):
     """List all registered agents — static crew + dynamic factory agents."""
     agents: list[dict[str, Any]] = []
 
@@ -213,7 +213,7 @@ async def agent_metadata():
 @router.delete("/{agent_name}")
 async def destroy_agent(
     agent_name:     str,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Destroy a dynamic agent by name."""
     from core.agent_factory import get_agent_factory

@@ -1,8 +1,8 @@
 """
-alignment_layer.py — Couche d'alignement pour JarvisMax
+alignment_layer.py — Couche d'alignement pour BeaMax
 Architecture en 4 couches : Constitution, Debate, Reasoning Logger, Corrigibility
 
-Ce module implémente un système d'alignement pratique pour JarvisMax.
+Ce module implémente un système d'alignement pratique pour BeaMax.
 Il ne prétend pas "résoudre" l'alignement AGI — il implémente des gardes-fous
 raisonnables pour un assistant IA à usage professionnel.
 """
@@ -173,7 +173,7 @@ class DebateProtocol:
             f"• Cela entre dans le scope de la mission : {scope}\n"
             f"• Refuser sans raison valable serait paternaliste et non coopératif\n"
             f"• L'utilisateur est en droit de gérer ses propres données/systèmes\n"
-            f"• Compléter cette tâche renforce la confiance et l'utilité de Jarvis"
+            f"• Compléter cette tâche renforce la confiance et l'utilité de Bea"
         )
 
     def _build_contra_argument(self, action: str, reversible: bool, scope: str) -> str:
@@ -217,12 +217,12 @@ class ReasoningLogger:
     Audit trail complet, révisable par l'humain.
     """
 
-    def __init__(self, log_path: Path = Path("/tmp/jarvis_alignment.jsonl")):  # nosec B108 — default log path; callers may override.
+    def __init__(self, log_path: Path = Path("/tmp/bea_alignment.jsonl")):  # nosec B108 — default log path; callers may override.
         self.log_path = log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Logger standard en parallèle
-        self.logger = logging.getLogger("jarvis.alignment")
+        self.logger = logging.getLogger("bea.alignment")
         if not self.logger.handlers:
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter(
@@ -401,7 +401,7 @@ class AlignmentLayer:
         self.constitution = ConstitutionLayer()
         self.debate_protocol = DebateProtocol()
         self.logger = ReasoningLogger(
-            log_path or Path("/tmp/jarvis_alignment.jsonl")  # nosec B108 — fallback to default log path.
+            log_path or Path("/tmp/bea_alignment.jsonl")  # nosec B108 — fallback to default log path.
         )
         self.corrigibility = CorrigibilityLayer()
 
@@ -552,10 +552,10 @@ class AlignmentLayer:
 
 def run_alignment_tests() -> list[dict]:
     """
-    5 scénarios de test conformes à la Constitution JarvisMax.
+    5 scénarios de test conformes à la Constitution BeaMax.
     Vérifie que le système se comporte comme attendu.
     """
-    alignment = AlignmentLayer(log_path=Path("/tmp/jarvis_alignment_test.jsonl"))  # nosec B108 — test path.
+    alignment = AlignmentLayer(log_path=Path("/tmp/bea_alignment_test.jsonl"))  # nosec B108 — test path.
     
     test_cases = [
         {
@@ -597,7 +597,7 @@ def run_alignment_tests() -> list[dict]:
     
     results = []
     print("\n" + "="*60)
-    print("JARVISMAX ALIGNMENT TESTS")
+    print("BEAMAX ALIGNMENT TESTS")
     print("="*60)
     
     for tc in test_cases:

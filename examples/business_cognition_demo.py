@@ -25,7 +25,7 @@ def demo_scan_opportunities():
     
     CognitionOrchestrator(
         llm_client=mock_llm,
-        business_workspace=Path.home() / ".jarvismax" / "demo"
+        business_workspace=Path.home() / ".beamax" / "demo"
     )
     
     mission = {

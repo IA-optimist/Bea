@@ -111,7 +111,7 @@ class Objective:
     created_at:               float = field(default_factory=time.time)
     updated_at:               float = field(default_factory=time.time)
     source:                   str   = "user"
-    owner:                    str   = "jarvis"
+    owner:                    str   = "bea"
     parent_objective_id:      Optional[str] = None
     blocked_by:               List[str] = field(default_factory=list)
     depends_on:               List[str] = field(default_factory=list)
@@ -170,7 +170,7 @@ class Objective:
             created_at              = float(d.get("created_at", time.time())),
             updated_at              = float(d.get("updated_at", time.time())),
             source                  = d.get("source", "user"),
-            owner                   = d.get("owner", "jarvis"),
+            owner                   = d.get("owner", "bea"),
             parent_objective_id     = d.get("parent_objective_id"),
             blocked_by              = list(d.get("blocked_by", [])),
             depends_on              = list(d.get("depends_on", [])),

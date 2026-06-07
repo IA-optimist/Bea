@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# JarvisMax AI OS Frontend - Quick Start Script
+# BeaMax AI OS Frontend - Quick Start Script
 
 echo "=========================================="
-echo "   JarvisMax AI OS Frontend Setup"
+echo "   BeaMax AI OS Frontend Setup"
 echo "=========================================="
 echo ""
 

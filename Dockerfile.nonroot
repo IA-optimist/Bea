@@ -1,8 +1,8 @@
-# Multi-stage non-root build for Jarvismax (audit Sprint 4 §6.4).
+# Multi-stage non-root build for Beamax (audit Sprint 4 §6.4).
 #
 # Stage 1 (builder) installs build-essential + git, compiles wheels into
 # /wheels. Stage 2 (runtime) ships only python:3.12-slim + the prebuilt
-# wheels + the app code, runs as UID 1000 jarvis. The build toolchain
+# wheels + the app code, runs as UID 1000 bea. The build toolchain
 # stays out of the final image (~150 MB lighter, no compiler at runtime).
 
 # ──────────────────────────────────────────────────────────────
@@ -33,10 +33,10 @@ FROM python:3.12-slim AS runtime
 # ── Non-root user for security ─────────────────────────────
 # UID 1000 aligned with most Linux hosts + compatible with `chown -R 1000:1000`
 # on the VPS volume mount. Audit S2.4 hardened sandbox runs alongside this.
-ARG JARVIS_UID=1000
-ARG JARVIS_GID=1000
-RUN groupadd --gid "${JARVIS_GID}" jarvis \
- && useradd --uid "${JARVIS_UID}" --gid "${JARVIS_GID}" --create-home --shell /bin/bash jarvis
+ARG BEA_UID=1000
+ARG BEA_GID=1000
+RUN groupadd --gid "${BEA_GID}" bea \
+ && useradd --uid "${BEA_UID}" --gid "${BEA_GID}" --create-home --shell /bin/bash bea
 
 WORKDIR /app
 
@@ -58,15 +58,15 @@ RUN python -m pip install --upgrade "pip>=25,<26" \
 # ── Application code ──────────────────────────────────────
 COPY . .
 
-# ── Writable directories (owned by jarvis) ─────────────────
+# ── Writable directories (owned by bea) ─────────────────
 # Data dir aligned with docker-compose volume mount :
-#   host:~/.jarvismax  →  container:/home/jarvis/.jarvismax
-RUN mkdir -p /home/jarvis/.jarvismax/logs /app/workspace \
- && chown -R jarvis:jarvis /home/jarvis /app
+#   host:~/.beamax  →  container:/home/bea/.beamax
+RUN mkdir -p /home/bea/.beamax/logs /app/workspace \
+ && chown -R bea:bea /home/bea /app
 
 # ── Drop privileges ────────────────────────────────────────
-USER jarvis
-ENV HOME=/home/jarvis \
+USER bea
+ENV HOME=/home/bea \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 

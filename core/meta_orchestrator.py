@@ -1,11 +1,11 @@
 """
-JARVIS MAX — MetaOrchestrator
+BEA MAX — MetaOrchestrator
 ==============================
 Point d'entrée unique et source de vérité pour le cycle de vie des missions.
 
 Architecture :
     MetaOrchestrator          ← vous êtes ici (facade + state machine)
-        └─► JarvisOrchestrator  (logique métier, agents, mémoire)
+        └─► BeaOrchestrator  (logique métier, agents, mémoire)
         └─► OrchestratorV2      (budget, DAG, checkpoint — missions complexes)
 
 Transitions d'état déterministes :
@@ -14,7 +14,7 @@ Transitions d'état déterministes :
 
 Règles d'usage :
     - TOUJOURS utiliser MetaOrchestrator comme point d'entrée.
-    - JarvisOrchestrator et OrchestratorV2 restent accessibles pour compatibilité
+    - BeaOrchestrator et OrchestratorV2 restent accessibles pour compatibilité
       ascendante, mais ne doivent plus être instanciés directement dans le code neuf.
     - Chaque transition de statut est loguée via structlog (observable, auditabl).
 """
@@ -69,9 +69,9 @@ from core.meta_custom_handlers import CustomMissionHandlerMixin  # noqa: E402
 
 class MetaOrchestrator(CustomMissionHandlerMixin):
     """
-    Cerveau unique de JarvisMax.
+    Cerveau unique de BeaMax.
 
-    Délègue l'exécution à JarvisOrchestrator (missions standard) ou
+    Délègue l'exécution à BeaOrchestrator (missions standard) ou
     OrchestratorV2 (missions avec budget/DAG), mais maintient lui-même
     le cycle de vie (MissionStatus) et les logs de transition.
     """
@@ -81,7 +81,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         self.s = settings or get_settings()
 
         # Orchestrateurs délégués (lazy)
-        self._jarvis: Any = None     # JarvisOrchestrator
+        self._bea: Any = None     # BeaOrchestrator
         self._v2: Any     = None     # OrchestratorV2
 
         # Registre des missions actives {mission_id: MissionContext}
@@ -99,13 +99,13 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
     # ── Lazy accessors ──────────────────────────────────────────────────────
 
     @property
-    def jarvis(self):
-        """JarvisOrchestrator — orchestrateur principal."""
-        if self._jarvis is None:
-            from core.jarvis_executor import JarvisOrchestrator
-            self._jarvis = JarvisOrchestrator(self.s)
-            log.debug("meta_orchestrator.jarvis_loaded")
-        return self._jarvis
+    def bea(self):
+        """BeaOrchestrator — orchestrateur principal."""
+        if self._bea is None:
+            from core.bea_executor import BeaOrchestrator
+            self._bea = BeaOrchestrator(self.s)
+            log.debug("meta_orchestrator.bea_loaded")
+        return self._bea
 
     @property
     def v2(self):
@@ -386,7 +386,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             )
             # Enrich capability graph with mission usage
             if bridge.capability_graph and mode:
-                agent_cap = f"cap-{mode}" if mode.startswith("jarvis-") else None
+                agent_cap = f"cap-{mode}" if mode.startswith("bea-") else None
                 caps_used = [c for c in [agent_cap] if c]
                 if caps_used:
                     bridge.capability_graph.record_mission_usage(mid, caps_used)
@@ -829,8 +829,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             return None
         
         try:
-            from core.orchestration.creative_engine import JarvisCreativePipeline, JarvisLLMClient, JarvisMissionStore
-            _creative = JarvisCreativePipeline(llm_client=JarvisLLMClient(role="fast"), mission_store=JarvisMissionStore())
+            from core.orchestration.creative_engine import BeaCreativePipeline, BeaLLMClient, BeaMissionStore
+            _creative = BeaCreativePipeline(llm_client=BeaLLMClient(role="fast"), mission_store=BeaMissionStore())
             _creative_result = await _creative.run(goal, n_solutions=3)
             if _creative_result.get("best"):
                 ctx.result = _creative_result["best"]
@@ -1152,8 +1152,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
 
         # ── CausalModule : enrich goal with causal context ──────────────────────────────────────
         try:
-            from core.orchestration.causal_module import JarvisMaxCausalIntegration
-            _causal = JarvisMaxCausalIntegration()
+            from core.orchestration.causal_module import BeaMaxCausalIntegration
+            _causal = BeaMaxCausalIntegration()
             _causal_ctx = _causal.get_causal_context(enriched_goal)
             if _causal_ctx and _causal_ctx.strip() and "No causal" not in _causal_ctx:
                 enriched_goal = enriched_goal + "\n\n" + _causal_ctx
@@ -1211,7 +1211,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             enriched_goal = enriched_goal[:2000] + "\n[...context truncated for performance...]"
             log.debug("enriched_goal_capped", mission_id=mid, original_len=len(enriched_goal))
         from core.orchestration.execution_supervisor import supervise
-        delegate = self.v2 if use_budget else self.jarvis
+        delegate = self.v2 if use_budget else self.bea
         
         # Wire the capability dispatcher
         if _cap_dispatcher is not None:
@@ -1365,7 +1365,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             except Exception as _sme:
                 log.debug("safer_model_activation_failed", err=str(_sme)[:60])
 
-        # FAST PATH: chat direct via JarvisLLMClient (no crew, no shadow-advisor)
+        # FAST PATH: chat direct via BeaLLMClient (no crew, no shadow-advisor)
         # Skip fast-path if mission needs approval or contains destructive keywords
         from core.meta_chat_fast_path import (
             CHAT_DESTRUCTIVE_REFUSAL,
@@ -1394,8 +1394,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
 
         if _is_chat_mode and not _fp_skip_risk:
             try:
-                from core.orchestration.creative_engine import JarvisLLMClient
-                _fp_llm = JarvisLLMClient(role="fast")
+                from core.orchestration.creative_engine import BeaLLMClient
+                _fp_llm = BeaLLMClient(role="fast")
                 _fp_ctx = str(ctx.metadata.get("context", "") or "")
                 # Inject semantic memory into fast-path
                 _fp_mem = ""
@@ -1509,7 +1509,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                 # FIXED (Phase 29): Integrate real executor with cognition pipeline
                 # Create async wrapper that calls the real delegate.run through supervise()
                 async def _real_executor(mission: Dict[str, Any]) -> str:
-                    """Execute mission using real JarvisOrchestrator + supervision."""
+                    """Execute mission using real BeaOrchestrator + supervision."""
                     result = await asyncio.wait_for(
                         supervise(
                             delegate.run,
@@ -1629,7 +1629,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         # Extract execution context from metadata
         enriched_goal = ctx.metadata.get("_exec_enriched_goal", goal)
         risk = ctx.metadata.get("_exec_risk", "low")
-        delegate = ctx.metadata.get("_exec_delegate", self.jarvis)
+        delegate = ctx.metadata.get("_exec_delegate", self.bea)
         _mission_timeout = ctx.metadata.get("_exec_mission_timeout", 600)
         needs_approval = ctx.metadata.get("_exec_needs_approval", False)
         
@@ -1751,7 +1751,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                     break
             if ctx.result and len(ctx.result) > 100:
                 _exp = LivrableExport()
-                _paths = _exp.save(ctx.result, _client_name or 'JarvisMax', goal, mid)
+                _paths = _exp.save(ctx.result, _client_name or 'BeaMax', goal, mid)
                 ctx.metadata['livrable_md'] = _paths['markdown']
                 ctx.metadata['livrable_html'] = _paths['html']
                 log.info('livrable_exported', mission_id=mid, client=_client_name,
@@ -1930,8 +1930,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         
         # ── ArtificialCuriosity : detect and log surprising results ───────────────────
         try:
-            from core.orchestration.creative_engine import ArtificialCuriosity, JarvisLLMClient
-            _ac = ArtificialCuriosity(llm_client=JarvisLLMClient(role="fast"))
+            from core.orchestration.creative_engine import ArtificialCuriosity, BeaLLMClient
+            _ac = ArtificialCuriosity(llm_client=BeaLLMClient(role="fast"))
             _surprise_ac = _ac.compute_surprise_score(enriched_goal, ctx.result or "")
             if _surprise_ac > 0.6:
                 _questions = await _ac.generate_curiosity_questions(enriched_goal, ctx.result or "")
@@ -2388,20 +2388,20 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
             if _creative_ctx is not None:
                 return _creative_ctx
 
-            # ── JarvisTeam dispatcher (mode=improve/lab/dev) ──────────────────────────
+            # ── BeaTeam dispatcher (mode=improve/lab/dev) ──────────────────────────
             # Route to architect→coder→reviewer→qa chain when mode indicates improvement.
             if mode in ("improve", "lab", "dev") and not _is_chat_mode:
                 try:
-                    from core.orchestration.jarvis_team_dispatcher import dispatch_improve
-                    log.info("jarvis_team.dispatching", mission_id=mid, mode=mode)
+                    from core.orchestration.bea_team_dispatcher import dispatch_improve
+                    log.info("bea_team.dispatching", mission_id=mid, mode=mode)
                     _team_result = await dispatch_improve(
                         goal=goal,
-                        llm_client=self.jarvis.llm,
+                        llm_client=self.bea.llm,
                         mission_id=mid,
                     )
                     if _team_result.get("result"):
                         ctx.result = _team_result["result"]
-                        ctx.metadata["jarvis_team"] = _team_result
+                        ctx.metadata["bea_team"] = _team_result
                         self._transition(ctx, MissionStatus.REVIEW)
                         self._transition(ctx, MissionStatus.DONE,
                                          result_len=len(ctx.result),
@@ -2410,7 +2410,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                                          confidence=0.75)
                         return ctx
                 except Exception as _jt_err:
-                    log.warning("jarvis_team.dispatch_failed", err=str(_jt_err)[:80])
+                    log.warning("bea_team.dispatch_failed", err=str(_jt_err)[:80])
                     # Fall through to standard pipeline
 
             # ── Phase 3: Supervised execution ─────────────────────
@@ -2762,7 +2762,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         return recovered
 
     # ── Backward-compat shims ────────────────────────────────────────────────
-    # Ces méthodes permettent aux modules qui appelaient JarvisOrchestrator.run()
+    # Ces méthodes permettent aux modules qui appelaient BeaOrchestrator.run()
     # de migrer progressivement vers MetaOrchestrator sans casser les imports.
 
     async def run(
@@ -2774,12 +2774,12 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         callback: CB | None = None,
     ):
         """
-        Compatibilité ascendante avec JarvisOrchestrator.run().
-        Délègue à run_mission() et retourne la session JarvisSession originale.
+        Compatibilité ascendante avec BeaOrchestrator.run().
+        Délègue à run_mission() et retourne la session BeaSession originale.
         """
         mid = session_id or uuid.uuid4().hex[:16]
         # BLOC 2: ALL modes route through run_mission() — kernel cognitive pipeline.
-        # Previous bypass (mode != "auto" → jarvis.run() directly) skipped:
+        # Previous bypass (mode != "auto" → bea.run() directly) skipped:
         #   - kernel cognitive cycle
         #   - kernel policy check
         #   - kernel evaluation

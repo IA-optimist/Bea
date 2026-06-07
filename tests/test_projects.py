@@ -1,5 +1,5 @@
 """
-JarvisMax - Project Model Tests
+BeaMax - Project Model Tests
 Tests for Phase 2.1 multi-project foundation.
 
 NOTE: These are INTEGRATION tests requiring a live PostgreSQL instance
@@ -14,10 +14,10 @@ pytestmark = pytest.mark.infra
 
 # Set test environment — setdefault (pas d'assignation dure) pour que ces tests soient
 # exécutables AUSSI hors conteneur : in-container "postgres" résout via le réseau compose ;
-# depuis l'hôte on override (POSTGRES_HOST=127.0.0.1, POSTGRES_DB=jarvismax, etc.).
+# depuis l'hôte on override (POSTGRES_HOST=127.0.0.1, POSTGRES_DB=beamax, etc.).
 os.environ.setdefault("POSTGRES_HOST", "postgres")
-os.environ.setdefault("POSTGRES_DB", "jarvis")
-os.environ.setdefault("POSTGRES_USER", "jarvis")
+os.environ.setdefault("POSTGRES_DB", "bea")
+os.environ.setdefault("POSTGRES_USER", "bea")
 os.environ.setdefault("POSTGRES_PASSWORD", "testpass123")
 
 try:
@@ -209,8 +209,8 @@ class TestProjectIntegration:
             # Create a test mission with project_id
             conn = psycopg2.connect(
                 host=os.getenv("POSTGRES_HOST", "postgres"),
-                database=os.getenv("POSTGRES_DB", "jarvis"),
-                user=os.getenv("POSTGRES_USER", "jarvis"),
+                database=os.getenv("POSTGRES_DB", "bea"),
+                user=os.getenv("POSTGRES_USER", "bea"),
                 password=os.getenv("POSTGRES_PASSWORD", "testpass123"),
                 cursor_factory=RealDictCursor
             )
@@ -286,8 +286,8 @@ class TestProjectIntegration:
             import psycopg2
             conn = psycopg2.connect(
                 host=os.getenv("POSTGRES_HOST", "postgres"),
-                database=os.getenv("POSTGRES_DB", "jarvis"),
-                user=os.getenv("POSTGRES_USER", "jarvis"),
+                database=os.getenv("POSTGRES_DB", "bea"),
+                user=os.getenv("POSTGRES_USER", "bea"),
                 password=os.getenv("POSTGRES_PASSWORD", "testpass123")
             )
             cur = conn.cursor()

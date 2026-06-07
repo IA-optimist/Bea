@@ -71,13 +71,13 @@ _daemon_meta: Dict[str, Any] = {}
 
 # ── Runner / planner factories ──────────────────────────────
 # By default the daemon uses safe stubs (event_bus_runner +
-# default_planner). Setting JARVIS_AUTONOMY_USE_REAL=1 swaps in the
+# default_planner). Setting BEA_AUTONOMY_USE_REAL=1 swaps in the
 # real MetaOrchestrator runner + ObjectiveEngine-aware planner with
 # learner downgrade. Operators flip this flag in pre-prod first ; CI
 # stays on the safe defaults so tests don't accidentally execute
 # real missions.
 def _build_runner_and_planner() -> tuple[ActionRunner, ActionPlanner]:
-    use_real = os.getenv("JARVIS_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
+    use_real = os.getenv("BEA_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
     if not use_real:
         return event_bus_runner(get_event_bus()), default_planner
 
@@ -172,7 +172,7 @@ async def start_daemon(req: StartRequest) -> Dict[str, Any]:
             max_iterations=req.max_iters,
         )
         runner, planner = _build_runner_and_planner()
-        use_real = os.getenv("JARVIS_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
+        use_real = os.getenv("BEA_AUTONOMY_USE_REAL", "0").lower() in ("1", "true", "yes")
         _daemon = AutonomyDaemon(
             objective=req.objective,
             mission_id=mission_id,

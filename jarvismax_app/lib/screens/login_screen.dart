@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ))),
               ),
               const SizedBox(height: 20),
-              const Text('Jarvis', style: TextStyle(
+              const Text('Bea', style: TextStyle(
                 fontSize: 28, fontWeight: FontWeight.w700,
                 color: JDS.textPrimary, letterSpacing: -0.5,
               )),

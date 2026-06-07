@@ -1,5 +1,5 @@
 """
-core/livrable_export.py — Export de livrables clients pour JarvisMax.
+core/livrable_export.py — Export de livrables clients pour BeaMax.
 
 Transforme le résultat d'une mission en livrable professionnel :
 - Markdown propre (prêt à copier/envoyer)
@@ -15,7 +15,7 @@ from pathlib import Path
 class LivrableExport:
     """Exporte les résultats de missions en livrables clients."""
 
-    LIVRABLE_DIR = Path('/opt/jarvismax-app/workspace/livrables')
+    LIVRABLE_DIR = Path('/opt/beamax-app/workspace/livrables')
 
     def __init__(self):
         self.LIVRABLE_DIR.mkdir(parents=True, exist_ok=True)
@@ -39,7 +39,7 @@ class LivrableExport:
         content = self._clean_for_client(mission_result)
 
         # En-tête
-        header = '# Rapport JarvisMax\n\n'
+        header = '# Rapport BeaMax\n\n'
         if client_name:
             header += f'**Client :** {client_name}  \n'
         header += f'**Date :** {date}  \n'
@@ -53,7 +53,7 @@ class LivrableExport:
         body = content
 
         # Pied de page
-        footer = '\n\n---\n*Généré par JarvisMax — Rapport confidentiel*\n'
+        footer = '\n\n---\n*Généré par BeaMax — Rapport confidentiel*\n'
 
         return header + body + footer
 
@@ -106,7 +106,7 @@ class LivrableExport:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rapport JarvisMax</title>
+<title>Rapport BeaMax</title>
 <style>
   body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }}
   h1 {{ color: #1a1a2e; border-bottom: 2px solid #e94560; padding-bottom: 10px; }}
@@ -158,7 +158,7 @@ class LivrableExport:
 
     def _clean_for_client(self, text: str) -> str:
         """Nettoyage final pour présentation client."""
-        # Supprimer préfixes techniques Jarvis
+        # Supprimer préfixes techniques Bea
         text = re.sub(r'^[\u2705\u274c\u26a0\ufe0f\s]*\*{0,2}(?:SUCCESS|FAILED|PARTIAL)\*{0,2}\s*\n+', '', text, flags=re.IGNORECASE)
         text = re.sub(r'^1\)\s*Statut\s*:[^\n]*\n+', '', text, flags=re.IGNORECASE | re.MULTILINE)
         text = re.sub(r'^2\)\s*Synth[eè]se\s*:\s*', '', text, flags=re.IGNORECASE | re.MULTILINE)

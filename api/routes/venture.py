@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List
 
-logger = logging.getLogger("jarvis.api.venture")
+logger = logging.getLogger("bea.api.venture")
 
 # Fail-hard on auth import: if require_auth is unavailable, the router
 # must NOT register — a silent fallback to no-auth is worse than 404.

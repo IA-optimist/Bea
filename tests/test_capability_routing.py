@@ -644,7 +644,7 @@ class TestIntegration:
         from core.meta_orchestrator import MetaOrchestrator
         src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
         assert "delegate" in src
-        assert "jarvis" in src.lower()
+        assert "bea" in src.lower()
 
     def test_CR79_self_model_integration(self):
         """Registry uses same sources as self-model."""
@@ -661,7 +661,7 @@ class TestIntegration:
         from core.meta_orchestrator import MetaOrchestrator
         m = MetaOrchestrator()
         assert hasattr(m, "run_mission")
-        assert hasattr(m, "jarvis")
+        assert hasattr(m, "bea")
         assert hasattr(m, "v2")
 
 

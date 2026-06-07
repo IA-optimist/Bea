@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Thread Safety Test Suite (Pass 4)
+BEA MAX — Thread Safety Test Suite (Pass 4)
 ==============================================
 
 Tests concurrent access to shared mutable state:

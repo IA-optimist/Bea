@@ -7,7 +7,7 @@ _silent_log = __import__("structlog").get_logger(__name__)
 pytestmark = pytest.mark.integration
 
 
-JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+BEA_ROOT = os.environ.get("BEA_ROOT", "/opt/beamax")
 
 
 def _skip_if_unavailable(result: dict, reason: str = "") -> None:
@@ -22,7 +22,7 @@ def _skip_if_unavailable(result: dict, reason: str = "") -> None:
 
 def test_file_read():
     from core.tool_executor import read_file_content
-    result = read_file_content(os.path.join(JARVIS_ROOT, "main.py"), max_lines=5)
+    result = read_file_content(os.path.join(BEA_ROOT, "main.py"), max_lines=5)
     # Either ok or file not found — both acceptable
     assert "ok" in result
 
@@ -35,7 +35,7 @@ def test_file_write_rollback():
     from core.rollback_manager import get_rollback_manager
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".txt", dir="/tmp", delete=False, prefix="jarvis_test_"
+        mode="w", suffix=".txt", dir="/tmp", delete=False, prefix="bea_test_"
     ) as f:
         test_path = f.name
         f.write("original content")
@@ -60,7 +60,7 @@ def test_file_create():
     import os
     from core.tools.file_tool import file_create
 
-    test_path = f"/tmp/jarvis_test_create_{os.getpid()}.txt"
+    test_path = f"/tmp/bea_test_create_{os.getpid()}.txt"
     try:
         result = file_create(test_path, "hello from file_create")
         assert result.get("ok"), f"file_create failed: {result.get('error')}"
@@ -76,7 +76,7 @@ def test_file_create():
 
 def test_git_status():
     from core.tools.github_tool import git_status
-    result = git_status(JARVIS_ROOT)
+    result = git_status(BEA_ROOT)
     _skip_if_unavailable(result, "git not available")
     # Either ok or blocked_path — acceptable
     assert "ok" in result or "status" in result

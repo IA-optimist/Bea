@@ -1,5 +1,5 @@
 """
-JARVIS MAX — SuperAGI Pattern Tests
+BEA MAX — SuperAGI Pattern Tests
 ========================================
 Tests for all 5 SuperAGI-inspired patterns:
   P10: Iteration Limit

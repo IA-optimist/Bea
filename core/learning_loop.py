@@ -1,5 +1,5 @@
 """
-JARVIS MAX — LearningLoop
+BEA MAX — LearningLoop
 Autonomous self-improvement: past critic feedback injected into future agent prompts.
 
 Key idea:

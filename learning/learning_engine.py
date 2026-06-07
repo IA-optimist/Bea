@@ -1,5 +1,5 @@
 """
-JARVIS MAX — LearningEngine
+BEA MAX — LearningEngine
 Analyse les runs passés pour optimiser les stratégies futures.
 
 Données persistées (JSON) :

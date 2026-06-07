@@ -1,4 +1,4 @@
-# config/policy.yaml — Jarvis Policy Engine defaults
+# config/policy.yaml — Bea Policy Engine defaults
 #
 # Controls economic decision-making for action execution.
 # Modify values to adjust cost tolerance and approval thresholds.

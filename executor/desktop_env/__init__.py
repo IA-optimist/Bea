@@ -1,4 +1,4 @@
-"""JARVIS MAX v3 — Desktop Environment (Sandbox & Tools)"""
+"""BEA MAX v3 — Desktop Environment (Sandbox & Tools)"""
 from __future__ import annotations
 
 from executor.desktop_env.sandbox import DockerSandbox, LocalFallbackSandbox, DesktopEnvironment

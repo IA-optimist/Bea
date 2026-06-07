@@ -10,7 +10,7 @@ revocation mechanism. A stolen token works for a month with no way to
 invalidate it.
 
 This rollout introduces a modern two-token model behind a feature flag
-(`JARVIS_JWT_HARDENING_V2`). When the flag is **off**, behavior is
+(`BEA_JWT_HARDENING_V2`). When the flag is **off**, behavior is
 unchanged (30-day single token). When the flag is **on**:
 
 | Concept | Legacy (flag off) | v2 (flag on) |
@@ -34,7 +34,7 @@ extra fields:
 - `typ` — `"access"`. Distinguishes from any future refresh-JWT variants.
 - `exp` — `iat + JWT_ACCESS_TTL_SECONDS` (default 15 min).
 
-The signing secret is unchanged (`config.settings.jarvis_secret_key`),
+The signing secret is unchanged (`config.settings.bea_secret_key`),
 so legacy tokens issued before the flag flip remain valid until their own
 `exp` — no force-logout when you enable v2.
 
@@ -47,7 +47,7 @@ revealing claims via base64 has no upside (the server has to look it up
 in Redis to rotate it anyway). The opaque shape also means a leaked
 refresh token cannot be partially trusted.
 
-Server-side storage in Redis (key: `jarvis:jwt:refresh:<token>`):
+Server-side storage in Redis (key: `bea:jwt:refresh:<token>`):
 
 ```
 sub|role|family_id|parent_access_jti
@@ -78,7 +78,7 @@ replaying a stolen value. We:
 
 1. Look up the `family_id` from the used entry.
 2. Delete every live refresh token belonging to that family (`SMEMBERS`
-   of `jarvis:jwt:family:<family_id>` followed by `DEL`).
+   of `bea:jwt:family:<family_id>` followed by `DEL`).
 3. Return `401 refresh_token_replay_detected` to **both** the attacker
    and the legitimate user. The legitimate user re-logs in normally;
    the attacker has no path forward.
@@ -88,10 +88,10 @@ oauth-security-topics §4.13).
 
 ### Revocation lists
 
-- `jarvis:jwt:revoked:<jti>` — `SETEX 1` with TTL = remaining access
+- `bea:jwt:revoked:<jti>` — `SETEX 1` with TTL = remaining access
   token lifetime. Written on logout. The verify path checks this set on
   every request and short-circuits on hit.
-- `jarvis:jwt:family:<family_id>` — `SET` of all refresh tokens issued
+- `bea:jwt:family:<family_id>` — `SET` of all refresh tokens issued
   in a chain. Used for wholesale revocation on replay.
 
 Self-cleaning: every key carries a TTL so the Redis footprint stays
@@ -101,10 +101,10 @@ bounded by the configured refresh TTL.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `JARVIS_JWT_HARDENING_V2` | `0` | Master kill-switch. Off = legacy behavior, on = v2. |
+| `BEA_JWT_HARDENING_V2` | `0` | Master kill-switch. Off = legacy behavior, on = v2. |
 | `JWT_ACCESS_TTL_SECONDS` | `900` | Access token TTL. 15 min is the sweet spot for SPA flows. |
 | `JWT_REFRESH_TTL_SECONDS` | `2592000` | Refresh token TTL. 30 days matches the legacy total session length. |
-| `JWT_REDIS_PREFIX` | `jarvis:jwt:` | Prefix for all Redis keys. Change to namespace per environment. |
+| `JWT_REDIS_PREFIX` | `bea:jwt:` | Prefix for all Redis keys. Change to namespace per environment. |
 | `REDIS_URL` | `redis://localhost:6379/0` | Where to find Redis. Already used elsewhere. |
 
 The flag reader is `api.jwt_v2.is_v2_enabled()` — case-insensitive
@@ -122,7 +122,7 @@ The flag reader is `api.jwt_v2.is_v2_enabled()` — case-insensitive
 
 ### Phase 1 — staging enable
 
-1. Set `JARVIS_JWT_HARDENING_V2=1` on staging.
+1. Set `BEA_JWT_HARDENING_V2=1` on staging.
 2. Verify the staging frontend can log in, refresh, and log out.
 3. Watch logs for `jwt_v2_family_revoked` (replay detections) and
    `jwt_v2_revocation_check_failed` (Redis health).
@@ -134,7 +134,7 @@ The flag reader is `api.jwt_v2.is_v2_enabled()` — case-insensitive
 Frontends must adopt the refresh flow:
 
 - Store `refresh_token` securely (HttpOnly cookie preferred — adding a
-  second cookie `jarvis_refresh` is a 5-line change). Avoid
+  second cookie `bea_refresh` is a 5-line change). Avoid
   `localStorage`.
 - On any 401 from an authenticated endpoint, **retry once** after calling
   `/auth/refresh`. Drop the user to the login screen if that 401s too.
@@ -190,9 +190,9 @@ helper in `api/auth.py` can also be retired.
   covering: accept-not-revoked, reject-after-revoke, ignore-when-flag-off,
   legacy-token-without-jti-still-works).
 - ✅ Three Prometheus counters wired:
-  - `jarvis_jwt_v2_pairs_issued_total{origin="login"|"rotation"}`
-  - `jarvis_jwt_v2_rotations_total{outcome="ok"|"replay"|"unknown"}`
-  - `jarvis_jwt_v2_revocations_total{kind="access"|"refresh"|"family"}`
+  - `bea_jwt_v2_pairs_issued_total{origin="login"|"rotation"}`
+  - `bea_jwt_v2_rotations_total{outcome="ok"|"replay"|"unknown"}`
+  - `bea_jwt_v2_revocations_total{kind="access"|"refresh"|"family"}`
   Visible on `/metrics`. Coverage: `tests/test_jwt_v2_metrics.py`
   (10 tests).
 

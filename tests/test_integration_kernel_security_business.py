@@ -137,7 +137,7 @@ def group_kernel_boot():
         from kernel.runtime.kernel import get_kernel
         k1 = get_kernel()
         k2 = get_kernel()
-        assert k1 is k2, "JarvisKernel should be singleton"
+        assert k1 is k2, "BeaKernel should be singleton"
 
     def t_cognitive_cycle():
         from kernel.runtime.kernel import get_kernel
@@ -150,7 +150,7 @@ def group_kernel_boot():
         assert has_data, f"cognitive cycle returned empty: {list(result.keys())}"
 
     _run_test("Boot: all subsystems initialized", t_boot)
-    _run_test("Boot: JarvisKernel singleton stable", t_kernel_singleton)
+    _run_test("Boot: BeaKernel singleton stable", t_kernel_singleton)
     _run_test("Boot: cognitive cycle returns data", t_cognitive_cycle)
 
 

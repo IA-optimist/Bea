@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Phase 9 Mission Control Router
+BEA MAX — Phase 9 Mission Control Router
 Real-time mission visibility and control endpoints.
 
 Routes:
@@ -34,9 +34,9 @@ from api._deps import _check_auth
 from typing import Optional as _Opt
 
 
-def _auth(x_jarvis_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
+def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     """Auth dependency for mission control routes."""
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 # ── v1 deprecation contract ───────────────────────────────────────────────

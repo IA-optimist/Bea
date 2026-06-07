@@ -1,7 +1,7 @@
 """
-JARVIS MAX — Access Token System
+BEA MAX — Access Token System
 ===================================
-Token-gated access control for multi-user Jarvis.
+Token-gated access control for multi-user Bea.
 
 Roles:
   - admin: full access, can manage tokens
@@ -166,7 +166,7 @@ def _hash_token(raw_token: str) -> str:
 
 class TokenManager:
     """
-    Manages access tokens for Jarvis.
+    Manages access tokens for Bea.
 
     Tokens are stored as hashes — the raw token is only returned
     once at creation time and never stored.

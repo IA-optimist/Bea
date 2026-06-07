@@ -1,10 +1,10 @@
 #!/bin/bash
-# Validation script for JarvisMax Real-Time Dashboard
+# Validation script for BeaMax Real-Time Dashboard
 
 set -e
 
 echo "=========================================="
-echo "🔍 JarvisMax Real-Time Dashboard Validator"
+echo "🔍 BeaMax Real-Time Dashboard Validator"
 echo "=========================================="
 echo ""
 

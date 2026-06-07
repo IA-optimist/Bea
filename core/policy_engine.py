@@ -1,12 +1,12 @@
 """
-JARVIS MAX — PolicyEngine
+BEA MAX — PolicyEngine
 Moteur de décision pour les actions : autorisation, limites, cloud vs local.
 
 Rôle :
     Décide en temps réel si une action est autorisée, quel LLM utiliser,
     et si les limites de coût / temps / risque sont respectées.
 
-    C'est la "constitution" de JarvisMax — toutes les décisions importantes
+    C'est la "constitution" de BeaMax — toutes les décisions importantes
     passent par PolicyEngine avant exécution.
 
 Politiques intégrées :
@@ -173,7 +173,7 @@ class SessionPolicy:
 
 class PolicyEngine:
     """
-    Moteur de politiques JarvisMax.
+    Moteur de politiques BeaMax.
     Fonctionne 100% local, sans LLM requis.
 
     Usage typique dans l'orchestrateur :

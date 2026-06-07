@@ -16,7 +16,7 @@ import logging
 from dataclasses import dataclass
 from typing import List
 
-logger = logging.getLogger("jarvis.self_improvement.candidate_generator")
+logger = logging.getLogger("bea.self_improvement.candidate_generator")
 
 VALID_TYPES = frozenset({"PROMPT_TWEAK", "TOOL_PREFERENCE", "RETRY_STRATEGY", "SKIP_PATTERN"})
 

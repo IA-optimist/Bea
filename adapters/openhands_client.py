@@ -1,5 +1,5 @@
 """
-Adaptateur Client pour contrôler OpenHands depuis JarvisMax.
+Adaptateur Client pour contrôler OpenHands depuis BeaMax.
 Permet d'invoquer l'immense Agent OpenHands (ex-OpenDevin) sur une tâche ultra complexe de longue durée,
 en lui cédant temporairement le contrôle d'un workspace précis via CLI ou API.
 """
@@ -25,7 +25,7 @@ class OpenHandsLocalClient:
         """
         Lance une mission complète dans OpenHands.
         Args:
-            prompt: La tâche de code hyper complète (générée par le JarvisMax Planner).
+            prompt: La tâche de code hyper complète (générée par le BeaMax Planner).
             target_workspace: Le dossier où OpenHands doit coder.
         Returns:
             (Success, Log Résumé)
@@ -68,7 +68,7 @@ class OpenHandsLocalClient:
                     if "Exception" in decoded_line or "Error" in decoded_line:
                         log.error("openhands_stream", msg=decoded_line[:200])
                     else:
-                        # Log de niveau DEBUG pour ne pas inonder la console JarvisMax
+                        # Log de niveau DEBUG pour ne pas inonder la console BeaMax
                         log.debug("openhands_stream", msg=decoded_line[:200])
             
             # Attend la finition absolue du processus (bien qu'il dût être terminé avec eof)
@@ -92,6 +92,6 @@ if __name__ == "__main__":
     # Test unitaire rapide
     async def _test():
         client = OpenHandsLocalClient()
-        success, out = await client.run_delegated_mission("Fais un echo hello world", "C:/Users/maxen/Documents/jarvismax/workspace")
+        success, out = await client.run_delegated_mission("Fais un echo hello world", "C:/Users/maxen/Documents/beamax/workspace")
         print(success, out)
     # asyncio.run(_test())

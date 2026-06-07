@@ -1,5 +1,5 @@
 """
-JARVIS — Mission Lifecycle Tracker
+BEA — Mission Lifecycle Tracker
 ======================================
 Tracks every mission through its full lifecycle.
 
@@ -33,7 +33,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.lifecycle")
+logger = logging.getLogger("bea.lifecycle")
 
 
 @dataclass

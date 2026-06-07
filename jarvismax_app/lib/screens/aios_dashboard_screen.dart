@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 import '../widgets/cyber_card.dart';
 import 'package:provider/provider.dart';
 
-/// AI OS Dashboard — system introspection for Jarvis.
+/// AI OS Dashboard — system introspection for Bea.
 class AIOSDashboardScreen extends StatefulWidget {
   const AIOSDashboardScreen({super.key});
 

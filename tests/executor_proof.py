@@ -31,9 +31,9 @@ test("TIMEOUT result has ok=False", err_result["ok"] is False)
 test("TIMEOUT result has error_class=TIMEOUT", err_result["error_class"] == "TIMEOUT")
 test("TIMEOUT result has tool name", err_result.get("tool") == "shell_command")
 
-from core.resilience import JarvisExecutionError
-je = JarvisExecutionError.from_exception(TimeoutError("x"), tool="web_search")
-test("JarvisExecError TIMEOUT retryable=True", je.retryable is True)
+from core.resilience import BeaExecutionError
+je = BeaExecutionError.from_exception(TimeoutError("x"), tool="web_search")
+test("BeaExecError TIMEOUT retryable=True", je.retryable is True)
 d = je.to_dict()
 test("TIMEOUT to_dict has 7 fields", len(d) >= 7, f"fields={list(d.keys())}")
 print()
@@ -43,10 +43,10 @@ print("━━━ E2: TRANSIENT FAILURE IS RETRYABLE ━━━")
 r = _classify_error(ConnectionError("refused"))
 test("ConnectionError → TRANSIENT", r == "TRANSIENT", f"got={r}")
 
-je = JarvisExecutionError.from_exception(ConnectionError("x"))
+je = BeaExecutionError.from_exception(ConnectionError("x"))
 test("TRANSIENT retryable=True", je.retryable is True)
 
-je2 = JarvisExecutionError.from_exception(OSError("network unreachable"))
+je2 = BeaExecutionError.from_exception(OSError("network unreachable"))
 test("OSError → TRANSIENT retryable=True", je2.retryable is True and je2.error_type == "TRANSIENT")
 
 # Verify retry logic in code
@@ -63,13 +63,13 @@ print("━━━ E3: USER_INPUT DOES NOT RETRY ━━━")
 r = _classify_error(ValueError("invalid"))
 test("ValueError → USER_INPUT", r == "USER_INPUT", f"got={r}")
 
-je = JarvisExecutionError.from_exception(ValueError("bad input"))
+je = BeaExecutionError.from_exception(ValueError("bad input"))
 test("USER_INPUT retryable=False", je.retryable is False)
 
-je2 = JarvisExecutionError.from_exception(KeyError("missing_key"))
+je2 = BeaExecutionError.from_exception(KeyError("missing_key"))
 test("KeyError → USER_INPUT retryable=False", je2.retryable is False and je2.error_type == "USER_INPUT")
 
-je3 = JarvisExecutionError.from_exception(TypeError("wrong type"))
+je3 = BeaExecutionError.from_exception(TypeError("wrong type"))
 test("TypeError → USER_INPUT retryable=False", je3.retryable is False and je3.error_type == "USER_INPUT")
 print()
 
@@ -78,7 +78,7 @@ print("━━━ E4: POLICY_BLOCKED DOES NOT RETRY ━━━")
 r = _classify_error(PermissionError("forbidden"))
 test("PermissionError → POLICY_BLOCKED", r == "POLICY_BLOCKED", f"got={r}")
 
-je = JarvisExecutionError.from_exception(PermissionError("blocked"))
+je = BeaExecutionError.from_exception(PermissionError("blocked"))
 test("POLICY_BLOCKED retryable=False", je.retryable is False)
 
 r2 = _classify_error("action blocked by policy engine")

@@ -771,13 +771,13 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                 // ── Phase 4: Error section ──────────────────────────────
                 _buildErrorSection(),
 
-                // ── Réponse Jarvis ──────────────────────────────────────
+                // ── Réponse Bea ──────────────────────────────────────
                 if (_mission.isDone || _mission.finalOutput.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        const Text('Réponse de Jarvis', style: TextStyle(
+                        const Text('Réponse de Bea', style: TextStyle(
                           color: JDS.textMuted, fontSize: 10,
                           fontWeight: FontWeight.w700, letterSpacing: 1.2,
                         )),

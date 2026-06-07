@@ -1,5 +1,5 @@
 """
-JARVIS MAX — CallManager (Phase 10)
+BEA MAX — CallManager (Phase 10)
 Twilio outbound calls, SMS, webhook handler, call status.
 
 Config via env vars:
@@ -53,7 +53,7 @@ class CallManager:
         self,
         to:      str,
         from_:   str = "",
-        message: str = "Hello from JarvisMax.",
+        message: str = "Hello from BeaMax.",
     ) -> dict[str, Any]:
         """
         Make an outbound call using Twilio TTS (<Say> verb).
@@ -147,9 +147,9 @@ class CallManager:
                  status=call_status, speech_chars=len(speech))
 
         if speech:
-            reply_text = f"Vous avez dit : {speech}. Merci d'avoir contacté JarvisMax."
+            reply_text = f"Vous avez dit : {speech}. Merci d'avoir contacté BeaMax."
         else:
-            reply_text = "Bonjour, vous avez joint JarvisMax. Comment puis-je vous aider ?"
+            reply_text = "Bonjour, vous avez joint BeaMax. Comment puis-je vous aider ?"
 
         twiml = (
             "<Response>"

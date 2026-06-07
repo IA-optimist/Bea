@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Modules API Routes (/modules/* prefix)
+BEA MAX — Modules API Routes (/modules/* prefix)
 =====================================================
 Provides agent/skill/MCP/connector CRUD at /modules/*.
 Registered in api/main.py as modules_router.

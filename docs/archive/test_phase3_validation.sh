@@ -8,8 +8,8 @@ echo ""
 
 # Start server in background (if not running)
 echo "Starting test server..."
-export JARVIS_DEV_MODE=1
-export JARVIS_API_TOKEN=test123
+export BEA_DEV_MODE=1
+export BEA_API_TOKEN=test123
 
 # Test 1: Cognitive Consolidation Endpoint
 echo "Test 1: POST /api/v3/training/consolidate"
@@ -19,7 +19,7 @@ from api.main import app
 import json
 
 client = TestClient(app)
-response = client.post("/api/v3/training/consolidate", headers={"X-Jarvis-Token": "test123"})
+response = client.post("/api/v3/training/consolidate", headers={"X-Bea-Token": "test123"})
 
 print(f"Status: {response.status_code}")
 data = response.json()
@@ -41,7 +41,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 
 client = TestClient(app)
-response = client.get("/api/v3/training/workspace", headers={"X-Jarvis-Token": "test123"})
+response = client.get("/api/v3/training/workspace", headers={"X-Bea-Token": "test123"})
 
 print(f"Status: {response.status_code}")
 data = response.json()

@@ -146,14 +146,14 @@ class TestApprovalEnforced(unittest.TestCase):
         self.assertIn("level", result)
 
     def test_kill_switch_blocks(self):
-        """ToolExecutor respects JARVIS_EXECUTION_DISABLED."""
-        os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+        """ToolExecutor respects BEA_EXECUTION_DISABLED."""
+        os.environ["BEA_EXECUTION_DISABLED"] = "1"
         try:
             # The kill switch is checked at execution time
-            blocked = os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
+            blocked = os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
             self.assertTrue(blocked, "Kill switch env var not set properly")
         finally:
-            os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+            os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
 
 class TestFeatureFlagsReal(unittest.TestCase):
@@ -168,13 +168,13 @@ class TestFeatureFlagsReal(unittest.TestCase):
         self.assertIn("execution_engine_enabled", d)
 
     def test_kill_switch_flag(self):
-        """JARVIS_EXECUTION_DISABLED blocks ToolExecutor."""
-        os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+        """BEA_EXECUTION_DISABLED blocks ToolExecutor."""
+        os.environ["BEA_EXECUTION_DISABLED"] = "1"
         try:
-            blocked = os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
+            blocked = os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes")
             self.assertTrue(blocked)
         finally:
-            os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+            os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
 
 class TestNoMockExecution(unittest.TestCase):

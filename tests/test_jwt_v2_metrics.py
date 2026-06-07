@@ -50,7 +50,7 @@ def test_counters_are_registered():
 
 
 def test_metric_names_follow_convention():
-    """Names must start with 'jarvis_' (consistent with other services)
+    """Names must start with 'bea_' (consistent with other services)
     and use snake_case. prometheus_client strips the '_total' suffix on
     the internal ``_name`` attribute and re-adds it at export time, so
     we verify the suffix via the exported metric family instead."""
@@ -60,7 +60,7 @@ def test_metric_names_follow_convention():
         jwt_v2.M_JWT_V2_REVOCATIONS,
     ):
         name = metric._name  # type: ignore[attr-defined]
-        assert name.startswith("jarvis_jwt_v2_"), name
+        assert name.startswith("bea_jwt_v2_"), name
         assert name == name.lower(), name
         # The exported series carries the _total suffix per Counter convention.
         families = list(metric.collect())

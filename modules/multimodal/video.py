@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Multimodal Video Module
+BEA MAX — Multimodal Video Module
 - generate_video_stub: placeholder (real gen too expensive; interface ready)
 - extract_video_frames: OpenCV primary, PIL fallback
 - analyze_video: sampled frames → GPT-4o Vision

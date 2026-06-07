@@ -205,7 +205,7 @@ Provide a comprehensive response addressing the mission goal."""
         3. Active Learning for performance tracking
         
         Args:
-            delegate: JarvisOrchestrator instance
+            delegate: BeaOrchestrator instance
             supervise_fn: Supervisor wrapper function
             mission_payload: Dict with mission_id, goal, mode, etc.
             timeout: Execution timeout in seconds

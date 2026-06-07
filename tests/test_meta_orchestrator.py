@@ -64,29 +64,29 @@ def test_meta_orchestrator_initialization(settings):
     mo = MetaOrchestrator(settings=settings)
     
     assert mo.s == settings
-    assert mo._jarvis is None  # Lazy loaded
+    assert mo._bea is None  # Lazy loaded
     assert mo._v2 is None  # Lazy loaded
     assert len(mo._missions) == 0
     assert mo._circuit_breaker is not None
     print("[OK] test_meta_orchestrator_initialization")
 
 
-def test_lazy_loading_jarvis(meta_orchestrator):
-    """JarvisOrchestrator should be lazy loaded on first access."""
-    with patch('core.jarvis_executor.JarvisOrchestrator') as MockJarvis:
+def test_lazy_loading_bea(meta_orchestrator):
+    """BeaOrchestrator should be lazy loaded on first access."""
+    with patch('core.bea_executor.BeaOrchestrator') as MockBea:
         mock_instance = Mock()
-        MockJarvis.return_value = mock_instance
+        MockBea.return_value = mock_instance
         
         # First access should trigger loading
-        jarvis = meta_orchestrator.jarvis
-        assert jarvis is not None
-        MockJarvis.assert_called_once()
+        bea = meta_orchestrator.bea
+        assert bea is not None
+        MockBea.assert_called_once()
         
         # Second access should reuse same instance
-        jarvis2 = meta_orchestrator.jarvis
-        assert jarvis is jarvis2
-        assert MockJarvis.call_count == 1
-    print("[OK] test_lazy_loading_jarvis")
+        bea2 = meta_orchestrator.bea
+        assert bea is bea2
+        assert MockBea.call_count == 1
+    print("[OK] test_lazy_loading_bea")
 
 
 def test_lazy_loading_v2(meta_orchestrator):
@@ -113,7 +113,7 @@ def test_mission_context_creation():
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.CREATED,
         created_at=time.time(),
         updated_at=time.time(),
@@ -135,7 +135,7 @@ def test_valid_state_transitions(meta_orchestrator):
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.CREATED,
         created_at=time.time(),
         updated_at=time.time(),
@@ -171,7 +171,7 @@ def test_invalid_state_transition_raises(meta_orchestrator):
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.CREATED,
         created_at=time.time(),
         updated_at=time.time(),
@@ -263,7 +263,7 @@ def test_setup_event_stream(meta_orchestrator):
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.CREATED,
         created_at=time.time(),
         updated_at=time.time(),
@@ -290,7 +290,7 @@ def test_check_circuit_breaker_when_open(meta_orchestrator):
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.CREATED,
         created_at=time.time(),
         updated_at=time.time(),
@@ -345,7 +345,7 @@ def test_mission_context_to_dict():
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission with a very long goal that should be truncated" * 10,
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.DONE,
         created_at=1234567890.0,
         updated_at=1234567900.0,
@@ -372,7 +372,7 @@ def test_mission_context_get_output():
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
-        mode="jarvis-research",
+        mode="bea-research",
         status=MissionStatus.RUNNING,
         created_at=time.time(),
         updated_at=time.time(),

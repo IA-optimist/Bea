@@ -3,7 +3,7 @@ version: '3.8'
 services:
   prometheus:
     image: prom/prometheus:latest
-    container_name: jarvismax-prometheus
+    container_name: beamax-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -17,7 +17,7 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - jarvismax-network
+      - beamax-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
@@ -27,7 +27,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: jarvismax-node-exporter
+    container_name: beamax-node-exporter
     command:
       - '--path.rootfs=/host'
       - '--path.procfs=/host/proc'
@@ -38,13 +38,13 @@ services:
     ports:
       - "9100:9100"
     networks:
-      - jarvismax-network
+      - beamax-network
     restart: unless-stopped
     pid: host
 
   grafana:
     image: grafana/grafana:latest
-    container_name: jarvismax-grafana
+    container_name: beamax-grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}
@@ -59,7 +59,7 @@ services:
     ports:
       - "3002:3000"
     networks:
-      - jarvismax-network
+      - beamax-network
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -71,7 +71,7 @@ services:
 
   alertmanager:
     image: prom/alertmanager:latest
-    container_name: jarvismax-alertmanager
+    container_name: beamax-alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -81,7 +81,7 @@ services:
     ports:
       - "9093:9093"
     networks:
-      - jarvismax-network
+      - beamax-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
@@ -95,6 +95,6 @@ volumes:
   alertmanager_data:
 
 networks:
-  jarvismax-network:
-    name: jarvismax-master_jarvismax-network
+  beamax-network:
+    name: beamax-master_beamax-network
     external: true

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mission Runner
+BEA MAX — Mission Runner
 ===============================
 Executes individual mission steps through the existing agent/tool layer.
 

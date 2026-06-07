@@ -29,8 +29,8 @@ sys.path.insert(0, '.')
 # ═══════════════════════════════════════════════════════════════
 
 def test_safety_state_defaults():
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
     from core.safety_controls import get_safety_state
     state = get_safety_state()
     assert state.intelligence_enabled
@@ -39,7 +39,7 @@ def test_safety_state_defaults():
 
 
 def test_safety_kill_all():
-    os.environ["JARVIS_DISABLE_ALL_INTELLIGENCE"] = "1"
+    os.environ["BEA_DISABLE_ALL_INTELLIGENCE"] = "1"
     try:
         from core.safety_controls import get_safety_state, is_intelligence_enabled, is_proposals_enabled
         state = get_safety_state()
@@ -47,25 +47,25 @@ def test_safety_kill_all():
         assert not is_intelligence_enabled()
         assert not is_proposals_enabled()  # disabled by parent
     finally:
-        os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+        os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
 
 
 def test_safety_disable_proposals():
-    os.environ["JARVIS_DISABLE_PROPOSALS"] = "1"
+    os.environ["BEA_DISABLE_PROPOSALS"] = "1"
     try:
         from core.safety_controls import is_proposals_enabled
         assert not is_proposals_enabled()
     finally:
-        os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
+        os.environ.pop("BEA_DISABLE_PROPOSALS", None)
 
 
 def test_safety_disable_execution_engine():
-    os.environ["JARVIS_DISABLE_EXECUTION_ENGINE"] = "1"
+    os.environ["BEA_DISABLE_EXECUTION_ENGINE"] = "1"
     try:
         from core.safety_controls import is_execution_engine_enabled
         assert not is_execution_engine_enabled()
     finally:
-        os.environ.pop("JARVIS_DISABLE_EXECUTION_ENGINE", None)
+        os.environ.pop("BEA_DISABLE_EXECUTION_ENGINE", None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -292,18 +292,18 @@ def test_no_circular_fallback():
 # ═══════════════════════════════════════════════════════════════
 
 def test_detector_respects_safety_kill():
-    os.environ["JARVIS_DISABLE_PROPOSALS"] = "1"
+    os.environ["BEA_DISABLE_PROPOSALS"] = "1"
     try:
         from core.improvement_detector import detect_improvements
         result = detect_improvements(dry_run=True)
         assert result == []
     finally:
-        os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
+        os.environ.pop("BEA_DISABLE_PROPOSALS", None)
 
 
 def test_detector_works_when_enabled():
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
     from core.improvement_detector import detect_improvements
     result = detect_improvements(dry_run=True)
     assert isinstance(result, list)

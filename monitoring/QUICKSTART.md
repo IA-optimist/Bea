@@ -1,4 +1,4 @@
-# 🚀 Quick Start - Monitoring Stack JarvisMax
+# 🚀 Quick Start - Monitoring Stack BeaMax
 
 ## Accès Immédiat
 
@@ -22,18 +22,18 @@
 
 Une fois connecté à Grafana, vous trouverez 3 dashboards pré-configurés:
 
-1. **JarvisMax - System Monitoring** (UID: `jarvismax-system`)
+1. **BeaMax - System Monitoring** (UID: `beamax-system`)
    - Métriques système: CPU, RAM, Disque, Network
    - État des conteneurs Docker
    - Load average
 
-2. **JarvisMax - API Monitoring** (UID: `jarvismax-api`)
+2. **BeaMax - API Monitoring** (UID: `beamax-api`)
    - Request Rate & Response Time
    - Error Rate & Success Rate
    - Top Endpoints & Slowest Endpoints
    - API Health Status
 
-3. **JarvisMax - Business Metrics** (UID: `jarvismax-business`)
+3. **BeaMax - Business Metrics** (UID: `beamax-business`)
    - Business Tasks & Success Rate
    - Agent Executions
    - Revenue & Cost Tracking
@@ -52,7 +52,7 @@ firefox http://MONITORING_HOST:3002
 ### 2. Navigation
 - Cliquer sur l'icône "☰" (menu hamburger) en haut à gauche
 - Sélectionner "Dashboards"
-- Ouvrir le dossier "JarvisMax"
+- Ouvrir le dossier "BeaMax"
 - Cliquer sur un dashboard
 
 ### 3. Vérifier les Métriques
@@ -81,14 +81,14 @@ curl https://api.telegram.org/bot<VOTRE_TOKEN>/getUpdates
 
 ### 3. Configurer dans .env
 ```bash
-# Ajouter dans /root/Jarvismax-master/.env
-echo "TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz" >> /root/Jarvismax-master/.env
-echo "TELEGRAM_CHAT_ID=123456789" >> /root/Jarvismax-master/.env
+# Ajouter dans /root/Beamax-master/.env
+echo "TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz" >> /root/Beamax-master/.env
+echo "TELEGRAM_CHAT_ID=123456789" >> /root/Beamax-master/.env
 ```
 
 ### 4. Redémarrer l'API
 ```bash
-cd /root/Jarvismax-master
+cd /root/Beamax-master
 docker compose restart api
 ```
 
@@ -96,7 +96,7 @@ docker compose restart api
 
 ### Statut des services
 ```bash
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 docker compose -f docker-compose-monitoring.yml ps
 ```
 
@@ -162,7 +162,7 @@ rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 1
 
 - [ ] Grafana accessible sur http://MONITORING_HOST:3002
 - [ ] Login avec admin / ${GRAFANA_ADMIN_PASSWORD} réussi
-- [ ] 3 dashboards visibles dans le dossier JarvisMax
+- [ ] 3 dashboards visibles dans le dossier BeaMax
 - [ ] Dashboard System affiche des métriques CPU/RAM
 - [ ] Dashboard API affiche request rate > 0
 - [ ] Prometheus targets "UP" sur http://MONITORING_HOST:9090/targets
@@ -172,8 +172,8 @@ rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 1
 
 ### Grafana ne charge pas
 ```bash
-docker logs jarvismax-grafana --tail 50
-docker restart jarvismax-grafana
+docker logs beamax-grafana --tail 50
+docker restart beamax-grafana
 ```
 
 ### Pas de métriques API

@@ -14,7 +14,7 @@ from __future__ import annotations
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-logger = structlog.get_logger("jarvis.api.models")
+logger = structlog.get_logger("bea.api.models")
 log = logger  # M3 emitter alias
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.

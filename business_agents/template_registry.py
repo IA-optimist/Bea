@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Template Registry
+BEA MAX — Template Registry
 ================================
 Central registry for all business agent templates.
 Supports loading from Python modules and future YAML/JSON files.

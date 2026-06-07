@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Learning Loop v1
+BEA MAX — Learning Loop v1
 Boucle d'apprentissage réel : observe les sorties agents → extrait → valide → stocke.
 
 Flux :
@@ -171,7 +171,7 @@ class LearningLoop:
 
     def observe_session(self, session: Any) -> list[LearningReport]:
         """
-        Observe toutes les sorties d'une session JarvisSession complète.
+        Observe toutes les sorties d'une session BeaSession complète.
         Retourne un rapport par agent.
         """
         reports = []

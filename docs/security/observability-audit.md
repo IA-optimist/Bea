@@ -22,10 +22,10 @@ PR is one grep away.
 
 | Module | Metric (exported name) | Type | Labels |
 |---|---|---|---|
-| `core/profiling.py` | `jarvis_profile_duration_seconds` | Histogram | `span`, `status` |
-| `api/jwt_v2.py` | `jarvis_jwt_v2_pairs_issued_total` | Counter | `origin` (login / rotation) |
-| `api/jwt_v2.py` | `jarvis_jwt_v2_rotations_total` | Counter | `outcome` (ok / replay / unknown) |
-| `api/jwt_v2.py` | `jarvis_jwt_v2_revocations_total` | Counter | `kind` (access / refresh / family) |
+| `core/profiling.py` | `bea_profile_duration_seconds` | Histogram | `span`, `status` |
+| `api/jwt_v2.py` | `bea_jwt_v2_pairs_issued_total` | Counter | `origin` (login / rotation) |
+| `api/jwt_v2.py` | `bea_jwt_v2_rotations_total` | Counter | `outcome` (ok / replay / unknown) |
+| `api/jwt_v2.py` | `bea_jwt_v2_revocations_total` | Counter | `kind` (access / refresh / family) |
 | `business/business_engine.py` | `business_opportunity_scans_total` | Counter | — |
 | `business/business_engine.py` | `business_opportunities_found` | Gauge | — |
 | `business/business_engine.py` | `business_scan_duration_seconds` | Histogram | — |
@@ -37,23 +37,23 @@ PR is one grep away.
 ### Findings
 
 **P1 — Prefix split** (medium). Two prefixes coexist:
-  - `jarvis_*` (4 metrics: profiling + 3 jwt_v2 counters)
+  - `bea_*` (4 metrics: profiling + 3 jwt_v2 counters)
   - `business_*` (7 metrics: all of business_engine)
 
 Prometheus best practice is to use a single service prefix so dashboards
-can `up{job="jarvis"}` and metrics are easy to discover via the registry.
-The `business_*` prefix predates the `jarvis_*` one.
+can `up{job="bea"}` and metrics are easy to discover via the registry.
+The `business_*` prefix predates the `bea_*` one.
 
 **Recommendation:**
-  - Going forward, all new metrics MUST use `jarvis_<subsystem>_<thing>_<unit>`.
-  - Migrate `business_*` to `jarvis_business_*` with dual emission for one
+  - Going forward, all new metrics MUST use `bea_<subsystem>_<thing>_<unit>`.
+  - Migrate `business_*` to `bea_business_*` with dual emission for one
     release cycle:
     ```python
     OPPORTUNITY_SCANS = Counter('business_opportunity_scans_total', ...)
-    OPPORTUNITY_SCANS_NEW = Counter('jarvis_business_opportunity_scans_total', ...)
+    OPPORTUNITY_SCANS_NEW = Counter('bea_business_opportunity_scans_total', ...)
     # increment both in the same call site; remove the old name after dashboards swap
     ```
-  - Add a CI test asserting every new Counter starts with `jarvis_` and
+  - Add a CI test asserting every new Counter starts with `bea_` and
     ends with `_total`. (Skeleton: see `tests/test_jwt_v2_metrics.py::test_metric_names_follow_convention`.)
 
 **P2 — Counter `_total` convention** (good). All 7 Counters use the
@@ -114,7 +114,7 @@ holdouts. Easy with `git grep -l "error=" -- '*.py' | xargs sed -i`.
 **S2 — `sid` vs `mission_id`** ✅ **closed**. The 9 `sid=` sites (audit
 estimated 12; the real count was 9 after Codex's M1 extractions moved
 some) were migrated to `mission_id=` in:
-  - `core/jarvis_executor.py` (3 sites)
+  - `core/bea_executor.py` (3 sites)
   - `core/policy_engine.py` (1 site)
   - `agents/crew.py` (2 sites)
   - `agents/openhands_agent.py` (1 site)
@@ -164,13 +164,13 @@ without the processor context. Borderline ; leave alone.
 
 | # | Action | Effort | Risk | Reach |
 |---|---|---|---|---|
-| 1 | Add CI metric-naming gate (Counter must `jarvis_*…_total`, Histogram must `*_seconds` or `*_bytes`) | 30 min | None | Locks future naming |
+| 1 | Add CI metric-naming gate (Counter must `bea_*…_total`, Histogram must `*_seconds` or `*_bytes`) | 30 min | None | Locks future naming |
 | 2 | `sid=` → `mission_id=` migration (12 sites) | 30 min | Low | Cleaner log queries |
 | 3 | Document event-name convention in `docs/observability/log-events.md` + soft lint | 1 h | None | Discoverability |
 | 4 | `error=` → `err=` migration (80 sites) | 1 h | Low | Unified payload key |
 | 5 | Rename Gauge `business_opportunities_found` → `business_opportunities_found_count` | 15 min | **Breaks any dashboard using it** — coordinate first | Convention |
 | 6 | Bare `id=` → typed `<thing>_id=` (30 sites) | 2 h | Low ; each site needs context inspection | Loki/Datadog queries |
-| 7 | `business_*` → `jarvis_business_*` with dual emission | 1 day + dashboard swap | **Breaks dashboards/alerts using old names** — needs coordination | Single-prefix story |
+| 7 | `business_*` → `bea_business_*` with dual emission | 1 day + dashboard swap | **Breaks dashboards/alerts using old names** — needs coordination | Single-prefix story |
 
 Items 1–3 are no-coordination wins. Items 4 is a mechanical sed pass.
 Items 5–7 require coordinating with whoever owns the dashboards before
@@ -178,9 +178,9 @@ landing.
 
 ## Already-fixed during the hardening pass
 
-- `jwt_v2.py` metrics follow `jarvis_jwt_v2_*_total` from day one.
+- `jwt_v2.py` metrics follow `bea_jwt_v2_*_total` from day one.
 - `swallowed_exception` events have a uniform `action`/`exc_type`/`exc_msg` shape.
-- `core/profiling.py` already uses `jarvis_profile_duration_seconds`.
+- `core/profiling.py` already uses `bea_profile_duration_seconds`.
 
 ## Re-running this audit
 

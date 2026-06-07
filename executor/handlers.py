@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Handlers d'exécution v2
+BEA MAX — Handlers d'exécution v2
 Séparation des préoccupations : les handlers sont indépendants du moteur.
 
 Chaque handler :
@@ -114,7 +114,7 @@ def handle_review(task: "ExecutionTask") -> str:
 
     # Check SQLite
     try:
-        db_path = Path("workspace/jarvismax.db")
+        db_path = Path("workspace/beamax.db")
         if db_path.exists():
             size_kb = db_path.stat().st_size // 1024
             checks.append(("OK", "SQLite DB", f"{size_kb} Ko"))

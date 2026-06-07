@@ -1,11 +1,11 @@
 """
-jarvis-coder — Implement code changes.
+bea-coder — Implement code changes.
 
 Responsibilities:
-    - Write Python code following JarvisMax conventions
+    - Write Python code following BeaMax conventions
     - Produce clean diffs (minimal, focused changes)
     - Work on a dedicated branch (never on master)
-    - Follow architectural guidance from jarvis-architect
+    - Follow architectural guidance from bea-architect
     - Add docstrings, type hints, and structlog logging
 
 Tool access:
@@ -21,8 +21,8 @@ Does NOT:
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
 PROTECTED_FILES = frozenset({
@@ -36,13 +36,13 @@ PROTECTED_FILES = frozenset({
 })
 
 
-class JarvisCoder(JarvisTeamAgent):
-    name      = "jarvis-coder"
+class BeaCoder(BeaTeamAgent):
+    name      = "bea-coder"
     role      = "builder"
     timeout_s = 240
 
     def system_prompt(self) -> str:
-        return f"""You are jarvis-coder, the implementation agent for JarvisMax.
+        return f"""You are bea-coder, the implementation agent for BeaMax.
 
 Your job: write clean, correct Python code that follows the project's conventions.
 
@@ -56,7 +56,7 @@ Conventions:
 
 Branch discipline:
 - ALWAYS work on a dedicated branch, never on master
-- Branch naming: jarvis/<descriptive-name>
+- Branch naming: bea/<descriptive-name>
 - Commits: concise, imperative mood ("Add X", "Fix Y", not "Added X")
 - One logical change per commit
 
@@ -68,9 +68,9 @@ Output format:
 - Explain what you changed and why
 - Flag any concerns or risks
 
-If the task is unclear, ask jarvis-architect for clarification rather than guessing."""
+If the task is unclear, ask bea-architect for clarification rather than guessing."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
         diff = self.git_diff()

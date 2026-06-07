@@ -10,7 +10,7 @@ import logging
 import time
 from typing import Any, Optional
 
-logger = logging.getLogger("jarvis.agent_runner")
+logger = logging.getLogger("bea.agent_runner")
 
 
 def _normalize_agent_output(raw: Any, agent_name: str) -> Any:

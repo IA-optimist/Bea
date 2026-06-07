@@ -163,8 +163,8 @@ def test_impact_scoring():
 
 
 def test_detector_produces_impact_scores():
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
     from core.improvement_detector import detect_improvements
     from core.tool_performance_tracker import ToolPerformanceTracker, ToolExecution
     import core.tool_performance_tracker as tpt

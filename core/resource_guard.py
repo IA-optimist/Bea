@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ResourceGuard
+BEA MAX — ResourceGuard
 Surveillance et contrôle des ressources système pour éviter les crashs.
 
 Causes du crash incident (2026-03-19) :
@@ -17,7 +17,7 @@ Architecture :
     └── _monitor_loop()        → monitoring continu (thread daemon)
 
 Modes :
-    NORMAL  : comportement standard selon JARVIS_MODE
+    NORMAL  : comportement standard selon BEA_MODE
     SAFE    : forcé si RAM < SAFE_RAM_MB ou agents > MAX_SAFE_AGENTS
     BLOCKED : refus total si RAM < HARD_LIMIT_MB
 
@@ -143,14 +143,14 @@ class ResourceGuard:
         self._active = 0
         self._lock   = threading.Lock()
         self._status = SystemStatus.UNKNOWN
-        self._forced_safe = False  # forcé manuellement via .env JARVIS_SAFE_MODE
+        self._forced_safe = False  # forcé manuellement via .env BEA_SAFE_MODE
         self._last_snapshot: Optional[ResourceSnapshot] = None
 
-        # Lire JARVIS_SAFE_MODE
+        # Lire BEA_SAFE_MODE
         import os
-        if os.environ.get("JARVIS_SAFE_MODE", "").lower() in ("1", "true", "yes"):
+        if os.environ.get("BEA_SAFE_MODE", "").lower() in ("1", "true", "yes"):
             self._forced_safe = True
-            log.warning("resource_guard_safe_mode_forced", reason="JARVIS_SAFE_MODE=true")
+            log.warning("resource_guard_safe_mode_forced", reason="BEA_SAFE_MODE=true")
 
         # Démarrer le thread de monitoring
         self._running = True
@@ -163,7 +163,7 @@ class ResourceGuard:
 
         log.info(
             "resource_guard_started",
-            mode=getattr(settings, "jarvis_mode", "local"),
+            mode=getattr(settings, "bea_mode", "local"),
             max_agents=self._profile.max_agents,
             soft_ram_mb=self._profile.soft_ram_mb,
             safe_ram_mb=self._profile.safe_ram_mb,
@@ -173,12 +173,12 @@ class ResourceGuard:
     @staticmethod
     def _load_profile(settings) -> ResourceProfile:
         """
-        Charge le profil selon JARVIS_MODE avec overrides depuis les settings.
+        Charge le profil selon BEA_MODE avec overrides depuis les settings.
         Ordre de priorité : overrides .env > profil du mode (local|vps).
         """
         if settings is None:
             return LOCAL_PROFILE
-        mode = getattr(settings, "jarvis_mode", "local").lower()
+        mode = getattr(settings, "bea_mode", "local").lower()
         base = VPS_PROFILE if mode == "vps" else LOCAL_PROFILE
 
         # Appliquer les overrides si définis (valeur > 0)

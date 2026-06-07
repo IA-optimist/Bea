@@ -1,15 +1,15 @@
 # ================================================================
-# JARVIS MAX — Minimal test stack (E2E proof path)
+# BEA MAX — Minimal test stack (E2E proof path)
 #
-# Services: Qdrant + Jarvis API only.
+# Services: Qdrant + Bea API only.
 # No Postgres, Redis, Ollama, n8n, Caddy, Langfuse.
 #
 # PROVEN PATH (Anthropic — recommended):
 #   export ANTHROPIC_API_KEY=sk-ant-...
-#   export JARVIS_ADMIN_PASSWORD=<password>
-#   export JARVIS_SECRET_KEY=$(openssl rand -hex 32)
+#   export BEA_ADMIN_PASSWORD=<password>
+#   export BEA_SECRET_KEY=$(openssl rand -hex 32)
 #   docker compose -f docker-compose.test.yml up --build
-#   JARVIS_ADMIN_PASSWORD=<password> bash scripts/verify_boot.sh
+#   BEA_ADMIN_PASSWORD=<password> bash scripts/verify_boot.sh
 #
 # OpenRouter path (proven 2026-04-01):
 #   pip install langchain-openai
@@ -23,19 +23,19 @@
 # ================================================================
 
 networks:
-  jarvis_test_net:
+  bea_test_net:
     driver: bridge
 
 volumes:
   qdrant_test_data:
-  jarvis_workspace_data:    # persistent workspace — canonical missions, jarvismax.db
+  bea_workspace_data:    # persistent workspace — canonical missions, beamax.db
 
 services:
 
   # ── Qdrant (vector memory — required at runtime) ──────────
   qdrant:
     image: qdrant/qdrant:v1.9.7
-    container_name: jarvis_test_qdrant
+    container_name: bea_test_qdrant
     restart: "no"
     environment:
       QDRANT__LOG_LEVEL: WARN
@@ -43,7 +43,7 @@ services:
       - qdrant_test_data:/qdrant/storage
     ports:
       - "6333:6333"
-    networks: [jarvis_test_net]
+    networks: [bea_test_net]
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6333 && echo ok' 2>/dev/null || exit 1"]
       interval: 5s
@@ -51,12 +51,12 @@ services:
       retries: 12
       start_period: 10s
 
-  # ── Jarvis Core API ───────────────────────────────────────
-  jarvis:
+  # ── Bea Core API ───────────────────────────────────────
+  bea:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: jarvis_test_core
+    container_name: bea_test_core
     restart: "no"
     environment:
       # ── LLM — at least one key required ──────────────────
@@ -70,12 +70,12 @@ services:
       MODEL_STRATEGY:       ${MODEL_STRATEGY:-anthropic}
       MODEL_FALLBACK:       ${MODEL_FALLBACK:-anthropic}
       ANTHROPIC_MODEL:      ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
-      JARVIS_ADMIN_PASSWORD: ${JARVIS_ADMIN_PASSWORD:-admin}
+      BEA_ADMIN_PASSWORD: ${BEA_ADMIN_PASSWORD:-admin}
 
       # ── Core settings ─────────────────────────────────────
-      JARVIS_SECRET_KEY:    ${JARVIS_SECRET_KEY:-test-secret-key-not-for-production}
-      JARVIS_NAME:          JarvisMax-Test
-      JARVIS_MODE:          local
+      BEA_SECRET_KEY:    ${BEA_SECRET_KEY:-test-secret-key-not-for-production}
+      BEA_NAME:          BeaMax-Test
+      BEA_MODE:          local
 
       # ── Service endpoints ─────────────────────────────────
       QDRANT_HOST:          qdrant
@@ -92,9 +92,9 @@ services:
       # ── Dirs ──────────────────────────────────────────────
       WORKSPACE_DIR:        /app/workspace
       LOGS_DIR:             /app/logs
-      JARVIS_ROOT:          /app
+      BEA_ROOT:          /app
     volumes:
-      - jarvis_workspace_data:/app/workspace   # persists canonical_missions.db, jarvismax.db
+      - bea_workspace_data:/app/workspace   # persists canonical_missions.db, beamax.db
     extra_hosts:
       # api.openrouter.ai has no DNS A record in some resolvers — pin to Cloudflare IPs
       # that serve openrouter.ai (verified: curl --resolve returns HTTP 200)
@@ -102,7 +102,7 @@ services:
       - "api.openrouter.ai:104.18.2.115"
     ports:
       - "8000:8000"
-    networks: [jarvis_test_net]
+    networks: [bea_test_net]
     depends_on:
       qdrant:
         condition: service_healthy

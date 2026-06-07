@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Actions
+BEA MAX — Browser Actions
 ================================
 Structured browser action execution with policy enforcement.
 

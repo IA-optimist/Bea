@@ -88,7 +88,7 @@ def test_intelligence_hooks_fail_open():
     sys.path.insert(0, '.')
 
     # Hooks disabled — must return empty/gracefully
-    os.environ.pop("JARVIS_INTELLIGENCE_HOOKS", None)
+    os.environ.pop("BEA_INTELLIGENCE_HOOKS", None)
     from core.intelligence_hooks import (
         post_mission_submit, post_step_complete,
         post_mission_complete, periodic_health,
@@ -114,14 +114,14 @@ def test_intelligence_hooks_enabled():
         sys.modules['structlog'] = sl
     sys.path.insert(0, '.')
 
-    os.environ["JARVIS_INTELLIGENCE_HOOKS"] = "1"
+    os.environ["BEA_INTELLIGENCE_HOOKS"] = "1"
     try:
         from core.intelligence_hooks import periodic_health
         health = periodic_health()
         assert health["hooks_enabled"] is True
         assert "components" in health
     finally:
-        os.environ.pop("JARVIS_INTELLIGENCE_HOOKS", None)
+        os.environ.pop("BEA_INTELLIGENCE_HOOKS", None)
 
 
 def test_authority_map_structure():

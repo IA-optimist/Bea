@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# JARVIS MAX — Vérification pré-déploiement v2
-# Usage : bash scripts/deploy_check.sh [--from-dir /chemin/vers/jarvismax]
+# BEA MAX — Vérification pré-déploiement v2
+# Usage : bash scripts/deploy_check.sh [--from-dir /chemin/vers/beamax]
 # Ce script VÉRIFIE seulement. Il ne démarre rien.
 
 set -euo pipefail
@@ -13,7 +13,7 @@ warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; }
 info()  { echo -e "${BLUE}[i]${NC} $1"; }
 
-echo -e "\n${BOLD}  🤖 JARVIS MAX — Vérification pré-déploiement${NC}\n"
+echo -e "\n${BOLD}  🤖 BEA MAX — Vérification pré-déploiement${NC}\n"
 
 # ── Localiser la racine du projet ──────────────────────────────
 # Fonctionner depuis n'importe quel dossier courant
@@ -70,7 +70,7 @@ else
     TG_UID="$(_get_env TELEGRAM_ALLOWED_USER_ID)"
     PG_PASS="$(_get_env POSTGRES_PASSWORD)"
     REDIS_PASS="$(_get_env REDIS_PASSWORD)"
-    SECRET_KEY="$(_get_env JARVIS_SECRET_KEY)"
+    SECRET_KEY="$(_get_env BEA_SECRET_KEY)"
     OPENAI_KEY="$(_get_env OPENAI_API_KEY)"
     MODEL_STRAT="$(_get_env MODEL_STRATEGY)"
 
@@ -89,11 +89,11 @@ else
     check_var "REDIS_PASSWORD"          "${REDIS_PASS}"
 
     if [ -z "${SECRET_KEY}" ] || echo "${SECRET_KEY}" | grep -qiE "CHANGE_ME"; then
-        error "JARVIS_SECRET_KEY non configuré"; ((ERRORS++))
+        error "BEA_SECRET_KEY non configuré"; ((ERRORS++))
     elif [ "${#SECRET_KEY}" -lt 16 ]; then
-        error "JARVIS_SECRET_KEY trop court (${#SECRET_KEY} chars < 16)"; ((ERRORS++))
+        error "BEA_SECRET_KEY trop court (${#SECRET_KEY} chars < 16)"; ((ERRORS++))
     else
-        ok "JARVIS_SECRET_KEY configuré (${#SECRET_KEY} chars)"
+        ok "BEA_SECRET_KEY configuré (${#SECRET_KEY} chars)"
     fi
 
     if [ -z "${OPENAI_KEY}" ]; then
@@ -164,7 +164,7 @@ if [ "${ERRORS}" -eq 0 ]; then
     echo -e "${GREEN}${BOLD}  ✅ Prêt pour le déploiement${NC}"
     echo ""
     echo "  Commandes :"
-    echo "    docker compose build jarvis"
+    echo "    docker compose build bea"
     echo "    docker compose up -d"
     echo "    bash scripts/pull_models.sh   # première installation"
 else

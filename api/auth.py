@@ -1,9 +1,9 @@
 """
-JARVIS MAX — Auth helpers (JWT + Access Token system).
+BEA MAX — Auth helpers (JWT + Access Token system).
 
 Two auth paths:
-1. Admin login: username=admin, password=JARVIS_ADMIN_PASSWORD → JWT
-   (legacy fallback to JARVIS_SECRET_KEY in dev only)
+1. Admin login: username=admin, password=BEA_ADMIN_PASSWORD → JWT
+   (legacy fallback to BEA_SECRET_KEY in dev only)
 2. Access token: jv-xxx bearer token → validated against TokenManager
 
 Both produce authorized access. Access tokens have role-based permissions.
@@ -28,7 +28,7 @@ except ImportError:
 
 def _secret() -> str:
     from config.settings import get_settings
-    return get_settings().jarvis_secret_key
+    return get_settings().bea_secret_key
 
 
 def _require_jwt():
@@ -53,13 +53,13 @@ _ADMIN_PW_MISSING_LOGGED = False
 def _get_admin_password() -> str:
     """Return the configured admin password, or raise if unset.
 
-    The legacy fallback to JARVIS_SECRET_KEY was removed so a missing
-    JARVIS_ADMIN_PASSWORD no longer silently elevates the JWT signing
+    The legacy fallback to BEA_SECRET_KEY was removed so a missing
+    BEA_ADMIN_PASSWORD no longer silently elevates the JWT signing
     key into an admin credential.
     """
-    admin_pw = os.environ.get("JARVIS_ADMIN_PASSWORD", "")
+    admin_pw = os.environ.get("BEA_ADMIN_PASSWORD", "")
     if not admin_pw:
-        raise RuntimeError("JARVIS_ADMIN_PASSWORD is not set — admin login is disabled.")
+        raise RuntimeError("BEA_ADMIN_PASSWORD is not set — admin login is disabled.")
     return admin_pw
 
 
@@ -78,7 +78,7 @@ def authenticate_user(username: str, password: str) -> Optional[dict]:
     except RuntimeError:
         if not _ADMIN_PW_MISSING_LOGGED:
             logger.warning(
-                "Admin login attempted but JARVIS_ADMIN_PASSWORD is not set — refusing."
+                "Admin login attempted but BEA_ADMIN_PASSWORD is not set — refusing."
             )
             _ADMIN_PW_MISSING_LOGGED = True
         # Still burn time on a dummy compare to avoid leaking the config state via timing
@@ -143,10 +143,10 @@ def verify_token(token_str: str) -> Optional[dict]:
                 }
         except Exception as _exc:
             log.warning("swallowed_exception", action="auth_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        # Fallback: static JARVIS_API_TOKEN (also starts with jv-)
+        # Fallback: static BEA_API_TOKEN (also starts with jv-)
         import os as _os
         import hmac as _hmac
-        _static = _os.environ.get('JARVIS_API_TOKEN', '')
+        _static = _os.environ.get('BEA_API_TOKEN', '')
         if _static and _hmac.compare_digest(token_str.encode(), _static.encode()):
             return {'username': 'api', 'role': 'admin', 'auth_type': 'static'}
         return None
@@ -179,7 +179,7 @@ def verify_token(token_str: str) -> Optional[dict]:
     # Path 3: Static API token fallback
     from config.settings import get_settings
     settings = get_settings()
-    configured_static = getattr(settings, 'jarvis_api_token', '') or ''
+    configured_static = getattr(settings, 'bea_api_token', '') or ''
     if configured_static and hmac.compare_digest(token_str.encode(), configured_static.encode()):
         return {"username": "api", "role": "admin", "auth_type": "static"}
 

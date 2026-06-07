@@ -1,4 +1,4 @@
-# Audit & Roadmap d'amélioration — Jarvis Max
+# Audit & Roadmap d'amélioration — Bea Max
 
 _Date : 2026-06-01 · Branche : `hardening/critical-fixes`_
 

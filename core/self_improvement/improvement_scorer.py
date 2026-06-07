@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 from typing import List, Tuple
 
-logger = logging.getLogger("jarvis.self_improvement.improvement_scorer")
+logger = logging.getLogger("bea.self_improvement.improvement_scorer")
 
 _RISK_PENALTIES = {"LOW": 0.0, "MEDIUM": 0.2, "HIGH": 0.5}
 

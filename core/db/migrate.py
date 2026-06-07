@@ -1,5 +1,5 @@
 """
-JarvisMax - Database Migration Runner
+BeaMax - Database Migration Runner
 Auto-detect and apply pending migrations with transaction safety.
 
 Features:
@@ -33,8 +33,8 @@ def _get_db_connection():
         
         conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST", "postgres"),
-            database=os.getenv("POSTGRES_DB", "jarvis"),
-            user=os.getenv("POSTGRES_USER", "jarvis"),
+            database=os.getenv("POSTGRES_DB", "bea"),
+            user=os.getenv("POSTGRES_USER", "bea"),
             password=os.getenv("POSTGRES_PASSWORD", "")
         )
         return conn

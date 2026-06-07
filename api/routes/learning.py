@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Learning API Routes
+BEA MAX — Learning API Routes
 Exposes LearningLoop and ImprovementMemory data over HTTP.
 
 Routes:
@@ -19,21 +19,21 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/learning", tags=["learning"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = __import__("os").getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = __import__("os").getenv("BEA_API_TOKEN", "")
 
 
 # ── Weekly report ─────────────────────────────────────────────
 
 @router.get("/report")
-async def weekly_report(x_jarvis_token: Optional[str] = Header(None)):
+async def weekly_report(x_bea_token: Optional[str] = Header(None)):
     """
     Full learning report: per-agent avg scores, improvement rates,
     top recurring issues, cross-agent patterns, and escalation list.
@@ -52,7 +52,7 @@ async def weekly_report(x_jarvis_token: Optional[str] = Header(None)):
 @router.get("/agents/{agent_name}/stats")
 async def agent_stats(
     agent_name:     str,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """
     Improvement statistics for a single agent:
@@ -80,7 +80,7 @@ async def agent_stats(
 async def agent_feedback(
     agent_name:     str,
     limit:          int            = Query(5, ge=1, le=20),
-    x_jarvis_token: Optional[str]  = Header(None),
+    x_bea_token: Optional[str]  = Header(None),
 ):
     """
     Top improvement feedback entries for an agent, sorted by score delta desc.
@@ -109,7 +109,7 @@ async def agent_feedback(
 @router.get("/global_lessons")
 async def global_lessons(
     limit:          int           = Query(10, ge=1, le=50),
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """
     Cross-agent failure patterns: most common recurring issue keywords

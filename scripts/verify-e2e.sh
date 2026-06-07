@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🧪 Vérification E2E JarvisMax"
+echo "🧪 Vérification E2E BeaMax"
 echo "=============================="
 echo ""
 

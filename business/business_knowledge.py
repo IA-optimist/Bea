@@ -1,8 +1,8 @@
 """
-JARVIS MAX — Business Knowledge Base v1
+BEA MAX — Business Knowledge Base v1
 Base de connaissances business contrôlée.
 
-Jarvis apprend progressivement :
+Bea apprend progressivement :
 - ce qui rend une idée vendable
 - ce qui rend un business récurrent
 - ce qui rend un SaaS simple à lancer
@@ -413,7 +413,7 @@ class BusinessKnowledge:
         if not signals:
             return ""
 
-        lines = ["## Connaissances business validées (JarvisMax)"]
+        lines = ["## Connaissances business validées (BeaMax)"]
         for s in signals:
             icon = "✅" if s.is_positive() else "⚠️"
             lines.append(f"{icon} [{s.category}] {s.description}")

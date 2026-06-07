@@ -1,3 +1,3 @@
 """
-JARVIS MAX — Control API package.
+BEA MAX — Control API package.
 """

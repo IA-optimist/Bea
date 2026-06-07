@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Task Queue v2
+BEA MAX — Task Queue v2
 File de tâches async avec priorité, états et persistence légère.
 
 Caractéristiques :

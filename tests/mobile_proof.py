@@ -17,9 +17,9 @@ def test(name, passed, detail=""):
 print("═══ MOBILE PROOF MATRIX ═══\n")
 
 # ── Read Flutter code ──────────────────────────────────────────────────
-ws_path = "jarvismax_app/lib/services/websocket_service.dart"
-api_path = "jarvismax_app/lib/services/api_service.dart"
-main_path = "jarvismax_app/lib/main.dart"
+ws_path = "beamax_app/lib/services/websocket_service.dart"
+api_path = "beamax_app/lib/services/api_service.dart"
+main_path = "beamax_app/lib/main.dart"
 
 with open(ws_path, encoding="utf-8") as f:
     ws_code = f.read()
@@ -32,10 +32,10 @@ with open(main_path, encoding="utf-8") as f:
 print("━━━ M1: LOGIN WORKS ━━━")
 import httpx
 BASE = "http://localhost:8000"
-TOKEN = os.environ.get("JARVIS_API_TOKEN", "")
+TOKEN = os.environ.get("BEA_API_TOKEN", "")
 
 # Test actual login endpoint
-resp = httpx.post(f"{BASE}/auth/token", data={"username": "admin", "password": os.environ.get("JARVIS_SECRET_KEY", "")}, timeout=5)
+resp = httpx.post(f"{BASE}/auth/token", data={"username": "admin", "password": os.environ.get("BEA_SECRET_KEY", "")}, timeout=5)
 test("POST /auth/token returns 200", resp.status_code == 200, f"status={resp.status_code}")
 if resp.status_code == 200:
     data = resp.json()
@@ -61,8 +61,8 @@ test("Uses FlutterSecureStorage", has_secure_storage)
 has_save_jwt = "saveJwt" in api_code
 test("saveJwt() method exists", has_save_jwt)
 
-has_jwt_key = "jarvis_jwt_token" in api_code
-test("JWT stored with key 'jarvis_jwt_token'", has_jwt_key)
+has_jwt_key = "bea_jwt_token" in api_code
+test("JWT stored with key 'bea_jwt_token'", has_jwt_key)
 print()
 
 # ── M3: App restart restores auth ─────────────────────────────────────
@@ -265,7 +265,7 @@ has_notify = "notifyListeners()" in ws_code
 test("notifyListeners on state change", has_notify)
 
 # Check mission_screen uses state
-mission_screen_path = "jarvismax_app/lib/screens/mission_screen.dart"
+mission_screen_path = "beamax_app/lib/screens/mission_screen.dart"
 if os.path.exists(mission_screen_path):
     with open(mission_screen_path, encoding="utf-8") as f:
         ms_code = f.read()

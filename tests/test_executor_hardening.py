@@ -76,11 +76,11 @@ def test_err_default_class():
     assert r["error_class"] == "TOOL_ERROR"
     assert r["ok"] is False
 
-# ── Test 3: JarvisExecutionError integration ──────────────────────────────
+# ── Test 3: BeaExecutionError integration ──────────────────────────────
 
-def test_jarvis_execution_error_from_exception():
-    """JarvisExecutionError.from_exception must return all canonical types."""
-    from core.resilience import JarvisExecutionError
+def test_bea_execution_error_from_exception():
+    """BeaExecutionError.from_exception must return all canonical types."""
+    from core.resilience import BeaExecutionError
     CANONICAL = {"TRANSIENT", "USER_INPUT", "TOOL_ERROR", "POLICY_BLOCKED", "TIMEOUT", "SYSTEM_ERROR"}
     
     tests = [
@@ -92,24 +92,24 @@ def test_jarvis_execution_error_from_exception():
         (RuntimeError("x"), "TOOL_ERROR"),
     ]
     for exc, expected in tests:
-        result = JarvisExecutionError.from_exception(exc)
+        result = BeaExecutionError.from_exception(exc)
         assert result.error_type == expected, f"{exc!r} → {result.error_type}, expected {expected}"
         assert result.error_type in CANONICAL
 
-def test_jarvis_execution_error_retryable():
+def test_bea_execution_error_retryable():
     """Only TRANSIENT and TIMEOUT should be retryable."""
-    from core.resilience import JarvisExecutionError
+    from core.resilience import BeaExecutionError
     
-    transient = JarvisExecutionError.from_exception(ConnectionError("x"))
+    transient = BeaExecutionError.from_exception(ConnectionError("x"))
     assert transient.retryable is True
     
-    timeout = JarvisExecutionError.from_exception(TimeoutError("x"))
+    timeout = BeaExecutionError.from_exception(TimeoutError("x"))
     assert timeout.retryable is True
     
-    user = JarvisExecutionError.from_exception(ValueError("x"))
+    user = BeaExecutionError.from_exception(ValueError("x"))
     assert user.retryable is False
     
-    policy = JarvisExecutionError.from_exception(PermissionError("x"))
+    policy = BeaExecutionError.from_exception(PermissionError("x"))
     assert policy.retryable is False
 
 # ── Test 4: No silent except blocks audit ─────────────────────────────────

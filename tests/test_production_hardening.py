@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Production Hardening Test Suite
+BEA MAX — Production Hardening Test Suite
 =============================================
 
 Regression and new-coverage tests for all changes made during the

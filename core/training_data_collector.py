@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Training Data Collector
+BEA MAX — Training Data Collector
 =====================================
 Collects training examples from successful missions to build a fine-tuning dataset.
 

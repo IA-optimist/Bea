@@ -94,7 +94,7 @@ Schemas (schemas.py)
 
 ```bash
 # Find which memory files are imported in production
-cd ~/Jarvismax-master
+cd ~/Beamax-master
 for f in memory/*.py; do
     base=$(basename $f .py)
     echo "=== $base ==="
@@ -181,7 +181,7 @@ Expected results:
 
 1. **Import audit script** (10 min):
    ```bash
-   cd ~/Jarvismax-master
+   cd ~/Beamax-master
    for f in memory/*.py; do
        base=$(basename $f .py)
        count=$(grep -r "from memory.$base\|import $base" core/ --include="*.py" 2>/dev/null | wc -l)

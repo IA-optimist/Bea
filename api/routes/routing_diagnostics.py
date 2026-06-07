@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Routing Diagnostics API
+BEA MAX — Routing Diagnostics API
 
 Exposes routing policy state and recent decisions for debugging.
 """

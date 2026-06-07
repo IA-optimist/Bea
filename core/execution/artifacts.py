@@ -1,7 +1,7 @@
 """
 core/execution/artifacts.py — Canonical artifact types for real-world outputs.
 
-An artifact is a concrete, deployable output produced by Jarvis from
+An artifact is a concrete, deployable output produced by Bea from
 structured cognition. Artifacts bridge the gap between reasoning
 (OpportunityReport, VenturePlan) and real-world deliverables
 (landing pages, APIs, automation workflows).
@@ -22,7 +22,7 @@ from enum import Enum
 
 
 class ArtifactType(str, Enum):
-    """Canonical artifact types producible by Jarvis."""
+    """Canonical artifact types producible by Bea."""
     LANDING_PAGE = "landing_page"
     AUTOMATION_WORKFLOW = "automation_workflow"
     API_SERVICE = "api_service"

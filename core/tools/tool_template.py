@@ -1,10 +1,10 @@
 """
 core/tools/tool_template.py — Standardized tool interface template.
 
-Every new Jarvis tool MUST follow this pattern:
+Every new Bea tool MUST follow this pattern:
 1. Implement execute() → dict with ok/result/error
 2. Register a Capability schema
-3. Use JarvisError for error handling
+3. Use BeaError for error handling
 4. Support timeout_guard
 5. Support idempotency_key
 6. Integrate with PolicyEngine via capability risk level
@@ -18,7 +18,7 @@ import structlog
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 
-log = structlog.get_logger("jarvis.tools")
+log = structlog.get_logger("bea.tools")
 
 
 @dataclass
@@ -38,7 +38,7 @@ class ToolResult:
 
 class BaseTool(ABC):
     """
-    Base class for all Jarvis tools.
+    Base class for all Bea tools.
 
     Subclasses must implement:
     - name: tool identifier
@@ -62,7 +62,7 @@ class BaseTool(ABC):
 
         # Timeout guard
         try:
-            from core.resilience import timeout_guard, idempotency_key, JarvisError  # noqa: F401
+            from core.resilience import timeout_guard, idempotency_key, BeaError  # noqa: F401
         except ImportError:
             def idempotency_key(*a):
                 return ""
@@ -81,7 +81,7 @@ class BaseTool(ABC):
         except Exception as exc:
             duration = (time.perf_counter() - start) * 1000
             try:
-                err = JarvisError.from_exception(exc, component="tool")
+                err = BeaError.from_exception(exc, component="tool")
                 return ToolResult(
                     ok=False,
                     error=f"{err.code}: {err.message}",

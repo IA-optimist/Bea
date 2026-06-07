@@ -1,11 +1,11 @@
 """
-core/profiling.py — Lightweight profiling instrumentation for JarvisMax.
+core/profiling.py — Lightweight profiling instrumentation for BeaMax.
 
 Goals :
 - Tag critical paths with minimal overhead (single perf_counter() per call)
 - Emit metrics via Prometheus (if prometheus_client available) AND structlog
 - Context manager + decorator APIs
-- Zero runtime cost when disabled (env var JARVIS_PROFILING=0)
+- Zero runtime cost when disabled (env var BEA_PROFILING=0)
 
 Usage :
     from core.profiling import profile_span, profile_fn
@@ -20,7 +20,7 @@ Usage :
         ...
 
 Observability :
-    - Histogram `jarvis_profile_duration_seconds{span=...}` (Prometheus)
+    - Histogram `bea_profile_duration_seconds{span=...}` (Prometheus)
     - structlog "profile.span" event with name, duration_ms, status
 """
 from __future__ import annotations
@@ -37,8 +37,8 @@ import structlog
 log = structlog.get_logger(__name__)
 
 # ── Config ───────────────────────────────────────────────────
-_ENABLED = os.getenv("JARVIS_PROFILING", "1") != "0"
-_SLOW_THRESHOLD_MS = float(os.getenv("JARVIS_PROFILE_SLOW_MS", "500"))
+_ENABLED = os.getenv("BEA_PROFILING", "1") != "0"
+_SLOW_THRESHOLD_MS = float(os.getenv("BEA_PROFILE_SLOW_MS", "500"))
 
 # ── Prometheus histogram (lazy init) ─────────────────────────
 _histogram = None
@@ -54,7 +54,7 @@ def _get_histogram():
     try:
         from prometheus_client import Histogram
         _histogram = Histogram(
-            "jarvis_profile_duration_seconds",
+            "bea_profile_duration_seconds",
             "Duration of profiled spans, by name",
             ["span", "status"],
             buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0),

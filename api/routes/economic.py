@@ -18,7 +18,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-logger = logging.getLogger("jarvis.api.economic")
+logger = logging.getLogger("bea.api.economic")
 
 # Fail-hard on auth import: silent fail-open to no-auth is a HIGH severity bug.
 # Canonical auth helper lives in api._deps, not api.auth.

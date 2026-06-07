@@ -1,8 +1,8 @@
-# JarvisMax Notification System
+# BeaMax Notification System
 
 ## Overview
 
-The JarvisMax Notification System provides push notifications for mission status changes. Users can subscribe to receive notifications via **Telegram** or **Email** when missions complete (DONE) or fail (FAILED).
+The BeaMax Notification System provides push notifications for mission status changes. Users can subscribe to receive notifications via **Telegram** or **Email** when missions complete (DONE) or fail (FAILED).
 
 ## Features
 
@@ -168,7 +168,7 @@ Send a test notification.
    ```bash
    curl -X POST http://localhost:8000/api/v2/notifications/subscribe \
      -H "Content-Type: application/json" \
-     -H "X-Jarvis-Token: your-token" \
+     -H "X-Bea-Token: your-token" \
      -d '{
        "channel": "telegram",
        "destination": "123456789"
@@ -179,7 +179,7 @@ Send a test notification.
    ```bash
    curl -X POST http://localhost:8000/api/v2/notifications/test \
      -H "Content-Type: application/json" \
-     -H "X-Jarvis-Token: your-token" \
+     -H "X-Bea-Token: your-token" \
      -d '{
        "channel": "telegram",
        "destination": "123456789"
@@ -194,7 +194,7 @@ Send a test notification.
    SMTP_PORT=587
    SMTP_USER=your_email@gmail.com
    SMTP_PASSWORD=your_app_password
-   EMAIL_FROM=noreply@jarvismax.ai
+   EMAIL_FROM=noreply@beamax.ai
    ```
 
    **For Gmail**:
@@ -206,7 +206,7 @@ Send a test notification.
    ```bash
    curl -X POST http://localhost:8000/api/v2/notifications/subscribe \
      -H "Content-Type: application/json" \
-     -H "X-Jarvis-Token: your-token" \
+     -H "X-Bea-Token: your-token" \
      -d '{
        "channel": "email",
        "destination": "user@example.com"
@@ -217,7 +217,7 @@ Send a test notification.
    ```bash
    curl -X POST http://localhost:8000/api/v2/notifications/test \
      -H "Content-Type: application/json" \
-     -H "X-Jarvis-Token: your-token" \
+     -H "X-Bea-Token: your-token" \
      -d '{
        "channel": "email",
        "destination": "user@example.com"
@@ -240,7 +240,7 @@ Analysis complete. Found 3 optimization opportunities...
 
 ### Email
 
-**Subject**: `[JarvisMax] Mission DONE: Analyze codebase...`
+**Subject**: `[BeaMax] Mission DONE: Analyze codebase...`
 
 **Body** (HTML + Text):
 - Status badge with color coding
@@ -350,7 +350,7 @@ Subscriptions are stored in `workspace/notifications_subscriptions.json`:
 
 ## Security
 
-- **Authentication**: All API endpoints require `X-Jarvis-Token` header
+- **Authentication**: All API endpoints require `X-Bea-Token` header
 - **User isolation**: Users can only manage their own subscriptions
 - **Token security**: Telegram bot token stored in environment variables
 - **SMTP credentials**: Stored in environment, never exposed in logs
@@ -380,7 +380,7 @@ const response = await fetch('/api/v2/notifications/subscribe', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'X-Jarvis-Token': token,
+    'X-Bea-Token': token,
   },
   body: JSON.stringify({
     channel: 'telegram',
@@ -398,13 +398,13 @@ const response = await fetch('/api/v2/notifications/subscribe', {
 # Test Telegram
 curl -X POST http://localhost:8000/api/v2/notifications/test \
   -H "Content-Type: application/json" \
-  -H "X-Jarvis-Token: test-token" \
+  -H "X-Bea-Token: test-token" \
   -d '{"channel":"telegram","destination":"123456789"}'
 
 # Test Email
 curl -X POST http://localhost:8000/api/v2/notifications/test \
   -H "Content-Type: application/json" \
-  -H "X-Jarvis-Token: test-token" \
+  -H "X-Bea-Token: test-token" \
   -d '{"channel":"email","destination":"user@example.com"}'
 ```
 
@@ -412,7 +412,7 @@ curl -X POST http://localhost:8000/api/v2/notifications/test \
 
 ```bash
 # Watch logs for notification events
-docker-compose logs -f jarvismax | grep notification
+docker-compose logs -f beamax | grep notification
 ```
 
 ## Troubleshooting
@@ -423,7 +423,7 @@ docker-compose logs -f jarvismax | grep notification
 2. Verify bot is started: Send `/start` to your bot
 3. Check chat_id is correct: Visit `https://api.telegram.org/bot<TOKEN>/getUpdates`
 4. Test with `/api/v2/notifications/test` endpoint
-5. Check logs: `docker-compose logs jarvismax | grep telegram`
+5. Check logs: `docker-compose logs beamax | grep telegram`
 
 ### Email notifications not working
 
@@ -437,7 +437,7 @@ docker-compose logs -f jarvismax | grep notification
    ```
 3. For Gmail: Ensure app password is used (not account password)
 4. Check firewall allows port 587 outbound
-5. Check logs: `docker-compose logs jarvismax | grep email`
+5. Check logs: `docker-compose logs beamax | grep email`
 
 ### No notifications received
 
@@ -468,4 +468,4 @@ docker-compose logs -f jarvismax | grep notification
 
 ## License
 
-Part of JarvisMax OS – Internal use only.
+Part of BeaMax OS – Internal use only.

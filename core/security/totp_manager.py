@@ -1,5 +1,5 @@
 """
-JARVIS MAX — TOTP Manager
+BEA MAX — TOTP Manager
 ============================
 RFC 6238 TOTP implementation — zero external dependencies.
 
@@ -147,7 +147,7 @@ def generate_seed(length: int = 20) -> tuple[str, bytes]:
 def build_otpauth_uri(
     seed_b32: str,
     account: str = "",
-    issuer: str = "JarvisMax",
+    issuer: str = "BeaMax",
     digits: int = 6,
     period: int = 30,
     algorithm: str = "sha1",

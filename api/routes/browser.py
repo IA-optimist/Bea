@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser API Routes (Phase 8)
+BEA MAX — Browser API Routes (Phase 8)
 
 POST /api/v2/browser/navigate   — navigate to URL, optionally extract text
 POST /api/v2/browser/search     — web search, return top 10 results
@@ -18,15 +18,15 @@ from api._deps import _check_auth
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 
 router = APIRouter(prefix="/api/v2/browser", tags=["browser"], dependencies=[Depends(_auth)])
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
 
 # ── Request models ────────────────────────────────────────────
@@ -50,7 +50,7 @@ class ScreenshotRequest(BaseModel):
 @router.post("/navigate")
 async def browser_navigate(
     req: NavigateRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Navigate to a URL and optionally extract visible page text."""
     from tools.browser_tool import BrowserTool
@@ -69,7 +69,7 @@ async def browser_navigate(
 @router.post("/search")
 async def browser_search(
     req: SearchRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Search the web and return top 10 results {title, url, snippet}."""
     from tools.browser_tool import BrowserTool
@@ -84,7 +84,7 @@ async def browser_search(
 @router.post("/screenshot")
 async def browser_screenshot(
     req: ScreenshotRequest,
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
 ):
     """Navigate to URL and return a base64-encoded PNG screenshot."""
     from tools.browser_tool import BrowserTool

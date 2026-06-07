@@ -1,5 +1,5 @@
 """
-jarvis-architect — System architecture decisions.
+bea-architect — System architecture decisions.
 
 Responsibilities:
     - Evaluate architectural proposals and trade-offs
@@ -14,23 +14,23 @@ Tool access:
     - Dependency graph (imports)
 
 Does NOT:
-    - Write code directly (delegates to jarvis-coder)
+    - Write code directly (delegates to bea-coder)
     - Push to any branch
     - Approve merges
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
-class JarvisArchitect(JarvisTeamAgent):
-    name      = "jarvis-architect"
+class BeaArchitect(BeaTeamAgent):
+    name      = "bea-architect"
     role      = "planner"
     timeout_s = 180
 
     def system_prompt(self) -> str:
-        return """You are jarvis-architect, the system architecture agent for JarvisMax.
+        return """You are bea-architect, the system architecture agent for BeaMax.
 
 Your job: make sound architectural decisions that maximize stability and maintainability.
 
@@ -49,9 +49,9 @@ Output format:
 5. **Rollback** — how to undo if something breaks
 
 Never generate code. Describe what code should do and where it should live.
-Delegate implementation to jarvis-coder."""
+Delegate implementation to bea-coder."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
         return f"{ctx}\n\nArchitecture task:\n{task}"

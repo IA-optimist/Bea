@@ -1,5 +1,5 @@
 """
-JARVIS — Architecture Ownership Map
+BEA — Architecture Ownership Map
 =======================================
 Documents the canonical owner for every system responsibility.
 Used by the coherence validator to detect ownership violations.
@@ -34,7 +34,7 @@ OWNERSHIP = {
     "mission_lifecycle_canonical": {
         "canonical": "core.meta_orchestrator.MetaOrchestrator",
         "active_api": False,
-        "note": "Will replace MissionSystem via OrchestrationBridge when JARVIS_USE_CANONICAL_ORCHESTRATOR=1",
+        "note": "Will replace MissionSystem via OrchestrationBridge when BEA_USE_CANONICAL_ORCHESTRATOR=1",
     },
 
     # --- Planning ---

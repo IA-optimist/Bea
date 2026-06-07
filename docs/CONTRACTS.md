@@ -1,4 +1,4 @@
-# Jarvismax — Contracts map
+# Beamax — Contracts map
 
 The repo has **four** `contracts.py` modules. The 2026-05-18 audit (§5.1 P2)
 flagged this as fragmentation and recommended centralising. After Sprint 8

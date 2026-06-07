@@ -1,7 +1,7 @@
 """
-creative_engine.py — JarvisMax Creative Engine
+creative_engine.py — BeaMax Creative Engine
 ================================================
-Module de créativité structurée pour JarvisMax.
+Module de créativité structurée pour BeaMax.
 Objectif : sortir de la recomposition pour aller vers l'invention.
 
 Architecture :
@@ -78,7 +78,7 @@ class Surprise:
 class LLMClient(ABC):
     """
     Interface minimale. Implémentez pour votre backend (OpenRouter, Ollama, etc.)
-    Exemple d'implémentation pour OpenRouter disponible dans jarvis_core/llm/openrouter.py
+    Exemple d'implémentation pour OpenRouter disponible dans bea_core/llm/openrouter.py
     """
     @abstractmethod
     async def complete(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
@@ -166,7 +166,7 @@ REFRAME_TEMPLATES = [
 
 class CreativeEngine:
     """
-    Moteur de créativité structurée pour JarvisMax.
+    Moteur de créativité structurée pour BeaMax.
 
     mode="creative"  → active generate_diverse + cross_domain + analogies
     mode="standard"  → retourne une seule solution directe (comportement actuel)
@@ -381,7 +381,7 @@ class MissionStore(ABC):
 class CrossMissionConnector:
     """
     Trouve des connexions entre missions en apparence non liées.
-    Requiert un store vectoriel (Qdrant recommandé — déjà dans la stack JarvisMax).
+    Requiert un store vectoriel (Qdrant recommandé — déjà dans la stack BeaMax).
 
     Architecture :
       1. Chaque mission est indexée avec son embedding + pattern abstrait
@@ -767,16 +767,16 @@ class CreativityTests:
 # 5. PIPELINE INTEGRATION
 # ─────────────────────────────────────────────
 
-class JarvisCreativePipeline:
+class BeaCreativePipeline:
     """
-    Point d'entrée unique pour intégrer le moteur créatif dans JarvisMax.
+    Point d'entrée unique pour intégrer le moteur créatif dans BeaMax.
 
     mode="creative"  → diversité + analogies + curiosité
     mode="standard"  → comportement actuel inchangé
 
-    Exemple d'usage dans un agent JarvisMax :
+    Exemple d'usage dans un agent BeaMax :
 
-        pipeline = JarvisCreativePipeline(llm_client=openrouter_client, mode=task.mode)
+        pipeline = BeaCreativePipeline(llm_client=openrouter_client, mode=task.mode)
         result = await pipeline.run(
             problem=task.description,
             mission_id=task.id,
@@ -885,11 +885,11 @@ class JarvisCreativePipeline:
 
 
 # ─────────────────────────────────────────────
-# JARVIS NATIVE ADAPTERS
-# Connectent le CreativeEngine aux systèmes JarvisMax existants.
+# BEA NATIVE ADAPTERS
+# Connectent le CreativeEngine aux systèmes BeaMax existants.
 # ─────────────────────────────────────────────
 
-class JarvisLLMClient(LLMClient):
+class BeaLLMClient(LLMClient):
     """
     Adaptateur LLM pour CreativeEngine utilisant OpenRouter (LLMFactory).
     Fallback : OllamaLLMClient si OpenRouter indisponible.
@@ -920,7 +920,7 @@ class JarvisLLMClient(LLMClient):
             response = await llm.ainvoke([HumanMessage(content=prompt)])
             return response.content if hasattr(response, "content") else str(response)
         except Exception as e:
-            logger.warning(f"JarvisLLMClient.complete fallback: {e}")
+            logger.warning(f"BeaLLMClient.complete fallback: {e}")
             # Fallback Ollama
             from config.settings import get_settings
             host = get_settings().ollama_host
@@ -931,11 +931,11 @@ class JarvisLLMClient(LLMClient):
         try:
             return await self._get_embed_provider().embed(text)
         except Exception as e:
-            logger.warning(f"JarvisLLMClient.embed failed: {e}")
+            logger.warning(f"BeaLLMClient.embed failed: {e}")
             return [0.0] * 768
 
 
-class JarvisMissionStore(MissionStore):
+class BeaMissionStore(MissionStore):
     """
     Implémentation de MissionStore branchée sur MissionSystem + Qdrant.
     Permet à CrossMissionConnector de chercher des analogies dans les missions passées.
@@ -991,7 +991,7 @@ class JarvisMissionStore(MissionStore):
             s = get_settings()
             client = QdrantClient(url=s.qdrant_url, api_key=s.qdrant_api_key, https=False)
             results = client.search(
-                collection_name="jarvismax_memory_384",
+                collection_name="beamax_memory_384",
                 query_vector=embedding[:384],  # Adapt to collection dims
                 limit=top_k,
                 with_payload=True,

@@ -1,8 +1,8 @@
 """
-dev_tools — Outils de développement pour Jarvis OS v3.
+dev_tools — Outils de développement pour Bea OS v3.
 Analyse de dépendances, recherche multi-fichiers, génération de schémas API,
 vérification de l'environnement, validation de requirements.txt.
-Sécurité : paths sous JARVIS_ROOT ou /tmp, try/except global, timeout=10s.
+Sécurité : paths sous BEA_ROOT ou /tmp, try/except global, timeout=10s.
 """
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ import re
 import subprocess  # nosec B404
 import time
 
-logger = logging.getLogger("jarvis.dev_tools")
+logger = logging.getLogger("bea.dev_tools")
 
-JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+BEA_ROOT = os.environ.get("BEA_ROOT", "/opt/beamax")
 _BLOCKED_PATHS = ("/etc", "/root", "/proc", "/sys", "\\Windows\\System32")
 _MAX_OUTPUT = 50 * 1024  # 50 KB
 _MAX_RESULTS = 100
@@ -41,29 +41,29 @@ def _err(error: str, logs: list = None, risk_level: str = "low", **extra) -> dic
 
 
 def _is_safe_path(path: str) -> bool:
-    """Vérifie que le path est sous JARVIS_ROOT ou /tmp."""
+    """Vérifie que le path est sous BEA_ROOT ou /tmp."""
     abs_path = os.path.abspath(path)
     for blocked in _BLOCKED_PATHS:
         if abs_path.startswith(blocked):
             return False
-    safe_roots = [os.path.abspath(JARVIS_ROOT), "/tmp", os.path.abspath(".")]  # nosec B108 — path-prefix allowlist, not a write target.
+    safe_roots = [os.path.abspath(BEA_ROOT), "/tmp", os.path.abspath(".")]  # nosec B108 — path-prefix allowlist, not a write target.
     return any(abs_path.startswith(root) for root in safe_roots)
 
 
 def dependency_analyzer(project_path: str = None) -> dict:
     """
     Lit requirements.txt, vérifie via pip show si chaque package est installé.
-    project_path doit être sous JARVIS_ROOT ou /tmp.
+    project_path doit être sous BEA_ROOT ou /tmp.
 
     Args:
-        project_path: Chemin du projet (défaut: JARVIS_ROOT)
+        project_path: Chemin du projet (défaut: BEA_ROOT)
 
     Returns:
         {status, installed: list, missing: list, version_conflicts: list}
     """
     try:
         logs = []
-        base_path = project_path or JARVIS_ROOT
+        base_path = project_path or BEA_ROOT
 
         if not _is_safe_path(base_path):
             return _err(f"blocked_path: {base_path}")
@@ -137,7 +137,7 @@ def code_search_multi_file(
     Max 100 résultats, timeout=10s.
 
     Args:
-        directory: Répertoire de recherche (sous JARVIS_ROOT ou /tmp)
+        directory: Répertoire de recherche (sous BEA_ROOT ou /tmp)
         pattern: Pattern regex à rechercher
         file_extensions: Liste d'extensions (ex: [".py", ".txt"]) défaut: [".py"]
 
@@ -301,7 +301,7 @@ def env_checker() -> dict:
 
         # Variables d'env critiques
         _CRITICAL_VARS = [
-            "JARVIS_ROOT", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+            "BEA_ROOT", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
             "DATABASE_URL", "REDIS_URL",
         ]
         _MASKED_VARS = {"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DATABASE_URL"}
@@ -362,10 +362,10 @@ def env_checker() -> dict:
 
 def system_health_check() -> dict:
     """
-    Vérifie la santé globale de l'environnement Jarvis.
+    Vérifie la santé globale de l'environnement Bea.
 
     Checks:
-    - Variables env critiques (JARVIS_ROOT, OPENAI_API_KEY masked)
+    - Variables env critiques (BEA_ROOT, OPENAI_API_KEY masked)
     - Connexion Qdrant : GET http://qdrant:6333/health
     - Connexion Redis : ping via socket TCP redis:6379
     - Connexion Ollama : GET http://ollama:11434/api/tags
@@ -394,7 +394,7 @@ def system_health_check() -> dict:
             warnings.append("Python < 3.10 detected")
 
         # Env vars
-        critical_vars = ["JARVIS_ROOT", "OPENAI_API_KEY"]
+        critical_vars = ["BEA_ROOT", "OPENAI_API_KEY"]
         for var in critical_vars:
             val = os.environ.get(var, "")
             present = bool(val)
@@ -428,7 +428,7 @@ def system_health_check() -> dict:
             warnings.append(f"Ollama unreachable: {e}")
 
         # requirements.txt
-        req_path = os.path.join(os.environ.get("JARVIS_ROOT", "/app"), "requirements.txt")
+        req_path = os.path.join(os.environ.get("BEA_ROOT", "/app"), "requirements.txt")
         try:
             with open(req_path) as f:
                 lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]

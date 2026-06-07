@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ================================================================
-#  JARVIS MAX — Build APK Release (Linux/macOS/Git Bash)
+#  BEA MAX — Build APK Release (Linux/macOS/Git Bash)
 # ================================================================
 set -e
 
 echo ""
-echo "  JarvisMax — Build APK Release"
+echo "  BeaMax — Build APK Release"
 echo "  =============================="
 echo ""
 

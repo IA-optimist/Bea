@@ -44,7 +44,7 @@ Ce que fait `scripts/ci/local_ci.sh`:
 
 Variables d’environnement (avec valeurs par défaut compatibles local):
 
-- `DATABASE_URL` (default: `postgresql://jarvis:***@localhost:5432/jarvismax_test`)
+- `DATABASE_URL` (default: `postgresql://bea:***@localhost:5432/beamax_test`)
 - `REDIS_URL` (default: `redis://localhost:6379`)
 - `TESTING` (default: `true`)
 

@@ -1,15 +1,15 @@
 """
-core/__init__.py — JarvisMax Core Public API
+core/__init__.py — BeaMax Core Public API
 
 CANONICAL EXPORTS ONLY.
 This module defines the public contract of the core runtime.
 
 Canonical execution path:
-  main.py → MetaOrchestrator.run() → JarvisOrchestrator (delegate, not public)
+  main.py → MetaOrchestrator.run() → BeaOrchestrator (delegate, not public)
 
 Rules:
   - Import only from here in application code.
-  - Do NOT import JarvisOrchestrator or OrchestratorV2 directly.
+  - Do NOT import BeaOrchestrator or OrchestratorV2 directly.
   - Do NOT extend core.orchestrator — it is frozen/deprecated.
 """
 from __future__ import annotations
@@ -17,7 +17,7 @@ from __future__ import annotations
 import warnings
 
 # ── Canonical types ────────────────────────────────────────────
-from core.state import MissionStatus, JarvisSession, SessionStatus
+from core.state import MissionStatus, BeaSession, SessionStatus
 
 # ── Canonical orchestrator ─────────────────────────────────────
 from core.meta_orchestrator import MetaOrchestrator, get_meta_orchestrator
@@ -26,23 +26,23 @@ from core.meta_orchestrator import MetaOrchestrator, get_meta_orchestrator
 __all__ = [
     # State
     "MissionStatus",
-    "JarvisSession",
+    "BeaSession",
     "SessionStatus",
     # Orchestrator
     "MetaOrchestrator",
     "get_meta_orchestrator",
     # Deprecation shim (see below)
-    "JarvisOrchestrator",
+    "BeaOrchestrator",
 ]
 
 
 # ── Deprecation shim ───────────────────────────────────────────
-# JarvisOrchestrator is an internal implementation detail of MetaOrchestrator.
+# BeaOrchestrator is an internal implementation detail of MetaOrchestrator.
 # External code must NEVER instantiate it directly.
 # This shim exists only to avoid ImportError in legacy modules during migration.
 # It will be removed once core/orchestrator.py is inlined into meta_orchestrator.py.
 
-class JarvisOrchestrator:  # type: ignore[no-redef]
+class BeaOrchestrator:  # type: ignore[no-redef]
     """
     DEPRECATED SHIM.
     Use: get_meta_orchestrator() instead.
@@ -53,11 +53,11 @@ class JarvisOrchestrator:  # type: ignore[no-redef]
 
     def __new__(cls, *args, **kwargs):
         warnings.warn(
-            "JarvisOrchestrator is deprecated and will be removed. "
+            "BeaOrchestrator is deprecated and will be removed. "
             "Use get_meta_orchestrator() from core instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         # Import and return the real internal class so behaviour is preserved
-        from core.jarvis_executor import JarvisOrchestrator as _Real
+        from core.bea_executor import BeaOrchestrator as _Real
         return _Real(*args, **kwargs)

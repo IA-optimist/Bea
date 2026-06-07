@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Reasoning Framework v1
+BEA MAX — Reasoning Framework v1
 Framework de raisonnement commun pour tous les agents.
 
 Objectif : éviter les réponses vagues, les conclusions non prouvées,

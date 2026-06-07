@@ -1,4 +1,4 @@
-# JarvisMax — Typed Inter-Agent Contracts
+# BeaMax — Typed Inter-Agent Contracts
 """
 core/contracts.py
 

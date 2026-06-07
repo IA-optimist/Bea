@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Training & Cognitive Consolidation API Routes
+BEA MAX — Training & Cognitive Consolidation API Routes
 Exposes bio-inspired learning mechanisms over HTTP.
 
 Routes:

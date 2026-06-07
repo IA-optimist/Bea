@@ -1,7 +1,7 @@
 """
 executor/contracts.py — Unified execution result contract.
 
-Every execution in JarvisMax returns an ExecutionResult.
+Every execution in BeaMax returns an ExecutionResult.
 No ambiguity. No fake success. Brutally honest.
 """
 from __future__ import annotations

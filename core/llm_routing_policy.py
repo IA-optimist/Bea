@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Dynamic LLM Routing Policy Engine
+BEA MAX — Dynamic LLM Routing Policy Engine
 
 AI-OS-grade model selection that goes beyond static role mapping.
 Selects models based on task characteristics, not just agent role.

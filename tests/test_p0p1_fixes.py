@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test P0/P1 bug fixes for JarvisMax.
+Test P0/P1 bug fixes for BeaMax.
 Validates: CognitionOrchestrator signature, ainvoke usage, exception handling, RBAC.
 """
 import sys
@@ -27,12 +27,12 @@ async def test_cognition_orchestrator_signature():
     print(f"✓ Signature correct: {params}")
     return True
 
-async def test_jarvis_team_dispatcher_ainvoke():
-    """Test that jarvis_team_dispatcher uses ainvoke, not achat."""
-    print("\n=== Test 2: JarvisTeam ainvoke usage ===")
+async def test_bea_team_dispatcher_ainvoke():
+    """Test that bea_team_dispatcher uses ainvoke, not achat."""
+    print("\n=== Test 2: BeaTeam ainvoke usage ===")
     
     # Read the source to verify
-    with open('core/orchestration/jarvis_team_dispatcher.py', "r", encoding="utf-8") as f:
+    with open('core/orchestration/bea_team_dispatcher.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     # Check no achat calls (except in comments)
@@ -50,11 +50,11 @@ async def test_jarvis_team_dispatcher_ainvoke():
     print("✓ Uses .ainvoke() with proper response.content handling")
     return True
 
-async def test_jarvis_team_dispatcher_continue():
-    """Test that jarvis_team_dispatcher uses continue, not break."""
+async def test_bea_team_dispatcher_continue():
+    """Test that bea_team_dispatcher uses continue, not break."""
     print("\n=== Test 3: Exception handling with continue ===")
     
-    with open('core/orchestration/jarvis_team_dispatcher.py', "r", encoding="utf-8") as f:
+    with open('core/orchestration/bea_team_dispatcher.py', "r", encoding="utf-8") as f:
         content = f.read()
     
     lines = content.split('\n')
@@ -164,8 +164,8 @@ async def main():
     
     tests = [
         test_cognition_orchestrator_signature,
-        test_jarvis_team_dispatcher_ainvoke,
-        test_jarvis_team_dispatcher_continue,
+        test_bea_team_dispatcher_ainvoke,
+        test_bea_team_dispatcher_continue,
         test_meta_orchestrator_create_task,
         test_vault_rbac,
         test_docker_compose_no_reload,

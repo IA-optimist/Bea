@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Hierarchical Planner
+BEA MAX — Hierarchical Planner
 ==================================
 Adds a strategic decomposition layer on top of MissionPlanner.
 

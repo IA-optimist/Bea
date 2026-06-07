@@ -1,8 +1,8 @@
 """
 docker/qdrant-mcp/app.py — Qdrant MCP HTTP sidecar.
 
-Exposes Jarvis /invoke endpoint protocol (POST /invoke) backed by qdrant-client.
-Compatible with Jarvis MCPAdapter.
+Exposes Bea /invoke endpoint protocol (POST /invoke) backed by qdrant-client.
+Compatible with Bea MCPAdapter.
 
 Tools:
   qdrant_search  — scroll search (or vector if pre-computed embedding provided)
@@ -11,11 +11,11 @@ Tools:
 Env:
   QDRANT_URL        (default: http://qdrant:6333)
   QDRANT_API_KEY    (default: empty)
-  QDRANT_COLLECTION (default: jarvis_memory)
+  QDRANT_COLLECTION (default: bea_memory)
 
 Usage:
-  docker build -t jarvis-qdrant-mcp .
-  docker run -p 8000:8000 -e QDRANT_URL=http://qdrant:6333 jarvis-qdrant-mcp
+  docker build -t bea-qdrant-mcp .
+  docker run -p 8000:8000 -e QDRANT_URL=http://qdrant:6333 bea-qdrant-mcp
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ log = structlog.get_logger("qdrant-mcp")
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY", "") or None
-DEFAULT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "jarvis_memory")
+DEFAULT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "bea_memory")
 
 app = FastAPI(title="Qdrant MCP Sidecar", version="1.0.0")
 

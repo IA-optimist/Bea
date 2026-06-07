@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Trade Ops : Agent
+BEA BUSINESS LAYER — Trade Ops : Agent
 Génère un agent IA spécialisé pour un métier de terrain (TPE/artisan).
 Mode 1 : template prédéfini (ex: chauffagiste)
 Mode 2 : génération libre à partir d'une description de métier
@@ -7,7 +7,7 @@ Mode 2 : génération libre à partir d'une description de métier
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.trade_ops.schema import parse_trade_ops_spec
 
 log = structlog.get_logger()
@@ -83,7 +83,7 @@ class TradeOpsAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input   = session.user_input or session.mission_summary or ""
         trade        = session.metadata.get("trade_sector", "")
         company_name = session.metadata.get("company_name", "l'entreprise")
@@ -118,7 +118,7 @@ class TradeOpsAgent(BaseAgent):
             "Réponds UNIQUEMENT en JSON valide selon le format demandé."
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         user_input   = session.user_input or session.mission_summary or ""
         trade        = session.metadata.get("trade_sector", "")
         company_name = session.metadata.get("company_name", "l'entreprise")

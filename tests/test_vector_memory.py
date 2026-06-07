@@ -118,12 +118,12 @@ class TestVectorMemoryIntegration:
         from core.memory.vector_memory import get_vector_memory
         vm = get_vector_memory()
         vm.store_embedding(
-            "JarvisMax uses FastAPI for its REST API",
+            "BeaMax uses FastAPI for its REST API",
             "project_memory",
             source="test",
         )
         import time; time.sleep(0.5)
-        ctx = vm.retrieve_context("What framework does Jarvis use?")
+        ctx = vm.retrieve_context("What framework does Bea use?")
         assert isinstance(ctx, str)
         # May or may not find it depending on Qdrant indexing time
         # Just verify no crash
@@ -143,4 +143,4 @@ class TestVectorMemoryIntegration:
         vm = get_vector_memory()
         stats = vm.stats()
         assert stats["total_vectors"] >= 0
-        assert stats["collection"] == "jarvis_aios_memory"
+        assert stats["collection"] == "bea_aios_memory"

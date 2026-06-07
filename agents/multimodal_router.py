@@ -1,5 +1,5 @@
 """
-JARVIS MAX — MultimodalRouter
+BEA MAX — MultimodalRouter
 Route les inputs multimodaux vers le bon agent/processor.
 
 État réel par modalité :

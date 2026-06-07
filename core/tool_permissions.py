@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Per-Tool Permission System (P1)
+BEA MAX — Per-Tool Permission System (P1)
 ================================================
 Declarative per-tool approval gating based on risk classification.
 

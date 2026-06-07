@@ -3,16 +3,16 @@ version: "3.9"
 # Hardening (audit Mo6): plusieurs durcissements alignés avec docker-compose.yml dev :
 #   1. Tous les secrets critiques (POSTGRES_PASSWORD, REDIS_PASSWORD) sont marqués
 #      `:?` → docker compose refuse de démarrer si la variable est vide.
-#   2. Le service `jarvis` n'expose plus son port 8000 à l'hôte : nginx le joint
-#      via le réseau Docker interne (`upstream jarvis_api { server jarvis:8000; }`),
+#   2. Le service `bea` n'expose plus son port 8000 à l'hôte : nginx le joint
+#      via le réseau Docker interne (`upstream bea_api { server bea:8000; }`),
 #      donc aucune raison d'écouter sur 0.0.0.0:8000 côté machine.
-#   3. Un réseau dédié `jarvis-net` isole les services internes (postgres, redis,
-#      qdrant, jarvis) ; seul nginx publie des ports.
-#   4. Limites mémoire posées sur jarvis (évite l'OOM-host si fuite).
+#   3. Un réseau dédié `bea-net` isole les services internes (postgres, redis,
+#      qdrant, bea) ; seul nginx publie des ports.
+#   4. Limites mémoire posées sur bea (évite l'OOM-host si fuite).
 #   5. depends_on avec condition: service_healthy quand l'amont a un healthcheck.
 
 services:
-  jarvis:
+  bea:
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -30,7 +30,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    networks: [jarvis-net]
+    networks: [bea-net]
     deploy:
       resources:
         limits:
@@ -42,16 +42,16 @@ services:
     image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-jarvismax}
-      POSTGRES_USER: ${POSTGRES_USER:-jarvis}
+      POSTGRES_DB: ${POSTGRES_DB:-beamax}
+      POSTGRES_USER: ${POSTGRES_USER:-bea}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jarvis}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bea}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [jarvis-net]
+    networks: [bea-net]
 
   redis:
     image: redis:7-alpine
@@ -66,13 +66,13 @@ services:
       retries: 5
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
-    networks: [jarvis-net]
+    networks: [bea-net]
 
   qdrant:
     image: ${QDRANT_IMAGE:?set QDRANT_IMAGE, e.g. qdrant/qdrant:v1.9.7}
     restart: always
     volumes: [qdrantdata:/qdrant/storage]
-    networks: [jarvis-net]
+    networks: [bea-net]
 
   ollama:
     image: ${OLLAMA_IMAGE:?set OLLAMA_IMAGE to a pinned ollama/ollama tag}
@@ -82,7 +82,7 @@ services:
       resources:
         limits:
           memory: 6g
-    networks: [jarvis-net]
+    networks: [bea-net]
 
   nginx:
     image: nginx:alpine
@@ -93,7 +93,7 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-www:/var/www/certbot
     depends_on:
-      jarvis:
+      bea:
         condition: service_healthy
     deploy:
       resources:
@@ -101,10 +101,10 @@ services:
           memory: 256m
         reservations:
           memory: 64m
-    networks: [jarvis-net]
+    networks: [bea-net]
 
 networks:
-  jarvis-net:
+  bea-net:
     driver: bridge
 
 volumes:

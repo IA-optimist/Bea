@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-JarvisMax OS — Command Line Interface
+BeaMax OS — Command Line Interface
 
 Usage:
-    jarvismax start                  # Start OS
-    jarvismax stop                   # Stop OS
-    jarvismax status                 # Show status
-    jarvismax modules                # List modules
-    jarvismax revenue                # Show revenue dashboard
-    jarvismax logs [module]          # Show logs
-    jarvismax exec <module> <action> # Execute module action
+    beamax start                  # Start OS
+    beamax stop                   # Stop OS
+    beamax status                 # Show status
+    beamax modules                # List modules
+    beamax revenue                # Show revenue dashboard
+    beamax logs [module]          # Show logs
+    beamax exec <module> <action> # Execute module action
 """
 import argparse
 import asyncio
@@ -20,33 +20,33 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core.jarvismax_os import JarvisMaxOS
+from core.beamax_os import BeaMaxOS
 
 
 def cmd_start(args):
-    """Start JarvisMax OS"""
-    print("🚀 Starting JarvisMax OS...")
+    """Start BeaMax OS"""
+    print("🚀 Starting BeaMax OS...")
     
-    os_instance = JarvisMaxOS()
+    os_instance = BeaMaxOS()
     
     try:
         asyncio.run(os_instance.start())
         
         # Keep running
-        print("\n✅ JarvisMax OS is running. Press Ctrl+C to stop.\n")
+        print("\n✅ BeaMax OS is running. Press Ctrl+C to stop.\n")
         
         while os_instance.running:
             asyncio.run(asyncio.sleep(1))
     
     except KeyboardInterrupt:
-        print("\n\n🛑 Stopping JarvisMax OS...")
+        print("\n\n🛑 Stopping BeaMax OS...")
         asyncio.run(os_instance.stop())
         print("✅ Stopped.\n")
 
 
 def cmd_status(args):
     """Show OS status"""
-    os_instance = JarvisMaxOS()
+    os_instance = BeaMaxOS()
     asyncio.run(os_instance.start())
     
     os_instance.print_status()
@@ -56,11 +56,11 @@ def cmd_status(args):
 
 def cmd_modules(args):
     """List modules"""
-    os_instance = JarvisMaxOS()
+    os_instance = BeaMaxOS()
     asyncio.run(os_instance.start())
     
     print("\n" + "=" * 80)
-    print("📦 JARVISMAX MODULES")
+    print("📦 BEAMAX MODULES")
     print("=" * 80 + "\n")
     
     for name, module in os_instance.modules.items():
@@ -75,13 +75,13 @@ def cmd_modules(args):
 
 def cmd_revenue(args):
     """Show revenue dashboard"""
-    os_instance = JarvisMaxOS()
+    os_instance = BeaMaxOS()
     asyncio.run(os_instance.start())
     
     status = os_instance.get_status()
     
     print("\n" + "=" * 80)
-    print("💰 JARVISMAX REVENUE DASHBOARD")
+    print("💰 BEAMAX REVENUE DASHBOARD")
     print("=" * 80 + "\n")
     
     print(f"Monthly Recurring Revenue: €{status['revenue']['mrr']:,.2f}")
@@ -103,17 +103,17 @@ def cmd_revenue(args):
 
 def cmd_logs(args):
     """Show logs"""
-    # In real implementation: tail ~/.jarvismax/logs/<module>.log
+    # In real implementation: tail ~/.beamax/logs/<module>.log
     print("📋 Logs feature coming soon...")
 
 
 def cmd_exec(args):
     """Execute module action"""
     if not args.module or not args.action:
-        print("❌ Usage: jarvismax exec <module> <action>")
+        print("❌ Usage: beamax exec <module> <action>")
         return
     
-    os_instance = JarvisMaxOS()
+    os_instance = BeaMaxOS()
     asyncio.run(os_instance.start())
     
     try:
@@ -127,22 +127,22 @@ def cmd_exec(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="JarvisMax OS — Autonomous AI Operating System",
+        description="BeaMax OS — Autonomous AI Operating System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  jarvismax start                      Start the OS
-  jarvismax status                     Show current status
-  jarvismax revenue                    Show revenue dashboard
-  jarvismax exec business_engine scan  Scan opportunities
+  beamax start                      Start the OS
+  beamax status                     Show current status
+  beamax revenue                    Show revenue dashboard
+  beamax exec business_engine scan  Scan opportunities
         """
     )
     
     subparsers = parser.add_subparsers(dest='command', help='Command to execute')
     
     # Commands
-    subparsers.add_parser('start', help='Start JarvisMax OS')
-    subparsers.add_parser('stop', help='Stop JarvisMax OS')
+    subparsers.add_parser('start', help='Start BeaMax OS')
+    subparsers.add_parser('stop', help='Stop BeaMax OS')
     subparsers.add_parser('status', help='Show OS status')
     subparsers.add_parser('modules', help='List all modules')
     subparsers.add_parser('revenue', help='Show revenue dashboard')

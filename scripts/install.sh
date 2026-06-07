@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ================================================================
-# JARVIS MAX — Script d'installation automatique
+# BEA MAX — Script d'installation automatique
 # Usage : bash scripts/install.sh
 # ================================================================
 set -euo pipefail
@@ -11,7 +11,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'
 RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
 
-info()    { echo -e "${BLUE}[Jarvis]${NC} $1"; }
+info()    { echo -e "${BLUE}[Bea]${NC} $1"; }
 ok()      { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 error()   { echo -e "${RED}[✗]${NC} $1"; exit 1; }
@@ -20,7 +20,7 @@ step()    { echo -e "\n${BOLD}${BLUE}━━ $1 ━━${NC}"; }
 banner() {
 cat << 'EOF'
   ╔══════════════════════════════════════════╗
-  ║          JARVIS MAX  v1.0                ║
+  ║          BEA MAX  v1.0                ║
   ║   Assistant Personnel Autonome IA        ║
   ╚══════════════════════════════════════════╝
 EOF
@@ -112,7 +112,7 @@ step "Démarrage Postgres + Redis + Qdrant"
 docker compose up -d postgres redis qdrant
 info "Attente Postgres..."
 for i in $(seq 1 40); do
-    docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-jarvis}" &>/dev/null && break
+    docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-bea}" &>/dev/null && break
     sleep 2
     [ $((i % 5)) -eq 0 ] && echo -n "."
 done
@@ -146,10 +146,10 @@ info "Attente n8n..."
 sleep 15
 ok "n8n → http://localhost:5678 (user: ${N8N_BASIC_AUTH_USER:-admin})"
 
-# ── Build Jarvis ──────────────────────────────────────────────
-step "Build du conteneur Jarvis Max"
-docker compose build jarvis
-ok "Image jarvis_core construite"
+# ── Build Bea ──────────────────────────────────────────────
+step "Build du conteneur Bea Max"
+docker compose build bea
+ok "Image bea_core construite"
 
 echo ""
 echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════╗"
@@ -160,7 +160,7 @@ echo "  Services disponibles :"
 echo "  → n8n        : http://localhost:5678"
 echo "  → Open WebUI : http://localhost:3001  (après démarrage)"
 echo "  → Qdrant UI  : http://localhost:6333/dashboard"
-echo "  → Jarvis API : http://localhost:8000  (après démarrage)"
+echo "  → Bea API : http://localhost:8000  (après démarrage)"
 echo ""
 echo "  Prochaines étapes :"
 echo -e "  ${YELLOW}1.${NC} Édite .env : TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USER_ID + OPENAI_API_KEY"

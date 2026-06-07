@@ -1,5 +1,5 @@
 """
-core/security/rbac.py — Role-Based Access Control pour JarvisMax.
+core/security/rbac.py — Role-Based Access Control pour BeaMax.
 
 Rôles :
   admin    → accès total (self-improvement, admin, missions, lecture)
@@ -8,7 +8,7 @@ Rôles :
 
 Règles de sécurité :
   - L'authentification est TOUJOURS obligatoire. Il n'existe aucun mode
-    "open" ou "anonymous". Si JARVIS_API_TOKEN n'est pas configuré,
+    "open" ou "anonymous". Si BEA_API_TOKEN n'est pas configuré,
     le démarrage échoue en production (startup_guard) et seul un token
     JWT valide est accepté en développement.
   - La comparaison des tokens statiques utilise hmac.compare_digest()
@@ -54,12 +54,12 @@ class CurrentUser:
 # ── Extraction du token ───────────────────────────────────────────────────────
 
 def _extract_token(
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ) -> Optional[str]:
-    """Extrait le token brut depuis X-Jarvis-Token ou Authorization: Bearer."""
-    if x_jarvis_token:
-        return x_jarvis_token
+    """Extrait le token brut depuis X-Bea-Token ou Authorization: Bearer."""
+    if x_bea_token:
+        return x_bea_token
     if authorization:
         if authorization.startswith("Bearer "):
             return authorization[7:]
@@ -82,7 +82,7 @@ def _resolve_user_from_token(token: Optional[str]) -> Optional[CurrentUser]:
     if not token:
         return None
 
-    api_token = os.getenv("JARVIS_API_TOKEN", "")
+    api_token = os.getenv("BEA_API_TOKEN", "")
 
     # Token API statique — comparaison constant-time (anti timing-attack)
     if api_token and hmac.compare_digest(token, api_token):
@@ -92,7 +92,7 @@ def _resolve_user_from_token(token: Optional[str]) -> Optional[CurrentUser]:
     try:
         import jwt as _jwt
         from config.settings import get_settings
-        secret = get_settings().jarvis_secret_key
+        secret = get_settings().bea_secret_key
         payload = _jwt.decode(token, secret, algorithms=["HS256"])
         username = payload.get("sub", "unknown")
         role = payload.get("role", DEFAULT_ROLE)
@@ -111,7 +111,7 @@ def _resolve_user_from_token(token: Optional[str]) -> Optional[CurrentUser]:
 # ── Dépendances FastAPI ───────────────────────────────────────────────────────
 
 def get_current_user(
-    x_jarvis_token: Optional[str] = Header(None),
+    x_bea_token: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ) -> CurrentUser:
     """
@@ -119,10 +119,10 @@ def get_current_user(
     Lève HTTP 401 systématiquement si le token est absent ou invalide.
 
     AUCUN mode anonyme ou open. L'authentification est toujours requise.
-    En dev sans JARVIS_API_TOKEN configuré, un JWT signé avec
-    JARVIS_SECRET_KEY est quand même nécessaire.
+    En dev sans BEA_API_TOKEN configuré, un JWT signé avec
+    BEA_SECRET_KEY est quand même nécessaire.
     """
-    token = _extract_token(x_jarvis_token, authorization)
+    token = _extract_token(x_bea_token, authorization)
     user = _resolve_user_from_token(token)
 
     if user is None:

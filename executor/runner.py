@@ -1,9 +1,9 @@
 """
-JARVIS MAX - Action Executor
+BEA MAX - Action Executor
 Execute les actions apres validation de risque.
 Backup automatique avant toute modification.
 Log JSONL complet.
-Whitelist elargie pour couvrir les cas reels Jarvis.
+Whitelist elargie pour couvrir les cas reels Bea.
 """
 from __future__ import annotations
 import asyncio
@@ -26,11 +26,11 @@ log = structlog.get_logger()
 
 def _resolve_workspace() -> Path:
     """Resout WORKSPACE_DIR dynamiquement.
-    Priorite : env WORKSPACE_DIR > JARVIS_ROOT/workspace > detection auto > /app/workspace
+    Priorite : env WORKSPACE_DIR > BEA_ROOT/workspace > detection auto > /app/workspace
     """
     if ws := os.getenv("WORKSPACE_DIR"):
         return Path(ws)
-    if root := os.getenv("JARVIS_ROOT"):
+    if root := os.getenv("BEA_ROOT"):
         return Path(root) / "workspace"
     # Detection automatique en dev local (chemin relatif au projet)
     here = Path(__file__).resolve().parent.parent
@@ -101,7 +101,7 @@ _BLACKLIST = re.compile(
 )
 
 # ── Whitelist : commandes autorisees ──────────────────────────
-# Couvre les usages reels de Jarvis : lecture, analyse, python, git
+# Couvre les usages reels de Bea : lecture, analyse, python, git
 _WHITELIST = re.compile(
     r"^("
     # Lecture systeme

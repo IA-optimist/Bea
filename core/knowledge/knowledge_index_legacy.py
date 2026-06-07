@@ -1,8 +1,8 @@
 """
-knowledge_index — Enregistrement et indexation des expériences de Jarvis dans Qdrant.
+knowledge_index — Enregistrement et indexation des expériences de Bea dans Qdrant.
 
-Collection Qdrant : "jarvis_knowledge" (dim=768, Cosine)
-Séparée de "jarvis_solutions" — dédiée aux patterns d'exécution de tâches.
+Collection Qdrant : "bea_knowledge" (dim=768, Cosine)
+Séparée de "bea_solutions" — dédiée aux patterns d'exécution de tâches.
 
 Chaque entrée enregistre :
   - task_type       : catégorie de la tâche (ex: "bug_fix", "deploy")
@@ -25,12 +25,12 @@ import random
 import time
 from typing import List
 
-logger = logging.getLogger("jarvis.knowledge.index")
+logger = logging.getLogger("bea.knowledge.index")
 
 # Lit QDRANT_URL de l'env (en local : 127.0.0.1 -> échec rapide "connection refused"
 # au lieu du DNS lent sur l'hôte Docker "qdrant"). Dégrade gracieusement si absent.
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
-KNOWLEDGE_COLLECTION = "jarvis_knowledge"
+KNOWLEDGE_COLLECTION = "bea_knowledge"
 _VECTOR_DIM = 768
 
 
@@ -49,7 +49,7 @@ def _pseudo_vector(text: str) -> list:
 
 
 def _ensure_knowledge_collection() -> bool:
-    """Crée la collection jarvis_knowledge si elle n'existe pas. Timeout=3s."""
+    """Crée la collection bea_knowledge si elle n'existe pas. Timeout=3s."""
     try:
         import requests as _req
         r = _req.get(f"{QDRANT_URL}/collections/{KNOWLEDGE_COLLECTION}", timeout=3)
@@ -69,7 +69,7 @@ def _ensure_knowledge_collection() -> bool:
 
 
 def _upsert_knowledge_point(point_id: int, vector: list, payload: dict) -> bool:
-    """Upsert un point dans jarvis_knowledge. Timeout=3s."""
+    """Upsert un point dans bea_knowledge. Timeout=3s."""
     try:
         import requests as _req
         body = {"points": [{"id": point_id, "vector": vector, "payload": payload}]}
@@ -97,7 +97,7 @@ def record_task(
     goal: str = "",
 ) -> bool:
     """
-    Enregistre une expérience d'exécution de tâche dans Qdrant jarvis_knowledge.
+    Enregistre une expérience d'exécution de tâche dans Qdrant bea_knowledge.
 
     Args:
         task_type       : type de tâche (ex: "bug_fix", "deploy", "coding_task")
@@ -154,7 +154,7 @@ def search_similar_tasks(
     top_k: int = 3,
 ) -> list:
     """
-    Recherche des tâches similaires dans jarvis_knowledge.
+    Recherche des tâches similaires dans bea_knowledge.
 
     Args:
         goal      : objectif textuel de la tâche courante
@@ -201,7 +201,7 @@ def search_similar_tasks(
 
 def get_task_stats(task_type: str = "") -> dict:
     """
-    Récupère statistiques agrégées depuis jarvis_knowledge via scroll.
+    Récupère statistiques agrégées depuis bea_knowledge via scroll.
 
     Args:
         task_type : si fourni, filtre par ce type de tâche

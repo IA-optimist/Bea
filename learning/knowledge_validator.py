@@ -1,10 +1,10 @@
 """
-JARVIS MAX — Knowledge Validator v1
+BEA MAX — Knowledge Validator v1
 Couche de validation avant stockage en mémoire.
 
-Avant de persister une connaissance, Jarvis répond à 7 questions :
+Avant de persister une connaissance, Bea répond à 7 questions :
   1. Est-ce crédible ?
-  2. Est-ce utile à Jarvis ?
+  2. Est-ce utile à Bea ?
   3. Est-ce réutilisable ?
   4. Est-ce compatible avec l'architecture actuelle ?
   5. Est-ce déjà connu ? (déduplication)
@@ -67,17 +67,17 @@ class ValidationResult:
         return self.verdict == Verdict.NEEDS_TEST
 
 
-# ── Connaissances spécifiques à Jarvis ───────────────────────────────────────
+# ── Connaissances spécifiques à Bea ───────────────────────────────────────
 
 # Patterns architecturaux connus — utiles pour l'analyse de compatibilité
-_JARVIS_PATTERNS = frozenset({
+_BEA_PATTERNS = frozenset({
     "BaseAgent", "LLMFactory", "safe_invoke", "MemoryStore",
-    "ExecutionGuard", "JarvisSession", "orchestrator", "task_router",
+    "ExecutionGuard", "BeaSession", "orchestrator", "task_router",
     "business_layer", "knowledge_memory", "agent_memory", "vector_memory",
     "patch_builder", "self_improve", "circuit_breaker",
 })
 
-# Sujets pertinents pour Jarvis
+# Sujets pertinents pour Bea
 _RELEVANT_TOPICS = frozenset({
     "python", "async", "asyncio", "fastapi", "docker", "postgresql",
     "qdrant", "langchain", "openai", "anthropic", "ollama",
@@ -162,10 +162,10 @@ class KnowledgeValidator:
         if credibility < self.MIN_CREDIBILITY:
             reasons.append(f"Crédibilité insuffisante ({credibility:.2f})")
 
-        # 3. Utilité pour Jarvis
+        # 3. Utilité pour Bea
         utility = self._utility(content, topic)
         if utility < self.MIN_UTILITY:
-            reasons.append(f"Faible utilité pour Jarvis ({utility:.2f})")
+            reasons.append(f"Faible utilité pour Bea ({utility:.2f})")
 
         # 4. Réutilisabilité
         reusability = self._reusability(content)
@@ -175,7 +175,7 @@ class KnowledgeValidator:
         # 5. Compatibilité architecture
         is_compatible = self._is_compatible(content)
         if not is_compatible:
-            reasons.append("Incompatible avec l'architecture Jarvis (pattern conflictuel)")
+            reasons.append("Incompatible avec l'architecture Bea (pattern conflictuel)")
 
         # 6. Déduplication
         is_duplicate = self._is_duplicate(content, existing_knowledge or [])
@@ -289,15 +289,15 @@ class KnowledgeValidator:
 
         content_lower = (content + " " + topic).lower()
 
-        # Bonus si sujet pertinent pour Jarvis
+        # Bonus si sujet pertinent pour Bea
         matched_topics = sum(
             1 for t in _RELEVANT_TOPICS if t in content_lower
         )
         score += min(matched_topics * 0.08, 0.40)
 
-        # Bonus si pattern Jarvis mentionné
+        # Bonus si pattern Bea mentionné
         matched_patterns = sum(
-            1 for p in _JARVIS_PATTERNS if p.lower() in content_lower
+            1 for p in _BEA_PATTERNS if p.lower() in content_lower
         )
         score += min(matched_patterns * 0.05, 0.20)
 
@@ -328,16 +328,16 @@ class KnowledgeValidator:
 
     def _is_compatible(self, content: str) -> bool:
         """
-        Vérifie la compatibilité avec l'architecture Jarvis.
+        Vérifie la compatibilité avec l'architecture Bea.
         Rejette les patterns qui contrediraient le design actuel.
         """
         content_lower = content.lower()
 
-        # Conflits avec le design Jarvis
+        # Conflits avec le design Bea
         incompatible_patterns = [
-            # Jarvis utilise asyncio — pas de sync blocking
+            # Bea utilise asyncio — pas de sync blocking
             r"time\.sleep\(\s*[^)]{1,10}\)",  # sleep bloquant
-            # Jarvis utilise structlog — pas print
+            # Bea utilise structlog — pas print
             r"\bprint\(.*error\b",
         ]
         for pattern in incompatible_patterns:

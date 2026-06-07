@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-JarvisMax has **40 memory-related Python files** with overlapping responsibilities and no single source of truth:
+BeaMax has **40 memory-related Python files** with overlapping responsibilities and no single source of truth:
 
 ```
 core/memory_facade.py              # Unified interface (fail-open)
@@ -57,7 +57,7 @@ memory/legacy/project_memory.py
 
 ```python
 class UnifiedMemory:
-    """Single canonical memory interface for JarvisMax.
+    """Single canonical memory interface for BeaMax.
     
     All memory operations MUST go through this class.
     Replaces: memory_facade.py, memory.py, memory_bus.py
@@ -113,7 +113,7 @@ CREATE TABLE memory_entries (
 
 #### Qdrant (Vector Similarity)
 
-**Collection:** `jarvismax_memory` (384-dim, cosine similarity)
+**Collection:** `beamax_memory` (384-dim, cosine similarity)
 
 **Stores:**
 - Semantic embeddings (all-MiniLM-L6-v2)

@@ -119,13 +119,13 @@ python3 business/automation/opportunity_scanner.py --days 30 --top 10
 ```
 
 **Output:**
-- `/root/.jarvismax/opportunities/opportunities.json`
-- `/root/.jarvismax/opportunities/report.md`
+- `/root/.beamax/opportunities/opportunities.json`
+- `/root/.beamax/opportunities/report.md`
 
 ### 2. Build Product
 ```bash
 python3 business/automation/product_builder.py \
-    /root/.jarvismax/opportunities/opportunities.json \
+    /root/.beamax/opportunities/opportunities.json \
     --output /tmp/my-saas
 ```
 
@@ -139,8 +139,8 @@ python3 business/legal/compliance_checker.py \
 ```
 
 **Output:**
-- `/root/.jarvismax/compliance/<product-name>_compliance.json`
-- `/root/.jarvismax/compliance/<product-name>_legal_checklist.md`
+- `/root/.beamax/compliance/<product-name>_compliance.json`
+- `/root/.beamax/compliance/<product-name>_legal_checklist.md`
 
 ### 4. Track Revenue
 ```bash
@@ -149,7 +149,7 @@ python3 business/revenue/revenue_engine.py --product my-saas --portfolio
 ```
 
 **Output:**
-- `/root/.jarvismax/revenue/revenue_dashboard.md`
+- `/root/.beamax/revenue/revenue_dashboard.md`
 
 ### 5. Run Full Pipeline
 ```bash
@@ -160,7 +160,7 @@ python3 business/business_engine.py \
 ```
 
 **Output:**
-- `/root/.jarvismax/business/pipeline_results.json`
+- `/root/.beamax/business/pipeline_results.json`
 - Opportunities scanned, compliance checked, products built (if --build)
 
 ---
@@ -173,7 +173,7 @@ python3 business/business_engine.py \
 python3 business/automation/opportunity_scanner.py --days 7 --top 10
 
 # Review report
-cat /root/.jarvismax/opportunities/report.md
+cat /root/.beamax/opportunities/report.md
 ```
 
 ### Example 2: Build Top Opportunity
@@ -181,24 +181,24 @@ cat /root/.jarvismax/opportunities/report.md
 # Get top opportunity
 TOP_OPP=$(python3 -c "
 import json
-with open('/root/.jarvismax/opportunities/opportunities.json') as f:
+with open('/root/.beamax/opportunities/opportunities.json') as f:
     data = json.load(f)
 print(data['opportunities'][0]['title'])
 ")
 
 # Build product
 python3 business/automation/product_builder.py \
-    /root/.jarvismax/opportunities/opportunities.json
+    /root/.beamax/opportunities/opportunities.json
 
 # Check compliance
 python3 business/legal/compliance_checker.py \
-    /root/.jarvismax/products/*/product_spec.json
+    /root/.beamax/products/*/product_spec.json
 ```
 
 ### Example 3: Deploy & Track
 ```bash
 # Deploy (manual for now)
-cd /root/.jarvismax/products/<product-name>
+cd /root/.beamax/products/<product-name>
 vercel deploy  # Frontend
 railway up     # Backend
 
@@ -212,7 +212,7 @@ export STRIPE_SECRET_KEY="sk_live_xxx"
 python3 business/revenue/revenue_engine.py --product <product-name>
 
 # View dashboard
-cat /root/.jarvismax/revenue/revenue_dashboard.md
+cat /root/.beamax/revenue/revenue_dashboard.md
 ```
 
 ---
@@ -335,12 +335,12 @@ stripe>=11.2.0          # Payment processing (optional)
 export STRIPE_SECRET_KEY="sk_test_xxx"
 
 # Optional (for custom workspace)
-export JARVISMAX_HOME="/path/to/workspace"
+export BEAMAX_HOME="/path/to/workspace"
 ```
 
 **Data Storage:**
 ```
-~/.jarvismax/
+~/.beamax/
 ├── opportunities/      # Scanned opportunities
 ├── products/          # Generated SaaS projects
 ├── compliance/        # Legal reports
@@ -382,7 +382,7 @@ MIT License — See main repo LICENSE
 
 ## 🆘 Support
 
-**Issues:** https://github.com/UniTy01/Jarvismax-master/issues  
+**Issues:** https://github.com/UniTy01/Beamax-master/issues  
 **Docs:** See `/tmp/BUSINESS_ENGINE_FINAL_REPORT.md`
 
 ---
@@ -399,5 +399,5 @@ MIT License — See main repo LICENSE
 
 ---
 
-**Built with ❤️ by JarvisMax AGI**  
+**Built with ❤️ by BeaMax AGI**  
 **Generated:** 2026-04-06 21:30 UTC

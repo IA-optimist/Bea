@@ -1,9 +1,9 @@
 """
-JARVIS MAX — SystemState (WorldModel)
+BEA MAX — SystemState (WorldModel)
 Vision en temps réel de la santé du système multi-agents.
 
 Rôle :
-    Maintient une image cohérente de l'état global de JarvisMax :
+    Maintient une image cohérente de l'état global de BeaMax :
     - Santé de chaque module (agents, LLM, mémoire, outils)
     - Erreurs récentes et tendances
     - Métriques clés (latences, taux de succès, ressources)
@@ -131,7 +131,7 @@ class ErrorRecord:
 
 class SystemState:
     """
-    Vision en temps réel de l'état du système JarvisMax.
+    Vision en temps réel de l'état du système BeaMax.
 
     Conçu pour être un singleton partagé entre l'orchestrateur,
     les agents et les outils de monitoring.

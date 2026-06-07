@@ -1,5 +1,5 @@
 """
-kernel/ — JarvisMax Cognitive OS Kernel.
+kernel/ — BeaMax Cognitive OS Kernel.
 
 The kernel is the minimal, stable, domain-agnostic core that everything
 else is built on. It defines:

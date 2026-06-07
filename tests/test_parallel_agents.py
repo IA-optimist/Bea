@@ -34,7 +34,7 @@ except ImportError:
 
 class _FakeSettings:
     def __init__(self):
-        self.workspace_dir = "/tmp/jarvis_test"
+        self.workspace_dir = "/tmp/bea_test"
         self.dry_run = True
 
     def get_llm(self, role):
@@ -49,8 +49,8 @@ def _make_settings():
 
 def _make_session(mission="Test mission"):
     try:
-        from core.state import JarvisSession
-        return JarvisSession(session_id="test_sess", user_input=mission)
+        from core.state import BeaSession
+        return BeaSession(session_id="test_sess", user_input=mission)
     except Exception:
         # Minimal fallback session
         s = types.SimpleNamespace()

@@ -1,4 +1,4 @@
-"""Agent Profile Management for JarvisMax multi-project specialization."""
+"""Agent Profile Management for BeaMax multi-project specialization."""
 import yaml
 from pathlib import Path
 import structlog

@@ -476,7 +476,7 @@ def test_mission9_degraded_model():
     Safety flags disable intelligence layers.
     System must still function: execute tools, record lifecycle.
     """
-    os.environ["JARVIS_DISABLE_ALL_INTELLIGENCE"] = "1"
+    os.environ["BEA_DISABLE_ALL_INTELLIGENCE"] = "1"
     try:
         from core.safety_controls import is_intelligence_enabled, is_proposals_enabled
         assert not is_intelligence_enabled()
@@ -491,7 +491,7 @@ def test_mission9_degraded_model():
         # Dynamic routing should fall through to static
         # Dynamic routing is a separate flag — should still be independently controllable
         # But intelligence being disabled doesn't necessarily disable routing
-        # This is by design: routing uses its own JARVIS_DYNAMIC_ROUTING flag
+        # This is by design: routing uses its own BEA_DYNAMIC_ROUTING flag
 
         # Lifecycle should still work
         lt = LifecycleTracker()
@@ -506,7 +506,7 @@ def test_mission9_degraded_model():
         assert lt.get("degraded-001").is_complete
 
     finally:
-        os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+        os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -626,8 +626,8 @@ def test_observe_latency_distribution():
 
 def test_observe_proposal_relevance():
     """Proposals should match actual performance issues."""
-    os.environ.pop("JARVIS_DISABLE_PROPOSALS", None)
-    os.environ.pop("JARVIS_DISABLE_ALL_INTELLIGENCE", None)
+    os.environ.pop("BEA_DISABLE_PROPOSALS", None)
+    os.environ.pop("BEA_DISABLE_ALL_INTELLIGENCE", None)
 
     tpt = ToolPerformanceTracker(persist_path="/tmp/obs_proposals.jsonl")
     import core.tool_performance_tracker as tpt_mod

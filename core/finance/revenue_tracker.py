@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Revenue Tracker
+BEA MAX — Revenue Tracker
 ================================
 Computes MRR, ARR, growth, customer value, and conversion metrics
 from FinanceMemory data.

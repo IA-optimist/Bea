@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Observability Endpoints
+BEA MAX — Observability Endpoints
 ======================================
 Production-grade diagnostics — metrics, traces, failure patterns, status.
 
@@ -13,7 +13,7 @@ Routes:
 
 Security:
   - /health is unauthenticated (for load balancers / uptime monitors)
-  - All other endpoints require JARVIS_API_TOKEN if set
+  - All other endpoints require BEA_API_TOKEN if set
   - No secrets, keys, or tokens in any response
   - Model IDs are exposed (not sensitive); API keys are never exposed
 """
@@ -34,7 +34,7 @@ if APIRouter:
     _start_time = time.time()
 
     def _check_auth(token: str | None) -> None:
-        api_token = os.getenv("JARVIS_API_TOKEN", "")
+        api_token = os.getenv("BEA_API_TOKEN", "")
         if api_token and token != api_token:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -48,9 +48,9 @@ if APIRouter:
     # ── Full Metrics ──────────────────────────────────────────
 
     @router.get("/metrics")
-    async def metrics(x_jarvis_token: str | None = Header(None)):
+    async def metrics(x_bea_token: str | None = Header(None)):
         """Full metrics snapshot — counters, histograms, gauges, failures, costs."""
-        _check_auth(x_jarvis_token)
+        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             return JSONResponse(content={"ok": True, "data": get_metrics().snapshot()})
@@ -61,9 +61,9 @@ if APIRouter:
     # ── Human Status ──────────────────────────────────────────
 
     @router.get("/status")
-    async def status(x_jarvis_token: str | None = Header(None)):
+    async def status(x_bea_token: str | None = Header(None)):
         """Human-readable system status overview."""
-        _check_auth(x_jarvis_token)
+        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             text = get_metrics().human_summary()
@@ -75,12 +75,12 @@ if APIRouter:
 
     @router.get("/failures")
     async def failures(
-        x_jarvis_token: str | None = Header(None),
+        x_bea_token: str | None = Header(None),
         window_hours: float = Query(1.0, ge=0.1, le=24),
         limit: int = Query(20, ge=1, le=100),
     ):
         """Failure pattern aggregation."""
-        _check_auth(x_jarvis_token)
+        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -99,9 +99,9 @@ if APIRouter:
     # ── Cost Visibility ───────────────────────────────────────
 
     @router.get("/costs")
-    async def costs(x_jarvis_token: str | None = Header(None)):
+    async def costs(x_bea_token: str | None = Header(None)):
         """Estimated cost breakdown by model and mission."""
-        _check_auth(x_jarvis_token)
+        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             return JSONResponse(content={
@@ -115,9 +115,9 @@ if APIRouter:
     # ── Trace Intelligence ────────────────────────────────────
 
     @router.get("/trace/{mission_id}")
-    async def trace(mission_id: str, x_jarvis_token: str | None = Header(None)):
+    async def trace(mission_id: str, x_bea_token: str | None = Header(None)):
         """Structured trace analysis for a mission."""
-        _check_auth(x_jarvis_token)
+        _check_auth(x_bea_token)
         try:
             from core.trace_intelligence import TraceSummarizer
             summary = TraceSummarizer.summarize(mission_id)

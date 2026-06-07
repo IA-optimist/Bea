@@ -1,5 +1,5 @@
 """
-Tree-of-Thought Reasoning for JarvisMax
+Tree-of-Thought Reasoning for BeaMax
 Multi-path exploration with pruning and evaluation.
 """
 from __future__ import annotations

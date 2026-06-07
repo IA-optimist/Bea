@@ -1,5 +1,5 @@
 -- Migration 002: Memory Tables
--- JarvisMax Phase 0 - Memory and knowledge storage
+-- BeaMax Phase 0 - Memory and knowledge storage
 -- PostgreSQL 13+ compatible
 -- Run date: 2026-04-10
 

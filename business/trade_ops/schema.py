@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Trade Ops : Schémas de données
+BEA BUSINESS LAYER — Trade Ops : Schémas de données
 Modélise un agent IA métier spécialisé pour les métiers de terrain / TPE.
 """
 from __future__ import annotations

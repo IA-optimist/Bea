@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Agent Template Schema
+BEA MAX — Business Agent Template Schema
 =============================================
 Defines the formal structure every business agent template must follow.
 

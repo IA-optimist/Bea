@@ -1,5 +1,5 @@
 """
-JARVIS — Business Pipeline Manager
+BEA — Business Pipeline Manager
 ======================================
 Lightweight CRM + pipeline tracker for digital micro-business operations.
 
@@ -34,7 +34,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.business_pipeline")
+logger = logging.getLogger("bea.business_pipeline")
 
 
 # ═══════════════════════════════════════════════════════════════

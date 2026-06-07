@@ -26,7 +26,7 @@ Without PostgreSQL (default behavior - backward compatible):
   # Works as before - JSON/SQLite only
 
 With PostgreSQL (dual-write enabled):
-  $ export DATABASE_URL="postgresql://user:pass@host:5432/jarvismax"
+  $ export DATABASE_URL="postgresql://user:pass@host:5432/beamax"
   $ python3 app.py
   
   from memory.vault_memory import VaultMemory

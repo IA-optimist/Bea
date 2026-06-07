@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Long-Term Episodic Memory
+BEA MAX v3 — Long-Term Episodic Memory
 Permet à l'agent de ne pas répéter les mêmes erreurs de syntaxe, ou de se souvenir
 des configurations systèmes spécifiques utiles à sa survie.
 """
@@ -12,7 +12,7 @@ log = structlog.get_logger()
 class MemoryBank:
     """Base de données locale (JSON) des leçons apprises (RAG basique contextuel)."""
     
-    def __init__(self, db_path: str = "workspace/.jarvis_memory.json"):
+    def __init__(self, db_path: str = "workspace/.bea_memory.json"):
         self.db_path = Path(db_path).absolute()
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)

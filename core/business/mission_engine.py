@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Mission Engine
+BEA MAX — Business Mission Engine
 ========================================
 Top-level orchestrator for structured multi-step business missions.
 

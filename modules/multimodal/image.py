@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Multimodal Image Module
+BEA MAX — Multimodal Image Module
 Provider chain: OpenAI DALL-E 3 → HuggingFace Stable Diffusion → stub
 Vision: GPT-4o for image description/analysis.
 

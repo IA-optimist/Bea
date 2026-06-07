@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Execution Engine v2
+BEA MAX — Execution Engine v2
 Moteur d'exécution central avec task queue priorisée, retry, timeouts et
 journalisation structurée. Aucune tâche ne disparaît silencieusement.
 
@@ -59,7 +59,7 @@ _MAX_TERMINAL_KEPT = 500    # tâches terminées conservées en mémoire (LRU)
 
 class ExecutionEngine:
     """
-    Moteur d'exécution JarvisMax v2.
+    Moteur d'exécution BeaMax v2.
 
     Usage :
         engine = get_engine()
@@ -103,7 +103,7 @@ class ExecutionEngine:
         self._started_at = time.time()
         self._thread = threading.Thread(
             target=self._worker_loop,
-            name="JarvisExecutionEngine",
+            name="BeaExecutionEngine",
             daemon=True,
         )
         self._thread.start()
@@ -313,7 +313,7 @@ class ExecutionEngine:
             t = threading.Thread(
                 target=self._execute_task_safe,
                 args=(task,),
-                name=f"JarvisTask-{task.id}",
+                name=f"BeaTask-{task.id}",
                 daemon=True,
             )
             t.start()
@@ -530,7 +530,7 @@ class ExecutionEngine:
             finally:
                 done_event.set()
 
-        worker = threading.Thread(target=_run, daemon=True, name=f"JarvisHandler-{task.id}")
+        worker = threading.Thread(target=_run, daemon=True, name=f"BeaHandler-{task.id}")
         worker.start()
 
         # Attendre avec timeout

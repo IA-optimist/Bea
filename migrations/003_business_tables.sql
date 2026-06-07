@@ -1,5 +1,5 @@
 -- Migration 003: Business & Finance Tables
--- JarvisMax Phase 1 - Autonomous business engine foundation
+-- BeaMax Phase 1 - Autonomous business engine foundation
 -- PostgreSQL 13+ compatible
 -- Run date: 2026-04-10
 

@@ -1,6 +1,6 @@
 """
-JARVIS MAX — Mission System v1
-Point d'entrée unique pour soumettre une mission à Jarvis.
+BEA MAX — Mission System v1
+Point d'entrée unique pour soumettre une mission à Bea.
 
 Flux complet :
   1. L'utilisateur soumet une mission en langage naturel
@@ -11,11 +11,11 @@ Flux complet :
   6. Chaque action est exécutée selon le mode
 
 Structure d'une mission :
-  MissionPlan    : le plan proposé par Jarvis (sans LLM, analyse rapide)
+  MissionPlan    : le plan proposé par Bea (sans LLM, analyse rapide)
   MissionResult  : résultat complet avec advisory, actions, statut
   MissionStatus  : cycle de vie de la mission
 
-Persistance : SQLite (workspace/jarvismax.db) avec fallback JSON
+Persistance : SQLite (workspace/beamax.db) avec fallback JSON
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ from core.mission_models import (
 
 class MissionSystem:
     """
-    Système de mission principal de JarvisMax.
+    Système de mission principal de BeaMax.
 
     Usage :
         ms = MissionSystem()

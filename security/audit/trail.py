@@ -1,5 +1,5 @@
 """
-security/audit/trail.py — Immutable audit trail for JarvisMax (Pass 17).
+security/audit/trail.py — Immutable audit trail for BeaMax (Pass 17).
 
 Every security decision (allow / deny / escalate) is recorded here.
 The trail is append-only: entries cannot be modified or deleted.
@@ -109,7 +109,7 @@ class AuditTrail:
     Append-only audit trail with optional JSONL file persistence.
 
     In-memory ring buffer (default 10 000 entries) + optional file sink.
-    File path is resolved from env JARVIS_AUDIT_LOG or defaults to
+    File path is resolved from env BEA_AUDIT_LOG or defaults to
     logs/security_audit.jsonl relative to the project root.
     """
 
@@ -124,7 +124,7 @@ class AuditTrail:
         self._max_memory = max_memory
 
         # Resolve file path
-        _env_path = os.getenv("JARVIS_AUDIT_LOG", "")
+        _env_path = os.getenv("BEA_AUDIT_LOG", "")
         self._file_path: Optional[Path] = None
         raw = file_path or _env_path
         if raw:
@@ -194,13 +194,13 @@ def get_audit_trail() -> AuditTrail:
     BLOC 4 fix: default singleton now uses file persistence so the audit trail
     survives process restarts. Path resolution order:
       1. Constructor arg (if called directly with file_path)
-      2. JARVIS_AUDIT_LOG env var
+      2. BEA_AUDIT_LOG env var
       3. Default: logs/security_audit.jsonl (relative to cwd / project root)
 
     The `logs/` directory is created on first write if missing.
     """
     global _trail
     if _trail is None:
-        _default_path = os.getenv("JARVIS_AUDIT_LOG", "logs/security_audit.jsonl")
+        _default_path = os.getenv("BEA_AUDIT_LOG", "logs/security_audit.jsonl")
         _trail = AuditTrail(file_path=_default_path)
     return _trail

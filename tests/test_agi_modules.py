@@ -85,8 +85,8 @@ class TestContinualMemory:
 
 class TestCausalModule:
     def test_import_integration(self):
-        from core.orchestration.causal_module import JarvisMaxCausalIntegration
-        c = JarvisMaxCausalIntegration()
+        from core.orchestration.causal_module import BeaMaxCausalIntegration
+        c = BeaMaxCausalIntegration()
         assert c is not None
 
     def test_import_causal_graph(self):

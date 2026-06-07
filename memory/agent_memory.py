@@ -1,5 +1,5 @@
 """
-JARVIS MAX — AgentMemory
+BEA MAX — AgentMemory
 Mémoire per-agent : enregistre les sorties réussies et patterns utiles.
 
 Objectif :

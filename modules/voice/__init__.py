@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Voice & Call System (Phase 10)
+BEA MAX — Voice & Call System (Phase 10)
 Exposes CallManager and VoicePipeline.
 """
 from modules.voice.call_manager import CallManager

@@ -150,49 +150,49 @@ class TestProductionStartupGuard(unittest.TestCase):
 
     def test_prod_fails_without_token(self):
         from core.security.startup_guard import run_all_checks, StartupGuardError
-        old_env = os.environ.get("JARVIS_ENV")
-        old_token = os.environ.get("JARVIS_API_TOKEN")
-        old_key = os.environ.get("JARVIS_SECRET_KEY")
-        os.environ["JARVIS_ENV"] = "production"
-        os.environ.pop("JARVIS_API_TOKEN", None)
-        os.environ.pop("JARVIS_SECRET_KEY", None)
+        old_env = os.environ.get("BEA_ENV")
+        old_token = os.environ.get("BEA_API_TOKEN")
+        old_key = os.environ.get("BEA_SECRET_KEY")
+        os.environ["BEA_ENV"] = "production"
+        os.environ.pop("BEA_API_TOKEN", None)
+        os.environ.pop("BEA_SECRET_KEY", None)
         try:
             with self.assertRaises(StartupGuardError):
                 run_all_checks()
         finally:
-            if old_env: os.environ["JARVIS_ENV"] = old_env
-            else: os.environ.pop("JARVIS_ENV", None)
-            if old_token: os.environ["JARVIS_API_TOKEN"] = old_token
-            if old_key: os.environ["JARVIS_SECRET_KEY"] = old_key
+            if old_env: os.environ["BEA_ENV"] = old_env
+            else: os.environ.pop("BEA_ENV", None)
+            if old_token: os.environ["BEA_API_TOKEN"] = old_token
+            if old_key: os.environ["BEA_SECRET_KEY"] = old_key
 
     def test_dev_passes_without_token(self):
         from core.security.startup_guard import run_all_checks
-        old_env = os.environ.get("JARVIS_ENV")
-        old_token = os.environ.get("JARVIS_API_TOKEN")
-        os.environ["JARVIS_ENV"] = "development"
-        os.environ.pop("JARVIS_API_TOKEN", None)
+        old_env = os.environ.get("BEA_ENV")
+        old_token = os.environ.get("BEA_API_TOKEN")
+        os.environ["BEA_ENV"] = "development"
+        os.environ.pop("BEA_API_TOKEN", None)
         try:
             result = run_all_checks()
             self.assertFalse(result["is_production"])
         finally:
-            if old_env: os.environ["JARVIS_ENV"] = old_env
-            else: os.environ.pop("JARVIS_ENV", None)
-            if old_token: os.environ["JARVIS_API_TOKEN"] = old_token
+            if old_env: os.environ["BEA_ENV"] = old_env
+            else: os.environ.pop("BEA_ENV", None)
+            if old_token: os.environ["BEA_API_TOKEN"] = old_token
 
     def test_prod_rejects_weak_token(self):
         from core.security.startup_guard import run_all_checks, StartupGuardError
-        old_env = os.environ.get("JARVIS_ENV")
-        old_token = os.environ.get("JARVIS_API_TOKEN")
-        os.environ["JARVIS_ENV"] = "production"
-        os.environ["JARVIS_API_TOKEN"] = "test"
+        old_env = os.environ.get("BEA_ENV")
+        old_token = os.environ.get("BEA_API_TOKEN")
+        os.environ["BEA_ENV"] = "production"
+        os.environ["BEA_API_TOKEN"] = "test"
         try:
             with self.assertRaises(StartupGuardError):
                 run_all_checks()
         finally:
-            if old_env: os.environ["JARVIS_ENV"] = old_env
-            else: os.environ.pop("JARVIS_ENV", None)
-            if old_token: os.environ["JARVIS_API_TOKEN"] = old_token
-            else: os.environ.pop("JARVIS_API_TOKEN", None)
+            if old_env: os.environ["BEA_ENV"] = old_env
+            else: os.environ.pop("BEA_ENV", None)
+            if old_token: os.environ["BEA_API_TOKEN"] = old_token
+            else: os.environ.pop("BEA_API_TOKEN", None)
 
 
 class TestCanonicalAPISchema(unittest.TestCase):

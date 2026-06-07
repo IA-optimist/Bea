@@ -20,7 +20,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-logger = logging.getLogger("jarvis.self_improvement.safe_executor")
+logger = logging.getLogger("bea.self_improvement.safe_executor")
 
 from core.self_improvement.protected_paths import PROTECTED_FILES_ARCH as PROTECTED_FILES, PROTECTED_DIRS
 

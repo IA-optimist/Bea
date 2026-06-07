@@ -1,5 +1,5 @@
 """
-Tests end-to-end — JarvisOrchestrator (offline)
+Tests end-to-end — BeaOrchestrator (offline)
 
 Couvre :
     1. classify_intent() — routing local zero LLM
@@ -48,11 +48,11 @@ def _fail(name: str, detail: str = ""):
 # ══════════════════════════════════════════════════════════════
 
 def test_import():
-    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
     from config.settings import get_settings
-    orch = JarvisOrchestrator(get_settings())
+    orch = BeaOrchestrator(get_settings())
     assert orch is not None
-    _ok("import JarvisOrchestrator")
+    _ok("import BeaOrchestrator")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -60,9 +60,9 @@ def test_import():
 # ══════════════════════════════════════════════════════════════
 
 def test_intent_map():
-    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
     required_keys = {"improve", "code", "research", "plan", "night", "chat", "default"}
-    present = set(JarvisOrchestrator.INTENT_MAP.keys())
+    present = set(BeaOrchestrator.INTENT_MAP.keys())
     missing = required_keys - present
     assert not missing, f"INTENT_MAP manquants : {missing}"
     _ok(f"INTENT_MAP complet ({len(present)} clés)")
@@ -73,10 +73,10 @@ def test_intent_map():
 # ══════════════════════════════════════════════════════════════
 
 def test_classify_intent():
-    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
     from config.settings import get_settings
 
-    orch = JarvisOrchestrator(get_settings())
+    orch = BeaOrchestrator(get_settings())
     cases = [
         ("ameliore le pipeline self_improve",        "improve"),
         ("optimise ton code",                        "improve"),
@@ -106,11 +106,11 @@ def test_classify_intent():
 # ══════════════════════════════════════════════════════════════
 
 def test_supervised_property():
-    from core.orchestrator_LEGACY_20260407 import JarvisOrchestrator
+    from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
     from config.settings import get_settings
     from executor.supervised_executor import SupervisedExecutor
 
-    orch = JarvisOrchestrator(get_settings())
+    orch = BeaOrchestrator(get_settings())
     sup  = orch.supervised
     assert isinstance(sup, SupervisedExecutor), f"type={type(sup)}"
     # Appel 2 fois → même instance (cache)

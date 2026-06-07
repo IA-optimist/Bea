@@ -1,4 +1,4 @@
-JARVIS MAX MEMORY CONSOLIDATION - BEFORE & AFTER
+BEA MAX MEMORY CONSOLIDATION - BEFORE & AFTER
 =================================================
 
 BEFORE (Current State - 26 Files):

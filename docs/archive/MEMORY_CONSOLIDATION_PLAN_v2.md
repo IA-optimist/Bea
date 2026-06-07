@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-JarvisMax currently has **37 memory-related files** across 10+ independent systems:
+BeaMax currently has **37 memory-related files** across 10+ independent systems:
 
 - `core/memory.py`, `core/memory_facade.py` (facade pattern)
 - `memory/vault_memory.py` (long-term storage)

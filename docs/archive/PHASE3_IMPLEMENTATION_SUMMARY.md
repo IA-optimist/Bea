@@ -45,7 +45,7 @@ Successfully implemented three bio-inspired AGI mechanisms:
 
 ### Integration
 
-5. **`core/orchestration/jarvis_team_dispatcher.py`** (modified)
+5. **`core/orchestration/bea_team_dispatcher.py`** (modified)
    - Added Global Workspace import
    - After each agent response, publishes to global workspace:
      ```python
@@ -141,7 +141,7 @@ Successfully implemented three bio-inspired AGI mechanisms:
   - Collective intelligence
 
 **Integration**: 
-- Integrated in `jarvis_team_dispatcher.py`
+- Integrated in `bea_team_dispatcher.py`
 - Each agent in the chain publishes to workspace
 - Creates "conscious" coordination between agents
 
@@ -154,7 +154,7 @@ Trigger nightly cognitive consolidation manually.
 **Request**:
 ```bash
 curl -X POST http://localhost:8000/api/v3/training/consolidate \
-  -H "X-Jarvis-Token: $ADMIN_TOKEN"
+  -H "X-Bea-Token: $ADMIN_TOKEN"
 ```
 
 **Response**:
@@ -259,7 +259,7 @@ Test 4: Global Workspace Theory integration
 
 1. **Cron Job**: Schedule consolidation at 3am UTC
    ```cron
-   0 3 * * * cd /path/to/jarvismax && python3 -c "import asyncio; from core.cognitive_consolidation import run_nightly_consolidation; asyncio.run(run_nightly_consolidation())"
+   0 3 * * * cd /path/to/beamax && python3 -c "import asyncio; from core.cognitive_consolidation import run_nightly_consolidation; asyncio.run(run_nightly_consolidation())"
    ```
 
 2. **Training Data Collection**: 

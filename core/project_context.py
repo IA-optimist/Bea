@@ -1,5 +1,5 @@
 """
-JarvisMax - Project Context Management
+BeaMax - Project Context Management
 Thread-safe storage for current project context.
 """
 import threading

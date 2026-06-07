@@ -435,7 +435,7 @@ def web_scrape_connector(params: dict) -> ConnectorResult:
     try:
         import urllib.request
         req = urllib.request.Request(url, headers={
-            "User-Agent": "JarvisMax/1.0 (research bot)",
+            "User-Agent": "BeaMax/1.0 (research bot)",
             "Accept": "text/html,application/xhtml+xml,*/*",
         })
         with urllib.request.urlopen(req, timeout=_SCRAPE_TIMEOUT) as resp:  # nosec B310 — URL pre-validated upstream (scheme/host allowlist or trusted config)
@@ -504,7 +504,7 @@ FILE_EXPORT_SPEC = ConnectorSpec(
     failure_modes=["write_error", "invalid_format", "size_exceeded"],
 )
 
-_EXPORT_DIR = os.environ.get("JARVIS_EXPORT_DIR", "workspace/exports")
+_EXPORT_DIR = os.environ.get("BEA_EXPORT_DIR", "workspace/exports")
 _MAX_EXPORT_SIZE = 500_000
 
 

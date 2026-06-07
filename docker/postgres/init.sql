@@ -1,5 +1,5 @@
 -- ================================================================
--- JARVIS MAX - Init PostgreSQL
+-- BEA MAX - Init PostgreSQL
 -- Created automatically on first docker compose startup.
 --
 -- ALIGNED with core/db.py SQLite schema + asyncpg module schemas.

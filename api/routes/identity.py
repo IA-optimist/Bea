@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity API Routes
+BEA MAX — Identity API Routes
 ====================================
 REST endpoints for Identity Manager.
 

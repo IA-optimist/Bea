@@ -173,7 +173,7 @@ def _build_handler(settings):
 
     # Routage HYBRIDE : question conversationnelle (sans outil) -> AGENT COMPLET (cognition).
     _api_url = os.getenv("BEA_API_URL", "http://127.0.0.1:8000").rstrip("/")
-    _api_token = os.getenv("JARVIS_API_TOKEN", "localdev")
+    _api_token = os.getenv("BEA_API_TOKEN", "localdev")
     _use_cognition = os.getenv("BEA_USE_COGNITION", "1") not in ("0", "false", "no", "")
 
     async def _cognition_via_api(message: str, hist) -> dict | None:
@@ -200,7 +200,7 @@ def _build_handler(settings):
         try:
             async with httpx.AsyncClient(timeout=75) as c:
                 resp = await c.post(f"{_api_url}/api/v3/chat", json=payload,
-                                    headers={"X-Jarvis-Token": _api_token})
+                                    headers={"X-Bea-Token": _api_token})
             if resp.status_code == 200:
                 d = resp.json()
                 txt = (d.get("response") or "").strip()
@@ -394,7 +394,7 @@ def _build_handler(settings):
         if not approve:
             return "Auto-amélioration annulée. 🚫"
         # Ton « oui » via Telegram = approbation OPÉRATEUR -> on lève le garde pour CE changement.
-        os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = "1"
+        os.environ["BEA_SKIP_IMPROVEMENT_GATE"] = "1"
 
         def _exec():
             from core.self_improvement.improvement_memory import get_improvement_memory
@@ -416,7 +416,7 @@ def _build_handler(settings):
         except Exception as e:                # noqa: BLE001
             return f"Erreur à l'application : {str(e)[:140]}"
         finally:
-            os.environ.pop("JARVIS_SKIP_IMPROVEMENT_GATE", None)
+            os.environ.pop("BEA_SKIP_IMPROVEMENT_GATE", None)
 
     _IMPROVE_TRIGGER = _re.compile(
         r"\b(am[ée]liore[\s-]?toi|auto[\s-]?am[ée]lior|am[ée]liore ton code|/improve)", _re.I)

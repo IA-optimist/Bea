@@ -1,5 +1,5 @@
 """
-JARVIS MAX - TaskRouter
+BEA MAX - TaskRouter
 Analyse l intention de l utilisateur et produit :
   - le TaskMode (CHAT / RESEARCH / PLAN / CODE / AUTO / NIGHT / IMPROVE)
   - la liste ordonnee des agents a mobiliser

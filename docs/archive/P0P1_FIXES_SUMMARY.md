@@ -44,8 +44,8 @@ cognition_result = await _cog.execute_mission_with_cognition(
 
 ---
 
-### ✅ 1C: Replace .achat() with .ainvoke() in jarvis_team_dispatcher.py
-**File**: `core/orchestration/jarvis_team_dispatcher.py` (line 43-44)
+### ✅ 1C: Replace .achat() with .ainvoke() in bea_team_dispatcher.py
+**File**: `core/orchestration/bea_team_dispatcher.py` (line 43-44)
 
 **Before**:
 ```python
@@ -64,12 +64,12 @@ result = response.content if hasattr(response, "content") else str(response)
 ---
 
 ### ✅ 1D: Replace except Exception: break with continue
-**File**: `core/orchestration/jarvis_team_dispatcher.py` (line 49-52)
+**File**: `core/orchestration/bea_team_dispatcher.py` (line 49-52)
 
 **Before**:
 ```python
 except Exception as e:
-    log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
+    log.warning("bea_team.agent_failed", agent=agent_name, error=str(e)[:80])
     chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
     break
 ```
@@ -77,7 +77,7 @@ except Exception as e:
 **After** (FIXED):
 ```python
 except Exception as e:
-    log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
+    log.warning("bea_team.agent_failed", agent=agent_name, error=str(e)[:80])
     chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
     continue
 ```
@@ -144,8 +144,8 @@ command: python main.py
 ### Test Suite: test_p0p1_fixes.py
 ```
 ✓ PASS: test_cognition_orchestrator_signature
-✓ PASS: test_jarvis_team_dispatcher_ainvoke
-✓ PASS: test_jarvis_team_dispatcher_continue
+✓ PASS: test_bea_team_dispatcher_ainvoke
+✓ PASS: test_bea_team_dispatcher_continue
 ✓ PASS: test_meta_orchestrator_create_task
 ✓ PASS: test_vault_rbac
 ✓ PASS: test_docker_compose_no_reload
@@ -157,7 +157,7 @@ command: python main.py
 ```
 ✓ MetaOrchestrator imports successfully
 ✓ CognitionOrchestrator imports successfully
-✓ JarvisTeamDispatcher imports successfully
+✓ BeaTeamDispatcher imports successfully
 ✓ Vault routes import successfully
 ✓ No TypeError or AttributeError at container startup
 ```
@@ -171,7 +171,7 @@ command: python main.py
 **Fixed in this commit**: 1
 
 ### Changes Made
-1. **jarvis_team_dispatcher.py line 52**: Changed `break` to `continue` to prevent agent failures from blocking the entire chain.
+1. **bea_team_dispatcher.py line 52**: Changed `break` to `continue` to prevent agent failures from blocking the entire chain.
 
 ### Already Correct
 - CognitionOrchestrator signature matches all call sites
@@ -189,7 +189,7 @@ command: python main.py
 ---
 
 ## Files Modified in This Commit
-1. `core/orchestration/jarvis_team_dispatcher.py` - Changed exception handling from `break` to `continue`
+1. `core/orchestration/bea_team_dispatcher.py` - Changed exception handling from `break` to `continue`
 
 ## Files Already Correct (No Changes Needed)
 1. `core/cognition/orchestrator.py` - Signature correct

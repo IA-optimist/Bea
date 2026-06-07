@@ -13,11 +13,11 @@
 ```
 fix: P0/P1 — CognitionOrchestrator signature, achat→ainvoke, ensure_future, Vault RBAC
 ```
-- Changed `break` to `continue` in jarvis_team_dispatcher.py exception handler (initial fix)
+- Changed `break` to `continue` in bea_team_dispatcher.py exception handler (initial fix)
 
 ### Commit 2: 223d1b11d867a4a0eb705b5cec0bfaceb89d8e03
 ```
-fix: P0/P1 — Replace break with continue in jarvis_team_dispatcher exception handler
+fix: P0/P1 — Replace break with continue in bea_team_dispatcher exception handler
 ```
 - Re-applied the fix after file was modified by other work
 - Includes Global Workspace Theory integration (bonus improvement)
@@ -66,7 +66,7 @@ cognition_result = await _cog.execute_mission_with_cognition(
 ---
 
 ### ✅ 1C: Replace .achat() with .ainvoke()
-**File**: `core/orchestration/jarvis_team_dispatcher.py:43-46`
+**File**: `core/orchestration/bea_team_dispatcher.py:43-46`
 
 **Code**:
 ```python
@@ -80,12 +80,12 @@ result = response.content if hasattr(response, "content") else str(response)
 ---
 
 ### ✅ 1D: Replace except Exception: break with continue
-**File**: `core/orchestration/jarvis_team_dispatcher.py:60-63`
+**File**: `core/orchestration/bea_team_dispatcher.py:60-63`
 
 **Before**:
 ```python
 except Exception as e:
-    log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
+    log.warning("bea_team.agent_failed", agent=agent_name, error=str(e)[:80])
     chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
     break
 ```
@@ -93,7 +93,7 @@ except Exception as e:
 **After**:
 ```python
 except Exception as e:
-    log.warning("jarvis_team.agent_failed", agent=agent_name, error=str(e)[:80])
+    log.warning("bea_team.agent_failed", agent=agent_name, error=str(e)[:80])
     chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
     continue
 ```
@@ -159,8 +159,8 @@ command: python main.py
 ### Test Suite: test_p0p1_fixes.py
 ```
 ✓ PASS: test_cognition_orchestrator_signature
-✓ PASS: test_jarvis_team_dispatcher_ainvoke
-✓ PASS: test_jarvis_team_dispatcher_continue
+✓ PASS: test_bea_team_dispatcher_ainvoke
+✓ PASS: test_bea_team_dispatcher_continue
 ✓ PASS: test_meta_orchestrator_create_task
 ✓ PASS: test_vault_rbac
 ✓ PASS: test_docker_compose_no_reload
@@ -172,14 +172,14 @@ command: python main.py
 ```
 ✓ MetaOrchestrator imports successfully
 ✓ CognitionOrchestrator imports successfully
-✓ JarvisTeamDispatcher imports successfully
+✓ BeaTeamDispatcher imports successfully
 ✓ Vault routes import successfully
 ✓ No TypeError or AttributeError at container startup
 ```
 
 ### Python Syntax Validation
 ```bash
-$ python3 -m py_compile core/orchestration/jarvis_team_dispatcher.py \
+$ python3 -m py_compile core/orchestration/bea_team_dispatcher.py \
                         core/meta_orchestrator.py \
                         core/cognition/orchestrator.py \
                         api/routes/vault.py
@@ -190,7 +190,7 @@ $ python3 -m py_compile core/orchestration/jarvis_team_dispatcher.py \
 ```python
 from core.meta_orchestrator import MetaOrchestrator  # ✓
 from core.cognition.orchestrator import CognitionOrchestrator  # ✓
-from core.orchestration.jarvis_team_dispatcher import dispatch_improve  # ✓
+from core.orchestration.bea_team_dispatcher import dispatch_improve  # ✓
 from api.routes.vault import router  # ✓
 # No TypeError or AttributeError
 ```
@@ -210,11 +210,11 @@ from api.routes.vault import router  # ✓
 
 ## Files Modified
 
-### core/orchestration/jarvis_team_dispatcher.py
+### core/orchestration/bea_team_dispatcher.py
 - **Line 63**: Changed `break` to `continue` in exception handler
 - **Lines 4, 10, 49-55**: Added Global Workspace Theory integration (bonus)
 
-**Impact**: Agents in the JarvisTeam chain no longer block each other on failure. If architect fails, coder/reviewer/qa can still attempt execution.
+**Impact**: Agents in the BeaTeam chain no longer block each other on failure. If architect fails, coder/reviewer/qa can still attempt execution.
 
 ---
 
@@ -298,7 +298,7 @@ result = response.content if hasattr(response, "content") else str(response)
 
 **All P0/P1 bugs have been successfully addressed.**
 
-- ✅ 1 file modified (jarvis_team_dispatcher.py)
+- ✅ 1 file modified (bea_team_dispatcher.py)
 - ✅ 6 issues already correct (no changes needed)
 - ✅ All validation tests pass
 - ✅ No TypeError or AttributeError at startup

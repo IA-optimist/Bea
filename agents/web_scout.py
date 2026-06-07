@@ -1,5 +1,5 @@
 """
-JARVIS MAX — WebScoutResearch Agent
+BEA MAX — WebScoutResearch Agent
 Agent de recherche web réel via Playwright (tools/browser/scraper.py).
 
 Complète ScoutResearch (LLM-only) en ajoutant un accès web réel :
@@ -30,7 +30,7 @@ import structlog
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -57,7 +57,7 @@ class WebScoutResearch(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es WebScoutResearch, agent de recherche web de JarvisMax.\n"
+            "Tu es WebScoutResearch, agent de recherche web de BeaMax.\n"
             "Tu analyses du contenu web réel extrait par navigation Playwright.\n"
             "Tu identifies les faits clés, tendances, acteurs, chiffres importants.\n"
             "Tu synthétises de façon structurée avec des sections claires.\n"
@@ -66,7 +66,7 @@ class WebScoutResearch(BaseAgent):
             "Lecture seule — tu ne génères pas d'actions."
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         # Appel standard (sans contenu web) — utilisé uniquement en fallback
         task = self._task(session)
         return (
@@ -78,7 +78,7 @@ class WebScoutResearch(BaseAgent):
 
     def _build_web_user_message(
         self,
-        session: JarvisSession,
+        session: BeaSession,
         search_results: list[dict],
         page_contents: list[dict],
     ) -> str:
@@ -119,7 +119,7 @@ class WebScoutResearch(BaseAgent):
 
     # ── run() override ────────────────────────────────────────
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         t0 = time.monotonic()
         log.info("web_scout_start", mission_id=session.session_id)
 
@@ -142,7 +142,7 @@ class WebScoutResearch(BaseAgent):
         log.info("web_scout_done", ms=ms, chars=len(result))
         return result
 
-    async def _run_with_browser(self, session: JarvisSession, query: str) -> str:
+    async def _run_with_browser(self, session: BeaSession, query: str) -> str:
         """Flux principal : browser → LLM synthesis."""
         from tools.browser.scraper import BrowserTool
 
@@ -204,7 +204,7 @@ class WebScoutResearch(BaseAgent):
             # Retourner le contenu brut sans synthèse LLM
             return self._format_raw_results(search_results, page_contents)
 
-    async def _run_fallback(self, session: JarvisSession, note: str = "") -> str:
+    async def _run_fallback(self, session: BeaSession, note: str = "") -> str:
         """Fallback LLM classique si Playwright indisponible ou timeout."""
         try:
             from core.llm_factory import LLMFactory

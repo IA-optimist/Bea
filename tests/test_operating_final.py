@@ -99,7 +99,7 @@ def test_file_export_json():
     from core.connectors import file_export_connector
     import core.connectors as conn
     old = conn._EXPORT_DIR
-    conn._EXPORT_DIR = f"/tmp/jarvis_export_{int(time.time()*1000)}"
+    conn._EXPORT_DIR = f"/tmp/bea_export_{int(time.time()*1000)}"
     try:
         r = file_export_connector({
             "format": "json", "filename": "test_data",
@@ -117,7 +117,7 @@ def test_file_export_csv():
     from core.connectors import file_export_connector
     import core.connectors as conn
     old = conn._EXPORT_DIR
-    conn._EXPORT_DIR = f"/tmp/jarvis_export_csv_{int(time.time()*1000)}"
+    conn._EXPORT_DIR = f"/tmp/bea_export_csv_{int(time.time()*1000)}"
     try:
         r = file_export_connector({
             "format": "csv", "filename": "metrics",
@@ -136,7 +136,7 @@ def test_file_export_markdown():
     from core.connectors import file_export_connector
     import core.connectors as conn
     old = conn._EXPORT_DIR
-    conn._EXPORT_DIR = f"/tmp/jarvis_export_md_{int(time.time()*1000)}"
+    conn._EXPORT_DIR = f"/tmp/bea_export_md_{int(time.time()*1000)}"
     try:
         r = file_export_connector({
             "format": "md", "filename": "report",
@@ -197,7 +197,7 @@ def test_operating_summary():
 def test_focus_recommendation_with_objectives():
     from core.operating_primitives import ObjectiveTracker, recommend_focus
     import core.operating_primitives as op
-    path = f"/tmp/jarvis_focus_obj_{int(time.time()*1000)}.json"
+    path = f"/tmp/bea_focus_obj_{int(time.time()*1000)}.json"
     # The global singleton is named _tracker, not _objective_tracker
     op._tracker = ObjectiveTracker(persist_path=path)
     tracker = op._tracker

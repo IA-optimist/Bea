@@ -5,8 +5,8 @@ Startup Checks (Langfuse)
   S1.  LANGFUSE_ENABLED=false + missing secrets → passes
   S2.  LANGFUSE_ENABLED=true + placeholder secrets → fails
   S3.  LANGFUSE_ENABLED=true + real secrets → passes
-  S4.  Weak JARVIS_SECRET_KEY → fails
-  S5.  Strong JARVIS_SECRET_KEY → passes
+  S4.  Weak BEA_SECRET_KEY → fails
+  S5.  Strong BEA_SECRET_KEY → passes
   S6.  Weak POSTGRES_PASSWORD → warns (non-blocking)
   S7.  enforce_startup_checks raises on blocker
   S8.  Dev-like env with missing langfuse → passes
@@ -49,7 +49,7 @@ class TestStartupChecks:
     def test_langfuse_disabled_missing_secrets_passes(self):
         """S1: LANGFUSE_ENABLED=false + missing secrets → passes."""
         env = {
-            "JARVIS_SECRET_KEY": "a" * 64,
+            "BEA_SECRET_KEY": "a" * 64,
             "LANGFUSE_ENABLED": "false",
             "LANGFUSE_PUBLIC_KEY": "",
             "LANGFUSE_SECRET_KEY": "",
@@ -62,7 +62,7 @@ class TestStartupChecks:
     def test_langfuse_enabled_placeholder_fails(self):
         """S2: LANGFUSE_ENABLED=true + placeholder → fails."""
         env = {
-            "JARVIS_SECRET_KEY": "a" * 64,
+            "BEA_SECRET_KEY": "a" * 64,
             "LANGFUSE_ENABLED": "true",
             "LANGFUSE_PUBLIC_KEY": "pk-lf-CHANGE_ME",
             "LANGFUSE_SECRET_KEY": "sk-lf-CHANGE_ME",
@@ -76,7 +76,7 @@ class TestStartupChecks:
     def test_langfuse_enabled_real_secrets_passes(self):
         """S3: LANGFUSE_ENABLED=true + real secrets → passes."""
         env = {
-            "JARVIS_SECRET_KEY": "a" * 64,
+            "BEA_SECRET_KEY": "a" * 64,
             "LANGFUSE_ENABLED": "true",
             "LANGFUSE_PUBLIC_KEY": "pk-lf-" + "a" * 30,
             "LANGFUSE_SECRET_KEY": "sk-lf-" + "b" * 30,
@@ -86,29 +86,29 @@ class TestStartupChecks:
         assert report.all_passed
 
     def test_weak_secret_key_fails(self):
-        """S4: Weak JARVIS_SECRET_KEY → fails."""
+        """S4: Weak BEA_SECRET_KEY → fails."""
         env = {
-            "JARVIS_SECRET_KEY": "change-me-in-production",
+            "BEA_SECRET_KEY": "change-me-in-production",
             "LANGFUSE_ENABLED": "false",
         }
         report = run_startup_checks(env)
         blocker_names = [b.name for b in report.blockers]
-        assert "JARVIS_SECRET_KEY" in blocker_names
+        assert "BEA_SECRET_KEY" in blocker_names
 
     def test_strong_secret_key_passes(self):
-        """S5: Strong JARVIS_SECRET_KEY → passes."""
+        """S5: Strong BEA_SECRET_KEY → passes."""
         env = {
-            "JARVIS_SECRET_KEY": "d686f44026a5a8b02beb2820d99354cd2d7d50650a50828a9b6ed39163aecd1f",
+            "BEA_SECRET_KEY": "d686f44026a5a8b02beb2820d99354cd2d7d50650a50828a9b6ed39163aecd1f",
             "LANGFUSE_ENABLED": "false",
         }
         report = run_startup_checks(env)
-        sec_check = next(c for c in report.checks if c.name == "JARVIS_SECRET_KEY")
+        sec_check = next(c for c in report.checks if c.name == "BEA_SECRET_KEY")
         assert sec_check.passed
 
     def test_weak_postgres_warns_nonblocking(self):
         """S6: Weak POSTGRES_PASSWORD → warns (non-blocking)."""
         env = {
-            "JARVIS_SECRET_KEY": "a" * 64,
+            "BEA_SECRET_KEY": "a" * 64,
             "LANGFUSE_ENABLED": "false",
             "POSTGRES_PASSWORD": "test",
         }
@@ -121,7 +121,7 @@ class TestStartupChecks:
     def test_enforce_raises_on_blocker(self):
         """S7: enforce raises RuntimeError."""
         env = {
-            "JARVIS_SECRET_KEY": "weak",
+            "BEA_SECRET_KEY": "weak",
             "LANGFUSE_ENABLED": "false",
         }
         with pytest.raises(RuntimeError, match="Startup blocked"):
@@ -130,7 +130,7 @@ class TestStartupChecks:
     def test_dev_env_langfuse_disabled(self):
         """S8: Dev-like env with langfuse disabled → passes."""
         env = {
-            "JARVIS_SECRET_KEY": "x" * 32,
+            "BEA_SECRET_KEY": "x" * 32,
             "LANGFUSE_ENABLED": "false",
             "LANGFUSE_PUBLIC_KEY": "pk-lf-CHANGE_ME",
             "LANGFUSE_SECRET_KEY": "sk-lf-CHANGE_ME",
@@ -232,5 +232,5 @@ class TestVerification:
 
     def test_self_improvement_loads(self):
         """S22: Self-improvement loop loads."""
-        from core.self_improvement_loop import JarvisImprovementLoop
-        assert JarvisImprovementLoop is not None
+        from core.self_improvement_loop import BeaImprovementLoop
+        assert BeaImprovementLoop is not None

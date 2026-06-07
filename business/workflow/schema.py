@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Workflow Architect : Schémas de données
+BEA BUSINESS LAYER — Workflow Architect : Schémas de données
 Modélise des workflows business avec étapes, outils, automatisations et ROI.
 """
 from __future__ import annotations

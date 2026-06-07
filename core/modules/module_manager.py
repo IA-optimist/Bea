@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Module Manager
+BEA MAX — Module Manager
 ================================
 User-facing management layer for Agents, Skills, Connectors, and MCP servers.
 
@@ -185,7 +185,7 @@ class CatalogEntry:
     module_type: str        # agent / skill / connector / mcp / playbook
     description: str = ""
     category: str = ""
-    author: str = "jarvismax"
+    author: str = "beamax"
     version: str = "1.0"
     risk_level: str = "low"
     requires_approval: bool = False
@@ -198,7 +198,7 @@ class CatalogEntry:
     required_connectors: list[str] = field(default_factory=list) # Connector types needed
     health_status: str = "unknown"                               # healthy / degraded / broken / unknown
     trust_level: str = "internal"                                # internal / verified / community / untrusted
-    compatibility: list[str] = field(default_factory=list)       # e.g., ["jarvismax>=1.0", "python>=3.10"]
+    compatibility: list[str] = field(default_factory=list)       # e.g., ["beamax>=1.0", "python>=3.10"]
     install_count: int = 0
     installable: bool = True                                     # One-click install safe?
     changelog: str = ""
@@ -259,7 +259,7 @@ class ModuleManager:
         import os
         # BLOC H fix: only seed in the canonical data/modules directory to avoid
         # contaminating test tmp directories with pre-populated agents/skills/mcp.
-        if not self._is_default_dir and not os.getenv("JARVIS_AUTO_POPULATE"):
+        if not self._is_default_dir and not os.getenv("BEA_AUTO_POPULATE"):
             return
         _KNOWN_AGENTS = [
             {"id": "atlas-director", "name": "Atlas Director", "description": "Orchestration principale", "purpose": "orchestration", "risk": "low", "tags": ["core"]},

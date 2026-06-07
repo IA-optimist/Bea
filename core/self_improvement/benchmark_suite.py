@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 
-log = logging.getLogger("jarvis.improvement.benchmark")
+log = logging.getLogger("bea.improvement.benchmark")
 
 
 @dataclass

@@ -1,7 +1,7 @@
 """
-JARVIS — Improvement Proposal Store
+BEA — Improvement Proposal Store
 =======================================
-Stores improvement proposals for review in the Jarvis app.
+Stores improvement proposals for review in the Bea app.
 
 Proposals come from:
 - Self-improvement engine detecting repeated failures
@@ -9,7 +9,7 @@ Proposals come from:
 - Mission performance tracker detecting failing mission types
 - Manual submission via API
 
-Proposals are reviewed in the Jarvis app before execution.
+Proposals are reviewed in the Bea app before execution.
 This is the approval-aware layer for controlled self-improvement.
 
 Zero external dependencies. Fail-open.
@@ -24,7 +24,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.improvement_proposals")
+logger = structlog.get_logger("bea.improvement_proposals")
 
 
 @dataclass

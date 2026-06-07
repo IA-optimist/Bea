@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Shadow-Advisor V2 Schema
+BEA MAX — Shadow-Advisor V2 Schema
 Schéma strict pour toutes les sorties du shadow-advisor.
 
 Format JSON imposé — aucune réponse libre autorisée.

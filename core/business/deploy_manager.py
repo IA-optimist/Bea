@@ -1,5 +1,5 @@
 """
-JarvisMax P3.4 — Deployment Manager
+BeaMax P3.4 — Deployment Manager
 Automates VPS deployment with Docker and Caddy reverse proxy.
 """
 
@@ -21,8 +21,8 @@ class DeployManager:
         vps_host: Optional[str] = None,
         vps_user: Optional[str] = None,
         vps_ssh_key: Optional[str] = None,
-        deploy_base_dir: str = "/opt/jarvismax_mvps",
-        domain: str = "jarvismaxapp.co.uk",
+        deploy_base_dir: str = "/opt/beamax_mvps",
+        domain: str = "beamaxapp.co.uk",
     ):
         """
         Initialize deployment manager.
@@ -34,7 +34,7 @@ class DeployManager:
             deploy_base_dir: Base directory for deployments on VPS
             domain: Base domain for subdomains
         """
-        self.vps_host = vps_host or os.getenv("VPS_DEPLOY_HOST", "jarvis.jarvismaxapp.co.uk")
+        self.vps_host = vps_host or os.getenv("VPS_DEPLOY_HOST", "bea.beamaxapp.co.uk")
         self.vps_user = vps_user or os.getenv("VPS_DEPLOY_USER", "root")
         self.vps_ssh_key = vps_ssh_key or os.getenv("VPS_SSH_KEY", "/root/.ssh/id_rsa")
         self.deploy_base_dir = deploy_base_dir

@@ -19,7 +19,7 @@ from pathlib import Path
 
 from core.tools.tool_template import BaseTool, ToolResult
 
-log = structlog.get_logger("jarvis.tools.file")
+log = structlog.get_logger("bea.tools.file")
 
 _WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "/app/workspace"))
 _MAX_READ_CHARS = 100_000

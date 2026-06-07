@@ -16,7 +16,7 @@ Usage (from api/routes/*.py):
     result = await adapter.submit(goal=..., mode=..., mission_id=...)
 
 Callers receive an AdapterResult — they do NOT directly hold KernelRuntime
-or JarvisKernel objects.
+or BeaKernel objects.
 """
 from __future__ import annotations
 

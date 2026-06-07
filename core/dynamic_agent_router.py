@@ -1,5 +1,5 @@
 """
-JARVIS — Dynamic Agent Router
+BEA — Dynamic Agent Router
 =================================
 Replaces static agent selection with measured specialization signals.
 
@@ -18,7 +18,7 @@ Routing logic:
 4. Add high-performers not in static list if data supports it
 5. Remove consistent underperformers if alternatives exist
 
-Feature flag: JARVIS_DYNAMIC_ROUTING=1 (default OFF)
+Feature flag: BEA_DYNAMIC_ROUTING=1 (default OFF)
 
 Minimum data threshold: 5 missions of same type before overriding static routing.
 """
@@ -29,7 +29,7 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
-logger = structlog.get_logger("jarvis.dynamic_routing")
+logger = structlog.get_logger("bea.dynamic_routing")
 
 # Minimum missions before we trust performance data for a type
 MIN_DATA_THRESHOLD = 5
@@ -42,7 +42,7 @@ BOOST_THRESHOLD = 0.75
 
 
 def is_enabled() -> bool:
-    return os.environ.get("JARVIS_DYNAMIC_ROUTING", "").lower() in ("1", "true", "yes")
+    return os.environ.get("BEA_DYNAMIC_ROUTING", "").lower() in ("1", "true", "yes")
 
 
 @dataclass

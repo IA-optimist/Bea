@@ -1,5 +1,5 @@
 """
-JarvisMax - Project Model
+BeaMax - Project Model
 Multi-project architecture foundation with CRUD operations.
 
 Project isolation enables:
@@ -30,8 +30,8 @@ def _get_db_connection():
         
         conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST", "postgres"),
-            database=os.getenv("POSTGRES_DB", "jarvis"),
-            user=os.getenv("POSTGRES_USER", "jarvis"),
+            database=os.getenv("POSTGRES_DB", "bea"),
+            user=os.getenv("POSTGRES_USER", "bea"),
             password=os.getenv("POSTGRES_PASSWORD", ""),
             cursor_factory=RealDictCursor
         )

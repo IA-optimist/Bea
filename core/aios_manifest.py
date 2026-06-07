@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import structlog
 
-log = structlog.get_logger("jarvis.aios")
+log = structlog.get_logger("bea.aios")
 
 AIOS_VERSION = "1.0.0"
 
@@ -170,8 +170,8 @@ def consistency_check() -> dict:
         known_agents = [
             "atlas-director", "scout-research", "map-planner", "forge-builder",
             "lens-reviewer", "vault-memory", "shadow-advisor", "pulse-ops",
-            "night-worker", "jarvis-architect", "jarvis-coder", "jarvis-reviewer",
-            "jarvis-qa", "jarvis-devops", "jarvis-watcher",
+            "night-worker", "bea-architect", "bea-coder", "bea-reviewer",
+            "bea-qa", "bea-devops", "bea-watcher",
         ]
         for agent in known_agents:
             if agent not in role_map:

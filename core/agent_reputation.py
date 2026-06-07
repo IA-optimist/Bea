@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Agent Reputation Scoring
+BEA MAX — Agent Reputation Scoring
 =========================================
 Tracks real runtime performance per agent and produces reputation scores.
 Used as a routing SIGNAL (not absolute truth). Manual override always available.

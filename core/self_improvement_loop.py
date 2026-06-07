@@ -1,9 +1,9 @@
 """
-JARVIS MAX — Self-Improvement Loop (V3) — CANONICAL IMPLEMENTATION
+BEA MAX — Self-Improvement Loop (V3) — CANONICAL IMPLEMENTATION
 ===================================================================
 STATUS: ACTIVE — This file is the V3 self-improvement loop implementation.
 
-Contains: JarvisImprovementLoop, ImprovementTask, PatchProposal, SandboxRunner,
+Contains: BeaImprovementLoop, ImprovementTask, PatchProposal, SandboxRunner,
           PatchDecision, PromptOptimizer, SignalType, ImprovementSignal, etc.
 
 DO NOT DELETE — imported by:
@@ -18,13 +18,13 @@ LessonMemory / Lesson: EXTRACTED → canonical location:
   `from core.self_improvement_loop import LessonMemory` continue to work.
 
 ARCHITECTURE POSITION:
-  - JarvisImprovementLoop: canonical V3 loop — keep in this file.
+  - BeaImprovementLoop: canonical V3 loop — keep in this file.
   - Canonical package entry: core/self_improvement/ (__init__.py).
   - Kernel gating (future): kernel/improvement/gate.py (Phase 6).
 
 KERNEL RULE (Phase 6 target):
   The kernel will gate all improvement cycles via ImprovementGate.
-  Until Phase 6, JarvisImprovementLoop runs independently under
+  Until Phase 6, BeaImprovementLoop runs independently under
   the existing check_improvement_allowed() guard.
 
 Production-grade, safe, test-driven, reversible self-improvement.
@@ -806,7 +806,7 @@ def _is_protected(filepath: str) -> bool:
 
 
 # ═══════════════════════════════════════════════════════════════
-# MAIN LOOP — JarvisImprovementLoop
+# MAIN LOOP — BeaImprovementLoop
 # ═══════════════════════════════════════════════════════════════
 
 @dataclass
@@ -838,7 +838,7 @@ class CycleReport:
         }
 
 
-class JarvisImprovementLoop:
+class BeaImprovementLoop:
     """
     Main self-improvement loop orchestrator.
 

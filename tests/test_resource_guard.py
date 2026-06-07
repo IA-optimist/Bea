@@ -20,8 +20,8 @@ from core.resource_guard import (
 
 class _MockSettings:
     workspace_dir = "/tmp"
-    jarvis_mode   = "local"
-    jarvis_safe_mode = False
+    bea_mode   = "local"
+    bea_safe_mode = False
 
 
 def _make_guard(max_agents: int = 3) -> ResourceGuard:

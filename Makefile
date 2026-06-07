@@ -7,7 +7,7 @@ ci-local-no-lint:
 	python -m pip install --upgrade pip
 	python -m pip install -r requirements.txt
 	python -m pip install pytest pytest-cov pytest-asyncio pytest-xdist
-	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:5432/jarvismax_test} \
+	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:5432/beamax_test} \
 	REDIS_URL=$${REDIS_URL:-redis://localhost:6379} \
 	TESTING=$${TESTING:-true} \
 	pytest tests/ -v -n auto --dist=loadfile --cov=core --cov-report=xml --cov-report=term --cov-fail-under=55

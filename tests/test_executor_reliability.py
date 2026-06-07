@@ -135,23 +135,23 @@ class TestToolExecutorRetry:
 
 
 class TestExecutionErrors:
-    """JarvisExecutionError tests."""
+    """BeaExecutionError tests."""
 
     def test_from_timeout(self):
-        from core.resilience import JarvisExecutionError
-        e = JarvisExecutionError.from_exception(TimeoutError("slow"), tool="web_search")
+        from core.resilience import BeaExecutionError
+        e = BeaExecutionError.from_exception(TimeoutError("slow"), tool="web_search")
         assert e.error_type in ("TIMEOUT", "TOOL_TIMEOUT")
         assert e.retryable is True
         assert e.tool == "web_search"
 
     def test_from_connection(self):
-        from core.resilience import JarvisExecutionError
-        e = JarvisExecutionError.from_exception(ConnectionError("refused"), tool="http_get")
+        from core.resilience import BeaExecutionError
+        e = BeaExecutionError.from_exception(ConnectionError("refused"), tool="http_get")
         assert e.retryable is True
 
     def test_to_dict(self):
-        from core.resilience import JarvisExecutionError
-        e = JarvisExecutionError("test error", tool="shell", stage="execution")
+        from core.resilience import BeaExecutionError
+        e = BeaExecutionError("test error", tool="shell", stage="execution")
         d = e.to_dict()
         assert "error_type" in d or "severity" in d  # depends on error class
         assert "tool" in d

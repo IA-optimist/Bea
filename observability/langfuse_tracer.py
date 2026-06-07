@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Langfuse Tracer
+BEA MAX — Langfuse Tracer
 Wrapper optionnel pour tracer chaque appel LLM dans Langfuse (self-hosted).
 
 Architecture :
@@ -98,7 +98,7 @@ class GenerationContext:
 
 class LangfuseTracer:
     """
-    Tracer Langfuse pour JarvisMax.
+    Tracer Langfuse pour BeaMax.
 
     Instanciation :
         tracer = LangfuseTracer(settings)
@@ -181,9 +181,9 @@ class LangfuseTracer:
             input_repr = self._serialize_messages(messages)
 
             trace = self._client.trace(
-                name=f"jarvis/{role}",
+                name=f"bea/{role}",
                 session_id=session_id or "no-session",
-                tags=[role, agent_name or "unknown", "jarvis"],
+                tags=[role, agent_name or "unknown", "bea"],
                 metadata={"agent": agent_name, "role": role},
                 input=input_repr,
             )

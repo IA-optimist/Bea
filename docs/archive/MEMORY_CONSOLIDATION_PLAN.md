@@ -1,4 +1,4 @@
-# JARVIS MAX - Memory System Consolidation Plan
+# BEA MAX - Memory System Consolidation Plan
 
 **Date:** 2026-04-11  
 **Status:** Audit Complete - Ready for Implementation  
@@ -599,5 +599,5 @@ from memory.specialized_memory import (
 ---
 
 **Document Version:** 1.0  
-**Author:** Hermes Agent (JarvisMax Audit)  
+**Author:** Hermes Agent (BeaMax Audit)  
 **Last Updated:** 2026-04-11

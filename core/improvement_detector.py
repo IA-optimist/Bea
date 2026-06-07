@@ -1,5 +1,5 @@
 """
-JARVIS — Improvement Detector
+BEA — Improvement Detector
 =================================
 Scans real performance data and generates improvement proposals.
 
@@ -22,12 +22,12 @@ import structlog
 import os
 import time
 
-logger = structlog.get_logger("jarvis.improvement_detector")
+logger = structlog.get_logger("bea.improvement_detector")
 log = logger  # alias for M3 swallowed_exception emitter
 
 
 # Rate limiter: minimum seconds between detection runs
-_MIN_DETECTION_INTERVAL = int(os.environ.get("JARVIS_DETECTION_INTERVAL", "60"))
+_MIN_DETECTION_INTERVAL = int(os.environ.get("BEA_DETECTION_INTERVAL", "60"))
 _last_detection_time: float = 0.0
 # Max proposals per detection run (prevents runaway generation)
 _MAX_PROPOSALS_PER_RUN = 20
@@ -39,7 +39,7 @@ def detect_improvements(dry_run: bool = True) -> list[dict]:
     """
     Scan all performance data and generate improvement proposals.
 
-    Rate-limited: runs at most once per JARVIS_DETECTION_INTERVAL seconds.
+    Rate-limited: runs at most once per BEA_DETECTION_INTERVAL seconds.
     Max proposals per run: 20. Max stored proposals: 500.
 
     Args:

@@ -1,7 +1,7 @@
 """
-core/self_model/ — JarvisMax Self-Model layer.
+core/self_model/ — BeaMax Self-Model layer.
 
-A structured introspection system that lets Jarvis reason about its own
+A structured introspection system that lets Bea reason about its own
 operational state: capabilities, limits, readiness, and autonomy boundaries.
 
 Public API:

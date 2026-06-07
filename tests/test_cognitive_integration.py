@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Cognitive Integration Tests
+BEA MAX — Cognitive Integration Tests
 =============================================
 Tests for:
   - CognitiveBridge wiring (all 8 modules)
@@ -18,7 +18,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ADMIN_PASSWORD_HASH", "test-hash")
-os.environ.setdefault("JARVISMAX_DATA_DIR", tempfile.mkdtemp())
+os.environ.setdefault("BEAMAX_DATA_DIR", tempfile.mkdtemp())
 
 import pytest
 
@@ -30,7 +30,7 @@ import pytest
 class TestCognitiveBridge:
 
     def setup_method(self):
-        os.environ["JARVISMAX_DATA_DIR"] = tempfile.mkdtemp()
+        os.environ["BEAMAX_DATA_DIR"] = tempfile.mkdtemp()
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
 
@@ -197,7 +197,7 @@ class TestCognitiveBridge:
 class TestOrchestrationIntegration:
 
     def setup_method(self):
-        os.environ["JARVISMAX_DATA_DIR"] = tempfile.mkdtemp()
+        os.environ["BEAMAX_DATA_DIR"] = tempfile.mkdtemp()
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
 
@@ -247,7 +247,7 @@ class TestOrchestrationIntegration:
 class TestSIIntegration:
 
     def setup_method(self):
-        os.environ["JARVISMAX_DATA_DIR"] = tempfile.mkdtemp()
+        os.environ["BEAMAX_DATA_DIR"] = tempfile.mkdtemp()
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
 
@@ -358,12 +358,12 @@ class TestMarketplaceIntegration:
             "full-1", "Full Entry", "skill",
             description="A skill",
             health_status="healthy",
-            compatibility=["jarvismax>=1.0"],
+            compatibility=["beamax>=1.0"],
             install_count=42,
         )
         d = entry.to_dict()
         assert d["health"] == "healthy"
-        assert d["compatibility"] == ["jarvismax>=1.0"]
+        assert d["compatibility"] == ["beamax>=1.0"]
         assert d["install_count"] == 42
 
 
@@ -375,7 +375,7 @@ class TestCognitiveAPI:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        os.environ["JARVISMAX_DATA_DIR"] = tempfile.mkdtemp()
+        os.environ["BEAMAX_DATA_DIR"] = tempfile.mkdtemp()
         from core.cognitive_bridge import CognitiveBridge
         CognitiveBridge.reset()
 

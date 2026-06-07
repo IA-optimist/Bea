@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-log = structlog.get_logger("jarvis.recovery_engine")
+log = structlog.get_logger("bea.recovery_engine")
 
 
 # ── Recovery Strategies ──────────────────────────────────────────────────────

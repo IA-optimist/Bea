@@ -11,7 +11,7 @@ import '../theme/design_system.dart';
 
 // ─── Chat message model ───────────────────────────────────────────────────────
 
-enum _MsgType { user, working, jarvis }
+enum _MsgType { user, working, bea }
 
 class _ChatMsg {
   final String localId;
@@ -131,7 +131,7 @@ class _MissionScreenState extends State<MissionScreen> {
                     : '✓ Mission terminée';
         msgs.add(_ChatMsg(
           localId: _nextId(),
-          type: _MsgType.jarvis,
+          type: _MsgType.bea,
           text: output,
           mission: m,
           missionId: m.id,
@@ -141,7 +141,7 @@ class _MissionScreenState extends State<MissionScreen> {
         msgs.add(_ChatMsg(
           localId: _nextId(),
           type: _MsgType.working,
-          text: 'Jarvis travaille...',
+          text: 'Bea travaille...',
           missionId: m.id,
           ts: _parseTs(m.createdAt),
         ));
@@ -233,7 +233,7 @@ class _MissionScreenState extends State<MissionScreen> {
     final _recentMsgs = _messages.where((m) => m.type != _MsgType.working).toList();
     if (_recentMsgs.length > 1) {
       _convCtx = _recentMsgs.reversed.take(6).toList().reversed
-        .map((m) => m.type == _MsgType.user ? 'User: ${m.text}' : 'Jarvis: ${m.text.length > 200 ? m.text.substring(0, 200) : m.text}')
+        .map((m) => m.type == _MsgType.user ? 'User: ${m.text}' : 'Bea: ${m.text.length > 200 ? m.text.substring(0, 200) : m.text}')
         .join('\n');
     }
     final result = await api.submitMission(goal, conversationContext: _convCtx.isNotEmpty ? _convCtx : null);
@@ -244,7 +244,7 @@ class _MissionScreenState extends State<MissionScreen> {
       final workBubble = _ChatMsg(
         localId: _nextId(),
         type: _MsgType.working,
-        text: 'Jarvis travaille...',
+        text: 'Bea travaille...',
         missionId: m.id,
       );
       setState(() {
@@ -257,7 +257,7 @@ class _MissionScreenState extends State<MissionScreen> {
     } else {
       final errBubble = _ChatMsg(
         localId: _nextId(),
-        type: _MsgType.jarvis,
+        type: _MsgType.bea,
         text: '❌ ${result.error ?? 'Erreur lors de la soumission de la mission.'}',
       );
       setState(() {
@@ -365,9 +365,9 @@ class _MissionScreenState extends State<MissionScreen> {
             ? m.planSummary
             : '✓ Mission terminée';
 
-    final jarvisBubble = _ChatMsg(
+    final beaBubble = _ChatMsg(
       localId: _messages[idx].localId,
-      type: _MsgType.jarvis,
+      type: _MsgType.bea,
       text: output,
       mission: m,
       missionId: m.id,
@@ -376,7 +376,7 @@ class _MissionScreenState extends State<MissionScreen> {
     );
 
     setState(() {
-      _messages[idx] = jarvisBubble;
+      _messages[idx] = beaBubble;
       _activeMid = null;
     });
     _scrollToBottom();
@@ -389,7 +389,7 @@ class _MissionScreenState extends State<MissionScreen> {
     if (idx < 0) return;
 
     final errBubble = _messages[idx].copyWith(
-      type: _MsgType.jarvis,
+      type: _MsgType.bea,
       text: '❌ ${errorMsg ?? 'La mission a échoué.'}',
     );
     setState(() {
@@ -472,7 +472,7 @@ class _MissionScreenState extends State<MissionScreen> {
                   : '✓ Mission terminée';
       msgs.add(_ChatMsg(
         localId: _nextId(),
-        type: _MsgType.jarvis,
+        type: _MsgType.bea,
         text: output,
         mission: m,
         missionId: m.id,
@@ -482,7 +482,7 @@ class _MissionScreenState extends State<MissionScreen> {
       msgs.add(_ChatMsg(
         localId: _nextId(),
         type: _MsgType.working,
-        text: 'Jarvis travaille...',
+        text: 'Bea travaille...',
         missionId: m.id,
         ts: _parseTs(m.createdAt),
       ));
@@ -546,7 +546,7 @@ class _MissionScreenState extends State<MissionScreen> {
           tooltip: 'Historique',
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text('JARVIS'),
+        title: const Text('BEA'),
         actions: [
           _WsDot(state: ws.connectionState),
           const SizedBox(width: 2),
@@ -591,7 +591,7 @@ class _MissionScreenState extends State<MissionScreen> {
                       return switch (msg.type) {
                         _MsgType.user    => _UserBubble(msg: msg),
                         _MsgType.working => _WorkingBubble(msg: msg, key: ValueKey(msg.localId)),
-                        _MsgType.jarvis  => _JarvisBubble(msg: msg, key: ValueKey(msg.localId)),
+                        _MsgType.bea  => _BeaBubble(msg: msg, key: ValueKey(msg.localId)),
                       };
                     },
                   ),
@@ -609,7 +609,7 @@ class _MissionScreenState extends State<MissionScreen> {
             focus: _focus,
             locked: locked,
             isUncensored: isUncensored,
-            hint: locked ? 'Jarvis travaille...' : hint,
+            hint: locked ? 'Bea travaille...' : hint,
             onSend: _send,
           ),
         ],
@@ -708,7 +708,7 @@ class _WorkingBubbleState extends State<_WorkingBubble>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _JarvisAvatar(),
+          const _BeaAvatar(),
           const SizedBox(width: 8),
           Flexible(
             child: Container(
@@ -752,7 +752,7 @@ class _WorkingBubbleState extends State<_WorkingBubble>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text('Jarvis travaille...',
+                    const Text('Bea travaille...',
                         style: TextStyle(
                             color: JvColors.cyan,
                             fontSize: 12,
@@ -812,17 +812,17 @@ class _WorkingBubbleState extends State<_WorkingBubble>
   }
 }
 
-// ─── Jarvis response bubble ───────────────────────────────────────────────────
+// ─── Bea response bubble ───────────────────────────────────────────────────
 
-class _JarvisBubble extends StatefulWidget {
+class _BeaBubble extends StatefulWidget {
   final _ChatMsg msg;
-  const _JarvisBubble({required this.msg, super.key});
+  const _BeaBubble({required this.msg, super.key});
 
   @override
-  State<_JarvisBubble> createState() => _JarvisBubbleState();
+  State<_BeaBubble> createState() => _BeaBubbleState();
 }
 
-class _JarvisBubbleState extends State<_JarvisBubble> {
+class _BeaBubbleState extends State<_BeaBubble> {
   bool _stepsExpanded = false;
   bool _copied = false;
 
@@ -840,7 +840,7 @@ class _JarvisBubbleState extends State<_JarvisBubble> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _JarvisAvatar(),
+          const _BeaAvatar(),
           const SizedBox(width: 8),
           Flexible(
             child: Column(
@@ -1057,10 +1057,10 @@ class _JarvisBubbleState extends State<_JarvisBubble> {
   }
 }
 
-// ─── Jarvis avatar ────────────────────────────────────────────────────────────
+// ─── Bea avatar ────────────────────────────────────────────────────────────
 
-class _JarvisAvatar extends StatelessWidget {
-  const _JarvisAvatar();
+class _BeaAvatar extends StatelessWidget {
+  const _BeaAvatar();
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1204,7 +1204,7 @@ class _EmptyHint extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text('Jarvis',
+              const Text('Bea',
                   style: TextStyle(
                       color: JvColors.textPrim,
                       fontSize: 20,

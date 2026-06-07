@@ -9,7 +9,7 @@ echo "================================"
 echo ""
 
 # Load token
-TOKEN=$(grep "^JARVIS_API_TOKEN=" .env | cut -d'=' -f2)
+TOKEN=$(grep "^BEA_API_TOKEN=" .env | cut -d'=' -f2)
 API_BASE="http://localhost:8000"
 
 echo "✅ Token loaded: ${TOKEN:0:15}..."
@@ -74,8 +74,8 @@ echo ""
 
 # Test 7: Docker Containers
 echo "🐳 Test 7: Docker Infrastructure"
-CONTAINERS=$(docker ps --filter "name=jarvis" --format "{{.Names}}" | wc -l)
-HEALTHY=$(docker ps --filter "name=jarvis" --filter "health=healthy" --format "{{.Names}}" | wc -l)
+CONTAINERS=$(docker ps --filter "name=bea" --format "{{.Names}}" | wc -l)
+HEALTHY=$(docker ps --filter "name=bea" --filter "health=healthy" --format "{{.Names}}" | wc -l)
 echo "   Containers: $HEALTHY/$CONTAINERS healthy"
 echo ""
 

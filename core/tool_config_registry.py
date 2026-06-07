@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Tool Config Registry (P8)
+BEA MAX — Tool Config Registry (P8)
 ==========================================
 Makes tool/module dependencies on secrets and configs explicit.
 

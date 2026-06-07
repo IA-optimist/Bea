@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Docker Sandbox
+BEA MAX v3 — Docker Sandbox
 Environnement d'exécution isolé pour les missions autonomes.
 """
 import os
@@ -38,7 +38,7 @@ class DockerSandbox(DesktopEnvironment):
     def __init__(self, workspace_path: str, image: str = "python:3.11-slim-bookworm"):
         self.workspace_path = Path(workspace_path).absolute()
         self.image = image
-        self.container_id = f"jarvis-sandbox-{uuid.uuid4().hex[:8]}"
+        self.container_id = f"bea-sandbox-{uuid.uuid4().hex[:8]}"
         self.container = None
         self._client = None
         self.tmp_workspace = None # Phase 12: Copy-on-Write tmp dir
@@ -68,7 +68,7 @@ class DockerSandbox(DesktopEnvironment):
             # `ignore` list exclut les fichiers sensibles qui ne doivent JAMAIS
             # entrer dans le conteneur (audit Sprint 2).
             self.workspace_path.mkdir(parents=True, exist_ok=True)
-            self.tmp_workspace = Path(tempfile.mkdtemp(prefix="jarvis_sandbox_"))
+            self.tmp_workspace = Path(tempfile.mkdtemp(prefix="bea_sandbox_"))
             _excluded = shutil.ignore_patterns(
                 ".env", ".env.*", ".git", ".gitignore",
                 "*.key", "*.pem", "secrets", "tokens.json", ".tokens.json",
@@ -82,11 +82,11 @@ class DockerSandbox(DesktopEnvironment):
 
             # Sandbox hardening (audit Sprint 2 §4.1 P1) :
             #   - network_mode="none"  : pas d'accès réseau par défaut
-            #     (opt-in via JARVIS_SANDBOX_ALLOW_NETWORK=1 → bridge)
+            #     (opt-in via BEA_SANDBOX_ALLOW_NETWORK=1 → bridge)
             #   - read_only=True       : root filesystem read-only
             #   - tmpfs /tmp           : tmpfs writable pour /tmp
             #   - mem_limit / pids_limit / cap_drop=ALL / no-new-privileges
-            _net = "bridge" if os.getenv("JARVIS_SANDBOX_ALLOW_NETWORK") == "1" else "none"
+            _net = "bridge" if os.getenv("BEA_SANDBOX_ALLOW_NETWORK") == "1" else "none"
             self.container = self._client.containers.run(
                 image=self.image,
                 name=self.container_id,
@@ -168,23 +168,23 @@ class LocalFallbackSandbox(DesktopEnvironment):
     """Fallback si Docker est indisponible : Exécution sur la machine hôte.
 
     Non isolé : RCE possible. Doit être activé explicitement via
-    JARVIS_ALLOW_LOCAL_SANDBOX=1, sinon toute exécution est refusée.
+    BEA_ALLOW_LOCAL_SANDBOX=1, sinon toute exécution est refusée.
     """
     def __init__(self, workspace_path: str):
         self.workspace_path = Path(workspace_path).absolute()
         self.workspace_path.mkdir(parents=True, exist_ok=True)
-        self._enabled = os.getenv("JARVIS_ALLOW_LOCAL_SANDBOX", "0") == "1"
+        self._enabled = os.getenv("BEA_ALLOW_LOCAL_SANDBOX", "0") == "1"
 
     def start(self) -> None:
         if not self._enabled:
             log.error("sandbox_local_fallback_refused",
-                      reason="JARVIS_ALLOW_LOCAL_SANDBOX!=1, refuse d'ex\u00e9cuter sur l'h\u00f4te")
+                      reason="BEA_ALLOW_LOCAL_SANDBOX!=1, refuse d'ex\u00e9cuter sur l'h\u00f4te")
             return
         log.warning("sandbox_local_fallback_started", warning="NON-ISOLE, RISQUE DE SECURITE")
 
     def execute(self, cmd: str) -> tuple[int, str]:
         if not self._enabled:
-            return -1, "LocalFallbackSandbox d\u00e9sactiv\u00e9 (JARVIS_ALLOW_LOCAL_SANDBOX!=1)"
+            return -1, "LocalFallbackSandbox d\u00e9sactiv\u00e9 (BEA_ALLOW_LOCAL_SANDBOX!=1)"
         log.debug("sandbox_local_exec", cmd=cmd[:50])
         try:
             args, parse_error = _parse_command(cmd)

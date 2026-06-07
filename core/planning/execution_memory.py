@@ -2,7 +2,7 @@
 core/planning/execution_memory.py — Persistent execution history.
 
 Records every plan execution with goal, tools, results, artifacts.
-Enables Jarvis to reuse successful patterns.
+Enables Bea to reuse successful patterns.
 """
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
 """
-JARVIS BUSINESS LAYER — Workflow Architect : Agent
+BEA BUSINESS LAYER — Workflow Architect : Agent
 Conçoit des workflows business structurés, identifie les automatisations possibles
 et génère des hints de blueprints n8n.
 """
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.workflow.schema import parse_workflow_report
 
 log = structlog.get_logger()
@@ -72,7 +72,7 @@ class WorkflowArchitectAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input = session.user_input or session.mission_summary or ""
 
         # Récupère l'OfferReport si disponible
@@ -105,7 +105,7 @@ class WorkflowArchitectAgent(BaseAgent):
             "Réponds UNIQUEMENT en JSON valide selon le format demandé."
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
             return ""

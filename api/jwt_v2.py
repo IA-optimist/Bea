@@ -3,7 +3,7 @@
 Audit follow-up (Mo2 prep): the legacy `api/auth.py` issues JWTs with a
 30-day expiry and no revocation mechanism. A stolen token works for a
 month with no way to invalidate it. This module implements the modern
-two-token model — fully gated by ``JARVIS_JWT_HARDENING_V2`` so deploying
+two-token model — fully gated by ``BEA_JWT_HARDENING_V2`` so deploying
 it does not invalidate active sessions.
 
 Model
@@ -42,11 +42,11 @@ Refresh tokens are revoked by simply deleting their entry from Redis.
 Feature flag
 ------------
 
-  * ``JARVIS_JWT_HARDENING_V2`` (env). Off (default): legacy 30-day token.
+  * ``BEA_JWT_HARDENING_V2`` (env). Off (default): legacy 30-day token.
     On: short access + rotating refresh.
   * ``JWT_ACCESS_TTL_SECONDS`` (env, default 900 = 15 minutes).
   * ``JWT_REFRESH_TTL_SECONDS`` (env, default 2592000 = 30 days).
-  * ``JWT_REDIS_PREFIX`` (env, default ``jarvis:jwt:``).
+  * ``JWT_REDIS_PREFIX`` (env, default ``bea:jwt:``).
 
 Redis dependency
 ----------------
@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ────────────────────────────────────────────────
 
-_DEFAULT_PREFIX = "jarvis:jwt:"
+_DEFAULT_PREFIX = "bea:jwt:"
 _DEFAULT_ACCESS_TTL = 15 * 60          # 15 minutes
 _DEFAULT_REFRESH_TTL = 30 * 24 * 60 * 60  # 30 days
 _USED_REFRESH_GRACE = 60 * 60          # 1 hour replay window
@@ -109,17 +109,17 @@ def _try_counter(name: str, doc: str, labelnames: tuple[str, ...]):
 
 
 M_JWT_V2_PAIRS_ISSUED = _try_counter(
-    "jarvis_jwt_v2_pairs_issued_total",
+    "bea_jwt_v2_pairs_issued_total",
     "JWT v2 access+refresh pairs issued.",
     ("origin",),  # "login" | "rotation"
 )
 M_JWT_V2_ROTATIONS = _try_counter(
-    "jarvis_jwt_v2_rotations_total",
+    "bea_jwt_v2_rotations_total",
     "JWT v2 refresh-token rotation attempts.",
     ("outcome",),  # "ok" | "replay" | "unknown"
 )
 M_JWT_V2_REVOCATIONS = _try_counter(
-    "jarvis_jwt_v2_revocations_total",
+    "bea_jwt_v2_revocations_total",
     "JWT v2 revocations issued.",
     ("kind",),  # "access" | "refresh" | "family"
 )
@@ -137,8 +137,8 @@ def _mcount(metric, **labels) -> None:
 
 
 def is_v2_enabled() -> bool:
-    """Return True iff JARVIS_JWT_HARDENING_V2 is set to a truthy value."""
-    return os.environ.get("JARVIS_JWT_HARDENING_V2", "0").lower() in {
+    """Return True iff BEA_JWT_HARDENING_V2 is set to a truthy value."""
+    return os.environ.get("BEA_JWT_HARDENING_V2", "0").lower() in {
         "1", "true", "yes", "on",
     }
 
@@ -185,7 +185,7 @@ def _get_store() -> RedisStore:
     except ImportError as exc:  # pragma: no cover — redis is in requirements.lock
         raise RuntimeError(
             "JWT v2 requires the `redis` package. Install it or disable "
-            "JARVIS_JWT_HARDENING_V2."
+            "BEA_JWT_HARDENING_V2."
         ) from exc
 
     url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")

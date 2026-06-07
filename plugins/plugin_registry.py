@@ -21,7 +21,7 @@ log = structlog.get_logger("plugins.registry")
 
 class PluginRegistry:
     """
-    Central registry for all Jarvis plugins.
+    Central registry for all Bea plugins.
 
     Thread-safe. Re-populated on each startup via explicit register() calls.
     """

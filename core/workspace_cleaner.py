@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Workspace Cleaner V1
+BEA MAX — Workspace Cleaner V1
 Nettoyage périodique des ressources en mémoire et sur disque.
 Appelé au démarrage de l'API (api/main.py startup).
 """

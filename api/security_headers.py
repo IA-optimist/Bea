@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Security Headers Middleware (Phase 4.2)
+BEA MAX — Security Headers Middleware (Phase 4.2)
 =====================================================
 Adds essential security headers to all HTTP responses.
 

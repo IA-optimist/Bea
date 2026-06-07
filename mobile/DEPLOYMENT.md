@@ -1,4 +1,4 @@
-# JarvisMax Mobile - Deployment Guide
+# BeaMax Mobile - Deployment Guide
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@
 
 ### 1. Install Dependencies
 ```bash
-cd /tmp/jarvismax-master/mobile
+cd /tmp/beamax-master/mobile
 npm install
 ```
 
@@ -60,7 +60,7 @@ eas build:configure
 {
   "expo": {
     "ios": {
-      "bundleIdentifier": "com.jarvismax.mobile",
+      "bundleIdentifier": "com.beamax.mobile",
       "buildNumber": "1.0.0"
     }
   }
@@ -86,8 +86,8 @@ eas submit --platform ios
 #### 1. Configure signing
 ```bash
 # Generate keystore
-keytool -genkeypair -v -storetype PKCS12 -keystore jarvismax.keystore \
-  -alias jarvismax -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -storetype PKCS12 -keystore beamax.keystore \
+  -alias beamax -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 #### 2. Update app.json
@@ -95,7 +95,7 @@ keytool -genkeypair -v -storetype PKCS12 -keystore jarvismax.keystore \
 {
   "expo": {
     "android": {
-      "package": "com.jarvismax.mobile",
+      "package": "com.beamax.mobile",
       "versionCode": 1
     }
   }
@@ -142,13 +142,13 @@ ENVIRONMENT=development
 
 ### Staging
 ```env
-API_BASE_URL=https://staging-api.jarvismax.com/api/v2
+API_BASE_URL=https://staging-api.beamax.com/api/v2
 ENVIRONMENT=staging
 ```
 
 ### Production
 ```env
-API_BASE_URL=https://api.jarvismax.com/api/v2
+API_BASE_URL=https://api.beamax.com/api/v2
 ENVIRONMENT=production
 ```
 

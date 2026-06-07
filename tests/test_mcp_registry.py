@@ -1,5 +1,5 @@
 """
-JARVIS MAX — MCP Registry Tests
+BEA MAX — MCP Registry Tests
 ====================================
 Tests for MCP server registration, health, discovery, security, and API.
 
@@ -219,7 +219,7 @@ class TestMCPSecurity:
         r = self._make_registry()
         r.seed_core_stack()
         fs = r.get("mcp-filesystem")
-        assert "Jarvismax" in " ".join(fs.args)  # Scoped to workspace
+        assert "Beamax" in " ".join(fs.args)  # Scoped to workspace
 
     def test_S07_untrusted_is_restricted(self):
         from core.mcp.mcp_registry import MCPServerEntry, TrustLevel, MCPHealth
@@ -269,7 +269,7 @@ class TestMCPAPI:
         mcpr._instance = mcpr.MCPRegistry(data_dir=os.path.join(tempfile.mkdtemp(), "mcp"))
         mcpr._instance.seed_core_stack()
         # Tests use Bearer "t" — align _API_TOKEN for match.
-        monkeypatch.setenv("JARVIS_API_TOKEN", "t")
+        monkeypatch.setenv("BEA_API_TOKEN", "t")
         import api._deps as _deps_mod
         monkeypatch.setattr(_deps_mod, "_API_TOKEN", "t", raising=False)
 

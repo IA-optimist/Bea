@@ -1,6 +1,6 @@
 """
 WeaknessDetector — analyses capability scores and failure patterns to identify
-domains where JarvisMax performs poorly.
+domains where BeaMax performs poorly.
 
 Returns List[Weakness] sorted by severity (HIGH first).
 Works with no historical data (returns [] or LOW-severity results).
@@ -11,7 +11,7 @@ import structlog
 from dataclasses import dataclass, field
 from typing import List
 
-logger = structlog.get_logger("jarvis.self_improvement.weakness_detector")
+logger = structlog.get_logger("bea.self_improvement.weakness_detector")
 log = logger  # M3 emitter alias
 
 # Severity thresholds for capability score success_rate

@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-APK_PATH="${1:-jarvismax_app/build/app/outputs/flutter-apk/app-release.apk}"
+APK_PATH="${1:-beamax_app/build/app/outputs/flutter-apk/app-release.apk}"
 VERSION="${2:-1.0.0}"
 DRY_RUN="${DRY_RUN:-false}"
 
@@ -28,7 +28,7 @@ fi
 
 if [ ! -f "$APK_PATH" ]; then
     echo "❌ APK not found at: $APK_PATH"
-    echo "   Build it first: cd jarvismax_app && flutter build apk --release"
+    echo "   Build it first: cd beamax_app && flutter build apk --release"
     exit 1
 fi
 
@@ -46,7 +46,7 @@ if [ "$DRY_RUN" = "true" ]; then
     echo "🏃 DRY-RUN MODE — would send:"
     echo "   File: $APK_PATH"
     echo "   Size: $APK_SIZE_MB MB"
-    echo "   Caption: JarvisMax v$VERSION release build"
+    echo "   Caption: BeaMax v$VERSION release build"
     echo ""
     echo "To send for real, set TELEGRAM_BOT_TOKEN and TELEGRAM_TARGET_CHAT_ID"
     echo "in your .env file, then run:"
@@ -56,10 +56,10 @@ fi
 
 # ── Send via Telegram Bot API ─────────────────────────────────────────────
 
-CAPTION="📱 *JarvisMax v${VERSION}*
+CAPTION="📱 *BeaMax v${VERSION}*
 Release build — $(date -u '+%Y-%m-%d %H:%M UTC')
 Size: ${APK_SIZE_MB} MB
-API: https://jarvis.jarvismaxapp.co.uk"
+API: https://bea.beamaxapp.co.uk"
 
 echo "📤 Sending to Telegram..."
 HTTP_CODE=$(curl -s -o /tmp/tg_response.json -w "%{http_code}" \

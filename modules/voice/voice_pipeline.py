@@ -1,5 +1,5 @@
 """
-JARVIS MAX — VoicePipeline (Phase 10)
+BEA MAX — VoicePipeline (Phase 10)
 Full STT → LLM → TTS pipeline with per-session history.
 
 Uses:
@@ -133,7 +133,7 @@ class VoicePipeline:
         """
         sid = session_id or str(uuid.uuid4())
         _get_history(sid)   # initialise session bucket
-        ws_base = os.getenv("JARVIS_WS_BASE_URL", "ws://localhost:8000")
+        ws_base = os.getenv("BEA_WS_BASE_URL", "ws://localhost:8000")
         url     = f"{ws_base}/api/v2/voice/ws/{sid}"
         log.info("voice_pipeline_realtime_session_url", session=sid, url=url)
         return url
@@ -160,7 +160,7 @@ async def _call_llm(user_text: str, history: deque, model: str) -> str:
         return "[LLM unavailable: OPENAI_API_KEY not set]"
 
     system_prompt = (
-        "Tu es JarvisMax, un assistant IA avancé. "
+        "Tu es BeaMax, un assistant IA avancé. "
         "Réponds de façon concise et utile."
     )
     messages = [{"role": "system", "content": system_prompt}]

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — AgentComm (Agent Communication Bus)
+BEA MAX — AgentComm (Agent Communication Bus)
 Structured inter-agent communication for multi-agent sessions.
 
 Architecture:

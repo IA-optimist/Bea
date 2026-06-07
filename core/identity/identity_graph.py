@@ -1,9 +1,9 @@
 """
-JARVIS MAX — Identity Graph
+BEA MAX — Identity Graph
 ===============================
 Relationship graph between identities, services, and domains.
 
-Allows Jarvis to:
+Allows Bea to:
 - Understand dependencies between accounts
 - Rotate secrets intelligently (cascading updates)
 - Debug broken integrations (find which identity feeds which service)

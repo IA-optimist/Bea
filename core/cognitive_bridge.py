@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Cognitive Bridge
+BEA MAX — Cognitive Bridge
 ==================================
 Non-invasive integration layer that wires the 8 cognitive modules into
 the runtime without modifying CRITICAL files.
@@ -27,7 +27,7 @@ import structlog
 
 log = structlog.get_logger()
 
-_DATA_DIR = os.environ.get("JARVISMAX_DATA_DIR", "data")
+_DATA_DIR = os.environ.get("BEAMAX_DATA_DIR", "data")
 
 
 class CognitiveBridge:

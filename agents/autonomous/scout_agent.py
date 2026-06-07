@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Scout Researcher Agent
+BEA MAX v3 — Scout Researcher Agent
 Agent spécialisé dans la recherche documentaire parallèle.
 """
 from typing import Any

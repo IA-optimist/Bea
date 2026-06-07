@@ -12,7 +12,7 @@ from typing import List, Optional
 
 from core.objectives.objective_models import Objective, SubObjective, SubObjectiveStatus
 
-logger = structlog.get_logger("jarvis.objective_breakdown")
+logger = structlog.get_logger("bea.objective_breakdown")
 log = logger  # alias for M3 emitter
 
 # ── Imports fail-open ──────────────────────────────────────────────────────────

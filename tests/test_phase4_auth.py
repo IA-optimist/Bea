@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Phase 4 Auth / Routes / WebSocket / Session Tests
+BEA MAX — Phase 4 Auth / Routes / WebSocket / Session Tests
 =================================================================
 Tests auth enforcement, route registration, WebSocket auth, session guards.
 
@@ -91,8 +91,8 @@ class TestRouteAuth:
         import inspect
         sig = inspect.signature(endpoint)
         for name, param in sig.parameters.items():
-            # Legacy: x_jarvis_token or authorization header
-            if name in ("x_jarvis_token", "authorization"):
+            # Legacy: x_bea_token or authorization header
+            if name in ("x_bea_token", "authorization"):
                 return True
             # New: Depends(require_auth) — param default is a Depends instance
             if hasattr(param.default, "dependency"):
@@ -194,7 +194,7 @@ class TestDocsControl:
                 continue
             with open(fpath, encoding="utf-8") as f:
                 source = f.read()
-            assert "jarvis_token" in source and "/api/v2/status" in source, \
+            assert "bea_token" in source and "/api/v2/status" in source, \
                 f"{fname} missing session guard"
 
 

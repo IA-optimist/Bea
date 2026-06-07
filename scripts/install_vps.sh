@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 JarvisMax VPS Setup"
+echo "🚀 BeaMax VPS Setup"
 
 # System update
 apt-get update && apt-get upgrade -y
@@ -19,13 +19,13 @@ ufw deny 8000
 ufw --force enable
 
 # Clone repo
-git clone https://github.com/UniTy01/Jarvismax /opt/jarvismax
-cd /opt/jarvismax
+git clone https://github.com/UniTy01/Beamax /opt/beamax
+cd /opt/beamax
 
 # Setup .env
 cp .env.example .env
 echo ""
-echo "⚠️  Edit /opt/jarvismax/.env with your values, then press ENTER to continue"
+echo "⚠️  Edit /opt/beamax/.env with your values, then press ENTER to continue"
 read
 
 # Pull Ollama models
@@ -44,7 +44,7 @@ docker compose -f docker-compose.prod.yml up -d
 sleep 10
 
 # Health check
-curl -f http://localhost:8000/health && echo "✅ JarvisMax is running!" || echo "❌ Health check failed"
+curl -f http://localhost:8000/health && echo "✅ BeaMax is running!" || echo "❌ Health check failed"
 
 echo "→ API: http://YOUR_IP:8000"
 echo "→ Docs: http://YOUR_IP:8000/docs"

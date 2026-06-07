@@ -1,5 +1,5 @@
 """
-JarvisTeam Dispatcher — orchestrates the architect→coder→reviewer→qa chain.
+BeaTeam Dispatcher — orchestrates the architect→coder→reviewer→qa chain.
 Activated when mode in ("improve", "lab", "dev").
 Integrates Global Workspace Theory for inter-agent consciousness.
 """
@@ -10,13 +10,13 @@ from core.global_workspace import get_workspace
 
 log = structlog.get_logger(__name__)
 
-AGENTS_DIR = Path(__file__).parent.parent.parent / "agents" / "jarvis_team"
+AGENTS_DIR = Path(__file__).parent.parent.parent / "agents" / "bea_team"
 
 def load_agent_prompt(agent_name: str) -> str:
     """Load system prompt from agent markdown file."""
     path = AGENTS_DIR / f"{agent_name}.md"
     if not path.exists():
-        return f"You are {agent_name} agent for JarvisMax."
+        return f"You are {agent_name} agent for BeaMax."
     content = path.read_text()
     # Strip frontmatter
     if content.startswith("---"):
@@ -55,9 +55,9 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
             
             # Pass result to next agent as context
             context = f"Previous {agent_name} output:\n{result}\n\nOriginal goal: {goal}"
-            log.info("jarvis_team.agent_complete", agent=agent_name, mission_id=mission_id)
+            log.info("bea_team.agent_complete", agent=agent_name, mission_id=mission_id)
         except Exception as e:
-            log.warning("jarvis_team.agent_failed", agent=agent_name, err=str(e)[:80])
+            log.warning("bea_team.agent_failed", agent=agent_name, err=str(e)[:80])
             chain_results.append({"agent": agent_name, "output": "", "success": False, "error": str(e)[:80]})
             continue
 

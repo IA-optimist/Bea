@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Extension Registry
+BEA MAX — Extension Registry
 ==================================
 Production-grade extensibility layer for user-managed Agents, MCP Connectors,
 Skills, and Tools.

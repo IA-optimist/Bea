@@ -1,5 +1,5 @@
 """
-JARVIS MAX — System Routes (extracted from api/main.py)
+BEA MAX — System Routes (extracted from api/main.py)
 =========================================================
 Health, status, metrics, diagnostics, logs, restart, mode, capabilities,
 policy-mode, tools registry, knowledge, plan.

@@ -1,18 +1,18 @@
 """
-jarvis_mcp/github_mcp_adapter.py — GitHub MCP sidecar adapter.
+bea_mcp/github_mcp_adapter.py — GitHub MCP sidecar adapter.
 
-Registers the github-mcp sidecar into Jarvis's MCPRegistry.
+Registers the github-mcp sidecar into Bea's MCPRegistry.
 Read tools are open; all write tools require approval.
 
 Feature flag : GITHUB_MCP_ENABLED=true
 Sidecar URL  : GITHUB_MCP_URL (default: http://github-mcp:3000)
 
 Security:
-  - GITHUB_TOKEN lives in the sidecar env only, never in jarvis_core
+  - GITHUB_TOKEN lives in the sidecar env only, never in bea_core
   - Write tools: requires_approval=True (create_issue, create_pr, push_files)
   - disable: GITHUB_MCP_ENABLED=false (default)
 
-NOTE: This module is in jarvis_mcp/ (not mcp/) to avoid namespace collision
+NOTE: This module is in bea_mcp/ (not mcp/) to avoid namespace collision
 with the mcp pip package (MCP SDK).
 """
 from __future__ import annotations
@@ -122,7 +122,7 @@ _GITHUB_TOOLS = [
 
 def register_github_mcp(registry, settings) -> bool:
     """
-    Register the GitHub MCP sidecar in the Jarvis MCPRegistry.
+    Register the GitHub MCP sidecar in the Bea MCPRegistry.
 
     Returns:
         True if registered, False if disabled or already registered.

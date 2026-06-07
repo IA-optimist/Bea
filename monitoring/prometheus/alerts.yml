@@ -1,16 +1,16 @@
 groups:
-  - name: jarvismax_alerts
+  - name: beamax_alerts
     interval: 30s
     rules:
       # API Health Alerts
       - alert: APIDown
-        expr: up{job="jarvismax-api"} == 0
+        expr: up{job="beamax-api"} == 0
         for: 1m
         labels:
           severity: critical
           component: api
         annotations:
-          summary: "JarvisMax API is down"
+          summary: "BeaMax API is down"
           description: "API has been down for more than 1 minute on {{ $labels.instance }}"
 
       - alert: HighErrorRate

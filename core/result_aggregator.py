@@ -16,7 +16,7 @@ from core.schemas.final_output import (
     FinalOutput, AgentOutput, AgentError, DecisionStep, OutputMetrics,
 )
 
-log = structlog.get_logger("jarvis.result_aggregator")
+log = structlog.get_logger("bea.result_aggregator")
 
 
 def aggregate_mission_result(

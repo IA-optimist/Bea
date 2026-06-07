@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Event Stream
+BEA MAX v3 — Event Stream
 Stockage append-only immuable de tous les événements d'une mission.
 Permet Time-Travel, sauvegarde JSON et subscriptions asynchrones (ex: pour WebSockets).
 """

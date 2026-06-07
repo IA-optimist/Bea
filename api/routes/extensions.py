@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Extension Management API
+BEA MAX — Extension Management API
 ========================================
 Admin-only CRUD for Agents, MCP Connectors, Skills, and Tools.
 

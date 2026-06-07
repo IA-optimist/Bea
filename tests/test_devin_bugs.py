@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Tests for Devin Bug Fixes
+BEA MAX — Tests for Devin Bug Fixes
 ==========================================
 BUG A: Anti-duplicate mission execution
 BUG B: No-op patch detection (false success prevention)

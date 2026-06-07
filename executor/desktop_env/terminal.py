@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Terminal (Stateful PTY)
+BEA MAX v3 — Terminal (Stateful PTY)
 Enveloppe un processus sous-jacent (bash via docker exec ou local) avec persistance.
 """
 import asyncio
@@ -14,7 +14,7 @@ log = structlog.get_logger()
 
 # Délimiteur complexe pour savoir avec certitude quand une commande est terminée
 # car on lit de manière asynchrone le stdout d'un process en continu.
-_END_MARKER = f"__JARVIS_CMD_END_{uuid.uuid4().hex[:8]}__"
+_END_MARKER = f"__BEA_CMD_END_{uuid.uuid4().hex[:8]}__"
 
 
 class PersistentTerminal:
@@ -107,7 +107,7 @@ class PersistentTerminal:
                         
                         # Détection du marqueur de fin
                         if _END_MARKER in line:
-                            # Parse l'exit code attaché au marqueur (ex: __JARVIS_CMD_END_123456__0)
+                            # Parse l'exit code attaché au marqueur (ex: __BEA_CMD_END_123456__0)
                             match = re.search(f"{_END_MARKER}(\\d+)", line)
                             if match:
                                 exit_code = int(match.group(1))

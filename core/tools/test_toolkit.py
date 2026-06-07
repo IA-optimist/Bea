@@ -1,4 +1,4 @@
-"""test_toolkit — outils de test et healthcheck pour Jarvis."""
+"""test_toolkit — outils de test et healthcheck pour Bea."""
 from __future__ import annotations
 import subprocess  # nosec B404
 
@@ -27,7 +27,7 @@ def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict:
     """Lance pytest sur test_path. Retourne passed/failed count."""
     try:
         import os
-        cwd = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+        cwd = os.environ.get("BEA_ROOT", "/opt/beamax")
         proc = subprocess.run(  # nosec B603 B607
             ["python", "-m", "pytest", test_path, "-v", "--tb=short"],
             capture_output=True, text=True, timeout=timeout, cwd=cwd
@@ -62,7 +62,7 @@ def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict:
 
 
 def run_smoke_tests() -> dict:
-    """Teste les endpoints clés de Jarvis en localhost."""
+    """Teste les endpoints clés de Bea en localhost."""
     base_url = "http://localhost:8000"
     endpoints_ok = []
     endpoints_fail = []

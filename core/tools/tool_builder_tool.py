@@ -1,5 +1,5 @@
 """
-tool_builder_tool — Génère des tools à la demande pour Jarvis.
+tool_builder_tool — Génère des tools à la demande pour Bea.
 Pipeline : analyze_tool_need → generate_tool_skeleton → generate_tool_tests
            → optionnel: register_tool_in_executor + save_tool_to_memory
 Retourne toujours {status, output, error, logs, risk_level}.
@@ -14,7 +14,7 @@ log = structlog.get_logger(__name__)
 _silent_log = structlog.get_logger(__name__)
 import re
 
-logger = logging.getLogger("jarvis.tool_builder")
+logger = logging.getLogger("bea.tool_builder")
 
 # Libs présentes dans requirements.txt (sans dépendances lourdes)
 _KNOWN_LIBS = {
@@ -27,7 +27,7 @@ _KNOWN_LIBS = {
     "pathlib", "hashlib", "random", "math", "io", "inspect",
 }
 
-JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+BEA_ROOT = os.environ.get("BEA_ROOT", "/opt/beamax")
 
 
 def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
@@ -180,7 +180,7 @@ def generate_tool_skeleton(
                 safety_checks += f"""
     # Safety: path traversal check
     import os as _os
-    _jarvis_root = _os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
+    _bea_root = _os.environ.get("BEA_ROOT", "/opt/beamax")
     for _blocked in ("/etc", "/root", "/proc", "/sys"):
         if any(_blocked in str(v) for v in [{', '.join(repr(n) for n in input_schema.keys() if 'path' in n.lower())}]):
             return _err(f"blocked_path: {{_blocked}}")
@@ -205,7 +205,7 @@ Auto-généré par tool_builder_tool.
 from __future__ import annotations
 import logging
 
-logger = logging.getLogger("jarvis.tools.{tool_name}")
+logger = logging.getLogger("bea.tools.{tool_name}")
 
 
 def _ok(output: str, logs: list = None, **extra) -> dict:
@@ -389,7 +389,7 @@ def register_tool_in_executor(
     """
     try:
         logs = []
-        executor_path = os.path.join(JARVIS_ROOT, "core", "tool_executor.py")
+        executor_path = os.path.join(BEA_ROOT, "core", "tool_executor.py")
         if not os.path.exists(executor_path):
             executor_path = "core/tool_executor.py"
 
@@ -448,7 +448,7 @@ def register_tool_in_executor(
 
 def save_tool_to_memory(tool_name: str, description: str, code: str) -> dict:
     """
-    Stocke le pattern du tool dans Qdrant collection 'jarvis_tools'.
+    Stocke le pattern du tool dans Qdrant collection 'bea_tools'.
 
     Args:
         tool_name: Nom du tool
@@ -472,7 +472,7 @@ def save_tool_to_memory(tool_name: str, description: str, code: str) -> dict:
 
 def validate_tool_structure(tool_code: str, tool_name: str) -> dict:
     """
-    Valide qu'un tool généré respecte les standards Jarvis.
+    Valide qu'un tool généré respecte les standards Bea.
 
     Checks:
     - Contient def {tool_name}()

@@ -1,7 +1,7 @@
 """
 DEPRECATED: Use core.actions.action_model.CanonicalAction for new code.
 
-JARVIS MAX — CoreTaskQueue
+BEA MAX — CoreTaskQueue
 Queue async pour les tâches de fond avec retry et backoff exponentiel.
 
 Architecture :

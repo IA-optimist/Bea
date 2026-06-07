@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Secure session persistence for Jarvis.
+/// Secure session persistence for Bea.
 ///
 /// Storage strategy:
 ///   - Access token → FlutterSecureStorage (encrypted keychain/keystore)
@@ -23,14 +23,14 @@ class SessionManager {
   );
 
   // Secure storage keys
-  static const _keyToken = 'jarvis_auth_token';
-  static const _keyPassword = 'jarvis_admin_password';
+  static const _keyToken = 'bea_auth_token';
+  static const _keyPassword = 'bea_admin_password';
 
   // SharedPreferences keys (non-sensitive)
-  static const _keyLoginMode = 'jarvis_login_mode';  // "admin" or "token"
-  static const _keyUsername = 'jarvis_username';
-  static const _keyRememberMe = 'jarvis_remember_me';
-  static const _keyRole = 'jarvis_role';
+  static const _keyLoginMode = 'bea_login_mode';  // "admin" or "token"
+  static const _keyUsername = 'bea_username';
+  static const _keyRememberMe = 'bea_remember_me';
+  static const _keyRole = 'bea_role';
 
   // ── Save ──
 

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — SynthesizerAgent
+BEA MAX — SynthesizerAgent
 Fusionne les résultats de plusieurs agents en une réponse unique cohérente.
 
 Rôle :
@@ -180,7 +180,7 @@ class SynthesizerAgent:
         from langchain_core.messages import SystemMessage, HumanMessage
         resp = await llm.ainvoke([
             SystemMessage(content=(
-                f"Tu es {getattr(self.s, 'jarvis_name', 'Jarvis')}, "
+                f"Tu es {getattr(self.s, 'bea_name', 'Bea')}, "
                 "agent de synthèse. Tu fusionnes les résultats de plusieurs agents "
                 "spécialisés en une réponse unique, claire et exploitable."
             )),

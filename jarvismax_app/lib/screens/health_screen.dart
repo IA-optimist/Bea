@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 import '../widgets/cyber_card.dart';
 import 'package:provider/provider.dart';
 
-/// Jarvis Health — Live system observability dashboard
+/// Bea Health — Live system observability dashboard
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
 
@@ -55,7 +55,7 @@ class _HealthScreenState extends State<HealthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('JARVIS HEALTH'),
+        title: const Text('BEA HEALTH'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: JvColors.cyan),

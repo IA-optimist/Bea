@@ -1,8 +1,8 @@
 {
   "dashboard": {
-    "title": "JarvisMax - Business Metrics",
-    "uid": "jarvismax-business",
-    "tags": ["jarvismax", "business", "analytics"],
+    "title": "BeaMax - Business Metrics",
+    "uid": "beamax-business",
+    "tags": ["beamax", "business", "analytics"],
     "timezone": "browser",
     "schemaVersion": 38,
     "version": 1,

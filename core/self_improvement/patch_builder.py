@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Self-Improvement Controller V1
+BEA MAX — Self-Improvement Controller V1
 Module C : PatchBuilder
 
 Transforme un ImprovementProposal en PatchCandidate structuré.

@@ -1,5 +1,5 @@
 """
-LangGraph orchestration backbone for JarvisMax.
+LangGraph orchestration backbone for BeaMax.
 Implements explicit graph-based execution flow.
 Coexists with existing orchestrator — use USE_LANGGRAPH=true to activate.
 
@@ -35,7 +35,7 @@ except ImportError:
     from typing_extensions import TypedDict  # type: ignore
 
 
-class JarvisState(TypedDict):
+class BeaState(TypedDict):
     user_input: str
     conversation_history: List[Dict[str, Any]]
     plan: Optional[Dict[str, Any]]
@@ -81,7 +81,7 @@ def _get_llm():
 
 # ── Nodes ─────────────────────────────────────────────────────────────────────
 
-def memory_read_node(state: JarvisState) -> JarvisState:
+def memory_read_node(state: BeaState) -> BeaState:
     """Inject relevant memory context before planning."""
     try:
         from core.knowledge.knowledge_index import search_similar
@@ -94,7 +94,7 @@ def memory_read_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def intent_router_node(state: JarvisState) -> JarvisState:
+def intent_router_node(state: BeaState) -> BeaState:
     """Route intent — maps to meta_orchestrator logic, fail-open."""
     try:
         from core.domain_router import classify_domain
@@ -108,7 +108,7 @@ def intent_router_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def planner_node(state: JarvisState) -> JarvisState:
+def planner_node(state: BeaState) -> BeaState:
     """Build execution plan using existing planner."""
     try:
         from core.planner import build_plan
@@ -121,7 +121,7 @@ def planner_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def approval_gate_node(state: JarvisState) -> JarvisState:
+def approval_gate_node(state: BeaState) -> BeaState:
     """Check if mission requires human approval (supervised mode)."""
     try:
         from core.execution_policy import requires_approval
@@ -132,7 +132,7 @@ def approval_gate_node(state: JarvisState) -> JarvisState:
     return state
 
 
-async def executor_node(state: JarvisState) -> JarvisState:
+async def executor_node(state: BeaState) -> BeaState:
     """Execute using MetaOrchestrator with AgentRunner fallback (fail-open)."""
     try:
         final_answer = ""
@@ -177,7 +177,7 @@ async def executor_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def verifier_node(state: JarvisState) -> JarvisState:
+def verifier_node(state: BeaState) -> BeaState:
     """Verify output quality — decides retry or proceed."""
     answer = state.get("final_answer", "")
     if not answer or answer.strip() == "":
@@ -186,7 +186,7 @@ def verifier_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def self_improvement_node(state: JarvisState) -> JarvisState:
+def self_improvement_node(state: BeaState) -> BeaState:
     """Trigger self-improvement check (fail-open, fire-and-forget)."""
     try:
         from core.self_improvement import get_self_improvement_manager
@@ -198,7 +198,7 @@ def self_improvement_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def memory_write_node(state: JarvisState) -> JarvisState:
+def memory_write_node(state: BeaState) -> BeaState:
     """Persist mission result to knowledge index."""
     try:
         from core.knowledge.knowledge_index import store_experience
@@ -213,7 +213,7 @@ def memory_write_node(state: JarvisState) -> JarvisState:
     return state
 
 
-def fallback_node(state: JarvisState) -> JarvisState:
+def fallback_node(state: BeaState) -> BeaState:
     """Last resort: build final_answer from pipeline_guard."""
     try:
         from api.pipeline_guard import build_safe_final_output
@@ -230,13 +230,13 @@ def fallback_node(state: JarvisState) -> JarvisState:
 
 # ── Routing ───────────────────────────────────────────────────────────────────
 
-def route_after_approval(state: JarvisState) -> str:
+def route_after_approval(state: BeaState) -> str:
     if state.get("requires_approval"):
         return "fallback"  # Suspend for approval (future: approval queue)
     return "executor"
 
 
-def route_after_verifier(state: JarvisState) -> str:
+def route_after_verifier(state: BeaState) -> str:
     """Retry if output empty and retries available, else proceed."""
     has_answer = bool((state.get("final_answer") or "").strip())
     retry_count = state.get("retry_count", 0)
@@ -248,12 +248,12 @@ def route_after_verifier(state: JarvisState) -> str:
 
 # ── Graph builder ─────────────────────────────────────────────────────────────
 
-def build_jarvis_graph():
-    """Build and compile the JarvisMax LangGraph execution graph."""
+def build_bea_graph():
+    """Build and compile the BeaMax LangGraph execution graph."""
     if not _LANGGRAPH_OK:
         return None
 
-    g = StateGraph(JarvisState)
+    g = StateGraph(BeaState)
 
     # Nodes
     g.add_node("memory_read", memory_read_node)
@@ -289,13 +289,13 @@ def build_jarvis_graph():
 
 # Singleton — built once on import
 try:
-    jarvis_graph = build_jarvis_graph()
-    if jarvis_graph:
+    bea_graph = build_bea_graph()
+    if bea_graph:
         logger.info("[LangGraph] Graph compiled successfully — 9 nodes")
     else:
-        jarvis_graph = None
+        bea_graph = None
 except Exception as _e:
-    jarvis_graph = None
+    bea_graph = None
     logger.error("[LangGraph] Graph compilation failed: %s", _e)
 
 
@@ -304,11 +304,11 @@ def invoke(user_input: str, mission_id: str = "", conversation_history=None) -> 
     Main entrypoint. Falls back to legacy pipeline if LangGraph unavailable.
     Returns dict with final_answer, errors, tool_results, memory_updates.
     """
-    if jarvis_graph is None:
+    if bea_graph is None:
         logger.warning("[LangGraph] graph unavailable — using legacy pipeline")
         return _legacy_fallback(user_input, mission_id)
 
-    initial_state: JarvisState = {
+    initial_state: BeaState = {
         "user_input": user_input,
         "conversation_history": list(conversation_history or []),
         "plan": None,
@@ -326,9 +326,9 @@ def invoke(user_input: str, mission_id: str = "", conversation_history=None) -> 
     try:
         config: Dict[str, Any] = {}
         if os.getenv("LANGCHAIN_TRACING_V2") == "true":
-            config["run_name"] = f"jarvis-{mission_id or 'anon'}"
+            config["run_name"] = f"bea-{mission_id or 'anon'}"
 
-        result = jarvis_graph.invoke(initial_state, config=config)
+        result = bea_graph.invoke(initial_state, config=config)
         return {
             "final_answer": result.get("final_answer", ""),
             "errors": result.get("errors", []),

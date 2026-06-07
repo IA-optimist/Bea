@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Base Tool primitives
+BEA MAX — Base Tool primitives
 BaseTool, ToolResult, ToolRisk — shared by all tool implementations.
 """
 from __future__ import annotations

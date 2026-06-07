@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Learning Traces Exploitation
+BEA MAX — Learning Traces Exploitation
 =============================================
 Captures structured learning events from runtime execution and makes
 them queryable for future decision-making.

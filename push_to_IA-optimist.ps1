@@ -1,12 +1,12 @@
 # ============================================================
-# Push Jarvismax -> github.com/IA-optimist/Bea (privé)
+# Push Beamax -> github.com/IA-optimist/Bea (privé)
 # ============================================================
 # Prérequis :
 #   - gh CLI installé et authentifié : `gh auth status`
 #   - Tu dois être membre de l'organisation IA-optimist (ou que ce soit ton user perso)
 #
 # Usage :
-#   cd C:\Users\maxen\Documents\Jarvismax-master
+#   cd C:\Users\maxen\Documents\Beamax-master
 #   powershell -ExecutionPolicy Bypass -File .\push_to_IA-optimist.ps1
 #
 # Note : repo name "Bea" car GitHub n'accepte pas les accents.
@@ -20,13 +20,13 @@ $Org       = "IA-optimist"
 $RepoName  = "Bea"            # <-- édite ici si tu veux un autre slug
 $Visibility = "private"        # private | public
 $RepoFull  = "$Org/$RepoName"
-$RepoDir   = "C:\Users\maxen\Documents\Jarvismax-master"
+$RepoDir   = "C:\Users\maxen\Documents\Beamax-master"
 
 Set-Location $RepoDir
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host " Push Jarvismax -> https://github.com/$RepoFull ($Visibility)" -ForegroundColor Cyan
+Write-Host " Push Beamax -> https://github.com/$RepoFull ($Visibility)" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -126,7 +126,7 @@ $exists = gh repo view $RepoFull 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "  Le repo $RepoFull existe déjà — on saute la création." -ForegroundColor Gray
 } else {
-    gh repo create $RepoFull --$Visibility --description "Jarvismax - Multi-agent AI OS"
+    gh repo create $RepoFull --$Visibility --description "Beamax - Multi-agent AI OS"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERREUR : création du repo échouée." -ForegroundColor Red
         Write-Host "Vérifie que :" -ForegroundColor Red

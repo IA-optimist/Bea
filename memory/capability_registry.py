@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Capability Registry
+BEA MAX — Capability Registry
 Registry léger calculé depuis decision_memory. Pas de persistence propre —
 reconstruit à la demande depuis decision_memory.jsonl. O(n) sur max 1000 entrées.
 stdlib uniquement.

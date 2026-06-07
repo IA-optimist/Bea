@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Metrics Bridge
+BEA MAX — Metrics Bridge
 ==============================
 Non-invasive instrumentation layer that connects runtime components
 to the metrics store and trace intelligence.
@@ -175,7 +175,7 @@ def _patch_llm_factory() -> bool:
             from core.metrics_store import emit_model_selected
             llm = original_get(self, role, **kwargs)
             try:
-                provider = getattr(llm, "_jarvis_provider", "unknown")
+                provider = getattr(llm, "_bea_provider", "unknown")
                 model_name = getattr(llm, "model_name", getattr(llm, "model", provider))
                 locality = "local" if provider == "ollama" else "cloud"
                 emit_model_selected(model_name, locality)

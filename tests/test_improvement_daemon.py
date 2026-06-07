@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # Le gate est ré-activé par défaut (conftest.py), ce module se réactive en
 # local pour que les cycle tests valident le comportement fonctionnel du
 # daemon, pas la sécurité (testée séparément dans test_improvement_gate_security).
-os.environ["JARVIS_SKIP_IMPROVEMENT_GATE"] = "1"
+os.environ["BEA_SKIP_IMPROVEMENT_GATE"] = "1"
 
 
 # ═══════════════════════════════════════════════════════════════

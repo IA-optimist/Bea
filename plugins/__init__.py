@@ -1,7 +1,7 @@
 """
-plugins — JarvisMax plugin system.
+plugins — BeaMax plugin system.
 
-Plugins extend Jarvis with new capabilities (tools, data sources,
+Plugins extend Bea with new capabilities (tools, data sources,
 integrations, notifications) through a controlled registry.
 
 Rules:

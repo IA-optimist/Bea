@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Test Runner (production-grade CI-in-the-loop)
+BEA MAX — Test Runner (production-grade CI-in-the-loop)
 =============================================================
 Runs pytest + syntax + linter on patches, parses results,
 computes regression score, and produces structured validation reports.

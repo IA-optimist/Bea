@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mission Templates
+BEA MAX — Mission Templates
 ==================================
 Built-in templates for common business missions.
 

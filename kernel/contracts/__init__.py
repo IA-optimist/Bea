@@ -1,5 +1,5 @@
 """
-kernel/contracts/ — Canonical domain contracts for JarvisMax.
+kernel/contracts/ — Canonical domain contracts for BeaMax.
 
 These are the primary language of the system. All subsystems communicate
 through these typed, validated, serializable objects.

@@ -8,7 +8,7 @@ le modèle ne l'appelle pas.
 Le wrapper `_run_coro` exécute la coroutine agent que l'appelant soit synchrone
 (asyncio.run) ou déjà dans une boucle (thread dédié) — robuste dans les deux cas.
 
-Limite connue : exécute un vrai agent (appel LLM + contrat `JarvisSession`) — le
+Limite connue : exécute un vrai agent (appel LLM + contrat `BeaSession`) — le
 comportement de bout en bout doit être validé en environnement complet/tests.
 """
 from __future__ import annotations
@@ -56,7 +56,7 @@ def _run_coro(coro):
 async def _adelegate(task: str, role: str, timeout: int) -> str:
     from agents.agent_factory import AgentFactory
     from config.settings import get_settings
-    from core.state import JarvisSession
+    from core.state import BeaSession
 
     settings = get_settings()
     factory = AgentFactory(settings)
@@ -65,7 +65,7 @@ async def _adelegate(task: str, role: str, timeout: int) -> str:
         name=name, role=role, timeout_s=timeout,
         description="Subagent délégué (one-shot)",
     )
-    session = JarvisSession(session_id=name, user_input=task)
+    session = BeaSession(session_id=name, user_input=task)
     session.metadata["delegated"] = True
     out = await agent.run(session)
     return str(out or "")

@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Trade Ops : Template Chauffagiste / Plombier Chauffage
+BEA BUSINESS LAYER — Trade Ops : Template Chauffagiste / Plombier Chauffage
 Template métier pré-configuré pour générer un agent IA spécialisé en chauffage.
 
 Couvre : devis, maintenance, SAV, clients, planning techniciens.

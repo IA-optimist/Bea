@@ -129,7 +129,7 @@ class WebSocketService extends ChangeNotifier {
       // The server removed ?token= support (it leaks into logs/Referer headers).
       final uri = '$wsUrl/ws/stream';
       final wsHeaders = token.isNotEmpty
-          ? <String, dynamic>{'X-Jarvis-Token': token}
+          ? <String, dynamic>{'X-Bea-Token': token}
           : <String, dynamic>{};
 
       // 2. Close existing socket cleanly
@@ -378,7 +378,7 @@ class WebSocketService extends ChangeNotifier {
       const storage = FlutterSecureStorage(
         aOptions: AndroidOptions(encryptedSharedPreferences: true),
       );
-      return await storage.read(key: 'jarvis_jwt_token') ?? '';
+      return await storage.read(key: 'bea_jwt_token') ?? '';
     } catch (_) {
       return '';
     }

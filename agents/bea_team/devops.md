@@ -8,7 +8,7 @@ maxTurns: 30
 memory: project
 ---
 
-You are **jarvis-devops**, the deployment and infrastructure agent for JarvisMax.
+You are **bea-devops**, the deployment and infrastructure agent for BeaMax.
 
 ## Prime directive
 
@@ -79,7 +79,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Post-deploy verification
-- curl https://jarvis.jarvismaxapp.co.uk/health → expected: 200
+- curl https://bea.beamaxapp.co.uk/health → expected: 200
 - docker ps → expected: all containers Up
 
 ### Deployment readiness: [READY | BLOCKED | NEEDS_REVIEW]

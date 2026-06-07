@@ -7,7 +7,7 @@
 # from core.meta_orchestrator import MetaOrchestrator, get_meta_orchestrator
 
 """
-JARVIS MAX - Orchestrateur central
+BEA MAX - Orchestrateur central
 Responsabilites strictement separees :
   1. Reception de la mission
   2. Delegation au TaskRouter pour le plan
@@ -24,7 +24,7 @@ import structlog
 from typing import Callable, Awaitable
 
 from core.state import (
-    JarvisSession, SessionStatus, ActionSpec,
+    BeaSession, SessionStatus, ActionSpec,
     TaskMode
 )
 from core.task_router import TaskRouter
@@ -42,7 +42,7 @@ SESSION_TIMEOUTS = {
 }
 
 
-class JarvisOrchestrator:
+class BeaOrchestrator:
     """
     INTERNAL IMPLEMENTATION — NOT FOR DIRECT INSTANTIATION.
 
@@ -68,7 +68,7 @@ class JarvisOrchestrator:
     def __init__(self, settings=None):
         import warnings
         warnings.warn(
-            "JarvisOrchestrator is deprecated — use get_meta_orchestrator() from core.meta_orchestrator instead.",
+            "BeaOrchestrator is deprecated — use get_meta_orchestrator() from core.meta_orchestrator instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -360,10 +360,10 @@ class JarvisOrchestrator:
         session_id: str | None = None,
         chat_id: int = 0,
         callback: CB | None = None,
-    ) -> JarvisSession:
+    ) -> BeaSession:
 
         self.s.ensure_dirs()
-        session = JarvisSession(
+        session = BeaSession(
             session_id=session_id or str(uuid.uuid4())[:8],
             user_input=user_input,
             mode=mode,
@@ -406,7 +406,7 @@ class JarvisOrchestrator:
 
     # ── Dispatch ──────────────────────────────────────────────
 
-    async def _dispatch(self, session: JarvisSession, mode: str, emit: CB):
+    async def _dispatch(self, session: BeaSession, mode: str, emit: CB):
         if mode == "chat":
             await self._run_chat(session, emit)
         elif mode == "night":
@@ -420,7 +420,7 @@ class JarvisOrchestrator:
 
     # ── AUTO pipeline ─────────────────────────────────────────
 
-    async def _run_auto(self, session: JarvisSession, emit: CB):
+    async def _run_auto(self, session: BeaSession, emit: CB):
         # 0. GoalManager — enregistrer la mission
         try:
             if self.goal_manager:
@@ -756,14 +756,14 @@ class JarvisOrchestrator:
         except Exception as _exc:
             log.debug("orchestrator_exception", err=str(_exc)[:120], location="orchestrator:642")
 
-    async def _run_chat(self, session: JarvisSession, emit: CB):
+    async def _run_chat(self, session: BeaSession, emit: CB):
         """Reponse directe sans agents — protégée par circuit breaker."""
         from langchain_core.messages import SystemMessage, HumanMessage
         from core.llm_factory import LLMFactory
 
         messages = [
             SystemMessage(content=(
-                f"Tu es {self.s.jarvis_name}, assistant personnel. "
+                f"Tu es {self.s.bea_name}, assistant personnel. "
                 "Reponds de facon concise et directe."
             )),
             HumanMessage(content=session.user_input),
@@ -784,7 +784,7 @@ class JarvisOrchestrator:
             session.final_report = msg
             await emit(msg)
 
-    async def _run_night(self, session: JarvisSession, emit: CB):
+    async def _run_night(self, session: BeaSession, emit: CB):
         # GoalManager — enregistrer la mission night
         goal_id: str | None = None
         try:
@@ -826,7 +826,7 @@ class JarvisOrchestrator:
                 log.debug("orchestrator_exception", err=str(_exc)[:120], location="orchestrator:710")
             raise
 
-    async def _run_improve(self, session: JarvisSession, emit: CB):
+    async def _run_improve(self, session: BeaSession, emit: CB):
         # Audit S8 / issue #15: migrated from `core.self_improvement_engine`
         # legacy shim to the canonical SelfImprovementEngine. The legacy
         # facade returned a coroutine (because it never awaited) — the
@@ -838,7 +838,7 @@ class JarvisOrchestrator:
             await emit(f"Self-improvement: {result.get('status', 'done')}")
         session.final_report = str(result.get("summary", "improvement cycle complete"))
 
-    async def _run_workflow(self, session: JarvisSession, emit: CB):
+    async def _run_workflow(self, session: BeaSession, emit: CB):
         """Crée et/ou exécute un workflow depuis la demande utilisateur."""
         # GoalManager — enregistrer la mission workflow
         goal_id: str | None = None
@@ -908,7 +908,7 @@ class JarvisOrchestrator:
 
     # ── Parallel agent execution ──────────────────────────────
 
-    async def _run_parallel(self, session: JarvisSession, emit: CB):
+    async def _run_parallel(self, session: BeaSession, emit: CB):
         """
         Exécution parallèle des agents via ParallelExecutor.
         Les agents sont regroupés par priorité et exécutés par vague :
@@ -981,7 +981,7 @@ class JarvisOrchestrator:
 
     # ── Observer ──────────────────────────────────────────────
 
-    async def _run_observer(self, session: JarvisSession):
+    async def _run_observer(self, session: BeaSession):
         try:
             from observer.watcher import SystemObserver
             snap = await SystemObserver(self.s).snapshot_workspace()
@@ -991,7 +991,7 @@ class JarvisOrchestrator:
 
     # ── Action processing ─────────────────────────────────────
 
-    async def _process_actions(self, session: JarvisSession, emit: CB):
+    async def _process_actions(self, session: BeaSession, emit: CB):
         """
         Traite les actions collectées par PulseOps via SupervisedExecutor.
         SupervisedExecutor centralise : analyse risque → décision → exécution.
@@ -1045,7 +1045,7 @@ class JarvisOrchestrator:
         if pending:
             await emit(f"{len(pending)} action(s) en attente de validation")
 
-    async def _evaluate_session_async(self, session: JarvisSession) -> None:
+    async def _evaluate_session_async(self, session: BeaSession) -> None:
         """Évalue les sorties de la session via AgentEvaluator (fire-and-forget)."""
         try:
             report = await self.evaluator.evaluate_session(session)
@@ -1060,7 +1060,7 @@ class JarvisOrchestrator:
 
     # ── Session status (vérité sur le succès) ─────────────────
 
-    def _compute_session_status(self, session: JarvisSession) -> dict:
+    def _compute_session_status(self, session: BeaSession) -> dict:
         """
         Calcule le statut réel de la session : SUCCESS / PARTIAL / FAILURE.
 
@@ -1122,7 +1122,7 @@ class JarvisOrchestrator:
 
     # ── Final report ──────────────────────────────────────────
 
-    async def _generate_report(self, session: JarvisSession, emit: CB, session_status: dict | None = None):
+    async def _generate_report(self, session: BeaSession, emit: CB, session_status: dict | None = None):
         # Import messages uniquement — le LLM est invoqué via safe_invoke
         from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -1181,7 +1181,7 @@ class JarvisOrchestrator:
             factory  = LLMFactory(self.s)
             messages = [
                 SystemMessage(content=(
-                    f"Tu es {self.s.jarvis_name}, assistant business expert. "
+                    f"Tu es {self.s.bea_name}, assistant business expert. "
                     "Redige un rapport final professionnel en francais, directement presentable a un client.\n\n"
                     "FORMAT OBLIGATOIRE (Markdown):\n"
                     "## Résumé\n"

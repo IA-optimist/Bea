@@ -44,7 +44,7 @@ _SECRET_PATTERNS = [
     (r"\bsk-ant-[A-Za-z0-9_\-]{20,}\b", "Anthropic API key"),
     (r"\bghp_[A-Za-z0-9]{30,}\b", "GitHub PAT"),
     (r"\bghs_[A-Za-z0-9]{30,}\b", "GitHub App token"),
-    (r"\bjv-[A-Za-z0-9_\-]{20,}\b", "JarvisMax access token"),
+    (r"\bjv-[A-Za-z0-9_\-]{20,}\b", "BeaMax access token"),
     (r"\bxox[bpsa]-[A-Za-z0-9\-]{10,}\b", "Slack token"),
     (r"\bglpat-[A-Za-z0-9\-_]{20}\b", "GitLab PAT"),
     # AWS

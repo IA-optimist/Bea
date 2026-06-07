@@ -1,4 +1,4 @@
-package com.jarvismax.jarvismax_app
+package com.beamax.beamax_app
 
 import io.flutter.embedding.android.FlutterActivity
 

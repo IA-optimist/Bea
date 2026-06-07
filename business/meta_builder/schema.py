@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Meta Builder : Schémas de données
+BEA BUSINESS LAYER — Meta Builder : Schémas de données
 Clone/duplique des configurations multi-agents pour un nouveau contexte métier.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ class AgentCloneSpec:
 @dataclass
 class MetaBuildPlan:
     """Plan de duplication d'un système multi-agents."""
-    source_system:    str   # ce qui est cloné ("jarvis-business" par ex)
+    source_system:    str   # ce qui est cloné ("bea-business" par ex)
     target_context:   str   # nouveau contexte (ex: "agence immobilière")
     target_name:      str   # nom du nouveau système
     agents_to_clone:  list[AgentCloneSpec] = field(default_factory=list)

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Model Agent
+BEA MAX — Business Model Agent
 =====================================
 Generates and scores business models from market research.
 

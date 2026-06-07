@@ -62,14 +62,14 @@ class TestEmailTool(unittest.TestCase):
 
     def test_smtp_not_configured(self):
         from core.tools.email_tool import EmailTool
-        old = os.environ.get("JARVIS_SMTP_HOST")
-        os.environ.pop("JARVIS_SMTP_HOST", None)
+        old = os.environ.get("BEA_SMTP_HOST")
+        os.environ.pop("BEA_SMTP_HOST", None)
         t = EmailTool()
         r = t.execute(to="test@example.com", subject="test", body="hello")
         self.assertFalse(r.ok)
         self.assertIn("smtp_not_configured", r.error)
         if old:
-            os.environ["JARVIS_SMTP_HOST"] = old
+            os.environ["BEA_SMTP_HOST"] = old
 
     def test_capability_schema(self):
         from core.tools.email_tool import EmailTool

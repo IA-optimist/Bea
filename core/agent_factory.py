@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Dynamic Agent Factory
+BEA MAX — Dynamic Agent Factory
 Creates new agent classes at runtime from blueprints and registers them in AgentCrew.
 
 Usage:
@@ -55,7 +55,7 @@ def _make_dynamic_agent_class(bp: AgentBlueprint, settings):
     Returns an instantiated agent, not the class.
     """
     from agents.crew import BaseAgent
-    from core.state import JarvisSession
+    from core.state import BeaSession
 
     class DynamicAgent(BaseAgent):
         name:      str = bp.name
@@ -69,7 +69,7 @@ def _make_dynamic_agent_class(bp: AgentBlueprint, settings):
         def system_prompt(self) -> str:
             return bp.system_prompt
 
-        def user_message(self, session: JarvisSession) -> str:
+        def user_message(self, session: BeaSession) -> str:
             return self._task(session)
 
     DynamicAgent.__name__     = f"DynamicAgent_{bp.name}"
@@ -145,7 +145,7 @@ class AgentFactory:
 
     async def _design_blueprint(self, objective: str) -> AgentBlueprint:
         """Call LLM to produce a JSON blueprint, with fallback to a safe default."""
-        design_prompt = f"""Design a JarvisMax agent blueprint as a JSON object.
+        design_prompt = f"""Design a BeaMax agent blueprint as a JSON object.
 
 Objective: {objective}
 
@@ -227,7 +227,7 @@ Return only the JSON object, no markdown fences."""
             name          = safe_name,
             role          = "builder",
             system_prompt = (
-                f"You are a specialized JarvisMax agent. "
+                f"You are a specialized BeaMax agent. "
                 f"Your objective: {objective}. "
                 f"Respond concisely and focus on achieving the stated goal."
             ),

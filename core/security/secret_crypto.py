@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Secret Crypto Layer
+BEA MAX — Secret Crypto Layer
 ===================================
 Authenticated encryption for individual secrets.
 

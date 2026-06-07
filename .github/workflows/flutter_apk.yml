@@ -1,4 +1,4 @@
-name: Build JarvisMax APK
+name: Build BeaMax APK
 
 # ──────────────────────────────────────────────────────────────
 # Triggered by:
@@ -8,10 +8,10 @@ name: Build JarvisMax APK
 #
 # Secrets consumed (configure in repo → Settings → Secrets and variables → Actions):
 #   Required for a usable APK :
-#     JARVIS_API_TOKEN   — current value from /root/Jarvismax-master/.env on VPS1
-#     JARVIS_API_HOST    — e.g. jarvis.jarvismaxapp.co.uk
-#     JARVIS_API_PORT    — e.g. 443
-#     JARVIS_USERNAME    — e.g. admin
+#     BEA_API_TOKEN   — current value from /root/Beamax-master/.env on VPS1
+#     BEA_API_HOST    — e.g. bea.beamaxapp.co.uk
+#     BEA_API_PORT    — e.g. 443
+#     BEA_USERNAME    — e.g. admin
 #
 #   Optional (release signing; if absent, APK is unsigned) :
 #     ANDROID_KEYSTORE_BASE64  — base64 of your .jks/.keystore
@@ -29,7 +29,7 @@ on:
   #   branches:
   #     - main
   #   paths:
-  #     - 'jarvismax_app/**'
+  #     - 'beamax_app/**'
   #     - '.github/workflows/flutter_apk.yml'
   workflow_dispatch:
     inputs:
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jarvismax_app
+        working-directory: beamax_app
 
     steps:
       - name: Checkout
@@ -111,18 +111,18 @@ jobs:
       # ── Build APK with injected secrets ──────────────────────
       - name: Build APK
         env:
-          JARVIS_API_TOKEN: ${{ secrets.JARVIS_API_TOKEN }}
-          JARVIS_API_HOST: ${{ secrets.JARVIS_API_HOST }}
-          JARVIS_API_PORT: ${{ secrets.JARVIS_API_PORT }}
-          JARVIS_USERNAME: ${{ secrets.JARVIS_USERNAME }}
+          BEA_API_TOKEN: ${{ secrets.BEA_API_TOKEN }}
+          BEA_API_HOST: ${{ secrets.BEA_API_HOST }}
+          BEA_API_PORT: ${{ secrets.BEA_API_PORT }}
+          BEA_USERNAME: ${{ secrets.BEA_USERNAME }}
         run: |
           set -euo pipefail
           flutter build apk --${{ steps.mode.outputs.mode }} --no-shrink \
-            --dart-define=JARVIS_API_TOKEN="${JARVIS_API_TOKEN:-CHANGE_ME}" \
-            --dart-define=JARVIS_API_HOST="${JARVIS_API_HOST:-127.0.0.1}" \
-            --dart-define=JARVIS_API_PORT="${JARVIS_API_PORT:-8000}" \
-            --dart-define=JARVIS_USERNAME="${JARVIS_USERNAME:-admin}" \
-            --dart-define=JARVIS_AUTO_LOGIN=true
+            --dart-define=BEA_API_TOKEN="${BEA_API_TOKEN:-CHANGE_ME}" \
+            --dart-define=BEA_API_HOST="${BEA_API_HOST:-127.0.0.1}" \
+            --dart-define=BEA_API_PORT="${BEA_API_PORT:-8000}" \
+            --dart-define=BEA_USERNAME="${BEA_USERNAME:-admin}" \
+            --dart-define=BEA_AUTO_LOGIN=true
 
       - name: Compute APK metadata
         id: apk
@@ -145,8 +145,8 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: jarvismax-${{ steps.mode.outputs.mode }}-${{ github.sha }}
-          path: jarvismax_app/${{ steps.apk.outputs.path }}
+          name: beamax-${{ steps.mode.outputs.mode }}-${{ github.sha }}
+          path: beamax_app/${{ steps.apk.outputs.path }}
           retention-days: 90
           if-no-files-found: error
 
@@ -155,10 +155,10 @@ jobs:
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
-          files: jarvismax_app/${{ steps.apk.outputs.path }}
-          name: JarvisMax ${{ github.ref_name }}
+          files: beamax_app/${{ steps.apk.outputs.path }}
+          name: BeaMax ${{ github.ref_name }}
           body: |
-            ## JarvisMax Mobile — ${{ github.ref_name }}
+            ## BeaMax Mobile — ${{ github.ref_name }}
 
             - APK : `app-${{ steps.mode.outputs.mode }}.apk` (${{ steps.apk.outputs.size }})
             - SHA-256 : `${{ steps.apk.outputs.sha256 }}`

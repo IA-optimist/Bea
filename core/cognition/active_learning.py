@@ -1,5 +1,5 @@
 """
-Active Learning for JarvisMax
+Active Learning for BeaMax
 Continuous improvement through skill discovery and performance tracking.
 """
 from __future__ import annotations

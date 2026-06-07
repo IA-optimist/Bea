@@ -177,7 +177,7 @@ def _get_performance_path() -> str:
     if os.path.isdir("kernel"):
         return _PERFORMANCE_FILE
     # Try common repo locations
-    for base in [os.environ.get("JARVIS_ROOT", ""), "/app"]:
+    for base in [os.environ.get("BEA_ROOT", ""), "/app"]:
         if base and os.path.isdir(os.path.join(base, "kernel")):
             return os.path.join(base, _PERFORMANCE_FILE)
     return _PERFORMANCE_FILE

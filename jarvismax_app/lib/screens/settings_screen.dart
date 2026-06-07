@@ -175,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
           SliverToBoxAdapter(child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
             child: Column(children: [
-              Center(child: Text('Jarvis AI OS • v2.0.0', style: TextStyle(
+              Center(child: Text('Bea AI OS • v2.0.0', style: TextStyle(
                 fontSize: 12, color: JDS.textDim,
               ))),
               const SizedBox(height: 4),

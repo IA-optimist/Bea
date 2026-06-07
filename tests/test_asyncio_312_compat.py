@@ -1,5 +1,5 @@
 """
-JARVIS MAX — asyncio 3.12 Compatibility Test Suite (Pass 4)
+BEA MAX — asyncio 3.12 Compatibility Test Suite (Pass 4)
 ===========================================================
 
 Verifies that all runtime files use asyncio.get_running_loop() instead of the

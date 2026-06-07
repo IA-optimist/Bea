@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 
-log = logging.getLogger("jarvis.observability")
+log = logging.getLogger("bea.observability")
 
 
 @dataclass

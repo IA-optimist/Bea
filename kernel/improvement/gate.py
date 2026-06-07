@@ -101,14 +101,14 @@ class ImprovementGate:
         Never raises. Returns ImprovementDecision(allowed=False, reason=...) on error.
         """
         import os as _os
-        if _os.getenv("JARVIS_SKIP_IMPROVEMENT_GATE"):
+        if _os.getenv("BEA_SKIP_IMPROVEMENT_GATE"):
             return ImprovementDecision(allowed=True, reason="test_bypass")
         # 0 — Security layer gate (R4, Pass 23 — fail-open)
         # Operator-approval channel: BEA_OPERATOR_APPROVE_IMPROVEMENT satisfies the R4
         # human-approval requirement (the operator has authorized autonomous self-improvement
         # at the host level) WITHOUT disabling the other rails — the cooldown and
         # consecutive-failure caps below still apply. This is the safe way to let the
-        # daemon run continuously; the blanket JARVIS_SKIP_IMPROVEMENT_GATE bypasses everything.
+        # daemon run continuously; the blanket BEA_SKIP_IMPROVEMENT_GATE bypasses everything.
         if not _os.getenv("BEA_OPERATOR_APPROVE_IMPROVEMENT"):
             try:
                 from security import get_security_layer

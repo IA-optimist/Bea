@@ -1,5 +1,5 @@
 """
-JARVIS MAX — RAG Pipeline
+BEA MAX — RAG Pipeline
 index_document → chunk → embed → store in pgvector (SQLite in-memory fallback)
 query          → embed question → search → rerank → RagResult
 
@@ -221,7 +221,7 @@ class RagPipeline:
 
     def _get_tracker(self) -> _MtimeTracker:
         if self._tracker is None:
-            db_path = os.path.join(tempfile.gettempdir(), "jarvis_rag_tracker.db")
+            db_path = os.path.join(tempfile.gettempdir(), "bea_rag_tracker.db")
             self._tracker = _MtimeTracker(db_path)
         return self._tracker
 

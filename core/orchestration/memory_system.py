@@ -1,12 +1,12 @@
 """
-memory_system.py — JarvisMax Memory System
+memory_system.py — BeaMax Memory System
 Architecture à 3 niveaux inspirée du cerveau humain.
 
 Niveau 1 — Mémoire de travail  : Redis (contexte session, TTL court)
 Niveau 2 — Mémoire épisodique  : Qdrant collection "episodes" (événements datés)
 Niveau 3 — Mémoire sémantique  : Qdrant collection "semantic" (faits permanents)
 
-Auteur   : sous-agent JarvisMax (2026-04-09)
+Auteur   : sous-agent BeaMax (2026-04-09)
 Python   : 3.10+
 Deps     : qdrant-client, httpx, redis, tiktoken (optionnel)
 """
@@ -58,12 +58,12 @@ EMBED_MODEL       = "nomic-embed-text"
 EMBED_DIM         = 768          # nomic-embed-text output dim
 REDIS_URL         = "redis://localhost:6379"
 WORKING_TTL_SEC   = 3600         # 1 hour — working memory expiry
-EPISODE_COLL      = "jarvis_episodes"
-SEMANTIC_COLL     = "jarvis_semantic"
+EPISODE_COLL      = "bea_episodes"
+SEMANTIC_COLL     = "bea_semantic"
 
 MemoryType = Literal["working", "episode", "semantic"]
 
-logger = logging.getLogger("jarvis.memory")
+logger = logging.getLogger("bea.memory")
 
 
 # ── Embedding helper ───────────────────────────────────────────────────────────
@@ -120,12 +120,12 @@ class WorkingMemory:
     """
     Fast, ephemeral, session-scoped context.
     Backend : Redis with TTL (falls back to in-process dict).
-    Key space: jarvis:wm:<session_id>
+    Key space: bea:wm:<session_id>
     """
 
     def __init__(self, session_id: str):
         self.session_id = session_id
-        self._key = f"jarvis:wm:{session_id}"
+        self._key = f"bea:wm:{session_id}"
         self._local: dict[str, Any] = {}   # fallback when Redis unavailable
         self._redis: Any = None
 
@@ -185,13 +185,13 @@ async def _ensure_collection(client: "AsyncQdrantClient", name: str) -> None:
 @dataclass
 class MemorySystem:
     """
-    Three-level memory system for JarvisMax.
+    Three-level memory system for BeaMax.
 
     Levels
     ------
     working   → WorkingMemory (Redis / in-process dict, TTL-based)
-    episode   → Qdrant "jarvis_episodes"  (time-tagged events, medium term)
-    semantic  → Qdrant "jarvis_semantic"  (distilled facts, long term)
+    episode   → Qdrant "bea_episodes"  (time-tagged events, medium term)
+    semantic  → Qdrant "bea_semantic"  (distilled facts, long term)
     """
 
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -558,7 +558,7 @@ def _human_age(ts: float) -> str:
 
 async def _smoke_test():
     ms = MemorySystem(session_id="smoke-test")
-    print("=== JarvisMax Memory System — Smoke Test ===\n")
+    print("=== BeaMax Memory System — Smoke Test ===\n")
 
     # Working memory
     await ms._wm.set("last_topic", "AGI memory architecture")
@@ -567,7 +567,7 @@ async def _smoke_test():
 
     # Episode store
     mid = await ms.store(
-        "We decided to use Qdrant for semantic search in JarvisMax.",
+        "We decided to use Qdrant for semantic search in BeaMax.",
         importance=0.8,
         memory_type="episode",
         mission_id="smoke-test",
@@ -576,7 +576,7 @@ async def _smoke_test():
 
     # Semantic store
     sid = await ms.store(
-        "JarvisMax uses a 3-level memory: working → Redis, episodes → Qdrant, semantic → Qdrant.",
+        "BeaMax uses a 3-level memory: working → Redis, episodes → Qdrant, semantic → Qdrant.",
         importance=0.95,
         memory_type="semantic",
     )

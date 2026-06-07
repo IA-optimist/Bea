@@ -26,7 +26,7 @@ class WebResearchTool(BaseTool):
 
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; JarvisMax/1.0)"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; BeaMax/1.0)"},
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 html = resp.read().decode("utf-8", errors="ignore")
@@ -62,7 +62,7 @@ class WebResearchTool(BaseTool):
 
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; JarvisMax/1.0)"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; BeaMax/1.0)"},
             )
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 content = resp.read().decode("utf-8", errors="ignore")

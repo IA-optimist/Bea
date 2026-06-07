@@ -129,7 +129,7 @@ class RevenueEngine:
     """
     
     def __init__(self, data_dir: Optional[Path] = None):
-        self.data_dir = data_dir or Path.home() / ".jarvismax" / "revenue"
+        self.data_dir = data_dir or Path.home() / ".beamax" / "revenue"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
         self.history_file = self.data_dir / "revenue_history.json"

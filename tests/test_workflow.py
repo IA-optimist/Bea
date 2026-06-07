@@ -41,8 +41,8 @@ class _FakeSettings:
         self.workspace_dir    = ws
         self.dry_run          = True
         self.max_auto_actions = 10
-        self.jarvis_root      = ws
-        self.jarvis_name      = "JarvisTest"
+        self.bea_root      = ws
+        self.bea_name      = "BeaTest"
         self.openai_api_key   = ""
         self.ollama_host      = "http://localhost:11434"
         self.ollama_model_main  = "llama3.1:8b"

@@ -1,5 +1,5 @@
 """
-JARVIS MAX — MCP Registry
+BEA MAX — MCP Registry
 =============================
 Centralized registry of MCP server integrations.
 
@@ -430,7 +430,7 @@ _CORE_MCP_STACK: List[MCPServerEntry] = [
         description="Official filesystem MCP — scoped file read/write/search",
         source="modelcontextprotocol/servers", source_url="https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
         trust_level=TrustLevel.OFFICIAL,
-        transport="stdio", command="npx", args=["-y", "@modelcontextprotocol/server-filesystem", "/root/.openclaw/workspace/Jarvismax"],
+        transport="stdio", command="npx", args=["-y", "@modelcontextprotocol/server-filesystem", "/root/.openclaw/workspace/Beamax"],
         risk_level="medium", category="engineering",
         tags=["filesystem", "files", "read", "write"],
         dangerous_tools=["write_file", "move_file", "create_directory"],

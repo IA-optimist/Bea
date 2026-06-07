@@ -1,5 +1,5 @@
 """
-JARVIS MAX — ImprovementMemory
+BEA MAX — ImprovementMemory
 Persists critic feedback and tracks agent improvement over time.
 
 DISTINCTION (Cas B — deux fichiers coexistent intentionnellement) :
@@ -277,7 +277,7 @@ class ImprovementMemory:
                 self._sqlite_path = get_sqlite_path()
             except Exception:
                 self._sqlite_path = os.path.join(
-                    tempfile.gettempdir(), "jarvis_improvements.db"
+                    tempfile.gettempdir(), "bea_improvements.db"
                 )
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._sqlite_create_table)

@@ -92,19 +92,19 @@ def store(monkeypatch: pytest.MonkeyPatch) -> FakeRedis:
 # ── is_v2_enabled ───────────────────────────────────────────────
 
 def test_feature_flag_default_off(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("JARVIS_JWT_HARDENING_V2", raising=False)
+    monkeypatch.delenv("BEA_JWT_HARDENING_V2", raising=False)
     assert jwt_v2.is_v2_enabled() is False
 
 
 @pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
 def test_feature_flag_enabled_values(value: str, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", value)
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", value)
     assert jwt_v2.is_v2_enabled() is True
 
 
 @pytest.mark.parametrize("value", ["0", "false", "no", "off", ""])
 def test_feature_flag_disabled_values(value: str, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("JARVIS_JWT_HARDENING_V2", value)
+    monkeypatch.setenv("BEA_JWT_HARDENING_V2", value)
     assert jwt_v2.is_v2_enabled() is False
 
 

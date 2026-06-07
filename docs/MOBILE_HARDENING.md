@@ -6,7 +6,7 @@ d'analyse) → les éléments « à faire » sont à exécuter et **valider dans
 ## État des lieux
 
 Trois projets mobiles coexistent (fragmentation) :
-- **`jarvismax_app/` (Flutter)** — **l'app de contrôle de Béa** (la bonne base). 15 écrans :
+- **`beamax_app/` (Flutter)** — **l'app de contrôle de Béa** (la bonne base). 15 écrans :
   missions, approbations (+ notifs locales), santé, décisions, self-improvement,
   capacités, modules, admin, dashboard AIOS, login, réglages. Services
   `api`/`websocket`/`notifications`/`session`, **JWT chiffré** (Keystore/Keychain).
@@ -23,7 +23,7 @@ remplacé par `/auth/me` (fail-safe : fallback admin déjà présent).
 ## Plan de durcissement (priorisé) — chemins chauds, à valider en env Flutter
 
 ### 1. Consolider sur une seule app (anti-sprawl)
-Garder `jarvismax_app` comme app de contrôle. **Supprimer `orchestrate-mobile/`**
+Garder `beamax_app` comme app de contrôle. **Supprimer `orchestrate-mobile/`**
 (doublon). Statuer sur `mobile/` (RN) : soit le fusionner en onglet « Business »
 dans l'app Flutter, soit le garder comme app séparée assumée. Ne pas maintenir 3 apps.
 

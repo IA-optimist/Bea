@@ -1,5 +1,5 @@
 """
-JARVIS — Tool Gap Analyzer
+BEA — Tool Gap Analyzer
 ==============================
 Identifies missing tools based on real execution patterns.
 
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import structlog
 
-logger = structlog.get_logger("jarvis.tool_gap_analyzer")
+logger = structlog.get_logger("bea.tool_gap_analyzer")
 log = logger  # alias for M3 emitter
 
 

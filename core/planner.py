@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-logger = logging.getLogger("jarvis.planner")
+logger = logging.getLogger("bea.planner")
 
 try:
     from core.tool_registry import rank_tools_for_task, should_create_tool
@@ -79,7 +79,7 @@ def _get_objective_context(goal: str, mission_type: str) -> Optional[dict]:
 
 def _search_similar_patterns(goal: str, mission_type: str) -> Optional[dict]:
     """
-    Cherche des patterns similaires dans la mémoire de Jarvis avant de planifier.
+    Cherche des patterns similaires dans la mémoire de Bea avant de planifier.
     Retourne un dict de contexte ou None si rien de trouvé.
     Fail-open : jamais d'exception levée.
     """

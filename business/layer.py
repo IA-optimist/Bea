@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Orchestrateur
+BEA BUSINESS LAYER — Orchestrateur
 Point d'entrée unique pour tous les modules business.
 
 Rôle : instancier, chaîner et router les agents business selon la demande.
@@ -19,7 +19,7 @@ R9 (Pass 17b): business layer never bypasses kernel.policy().
 """
 from __future__ import annotations
 import structlog
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -101,7 +101,7 @@ class BusinessLayer:
         self.s = settings
         self._agents: dict[str, object] = {}
 
-    def _security_gate(self, module: str, session: JarvisSession) -> bool:
+    def _security_gate(self, module: str, session: BeaSession) -> bool:
         """
         R9: Check security layer before executing sensitive business modules.
         Fail-open: if security layer is unavailable, allow execution.
@@ -169,7 +169,7 @@ class BusinessLayer:
                 return module
         return "venture"   # défaut : analyse d'opportunités
 
-    async def run(self, module: str, session: JarvisSession) -> str:
+    async def run(self, module: str, session: BeaSession) -> str:
         """
         Exécute un module business spécifique.
         module : "venture"|"offer"|"workflow"|"saas"|"trade_ops"|"meta_builder"|"auto"
@@ -196,7 +196,7 @@ class BusinessLayer:
 
     async def run_pipeline(
         self,
-        session: JarvisSession,
+        session: BeaSession,
         modules: list[str] | None = None,
     ) -> dict[str, str]:
         """

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# JARVIS MAX — Pull modèles Ollama
+# BEA MAX — Pull modèles Ollama
 # Usage : bash scripts/pull_models.sh [--all]
 # Fonctionne depuis n'importe quel dossier courant.
 
@@ -32,7 +32,7 @@ if [ "${1:-}" = "--all" ]; then
     MODELS+=("$VISION")
 fi
 
-echo "[Jarvis] Téléchargement des modèles Ollama..."
+echo "[Bea] Téléchargement des modèles Ollama..."
 echo "  Modèles : ${MODELS[*]}"
 echo ""
 

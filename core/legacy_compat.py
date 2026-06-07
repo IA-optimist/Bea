@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Legacy Compatibility Layer
+BEA MAX — Legacy Compatibility Layer
 ==========================================
 Documents and bridges all duplicate enums and parallel systems.
 Does NOT modify any existing files. Provides:
@@ -130,7 +130,7 @@ AUTHORITY_MAP = {
         "canonical": "MetaOrchestrator",
         "active_api": "MissionSystem",
         "convergence": "OrchestrationBridge mediates",
-        "flag": "JARVIS_USE_CANONICAL_ORCHESTRATOR",
+        "flag": "BEA_USE_CANONICAL_ORCHESTRATOR",
     },
     "risk_assessment": {
         "canonical": "core.state.RiskLevel",

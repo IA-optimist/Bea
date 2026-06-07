@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# JARVIS MAX — Démarrage
+# BEA MAX — Démarrage
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
-info()  { echo -e "${BLUE}[Jarvis]${NC} $1"; }
+info()  { echo -e "${BLUE}[Bea]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
 
-echo -e "\n${BOLD}  🤖 JARVIS MAX — Démarrage${NC}\n"
+echo -e "\n${BOLD}  🤖 BEA MAX — Démarrage${NC}\n"
 
 # ── Vérifications ─────────────────────────────────────────────
 [ -f .env ] || error ".env introuvable. Lance d'abord : bash scripts/install.sh"
@@ -30,30 +30,30 @@ ok "Variables .env vérifiées"
 info "Démarrage de toute la stack..."
 docker compose up -d
 
-info "Attente que jarvis_core soit healthy..."
+info "Attente que bea_core soit healthy..."
 MAX=60
 for i in $(seq 1 $MAX); do
-    STATUS=$(docker inspect --format='{{.State.Health.Status}}' jarvis_core 2>/dev/null || echo "missing")
+    STATUS=$(docker inspect --format='{{.State.Health.Status}}' bea_core 2>/dev/null || echo "missing")
     if [ "$STATUS" = "healthy" ]; then
         break
     elif [ "$STATUS" = "unhealthy" ]; then
-        error "jarvis_core unhealthy. Logs : docker compose logs jarvis"
+        error "bea_core unhealthy. Logs : docker compose logs bea"
     fi
     sleep 3
-    [ $((i % 10)) -eq 0 ] && echo -n "." && docker compose logs --tail=3 jarvis 2>/dev/null || true
+    [ $((i % 10)) -eq 0 ] && echo -n "." && docker compose logs --tail=3 bea 2>/dev/null || true
 done
 echo ""
 
 # Test API
-curl -sf http://localhost:8000/health >/dev/null 2>&1 && ok "API Jarvis opérationnelle" || warn "API non accessible (peut être en démarrage)"
+curl -sf http://localhost:8000/health >/dev/null 2>&1 && ok "API Bea opérationnelle" || warn "API non accessible (peut être en démarrage)"
 
 echo ""
-echo -e "${GREEN}${BOLD}  ✅ JarvisMax opérationnel !${NC}"
+echo -e "${GREEN}${BOLD}  ✅ BeaMax opérationnel !${NC}"
 echo ""
 echo "  → Envoie un message à ton bot Telegram"
 echo "  → API      : http://localhost:8000"
 echo "  → n8n      : http://localhost:5678"
 echo "  → WebUI    : http://localhost:3001"
 echo ""
-echo "  Logs en direct : docker compose logs -f jarvis"
+echo "  Logs en direct : docker compose logs -f bea"
 echo ""

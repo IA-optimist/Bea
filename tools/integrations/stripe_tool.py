@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Stripe Tool
+BEA MAX — Stripe Tool
 ============================
 Production-safe Stripe API wrapper.
 

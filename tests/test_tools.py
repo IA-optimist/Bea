@@ -18,18 +18,18 @@ from core.tool_executor import (
 
 @pytest.mark.skip(reason="stale: shell disabled in container")
 def test_tool_shell():
-    result = run_shell_command("echo hello_jarvis && date")
+    result = run_shell_command("echo hello_bea && date")
     assert result["ok"], f"shell failed: {result['error']}"
-    assert "hello_jarvis" in result["result"]
+    assert "hello_bea" in result["result"]
     print(f"✅ shell_command OK: {result['result'][:100]}")
 
 
 def test_tool_read_file():
-    with open("/tmp/jarvis_test.txt", "w") as f:
-        f.write("test_content_jarvis\n")
-    result = read_file_content("/tmp/jarvis_test.txt")
+    with open("/tmp/bea_test.txt", "w") as f:
+        f.write("test_content_bea\n")
+    result = read_file_content("/tmp/bea_test.txt")
     assert result["ok"], f"read_file failed: {result['error']}"
-    assert "test_content_jarvis" in result["result"]
+    assert "test_content_bea" in result["result"]
     print(f"✅ read_file OK: {result['result'][:100]}")
 
 

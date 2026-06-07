@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS opportunity_analyses (
     analysis_duration_seconds INTEGER,  -- How long the analysis took
     
     -- Cognition metadata
-    mission_id VARCHAR(50),  -- JarvisMax mission ID (if triggered via cognition)
+    mission_id VARCHAR(50),  -- BeaMax mission ID (if triggered via cognition)
     confidence_score FLOAT,  -- Self-confidence score (0.0-1.0)
     cognition_reasoning TEXT,  -- Reasoning from confidence scorer
     

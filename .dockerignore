@@ -7,7 +7,7 @@ __pycache__
 .ruff_cache
 data/
 mcp/hexstrike-ai/
-jarvismax_app/
+beamax_app/
 *.apk
 node_modules/
 .env

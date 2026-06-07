@@ -44,7 +44,7 @@ def schedule_agent_trigger(
     async def _run() -> None:
         try:
             orchestrator = get_orchestrator()
-            session = __import__("core.state", fromlist=["JarvisSession"]).JarvisSession(
+            session = __import__("core.state", fromlist=["BeaSession"]).BeaSession(
                 session_id=f"manual-{agent_id}",
                 user_input=mission,
                 mode="auto",

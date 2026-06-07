@@ -14,7 +14,7 @@ def test_critical_imports():
     try:
         from core.meta_orchestrator import MetaOrchestrator  # noqa: F401
         from core.cognition.orchestrator import CognitionOrchestrator  # noqa: F401
-        from core.orchestration.jarvis_team_dispatcher import dispatch_improve  # noqa: F401
+        from core.orchestration.bea_team_dispatcher import dispatch_improve  # noqa: F401
         from api.routes.vault import router  # noqa: F401
         from api.routes import missions  # noqa: F401
     except (TypeError, AttributeError) as e:

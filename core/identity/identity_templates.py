@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity Templates
+BEA MAX — Identity Templates
 ===================================
 Provider templates defining required fields, secret types,
 risk levels, and policies for common services.

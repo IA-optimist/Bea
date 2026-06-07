@@ -1,8 +1,8 @@
 """agentskill_format — interop avec le standard ouvert agentskills.io (Axe 1, Hermes).
 
-Convertit un `Skill` Jarvis en `SKILL.md` portable (frontmatter + procédure
+Convertit un `Skill` Bea en `SKILL.md` portable (frontmatter + procédure
 lisible) et inversement. Le round-trip est **lossless** : un bloc de données
-JSON masqué (`<!-- jarvis-skill-data ... -->`) permet de reconstruire le Skill
+JSON masqué (`<!-- bea-skill-data ... -->`) permet de reconstruire le Skill
 exact, sans dépendance YAML. Si ce bloc est absent (SKILL.md externe), on
 reconstruit au mieux depuis le frontmatter `name`/`description`.
 
@@ -15,7 +15,7 @@ import re
 
 from core.skills.skill_models import Skill, SkillStep
 
-_DATA_RE = re.compile(r"<!--\s*jarvis-skill-data\s*(\{.*?\})\s*-->", re.DOTALL)
+_DATA_RE = re.compile(r"<!--\s*bea-skill-data\s*(\{.*?\})\s*-->", re.DOTALL)
 
 
 def _fm_value(line: str) -> str:
@@ -62,7 +62,7 @@ def to_agentskill(skill: Skill) -> str:
         lines += [f"- {p}" for p in skill.pitfalls]
         lines.append("")
     # Bloc de données lossless pour round-trip exact
-    lines.append(f"<!-- jarvis-skill-data {json.dumps(skill.to_dict(), ensure_ascii=False)} -->")
+    lines.append(f"<!-- bea-skill-data {json.dumps(skill.to_dict(), ensure_ascii=False)} -->")
     lines.append("")
     return "\n".join(lines)
 

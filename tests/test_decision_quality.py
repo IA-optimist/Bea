@@ -1,8 +1,8 @@
-"""Tests qualité de décision — Jarvis doit choisir intelligemment ses tools."""
+"""Tests qualité de décision — Bea doit choisir intelligemment ses tools."""
 import pytest
 import sys
 import os
-sys.path.insert(0, os.environ.get("JARVIS_ROOT", "/app"))
+sys.path.insert(0, os.environ.get("BEA_ROOT", "/app"))
 
 from core.tool_registry import (
     score_tool_relevance,

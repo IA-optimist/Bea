@@ -1,7 +1,7 @@
 """
-Jarvis Team — Tool Access Layer
+Bea Team — Tool Access Layer
 =================================
-Maps existing JarvisMax tools to jarvis-team agents with:
+Maps existing BeaMax tools to bea-team agents with:
 - Per-agent access control (which agent can use which tool)
 - Risk classification (SAFE / SUPERVISED / DANGEROUS)
 - Structured ToolResult output
@@ -34,7 +34,7 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-REPO_ROOT = Path(os.environ.get("JARVISMAX_REPO", ".")).resolve()
+REPO_ROOT = Path(os.environ.get("BEAMAX_REPO", ".")).resolve()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -142,11 +142,11 @@ def _git(cmd: str, timeout: int = 30) -> str:
 
 @_timed
 def tool_git_branch_create(branch_name: str) -> ToolResult:
-    """Create a new branch. Convention: jarvis/<agent>/<task>."""
-    if not re.match(r'^jarvis/[a-z\-]+/[a-z0-9\-]+$', branch_name):
+    """Create a new branch. Convention: bea/<agent>/<task>."""
+    if not re.match(r'^bea/[a-z\-]+/[a-z0-9\-]+$', branch_name):
         return ToolResult(
             success=False, tool="git_branch_create",
-            error=f"Invalid branch name: {branch_name}. Must match jarvis/<agent>/<task>",
+            error=f"Invalid branch name: {branch_name}. Must match bea/<agent>/<task>",
         )
     _git(f"checkout -b {branch_name}")
     current = _git("rev-parse --abbrev-ref HEAD")
@@ -289,9 +289,9 @@ def tool_write_file(path: str, content: str) -> ToolResult:
     if protected:
         return ToolResult(
             success=False, tool="write_file",
-            error=f"Protected file: {path}. Requires jarvis-reviewer approval.",
+            error=f"Protected file: {path}. Requires bea-reviewer approval.",
             risk="dangerous",
-            meta={"protected": True, "requires_approval": "jarvis-reviewer"},
+            meta={"protected": True, "requires_approval": "bea-reviewer"},
         )
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -313,7 +313,7 @@ def tool_patch_file(path: str, old_text: str, new_text: str) -> ToolResult:
     if protected:
         return ToolResult(
             success=False, tool="patch_file",
-            error=f"Protected file: {path}. Requires jarvis-reviewer approval.",
+            error=f"Protected file: {path}. Requires bea-reviewer approval.",
             risk="dangerous",
             meta={"protected": True},
         )
@@ -874,7 +874,7 @@ def tool_detect_docker_config() -> ToolResult:
 def tool_env_vars_check() -> ToolResult:
     """Check which expected environment variables are set (names only, not values)."""
     expected = [
-        "JARVIS_ROOT", "JARVISMAX_REPO", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+        "BEA_ROOT", "BEAMAX_REPO", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
         "DATABASE_URL", "REDIS_URL", "QDRANT_URL",
         "OLLAMA_HOST", "GITHUB_TOKEN",
     ]
@@ -1033,7 +1033,7 @@ def tool_report_status(agent: str, task: str, status: str,
 
 # Maps agent name → set of tool function names they can access
 AGENT_TOOL_ACCESS: dict[str, set[str]] = {
-    "jarvis-architect": {
+    "bea-architect": {
         # Read-only analysis + knowledge
         "tool_read_file", "tool_list_directory", "tool_detect_file_dependencies",
         "tool_syntax_validate", "tool_import_graph", "tool_circular_import_detect",
@@ -1044,7 +1044,7 @@ AGENT_TOOL_ACCESS: dict[str, set[str]] = {
         "tool_create_task", "tool_report_status",
         "tool_diff_summary",
     },
-    "jarvis-coder": {
+    "bea-coder": {
         # Read + write + git workflow
         "tool_read_file", "tool_write_file", "tool_patch_file",
         "tool_list_directory", "tool_detect_file_dependencies",
@@ -1054,7 +1054,7 @@ AGENT_TOOL_ACCESS: dict[str, set[str]] = {
         "tool_generate_diff", "tool_diff_summary",
         "tool_report_status", "tool_search_patterns",
     },
-    "jarvis-reviewer": {
+    "bea-reviewer": {
         # Read-only + diff analysis
         "tool_read_file", "tool_list_directory", "tool_detect_file_dependencies",
         "tool_syntax_validate", "tool_import_graph", "tool_circular_import_detect",
@@ -1065,7 +1065,7 @@ AGENT_TOOL_ACCESS: dict[str, set[str]] = {
         "tool_detect_error_patterns", "tool_detect_regressions",
         "tool_report_status",
     },
-    "jarvis-qa": {
+    "bea-qa": {
         # Tests + read + limited write (tests/ only)
         "tool_read_file", "tool_write_file", "tool_list_directory",
         "tool_syntax_validate",
@@ -1074,7 +1074,7 @@ AGENT_TOOL_ACCESS: dict[str, set[str]] = {
         "tool_detect_regressions",
         "tool_report_status",
     },
-    "jarvis-devops": {
+    "bea-devops": {
         # Environment + docker + read
         "tool_read_file", "tool_list_directory",
         "tool_detect_docker_config", "tool_env_vars_check",
@@ -1084,7 +1084,7 @@ AGENT_TOOL_ACCESS: dict[str, set[str]] = {
         "tool_run_tests",
         "tool_report_status",
     },
-    "jarvis-watcher": {
+    "bea-watcher": {
         # Monitoring + read-only
         "tool_read_file", "tool_read_logs",
         "tool_detect_error_patterns", "tool_detect_regressions",
@@ -1120,7 +1120,7 @@ def get_tools_for_agent(agent_name: str) -> dict[str, callable]:
 
 TOOL_CATALOG = [
     # 1. Git tools
-    {"name": "git_branch_create", "purpose": "Create branch (jarvis/<agent>/<task>)", "risk": "supervised", "category": "git", "deps": ["git"]},
+    {"name": "git_branch_create", "purpose": "Create branch (bea/<agent>/<task>)", "risk": "supervised", "category": "git", "deps": ["git"]},
     {"name": "git_status", "purpose": "Get repo status", "risk": "safe", "category": "git", "deps": ["git"]},
     {"name": "git_diff", "purpose": "Generate diff against base branch", "risk": "safe", "category": "git", "deps": ["git"]},
     {"name": "git_log", "purpose": "View commit history", "risk": "safe", "category": "git", "deps": ["git"]},

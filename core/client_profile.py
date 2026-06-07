@@ -1,11 +1,11 @@
-"""ClientProfile — Contexte client persistant pour JarvisMax."""
+"""ClientProfile — Contexte client persistant pour BeaMax."""
 from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
-_PROFILES_PATH = Path('/opt/jarvismax-app/workspace/client_profiles.jsonl')
+_PROFILES_PATH = Path('/opt/beamax-app/workspace/client_profiles.jsonl')
 
 @dataclass
 class ClientProfile:

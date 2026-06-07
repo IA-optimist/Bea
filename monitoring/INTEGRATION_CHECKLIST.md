@@ -1,4 +1,4 @@
-# ✅ Checklist d'Intégration - Monitoring JarvisMax
+# ✅ Checklist d'Intégration - Monitoring BeaMax
 
 ## État Actuel du Déploiement
 
@@ -35,8 +35,8 @@ curl https://api.telegram.org/bot<VOTRE_TOKEN>/getUpdates | jq '.result[0].messa
 **Étape 3**: Configurer
 ```bash
 # Ajouter dans .env
-echo "TELEGRAM_BOT_TOKEN=votre_token" >> /root/Jarvismax-master/.env
-echo "TELEGRAM_CHAT_ID=votre_chat_id" >> /root/Jarvismax-master/.env
+echo "TELEGRAM_BOT_TOKEN=votre_token" >> /root/Beamax-master/.env
+echo "TELEGRAM_CHAT_ID=votre_chat_id" >> /root/Beamax-master/.env
 ```
 
 **Étape 4**: Intégrer dans l'API
@@ -71,7 +71,7 @@ curl http://localhost:8000/api/v2/webhooks/alertmanager \
 
 ```bash
 # Exécuter le script de test
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 ./test_stack.sh
 
 # Vérifier l'accès Grafana
@@ -85,7 +85,7 @@ curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 
 1. Ouvrir http://MONITORING_HOST:3002
 2. Login: `admin` / `${GRAFANA_ADMIN_PASSWORD}`
-3. Menu (☰) > Dashboards > JarvisMax
+3. Menu (☰) > Dashboards > BeaMax
 4. Ouvrir un dashboard pour vérifier les métriques
 
 #### 4. Personnalisation (Optionnel)
@@ -109,7 +109,7 @@ with task_duration.time():
 **Ajuster les seuils d'alerte**:
 ```bash
 # Éditer les règles
-nano /root/Jarvismax-master/monitoring/prometheus/alerts.yml
+nano /root/Beamax-master/monitoring/prometheus/alerts.yml
 
 # Recharger Prometheus
 curl -X POST http://localhost:9090/-/reload
@@ -129,7 +129,7 @@ curl -X POST http://localhost:9090/-/reload
 
 ```bash
 # Voir le statut
-cd /root/Jarvismax-master/monitoring
+cd /root/Beamax-master/monitoring
 docker compose -f docker-compose-monitoring.yml ps
 
 # Logs en temps réel

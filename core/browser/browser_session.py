@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Session Model
+BEA MAX — Browser Session Model
 ======================================
 Session lifecycle for browser automation.
 Each session is isolated with its own download sandbox.

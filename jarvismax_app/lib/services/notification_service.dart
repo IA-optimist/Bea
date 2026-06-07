@@ -1,4 +1,4 @@
-/// JarvisMax — Local notification service
+/// BeaMax — Local notification service
 /// Triggers Android notifications for approvals, mission completion, errors.
 /// Uses flutter_local_notifications (no Firebase required).
 
@@ -14,22 +14,22 @@ class NotificationService {
   bool _initialized = false;
 
   static const _channelApproval = AndroidNotificationChannel(
-    'jarvis_approval', 'Approbations',
-    description: 'Jarvis demande votre validation',
+    'bea_approval', 'Approbations',
+    description: 'Bea demande votre validation',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
   );
 
   static const _channelMission = AndroidNotificationChannel(
-    'jarvis_mission', 'Missions',
-    description: 'Statut des missions Jarvis',
+    'bea_mission', 'Missions',
+    description: 'Statut des missions Bea',
     importance: Importance.high,
   );
 
   static const _channelAlert = AndroidNotificationChannel(
-    'jarvis_alert', 'Alertes',
-    description: 'Alertes système Jarvis',
+    'bea_alert', 'Alertes',
+    description: 'Alertes système Bea',
     importance: Importance.high,
   );
 
@@ -59,7 +59,7 @@ class NotificationService {
     await _ensureInit();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'jarvis_approval', 'Approbations',
+        'bea_approval', 'Approbations',
         importance: Importance.max,
         priority: Priority.high,
         fullScreenIntent: true,
@@ -70,7 +70,7 @@ class NotificationService {
     );
     await _plugin.show(
       missionId.hashCode,
-      '⚠️ Jarvis demande votre approbation',
+      '⚠️ Bea demande votre approbation',
       '${action.length > 80 ? action.substring(0, 80) + '…' : action}'
       '${risk != null ? " [Risque: $risk]" : ""}',
       details,
@@ -86,7 +86,7 @@ class NotificationService {
     await _ensureInit();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'jarvis_mission', 'Missions',
+        'bea_mission', 'Missions',
         importance: Importance.high,
         priority: Priority.defaultPriority,
         autoCancel: true,
@@ -106,7 +106,7 @@ class NotificationService {
     await _ensureInit();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'jarvis_alert', 'Alertes',
+        'bea_alert', 'Alertes',
         importance: Importance.high,
         priority: Priority.high,
         autoCancel: true,

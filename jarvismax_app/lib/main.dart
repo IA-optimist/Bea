@@ -29,12 +29,12 @@ void main() {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  runApp(const JarvisApp());
+  runApp(const BeaApp());
 }
 
 /// Root application widget.
-class JarvisApp extends StatelessWidget {
-  const JarvisApp({super.key});
+class BeaApp extends StatelessWidget {
+  const BeaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +54,9 @@ class JarvisApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: wsService),
       ],
       child: MaterialApp(
-        title: 'Jarvis',
+        title: 'Bea',
         debugShowCheckedModeBanner: false,
-        theme: JarvisTheme.dark,
+        theme: BeaTheme.dark,
         home: const _AppEntry(),
       ),
     );
@@ -121,7 +121,7 @@ class _AppEntryState extends State<_AppEntry> {
               ))),
             ),
             const SizedBox(height: 20),
-            const Text('Jarvis', style: TextStyle(
+            const Text('Bea', style: TextStyle(
               fontSize: 24, fontWeight: FontWeight.w700,
               color: JDS.textPrimary, letterSpacing: -0.5,
             )),

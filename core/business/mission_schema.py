@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Business Mission Schema
+BEA MAX — Business Mission Schema
 ========================================
 Core data models for structured multi-step business missions.
 

@@ -1,11 +1,11 @@
 """
-JARVIS BUSINESS LAYER — SaaS Builder : Agent
+BEA BUSINESS LAYER — SaaS Builder : Agent
 Transforme une idée ou opportunité en spécification MVP SaaS complète.
 """
 from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
-from core.state import JarvisSession
+from core.state import BeaSession
 from business.saas.schema import parse_saas_report
 
 log = structlog.get_logger()
@@ -99,7 +99,7 @@ class SaasBuilderAgent(BaseAgent):
     def system_prompt(self) -> str:
         return _SYSTEM
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         user_input = session.user_input or session.mission_summary or ""
 
         # Récupère le contexte des modules précédents
@@ -141,7 +141,7 @@ class SaasBuilderAgent(BaseAgent):
             "Réponds UNIQUEMENT en JSON valide selon le format demandé."
         )
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
             return ""

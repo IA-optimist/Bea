@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Agent Crew
+BEA MAX — Agent Crew
 BaseAgent + 9 agents spécialisés + registre AgentCrew.
 """
 from __future__ import annotations
@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import structlog
 from abc import ABC, abstractmethod
 from langchain_core.messages import SystemMessage, HumanMessage
-from core.state import JarvisSession
+from core.state import BeaSession
 
 if TYPE_CHECKING:
     from agents.contracts import AgentContract
@@ -40,9 +40,9 @@ class BaseAgent(ABC):
     def system_prompt(self) -> str: ...
 
     @abstractmethod
-    def user_message(self, session: JarvisSession) -> str: ...
+    def user_message(self, session: BeaSession) -> str: ...
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         t0 = time.monotonic()
         log.info(f"{self.name}_start", mission_id=session.session_id)
         # Emit agent_start to EventStream (fail-open)
@@ -133,7 +133,7 @@ class BaseAgent(ABC):
             log.error(f"{self.name}_error", err=str(e))
             return ""
 
-    def _task(self, session: JarvisSession) -> str:
+    def _task(self, session: BeaSession) -> str:
         for t in session.agents_plan:
             if t.get("agent") == self.name:
                 return t.get("task", session.mission_summary)
@@ -146,7 +146,7 @@ class BaseAgent(ABC):
 
     def _get_memory_context(
         self,
-        session: "JarvisSession",
+        session: "BeaSession",
         max_chars: int = 2000,
     ) -> str:
         """
@@ -195,7 +195,7 @@ class BaseAgent(ABC):
 
     async def run_structured(
         self,
-        session: "JarvisSession",
+        session: "BeaSession",
         inject_memory: bool = True,
         store_output:  bool = True,
     ) -> "AgentContract":
@@ -281,7 +281,7 @@ class BaseAgent(ABC):
         return contract
 
 
-    def _ctx(self, session: JarvisSession, skip: set | None = None, limit: int = 600) -> str:
+    def _ctx(self, session: BeaSession, skip: set | None = None, limit: int = 600) -> str:
         sk = (skip or set()) | {self.name}
         parts = [
             f"### {k}\n{v[:limit]}"
@@ -357,7 +357,7 @@ class AtlasDirector(BaseAgent):
     name, role, timeout_s = "atlas-director", "director", 60
 
     def system_prompt(self) -> str:
-        return """Tu es AtlasDirector, chef d'orchestre de JarvisMax.
+        return """Tu es AtlasDirector, chef d'orchestre de BeaMax.
 
 Décompose chaque mission en tâches précises pour les agents.
 
@@ -385,12 +385,12 @@ Réponds UNIQUEMENT en JSON :
   "reasoning": "Justification du plan"
 }"""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         mem = session.get_output("vault-memory")
         ctx = f"\nContexte mémorisé :\n{mem}" if mem else ""
         return f"Mission : {session.user_input}{ctx}"
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         out = await super().run(session)
         try:
             raw = out.strip()
@@ -419,7 +419,7 @@ class ScoutResearch(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es ScoutResearch, agent de recherche expert de JarvisMax.\n\n"
+            "Tu es ScoutResearch, agent de recherche expert de BeaMax.\n\n"
             "MISSION : Analyser, comparer et synthétiser des informations avec rigueur.\n\n"
             "EXPERTISE :\n"
             "- Identification des tendances de fond vs tendances superficielles\n"
@@ -447,7 +447,7 @@ class ScoutResearch(BaseAgent):
             + INJECT_SCOUT
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         task    = self._task(session)
         ctx     = self._ctx(session)
         mem     = self._mem_ctx(2)
@@ -471,7 +471,7 @@ class MapPlanner(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es MapPlanner, agent de planification stratégique de JarvisMax.\n\n"
+            "Tu es MapPlanner, agent de planification stratégique de BeaMax.\n\n"
             "MISSION : Transformer des objectifs en plans exécutables, réalistes et hiérarchisés.\n\n"
             "FORMAT DE RÉPONSE OBLIGATOIRE :\n"
             "## Objectif\n"
@@ -500,7 +500,7 @@ class MapPlanner(BaseAgent):
             + INJECT_PLANNER
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         task    = self._task(session)
         ctx     = self._ctx(session)
         mem     = self._mem_ctx(2)
@@ -524,7 +524,7 @@ class ForgeBuilder(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es ForgeBuilder, agent de génération de code production-ready de JarvisMax.\n\n"
+            "Tu es ForgeBuilder, agent de génération de code production-ready de BeaMax.\n\n"
             "MISSION : Générer du code Python, Shell, YAML, JSON de qualité professionnelle.\n\n"
             "STANDARDS OBLIGATOIRES :\n"
             "- Type hints Python partout (PEP 484)\n"
@@ -556,7 +556,7 @@ class ForgeBuilder(BaseAgent):
             + INJECT_BUILDER
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         task    = self._task(session)
         ctx     = self._ctx(session)
         mem     = self._mem_ctx(2)
@@ -580,7 +580,7 @@ class LensReviewer(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es LensReviewer, agent de contrôle qualité senior de JarvisMax.\n\n"
+            "Tu es LensReviewer, agent de contrôle qualité senior de BeaMax.\n\n"
             "MISSION : Évaluer les travaux des autres agents avec rigueur et honnêteté.\n\n"
             "FORMAT DE RÉPONSE OBLIGATOIRE :\n"
             "## Score global : X/10\n\n"
@@ -605,7 +605,7 @@ class LensReviewer(BaseAgent):
             + INJECT_REVIEWER
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx  = self._ctx(session)
         know = self._knowledge_ctx(session.mission_summary)
         return (f"Mission : {session.mission_summary}\n\n"
@@ -626,17 +626,17 @@ class VaultMemory(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es VaultMemory, agent de mémoire de JarvisMax.\n"
+            "Tu es VaultMemory, agent de mémoire de BeaMax.\n"
             "À partir des souvenirs récupérés, formule un résumé du contexte utile.\n"
             "Indique aussi ce qui devrait être mémorisé après cette session."
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         return f"Mission : {session.user_input}\n\nSouvenirs :\n{self._recalled}"
 
 
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         try:
             from memory.store import MemoryStore
             store  = MemoryStore(self.s)
@@ -683,7 +683,7 @@ class ShadowAdvisor(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es ShadowAdvisor V2, validateur critique structuré de JarvisMax.\n\n"
+            "Tu es ShadowAdvisor V2, validateur critique structuré de BeaMax.\n\n"
             "MISSION : Analyser toute décision, plan, code ou idée soumis.\n"
             "Détecter ce qui peut échouer, ce qui manque, ce qui est incohérent.\n"
             "Tu n'approuves JAMAIS sans preuve. Tu ne valides JAMAIS par politesse.\n\n"
@@ -712,7 +712,7 @@ class ShadowAdvisor(BaseAgent):
             + INJECT_ADVISOR
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         # shadow-advisor reçoit la mission + contexte agents + connaissances validées
         ctx  = self._ctx(session, limit=800)
         know = self._knowledge_ctx(session.mission_summary or session.user_input)
@@ -728,7 +728,7 @@ class ShadowAdvisor(BaseAgent):
         )
         return "\n".join(lines)
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         """
         Run V2 : exécute l'agent, parse la sortie JSON, score le rapport,
         stocke l'AdvisoryReport dans session.metadata, et retourne le JSON stringifié.
@@ -801,7 +801,7 @@ class PulseOps(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es PulseOps, agent de préparation d'actions de JarvisMax.\n\n"
+            "Tu es PulseOps, agent de préparation d'actions de BeaMax.\n\n"
             "À partir des résultats des agents, liste les actions concrètes.\n\n"
             "Types disponibles :\n"
             "create_file | write_file | replace_in_file | run_command | backup_file\n\n"
@@ -811,12 +811,12 @@ class PulseOps(BaseAgent):
             '"old_str":"","new_str":"","reversible":true}],"summary":"..."}'
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self._ctx(session)
         return (f"Mission : {session.mission_summary}\n\n"
                 f"Résultats agents :\n{ctx or '(aucun résultat)'}")
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         out = await super().run(session)
         try:
             raw = out.strip()
@@ -839,12 +839,12 @@ class NightWorker(BaseAgent):
 
     def system_prompt(self) -> str:
         return (
-            "Tu es NightWorker, agent de travail long de JarvisMax.\n"
+            "Tu es NightWorker, agent de travail long de BeaMax.\n"
             "Tu produis du contenu concret sur des missions longues.\n"
             "Code, analyses, rapports, structures — tout est permis."
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self._ctx(session)
         return (
             f"Mission : {session.mission_summary}\n"
@@ -882,11 +882,11 @@ class ImageAgent(BaseAgent):
             "Utilise generate_image() pour créer des images à partir de descriptions."
         )
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         task = self._task(session)
         return f"Mission : {session.mission_summary}\nTâche : {task}"
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         task = self._task(session)
         log.info("image_agent_start", task=task[:80], mission_id=session.session_id)
         try:
@@ -949,7 +949,7 @@ class ForgeBuilderWithCritic(SelfCriticMixin, ForgeBuilder):
     critic_max_rounds = 1        # 1 seul round de révision (latence maîtrisée)
     critic_pass_score = 6.5      # seuil légèrement plus élevé que CRITIC_PASS_SCORE global
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         return await self.run_with_self_critic(session)
 
 
@@ -967,7 +967,7 @@ class MapPlannerWithCritic(SelfCriticMixin, MapPlanner):
     critic_max_rounds = 1
     critic_pass_score = 6.0
 
-    async def run(self, session: JarvisSession) -> str:
+    async def run(self, session: BeaSession) -> str:
         return await self.run_with_self_critic(session)
 
 

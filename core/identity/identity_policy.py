@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity Policy Engine
+BEA MAX — Identity Policy Engine
 =======================================
 Access control and governance for identity operations.
 

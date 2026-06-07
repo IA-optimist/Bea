@@ -11,7 +11,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Literal, Optional
 import logging
 
-log = logging.getLogger("jarvis.tool_os")
+log = logging.getLogger("bea.tool_os")
 
 
 ToolDomain = Literal["filesystem", "network", "analysis", "generation",

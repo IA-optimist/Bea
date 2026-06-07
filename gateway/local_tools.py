@@ -343,10 +343,10 @@ def delegate_task(args: dict) -> str:
         import os
         import httpx
         base = os.getenv("BEA_API_URL", "http://127.0.0.1:8000").rstrip("/")
-        token = os.getenv("JARVIS_API_TOKEN", "localdev")
+        token = os.getenv("BEA_API_TOKEN", "localdev")
         r = httpx.post(f"{base}/api/v3/chat",
                        json={"message": task, "enable_self_correction": True},
-                       headers={"X-Jarvis-Token": token}, timeout=90)
+                       headers={"X-Bea-Token": token}, timeout=90)
         if r.status_code == 200:
             return f"[sous-agent] {(r.json().get('response') or '')[:1500]}"
         return f"erreur: agent HTTP {r.status_code}"

@@ -184,7 +184,7 @@ class TestModelAutoUpdate:
 
 
 class TestAutoOptimization:
-    """Jarvis optimizes cost vs quality automatically."""
+    """Bea optimizes cost vs quality automatically."""
 
     def test_MD22_cheap_wins_equal_quality(self):
         """Given equal quality, the cheaper model should score higher."""

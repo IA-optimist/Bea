@@ -72,7 +72,7 @@ class TestAutonomyDaemon(unittest.TestCase):
         reset_budget_tracker()
         self.bus = EventBus()
         self.budget = BudgetTracker(daily_budget=Budget())  # unlimited daily
-        os.environ.pop("JARVIS_AUTONOMY_PAUSED", None)
+        os.environ.pop("BEA_AUTONOMY_PAUSED", None)
 
     def _make_daemon(self, **kw) -> AutonomyDaemon:
         defaults = {
@@ -104,10 +104,10 @@ class TestAutonomyDaemon(unittest.TestCase):
         self.assertIsNone(d.run_once())
 
     def test_paused_via_env_halts(self):
-        os.environ["JARVIS_AUTONOMY_PAUSED"] = "1"
+        os.environ["BEA_AUTONOMY_PAUSED"] = "1"
         d = self._make_daemon()
         self.assertIsNone(d.run_once())
-        os.environ.pop("JARVIS_AUTONOMY_PAUSED")
+        os.environ.pop("BEA_AUTONOMY_PAUSED")
 
     def test_run_forever_respects_max_iters(self):
         d = self._make_daemon()

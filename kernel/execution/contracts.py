@@ -33,7 +33,7 @@ class ExecutionRequest:
     """
     What the kernel submits for execution.
 
-    Produced by JarvisKernel.execute() after cognitive pre-computation
+    Produced by BeaKernel.execute() after cognitive pre-computation
     (classify → plan → route → retrieve).
     """
     goal:        str
@@ -75,7 +75,7 @@ class ExecutionResult:
 
     # Backward-compat: allow attribute access like MissionContext
     def get_output(self, agent: str) -> str:
-        """Compatibility with JarvisSession.get_output() interface."""
+        """Compatibility with BeaSession.get_output() interface."""
         outputs = self.metadata.get("agent_outputs", {})
         if isinstance(outputs, dict):
             out = outputs.get(agent, "")
@@ -84,7 +84,7 @@ class ExecutionResult:
 
     @property
     def final_report(self) -> str:
-        """Compatibility with JarvisSession.final_report."""
+        """Compatibility with BeaSession.final_report."""
         return self.result
 
     def is_terminal(self) -> bool:

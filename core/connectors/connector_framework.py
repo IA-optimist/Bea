@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 from enum import Enum
 
-log = structlog.get_logger("jarvis.connector_framework")
+log = structlog.get_logger("bea.connector_framework")
 
 
 # ── Connector Domain ─────────────────────────────────────────────────────────

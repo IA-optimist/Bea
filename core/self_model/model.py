@@ -1,5 +1,5 @@
 """
-core/self_model/model.py — JarvisMax Self-Model data structures.
+core/self_model/model.py — BeaMax Self-Model data structures.
 
 The Self-Model is a structured introspection layer that aggregates runtime
 truth into a queryable internal model. It answers:
@@ -176,7 +176,7 @@ class AutonomyEnvelope:
 @dataclass
 class SelfModel:
     """
-    The complete self-model of JarvisMax at a point in time.
+    The complete self-model of BeaMax at a point in time.
 
     This is the single source of truth for "what can I do right now?"
     All fields are derived from real runtime sources via the Updater.

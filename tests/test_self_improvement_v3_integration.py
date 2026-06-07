@@ -84,7 +84,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from core.self_improvement_loop import (
-    JarvisImprovementLoop, ImprovementTask, PatchProposal,
+    BeaImprovementLoop, ImprovementTask, PatchProposal,
     PromotionPolicy,
 )
 from core.self_improvement.promotion_pipeline import (
@@ -127,8 +127,8 @@ def tmp_repo(tmp_path):
 
 @pytest.fixture
 def loop_with_repo(tmp_repo):
-    """JarvisImprovementLoop with a real temp repo."""
-    return JarvisImprovementLoop(
+    """BeaImprovementLoop with a real temp repo."""
+    return BeaImprovementLoop(
         repo_root=tmp_repo,
         policy=PromotionPolicy.REVIEW_ALL,
         lesson_path=tmp_repo / "lessons.json",
@@ -181,7 +181,7 @@ class TestLessonMemoryIntegration:
 
     def test_lesson_via_pipeline_record(self, tmp_repo):
         """VI1. pipeline.record_lesson() is called."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
@@ -190,7 +190,7 @@ class TestLessonMemoryIntegration:
 
     def test_lesson_stored_promote(self, tmp_repo):
         """VI2. Lesson stored in LessonMemory after PROMOTE."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
@@ -200,7 +200,7 @@ class TestLessonMemoryIntegration:
 
     def test_lesson_stored_reject(self, tmp_repo):
         """VI3. Lesson stored after REJECT."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("REJECT", reason="Syntax error")
         loop._pipeline = mock_pipe
         details = []
@@ -209,7 +209,7 @@ class TestLessonMemoryIntegration:
 
     def test_lesson_stored_review(self, tmp_repo):
         """VI4. Lesson stored after REVIEW."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("REVIEW", reason="Medium risk")
         loop._pipeline = mock_pipe
         details = []
@@ -326,7 +326,7 @@ class TestBridgeIntegration:
 
     def test_bridge_uses_pipeline(self, tmp_repo):
         """VI16. Bridge calls PromotionPipeline.execute()."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
@@ -372,7 +372,7 @@ class TestBridgeIntegration:
 
     def test_medium_risk_review(self, tmp_repo):
         """VI20. Medium risk → REVIEW (not PROMOTE)."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("REVIEW", reason="Medium risk")
         loop._pipeline = mock_pipe
         details = []
@@ -381,7 +381,7 @@ class TestBridgeIntegration:
 
     def test_high_risk_review(self, tmp_repo):
         """VI21. High risk → REVIEW."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("REVIEW", reason="High risk")
         loop._pipeline = mock_pipe
         details = []
@@ -390,7 +390,7 @@ class TestBridgeIntegration:
 
     def test_lesson_recording_called(self, tmp_repo):
         """VI22. Lesson recording called on pipeline path."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
@@ -418,7 +418,7 @@ class TestBridgeIntegration:
     def test_no_production_write(self, tmp_repo):
         """VI24. PROMOTE never writes to production."""
         original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE")
         loop._pipeline = mock_pipe
         details = []
@@ -462,7 +462,7 @@ class TestBridgeIntegration:
     def test_fallback_safe(self, tmp_repo):
         """VI28. Fallback path never writes to production."""
         original = (tmp_repo / "core" / "tool_runner.py").read_text(encoding="utf-8")
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         loop._pipeline = MagicMock()
         loop._pipeline.execute.side_effect = RuntimeError("broken")
         details = []
@@ -472,7 +472,7 @@ class TestBridgeIntegration:
 
     def test_files_changed_propagated(self, tmp_repo):
         """VI29. Files changed list propagated from decision."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE", files=["core/tool_runner.py", "core/helper.py"])
         loop._pipeline = mock_pipe
         details = []
@@ -482,7 +482,7 @@ class TestBridgeIntegration:
 
     def test_score_propagated(self, tmp_repo):
         """VI30. Score propagated from decision."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_pipe = _mock_pipeline_result("PROMOTE", score=0.95)
         loop._pipeline = mock_pipe
         details = []
@@ -676,14 +676,14 @@ class TestGitWorkspace:
         This test only runs if we're in a real git repo with permissions.
         In CI/Docker without git init or with permission issues, it's skipped.
         """
-        jarvis_root = Path("/root/.openclaw/workspace/Jarvismax")
+        bea_root = Path("/root/.openclaw/workspace/Beamax")
         try:
-            if not (jarvis_root / ".git").exists():
+            if not (bea_root / ".git").exists():
                 pytest.skip("Not a real git repo — worktree test env-dependent")
         except PermissionError:
             pytest.skip("No permission to access .git — env-dependent")
         
-        agent = GitAgent(jarvis_root)
+        agent = GitAgent(bea_root)
         has_wt = agent.has_worktree_support()
         
         if not has_wt:
@@ -709,14 +709,14 @@ class TestTelegramNotification:
 
     def test_set_notifier(self, tmp_repo):
         """VI51. set_notifier stores notifier."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         assert loop._notifier is mock_notifier
 
     def test_notify_on_promote(self, tmp_repo):
         """VI52. _notify_review called on PROMOTE."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("PROMOTE")
@@ -729,7 +729,7 @@ class TestTelegramNotification:
 
     def test_notify_on_review(self, tmp_repo):
         """VI53. _notify_review called on REVIEW."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("REVIEW")
@@ -740,7 +740,7 @@ class TestTelegramNotification:
 
     def test_no_notify_on_reject(self, tmp_repo):
         """VI54. _notify_review NOT called on REJECT."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("REJECT")
@@ -751,7 +751,7 @@ class TestTelegramNotification:
 
     def test_notification_fail_open(self, tmp_repo):
         """VI55. Notification failure doesn't crash the loop."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         mock_notifier.request_approval.side_effect = Exception("Telegram down")
         loop.set_notifier(mock_notifier)
@@ -764,7 +764,7 @@ class TestTelegramNotification:
 
     def test_notification_includes_patch_id(self, tmp_repo):
         """VI56. Notification includes patch_id."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("REVIEW")
@@ -777,7 +777,7 @@ class TestTelegramNotification:
 
     def test_notification_includes_files(self, tmp_repo):
         """VI57. Notification includes files."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("REVIEW")
@@ -789,7 +789,7 @@ class TestTelegramNotification:
 
     def test_notification_includes_score(self, tmp_repo):
         """VI58. Notification includes score."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         mock_notifier = MagicMock()
         loop.set_notifier(mock_notifier)
         mock_pipe = _mock_pipeline_result("PROMOTE", score=0.95)
@@ -815,7 +815,7 @@ class TestDecisionContract:
 
     def test_no_applied_production(self, tmp_repo):
         """VI60. PatchDecision.APPLIED_PRODUCTION never reachable from pipeline."""
-        loop = JarvisImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
+        loop = BeaImprovementLoop(repo_root=tmp_repo, lesson_path=tmp_repo / "l.json")
         # The _execute_via_pipeline method never returns APPLIED_PRODUCTION
         for decision_type in ["PROMOTE", "REVIEW", "REJECT"]:
             mock_pipe = _mock_pipeline_result(decision_type)

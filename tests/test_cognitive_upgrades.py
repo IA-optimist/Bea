@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Cognitive Upgrade Tests
+BEA MAX — Cognitive Upgrade Tests
 ========================================
 Tests for all 8 cognitive/agentic upgrades:
   P1: Memory Graph

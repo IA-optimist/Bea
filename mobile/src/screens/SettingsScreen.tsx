@@ -75,7 +75,7 @@ export const SettingsScreen: React.FC = () => {
   const handleTestNotification = async () => {
     haptics.medium();
     await notificationService.scheduleLocalNotification(
-      'JarvisMax',
+      'BeaMax',
       'This is a test notification!',
       1
     );

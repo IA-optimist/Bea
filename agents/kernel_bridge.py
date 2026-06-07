@@ -191,7 +191,7 @@ class KernelMissionAgent:
 
         try:
             # Use kernel cognitive cycle as the execution backbone.
-            # run_cognitive_cycle() lives on JarvisKernel (kernel/runtime/kernel.py),
+            # run_cognitive_cycle() lives on BeaKernel (kernel/runtime/kernel.py),
             # not on KernelRuntime (kernel/runtime/boot.py).
             from kernel.runtime.kernel import get_kernel
             _rt = get_kernel()

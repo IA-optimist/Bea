@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 from typing import Dict, List
 
-logger = logging.getLogger("jarvis.knowledge.memory_quality")
+logger = logging.getLogger("bea.knowledge.memory_quality")
 
 # Seuils de classification
 _THRESHOLD_HIGH = 0.8

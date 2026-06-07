@@ -1,7 +1,7 @@
-JarvisMax Directory Structure Overview
+BeaMax Directory Structure Overview
 ======================================
 
-ROOT: /root/Jarvismax-master (43 MB, 959 Python files, 279,313 LOC)
+ROOT: /root/Beamax-master (43 MB, 959 Python files, 279,313 LOC)
 
 TOP-LEVEL STRUCTURE (41 directories):
 ├── core/                    [9.1 MB, 373 files, 108,945 LOC] ⭐ CORE SYSTEM
@@ -34,8 +34,8 @@ TOP-LEVEL STRUCTURE (41 directories):
 ├── logs/                    📋 LOG FILES
 ├── static/                  🎨 STATIC ASSETS
 ├── interfaces/              🖥️  INTERFACES
-├── jarvis_mcp/              🔧 MCP INTEGRATION
-├── jarvismax_app/           📱 APP LAYER
+├── bea_mcp/              🔧 MCP INTEGRATION
+├── beamax_app/           📱 APP LAYER
 ├── mcp/                     🔧 MCP PROTOCOL
 ├── scripts/                 📜 SCRIPTS
 ├── workflow/                🔄 WORKFLOWS
@@ -245,7 +245,7 @@ AGENTS/ STRUCTURE:
 ==================
 agents/
 ├── autonomous/              🤖 AUTONOMOUS AGENTS
-├── jarvis_team/             👥 JARVIS TEAM AGENTS
+├── bea_team/             👥 BEA TEAM AGENTS
 └── shadow_advisor/          🕶️  SHADOW ADVISOR
 
 TESTS/ STRUCTURE:

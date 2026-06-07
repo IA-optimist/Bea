@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Identity Audit Logger
+BEA MAX — Identity Audit Logger
 ======================================
 Audit trail for all identity operations.
 Extends the same chained-hash pattern as Secret Vault audit.

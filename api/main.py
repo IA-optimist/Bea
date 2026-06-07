@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Canonical API (FastAPI)
+BEA MAX — Canonical API (FastAPI)
 This is the ONE backend API. Loaded by main.py (the canonical entrypoint).
 
 Structure (1800+ lines — refactor into routers planned):
@@ -63,12 +63,12 @@ async def lifespan(app: FastAPI):
 # ── App ───────────────────────────────────────────────────────
 
 # Disable public /docs and /redoc in production (expose only when ENABLE_API_DOCS=1)
-ENABLE_API_DOCS = os.environ.get("ENABLE_API_DOCS", os.environ.get("JARVIS_DOCS", "0"))
+ENABLE_API_DOCS = os.environ.get("ENABLE_API_DOCS", os.environ.get("BEA_DOCS", "0"))
 _enable_docs = ENABLE_API_DOCS == "1"
 
 app = FastAPI(
-    title="JarvisMax API",
-    description="Plateforme multi-agents autonome JarvisMax — API v2",
+    title="BeaMax API",
+    description="Plateforme multi-agents autonome BeaMax — API v2",
     version="2.0.0",
     docs_url="/docs" if _enable_docs else None,
     redoc_url="/redoc" if _enable_docs else None,
@@ -106,13 +106,13 @@ app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 # Falling through to the localhost defaults in prod is a config smell that
 # would silently allow misconfigured browser clients to be reachable.
 _cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
-_is_production = os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes")
+_is_production = os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
 if _is_production and not _cors_origins:
     raise RuntimeError(
         "PRODUCTION STARTUP BLOCKED — CORS_ORIGINS is not set. "
         "Set CORS_ORIGINS to a comma-separated allowlist of trusted origins "
         "(e.g. CORS_ORIGINS=https://app.example.com,https://admin.example.com) "
-        "or unset JARVIS_PRODUCTION to run in dev mode."
+        "or unset BEA_PRODUCTION to run in dev mode."
     )
 _allowed_origins = (
     [o.strip() for o in _cors_origins.split(",") if o.strip()]
@@ -140,10 +140,10 @@ except ImportError as _enf_err:
               note="Security middleware unavailable — API will rely on per-route auth only")
     # Fail-hard in production: a missing security middleware is a block-startup
     # condition. In dev we fall through to per-route auth only (logged error).
-    if os.environ.get("JARVIS_PRODUCTION", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes"):
         raise RuntimeError(
             "PRODUCTION STARTUP BLOCKED — AccessEnforcementMiddleware failed "
-            f"to import: {_enf_err}. Fix the import or unset JARVIS_PRODUCTION "
+            f"to import: {_enf_err}. Fix the import or unset BEA_PRODUCTION "
             "to run in dev mode with per-route auth only."
         ) from _enf_err
 
@@ -158,11 +158,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Jarvis-Token", "X-Request-ID"],
+    allow_headers=["Authorization", "Content-Type", "X-Bea-Token", "X-Request-ID"],
     expose_headers=["X-Request-ID"],
 )
 
-# ── Training-data collector hook (opt-in via JARVIS_TRAINING_COLLECT=1) ──
+# ── Training-data collector hook (opt-in via BEA_TRAINING_COLLECT=1) ──
 # Wraps LLMFactory.safe_invoke so every successful LLM call is captured
 # in data/training/raw/*.jsonl. No-op if the env var is unset.
 try:
@@ -655,7 +655,7 @@ async def prometheus_metrics(user: dict = Depends(require_auth)):
 # ── Startup : workspace cleanup ────────────────────────────────
 async def _on_startup():
     # SECURITY: Enforce production secrets (JWT, admin password, API token)
-    # Raises RuntimeError if JARVIS_PRODUCTION=true and secrets are insecure
+    # Raises RuntimeError if BEA_PRODUCTION=true and secrets are insecure
     try:
         from config.settings import get_settings
         settings = get_settings()
@@ -807,7 +807,7 @@ _start_time = time.time()
 
 # ── Auth optionnel ────────────────────────────────────────────
 
-_API_TOKEN = os.getenv("JARVIS_API_TOKEN", "")
+_API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 _start_time = get_start_time()
 # NOTE: _check_auth is imported from api._deps (supports JWT + static token)
 # Do NOT redefine it here — the import above is canonical.
@@ -860,7 +860,7 @@ def _get_orchestrator():
     """Get the mission orchestrator.
 
     MetaOrchestrator is the CANONICAL entry point.
-    It delegates to JarvisOrchestrator/OrchestratorV2 internally.
+    It delegates to BeaOrchestrator/OrchestratorV2 internally.
     Direct instantiation of legacy orchestrators is prohibited.
     See: core/architecture_ownership.py — DEPRECATED_MODULES
     """
@@ -974,9 +974,9 @@ async def chat_v2_alias(request: Request, user: dict = Depends(require_auth)):
             enable_self_correction: bool = True
         
         req = ChatRequest(**body)
-        x_jarvis_token = request.headers.get("x-jarvis-token")
+        x_bea_token = request.headers.get("x-bea-token")
         authorization = request.headers.get("authorization")
-        return await chat(req, x_jarvis_token, authorization)
+        return await chat(req, x_bea_token, authorization)
     except Exception as e:
         log.error("chat_v2_alias_error", err=str(e))
         raise HTTPException(status_code=500, detail=str(e))

@@ -7,5 +7,5 @@ services:
       - .:/app
     environment:
       # Profil VPS: max_agents=8 au lieu de 2 (LOCAL) -> crews complexes fonctionnent
-      - JARVIS_MODE=vps
+      - BEA_MODE=vps
       - RESOURCE_MAX_AGENTS=8

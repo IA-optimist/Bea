@@ -141,7 +141,7 @@ def test_hexstrike_vendored_module_is_removed():
 def test_missions_route_has_no_tmp_trace_logging():
     content = Path("api/routes/missions.py").read_text(encoding="utf-8")
 
-    assert "jarvis_trace.log" not in content
+    assert "bea_trace.log" not in content
     assert "TRACE_A" not in content
     assert "TRACE_B" not in content
 
@@ -155,7 +155,7 @@ def test_compose_files_do_not_mount_docker_socket():
 def test_monitoring_grafana_uses_env_configuration():
     content = Path("monitoring/docker-compose-monitoring.yml").read_text(encoding="utf-8")
 
-    assert "jarvismax2026" not in content
+    assert "beamax2026" not in content
     assert "72.62.177.55" not in content
     assert "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD" in content
 
@@ -164,7 +164,7 @@ def test_monitoring_tree_does_not_commit_grafana_secret_or_vps_ip():
     for path in Path("monitoring").rglob("*"):
         if path.is_file():
             content = path.read_text(encoding="utf-8", errors="ignore")
-            assert "jarvismax2026" not in content, str(path)
+            assert "beamax2026" not in content, str(path)
             assert "72.62.177.55" not in content, str(path)
 
 

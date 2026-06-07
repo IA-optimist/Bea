@@ -83,7 +83,7 @@
 - **Task Modes**: `CHAT`, `RESEARCH`, `PLAN`, `CODE`, `AUTO`, `NIGHT`, `IMPROVE`, `BUSINESS`
 - **Output**: `RoutingDecision(mode, agents[], needs_actions, confidence)`
 - **Used By**:
-  - `core/jarvis_executor.py` (primary orchestrator entry point)
+  - `core/bea_executor.py` (primary orchestrator entry point)
   - `core/context_provider.py`
   - `business/layer.py`
   - Tests: `test_task_router.py`, `test_task_router_edge.py`, `test_orchestrator.py`
@@ -95,7 +95,7 @@
 ### 1.3 Agent Selection Routers (SEPARATE CONCERN — KEEP)
 
 #### ✅ **core/dynamic_agent_router.py** — PERFORMANCE-BASED AGENT SELECTION (PRODUCTION)
-- **Status**: ✅ ACTIVE IN PRODUCTION (feature-flagged: `JARVIS_DYNAMIC_ROUTING=1`)
+- **Status**: ✅ ACTIVE IN PRODUCTION (feature-flagged: `BEA_DYNAMIC_ROUTING=1`)
 - **Purpose**: Select agents using measured performance data vs static mapping
 - **Scope**: Routes **mission_type** → **best agents**, not LLM selection
 - **Key Features**:
@@ -222,7 +222,7 @@
 │         /BUSINESS                                            │
 │                                                               │
 │  USED BY:                                                    │
-│    ├─ core/jarvis_executor.py (primary entry)               │
+│    ├─ core/bea_executor.py (primary entry)               │
 │    ├─ core/context_provider.py                              │
 │    ├─ business/layer.py                                      │
 │    └─ Tests: test_task_router.py, test_orchestrator.py      │
@@ -568,7 +568,7 @@ These are domain-specific skill matchers, not LLM routers:
 ## Appendix A: File Locations
 
 ```
-/root/Jarvismax-master/
+/root/Beamax-master/
 ├── core/
 │   ├── llm_routing_policy.py          # ✅ CANONICAL LLM ROUTER (596 lines)
 │   ├── adaptive_routing.py             # ✅ LIVE METRICS ENHANCEMENT (588 lines)

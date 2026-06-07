@@ -130,16 +130,16 @@ class TestConnectorKillSwitch(unittest.TestCase):
 
     def test_kill_switch_blocks_connector(self):
         from core.connectors import execute_connector
-        os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+        os.environ["BEA_EXECUTION_DISABLED"] = "1"
         try:
             result = execute_connector("json_storage", {"action": "list"})
             self.assertFalse(result.success)
             self.assertIn("disabled", result.error.lower())
         finally:
-            os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+            os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
     def test_normal_execution_allowed(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.connectors import execute_connector
         result = execute_connector("json_storage", {"action": "list", "collection": "test"})
         # May fail for other reasons, but should not be "execution_disabled"
@@ -155,7 +155,7 @@ class TestSafetyCheckpoint(unittest.TestCase):
     """Unified safety_checkpoint() validates all gates."""
 
     def test_normal_returns_allowed(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.governance import safety_checkpoint
         result = safety_checkpoint(action="read_file", risk_level="low")
         self.assertTrue(result["allowed"])
@@ -164,16 +164,16 @@ class TestSafetyCheckpoint(unittest.TestCase):
 
     def test_kill_switch_blocks(self):
         from core.governance import safety_checkpoint
-        os.environ["JARVIS_EXECUTION_DISABLED"] = "1"
+        os.environ["BEA_EXECUTION_DISABLED"] = "1"
         try:
             result = safety_checkpoint(action="write_file")
             self.assertFalse(result["allowed"])
             self.assertEqual(result["reason"], "execution_disabled")
         finally:
-            os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+            os.environ.pop("BEA_EXECUTION_DISABLED", None)
 
     def test_with_connector_name(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.governance import safety_checkpoint
         result = safety_checkpoint(
             action="execute_connector",
@@ -185,7 +185,7 @@ class TestSafetyCheckpoint(unittest.TestCase):
         self.assertIn("checks", result)
 
     def test_returns_check_details(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.governance import safety_checkpoint
         result = safety_checkpoint(action="test", connector="json_storage")
         checks = result["checks"]
@@ -193,7 +193,7 @@ class TestSafetyCheckpoint(unittest.TestCase):
         self.assertTrue(checks["kill_switch"])
 
     def test_unknown_connector_allowed(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.governance import safety_checkpoint
         result = safety_checkpoint(connector="nonexistent_connector")
         # Should be allowed (fail-open for unknown connectors)
@@ -581,7 +581,7 @@ class TestSafetyStress(unittest.TestCase):
     """Safety checks remain fast under load."""
 
     def test_1000_safety_checkpoints_bounded(self):
-        os.environ.pop("JARVIS_EXECUTION_DISABLED", None)
+        os.environ.pop("BEA_EXECUTION_DISABLED", None)
         from core.governance import safety_checkpoint
         t0 = time.time()
         for _ in range(1000):

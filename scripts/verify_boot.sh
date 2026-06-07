@@ -9,9 +9,9 @@ BASE_URL="${1:-http://localhost:8000}"
 MAX_WAIT=90
 INTERVAL=3
 # Admin password for auth — read from env or default to "admin" for dev probing
-ADMIN_PASSWORD="${JARVIS_ADMIN_PASSWORD:-admin}"
+ADMIN_PASSWORD="${BEA_ADMIN_PASSWORD:-admin}"
 
-echo "=== Jarvis Max Boot Verification ==="
+echo "=== Bea Max Boot Verification ==="
 echo "Target: $BASE_URL"
 echo ""
 
@@ -43,7 +43,7 @@ else
     echo "   Diagnose:"
     echo "   - Check OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY"
     echo "   - Check Qdrant is running and QDRANT_HOST is correct"
-    echo "   - Check logs: docker logs jarvis_test_core"
+    echo "   - Check logs: docker logs bea_test_core"
     exit 1
 fi
 
@@ -56,7 +56,7 @@ TOKEN=$(echo "$AUTH_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin);
 if [ -z "$TOKEN" ]; then
     echo "   FAILED — could not obtain auth token"
     echo "   Response: $AUTH_RESP"
-    echo "   Set JARVIS_ADMIN_PASSWORD env var to the correct admin password"
+    echo "   Set BEA_ADMIN_PASSWORD env var to the correct admin password"
     exit 1
 fi
 echo "   OK — authenticated"
@@ -128,7 +128,7 @@ except Exception:
     echo "   Preview: $(echo "$RESULT" | head -c 120)"
     echo ""
     echo "=== BOOT VERIFICATION PASSED ==="
-    echo "Jarvis Max is operational."
+    echo "Bea Max is operational."
     exit 0
 
 elif [ "$STATUS" = "FAILED" ]; then

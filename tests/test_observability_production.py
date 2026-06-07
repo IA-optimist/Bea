@@ -348,7 +348,7 @@ class TestHumanSummary:
         emit_model_selected("claude-sonnet")
 
         text = m.human_summary()
-        assert "JARVISMAX SYSTEM STATUS" in text
+        assert "BEAMAX SYSTEM STATUS" in text
         assert "Missions" in text
         assert "Submitted" in text
 

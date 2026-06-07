@@ -58,7 +58,7 @@ receivers:
   # Default Telegram receiver
   - name: 'telegram-alerts'
     webhook_configs:
-      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager'
+      - url: 'http://beamax-api:8000/api/v2/webhooks/alertmanager'
         send_resolved: true
         http_config:
           follow_redirects: true
@@ -67,7 +67,7 @@ receivers:
   # Critical alerts - higher priority
   - name: 'telegram-critical'
     webhook_configs:
-      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager?priority=critical'
+      - url: 'http://beamax-api:8000/api/v2/webhooks/alertmanager?priority=critical'
         send_resolved: true
         http_config:
           follow_redirects: true
@@ -76,7 +76,7 @@ receivers:
   # Info alerts - lower priority
   - name: 'telegram-info'
     webhook_configs:
-      - url: 'http://jarvismax-api:8000/api/v2/webhooks/alertmanager?priority=info'
+      - url: 'http://beamax-api:8000/api/v2/webhooks/alertmanager?priority=info'
         send_resolved: true
         http_config:
           follow_redirects: true

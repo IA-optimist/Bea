@@ -1,5 +1,5 @@
 """
-JarvisMax P3.4 — Opportunity Deployment Model
+BeaMax P3.4 — Opportunity Deployment Model
 Tracks deployed MVPs on VPS.
 """
 

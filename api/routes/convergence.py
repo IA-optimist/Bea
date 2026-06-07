@@ -1,8 +1,8 @@
 """
-JARVIS MAX — Convergence API Router
+BEA MAX — Convergence API Router
 ======================================
 Provides /api/v3/ endpoints that route through the OrchestrationBridge
-to MetaOrchestrator (canonical authority) when JARVIS_USE_CANONICAL_ORCHESTRATOR=1.
+to MetaOrchestrator (canonical authority) when BEA_USE_CANONICAL_ORCHESTRATOR=1.
 
 Falls back to MissionSystem transparently when flag is OFF.
 
@@ -61,9 +61,9 @@ except ImportError:
 
 
 
-def _auth(x_jarvis_token: str | None = Header(None),
+def _auth(x_bea_token: str | None = Header(None),
           authorization: str | None = Header(None)):
-    _check_auth(x_jarvis_token, authorization)
+    _check_auth(x_bea_token, authorization)
 
 
 router = APIRouter(prefix="/api/v3", tags=["convergence"], dependencies=[Depends(_auth)])
@@ -71,8 +71,8 @@ router = APIRouter(prefix="/api/v3", tags=["convergence"], dependencies=[Depends
 
 def _use_canonical() -> bool:
     # Default TRUE — v3 API always uses the canonical orchestrator bridge.
-    # Set JARVIS_USE_CANONICAL_ORCHESTRATOR=0 to fall back to legacy MissionSystem.
-    val = os.environ.get("JARVIS_USE_CANONICAL_ORCHESTRATOR", "1").lower()
+    # Set BEA_USE_CANONICAL_ORCHESTRATOR=0 to fall back to legacy MissionSystem.
+    val = os.environ.get("BEA_USE_CANONICAL_ORCHESTRATOR", "1").lower()
     return val not in ("0", "false", "no")
 
 
@@ -567,15 +567,15 @@ async def get_agent_status():
         except Exception:
             agents["crew"] = {"available": False}
 
-        # Try jarvis team
+        # Try bea team
         try:
-            from agents.jarvis_team.tools import AGENT_TOOL_ACCESS
-            agents["jarvis_team"] = {
+            from agents.bea_team.tools import AGENT_TOOL_ACCESS
+            agents["bea_team"] = {
                 "available": True,
                 "agents": list(AGENT_TOOL_ACCESS.keys()),
             }
         except Exception:
-            agents["jarvis_team"] = {"available": False}
+            agents["bea_team"] = {"available": False}
 
         return _ok(agents)
 

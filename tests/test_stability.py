@@ -1,8 +1,8 @@
-"""Tests de stabilité Jarvis — tous doivent passer avant tout déploiement."""
+"""Tests de stabilité Bea — tous doivent passer avant tout déploiement."""
 import pytest
 import sys
 import os
-sys.path.insert(0, os.environ.get("JARVIS_ROOT", "/app"))
+sys.path.insert(0, os.environ.get("BEA_ROOT", "/app"))
 
 
 def test_planner_no_loop():

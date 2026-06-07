@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Mission Audit Log
+BEA MAX — Mission Audit Log
 =================================
 Immutable audit trail for business mission execution.
 

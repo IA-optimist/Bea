@@ -10,20 +10,20 @@
 #   - OPENCLAW_TOKEN in 7× openclaw/agents/*/SOUL.md (commit 48fabb6)
 #   - curl example tokens in completion reports / runbooks / docs
 #   - workspace/access_tokens.json runtime tokens (now gitignored)
-#   - jarvismax_app/lib/config/hardcoded_config.dart (mobile token placeholder)
+#   - beamax_app/lib/config/hardcoded_config.dart (mobile token placeholder)
 #   - docker-compose.yml api-key (historic, env-driven now)
 #
 # Do NOT add new entries here without an out-of-band rotation note.
 
 # OPENCLAW_TOKEN — openclaw/agents/* (commit 48fabb6, 2026-03-31)
 48fabb67ec26e5c0436344d21f48003695f9068b:docs/incidents/2026-03-27/CONFIRMATION_TEST.md:curl-auth-header:5
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-architect/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-coder/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-devops/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-orchestrator/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-qa/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-reviewer/SOUL.md:generic-api-key:21
-48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/jarvismax-watcher/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-architect/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-coder/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-devops/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-orchestrator/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-qa/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-reviewer/SOUL.md:generic-api-key:21
+48fabb67ec26e5c0436344d21f48003695f9068b:openclaw/agents/beamax-watcher/SOUL.md:generic-api-key:21
 
 # curl-auth-header examples in completion reports + docs
 1e901dede9d370d0e69fba0c56f165bf21781917:docs/DEPLOYMENT_GUIDE.md:curl-auth-header:213
@@ -57,5 +57,5 @@ d98da3673bd6731af0077417993e56d798631355:.tokens.json:generic-api-key:25
 
 # Hardcoded placeholder tokens in build artefacts / docs
 ab3a9b122b3a17cd82efabe134db79f60c52b8c9:docker-compose.yml:generic-api-key:67
-b4ae9dca3bbd2faa2abf5c5558e812631a282875:jarvismax_app/lib/config/hardcoded_config.dart:generic-api-key:9
+b4ae9dca3bbd2faa2abf5c5558e812631a282875:beamax_app/lib/config/hardcoded_config.dart:generic-api-key:9
 f00039995ac5f9795410d66a796dbd1ea91c40da:docs/API_REFERENCE.md:generic-api-key:74

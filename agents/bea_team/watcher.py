@@ -1,5 +1,5 @@
 """
-jarvis-watcher — Monitor logs and detect anomalies.
+bea-watcher — Monitor logs and detect anomalies.
 
 Responsibilities:
     - Analyze application logs for errors and warnings
@@ -21,17 +21,17 @@ Does NOT:
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
-class JarvisWatcher(JarvisTeamAgent):
-    name      = "jarvis-watcher"
+class BeaWatcher(BeaTeamAgent):
+    name      = "bea-watcher"
     role      = "default"
     timeout_s = 120
 
     def system_prompt(self) -> str:
-        return """You are jarvis-watcher, the monitoring and anomaly detection agent for JarvisMax.
+        return """You are bea-watcher, the monitoring and anomaly detection agent for BeaMax.
 
 Your job: keep an eye on system health and catch problems early.
 
@@ -69,7 +69,7 @@ Output format:
 
 If everything looks healthy, say so concisely. Don't generate false alarms."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
 

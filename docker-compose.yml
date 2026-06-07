@@ -3,26 +3,26 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: jarvismax-postgres
+    container_name: beamax-postgres
     environment:
-      POSTGRES_DB: jarvismax
-      POSTGRES_USER: jarvis
+      POSTGRES_DB: beamax
+      POSTGRES_USER: bea
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U jarvis"]
+      test: ["CMD-SHELL", "pg_isready -U bea"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - jarvismax-network
+      - beamax-network
 
   redis:
     image: redis:7-alpine
-    container_name: jarvismax-redis
+    container_name: beamax-redis
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -34,11 +34,11 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - jarvismax-network
+      - beamax-network
 
   qdrant:
     image: ${QDRANT_IMAGE:?set QDRANT_IMAGE, e.g. qdrant/qdrant:v1.9.7}
-    container_name: jarvismax-qdrant
+    container_name: beamax-qdrant
     volumes:
       - qdrant_data:/qdrant/storage
     ports:
@@ -51,21 +51,21 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - jarvismax-network
+      - beamax-network
 
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: jarvismax-api
+    container_name: beamax-api
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://jarvis:${POSTGRES_PASSWORD}@postgres:5432/jarvismax
+      DATABASE_URL: postgresql://bea:${POSTGRES_PASSWORD}@postgres:5432/beamax
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
-      JARVIS_API_TOKEN: ${JARVIS_API_TOKEN}
-      JARVIS_REQUIRE_AUTH: "true"
+      BEA_API_TOKEN: ${BEA_API_TOKEN}
+      BEA_REQUIRE_AUTH: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
@@ -80,7 +80,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./:/app
-      - ~/.jarvismax:/home/jarvis/.jarvismax
+      - ~/.beamax:/home/bea/.beamax
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,27 +96,27 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - jarvismax-network
-      - jarvis_net
+      - beamax-network
+      - bea_net
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: jarvismax-frontend
+    container_name: beamax-frontend
     ports:
       - "3001:80"
     depends_on:
       api:
         condition: service_healthy
     networks:
-      - jarvismax-network
+      - beamax-network
     restart: unless-stopped
 
   ollama:
     image: ${OLLAMA_IMAGE:?set OLLAMA_IMAGE to a pinned ollama/ollama tag}
-    container_name: jarvismax-ollama
+    container_name: beamax-ollama
     volumes:
       - ollama_data:/root/.ollama
     ports:
@@ -129,11 +129,11 @@ services:
               count: all
               capabilities: [gpu]
     networks:
-      - jarvismax-network
+      - beamax-network
 
   caddy:
     image: caddy:2-alpine
-    container_name: jarvismax-caddy
+    container_name: beamax-caddy
     ports:
       - "80:80"
       - "443:443"
@@ -144,7 +144,7 @@ services:
     depends_on:
       - api
     networks:
-      - jarvismax-network
+      - beamax-network
 
 volumes:
   postgres_data:
@@ -155,8 +155,8 @@ volumes:
   caddy_config:
 
 networks:
-  jarvismax-network:
+  beamax-network:
     driver: bridge
-  jarvis_net:
+  bea_net:
     external: true
-    name: jarvismax-app_jarvis_net
+    name: beamax-app_bea_net

@@ -80,7 +80,7 @@ def test_e2e_budget_via_connector():
     from core.connectors import execute_connector
     from core.business_pipeline import BudgetTracker
     import core.business_pipeline as bp
-    bp._budget_tracker = BudgetTracker(persist_path=f"/tmp/jarvis_e2e_bud_{int(time.time()*1000)}.jsonl")
+    bp._budget_tracker = BudgetTracker(persist_path=f"/tmp/bea_e2e_bud_{int(time.time()*1000)}.jsonl")
 
     execute_connector("budget_tracker", {
         "action": "record", "category": "revenue", "amount": 100.0,
@@ -104,9 +104,9 @@ def test_e2e_workflow_with_connectors():
     from core.workflow_runtime import WorkflowEngine
     import core.connectors as conn
     old_dir = conn._JSON_STORAGE_DIR
-    conn._JSON_STORAGE_DIR = f"/tmp/jarvis_e2e_wf_{int(time.time()*1000)}"
+    conn._JSON_STORAGE_DIR = f"/tmp/bea_e2e_wf_{int(time.time()*1000)}"
 
-    engine = WorkflowEngine(persist_path=f"/tmp/jarvis_e2e_wf_exec_{int(time.time()*1000)}.json")
+    engine = WorkflowEngine(persist_path=f"/tmp/bea_e2e_wf_exec_{int(time.time()*1000)}.json")
     engine._loaded = True
 
     try:
@@ -254,9 +254,9 @@ def test_e2e_full_business_cycle():
     from core.business_pipeline import LeadTracker, ContentPipeline, BudgetTracker
     import core.business_pipeline as bp
     ts = int(time.time() * 1000)
-    bp._lead_tracker = LeadTracker(persist_path=f"/tmp/jarvis_e2e_cycle_l_{ts}.json")
-    bp._content_pipeline = ContentPipeline(persist_path=f"/tmp/jarvis_e2e_cycle_c_{ts}.json")
-    bp._budget_tracker = BudgetTracker(persist_path=f"/tmp/jarvis_e2e_cycle_b_{ts}.jsonl")
+    bp._lead_tracker = LeadTracker(persist_path=f"/tmp/bea_e2e_cycle_l_{ts}.json")
+    bp._content_pipeline = ContentPipeline(persist_path=f"/tmp/bea_e2e_cycle_c_{ts}.json")
+    bp._budget_tracker = BudgetTracker(persist_path=f"/tmp/bea_e2e_cycle_b_{ts}.jsonl")
 
     # 1. Add prospect
     r = execute_connector("lead_manager", {

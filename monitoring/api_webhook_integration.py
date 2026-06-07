@@ -1,5 +1,5 @@
 """
-Integration du Webhook Alertmanager dans l'API FastAPI JarvisMax
+Integration du Webhook Alertmanager dans l'API FastAPI BeaMax
 
 Ce fichier montre comment intégrer le webhook Alertmanager dans votre API.
 Copiez le code nécessaire dans votre fichier main.py ou créez un nouveau router.
@@ -200,7 +200,7 @@ async def test_telegram():
         },
         "annotations": {
             "summary": "This is a test alert",
-            "description": "Testing Telegram integration for JarvisMax monitoring"
+            "description": "Testing Telegram integration for BeaMax monitoring"
         },
         "startsAt": "2026-04-09T21:00:00Z"
     }
@@ -219,7 +219,7 @@ async def test_telegram():
 # ============================================
 
 """
-Pour intégrer ce code dans votre API JarvisMax:
+Pour intégrer ce code dans votre API BeaMax:
 
 1. Ajouter dans main.py ou créer un nouveau fichier api/webhooks.py:
 
@@ -241,7 +241,7 @@ Pour intégrer ce code dans votre API JarvisMax:
     curl http://localhost:8000/api/v2/webhooks/test-telegram
 
 6. Vérifier les logs:
-    docker logs jarvismax-api -f
+    docker logs beamax-api -f
 """
 
 

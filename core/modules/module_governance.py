@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Module Governance Layer
+BEA MAX — Module Governance Layer
 ========================================
 RBAC, audit, dependency validation, health checks, and wizard
 for the Module Manager.
@@ -630,7 +630,7 @@ def get_wizard_steps() -> list[dict]:
         ).to_dict(),
         WizardStep(
             5, "Choose approval mode",
-            "When should Jarvis ask for your permission?",
+            "When should Bea ask for your permission?",
             "approval", "radio",
             options=[
                 {"label": "Always ask", "value": "always_approve", "description": "Maximum control"},

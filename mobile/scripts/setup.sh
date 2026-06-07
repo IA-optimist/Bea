@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# JarvisMax Mobile Setup Script
+# BeaMax Mobile Setup Script
 
-echo "🚀 Setting up JarvisMax Mobile..."
+echo "🚀 Setting up BeaMax Mobile..."
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then

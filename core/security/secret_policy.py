@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Secret Access Policy Engine
+BEA MAX — Secret Access Policy Engine
 ============================================
 Controls WHO can access WHICH secrets and HOW.
 

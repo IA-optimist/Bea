@@ -6,7 +6,7 @@ ALL operations are read-only, sandboxed, time-bounded, and traced.
 
 Security:
 - Read-only: no writes, no execution of arbitrary code
-- Sandboxed: confined to JARVIS_ROOT (/app)
+- Sandboxed: confined to BEA_ROOT (/app)
 - Time-bounded: 5s per operation, 15s total budget
 - Traced: all calls logged via structlog
 - Policy: all tools classified as LOW risk
@@ -25,7 +25,7 @@ import structlog
 log = structlog.get_logger()
 
 _REPO_ROOT = Path(os.environ.get(
-    "JARVIS_ROOT",
+    "BEA_ROOT",
     # Default: walk up from this file to find repo root (has conftest.py or pytest.ini)
     str(Path(__file__).resolve().parents[2]),
 ))
@@ -45,7 +45,7 @@ _CODE_EXTENSIONS = {
 _SKIP_DIRS = {
     "__pycache__", ".git", "node_modules", ".mypy_cache", ".pytest_cache",
     ".eggs", "*.egg-info", "venv", ".venv", "dist", "build",
-    "jarvismax_app/.dart_tool", "jarvismax_app/.flutter-plugins",
+    "beamax_app/.dart_tool", "beamax_app/.flutter-plugins",
 }
 
 

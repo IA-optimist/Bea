@@ -1,5 +1,5 @@
 """
-JARVIS MAX v3 — Context Manager & Compressor
+BEA MAX v3 — Context Manager & Compressor
 Empêche l'agent de crasher pour "Context Length Exceeded" en condensant l'historique.
 """
 import structlog

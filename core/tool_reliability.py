@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Tool Reliability Engine
+BEA MAX — Tool Reliability Engine
 =======================================
 Detects unstable tools and proposes safe, bounded improvements.
 

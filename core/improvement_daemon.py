@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Improvement Daemon
+BEA MAX — Improvement Daemon
 ==================================
 Autonomous background optimization loop.
 
@@ -641,7 +641,7 @@ def run_cycle(repo_root: Path | None = None) -> dict:
     Fail-open: if the gate check itself fails, cycle proceeds with a WARNING.
     """
     if repo_root is None:
-        repo_root = Path(os.environ.get("JARVIS_REPO_ROOT", "/app"))
+        repo_root = Path(os.environ.get("BEA_REPO_ROOT", "/app"))
 
     result = {
         "weaknesses_found": 0,
@@ -908,7 +908,7 @@ def reset_daemon_state() -> None:
     """Reset state (for tests).
 
     NOTE: If the gate security check also needs to be bypassed in tests,
-    set JARVIS_SKIP_IMPROVEMENT_GATE=1 in the test environment directly.
+    set BEA_SKIP_IMPROVEMENT_GATE=1 in the test environment directly.
     This function does NOT mutate the process environment — callers are
     responsible for setting/unsetting that flag to avoid cross-test contamination.
     """

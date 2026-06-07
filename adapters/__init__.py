@@ -1,10 +1,10 @@
 """
-JARVIS MAX — Framework Adapters
+BEA MAX — Framework Adapters
 Adaptateurs pour les frameworks multi-agents externes.
 
 Exports :
-    CrewAIAdapter    — wraps JarvisMax agents as CrewAI crew
-    OpenAIAgentsAdapter — wraps JarvisMax agents as OpenAI Agents SDK
+    CrewAIAdapter    — wraps BeaMax agents as CrewAI crew
+    OpenAIAgentsAdapter — wraps BeaMax agents as OpenAI Agents SDK
     get_best_adapter  — factory retournant le meilleur adapter dispo
 """
 from __future__ import annotations
@@ -37,10 +37,10 @@ class BaseAdapter:
 
 class CrewAIAdapter(BaseAdapter):
     """
-    Wraps JarvisMax agents en agents CrewAI + tasks CrewAI.
+    Wraps BeaMax agents en agents CrewAI + tasks CrewAI.
 
     Chaque agent de `agents_plan` devient :
-    - Un `crewai.Agent` avec le system_prompt de l'agent JarvisMax
+    - Un `crewai.Agent` avec le system_prompt de l'agent BeaMax
     - Une `crewai.Task` avec la description de la tâche
 
     Fallback transparent vers AgentCrew si CrewAI non disponible.
@@ -81,20 +81,20 @@ class CrewAIAdapter(BaseAdapter):
             crew_agents = []
             crew_tasks  = []
 
-            # Loader lazy de la crew JarvisMax pour les prompts
+            # Loader lazy de la crew BeaMax pour les prompts
             from config.settings import get_settings
             from agents.crew import AgentCrew
-            jarvis_crew = AgentCrew(self.s or get_settings())
+            bea_crew = AgentCrew(self.s or get_settings())
 
             for step in agents_plan:
                 agent_name = step.get("agent", "")
                 task_desc  = step.get("task", "")
 
-                # Récupérer le system_prompt depuis l'agent JarvisMax
-                jarvis_agent = jarvis_crew.registry.get(agent_name)
+                # Récupérer le system_prompt depuis l'agent BeaMax
+                bea_agent = bea_crew.registry.get(agent_name)
                 system_p = (
-                    jarvis_agent.system_prompt()
-                    if jarvis_agent else f"Tu es {agent_name}, agent JarvisMax."
+                    bea_agent.system_prompt()
+                    if bea_agent else f"Tu es {agent_name}, agent BeaMax."
                 )
 
                 crew_agent = crewai.Agent(
@@ -150,7 +150,7 @@ class CrewAIAdapter(BaseAdapter):
 
 class OpenAIAgentsAdapter(BaseAdapter):
     """
-    Wraps JarvisMax agents en agents OpenAI Agents SDK.
+    Wraps BeaMax agents en agents OpenAI Agents SDK.
     Utilise les handoffs inter-agents du SDK.
 
     SDK : openai-agents-python (local dans GitHub/)
@@ -190,17 +190,17 @@ class OpenAIAgentsAdapter(BaseAdapter):
                 from openai_agents import Agent, Runner, handoff  # type: ignore
 
             from config.settings import get_settings
-            from agents.crew import AgentCrew as JarvisCrewClass
-            jarvis_crew = JarvisCrewClass(self.s or get_settings())
+            from agents.crew import AgentCrew as BeaCrewClass
+            bea_crew = BeaCrewClass(self.s or get_settings())
 
             sdk_agents = []
             for step in agents_plan:
                 agent_name = step.get("agent", "")
                 task_desc  = step.get("task", "")
-                jarvis_agent = jarvis_crew.registry.get(agent_name)
+                bea_agent = bea_crew.registry.get(agent_name)
                 instructions = (
-                    jarvis_agent.system_prompt()
-                    if jarvis_agent else f"Tu es {agent_name}."
+                    bea_agent.system_prompt()
+                    if bea_agent else f"Tu es {agent_name}."
                 )
                 sdk_agent = Agent(
                     name=agent_name,
@@ -239,12 +239,12 @@ class OpenAIAgentsAdapter(BaseAdapter):
 
 
 # ═══════════════════════════════════════════════════════════════
-# JARVIS NATIVE ADAPTER (Fallback)
+# BEA NATIVE ADAPTER (Fallback)
 # ═══════════════════════════════════════════════════════════════
 
-class JarvisNativeAdapter(BaseAdapter):
-    """Adapter natif JarvisMax — toujours disponible, toujours fonctionnel."""
-    name = "jarvis-native"
+class BeaNativeAdapter(BaseAdapter):
+    """Adapter natif BeaMax — toujours disponible, toujours fonctionnel."""
+    name = "bea-native"
 
     def is_available(self) -> bool:
         return True
@@ -256,7 +256,7 @@ class JarvisNativeAdapter(BaseAdapter):
         await pex.run(session, agents_plan)
         return [
             {
-                "adapter": "jarvis-native",
+                "adapter": "bea-native",
                 "agent":   name,
                 "success": out.success,
                 "result":  out.content[:500] if out.success else "",
@@ -279,7 +279,7 @@ def get_best_adapter(settings=None, prefer: str = "auto") -> BaseAdapter:
     adapters = {
         "crewai":        CrewAIAdapter(settings),
         "openai-agents": OpenAIAgentsAdapter(settings),
-        "native":        JarvisNativeAdapter(),
+        "native":        BeaNativeAdapter(),
     }
 
     if prefer != "auto" and prefer in adapters:
@@ -295,13 +295,13 @@ def get_best_adapter(settings=None, prefer: str = "auto") -> BaseAdapter:
             log.info("adapter_selected", name=name, reason="auto")
             return adapter
 
-    return JarvisNativeAdapter()
+    return BeaNativeAdapter()
 
 
 __all__ = [
     "BaseAdapter",
     "CrewAIAdapter",
     "OpenAIAgentsAdapter",
-    "JarvisNativeAdapter",
+    "BeaNativeAdapter",
     "get_best_adapter",
 ]

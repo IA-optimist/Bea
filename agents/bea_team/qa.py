@@ -1,5 +1,5 @@
 """
-jarvis-qa — Create and run tests.
+bea-qa — Create and run tests.
 
 Responsibilities:
     - Write pytest tests for new and modified code
@@ -21,17 +21,17 @@ Does NOT:
 """
 from __future__ import annotations
 
-from agents.jarvis_team.base import JarvisTeamAgent
-from core.state import JarvisSession
+from agents.bea_team.base import BeaTeamAgent
+from core.state import BeaSession
 
 
-class JarvisQA(JarvisTeamAgent):
-    name      = "jarvis-qa"
+class BeaQA(BeaTeamAgent):
+    name      = "bea-qa"
     role      = "builder"
     timeout_s = 240
 
     def system_prompt(self) -> str:
-        return """You are jarvis-qa, the testing and quality assurance agent for JarvisMax.
+        return """You are bea-qa, the testing and quality assurance agent for BeaMax.
 
 Your job: ensure every change is tested and no regressions slip through.
 
@@ -76,7 +76,7 @@ Output format:
 
 NEVER mark a test suite as passing if any test actually failed."""
 
-    def user_message(self, session: JarvisSession) -> str:
+    def user_message(self, session: BeaSession) -> str:
         ctx = self.repo_context()
         task = self._task(session)
         diff = self.git_diff()

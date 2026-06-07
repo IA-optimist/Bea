@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Capability Graph
+BEA MAX — Capability Graph
 =================================
 Maps what the system CAN do, WHO can do it, and HOW WELL.
 
@@ -162,18 +162,18 @@ class CapabilityGraph:
     def _populate_agents(self) -> int:
         """Create capabilities from agent tool access matrix."""
         try:
-            from agents.jarvis_team.tools import AGENT_TOOL_ACCESS
+            from agents.bea_team.tools import AGENT_TOOL_ACCESS
         except ImportError:
             return 0
 
         # Map agent roles to capability categories
         ROLE_CATEGORIES = {
-            "jarvis-architect": ("architecture", "System design, code analysis, dependency mapping"),
-            "jarvis-coder": ("coding", "Code writing, patching, git workflow"),
-            "jarvis-reviewer": ("review", "Code review, quality analysis, regression detection"),
-            "jarvis-qa": ("testing", "Test execution, test writing, regression detection"),
-            "jarvis-devops": ("deployment", "Docker config, environment checks, dependency validation"),
-            "jarvis-watcher": ("monitoring", "Log analysis, error pattern detection, system monitoring"),
+            "bea-architect": ("architecture", "System design, code analysis, dependency mapping"),
+            "bea-coder": ("coding", "Code writing, patching, git workflow"),
+            "bea-reviewer": ("review", "Code review, quality analysis, regression detection"),
+            "bea-qa": ("testing", "Test execution, test writing, regression detection"),
+            "bea-devops": ("deployment", "Docker config, environment checks, dependency validation"),
+            "bea-watcher": ("monitoring", "Log analysis, error pattern detection, system monitoring"),
         }
 
         count = 0
@@ -183,7 +183,7 @@ class CapabilityGraph:
             if cap_id not in self._capabilities:
                 self.register_capability(Capability(
                     id=cap_id,
-                    name=f"{agent_id.replace('jarvis-', '').title()} capabilities",
+                    name=f"{agent_id.replace('bea-', '').title()} capabilities",
                     description=desc,
                     category=category,
                     required_tools=sorted(tools),

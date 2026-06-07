@@ -1,7 +1,7 @@
 # API Route Status — Single Source of Truth
 ## Updated: 2026-04-06
 
-Classification based on runtime testing on jarvismax-prod.
+Classification based on runtime testing on beamax-prod.
 
 ## Legend
 - **CANONICAL**: Primary endpoint, actively used, returns real data

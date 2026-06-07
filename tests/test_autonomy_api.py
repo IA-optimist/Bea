@@ -59,8 +59,8 @@ class TestAutonomyAPIStatus(unittest.TestCase):
             Path(self._tmp.name) / "decisions.json",
         )
         self._patch.start()
-        os.environ["JARVIS_AUTONOMY_USE_REAL"] = "0"
-        os.environ.pop("JARVIS_AUTONOMY_PAUSED", None)
+        os.environ["BEA_AUTONOMY_USE_REAL"] = "0"
+        os.environ.pop("BEA_AUTONOMY_PAUSED", None)
         self.app = _build_app()
         self.client = TestClient(self.app)
 
@@ -100,8 +100,8 @@ class TestAutonomyAPILifecycle(unittest.TestCase):
         reset_event_bus()
         reset_multi_choice_store()
         # Force safe mode (event_bus_runner) so tests don't poke real orchestrator
-        os.environ["JARVIS_AUTONOMY_USE_REAL"] = "0"
-        os.environ.pop("JARVIS_AUTONOMY_PAUSED", None)
+        os.environ["BEA_AUTONOMY_USE_REAL"] = "0"
+        os.environ.pop("BEA_AUTONOMY_PAUSED", None)
         self.app = _build_app()
         self.client = TestClient(self.app)
 
@@ -198,7 +198,7 @@ class TestAutonomyAPIDecisions(unittest.TestCase):
             Path(self._tmp.name) / "decisions.json",
         )
         self._patch.start()
-        os.environ["JARVIS_AUTONOMY_USE_REAL"] = "0"
+        os.environ["BEA_AUTONOMY_USE_REAL"] = "0"
         self.app = _build_app()
         self.client = TestClient(self.app)
 

@@ -8,7 +8,7 @@ from typing import Optional
 
 from core.connectors.contracts import ConnectorResult
 
-logger = structlog.get_logger("jarvis.connectors")
+logger = structlog.get_logger("bea.connectors")
 log = logger  # alias for M3 swallowed_exception emitter
 
 
@@ -120,7 +120,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
         if not check["allowed"]:
             return ConnectorResult(error=check["reason"], connector=name)
     except ImportError:
-        if os.environ.get("JARVIS_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
+        if os.environ.get("BEA_EXECUTION_DISABLED", "").lower() in ("1", "true", "yes"):
             return ConnectorResult(error="execution_disabled", connector=name)
 
     clean_params, sanitize_warnings = _sanitize_connector_params(name, params)
@@ -132,7 +132,7 @@ def execute_connector(name: str, params: dict) -> ConnectorResult:
             from core.connectors._base import log_approval_event
             from core.operating_primitives import requires_approval
             if requires_approval(spec.category, spec.risk_level):
-                auto_approve = os.environ.get("JARVIS_AUTO_APPROVE_LOW_RISK") and spec.risk_level == "low"
+                auto_approve = os.environ.get("BEA_AUTO_APPROVE_LOW_RISK") and spec.risk_level == "low"
                 if auto_approve:
                     log_approval_event(name, "execute", True, "auto_approved_low_risk")
                 else:

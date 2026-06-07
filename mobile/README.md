@@ -1,6 +1,6 @@
-# JarvisMax Mobile
+# BeaMax Mobile
 
-Premium React Native Expo mobile app for JarvisMax - Autonomous Business Builder.
+Premium React Native Expo mobile app for BeaMax - Autonomous Business Builder.
 
 ## Features
 
@@ -31,7 +31,7 @@ Premium React Native Expo mobile app for JarvisMax - Autonomous Business Builder
 ## Installation
 
 ```bash
-cd /tmp/jarvismax-master/mobile
+cd /tmp/beamax-master/mobile
 npm install
 ```
 

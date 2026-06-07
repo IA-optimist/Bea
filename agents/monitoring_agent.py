@@ -1,5 +1,5 @@
 """
-JARVIS MAX — MonitoringAgent
+BEA MAX — MonitoringAgent
 Agrège tous les signaux de santé du système en un HealthReport.
 
 Exposé via :
@@ -15,7 +15,7 @@ from typing import Any
 import structlog
 
 from core.contracts import ComponentHealth, HealthReport, HealthStatus
-from core.state import JarvisSession
+from core.state import BeaSession
 
 log = structlog.get_logger()
 
@@ -30,7 +30,7 @@ class MonitoringAgent:
     def __init__(self, settings=None):
         self.s = settings
 
-    async def run(self, session: JarvisSession | None = None) -> HealthReport:
+    async def run(self, session: BeaSession | None = None) -> HealthReport:
         """Collecte la santé de tous les composants."""
         components: dict[str, ComponentHealth] = {}
 

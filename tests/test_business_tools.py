@@ -252,7 +252,7 @@ class TestEvaluationScenarios(unittest.TestCase):
     """Verify the AI-OS can plan real business workflows end-to-end."""
 
     def test_scenario_landing_page(self):
-        """Scenario 1: Jarvis can decompose and plan a landing page creation."""
+        """Scenario 1: Bea can decompose and plan a landing page creation."""
         from core.goal_decomposer import decompose
         result = decompose("create a landing page for a local plumber in Paris")
         plan = result.to_plan()

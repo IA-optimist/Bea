@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Unified Metrics Store
+BEA MAX — Unified Metrics Store
 ====================================
 Production-grade in-memory metrics with optional JSON persistence.
 Thread-safe counters, histograms, and gauges covering:
@@ -245,7 +245,7 @@ class CostTracker:
 
 class MetricsRegistry:
     """
-    Central metrics store for all JarvisMax subsystems.
+    Central metrics store for all BeaMax subsystems.
 
     Thread-safe. Fail-open (never crashes caller).
     All metric names are strings; labels are encoded as `key=val,key=val`.
@@ -385,7 +385,7 @@ class MetricsRegistry:
         c = s["counters"]
         g = s["gauges"]
 
-        lines = ["═══ JARVISMAX SYSTEM STATUS ═══"]
+        lines = ["═══ BEAMAX SYSTEM STATUS ═══"]
         lines.append(f"Uptime: {s['uptime_s']}s")
         lines.append("")
 

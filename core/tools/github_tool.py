@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 import subprocess  # nosec B404
 
-_JARVIS_ROOT = os.environ.get("JARVIS_ROOT", "/opt/jarvismax")
-_ALLOWED_ROOTS = (_JARVIS_ROOT, "/tmp")  # nosec B108 — path-prefix allowlist, not a write target.
+_BEA_ROOT = os.environ.get("BEA_ROOT", "/opt/beamax")
+_ALLOWED_ROOTS = (_BEA_ROOT, "/tmp")  # nosec B108 — path-prefix allowlist, not a write target.
 
 
 def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:

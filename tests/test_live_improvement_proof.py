@@ -112,7 +112,7 @@ class TestLiveProof:
 
         def safe_patch(root, s):
             (root / "utils.py").write_text(
-                '"""Utility functions for JarvisMax."""\n\n'
+                '"""Utility functions for BeaMax."""\n\n'
                 'def add(a, b):\n    """Add two numbers."""\n    return a + b\n\n'
                 'def greet(name):\n    """Greet someone by name."""\n    return f"Hello {name}"\n'
             )
@@ -131,7 +131,7 @@ class TestLiveProof:
 
         # File should contain the improvement (NOT rolled back)
         content = (repo / "utils.py").read_text(encoding="utf-8")
-        assert '"""Utility functions for JarvisMax."""' in content
+        assert '"""Utility functions for BeaMax."""' in content
         assert '"""Add two numbers."""' in content
 
         # Lesson stored as success

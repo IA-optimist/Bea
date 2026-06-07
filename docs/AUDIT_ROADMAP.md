@@ -92,16 +92,16 @@ Added to the blocking select :
 - `core/autonomy/planners.py` — objective_engine_planner, learner_aware_planner, chain_planner
 - `core/autonomy/approval_bridge.py` — StrategyChoice + request_strategy_choice
 - `api/routes/autonomy.py` — /api/v3/autonomy/{start, stop, status, decisions}
-  with feature flag `JARVIS_AUTONOMY_USE_REAL=1` to switch from safe to real mode
+  with feature flag `BEA_AUTONOMY_USE_REAL=1` to switch from safe to real mode
 - `tests/test_autonomy_api.py` (11 tests) — FastAPI TestClient
 - 22 wiring tests in `tests/test_autonomy_wiring.py`
 
 ### Autonomy Production Wiring
-- `jarvismax_app/lib/models/autonomy_decision.dart` + `screens/decisions_screen.dart`
+- `beamax_app/lib/models/autonomy_decision.dart` + `screens/decisions_screen.dart`
   Mobile UI : list pending decisions, tap to choose, with risk badges
 - ApiService.fetchPendingDecisions / answerDecision / fetchAutonomyStatus
 - Approvals screen → tap icon → DecisionsScreen
-- `deploy/jarvis-autonomy.service` — systemd unit that POSTs /start at boot
+- `deploy/bea-autonomy.service` — systemd unit that POSTs /start at boot
 - `scripts/install_autonomy.sh` — interactive installer with smoke test
 - `docs/AUTONOMY.md` — operator guide
 
@@ -127,14 +127,14 @@ sandbox / CI. Status tracked independently of the code roadmap.
 
 - [ ] `bash scripts/verify_prod.sh --verbose` — baseline diagnostic
 - [ ] `bash scripts/rotate_secrets.sh` — revoke leaked tokens, rotate
-      JARVIS_SECRET_KEY, POSTGRES_PASSWORD, N8N_ENCRYPTION_KEY,
+      BEA_SECRET_KEY, POSTGRES_PASSWORD, N8N_ENCRYPTION_KEY,
       OPENROUTER_API_KEY
 - [ ] `bash scripts/backup_db.sh` — install in cron
-      `0 3 * * * /root/Jarvismax-master/scripts/backup_db.sh >> /var/log/jarvis_backup.log 2>&1`
+      `0 3 * * * /root/Beamax-master/scripts/backup_db.sh >> /var/log/bea_backup.log 2>&1`
 - [ ] `bash scripts/migrate_to_nonroot.sh` — container UID=1000 (brief downtime)
 - [ ] Configure GitHub Actions secrets for Flutter APK build :
-      `JARVIS_API_TOKEN`, `JARVIS_API_HOST`, `JARVIS_API_PORT`,
-      `JARVIS_USERNAME`
+      `BEA_API_TOKEN`, `BEA_API_HOST`, `BEA_API_PORT`,
+      `BEA_USERNAME`
 - [ ] Optional : Android keystore secrets for signed APK :
       `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
       `KEY_PASSWORD`
@@ -150,7 +150,7 @@ sandbox / CI. Status tracked independently of the code roadmap.
   Direct layer access (`memory.memory_bus`, `memory.qdrant_client`) is
   fallback only.
 - **Auth model** : HttpOnly cookie + SameSite=Lax + Secure (HTTPS only).
-  JWT access tokens + static `JARVIS_API_TOKEN` support kept for legacy
+  JWT access tokens + static `BEA_API_TOKEN` support kept for legacy
   callers.
 - **Secrets policy** : pre-commit blocks commits with secret patterns.
   `.secrets.baseline` whitelists test fixtures. Rotation via

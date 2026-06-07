@@ -1,5 +1,5 @@
 """
-JARVIS MAX — VectorMemory
+BEA MAX — VectorMemory
 Mémoire contextuelle locale via embeddings numpy + sentence-transformers.
 
 Architecture :
@@ -370,11 +370,11 @@ class QdrantVectorMemory:
     Activate: QDRANT_MEMORY_ENABLED=true
     Falls back to local VectorMemory on any Qdrant error — never raises.
 
-    Collection: QDRANT_COLLECTION (default: jarvis_unified_memory)
+    Collection: QDRANT_COLLECTION (default: bea_unified_memory)
     Vector dim:  QDRANT_VECTOR_DIM (default: 768, matches nomic-embed-text)
     """
 
-    COLLECTION = "jarvis_unified_memory"
+    COLLECTION = "bea_unified_memory"
     VECTOR_DIM = 768
 
     def __init__(self, settings, fallback: "VectorMemory | None" = None):

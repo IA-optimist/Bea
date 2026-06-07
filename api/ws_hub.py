@@ -1,5 +1,5 @@
 """
-JARVIS MAX — WebSocket Hub v2
+BEA MAX — WebSocket Hub v2
 Broadcast hub for real-time events: task progress, agent thinking, token streaming.
 
 Architecture:

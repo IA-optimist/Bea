@@ -1,7 +1,7 @@
 """
 Objective Engine — Logique principale.
 CRUD + breakdown + next_best_action + détection blocages.
-Fail-open total : si le module échoue, Jarvis continue comme avant.
+Fail-open total : si le module échoue, Bea continue comme avant.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from core.objectives.objective_store import ObjectiveStore, get_objective_store
 from core.objectives.objective_scoring import compute_priority_score
 from core.objectives.objective_breakdown import breakdown_objective
 
-logger = logging.getLogger("jarvis.objective_engine")
+logger = logging.getLogger("bea.objective_engine")
 
 # ── Constantes ─────────────────────────────────────────────────────────────────
 
@@ -59,7 +59,7 @@ class ObjectiveEngine:
         category: str = "general",
         priority_score: float = 0.5,
         source: str = "user",
-        owner: str = "jarvis",
+        owner: str = "bea",
         success_criteria: str = "",
         depends_on: List[str] | None = None,
         auto_breakdown: bool = True,
@@ -379,7 +379,7 @@ class ObjectiveEngine:
                         "required_tools":         next_sub.recommended_tools[:5],
                         "requires_human_approval": requires_approval,
                         "suggested_agent":        next_sub.recommended_agents[0]
-                                                  if next_sub.recommended_agents else "jarvis",
+                                                  if next_sub.recommended_agents else "bea",
                         "objective_status":       obj.status,
                         "objective_priority":     round(score, 3),
                     }
@@ -396,7 +396,7 @@ class ObjectiveEngine:
                     "confidence":              0.3,
                     "required_tools":          [],
                     "requires_human_approval": True,
-                    "suggested_agent":         "jarvis",
+                    "suggested_agent":         "bea",
                     "objective_status":        best.status,
                     "objective_priority":      round(scored[0][0], 3),
                 }
@@ -553,7 +553,7 @@ def _no_action(reason: str) -> dict:
         "confidence":              0.0,
         "required_tools":          [],
         "requires_human_approval": False,
-        "suggested_agent":         "jarvis",
+        "suggested_agent":         "bea",
         "objective_status":        None,
         "objective_priority":      0.0,
     }

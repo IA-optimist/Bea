@@ -118,7 +118,7 @@ def test_email_dry_send():
 
 def test_email_send_no_smtp():
     """Send without SMTP config returns clear error."""
-    old = os.environ.pop("JARVIS_SMTP_HOST", None)
+    old = os.environ.pop("BEA_SMTP_HOST", None)
     from core.connectors import email_connector
     r = email_connector({
         "action": "send",
@@ -128,7 +128,7 @@ def test_email_send_no_smtp():
     assert not r.success
     assert "SMTP not configured" in r.error
     if old:
-        os.environ["JARVIS_SMTP_HOST"] = old
+        os.environ["BEA_SMTP_HOST"] = old
 
 
 def test_email_formatting_deterministic():
@@ -157,7 +157,7 @@ def test_messaging_draft():
         "action": "draft",
         "platform": "webhook",
         "recipient": "user123",
-        "content": "Hello from Jarvis!",
+        "content": "Hello from Bea!",
     })
     assert r.success
     assert r.data["status"] == "drafted"
@@ -327,7 +327,7 @@ def test_execute_connector_logs_approval():
     from core.connectors import execute_connector, _approval_log
     import core.connectors as conn
     old_dir = conn._JSON_STORAGE_DIR
-    conn._JSON_STORAGE_DIR = f"/tmp/jarvis_appr_{int(time.time())}"
+    conn._JSON_STORAGE_DIR = f"/tmp/bea_appr_{int(time.time())}"
     _approval_log.clear()
     try:
         # email requires approval

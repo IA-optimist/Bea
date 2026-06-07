@@ -7,7 +7,7 @@ Layered architecture :
   stop_conditions : composable predicates that halt a loop
   daemon          : the outer loop (uses bus + budget + stop_conditions)
   skills          : registry of named, parameterizable workflows
-  builtin_skills  : default skills shipped with JarvisMax
+  builtin_skills  : default skills shipped with BeaMax
   learning        : outcome aggregator wired to the bus
   multi_choice    : human-in-the-loop multi-option decisions
 

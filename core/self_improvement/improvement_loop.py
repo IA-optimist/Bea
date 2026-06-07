@@ -14,7 +14,7 @@ import structlog
 from dataclasses import dataclass, field, asdict
 from typing import Literal
 
-log = structlog.get_logger("jarvis.improvement.loop")
+log = structlog.get_logger("bea.improvement.loop")
 
 
 # ── Experiment Result ─────────────────────────────────────────────────────────

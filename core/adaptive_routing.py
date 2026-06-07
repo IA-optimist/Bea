@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Adaptive Model Routing
+BEA MAX — Adaptive Model Routing
 ======================================
 Upgrades static model profiles with live metrics-driven intelligence.
 

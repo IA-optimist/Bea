@@ -1,5 +1,5 @@
 """
-JARVIS — Mission Performance Tracker
+BEA — Mission Performance Tracker
 ========================================
 Tracks mission outcomes for real planning intelligence.
 
@@ -24,7 +24,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-logger = logging.getLogger("jarvis.mission_performance")
+logger = logging.getLogger("bea.mission_performance")
 
 
 @dataclass
@@ -258,7 +258,7 @@ class MissionPerformanceTracker:
         }
 
     def get_dashboard_data(self) -> dict:
-        """Full dashboard payload for Jarvis app."""
+        """Full dashboard payload for Bea app."""
         total = sum(s.total for s in self._type_stats.values())
         successes = sum(s.successes for s in self._type_stats.values())
         return {

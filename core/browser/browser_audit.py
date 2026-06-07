@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Browser Audit Logger
+BEA MAX — Browser Audit Logger
 =====================================
 Immutable audit trail for all browser actions.
 Sensitive data (passwords, tokens) is NEVER logged.

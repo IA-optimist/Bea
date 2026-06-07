@@ -1,14 +1,14 @@
 """
-kernel/runtime/kernel.py — JarvisKernel: Single Kernel Entry Point
+kernel/runtime/kernel.py — BeaKernel: Single Kernel Entry Point
 ====================================================================
 Phase 5 of the kernel recentering roadmap (see KERNEL_AUDIT.md).
 
-JarvisKernel is the canonical kernel object. All system components
+BeaKernel is the canonical kernel object. All system components
 should interact with the kernel through this class, not through
 MetaOrchestrator directly.
 
 Architecture:
-  JarvisKernel
+  BeaKernel
     ├── .planning     → KernelPlanner
     ├── .state        → MissionStateMachine
     ├── .policy       → KernelPolicyEngine
@@ -30,7 +30,7 @@ Usage (target):
 KERNEL RULE: This module does NOT import from core/, agents/, api/, tools/.
 core/ submits missions to the kernel via submit(). Not the other way around.
 
-Current status: JarvisKernel delegates execution to MetaOrchestrator
+Current status: BeaKernel delegates execution to MetaOrchestrator
 (registered at boot via register_orchestrator). This will be inverted in
 Phase 7 when the kernel becomes the primary executor.
 """
@@ -110,8 +110,8 @@ class KernelStatus:
         }
 
 
-# ── JarvisKernel ─────────────────────────────────────────────────────────────
-class JarvisKernel:
+# ── BeaKernel ─────────────────────────────────────────────────────────────
+class BeaKernel:
     """
     The kernel. One object. One instance.
 
@@ -144,12 +144,12 @@ class JarvisKernel:
         # Pass 23 — R5
         self._learner       = None
 
-    def boot(self) -> "JarvisKernel":
+    def boot(self) -> "BeaKernel":
         """
         Initialize all kernel subsystems.
         Returns self for chaining.
         """
-        log.info("jarvis_kernel_boot_start", version=self._version)
+        log.info("bea_kernel_boot_start", version=self._version)
         t0 = time.time()
 
         # 1 — Boot kernel runtime (existing boot.py infrastructure)
@@ -161,60 +161,60 @@ class JarvisKernel:
             self._capabilities = self._runtime.capabilities
             self._events       = self._runtime.events
         except Exception as e:
-            log.warning("jarvis_kernel_runtime_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_runtime_unavailable", err=str(e)[:80])
 
         # 2 — Planning layer
         try:
             from kernel.planning.planner import get_planner
             self._planning = get_planner()
         except Exception as e:
-            log.warning("jarvis_kernel_planning_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_planning_unavailable", err=str(e)[:80])
 
         # 3 — State machine
         try:
             from kernel.state.mission_state import get_state_machine
             self._state_machine = get_state_machine()
         except Exception as e:
-            log.warning("jarvis_kernel_state_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_state_unavailable", err=str(e)[:80])
 
         # 4 — Classifier (Phase 5)
         try:
             from kernel.classifier.mission_classifier import get_classifier
             self._classifier = get_classifier()
         except Exception as e:
-            log.warning("jarvis_kernel_classifier_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_classifier_unavailable", err=str(e)[:80])
 
         # 5 — Improvement gate (Phase 5)
         try:
             from kernel.improvement.gate import get_gate
             self._gate = get_gate()
         except Exception as e:
-            log.warning("jarvis_kernel_gate_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_gate_unavailable", err=str(e)[:80])
 
         # 6 — Outcome evaluator (Phase 5)
         try:
             from kernel.evaluation.scorer import get_evaluator
             self._evaluator = get_evaluator()
         except Exception as e:
-            log.warning("jarvis_kernel_evaluator_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_evaluator_unavailable", err=str(e)[:80])
 
         # 7 — Capability router (Phase 5)
         try:
             from kernel.routing.router import get_router
             self._router = get_router()
         except Exception as e:
-            log.warning("jarvis_kernel_router_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_router_unavailable", err=str(e)[:80])
 
         # 8 — Kernel learner (Pass 23 — R5)
         try:
             from kernel.learning.learner import get_learner as _get_learner
             self._learner = _get_learner()
         except Exception as e:
-            log.warning("jarvis_kernel_learner_unavailable", err=str(e)[:80])
+            log.warning("bea_kernel_learner_unavailable", err=str(e)[:80])
 
         self._booted_at = time.time()
         boot_ms = round((time.time() - t0) * 1000)
-        log.info("jarvis_kernel_boot_complete", boot_ms=boot_ms, version=self._version)
+        log.info("bea_kernel_boot_complete", boot_ms=boot_ms, version=self._version)
         return self
 
     # ── Subsystem accessors ───────────────────────────────────────────────────
@@ -671,15 +671,15 @@ class JarvisKernel:
 
 
 # ── Module-level singleton ────────────────────────────────────────────────────
-_kernel: JarvisKernel | None = None
+_kernel: BeaKernel | None = None
 
 
-def get_kernel() -> JarvisKernel:
+def get_kernel() -> BeaKernel:
     """
-    Return the singleton JarvisKernel.
+    Return the singleton BeaKernel.
     Boots on first call.
     """
     global _kernel
     if _kernel is None:
-        _kernel = JarvisKernel().boot()
+        _kernel = BeaKernel().boot()
     return _kernel

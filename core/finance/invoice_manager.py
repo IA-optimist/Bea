@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Invoice Manager
+BEA MAX — Invoice Manager
 ================================
 Manages invoice lifecycle: create → approve → send → track.
 

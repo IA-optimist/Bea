@@ -1,6 +1,6 @@
 @echo off
 REM ================================================================
-REM  JARVIS MAX — Setup complet + Build APK
+REM  BEA MAX — Setup complet + Build APK
 REM  Ce script installe Flutter, configure l'environnement,
 REM  et génère l'APK release.
 REM ================================================================
@@ -8,7 +8,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo  ============================================================
-echo   JARVIS MAX — Setup et Build APK
+echo   BEA MAX — Setup et Build APK
 echo  ============================================================
 echo.
 

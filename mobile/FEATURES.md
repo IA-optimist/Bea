@@ -1,4 +1,4 @@
-# JarvisMax Mobile - Feature Documentation
+# BeaMax Mobile - Feature Documentation
 
 ## Core Features
 
@@ -147,7 +147,7 @@
 - [ ] Voice Commands (Siri/Google Assistant integration)
 - [ ] Widget Support (iOS 14+ widgets)
 - [ ] Apple Watch companion app
-- [ ] Share Extension (share to JarvisMax)
+- [ ] Share Extension (share to BeaMax)
 - [ ] Augmented Reality product preview
 - [ ] Machine Learning on-device predictions
 - [ ] Multi-language support

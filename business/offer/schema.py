@@ -1,5 +1,5 @@
 """
-JARVIS BUSINESS LAYER — Offer Designer : Schémas de données
+BEA BUSINESS LAYER — Offer Designer : Schémas de données
 Transforme une opportunité en offre commerciale structurée et vendable.
 """
 from __future__ import annotations

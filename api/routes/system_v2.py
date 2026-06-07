@@ -28,7 +28,7 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, Request
 
-logger = logging.getLogger("jarvis.api.system_v2")
+logger = logging.getLogger("bea.api.system_v2")
 
 # Fail-hard on auth import: silent fail-open (_auth = None) would make
 # every route parameter default to None, bypassing Depends entirely.
@@ -214,7 +214,7 @@ async def health_check():
     FastAPI uses the first registered route — main.py's wins.
     This function is kept for importability by tests (test_api_structure.py).
     """
-    return {"status": "ok", "service": "jarvismax"}
+    return {"status": "ok", "service": "beamax"}
 
 
 @router.get("/api/v2/system/health/llm", tags=["system"])

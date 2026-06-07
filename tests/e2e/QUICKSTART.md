@@ -1,6 +1,6 @@
 # Quick Start - Tests E2E Playwright
 
-Guide rapide pour lancer les tests E2E de JarvisMax.
+Guide rapide pour lancer les tests E2E de BeaMax.
 
 ## Installation rapide
 

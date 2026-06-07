@@ -1,7 +1,7 @@
 """
 core/autonomy/daemon.py — Goal-driven autonomy loop.
 
-The daemon is the outer loop that turns JarvisMax from "reactive
+The daemon is the outer loop that turns BeaMax from "reactive
 mission-runner" into "goal-driven actor". One iteration :
 
     1. Pick the next active objective (from ObjectiveEngine if available)
@@ -26,7 +26,7 @@ Safety :
   failures past the policy limit do
 - All risky actions still go through ApprovalQueue (the daemon never
   bypasses it)
-- Operator can halt globally via `JARVIS_AUTONOMY_PAUSED=1` env var
+- Operator can halt globally via `BEA_AUTONOMY_PAUSED=1` env var
 
 Public API :
     daemon = AutonomyDaemon(action_runner=my_runner)
@@ -189,7 +189,7 @@ class AutonomyDaemon:
 
     def is_paused(self) -> bool:
         """Operator-level pause via env var. Useful for emergency halt."""
-        return os.getenv("JARVIS_AUTONOMY_PAUSED", "").lower() in ("1", "true", "yes")
+        return os.getenv("BEA_AUTONOMY_PAUSED", "").lower() in ("1", "true", "yes")
 
     # ── One iteration ─────────────────────────────────────────
     def run_once(self) -> Optional[ActionResult]:

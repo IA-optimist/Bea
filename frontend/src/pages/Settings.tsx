@@ -63,7 +63,7 @@ export const Settings = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Customize your JarvisMax experience
+          Customize your BeaMax experience
         </p>
       </div>
 
@@ -233,7 +233,7 @@ export const Settings = () => {
       </Card>
 
       {/* System Information */}
-      <Card title="System Information" subtitle="About JarvisMax AI OS">
+      <Card title="System Information" subtitle="About BeaMax AI OS">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>

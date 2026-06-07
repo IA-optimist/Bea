@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Memory Store v2
+BEA MAX — Memory Store v2
 Mémoire vectorielle persistante (Qdrant) avec fallback PostgreSQL.
 
 Corrections v2 :
@@ -24,8 +24,8 @@ log = structlog.get_logger()
 SCORE_THRESH = 0.55
 
 # Noms de collections séparés par dimension — évite toute pollution cross-mode.
-_COLLECTION_384  = "jarvismax_memory_384"
-_COLLECTION_1536 = "jarvismax_memory_1536"
+_COLLECTION_384  = "beamax_memory_384"
+_COLLECTION_1536 = "beamax_memory_1536"
 
 # ── Dimensions d'embedding ──────────────────────────────────────
 # all-MiniLM-L6-v2  → 384 dims  (sentence-transformers, local)

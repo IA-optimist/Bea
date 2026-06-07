@@ -1,5 +1,5 @@
 """
-JARVIS MAX — PatchMemory
+BEA MAX — PatchMemory
 Mémorise les patchs réussis pour privilégier les patterns qui fonctionnent.
 
 Persistance : fichier JSON dans workspace/memory/ (zéro dépendance DB).

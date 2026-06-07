@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Base Schema with Security Hardening (Phase 4.2)
+BEA MAX — Base Schema with Security Hardening (Phase 4.2)
 =============================================================
 Strict Pydantic models with validation enabled by default.
 

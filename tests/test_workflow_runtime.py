@@ -31,7 +31,7 @@ sys.path.insert(0, '.')
 
 def test_schedule_interval_task():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_test.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_test.json")
     task = mgr.schedule(ScheduledTask(
         name="health_check",
         schedule_type="interval",
@@ -45,7 +45,7 @@ def test_schedule_interval_task():
 
 def test_schedule_fixed_time_task():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_fixed.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_fixed.json")
     task = mgr.schedule(ScheduledTask(
         name="daily_report",
         schedule_type="fixed_time",
@@ -57,7 +57,7 @@ def test_schedule_fixed_time_task():
 
 def test_schedule_manual_task():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_manual.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_manual.json")
     task = mgr.schedule(ScheduledTask(
         name="manual_deploy",
         schedule_type="manual",
@@ -80,7 +80,7 @@ def test_task_due_detection():
 
 def test_task_execution_recording():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_exec.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_exec.json")
     task = mgr.schedule(ScheduledTask(
         name="test_task", schedule_type="interval", interval_s=60,
     ))
@@ -93,7 +93,7 @@ def test_task_execution_recording():
 
 def test_task_failure_recording():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_fail.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_fail.json")
     task = mgr.schedule(ScheduledTask(name="failing_task", schedule_type="interval", interval_s=60))
     mgr.record_execution(task.task_id, False, error="connection_timeout", duration_s=5.0)
     updated = mgr.get_task(task.task_id)
@@ -104,7 +104,7 @@ def test_task_failure_recording():
 
 def test_task_pause_resume():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    mgr = ScheduledTaskManager(persist_path="/tmp/jarvis_sched_pr.json")
+    mgr = ScheduledTaskManager(persist_path="/tmp/bea_sched_pr.json")
     task = mgr.schedule(ScheduledTask(name="pausable", schedule_type="interval", interval_s=60))
     mgr.pause(task.task_id)
     assert not mgr.get_task(task.task_id).enabled
@@ -114,7 +114,7 @@ def test_task_pause_resume():
 
 def test_task_persistence():
     from core.workflow_runtime import ScheduledTaskManager, ScheduledTask
-    path = f"/tmp/jarvis_sched_persist_{int(time.time())}.json"
+    path = f"/tmp/bea_sched_persist_{int(time.time())}.json"
     mgr1 = ScheduledTaskManager(persist_path=path)
     mgr1.schedule(ScheduledTask(name="persistent_task", schedule_type="interval", interval_s=120))
     assert os.path.exists(path)
@@ -129,7 +129,7 @@ def test_task_bounded():
     from core.workflow_runtime import ScheduledTask
     old = wr.MAX_SCHEDULED_TASKS
     wr.MAX_SCHEDULED_TASKS = 3
-    mgr = ScheduledTaskManager(persist_path=f"/tmp/jarvis_sched_bound_{int(time.time()*1000)}.json")
+    mgr = ScheduledTaskManager(persist_path=f"/tmp/bea_sched_bound_{int(time.time()*1000)}.json")
     mgr._tasks.clear()
     mgr._loaded = True
     try:
@@ -154,7 +154,7 @@ from core.workflow_runtime import ScheduledTaskManager
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_create_workflow():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_create.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_create.json")
     wf = engine.create_workflow("test_workflow", [
         {"name": "step1", "action": "json_storage", "params": {"action": "list", "key": "x"}},
         {"name": "step2", "action": "noop"},
@@ -167,7 +167,7 @@ def test_create_workflow():
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_step_execution():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_step.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_step.json")
     wf = engine.create_workflow("test", [
         {"name": "step1", "action": "noop"},
         {"name": "step2", "action": "noop"},
@@ -178,7 +178,7 @@ def test_workflow_step_execution():
 
 def test_workflow_run_all():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_runall.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_runall.json")
     wf = engine.create_workflow("full_run", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop"},
@@ -190,7 +190,7 @@ def test_workflow_run_all():
 
 def test_workflow_pause_resume():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_pause.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_pause.json")
     wf = engine.create_workflow("pausable_wf", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop"},
@@ -214,7 +214,7 @@ def test_workflow_pause_resume():
 
 def test_workflow_cancel():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_cancel.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_cancel.json")
     wf = engine.create_workflow("cancel_me", [
         {"name": "s1", "action": "noop"},
     ])
@@ -225,7 +225,7 @@ def test_workflow_cancel():
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_progress_tracking():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_prog.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_prog.json")
     wf = engine.create_workflow("progress_wf", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop"},
@@ -241,7 +241,7 @@ def test_workflow_progress_tracking():
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_step_dependencies():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_deps.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_deps.json")
     wf = engine.create_workflow("deps_wf", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop", "depends_on": [0]},
@@ -255,7 +255,7 @@ def test_workflow_step_dependencies():
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_retry_on_failure():
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_wf_retry.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_wf_retry.json")
 
     # Register a failing executor
     call_count = [0]
@@ -279,7 +279,7 @@ def test_workflow_retry_on_failure():
 
 def test_workflow_persistence():
     from core.workflow_runtime import WorkflowEngine
-    path = f"/tmp/jarvis_wf_persist_{int(time.time())}.json"
+    path = f"/tmp/bea_wf_persist_{int(time.time())}.json"
     engine1 = WorkflowEngine(persist_path=path)
     wf = engine1.create_workflow("persistent_wf", [{"name": "s1", "action": "noop"}])
     eid = wf.execution_id
@@ -293,7 +293,7 @@ def test_workflow_bounded_concurrency():
     import core.workflow_runtime as wr
     old = wr.MAX_CONCURRENT_WORKFLOWS
     wr.MAX_CONCURRENT_WORKFLOWS = 2
-    engine = WorkflowEngine(persist_path=f"/tmp/jarvis_wf_bound_{int(time.time()*1000)}.json")
+    engine = WorkflowEngine(persist_path=f"/tmp/bea_wf_bound_{int(time.time()*1000)}.json")
     engine._executions.clear()
     engine._loaded = True
     try:
@@ -494,8 +494,8 @@ def test_version_rollback():
 
 def test_resource_signals():
     from core.workflow_runtime import WorkflowEngine, ScheduledTaskManager, ResourceMonitor
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_res_sig.json")
-    scheduler = ScheduledTaskManager(persist_path="/tmp/jarvis_res_sched.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_res_sig.json")
+    scheduler = ScheduledTaskManager(persist_path="/tmp/bea_res_sched.json")
     monitor = ResourceMonitor(engine, scheduler)
 
     signals = monitor.get_signals()
@@ -510,10 +510,10 @@ def test_resource_pressure_increases():
     from core.workflow_runtime import WorkflowEngine, ScheduledTaskManager, ResourceMonitor
     old = wr.MAX_CONCURRENT_WORKFLOWS
     wr.MAX_CONCURRENT_WORKFLOWS = 5
-    engine = WorkflowEngine(persist_path=f"/tmp/jarvis_res_press_{int(time.time()*1000)}.json")
+    engine = WorkflowEngine(persist_path=f"/tmp/bea_res_press_{int(time.time()*1000)}.json")
     engine._executions.clear()
     engine._loaded = True
-    scheduler = ScheduledTaskManager(persist_path=f"/tmp/jarvis_res_sched2_{int(time.time()*1000)}.json")
+    scheduler = ScheduledTaskManager(persist_path=f"/tmp/bea_res_sched2_{int(time.time()*1000)}.json")
     try:
         for i in range(4):
             engine.create_workflow(f"wf_{i}", [{"name": "s1", "action": "noop"}])
@@ -527,8 +527,8 @@ def test_resource_pressure_increases():
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_failure_cluster_detection():
     from core.workflow_runtime import WorkflowEngine, ScheduledTaskManager, ResourceMonitor
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_res_cluster.json")
-    scheduler = ScheduledTaskManager(persist_path="/tmp/jarvis_res_sched3.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_res_cluster.json")
+    scheduler = ScheduledTaskManager(persist_path="/tmp/bea_res_sched3.json")
 
     # Create and fail 4 workflows
     for i in range(4):
@@ -548,7 +548,7 @@ def test_max_workflow_depth_enforced():
     import core.workflow_runtime as wr
     old = wr.MAX_WORKFLOW_DEPTH
     wr.MAX_WORKFLOW_DEPTH = 5
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_depth.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_depth.json")
     try:
         engine.create_workflow("deep", [{"name": f"s{i}", "action": "noop"} for i in range(10)])
         assert False, "Should have raised"
@@ -561,7 +561,7 @@ def test_max_workflow_depth_enforced():
 def test_no_runaway_execution():
     """run_all is bounded by MAX_WORKFLOW_DEPTH iterations."""
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_runaway.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_runaway.json")
     wf = engine.create_workflow("bounded_run", [
         {"name": f"s{i}", "action": "noop"} for i in range(15)
     ])
@@ -587,8 +587,8 @@ def test_workflow_dashboard():
         WorkflowEngine, ScheduledTaskManager, WorkflowVersionManager,
         EventTriggerManager, get_workflow_dashboard,
     )
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_dash_wf.json")
-    scheduler = ScheduledTaskManager(persist_path="/tmp/jarvis_dash_sched.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_dash_wf.json")
+    scheduler = ScheduledTaskManager(persist_path="/tmp/bea_dash_sched.json")
     vm = WorkflowVersionManager()
     em = EventTriggerManager()
 
@@ -613,7 +613,7 @@ def test_workflow_dashboard():
 def test_workflow_resume_stability():
     """Pause → resume → complete produces correct final state."""
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_resume_stab.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_resume_stab.json")
     wf = engine.create_workflow("resume_test", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop"},
@@ -635,7 +635,7 @@ def test_retry_determinism():
     from core.workflow_runtime import WorkflowEngine
     results = []
     for _ in range(3):
-        engine = WorkflowEngine(persist_path=f"/tmp/jarvis_det_{int(time.time()*1000)}.json")
+        engine = WorkflowEngine(persist_path=f"/tmp/bea_det_{int(time.time()*1000)}.json")
         engine.register_step_executor("fail_once", lambda p: {"success": False, "error": "fail"})
         wf = engine.create_workflow("det_test", [
             {"name": "step", "action": "fail_once", "max_retries": 2},
@@ -660,7 +660,7 @@ def test_schedule_accuracy():
 def test_output_schema_consistency():
     """All workflow outputs are JSON-serializable."""
     from core.workflow_runtime import WorkflowEngine
-    engine = WorkflowEngine(persist_path="/tmp/jarvis_schema.json")
+    engine = WorkflowEngine(persist_path="/tmp/bea_schema.json")
     wf = engine.create_workflow("schema_test", [
         {"name": "s1", "action": "noop"},
         {"name": "s2", "action": "noop"},

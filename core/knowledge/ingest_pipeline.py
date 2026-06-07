@@ -1,7 +1,7 @@
 """
 core/knowledge/ingest_pipeline.py — Knowledge ingestion for AI OS.
 
-Allows Jarvis to learn from:
+Allows Bea to learn from:
 - Documentation files (markdown, txt)
 - Code repositories (Python files)
 - API specs (OpenAPI/JSON)
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 from pathlib import Path
 
-log = structlog.get_logger("jarvis.knowledge_ingest")
+log = structlog.get_logger("bea.knowledge_ingest")
 
 KnowledgeSource = Literal["documentation", "code", "api_spec", "logs", "conversation"]
 

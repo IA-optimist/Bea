@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Canonical Entrypoint
+BEA MAX — Canonical Entrypoint
 Launches FastAPI backend on port 8000.
 
 Usage:
@@ -40,18 +40,18 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
-log = structlog.get_logger("jarvismax.main")
+log = structlog.get_logger("beamax.main")
 
 
 # ── FastAPI ───────────────────────────────────────────────────
 
 def create_api(settings) -> FastAPI:
-    """Returns the unified JarvisMax FastAPI app."""
+    """Returns the unified BeaMax FastAPI app."""
     s = settings
     from api.main import app
 
     @app.on_event("startup")
-    async def _jarvis_startup():
+    async def _bea_startup():
         try:
             s.ensure_dirs()
         except Exception as _dir_err:
@@ -91,7 +91,7 @@ def create_api(settings) -> FastAPI:
                 log.info("kernel_planner_registered", source="core.planner")
             except Exception as _pp:
                 log.debug("kernel_planner_register_skipped", err=str(_pp)[:80])
-            # Register MetaOrchestrator as execution backend in JarvisKernel (Phase 4).
+            # Register MetaOrchestrator as execution backend in BeaKernel (Phase 4).
             # kernel/ never imports MetaOrchestrator directly — it registers itself here.
             try:
                 from kernel.runtime.kernel import get_kernel, register_orchestrator
@@ -99,7 +99,7 @@ def create_api(settings) -> FastAPI:
                 _jk = get_kernel()
                 _meta_orch = get_meta_orchestrator()
                 register_orchestrator(_meta_orch.run_mission)
-                log.info("jarvis_kernel_ready",
+                log.info("bea_kernel_ready",
                          status=_jk.status().to_dict()["booted"],
                          orchestrator=True)
                 
@@ -112,7 +112,7 @@ def create_api(settings) -> FastAPI:
                     log.warning("business_handlers_register_failed", err=str(_biz_err)[:120])
             except Exception as _jke:
                 # BLOC F: orchestrator registration failure is critical — kernel cannot run missions.
-                log.warning("jarvis_kernel_orchestrator_register_failed", err=str(_jke)[:80])
+                log.warning("bea_kernel_orchestrator_register_failed", err=str(_jke)[:80])
             # Phase 5: Register core classifier with kernel (breaks circular dep).
             try:
                 from kernel.classifier.mission_classifier import register_core_classifier
@@ -279,8 +279,8 @@ def create_api(settings) -> FastAPI:
             log.warning("improvement_daemon_start_failed", err=str(_id_e)[:80])
 
         log.info("api_ready",
-                 name=getattr(s, "jarvis_name", "jarvis"),
-                 version=getattr(s, "jarvis_version", "2.0.0"))
+                 name=getattr(s, "bea_name", "bea"),
+                 version=getattr(s, "bea_version", "2.0.0"))
 
     @app.get("/kernel/status", tags=["system"])
     async def kernel_status():
@@ -311,8 +311,8 @@ def create_api(settings) -> FastAPI:
         from core.meta_orchestrator import get_meta_orchestrator
         orch = get_meta_orchestrator()
         session = await orch.run(user_input=mission, mode=mode)
-        # orch.run() returns MissionContext (mode="auto") or JarvisSession (other modes).
-        # MissionContext uses mission_id/result; JarvisSession uses session_id/final_report.
+        # orch.run() returns MissionContext (mode="auto") or BeaSession (other modes).
+        # MissionContext uses mission_id/result; BeaSession uses session_id/final_report.
         _sid    = getattr(session, "session_id", None) or getattr(session, "mission_id", "")
         _report = getattr(session, "final_report", None) or getattr(session, "result", "") or ""
         return {
@@ -336,7 +336,7 @@ async def main() -> None:
     # Fail early rather than silently booting into a broken state.
     s.enforce_llm_key()
 
-    # Hard-fail if JARVIS_PRODUCTION=true and secrets are insecure.
+    # Hard-fail if BEA_PRODUCTION=true and secrets are insecure.
     # This raises RuntimeError immediately — no partial boot allowed.
     s.enforce_production_secrets()
 
@@ -350,7 +350,7 @@ async def main() -> None:
         log.warning(
             "si_forced_off_in_production",
             reason=(
-                "SELF_IMPROVE_ENABLED overridden to false in JARVIS_PRODUCTION mode. "
+                "SELF_IMPROVE_ENABLED overridden to false in BEA_PRODUCTION mode. "
                 "Self-improvement must not run autonomously in production without explicit review."
             ),
         )
@@ -359,9 +359,9 @@ async def main() -> None:
         log.warning("security_config_warning", detail=warn)
 
     log.info(
-        "jarvismax_starting",
-        name=s.jarvis_name,
-        version=s.jarvis_version,
+        "beamax_starting",
+        name=s.bea_name,
+        version=s.bea_version,
         dry_run=s.dry_run,
         model_strategy=s.model_strategy,
         self_improve_active=s.self_improve_enabled and not s.production_mode,
@@ -411,7 +411,7 @@ async def main() -> None:
     )
     server = uvicorn.Server(config)
 
-    log.info("jarvismax_ready", api="http://0.0.0.0:8000")
+    log.info("beamax_ready", api="http://0.0.0.0:8000")
 
     await server.serve()
 

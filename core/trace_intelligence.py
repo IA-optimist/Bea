@@ -1,5 +1,5 @@
 """
-JARVIS MAX — Trace Intelligence
+BEA MAX — Trace Intelligence
 =================================
 Enhanced trace analysis for production-grade observability.
 

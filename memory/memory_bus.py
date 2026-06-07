@@ -1,6 +1,6 @@
 """
-JARVIS MAX — MemoryBus
-Interface unifiée pour les 4 systèmes de mémoire de Jarvis.
+BEA MAX — MemoryBus
+Interface unifiée pour les 4 systèmes de mémoire de Bea.
 
 Problème résolu :
     Les agents doivent actuellement importer et instancier séparément
@@ -54,13 +54,13 @@ BACKEND_VECTOR   = "vector"
 BACKEND_PATCHES  = "patches"
 BACKEND_FAILURE  = "failures"
 BACKEND_PGVECTOR = "pgvector"
-BACKEND_FTS      = "fts"  # opt-in (JARVIS_FTS_DB), hors BACKEND_ALL
+BACKEND_FTS      = "fts"  # opt-in (BEA_FTS_DB), hors BACKEND_ALL
 BACKEND_ALL      = (BACKEND_STORE, BACKEND_VECTOR)
 
 
 class MemoryBus:
     """
-    Bus d'accès unifié aux 4 systèmes de mémoire de Jarvis.
+    Bus d'accès unifié aux 4 systèmes de mémoire de Bea.
 
     Tous les sous-systèmes sont initialisés en lazy (à la première utilisation)
     pour éviter les imports inutiles si certains backends ne sont pas disponibles.
@@ -355,10 +355,10 @@ class MemoryBus:
 
     @property
     def fts(self):
-        """FTSRecall — rappel plein-texte SQLite, opt-in via env JARVIS_FTS_DB."""
+        """FTSRecall — rappel plein-texte SQLite, opt-in via env BEA_FTS_DB."""
         if self._fts is None:
             import os
-            db = os.getenv("JARVIS_FTS_DB")
+            db = os.getenv("BEA_FTS_DB")
             if not db:
                 return None
             try:

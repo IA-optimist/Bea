@@ -12,8 +12,8 @@ sys.path.insert(0, '/app')
 import httpx
 
 BASE = "http://localhost:8000"
-TOKEN = os.environ.get("JARVIS_API_TOKEN", "")
-SECRET = os.environ.get("JARVIS_SECRET_KEY", "")
+TOKEN = os.environ.get("BEA_API_TOKEN", "")
+SECRET = os.environ.get("BEA_SECRET_KEY", "")
 
 results = []
 def test(section, name, passed, detail=""):

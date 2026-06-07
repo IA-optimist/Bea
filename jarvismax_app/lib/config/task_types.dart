@@ -1,4 +1,4 @@
-/// JarvisMax — Canonical Task Type Definitions
+/// BeaMax — Canonical Task Type Definitions
 /// Single source of truth for mission task types across all screens.
 ///
 /// Each entry maps a backend skill key to its French label, icon codepoint,
