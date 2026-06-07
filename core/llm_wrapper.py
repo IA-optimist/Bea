@@ -95,9 +95,14 @@ def patch_llm_factory(LLMFactory: Optional[type] = None) -> bool:
     # (self, messages, role, **kw) and breaks the contract-introspection
     # regression tests (audit S6.F, 2026-05-19).
     @_functools.wraps(original)
-    async def safe_invoke_with_capture(self, messages, role="fast", **kw):
+    async def safe_invoke_with_capture(self, messages, role="fast", *args, **kw):
+        # Transparent passthrough: the real safe_invoke accepts several extra
+        # positional params (timeout, session_id, agent_name, task_description,
+        # budget, latency). Capturing only (messages, role, **kw) made every
+        # positional caller crash with "takes 2 to 3 positional arguments but N
+        # were given". Forward *args verbatim so the wrapper is signature-neutral.
         t0 = time.monotonic()
-        resp = await original(self, messages, role=role, **kw)
+        resp = await original(self, messages, role, *args, **kw)
         try:
             from core.training_collector import _is_enabled, record_llm_interaction
 
