@@ -232,15 +232,11 @@ class CanonicalMissionStore:
                 context_json,
             )
             if self._pg_dsn:
-                import datetime as _dt
-                # PG expects timestamptz, not float — convert unix timestamps
-                vals_list = list(values)
-                # created_at = index 7, updated_at = index 8
-                for idx in (7, 8):
-                    v = vals_list[idx]
-                    if isinstance(v, (int, float)):
-                        vals_list[idx] = _dt.datetime.fromtimestamp(v, tz=_dt.timezone.utc)
-                values = tuple(vals_list)
+                # created_at/updated_at columns are REAL (unix epoch) in both the
+                # SQLite and PG schemas — insert the float verbatim. A previous
+                # version converted these to datetime, which failed with
+                # "column created_at is of type real but expression is of type
+                # timestamp with time zone".
                 self._save_pg(values)
             elif self._db_path:
                 with self._connect() as conn:
