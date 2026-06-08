@@ -7,6 +7,9 @@ import { Opportunities } from './pages/Opportunities';
 import { Products } from './pages/Products';
 import { Revenue } from './pages/Revenue';
 import { Settings } from './pages/Settings';
+import { McpSkills } from './pages/McpSkills';
+import { ImprovementLoop } from './pages/ImprovementLoop';
+import { MemoryMonitor } from './pages/MemoryMonitor';
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
         <Route path="/products" element={<Layout><Products /></Layout>} />
         <Route path="/revenue" element={<Layout><Revenue /></Layout>} />
         <Route path="/settings" element={<Layout><Settings /></Layout>} />
+        <Route path="/mcp-skills" element={<Layout><McpSkills /></Layout>} />
+        <Route path="/improvement" element={<Layout><ImprovementLoop /></Layout>} />
+        <Route path="/memory" element={<Layout><MemoryMonitor /></Layout>} />
       </Routes>
     </Router>
   );

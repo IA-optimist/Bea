@@ -7,6 +7,9 @@ import {
   DollarSign,
   Settings,
   Brain,
+  Cpu,
+  Sparkles,
+  Database,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Logo } from './Logo';
@@ -22,6 +25,9 @@ const navigation = [
   { name: 'Opportunities', href: '/opportunities', icon: TrendingUp },
   { name: 'Products', href: '/products', icon: Package },
   { name: 'Revenue', href: '/revenue', icon: DollarSign },
+  { name: 'MCP & Skills', href: '/mcp-skills', icon: Cpu },
+  { name: 'Auto-Improve', href: '/improvement', icon: Sparkles },
+  { name: 'Memory', href: '/memory', icon: Database },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

@@ -253,6 +253,68 @@ class ApiClient {
   // posts directly to /api/v2/chat. Re-add via git history if a future
   // page needs the v3/missions wrapper.
 
+  // MCP endpoints
+  async getMcpServers(): Promise<any[]> {
+    const { data } = await this.client.get<any>('/api/v3/mcp/servers');
+    return data.servers ?? data ?? [];
+  }
+
+  async getMcpStats(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v3/mcp/stats');
+    return data;
+  }
+
+  async enableMcpServer(id: string): Promise<void> {
+    await this.client.post(`/api/v3/mcp/servers/${id}/enable`);
+  }
+
+  async disableMcpServer(id: string): Promise<void> {
+    await this.client.post(`/api/v3/mcp/servers/${id}/disable`);
+  }
+
+  // Skills endpoints
+  async getLearnedSkills(): Promise<any[]> {
+    const { data } = await this.client.get<any>('/api/v2/skills');
+    return data.data ?? data.skills ?? data ?? [];
+  }
+
+  // Self-improvement endpoints
+  async getImprovementStatus(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v2/self-improvement/status');
+    return data;
+  }
+
+  async getImprovementProposals(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v2/self-improvement/proposals');
+    return data.data ?? data;
+  }
+
+  async getImprovementFailures(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v2/self-improvement/failures');
+    return data.data ?? data;
+  }
+
+  async getImprovementReport(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v2/self-improve/report');
+    return data;
+  }
+
+  async triggerImprovementRun(): Promise<any> {
+    const { data } = await this.client.post<any>('/api/v2/self-improve/run', {});
+    return data;
+  }
+
+  // Memory / RAG endpoints
+  async getMemoryStats(): Promise<any> {
+    const { data } = await this.client.get<any>('/api/v2/rag/status');
+    return data;
+  }
+
+  async queryMemory(query: string, top_k = 5): Promise<any> {
+    const { data } = await this.client.post<any>('/api/v2/rag/query', { query, top_k });
+    return data.data ?? data;
+  }
+
   // Generic request method for chat API
   async post<T = any>(url: string, data: any): Promise<{ data: T }> {
     return await this.client.post<T>(url, data);
