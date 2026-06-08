@@ -15,7 +15,6 @@ log = structlog.get_logger(__name__)
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 from fastapi import Request
 from starlette.responses import JSONResponse
 
@@ -82,15 +81,22 @@ limiter = Limiter(
 )
 
 
-def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+def custom_rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     User-friendly rate limit error response.
+    Handles both RateLimitExceeded and unexpected exception types gracefully.
     """
+    detail_str = getattr(exc, "detail", "") or str(exc)
+    retry_after = (
+        detail_str.split("Retry after ")[1]
+        if isinstance(detail_str, str) and "Retry after" in detail_str
+        else "60 seconds"
+    )
     return JSONResponse(
         status_code=429,
         content={
             "detail": "Too many requests. Please slow down and try again in a minute.",
-            "retry_after": exc.detail.split("Retry after ")[1] if "Retry after" in exc.detail else "60 seconds",
+            "retry_after": retry_after,
             "support": "If you need higher limits, please contact support or upgrade your plan.",
         },
     )
