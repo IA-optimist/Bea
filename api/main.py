@@ -496,6 +496,11 @@ try:
     app.include_router(opportunities_router)
 except Exception as _e:
     log.warning("opportunities_router_unavailable", err=str(_e))
+try:
+    from api.routes.products import router as products_router
+    app.include_router(products_router)
+except Exception as _e:
+    log.warning("products_router_unavailable", err=str(_e))
 
 
 try:

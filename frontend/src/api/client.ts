@@ -165,42 +165,67 @@ class ApiClient {
   }
 
   // Products endpoints
+  private normalizeProduct(item: any): Product {
+    return {
+      id: String(item.id),
+      name: item.name || '',
+      description: item.description || '',
+      category: item.category || 'saas',
+      status: item.status || 'active',
+      version: item.version || '1.0.0',
+      price: item.price ?? 0,
+      deployment_url: item.deployment_url,
+      created_at: item.created_at || '',
+      updated_at: item.updated_at || '',
+    };
+  }
+
   async getProducts(params?: {
     page?: number;
     per_page?: number;
     category?: string;
     status?: string;
   }): Promise<PaginatedResponse<Product>> {
-    const { data } = await this.client.get<ApiResponse<PaginatedResponse<Product>>>('/products', {
-      params,
-    });
-    return data.data;
+    const { per_page, ...rest } = params || {};
+    const apiParams: any = { ...rest };
+    if (per_page !== undefined) apiParams.page_size = per_page;
+
+    const { data } = await this.client.get<any>('/api/v3/business/products', { params: apiParams });
+    const raw = data.data || {};
+    return {
+      items: (raw.items || []).map((item: any) => this.normalizeProduct(item)),
+      total: raw.total || 0,
+      page: raw.page || 1,
+      per_page: raw.page_size || per_page || 20,
+      total_pages: raw.pages || 1,
+    };
   }
 
   async getProduct(id: string): Promise<Product> {
-    const { data } = await this.client.get<ApiResponse<Product>>(`/products/${id}`);
-    return data.data;
+    const { data } = await this.client.get<any>(`/api/v3/business/products/${id}`);
+    return this.normalizeProduct(data.data || data);
   }
 
   async deployProduct(id: string): Promise<{ job_id: string; message: string }> {
-    const { data } = await this.client.post<ApiResponse<{ job_id: string; message: string }>>(
-      `/products/${id}/deploy`
-    );
-    return data.data;
+    const { data } = await this.client.post<any>(`/api/v3/business/products/${id}/deploy`);
+    return {
+      job_id: data.data?.job_id || `deploy-${id}`,
+      message: data.message || 'Deployment started',
+    };
   }
 
   async createProduct(product: Partial<Product>): Promise<Product> {
-    const { data } = await this.client.post<ApiResponse<Product>>('/products', product);
-    return data.data;
+    const { data } = await this.client.post<any>('/api/v3/business/products', product);
+    return this.normalizeProduct(data.data || data);
   }
 
   async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-    const { data } = await this.client.patch<ApiResponse<Product>>(`/products/${id}`, product);
-    return data.data;
+    const { data } = await this.client.patch<any>(`/api/v3/business/products/${id}`, product);
+    return this.normalizeProduct(data.data || data);
   }
 
   async deleteProduct(id: string): Promise<void> {
-    await this.client.delete(`/products/${id}`);
+    await this.client.delete(`/api/v3/business/products/${id}`);
   }
 
   // Settings endpoints
