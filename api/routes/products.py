@@ -5,7 +5,7 @@ REST endpoints for product catalogue management
 from __future__ import annotations
 
 import time
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
