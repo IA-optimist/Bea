@@ -53,6 +53,8 @@ _PUBLIC_PATHS = {
     "/app.html",
     "/auth/login",
     "/auth/token",
+    "/api/v2/auth/login",
+    "/api/v2/auth/logout",
     "/docs",
     "/openapi.json",
     "/redoc",

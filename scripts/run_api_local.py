@@ -21,13 +21,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 # .env -> os.environ (sans écraser ce qui est déjà défini)
+# Exception : OLLAMA_HOST est toujours forcé depuis .env — sinon la valeur
+# héritée du parent (http://ollama:11434, hostname Docker) prime et casse
+# l'accès à Ollama natif Windows.
+_FORCE_OVERWRITE = {"OLLAMA_HOST", "DATABASE_URL"}
 env = ROOT / ".env"
 if env.exists():
     for line in env.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, _, v = line.partition("=")
-            os.environ.setdefault(k.strip(), v.strip())
+            k = k.strip(); v = v.strip()
+            if k in _FORCE_OVERWRITE:
+                os.environ[k] = v
+            else:
+                os.environ.setdefault(k, v)
 
 os.environ.setdefault("BEA_API_TOKEN", "localdev")
 os.environ.setdefault("BEA_REQUIRE_AUTH", "true")

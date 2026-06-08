@@ -10,7 +10,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://bea.beamaxapp.co.uk/api/v2';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -93,6 +93,37 @@ class ApiClient {
   }
 
   // Opportunities endpoints
+  private normalizeOpportunity(item: any): Opportunity {
+    const scores = item.scores || {};
+    const statusObj = item.status || {};
+
+    let status: 'new' | 'in_progress' | 'completed' | 'rejected' = 'new';
+    if (typeof statusObj === 'string') {
+      status = statusObj as any;
+    } else if (statusObj.deployed) {
+      status = 'completed';
+    } else if (statusObj.mvp_generated || statusObj.analyzed) {
+      status = 'in_progress';
+    }
+
+    const src = item.source || '';
+    const type = src.includes('hackernews') ? 'product' : 'market';
+
+    return {
+      id: String(item.id),
+      title: item.title || '',
+      description: item.description || '',
+      type,
+      value: 0,
+      confidence: (scores.total || 0) / 100,
+      status,
+      created_at: item.created_at || '',
+      updated_at: item.updated_at || '',
+      source: item.source,
+      tags: item.tags || [],
+    };
+  }
+
   async getOpportunities(params?: {
     page?: number;
     per_page?: number;
@@ -100,29 +131,37 @@ class ApiClient {
     type?: string;
     search?: string;
   }): Promise<PaginatedResponse<Opportunity>> {
-    const { data } = await this.client.get<ApiResponse<PaginatedResponse<Opportunity>>>('/opportunities', {
-      params,
-    });
-    return data.data;
+    const { per_page, ...rest } = params || {};
+    const apiParams: any = { ...rest };
+    if (per_page !== undefined) apiParams.page_size = per_page;
+
+    const { data } = await this.client.get<any>('/api/v3/business/opportunities', { params: apiParams });
+    const raw = data.data || {};
+    return {
+      items: (raw.items || []).map((item: any) => this.normalizeOpportunity(item)),
+      total: raw.total || 0,
+      page: raw.page || 1,
+      per_page: raw.page_size || per_page || 10,
+      total_pages: raw.pages || 1,
+    };
   }
 
   async getOpportunity(id: string): Promise<Opportunity> {
-    const { data } = await this.client.get<ApiResponse<Opportunity>>(`/opportunities/${id}`);
-    return data.data;
+    const { data } = await this.client.get<any>(`/api/v3/business/opportunities/${id}`);
+    return this.normalizeOpportunity(data.data || data);
   }
 
   async scanOpportunities(): Promise<{ job_id: string; message: string }> {
-    const { data } = await this.client.post<ApiResponse<{ job_id: string; message: string }>>(
-      '/opportunities/scan'
-    );
-    return data.data;
+    const { data } = await this.client.post<any>('/api/v3/business/opportunities/scan', {});
+    return {
+      job_id: data.data?.job_id || 'background',
+      message: data.message || data.data?.message || 'Scan started',
+    };
   }
 
   async updateOpportunityStatus(id: string, status: string): Promise<Opportunity> {
-    const { data } = await this.client.patch<ApiResponse<Opportunity>>(`/opportunities/${id}`, {
-      status,
-    });
-    return data.data;
+    const { data } = await this.client.patch<any>(`/api/v3/business/opportunities/${id}`, { status });
+    return this.normalizeOpportunity(data.data || data);
   }
 
   // Products endpoints

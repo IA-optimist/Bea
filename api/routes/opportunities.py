@@ -170,19 +170,13 @@ async def trigger_scan(
     """
     try:
         def _run_scan():
+            import asyncio
             scanner = OpportunityScanner()
-            opportunities = []
-            
-            for source in request.sources:
-                try:
-                    if source == "product_hunt":
-                        opportunities.extend(scanner.scan_product_hunt())
-                    elif source == "reddit":
-                        opportunities.extend(scanner.scan_reddit())
-                    elif source == "hackernews":
-                        opportunities.extend(scanner.scan_hackernews())
-                except Exception as e:
-                    logger.error(f"scan_source_failed source={source}: {e}")
+            try:
+                opportunities = asyncio.run(scanner.scan_all())
+            except Exception as e:
+                logger.error(f"scan_all_failed: {e}", exc_info=True)
+                opportunities = []
             
             # Filter by score
             high_value = [opp for opp in opportunities if opp.total_score >= request.min_score]

@@ -120,6 +120,7 @@ _allowed_origins = (
     else [
         "http://localhost:8000",       # local dev
         "http://localhost:3000",       # local frontend
+        "http://localhost:3001",       # beamax-frontend docker
         "http://10.0.2.2:8000",       # Android emulator
         "http://127.0.0.1:8000",      # loopback
     ]
@@ -157,6 +158,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Bea-Token", "X-Request-ID"],
     expose_headers=["X-Request-ID"],
