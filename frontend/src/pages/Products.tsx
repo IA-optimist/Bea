@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Rocket, Search, Filter, ExternalLink } from 'lucide-react';
+import { Package, Rocket, Search, Filter, ExternalLink, Plus, X } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
@@ -18,6 +18,9 @@ export const Products = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({ name: '', description: '', category: 'saas', version: '1.0.0', price: '0', deployment_url: '' });
 
   useEffect(() => {
     loadProducts();
@@ -69,6 +72,32 @@ export const Products = () => {
     }
   };
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setCreating(true);
+      await apiClient.createProduct({
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        version: form.version,
+        price: parseFloat(form.price) || 0,
+        deployment_url: form.deployment_url || undefined,
+        status: 'active',
+      });
+      setShowCreate(false);
+      setForm({ name: '', description: '', category: 'saas', version: '1.0.0', price: '0', deployment_url: '' });
+      setMessage({ type: 'success', text: 'Product created successfully' });
+      setTimeout(() => setMessage(null), 4000);
+      loadProducts();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to create product' });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'deployed':
@@ -99,7 +128,75 @@ export const Products = () => {
             Manage and deploy your AI-powered products
           </p>
         </div>
+        <Button onClick={() => setShowCreate(true)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          New Product
+        </Button>
       </div>
+
+      {/* Create modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreate(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Product</h2>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
+                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="My Product" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                  placeholder="What does it do?" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="saas">SaaS</option>
+                    <option value="api">API</option>
+                    <option value="ai">AI & ML</option>
+                    <option value="automation">Automation</option>
+                    <option value="analytics">Analytics</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Version</label>
+                  <input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="1.0.0" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price ($/mo)</label>
+                  <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deploy URL</label>
+                  <input value={form.deployment_url} onChange={(e) => setForm({ ...form, deployment_url: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="https://..." />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="ghost" className="flex-1" onClick={() => setShowCreate(false)}>Cancel</Button>
+                <Button type="submit" loading={creating} className="flex-1">Create</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div role="status" className={`p-3 rounded border ${message.type === 'success' ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-200' : 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200'}`}>
