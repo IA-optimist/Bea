@@ -216,11 +216,11 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
     ],
 
     TaskMode.BUSINESS: [
-        {"agent": "venture-builder",    "task": "Analyse d'opportunités business",         "priority": 1},
-        {"agent": "offer-designer",     "task": "Design d'offre commerciale",              "priority": 2},
-        {"agent": "workflow-architect", "task": "Architecture de workflows",               "priority": 3},
-        {"agent": "saas-builder",       "task": "Blueprint MVP SaaS",                      "priority": 4},
-        {"agent": "trade-ops",          "task": "Agent IA métier spécialisé",              "priority": 2},
+        {"agent": "venture-builder",    "task": "Analyse d'opportunités business",         "priority": 1, "timeout": 90},
+        {"agent": "offer-designer",     "task": "Design d'offre commerciale",              "priority": 2, "timeout": 90},
+        {"agent": "workflow-architect", "task": "Architecture de workflows",               "priority": 3, "timeout": 90},
+        {"agent": "saas-builder",       "task": "Blueprint MVP SaaS",                      "priority": 4, "timeout": 90},
+        {"agent": "trade-ops",          "task": "Agent IA métier spécialisé",              "priority": 2, "timeout": 90},
     ],
 }
 

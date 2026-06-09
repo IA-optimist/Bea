@@ -205,6 +205,10 @@ ROLE_PROVIDERS: dict[str, str] = {
 # "uncensored" : LOCAL_ONLY absolu — si Ollama est indisponible, RuntimeError levée.
 LOCAL_ONLY_ROLES: frozenset[str] = frozenset({"code", "vision", "uncensored", "memory"})
 
+# Rôles qui doivent toujours utiliser leur propre provider (pas d'override kernel).
+# "analyst" : business layer — attend JSON strict via OpenRouter, pas Codex.
+_OVERRIDE_EXEMPT_ROLES: frozenset[str] = frozenset({"analyst"})
+
 # Rôles qui acceptent le fallback ollama si aucun cloud n'est dispo.
 # Ces rôles préfèrent un LLM cloud mais fonctionnent 100% en local si
 # aucune clé API n'est configurée (mode offline-safe garanti).
@@ -236,7 +240,7 @@ class LLMFactory:
         Reads _provider_override ContextVar set by Phase 0c routing.
         """
         _override = _provider_override.get()
-        if _override and role not in LOCAL_ONLY_ROLES:
+        if _override and role not in LOCAL_ONLY_ROLES and role not in _OVERRIDE_EXEMPT_ROLES:
             preferred = _override
             log.debug("llm_provider_override_applied", role=role, provider=_override)
         else:
