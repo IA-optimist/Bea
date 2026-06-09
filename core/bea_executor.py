@@ -466,7 +466,10 @@ class BeaOrchestrator:
         complexity   = self._compute_mission_complexity(session.user_input)
         use_director = (
             complexity > 0.80  # 0.60->0.80: evite atlas sur research/analyse simples
-            and decision.mode not in (TaskMode.CHAT, TaskMode.RESEARCH, TaskMode.PLAN)
+            and decision.mode not in (TaskMode.CHAT, TaskMode.RESEARCH, TaskMode.PLAN,
+                                      TaskMode.BUSINESS)
+            # BUSINESS: plan statique requis (agents spécialisés + timeouts 90s/180s
+            # que AtlasDirector ne connaît pas et ne reproduit pas)
         )
 
         # 3a. Hierarchical decomposition (strategic layer) — fires before AtlasDirector
