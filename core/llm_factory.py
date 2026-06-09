@@ -725,13 +725,15 @@ class LLMFactory:
                 if os.getenv("BEA_LLM_TRACE", "1") not in ("0", "false", "no", ""):
                     try:
                         from core.observability import get_tracer
+                        from core.observability.pricing import estimate_cost
                         _um = getattr(resp, "usage_metadata", None) or {}
                         _tu = (getattr(resp, "response_metadata", {}) or {}).get("token_usage", {}) or {}
+                        _pt = int(_um.get("input_tokens", 0) or _tu.get("prompt_tokens", 0) or 0)
+                        _ct = int(_um.get("output_tokens", 0) or _tu.get("completion_tokens", 0) or 0)
                         get_tracer().record(
                             model=str(model_name), latency_ms=ms, ok=True, mission_id=session_id,
-                            prompt_tokens=int(_um.get("input_tokens", 0) or _tu.get("prompt_tokens", 0) or 0),
-                            completion_tokens=int(
-                                _um.get("output_tokens", 0) or _tu.get("completion_tokens", 0) or 0))
+                            prompt_tokens=_pt, completion_tokens=_ct,
+                            cost_usd=estimate_cost(str(model_name), _pt, _ct))
                     except Exception:  # noqa: BLE001
                         pass
                 return resp

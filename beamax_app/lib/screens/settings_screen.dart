@@ -11,6 +11,7 @@ import 'health_screen.dart';
 import 'capabilities_screen.dart';
 import 'aios_dashboard_screen.dart';
 import 'admin_panel_screen.dart';
+import 'monitoring_screen.dart';
 
 /// Settings — configuration + advanced access point.
 /// Normal: server, account, logout.
@@ -166,6 +167,13 @@ class SettingsScreen extends StatelessWidget {
                   label: 'Santé système',
                   subtitle: 'Métriques, disponibilité, ressources',
                   onTap: () => _push(context, const HealthScreen()),
+                ),
+                const Divider(height: 1, indent: 52),
+                _NavItem(
+                  icon: Icons.insights_rounded,
+                  label: 'Monitoring LLM',
+                  subtitle: 'Coût, erreurs, latence, par modèle',
+                  onTap: () => _push(context, const MonitoringScreen()),
                 ),
               ])),
             )),

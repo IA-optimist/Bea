@@ -678,6 +678,95 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
     );
   }
 
+  // ── Contrôle de mission (abort / pause / resume) ─────────────────────────
+
+  Future<void> _runControl(
+    Future<ApiResult<void>> Function(ApiService) op,
+    String okMsg,
+  ) async {
+    final api = context.read<ApiService>();
+    final result = await op(api);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.ok ? okMsg : 'Échec de l\'action'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    _fetchDetail();
+  }
+
+  Future<void> _confirmAbort() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Arrêter la mission ?'),
+        content: const Text('Cette action interrompt la mission en cours.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Arrêter'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _runControl((api) => api.abortMission(_mission.id), 'Mission arrêtée');
+    }
+  }
+
+  Widget _buildControlBar() {
+    if (_mission.isTerminal) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.pause, size: 16),
+              label: const Text('Pause'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: JDS.amber,
+                side: const BorderSide(color: JDS.amber),
+              ),
+              onPressed: () =>
+                  _runControl((api) => api.pauseMission(_mission.id), 'Mission en pause'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.play_arrow, size: 16),
+              label: const Text('Reprendre'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: JDS.green,
+                side: const BorderSide(color: JDS.green),
+              ),
+              onPressed: () =>
+                  _runControl((api) => api.resumeMission(_mission.id), 'Mission reprise'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.stop, size: 16),
+              label: const Text('Abort'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: JDS.red,
+                side: const BorderSide(color: JDS.red),
+              ),
+              onPressed: _confirmAbort,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ────────────────────────────────────────────────────────────────
 
   @override
@@ -767,6 +856,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
                 // ── Phase 6: Stats row ──────────────────────────────────
                 _buildStatsRow(),
+
+                // ── Contrôle de mission (pause / reprendre / abort) ─────
+                _buildControlBar(),
 
                 // ── Phase 4: Error section ──────────────────────────────
                 _buildErrorSection(),

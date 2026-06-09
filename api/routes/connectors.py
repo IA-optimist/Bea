@@ -39,6 +39,15 @@ def _get_registry():
         reg.register(FilesystemConnector())
     if not reg.get("http"):
         reg.register(HttpConnector())
+    # Connecteurs intégrés additionnels (Slack/Telegram/Discord/Notion/email).
+    # fail-open : register_builtin_connectors gère déjà ses erreurs par connecteur.
+    if not reg.get("slack"):
+        try:
+            from connectors.bootstrap import register_builtin_connectors
+            register_builtin_connectors(reg)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).debug("builtin_connectors_register_failed", exc_info=True)
     return reg
 
 
