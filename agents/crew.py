@@ -826,15 +826,21 @@ class PulseOps(BaseAgent):
 
     async def run(self, session: BeaSession) -> str:
         out = await super().run(session)
+        # Preserve forge-builder's direct actions — extend, don't overwrite.
+        forge_actions = list(getattr(session, "_raw_actions", None) or [])
         try:
             raw = out.strip()
             if raw.startswith("```"):
                 raw = raw.split("```")[1].lstrip("json").strip()
             data = json.loads(raw)
-            session._raw_actions = data.get("actions", [])
+            pulse_actions = data.get("actions", [])
+            # Deduplicate by target path: forge-builder actions take priority
+            forge_targets = {a.get("target") for a in forge_actions}
+            new_actions = [a for a in pulse_actions if a.get("target") not in forge_targets]
+            session._raw_actions = forge_actions + new_actions
         except Exception as e:
             log.error("pulse_ops_parse_failed", err=str(e))
-            session._raw_actions = []
+            session._raw_actions = forge_actions  # keep forge-builder's actions on parse failure
         return out
 
 
