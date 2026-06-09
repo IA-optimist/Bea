@@ -548,7 +548,11 @@ class BeaOrchestrator:
                 _shape = _routing_match.group(1)
                 _complexity = _routing_match.group(2)
 
-            if _shape and session.agents_plan:
+            # BUSINESS mode : le plan est figé (analystes spécialisés + forge-builder).
+            # Le smart_agent_selection ne connaît pas les agents business et les
+            # élimine systématiquement. On le bypass pour BUSINESS.
+            _is_business = (getattr(getattr(session, "task_mode", None), "value", "") == "business")
+            if _shape and session.agents_plan and not _is_business:
                 # Agent relevance map based on output shape
                 _SHAPE_AGENTS = {
                     "direct_answer": {"scout-research"},
