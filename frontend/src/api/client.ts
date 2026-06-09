@@ -172,7 +172,13 @@ class ApiClient {
     return data;
   }
 
+  async approveAnalysis(id: string): Promise<any> {
+    const { data } = await this.client.post<any>(`/api/v3/business/opportunities/${id}/analysis/approve`);
+    return data;
+  }
+
   async generateMvp(id: string): Promise<any> {
+    await this.approveAnalysis(id).catch(() => {});
     const { data } = await this.client.post<any>(`/api/v3/business/opportunities/${id}/generate-mvp`);
     return data;
   }

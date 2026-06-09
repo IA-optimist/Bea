@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
@@ -510,12 +510,35 @@ async def delete_analysis(
 # P3.3 — MVP GENERATION
 # ═══════════════════════════════════════════════════════════════════
 
+@router.post("/{opportunity_id}/analysis/approve")
+async def approve_analysis(
+    opportunity_id: int,
+    db: Session = Depends(get_db),
+    x_bea_token: str | None = Header(None),
+    authorization: str | None = Header(None),
+) -> Dict[str, Any]:
+    """Approve the feasibility analysis so MVP generation can proceed."""
+    from api._deps import _check_auth
+    _check_auth(x_bea_token, authorization)
+    from models.opportunity_analysis import OpportunityAnalysis
+    analysis = db.query(OpportunityAnalysis).filter(
+        OpportunityAnalysis.opportunity_id == opportunity_id
+    ).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail=f"No analysis found for opportunity {opportunity_id}")
+    analysis.approved = True
+    db.commit()
+    return _response(message=f"Analysis approved for opportunity {opportunity_id}")
+
+
 @router.post("/{opportunity_id}/generate-mvp")
 async def generate_mvp(
     opportunity_id: int,
     background_tasks: BackgroundTasks,
     project_id: int = 1,
     db: Session = Depends(get_db),
+    x_bea_token: str | None = Header(None),
+    authorization: str | None = Header(None),
 ) -> Dict[str, Any]:
     """
     Generate MVP codebase from feasibility analysis (P3.3).
@@ -542,14 +565,16 @@ async def generate_mvp(
         - 404: Opportunity not found
         - 400: Analysis not found or not approved
     """
+    from api._deps import _check_auth
+    _check_auth(x_bea_token, authorization)
     from core.business.mvp_generator import MVPGenerator
     from models.opportunity_analysis import OpportunityAnalysis
-    
+
     # Validate opportunity
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # Validate analysis exists and is approved
     analysis = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
@@ -589,8 +614,9 @@ async def generate_mvp(
             result = generator.generate(opportunity, analysis)
             
             if result["success"]:
-                # Update opportunity
-                opportunity.mvp_generated = True
+                fresh_opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+                if fresh_opp:
+                    fresh_opp.mvp_generated = True
                 db.commit()
                 
                 logger.info(
@@ -817,7 +843,9 @@ async def deploy_mvp(
             )
             
             db.add(deployment)
-            opportunity.deployed = True
+            fresh_opp2 = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+            if fresh_opp2:
+                fresh_opp2.deployed = True
             db.commit()
             
             logger.info(
