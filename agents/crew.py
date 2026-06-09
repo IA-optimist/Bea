@@ -803,6 +803,9 @@ class PulseOps(BaseAgent):
         return (
             "Tu es PulseOps, agent de préparation d'actions de BeaMax.\n\n"
             "À partir des résultats des agents, liste les actions concrètes.\n\n"
+            "PRIORITÉ : Si forge-builder a produit des sections '### Fichier: chemin' dans sa sortie, "
+            "extrait CHAQUE bloc et crée une action create_file pour chacun. "
+            "Sinon, déduis les actions appropriées depuis le contexte.\n\n"
             "Types disponibles :\n"
             "create_file | write_file | replace_in_file | run_command | backup_file\n\n"
             "Réponds UNIQUEMENT en JSON :\n"

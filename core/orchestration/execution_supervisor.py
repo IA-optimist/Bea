@@ -62,7 +62,7 @@ _RETRY_BACKOFF_BASE = 1.5  # seconds
 # 180s × 3 = 540s < 600s, so the retry budget is reachable before the outer deadline.
 # (The old 300s × 3 = 900s exceeded the outer deadline — retries past attempt 0 were
 # unreachable because the outer wait_for fired first.)
-_ATTEMPT_TIMEOUT_S = 180  # 3 minutes per attempt — allows ≥2 retries within 600s outer
+_ATTEMPT_TIMEOUT_S = 300  # 5 minutes per attempt — business missions: ~60s analysts + 180s forge-builder + buffer
 
 # Approval queue submission timeout — prevents hangs on slow approval backends.
 _APPROVAL_SUBMIT_TIMEOUT_S = 10  # 10 seconds to submit

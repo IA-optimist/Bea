@@ -1483,7 +1483,13 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # PHASE 4: AGI COGNITION WRAPPER
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        _mission_timeout = getattr(self.s, "mission_timeout_s", 120)
+        _base_timeout = getattr(self.s, "mission_timeout_s", 120)
+        # Multi-agent modes need a longer window: analyst waves (~60s) + forge-builder Codex (~120s).
+        # The 120s default kills forge-builder before it can complete.
+        _LONG_MODE_TIMEOUT = 400
+        _mission_timeout = _LONG_MODE_TIMEOUT if mode in (
+            "business", "code", "auto", "plan", "research", "night", "improve"
+        ) else _base_timeout
         
         _use_cognition = (
             not _is_chat_mode

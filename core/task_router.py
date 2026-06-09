@@ -222,10 +222,13 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
         {"agent": "saas-builder",       "task": "Blueprint MVP SaaS",                      "priority": 4, "timeout": 90},
         {"agent": "trade-ops",          "task": "Agent IA métier spécialisé",              "priority": 2, "timeout": 90},
         # Étape d'implémentation : forge-builder concrétise le travail des analystes
-        # (écriture des fichiers demandés : landing pages, cold emails, code, etc.)
-        # timeout=180 : Codex gpt-5.5 peut prendre jusqu'à 180s pour du long-form.
-        {"agent": "forge-builder",      "task": "Implémentation des livrables business",  "priority": 5, "timeout": 180},
-        {"agent": "pulse-ops",          "task": "Exécution des actions business",          "priority": 6, "timeout": 60},
+        # IMPORTANT : produit le contenu final (HTML, Markdown, JSON, scripts) directement,
+        # PAS du Python intermédiaire. Format obligatoire pour chaque fichier :
+        #   ### Fichier: workspace/chemin/vers/fichier.ext
+        #   (contenu complet du fichier)
+        # Puis PulseOps lit ces blocs et crée les actions create_file.
+        {"agent": "forge-builder",      "task": "Génère les livrables finaux (HTML, Markdown, scripts) basés sur les analyses. Pour CHAQUE fichier à créer, utilise le format exact : '### Fichier: workspace/path/fichier.ext' suivi du contenu complet.", "priority": 5, "timeout": 180},
+        {"agent": "pulse-ops",          "task": "Parse la sortie de forge-builder pour extraire les fichiers (format '### Fichier: path') et crée les actions create_file correspondantes.",          "priority": 6, "timeout": 60},
     ],
 }
 
