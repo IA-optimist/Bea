@@ -107,7 +107,9 @@ class GitHubAutomation:
             
             # 2. Initialize git (clean slate — remove any previous .git)
             logger.debug("initializing_git_repo")
-            import shutil as _shutil, stat as _stat, os as _os
+            import shutil as _shutil
+            import stat as _stat
+            import os as _os
             git_dir = mvp_path / ".git"
             if git_dir.exists():
                 def _force_rm(func, path, exc):
