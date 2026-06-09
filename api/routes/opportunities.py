@@ -795,14 +795,11 @@ async def deploy_mvp(
         start_time = time.time()
         
         try:
-            # Get MVP directory (from mvp_generator output)
+            # Get MVP directory — must match the path used by MVPGenerator
             from core.business.mvp_generator import MVPGenerator
             generator = MVPGenerator()
             project_slug = generator._slugify(opportunity.title)
-            # Create secure temp directory
-            base_dir = Path(tempfile.gettempdir()) / "beamax_mvp"
-            base_dir.mkdir(parents=True, exist_ok=True)
-            mvp_dir = str(base_dir / project_slug)
+            mvp_dir = str(generator.workspace_dir / project_slug)
             
             # GitHub automation
             logger.info(f"deploying_to_github opportunity_id={opportunity_id}")

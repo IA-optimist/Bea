@@ -92,32 +92,45 @@ class GitHubAutomation:
             )
             
             if result.returncode != 0:
-                logger.error(f"github_repo_creation_failed: {result.stderr}")
-                return {
-                    "success": False,
-                    "message": f"GitHub repo creation failed: {result.stderr}",
-                    "error": "gh_create_failed",
-                    "stderr": result.stderr,
-                }
-            
+                if "already exists" in result.stderr.lower() or "Name already exists" in result.stderr:
+                    logger.info(f"github_repo_already_exists repo={repo_name} — continuing")
+                else:
+                    logger.error(f"github_repo_creation_failed: {result.stderr}")
+                    return {
+                        "success": False,
+                        "message": f"GitHub repo creation failed: {result.stderr}",
+                        "error": "gh_create_failed",
+                        "stderr": result.stderr,
+                    }
+
             logger.info(f"github_repo_created repo={repo_name}")
             
-            # 2. Initialize git
+            # 2. Initialize git (clean slate — remove any previous .git)
             logger.debug("initializing_git_repo")
-            subprocess.run(["git", "init"], cwd=mvp_path, check=True, capture_output=True)  # nosec B603 B607
+            import shutil as _shutil, stat as _stat, os as _os
+            git_dir = mvp_path / ".git"
+            if git_dir.exists():
+                def _force_rm(func, path, exc):
+                    _os.chmod(path, _stat.S_IWRITE)
+                    func(path)
+                _shutil.rmtree(str(git_dir), onerror=_force_rm)
+            subprocess.run(["git", "init", "-b", "main"], cwd=mvp_path, capture_output=True)  # nosec B603 B607
+            subprocess.run(["git", "branch", "-M", "main"], cwd=mvp_path, capture_output=True)  # nosec B603 B607
             subprocess.run(["git", "add", "."], cwd=mvp_path, check=True, capture_output=True)  # nosec B603 B607
+            env_git = {**__import__("os").environ, "GIT_AUTHOR_NAME": "BeaMax", "GIT_AUTHOR_EMAIL": "bea@beamax.ai", "GIT_COMMITTER_NAME": "BeaMax", "GIT_COMMITTER_EMAIL": "bea@beamax.ai"}
             subprocess.run(  # nosec B603 B607
                 ["git", "commit", "-m", f"Initial commit - {opportunity.title}"],
                 cwd=mvp_path,
                 check=True,
                 capture_output=True,
+                env=env_git,
             )
-            
+
             # 3. Add remote
             logger.debug("adding_git_remote")
-            
+
             if self.github_org:
-                remote_url = f"https://github.com/{self.github_org}/{repo_name}.git"
+                remote_url = f"git@github.com:{self.github_org}/{repo_name}.git"
             else:
                 # Get username from gh CLI
                 whoami = subprocess.run(  # nosec B603 B607
@@ -127,24 +140,29 @@ class GitHubAutomation:
                     check=True,
                 )
                 username = whoami.stdout.strip()
-                remote_url = f"https://github.com/{username}/{repo_name}.git"
-            
+                remote_url = f"git@github.com:{username}/{repo_name}.git"
+
+            # Remove existing remote if any (idempotent)
+            subprocess.run(["git", "remote", "remove", "origin"], cwd=mvp_path, capture_output=True)  # nosec B603 B607
             subprocess.run(  # nosec B603 B607
                 ["git", "remote", "add", "origin", remote_url],
                 cwd=mvp_path,
                 check=True,
                 capture_output=True,
             )
-            
+
             # 4. Push code
             logger.debug("pushing_code_to_github")
-            subprocess.run(  # nosec B603 B607
-                ["git", "push", "-u", "origin", "main"],
+            push_result = subprocess.run(  # nosec B603 B607
+                ["git", "push", "-u", "origin", "main", "--force"],
                 cwd=mvp_path,
-                check=True,
                 capture_output=True,
+                text=True,
                 timeout=60,
             )
+            if push_result.returncode != 0:
+                logger.error(f"git_push_stderr: {push_result.stderr[:400]}")
+                raise subprocess.CalledProcessError(push_result.returncode, "git push", push_result.stderr)
             
             logger.info(f"github_push_completed repo={repo_name} url={remote_url}")
             

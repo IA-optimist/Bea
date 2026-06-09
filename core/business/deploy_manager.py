@@ -81,11 +81,24 @@ class DeployManager:
         )
         
         try:
+            # 0. Quick reachability check — fall back to Railway if VPS not up
+            ssh_cmd = self._build_ssh_cmd()
+            probe = subprocess.run(  # nosec B603 B607
+                ssh_cmd + ["echo ok"],
+                capture_output=True,
+                text=True,
+                timeout=8,
+            )
+            if probe.returncode != 0:
+                logger.warning(
+                    f"vps_unreachable host={self.vps_host} stderr={probe.stderr.strip()[:80]} "
+                    f"→ falling back to Railway"
+                )
+                return self._deploy_railway(opportunity, project_slug)
+
             # 1. Clone repo on VPS
             logger.debug(f"cloning_repo_on_vps path={deploy_path}")
-            
-            ssh_cmd = self._build_ssh_cmd()
-            
+
             # Create base dir
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"mkdir -p {self.deploy_base_dir}"],
@@ -93,7 +106,7 @@ class DeployManager:
                 text=True,
                 timeout=10,
             )
-            
+
             if result.returncode != 0:
                 logger.error(f"mkdir_failed: {result.stderr}")
                 return {
@@ -232,6 +245,82 @@ class DeployManager:
                 "error": str(e),
             }
     
+    def _deploy_railway(self, opportunity: "Opportunity", project_slug: str) -> Dict[str, Any]:
+        """Deploy MVP to Railway when VPS is not available."""
+        import shutil as _shutil
+        from core.business.mvp_generator import MVPGenerator
+        generator = MVPGenerator()
+        mvp_dir = str(generator.workspace_dir / project_slug)
+
+        # Locate railway CLI (may not be in PATH when running as service)
+        railway_bin = _shutil.which("railway") or r"C:\Users\maxen\AppData\Roaming\npm\railway.cmd"
+
+        try:
+            logger.info(f"railway_deploy_started opportunity_id={opportunity.id} dir={mvp_dir}")
+            env = {**__import__("os").environ}
+
+            # Init Railway project linked to the slug
+            subprocess.run(  # nosec B603 B607
+                [railway_bin, "init", "--name", f"beamax-mvp-{opportunity.id}"],
+                cwd=mvp_dir,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env=env,
+            )
+
+            # Deploy
+            result = subprocess.run(  # nosec B603 B607
+                [railway_bin, "up", "--detach"],
+                cwd=mvp_dir,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                env=env,
+            )
+
+            if result.returncode != 0:
+                logger.error(f"railway_up_failed: {result.stderr}")
+                return {
+                    "success": False,
+                    "message": f"Railway deploy failed: {result.stderr[:200]}",
+                    "error": "railway_up_failed",
+                }
+
+            # Get the URL from railway status
+            status = subprocess.run(  # nosec B603 B607
+                [railway_bin, "status", "--json"],
+                cwd=mvp_dir,
+                capture_output=True,
+                text=True,
+                timeout=20,
+                env=env,
+            )
+
+            url = f"https://beamax-mvp-{opportunity.id}.up.railway.app"
+            try:
+                import json as _json
+                info = _json.loads(status.stdout)
+                url = info.get("url") or info.get("deploymentUrl") or url
+            except Exception:
+                pass
+
+            logger.info(f"railway_deploy_completed opportunity_id={opportunity.id} url={url}")
+            return {
+                "success": True,
+                "subdomain": f"beamax-mvp-{opportunity.id}.up.railway.app",
+                "url": url,
+                "deploy_path": mvp_dir,
+                "message": f"Deployed to Railway: {url}",
+            }
+
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"railway_deploy_timeout: {e}")
+            return {"success": False, "message": f"Railway timeout: {e}", "error": "timeout"}
+        except Exception as e:
+            logger.error(f"railway_deploy_exception: {e}", exc_info=True)
+            return {"success": False, "message": str(e), "error": str(e)}
+
     def _build_ssh_cmd(self) -> list:
         """Build SSH command with proper key and options"""
         return [
