@@ -221,12 +221,16 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
         {"agent": "workflow-architect", "task": "Architecture de workflows",               "priority": 3, "timeout": 90},
         {"agent": "saas-builder",       "task": "Blueprint MVP SaaS",                      "priority": 4, "timeout": 90},
         {"agent": "trade-ops",          "task": "Agent IA métier spécialisé",              "priority": 2, "timeout": 90},
+        # Étape d'implémentation : forge-builder concrétise le travail des analystes
+        # (écriture des fichiers demandés : landing pages, cold emails, code, etc.)
+        {"agent": "forge-builder",      "task": "Implémentation des livrables business",  "priority": 5, "timeout": 120},
+        {"agent": "pulse-ops",          "task": "Exécution des actions business",          "priority": 6, "timeout": 60},
     ],
 }
 
 # Modes qui peuvent declencher des actions automatiques
-_ACTION_MODES = frozenset({TaskMode.CODE, TaskMode.AUTO, TaskMode.NIGHT})
-# Modes business : pas d'actions fichiers, mais routing spécial via BusinessLayer
+_ACTION_MODES = frozenset({TaskMode.CODE, TaskMode.AUTO, TaskMode.NIGHT, TaskMode.BUSINESS})
+# Modes business : routing spécial + actions fichiers via forge-builder
 _BUSINESS_MODES = frozenset({TaskMode.BUSINESS})
 
 
