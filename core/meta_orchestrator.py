@@ -362,13 +362,15 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         return _is_chat_mode, _reasoning_result
 
     def _cleanup_event_stream(self, mid: str) -> None:
-        """Deregister EventStream after mission completion (lines 1938-1945)."""
+        """Deregister EventStream after mission completion (lines 1938-1945).
+
+        NOTE: deregister_ws_stream is intentionally NOT called here.
+        The WS stream stays in ACTIVE_WS_STREAMS so late-connecting clients
+        can still replay historical events. The 1-hour TTL in event_stream.py
+        handles eventual eviction.
+        """
         try:
-            from core.event_stream import (
-                deregister_mission_stream,
-                deregister_ws_stream,
-            )
-            deregister_ws_stream(mid)
+            from core.event_stream import deregister_mission_stream
             deregister_mission_stream(mid)
         except Exception as _exc:
             log.warning("swallowed_exception", action="ws_stream_deregister", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])

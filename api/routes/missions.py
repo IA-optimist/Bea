@@ -83,6 +83,39 @@ async def submit_task(
 
     async def _run_mission():
         _mission_start = time.time()
+
+        # ── Event stream registration (fail-open) ──────────────────────────
+        # Register BEFORE execution so WS clients can connect immediately.
+        # The stream persists for 1 hour after completion (TTL in event_stream.py)
+        # allowing late-connecting clients to replay the full history.
+        _ws_stream = None
+        try:
+            from core.event_stream import EventStream, register_ws_stream, register_mission_stream
+            from core.events import Observation
+            _ws_stream = EventStream(str(result.mission_id))
+            register_mission_stream(str(result.mission_id), _ws_stream)
+            register_ws_stream(str(result.mission_id), _ws_stream)
+            await _ws_stream.append(Observation(
+                source="system",
+                observation_type="mission_started",
+                content=f"Mission démarrée : {req.input[:200]}",
+                metadata={"mission_id": str(result.mission_id), "mode": req.mode},
+            ))
+        except Exception as _es_err:
+            log.debug("ws_stream_register_skipped", err=str(_es_err)[:80])
+
+        async def _ws_emit(content: str, otype: str = "info", source: str = "system", is_error: bool = False) -> None:
+            if _ws_stream is None:
+                return
+            try:
+                from core.events import Observation
+                await _ws_stream.append(Observation(
+                    source=source, observation_type=otype,
+                    content=content, is_error=is_error,
+                ))
+            except Exception:
+                pass
+
         try:
             from core.mission_system import is_capability_query, CAPABILITY_DEMO
             if is_capability_query(req.input):
@@ -263,14 +296,22 @@ async def submit_task(
             # Fallback chain: KernelAdapter → legacy orch.run()
             _adapter = _get_kernel_adapter()
             if _adapter is not None:
+                await _ws_emit("Exécution via KernelAdapter…", otype="kernel_start", source="kernel")
                 session = await _adapter.submit(
                     goal=_enriched_input,
                     mission_id=str(result.mission_id),
                     mode=req.mode,
                 )
                 log.debug("api_kernel_adapter_used", mission_id=result.mission_id)
+                _adapter_out = getattr(session, "output", "") or ""
+                if _adapter_out:
+                    await _ws_emit(_adapter_out[:2000], otype="result", source="kernel")
+                _adapter_err = getattr(session, "error", "") or ""
+                if _adapter_err:
+                    await _ws_emit(_adapter_err[:500], otype="error", source="kernel", is_error=True)
             else:
                 # Fallback: legacy MetaOrchestrator.run() path
+                await _ws_emit("Exécution via MetaOrchestrator…", otype="orch_start", source="orchestrator")
                 orch    = _get_orchestrator()
                 session = await orch.run(
                     user_input=_enriched_input,
@@ -594,6 +635,7 @@ async def submit_task(
 
         except Exception as e:
             log.error("background_mission_failed", err=str(e)[:100])
+            await _ws_emit(f"Erreur interne : {str(e)[:200]}", otype="error", source="system", is_error=True)
             # Garantir que la mission se termine même en cas d'erreur interne
             try:
                 _err_output = (
@@ -610,6 +652,10 @@ async def submit_task(
                           mission_id=str(result.mission_id),
                           err=str(_completion_err)[:120])
         finally:
+            await _ws_emit(
+                f"Mission terminée en {int((time.time() - _mission_start)*1000)} ms",
+                otype="mission_done", source="system",
+            )
             _running_missions.discard(result.mission_id)
 
     background_tasks.add_task(_run_mission)
