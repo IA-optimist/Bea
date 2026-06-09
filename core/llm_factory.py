@@ -179,7 +179,7 @@ def _is_valid_key(key: str | None) -> bool:
 # En l'absence de clé valide, tous ces rôles basculent automatiquement sur Ollama.
 ROLE_PROVIDERS: dict[str, str] = {
     "director":  "codex",       # orchestrateur → Codex via gateway Hermes (fallback ollama)
-    "builder":   "ollama",      # worker → Bea v3.1
+    "builder":   "codex_direct", # worker → gpt-5.5 direct (OAuth), fallback ollama
     "reviewer":  "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
     "research":  "ollama",      # worker → Bea v3.1
     "planner":   "openrouter",
@@ -324,6 +324,8 @@ class LLMFactory:
             result = None
             if provider == "openai":
                 result = self._build_openai(role)
+            elif provider == "codex_direct":
+                result = self._build_codex_direct(role)
             elif provider == "codex":
                 result = self._build_codex(role)
             elif provider == "anthropic":
@@ -354,6 +356,19 @@ class LLMFactory:
             if provider == "ollama":
                 _OLLAMA_CIRCUIT.record_failure()
         return None
+
+    def _build_codex_direct(self, role: str) -> BaseChatModel | None:
+        """gpt-5.5 direct via OAuth ChatGPT — sans passer par Hermes.
+
+        Utilise `CodexDirectChatModel` (wrapper LangChain autour de CodexChat).
+        Fallback automatique vers ollama si les credentials sont absents.
+        """
+        try:
+            from core.llm_codex_direct import CodexDirectChatModel
+            return CodexDirectChatModel(model="gpt-5.5", temperature=0.3, timeout=180)
+        except Exception as e:
+            log.warning("codex_direct_build_failed", role=role, err=str(e))
+            return None
 
     def _build_codex(self, role: str) -> BaseChatModel | None:
         """Orchestrateur Codex via le gateway OpenAI-compatible de Hermes.

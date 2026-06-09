@@ -248,70 +248,92 @@ class DeployManager:
     def _deploy_railway(self, opportunity: "Opportunity", project_slug: str) -> Dict[str, Any]:
         """Deploy MVP to Railway when VPS is not available."""
         import shutil as _shutil
+        import tempfile as _tempfile
+        import stat as _stat
+        import json as _json
+        from pathlib import Path as _Path
         from core.business.mvp_generator import MVPGenerator
+
         generator = MVPGenerator()
         mvp_dir = str(generator.workspace_dir / project_slug)
 
-        # Locate railway CLI (may not be in PATH when running as service)
         railway_bin = _shutil.which("railway") or r"C:\Users\maxen\AppData\Roaming\npm\railway.cmd"
 
+        def _force_rm(func, path, exc):
+            os.chmod(path, _stat.S_IWRITE)
+            func(path)
+
+        short_name = f"beamax-mvp-{opportunity.id}"
+        stage_dir = os.path.join(_tempfile.gettempdir(), short_name)
+        if os.path.exists(stage_dir):
+            _shutil.rmtree(stage_dir, onerror=_force_rm)
+        _shutil.copytree(mvp_dir, stage_dir)
+
+        # Pre-link project in Railway config so CLI skips all interactive prompts.
+        # Reuse beamax-mvp-5 project slot (free plan allows 2 projects; this is the test slot).
+        railway_config_path = _Path.home() / ".railway" / "config.json"
+        railway_project_id = os.getenv("RAILWAY_PROJECT_ID", "e0017755-a25a-4971-a2c8-6bb5c3c762ee")
+        railway_environment_id = os.getenv("RAILWAY_ENVIRONMENT_ID", "18c6324c-10d9-4041-9bd0-fa3f3cb9c476")
+        railway_service_id = os.getenv("RAILWAY_SERVICE_ID", "9328d820-a8de-4007-ba3a-74c0cb9a2387")
+
         try:
-            logger.info(f"railway_deploy_started opportunity_id={opportunity.id} dir={mvp_dir}")
-            env = {**__import__("os").environ}
+            with open(railway_config_path, "r") as _f:
+                _rail_cfg = _json.load(_f)
+        except Exception:
+            _rail_cfg = {"projects": {}, "user": {}}
 
-            # Init Railway project linked to the slug
-            subprocess.run(  # nosec B603 B607
-                [railway_bin, "init", "--name", f"beamax-mvp-{opportunity.id}"],
-                cwd=mvp_dir,
-                capture_output=True,
-                text=True,
-                timeout=30,
-                env=env,
-            )
+        _rail_cfg.setdefault("projects", {})[stage_dir] = {
+            "projectPath": stage_dir,
+            "name": short_name,
+            "project": railway_project_id,
+            "environment": railway_environment_id,
+            "environmentName": "production",
+            "service": railway_service_id,
+        }
+        try:
+            with open(railway_config_path, "w") as _f:
+                _json.dump(_rail_cfg, _f, indent=2)
+        except Exception as e:
+            logger.warning(f"railway_config_write_failed: {e}")
 
-            # Deploy
+        try:
+            logger.info(f"railway_deploy_started opportunity_id={opportunity.id} dir={stage_dir}")
+            env = {**os.environ}
+
             result = subprocess.run(  # nosec B603 B607
                 [railway_bin, "up", "--detach"],
-                cwd=mvp_dir,
+                cwd=stage_dir,
                 capture_output=True,
                 text=True,
                 timeout=300,
                 env=env,
             )
 
+            logger.info(f"railway_up_stdout: {result.stdout.strip()[:400]}")
             if result.returncode != 0:
-                logger.error(f"railway_up_failed: {result.stderr}")
+                logger.error(f"railway_up_failed rc={result.returncode}: {result.stderr.strip()[:400]}")
                 return {
                     "success": False,
                     "message": f"Railway deploy failed: {result.stderr[:200]}",
                     "error": "railway_up_failed",
                 }
 
-            # Get the URL from railway status
-            status = subprocess.run(  # nosec B603 B607
-                [railway_bin, "status", "--json"],
-                cwd=mvp_dir,
-                capture_output=True,
-                text=True,
-                timeout=20,
-                env=env,
-            )
+            # Build log URL embedded in stdout by Railway CLI
+            build_url = ""
+            for line in result.stdout.splitlines():
+                if "railway.com/project" in line:
+                    build_url = line.strip()
+                    break
 
-            url = f"https://beamax-mvp-{opportunity.id}.up.railway.app"
-            try:
-                import json as _json
-                info = _json.loads(status.stdout)
-                url = info.get("url") or info.get("deploymentUrl") or url
-            except Exception:
-                pass
-
+            url = f"https://{short_name}.up.railway.app"
             logger.info(f"railway_deploy_completed opportunity_id={opportunity.id} url={url}")
             return {
                 "success": True,
-                "subdomain": f"beamax-mvp-{opportunity.id}.up.railway.app",
+                "subdomain": f"{short_name}.up.railway.app",
                 "url": url,
-                "deploy_path": mvp_dir,
+                "deploy_path": stage_dir,
                 "message": f"Deployed to Railway: {url}",
+                "build_logs": build_url,
             }
 
         except subprocess.TimeoutExpired as e:
