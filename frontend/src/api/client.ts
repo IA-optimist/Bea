@@ -290,6 +290,27 @@ class ApiClient {
     await this.client.post(`/api/v3/mcp/servers/${id}/disable`);
   }
 
+  async addMcpServer(server: {
+    id: string; name: string; description?: string;
+    command?: string; args?: string[]; transport?: string;
+    endpoint?: string; category?: string; trust_level?: string;
+    risk_level?: string; required_secrets?: string[];
+    source?: string; source_url?: string;
+  }): Promise<any> {
+    const { data } = await this.client.post<any>('/api/v3/mcp/servers', server);
+    return data;
+  }
+
+  async deleteMcpServer(id: string): Promise<void> {
+    await this.client.delete(`/api/v3/mcp/servers/${id}`);
+  }
+
+  // Missions list
+  async listMissions(params?: { limit?: number; offset?: number; status?: string }): Promise<any[]> {
+    const { data } = await this.client.get<any>('/api/v2/missions', { params });
+    return data.missions ?? data.data?.missions ?? [];
+  }
+
   // Skills endpoints
   async getLearnedSkills(): Promise<any[]> {
     const { data } = await this.client.get<any>('/api/v2/skills');

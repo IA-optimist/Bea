@@ -125,3 +125,67 @@ async def probe_all(x_bea_token: str | None = Header(None), authorization: str |
     """Probe all MCP servers for spawn capability."""
     _check_auth(x_bea_token, authorization)
     return {"probes": _get_registry().probe_all_spawnable()}
+
+
+from pydantic import BaseModel  # noqa: E402
+
+class AddMcpServerRequest(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+    command: str = ""
+    args: list[str] = []
+    transport: str = "stdio"
+    endpoint: str = ""
+    category: str = "community"
+    trust_level: str = "community"
+    risk_level: str = "medium"
+    required_secrets: list[str] = []
+    source: str = ""
+    source_url: str = ""
+
+
+@router.post("/servers")
+async def add_server(
+    req: AddMcpServerRequest,
+    x_bea_token: str | None = Header(None),
+    authorization: str | None = Header(None),
+):
+    """Register a new MCP server."""
+    _check_auth(x_bea_token, authorization)
+    from core.mcp.mcp_registry import MCPServerEntry
+    reg = _get_registry()
+    if reg.get(req.id):
+        raise HTTPException(status_code=409, detail=f"MCP server '{req.id}' already exists")
+    entry = MCPServerEntry(
+        id=req.id,
+        name=req.name,
+        description=req.description,
+        command=req.command,
+        args=req.args,
+        transport=req.transport,
+        endpoint=req.endpoint,
+        category=req.category,
+        trust_level=req.trust_level,
+        risk_level=req.risk_level,
+        required_secrets=req.required_secrets,
+        source=req.source,
+        source_url=req.source_url,
+        status="disabled",
+    )
+    reg.register(entry)
+    return {"status": "registered", "server": entry.to_safe_dict()}
+
+
+@router.delete("/servers/{mcp_id}")
+async def delete_server(
+    mcp_id: str,
+    x_bea_token: str | None = Header(None),
+    authorization: str | None = Header(None),
+):
+    """Unregister an MCP server."""
+    _check_auth(x_bea_token, authorization)
+    removed = _get_registry().unregister(mcp_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="MCP server not found")
+    return {"status": "removed", "mcp_id": mcp_id}

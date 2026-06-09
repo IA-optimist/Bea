@@ -10,6 +10,7 @@ import { Settings } from './pages/Settings';
 import { McpSkills } from './pages/McpSkills';
 import { ImprovementLoop } from './pages/ImprovementLoop';
 import { MemoryMonitor } from './pages/MemoryMonitor';
+import { MissionLogs } from './pages/MissionLogs';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/mcp-skills" element={<Layout><McpSkills /></Layout>} />
         <Route path="/improvement" element={<Layout><ImprovementLoop /></Layout>} />
         <Route path="/memory" element={<Layout><MemoryMonitor /></Layout>} />
+        <Route path="/mission-logs" element={<Layout><MissionLogs /></Layout>} />
       </Routes>
     </Router>
   );

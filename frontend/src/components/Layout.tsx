@@ -10,6 +10,7 @@ import {
   Cpu,
   Sparkles,
   Database,
+  Radio,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Logo } from './Logo';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Opportunities', href: '/opportunities', icon: TrendingUp },
   { name: 'Products', href: '/products', icon: Package },
   { name: 'Revenue', href: '/revenue', icon: DollarSign },
+  { name: 'Mission Logs', href: '/mission-logs', icon: Radio },
   { name: 'MCP & Skills', href: '/mcp-skills', icon: Cpu },
   { name: 'Auto-Improve', href: '/improvement', icon: Sparkles },
   { name: 'Memory', href: '/memory', icon: Database },
