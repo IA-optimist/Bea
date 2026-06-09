@@ -35,10 +35,14 @@ CB = Callable[[str], Awaitable[None]]
 
 # Timeout global par mode (secondes)
 SESSION_TIMEOUTS = {
-    "auto":    150,    # 2.5 min (optimise pour <60s missions simples)
-    "night":   1800,   # 30 min
-    "improve": 900,    # 15 min
-    "chat":    60,
+    "auto":     150,   # 2.5 min (optimise pour <60s missions simples)
+    "night":    1800,  # 30 min
+    "improve":  900,   # 15 min
+    "chat":     60,
+    "business": 720,   # 12 min — analysts (~142s) + forge-builder Codex (~300s) + buffer
+    "code":     600,
+    "plan":     600,
+    "research": 600,
 }
 
 

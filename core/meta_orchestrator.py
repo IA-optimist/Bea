@@ -1484,9 +1484,8 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
         # PHASE 4: AGI COGNITION WRAPPER
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         _base_timeout = getattr(self.s, "mission_timeout_s", 120)
-        # Multi-agent modes need a longer window: analyst waves (~60s) + forge-builder Codex (~120s).
-        # The 120s default kills forge-builder before it can complete.
-        _LONG_MODE_TIMEOUT = 400
+        # Multi-agent modes need a longer window: analyst waves (~142s) + forge-builder Codex (~300s) + buffer.
+        _LONG_MODE_TIMEOUT = 600
         _mission_timeout = _LONG_MODE_TIMEOUT if mode in (
             "business", "code", "auto", "plan", "research", "night", "improve"
         ) else _base_timeout
@@ -1548,7 +1547,7 @@ class MetaOrchestrator(CustomMissionHandlerMixin):
                         enable_learning=True,
                         executor_fn=_real_executor,
                     ),
-                    timeout=180,  # 3 min max for cognition (incl. ToT)
+                    timeout=_mission_timeout,  # use mode-specific timeout (400s for business/code/etc.)
                 )
                 # Extract outcome from cognition result
                 # CognitionOrchestrator returns augmented mission dict with "result" key

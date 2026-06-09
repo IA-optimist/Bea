@@ -124,6 +124,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                     _ctx_capture = str(body.get("context", "") or "")
                     _risk_capture = str(body.get("risk_level", "low") or "low")
                     _requires_capture = bool(body.get("requires_validation", False))
+                    _mode_capture = str(body.get("mode", "auto") or "auto")
                     async def _execute_canonical():
                         try:
                             from core.meta_orchestrator import get_meta_orchestrator
@@ -142,7 +143,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                                 except Exception as _exc:
                                     log.debug("validation_flag_suppressed", exc_type=type(_exc).__name__)
 
-                            await mo.run_mission(_goal_capture, mission_id=_mid_capture)
+                            await mo.run_mission(_goal_capture, mission_id=_mid_capture, mode=_mode_capture)
                         except Exception as _exc:
                             import traceback
                             log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120], tb=traceback.format_exc()[-300:])
