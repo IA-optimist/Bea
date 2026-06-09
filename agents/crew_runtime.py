@@ -87,6 +87,22 @@ class AgentCrew:
                     log.warning("bea_team_agent_failed", name=agent_name, err=str(e)[:80])
         except Exception as e:
             log.debug("bea_team_import_skipped", err=str(e)[:80])
+        self._register_catalog_agents(settings)
+
+    def _register_catalog_agents(self, settings) -> None:
+        """Register any agent from agents.registry.AGENT_CLASSES not yet in registry.
+        Covers business layer agents (venture-builder, offer-designer, saas-builder…)."""
+        try:
+            from agents.registry import AGENT_CLASSES
+            for agent_name, agent_cls in AGENT_CLASSES.items():
+                if agent_name not in self.registry:
+                    try:
+                        self.registry[agent_name] = agent_cls(settings)
+                        log.info("agent_registered", name=agent_name, team="catalog")
+                    except Exception as e:
+                        log.warning("catalog_agent_failed", name=agent_name, err=str(e)[:80])
+        except Exception as e:
+            log.debug("catalog_import_skipped", err=str(e)[:80])
 
     def discover(self, extra_agents=None) -> None:
         """Enregistre des agents supplementaires dynamiquement."""
