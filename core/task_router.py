@@ -105,6 +105,19 @@ _PATTERNS: list[tuple[TaskMode, re.Pattern]] = [
         re.IGNORECASE
     )),
 
+    # CODE — execution bash/shell/commande (doit rester avant le bloc CODE général)
+    (TaskMode.CODE, re.compile(
+        r"\b(execut[ei]?r?\s+(la\s+)?(commande|cmd|bash|shell|script)|"
+        r"lance[rz]?\s+(la\s+)?(commande|bash|shell)|"
+        r"run\s+(bash|shell|command|cmd|this\s+command)|"
+        r"(commande|bash|shell)\s+(suivante?|ci.?dessous)|"
+        r"execut[ei]?r?\s+.*\becho\b|"
+        r"execut[ei]?r?\s+.*\bpython\b|"
+        r"execut[ei]?r?\s+.*\bnpm\b|"
+        r"execut[ei]?r?\s+.*\bgit\b)",
+        re.IGNORECASE
+    )),
+
     # CODE — generation de code/script (verbes d ecriture + artefact technique)
     (TaskMode.CODE, re.compile(
         r"\b(ecris?\s+(un\s+)?(script|code|fonction|classe|module|programme)|"
