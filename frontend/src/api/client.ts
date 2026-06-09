@@ -121,6 +121,9 @@ class ApiClient {
       updated_at: item.updated_at || '',
       source: item.source,
       tags: item.tags || [],
+      analyzed: typeof statusObj === 'object' ? !!statusObj.analyzed : false,
+      mvp_generated: typeof statusObj === 'object' ? !!statusObj.mvp_generated : false,
+      deployed: typeof statusObj === 'object' ? !!statusObj.deployed : false,
     };
   }
 
@@ -162,6 +165,21 @@ class ApiClient {
   async updateOpportunityStatus(id: string, status: string): Promise<Opportunity> {
     const { data } = await this.client.patch<any>(`/api/v3/business/opportunities/${id}`, { status });
     return this.normalizeOpportunity(data.data || data);
+  }
+
+  async analyzeOpportunity(id: string): Promise<any> {
+    const { data } = await this.client.post<any>(`/api/v3/business/opportunities/${id}/analyze`);
+    return data;
+  }
+
+  async generateMvp(id: string): Promise<any> {
+    const { data } = await this.client.post<any>(`/api/v3/business/opportunities/${id}/generate-mvp`);
+    return data;
+  }
+
+  async deployOpportunityPipeline(id: string): Promise<any> {
+    const { data } = await this.client.post<any>(`/api/v3/business/opportunities/${id}/deploy`);
+    return data;
   }
 
   // Products endpoints
@@ -311,7 +329,7 @@ class ApiClient {
   }
 
   async queryMemory(query: string, top_k = 5): Promise<any> {
-    const { data } = await this.client.post<any>('/api/v2/rag/query', { query, top_k });
+    const { data } = await this.client.post<any>('/api/v2/rag/query', { question: query, top_k });
     return data.data ?? data;
   }
 

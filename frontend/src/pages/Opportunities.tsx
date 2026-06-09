@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, RefreshCw, TrendingUp } from 'lucide-react';
+import { Search, Filter, RefreshCw, TrendingUp, Cpu, Zap, Rocket, CheckCircle2 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
@@ -8,10 +8,68 @@ import { apiClient } from '../api/client';
 import { formatCurrency, formatDateTime } from '../utils/format';
 import type { Opportunity } from '../types';
 
+interface PipelineActionsProps {
+  opp: Opportunity;
+  inProgress: Set<string>;
+  onRun: (key: string, action: () => Promise<any>, label: string) => void;
+}
+
+const PipelineActions = ({ opp, inProgress, onRun }: PipelineActionsProps) => {
+  const analyzeKey = `analyze-${opp.id}`;
+  const mvpKey = `mvp-${opp.id}`;
+  const deployKey = `deploy-${opp.id}`;
+
+  if (opp.deployed) {
+    return (
+      <span className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium">
+        <CheckCircle2 className="w-4 h-4" />Deployed
+      </span>
+    );
+  }
+
+  if (opp.mvp_generated) {
+    return (
+      <button
+        disabled={inProgress.has(deployKey)}
+        onClick={() => onRun(deployKey, () => apiClient.deployOpportunityPipeline(opp.id), 'Deploy')}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-medium transition-colors"
+      >
+        <Rocket className="w-3.5 h-3.5" />
+        {inProgress.has(deployKey) ? 'Deploying…' : 'Deploy'}
+      </button>
+    );
+  }
+
+  if (opp.analyzed) {
+    return (
+      <button
+        disabled={inProgress.has(mvpKey)}
+        onClick={() => onRun(mvpKey, () => apiClient.generateMvp(opp.id), 'Generate MVP')}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-medium transition-colors"
+      >
+        <Zap className="w-3.5 h-3.5" />
+        {inProgress.has(mvpKey) ? 'Generating…' : 'Generate MVP'}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      disabled={inProgress.has(analyzeKey)}
+      onClick={() => onRun(analyzeKey, () => apiClient.analyzeOpportunity(opp.id), 'Analyze')}
+      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium transition-colors"
+    >
+      <Cpu className="w-3.5 h-3.5" />
+      {inProgress.has(analyzeKey) ? 'Analyzing…' : 'Analyze'}
+    </button>
+  );
+};
+
 export const Opportunities = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [inProgress, setInProgress] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -63,12 +121,24 @@ export const Opportunities = () => {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const runPipelineStep = async (
+    key: string,
+    action: () => Promise<any>,
+    label: string
+  ) => {
+    setInProgress((s) => new Set(s).add(key));
     try {
-      await apiClient.updateOpportunityStatus(id, newStatus);
-      loadOpportunities();
-    } catch (err) {
-      console.error('Failed to update status:', err);
+      await action();
+      setMessage({ type: 'success', text: `${label} started — running in background (may take several minutes)` });
+      setTimeout(() => setMessage(null), 6000);
+      // Poll once after 5 s to refresh status
+      setTimeout(loadOpportunities, 5000);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      setMessage({ type: 'error', text: `${label} failed: ${detail}` });
+      setTimeout(() => setMessage(null), 6000);
+    } finally {
+      setInProgress((s) => { const n = new Set(s); n.delete(key); return n; });
     }
   };
 
@@ -256,16 +326,7 @@ export const Opportunities = () => {
                       </span>
                     </td>
                     <td className="py-4 px-4">
-                      <select
-                        value={opp.status}
-                        onChange={(e) => handleStatusChange(opp.id, e.target.value)}
-                        className="px-3 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value="new">New</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
+                      <PipelineActions opp={opp} inProgress={inProgress} onRun={runPipelineStep} />
                     </td>
                   </tr>
                 ))}

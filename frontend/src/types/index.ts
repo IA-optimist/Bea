@@ -28,6 +28,10 @@ export interface Opportunity {
   updated_at: string;
   source?: string;
   tags?: string[];
+  // pipeline state
+  analyzed?: boolean;
+  mvp_generated?: boolean;
+  deployed?: boolean;
 }
 
 export interface Product {
