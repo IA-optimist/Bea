@@ -921,7 +921,11 @@ class BeaOrchestrator:
         avant de démarrer son évaluation.
         """
         from agents.parallel_executor import ParallelExecutor
-        pex = ParallelExecutor(self.s)
+        # BUSINESS mode : forge-builder (P5) peut prendre jusqu'à 180s pour Codex.
+        # Le global_timeout par défaut (120s) le coupe systématiquement.
+        _mode_val = getattr(getattr(session, "task_mode", None), "value", "") or ""
+        _gtimeout = 200 if _mode_val == "business" else 120
+        pex = ParallelExecutor(self.s, global_timeout=_gtimeout)
 
         # Filtrer les agents non-supportés
         skip = {"atlas-director", "vault-memory"}

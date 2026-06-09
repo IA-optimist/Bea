@@ -223,7 +223,8 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
         {"agent": "trade-ops",          "task": "Agent IA métier spécialisé",              "priority": 2, "timeout": 90},
         # Étape d'implémentation : forge-builder concrétise le travail des analystes
         # (écriture des fichiers demandés : landing pages, cold emails, code, etc.)
-        {"agent": "forge-builder",      "task": "Implémentation des livrables business",  "priority": 5, "timeout": 120},
+        # timeout=180 : Codex gpt-5.5 peut prendre jusqu'à 180s pour du long-form.
+        {"agent": "forge-builder",      "task": "Implémentation des livrables business",  "priority": 5, "timeout": 180},
         {"agent": "pulse-ops",          "task": "Exécution des actions business",          "priority": 6, "timeout": 60},
     ],
 }
