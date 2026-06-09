@@ -183,6 +183,18 @@ def _classify_complexity(goal: str, words: set) -> str:
     if verb_count >= 1 or len(goal) > 300:
         return "multi_step"
 
+    # ── Bash/shell execution gate (FR + EN) — doit rester juste avant le fallback ──
+    # "Executer la commande bash", "run this bash command", "lancer le script"
+    # → small_fix (PATCH shape) pour inclure forge-builder dans le plan d'agents.
+    _bash_exec_patterns = [
+        r"\bexecut[ei]?r?\s+(la\s+)?(commande|bash|shell|script|cmd)\b",
+        r"\blance[rz]?\s+(la\s+)?(commande|bash|shell|script)\b",
+        r"\brun\s+(bash|shell|this\s+command|cmd|script)\b",
+        r"\bexecut[ei]?r?\s+.*\b(echo|python[23]?|npm|git|pip|docker)\b",
+    ]
+    if any(re.search(p, goal, re.IGNORECASE) for p in _bash_exec_patterns):
+        return "small_fix"
+
     # ── Default changed: "direct_answer" is safer than "small_fix" ──────────
     # The old default "small_fix" caused select_output_shape to return PATCH
     # for ANY unrecognized input (especially French). A direct_answer is always
