@@ -78,11 +78,15 @@ _PATTERNS: list[tuple[TaskMode, re.Pattern]] = [
     (TaskMode.BUSINESS, re.compile(
         r"(\bventure\b|opportunite\s+business|niche\s+(business|marche)|"
         r"offre\s+commerciale|design\s+d.offre|"
-        r"blueprint\s+saas|mvp\s+saas|creer\s+un\s+saas|"
+        r"blueprint\s+saas|mvp\s+saas|creer\s+un\s+saas|lancer\s+un\s+(nouveau\s+)?saas|"
         r"workflow\s+business|automatisation\s+business|"
         r"agent\s+(ia\s+)?metier|artisan\s+ia|"
         r"chauffagiste\s+ia|plombier\s+ia|tpe\s+ia|"
         r"trade.?ops|business.?layer|"
+        r"genere?\s+des?\s+revenus?|generer\s+des?\s+revenus?|"
+        r"premier\s+(client\s+payant|paiement\s+reel)|"
+        r"acquisition\s+(clients?|leads?|utilisateurs?)|strategie\s+d.?acquisition|"
+        r"tunnel\s+d.?acquisition|monetis[ae]r?|"
         r"(?:^|\s)/venture|(?:^|\s)/offre|(?:^|\s)/saas|"
         r"(?:^|\s)/metier|(?:^|\s)/business)",
         re.IGNORECASE

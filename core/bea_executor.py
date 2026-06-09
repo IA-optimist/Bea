@@ -559,22 +559,26 @@ class BeaOrchestrator:
                 _relevant = _SHAPE_AGENTS.get(_shape)
                 if _relevant and len(session.agents_plan) > 1:
                     _before = len(session.agents_plan)
-                    session.agents_plan = [
+                    _filtered = [
                         a for a in session.agents_plan
                         if a.get("agent") in _relevant
                     ]
-                    # Always keep at least 1 agent
-                    if not session.agents_plan:
-                        session.agents_plan = [{"agent": "scout-research", "task": session.mission_summary}]
-                    _after = len(session.agents_plan)
-                    if _after < _before:
-                        log.info("smart_agent_selection",
-                                 shape=_shape, before=_before, after=_after,
-                                 agents=[a.get("agent") for a in session.agents_plan])
-                        await emit(
-                            f"[Routing] {_shape} → {_after} agent(s) sélectionné(s) "
-                            f"(sur {_before})"
-                        )
+                    # Ne pas appliquer le filtre si tous les agents sont éliminés :
+                    # cela indique un plan spécialisé (ex: business) sans agents génériques.
+                    if _filtered:
+                        session.agents_plan = _filtered
+                        _after = len(session.agents_plan)
+                        if _after < _before:
+                            log.info("smart_agent_selection",
+                                     shape=_shape, before=_before, after=_after,
+                                     agents=[a.get("agent") for a in session.agents_plan])
+                            await emit(
+                                f"[Routing] {_shape} → {_after} agent(s) sélectionné(s) "
+                                f"(sur {_before})"
+                            )
+                    else:
+                        log.info("smart_agent_selection_skipped_specialized",
+                                 shape=_shape, agents=[a.get("agent") for a in session.agents_plan])
         except Exception as _ras_err:
             log.debug("smart_agent_selection_skipped", err=str(_ras_err)[:60])
 
