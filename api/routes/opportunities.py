@@ -408,10 +408,13 @@ async def analyze_feasibility(
             )
             
             db.add(analysis)
-            
-            # Update opportunity.analyzed = TRUE
-            opportunity.analyzed = True
-            
+
+            # Re-fetch the opportunity in the same session to avoid stale-object issues
+            # (SQLAlchemy auto-expires objects after long async waits)
+            fresh_opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+            if fresh_opp:
+                fresh_opp.analyzed = True
+
             db.commit()
             db.refresh(analysis)
             
