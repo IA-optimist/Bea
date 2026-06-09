@@ -815,9 +815,14 @@ class PulseOps(BaseAgent):
         )
 
     def user_message(self, session: BeaSession) -> str:
-        ctx = self._ctx(session)
-        return (f"Mission : {session.mission_summary}\n\n"
-                f"Résultats agents :\n{ctx or '(aucun résultat)'}")
+        # forge-builder output at full length — needed to find ### Fichier: blocks
+        forge_out = getattr(getattr(session, "outputs", {}).get("forge-builder"), "content", "")
+        ctx = self._ctx(session, limit=400)  # other agents: short summary
+        msg = f"Mission : {session.mission_summary}\n\n"
+        if forge_out:
+            msg += f"### forge-builder (COMPLET)\n{forge_out}\n\n"
+        msg += f"Autres agents :\n{ctx or '(aucun)'}"
+        return msg
 
     async def run(self, session: BeaSession) -> str:
         out = await super().run(session)
