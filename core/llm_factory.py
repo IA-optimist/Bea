@@ -324,7 +324,8 @@ class LLMFactory:
             result = None
             if provider == "openai":
                 result = self._build_openai(role)
-            elif provider == "codex_direct":
+            elif provider in ("codex_direct", "llm_primary"):
+                # "llm_primary" = alias du kernel routing (router.py) → même impl Codex direct
                 result = self._build_codex_direct(role)
             elif provider == "codex":
                 result = self._build_codex(role)
@@ -363,9 +364,12 @@ class LLMFactory:
         Utilise `CodexDirectChatModel` (wrapper LangChain autour de CodexChat).
         Fallback automatique vers ollama si les credentials sont absents.
         """
+        log.info("codex_direct_build_attempt", role=role)
         try:
             from core.llm_codex_direct import CodexDirectChatModel
-            return CodexDirectChatModel(model="gpt-5.5", temperature=0.3, timeout=180)
+            instance = CodexDirectChatModel(model="gpt-5.5", temperature=0.3, timeout=180)
+            log.info("codex_direct_build_success", role=role, llm_type=instance._llm_type)
+            return instance
         except Exception as e:
             log.warning("codex_direct_build_failed", role=role, err=str(e))
             return None
