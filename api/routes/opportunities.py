@@ -5,10 +5,8 @@ REST endpoints for SaaS opportunity management (Phase 3)
 from __future__ import annotations
 
 import logging
-import tempfile
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
