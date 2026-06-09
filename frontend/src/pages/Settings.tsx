@@ -3,47 +3,37 @@ import { Moon, Sun, Bell, RefreshCw, Save } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useTheme } from '../hooks/useTheme';
-import { apiClient } from '../api/client';
 import type { Settings as SettingsType } from '../types';
+
+const STORAGE_KEY = 'bea_settings';
+
+const loadFromStorage = (): SettingsType => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { theme: 'light', notifications_enabled: true, auto_scan_enabled: false, scan_interval: 3600 };
+};
 
 export const Settings = () => {
   const { theme, toggleTheme } = useTheme();
-  const [settings, setSettings] = useState<SettingsType>({
-    theme: 'light',
-    notifications_enabled: true,
-    auto_scan_enabled: false,
-    scan_interval: 3600,
-  });
-  const [_loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<SettingsType>(loadFromStorage);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+  useEffect(() => { loadSettings(); }, []);
 
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient.getSettings();
-      setSettings(data);
-    } catch (err) {
-      console.error('Failed to load settings:', err);
-    } finally {
-      setLoading(false);
-    }
+  const loadSettings = () => {
+    setSettings(loadFromStorage());
   };
 
   const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
     try {
-      setSaving(true);
-      setMessage(null);
-      await apiClient.updateSettings(settings);
-      setMessage({ type: 'success', text: 'Settings saved successfully!' });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      setMessage({ type: 'success', text: 'Settings saved!' });
       setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      console.error('Failed to save settings:', err);
-      setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -243,7 +233,7 @@ export const Settings = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">API Endpoint</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {(import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/v2'}
+                {import.meta.env.VITE_API_URL || 'http://localhost:8000'}
               </p>
             </div>
             <div>
