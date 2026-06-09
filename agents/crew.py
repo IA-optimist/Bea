@@ -960,8 +960,8 @@ class ForgeBuilderWithCritic(SelfCriticMixin, ForgeBuilder):
         Transparence totale — même nom, même interface.
     """
     name              = "forge-builder"
-    critic_max_rounds = 1        # 1 seul round de révision (latence maîtrisée)
-    critic_pass_score = 6.5      # seuil légèrement plus élevé que CRITIC_PASS_SCORE global
+    critic_max_rounds = 0        # no revision — Codex streaming takes ~180s; 2nd call would exceed timeouts
+    critic_pass_score = 6.5
 
     async def run(self, session: BeaSession) -> str:
         out = await self.run_with_self_critic(session)
