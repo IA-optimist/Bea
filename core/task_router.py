@@ -227,7 +227,7 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
         #   ### Fichier: workspace/chemin/vers/fichier.ext
         #   (contenu complet du fichier)
         # Puis PulseOps lit ces blocs et crée les actions create_file.
-        {"agent": "forge-builder",      "task": "Génère les livrables finaux (HTML, Markdown, scripts) basés sur les analyses. Pour CHAQUE fichier à créer, utilise le format exact : '### Fichier: workspace/path/fichier.ext' suivi du contenu complet.", "priority": 5, "timeout": 180},
+        {"agent": "forge-builder",      "task": "Génère les livrables finaux (HTML, Markdown, scripts) basés sur les analyses. Pour CHAQUE fichier à créer, utilise le format exact : '### Fichier: workspace/path/fichier.ext' suivi du contenu complet.", "priority": 5, "timeout": 420},
         {"agent": "pulse-ops",          "task": "Parse la sortie de forge-builder pour extraire les fichiers (format '### Fichier: path') et crée les actions create_file correspondantes.",          "priority": 6, "timeout": 60},
     ],
 }
