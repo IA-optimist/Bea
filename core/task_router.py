@@ -280,9 +280,13 @@ class TaskRouter:
                                       reason="heuristic:short_override_auto",
                                       confidence=0.9,
                                       uncensored_mode=uncensored_mode)
-                return self._make(mode, user_input,
-                                  reason=f"explicit:{explicit_mode}",
-                                  uncensored_mode=uncensored_mode)
+                # "auto" est le mode par défaut de OrchestratorSession — pas un override
+                # explicite utilisateur. On laisse les patterns prendre le dessus.
+                # Les vrais overrides (/code, /business, /night...) passent directement.
+                if mode != TaskMode.AUTO:
+                    return self._make(mode, user_input,
+                                      reason=f"explicit:{explicit_mode}",
+                                      uncensored_mode=uncensored_mode)
             except ValueError:
                 log.warning("unknown_explicit_mode", mode=explicit_mode)
 
