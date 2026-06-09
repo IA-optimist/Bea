@@ -958,7 +958,38 @@ class ForgeBuilderWithCritic(SelfCriticMixin, ForgeBuilder):
     critic_pass_score = 6.5      # seuil légèrement plus élevé que CRITIC_PASS_SCORE global
 
     async def run(self, session: BeaSession) -> str:
-        return await self.run_with_self_critic(session)
+        out = await self.run_with_self_critic(session)
+        # Extract ### Fichier: blocks directly into session._raw_actions
+        # This bypasses PulseOps context truncation (context_snapshot limits to 600 chars).
+        import re as _re
+        parts = _re.split(r"(?m)^### Fichier:\s*(.+)$", out)
+        if len(parts) > 1:
+            actions = []
+            for idx in range(1, len(parts), 2):
+                path = parts[idx].strip()
+                content = parts[idx + 1].strip() if idx + 1 < len(parts) else ""
+                if content.startswith("```"):
+                    content = "\n".join(content.split("\n")[1:])
+                    if content.endswith("```"):
+                        content = content[:-3].strip()
+                if path and content:
+                    actions.append({
+                        "action_type": "create_file",
+                        "target": path,
+                        "content": content,
+                        "description": f"Créé par forge-builder: {path}",
+                        "command": "",
+                        "old_str": "",
+                        "new_str": "",
+                        "reversible": True,
+                    })
+            if actions:
+                if not getattr(session, "_raw_actions", None):
+                    session._raw_actions = []
+                session._raw_actions.extend(actions)
+                log.info("forge_builder_actions_extracted",
+                         files=[a["target"] for a in actions], count=len(actions))
+        return out
 
 
 class MapPlannerWithCritic(SelfCriticMixin, MapPlanner):
