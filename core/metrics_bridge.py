@@ -58,9 +58,13 @@ def _patch_meta_orchestrator() -> bool:
         from core.meta_orchestrator import MetaOrchestrator
         original = MetaOrchestrator.run_mission
 
+        # Signature TRANSPARENTE (*args/**kwargs) : le wrapper dupliquait la
+        # signature de run_mission et perdait les paramètres ajoutés depuis
+        # (force_approved, project_id, extra_metadata) → TypeError sur toute
+        # reprise approuvée. functools.wraps masquait le problème en faisant
+        # mentir inspect.signature(). Ne JAMAIS énumérer les kwargs ici.
         @functools.wraps(original)
-        async def instrumented_run_mission(self, goal, mode="auto", mission_id=None,
-                                           callback=None, use_budget=False):
+        async def instrumented_run_mission(self, goal, mode="auto", *args, **kwargs):
             from core.metrics_store import (
                 emit_mission_submitted, emit_mission_completed,
                 emit_mission_failed, emit_mission_timeout,
@@ -76,7 +80,7 @@ def _patch_meta_orchestrator() -> bool:
 
             t0 = time.monotonic()
             try:
-                ctx = await original(self, goal, mode, mission_id, callback, use_budget)
+                ctx = await original(self, goal, mode, *args, **kwargs)
                 duration_ms = (time.monotonic() - t0) * 1000
 
                 if ctx.status.value == "DONE":
@@ -114,12 +118,12 @@ def _patch_tool_executor() -> bool:
         original_retry = ToolExecutor._execute_with_retry
 
         @functools.wraps(original_execute)
-        def instrumented_execute(self, tool_name, params, approval_mode="SUPERVISED"):
+        def instrumented_execute(self, tool_name, params, *args, **kwargs):
             from core.metrics_store import (
                 emit_tool_invocation, emit_tool_timeout, get_metrics,
             )
 
-            result = original_execute(self, tool_name, params, approval_mode)
+            result = original_execute(self, tool_name, params, *args, **kwargs)
 
             try:
                 success = bool(result.get("ok"))
@@ -143,9 +147,9 @@ def _patch_tool_executor() -> bool:
             return result
 
         @functools.wraps(original_retry)
-        def instrumented_retry(self, tool_name, params, max_retries=1):
+        def instrumented_retry(self, tool_name, params, max_retries=1, *args, **kwargs):
             from core.metrics_store import emit_retry
-            result = original_retry(self, tool_name, params, max_retries)
+            result = original_retry(self, tool_name, params, max_retries, *args, **kwargs)
             try:
                 # If the result has retry indicators
                 if max_retries > 0 and not result.get("ok"):
@@ -235,11 +239,13 @@ def _patch_memory_facade() -> bool:
         original_search = MemoryFacade.search
 
         @functools.wraps(original_store)
-        def instrumented_store(self, content, content_type="general",
-                                tags=None, metadata=None):
+        def instrumented_store(self, content, *args, **kwargs):
             from core.metrics_store import get_metrics
-            result = original_store(self, content, content_type, tags, metadata)
+            result = original_store(self, content, *args, **kwargs)
             try:
+                content_type = kwargs.get(
+                    "content_type", args[0] if args else "general"
+                )
                 m = get_metrics()
                 m.inc("memory_entries_total", labels={"type": content_type})
                 if result.get("ok"):
@@ -251,10 +257,10 @@ def _patch_memory_facade() -> bool:
             return result
 
         @functools.wraps(original_search)
-        def instrumented_search(self, query, content_type=None, top_k=5):
+        def instrumented_search(self, query, *args, **kwargs):
             from core.metrics_store import emit_memory_search
             t0 = time.monotonic()
-            results = original_search(self, query, content_type, top_k)
+            results = original_search(self, query, *args, **kwargs)
             try:
                 ms = (time.monotonic() - t0) * 1000
                 hit = len(results) > 0
@@ -279,9 +285,9 @@ def _patch_improvement_loop() -> bool:
         original = ImprovementLoop.run_experiment
 
         @functools.wraps(original)
-        def instrumented_run_experiment(self, spec, apply_patch=None):
+        def instrumented_run_experiment(self, spec, *args, **kwargs):
             from core.metrics_store import emit_experiment, get_metrics
-            report = original(self, spec, apply_patch)
+            report = original(self, spec, *args, **kwargs)
             try:
                 score_delta = report.evaluation.get("composite", 0) if isinstance(
                     report.evaluation, dict) else 0
