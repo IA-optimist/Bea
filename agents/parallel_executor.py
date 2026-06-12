@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import os
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -39,6 +40,14 @@ CB = Callable[[str], Awaitable[None]]
 # Timeouts par défaut
 _DEFAULT_AGENT_TIMEOUT = 40      # secondes par agent
 _DEFAULT_GLOBAL_TIMEOUT = 120    # secondes pour tout le batch
+
+# Agents lents : les builders (Codex streaming) prennent 40-300s — le défaut
+# de 40s les tuait systématiquement en mode auto (le fix du 2026-06-10 ne
+# couvrait que le chemin BUSINESS). Surchargeable par env.
+_SLOW_AGENT_TIMEOUTS = {
+    "forge-builder": int(os.getenv("BEA_FORGE_AGENT_TIMEOUT", "420")),
+    "pulse-ops":     int(os.getenv("BEA_PULSE_AGENT_TIMEOUT", "180")),
+}
 
 _TRACE_LOG = Path("workspace/execution_trace.jsonl")
 # Rotation: keep max 50 MB of trace history.
@@ -258,19 +267,29 @@ class ParallelExecutor:
 
         t0 = time.monotonic()
 
+        # Le timeout global ne doit JAMAIS être plus court que le plus long
+        # timeout individuel du batch (+ marge), sinon il annule des agents
+        # lents (forge-builder 420s) que leur timeout propre autorise encore.
+        _longest_individual = max(
+            (t.get("timeout", _SLOW_AGENT_TIMEOUTS.get(t.get("agent", ""), self.agent_timeout))
+             for t in tasks),
+            default=self.agent_timeout,
+        )
+        _effective_global = max(self.global_timeout, _longest_individual + 30)
+
         try:
             raw_results = await asyncio.wait_for(
                 asyncio.gather(
                     *[self._run_one(t, session) for t in tasks],
                     return_exceptions=True,
                 ),
-                timeout=self.global_timeout,
+                timeout=_effective_global,
             )
         except asyncio.TimeoutError:
             log.warning("parallel_global_timeout",
-                        timeout=self.global_timeout, tasks=len(tasks))
+                        timeout=_effective_global, tasks=len(tasks))
             await _emit(
-                f"[ParallelExecutor] Timeout global ({self.global_timeout}s) — "
+                f"[ParallelExecutor] Timeout global ({_effective_global}s) — "
                 f"résultats partiels."
             )
             return {}
@@ -440,7 +459,10 @@ class ParallelExecutor:
         except Exception:
             log.debug("swallowed_exception", exc_info=True)
 
-        individual_timeout = task.get("timeout", self.agent_timeout)
+        individual_timeout = task.get(
+            "timeout",
+            _SLOW_AGENT_TIMEOUTS.get(agent_name, self.agent_timeout),
+        )
         retry_count = 0
         status = "SUCCESS"
         output = ""
