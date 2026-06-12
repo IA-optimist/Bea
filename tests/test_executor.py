@@ -323,3 +323,21 @@ def test_medium_auto_approve_via_settings():
 
     asyncio.run(run())
     _ok("politique BEA_AUTO_APPROVE_MEDIUM : False→attente, True→exécution")
+
+
+def test_parallel_executor_slow_agent_timeouts():
+    """forge-builder ne doit plus être tué à 40s en mode auto.
+
+    Régression 2026-06-12 : _DEFAULT_AGENT_TIMEOUT=40s tuait forge-builder
+    (Codex 40-300s) sur le chemin auto, et le timeout global (120s) annulait
+    de toute façon les agents lents que leur timeout propre autorisait.
+    """
+    from agents import parallel_executor as pe
+
+    assert pe._SLOW_AGENT_TIMEOUTS["forge-builder"] >= 300
+    assert pe._SLOW_AGENT_TIMEOUTS["pulse-ops"] > pe._DEFAULT_AGENT_TIMEOUT
+
+    # Le global effectif doit couvrir le plus long timeout individuel.
+    src = __import__("pathlib").Path("agents/parallel_executor.py").read_text(encoding="utf-8")
+    assert "_effective_global = max(self.global_timeout, _longest_individual" in src
+    _ok("timeouts agents lents : forge-builder >= 300s, global effectif couvrant")
