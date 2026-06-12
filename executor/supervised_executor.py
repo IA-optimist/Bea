@@ -365,7 +365,7 @@ class SupervisedExecutor:
                                    target=wf_name,
                                    output=f"[DRY_RUN] workflow '{wf_name}' simulé")
         try:
-            from workflow.workflow_engine import WorkflowEngine
+            from core.workflow.workflow_engine import WorkflowEngine
             engine  = WorkflowEngine(self.s)
             wf_id   = await engine.create(workflow_def)
             return ExecutionResult(success=True, action_type="create_workflow",
