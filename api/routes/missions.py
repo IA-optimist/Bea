@@ -69,6 +69,13 @@ async def submit_task(
     _check_auth(x_bea_token, authorization)
     ms      = _get_mission_system()
     result  = ms.submit(req.input)
+    # Persister le mode demandé : la reprise post-approbation
+    # (approve_mission_for_resume) relançait TOUT en mode "auto", perdant
+    # le mode BUSINESS/CODE choisi à la soumission.
+    try:
+        result.decision_trace["mode"] = req.mode
+    except Exception:
+        log.debug("mode_trace_skip", mission_id=result.mission_id)
 
     # ── Anti-duplicate execution guard (atomic check-and-add) ────────
     async with _running_missions_lock:

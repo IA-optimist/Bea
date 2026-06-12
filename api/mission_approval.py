@@ -83,13 +83,17 @@ def approve_mission_for_resume(
     original_goal = record.user_input or record.decision_trace.get("original_goal", "")
     if not original_goal:
         return {"ok": False, "error": "Cannot resume: original goal not found."}
+    # Reprendre dans le mode demandé à la soumission (persisté dans
+    # decision_trace par submit_task) — le hardcode "auto" perdait le mode
+    # BUSINESS/CODE et changeait le plan d'agents à la reprise.
+    original_mode = record.decision_trace.get("mode") or "auto"
 
     async def _resume_mission() -> None:
         try:
             orchestrator = get_orchestrator()
             session = await orchestrator.run_mission(
                 goal=original_goal,
-                mode="auto",
+                mode=original_mode,
                 mission_id=mission_id,
                 force_approved=True,
             )
