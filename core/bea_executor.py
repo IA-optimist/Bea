@@ -1005,7 +1005,7 @@ class BeaOrchestrator:
 
     async def _run_observer(self, session: BeaSession):
         try:
-            from observer.watcher import SystemObserver
+            from core.observability.watcher import SystemObserver
             snap = await SystemObserver(self.s).snapshot_workspace()
             session.set_output("observer", snap, success=True)
         except Exception as e:
