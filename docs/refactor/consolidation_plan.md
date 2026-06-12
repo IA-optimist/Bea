@@ -15,7 +15,7 @@ La règle de gel (« plus aucun nouveau top-level ») est dans
 | 1 | `observability/` | `langfuse_tracer.py` | `core/llm_factory.py` | `core/observability/` (existe déjà !) |
 | 2 | `observer/` | `watcher.py` | `core/bea_executor.py`, `main.py` | `core/observability/watcher.py` |
 | 3 | `workflow/` | `workflow_engine.py` | `agents/workflow_agent.py`, `tests/test_workflow.py` | `core/workflow/` (à côté de `core/workflow_runtime.py`) |
-| 4 | `bea_mcp/` | serveur + 2 adaptateurs | `api/startup_checks.py`, 2 tests | `mcp/bea/` (sous le paquet `mcp/` existant) |
+| 4 | `bea_mcp/` | serveur + 2 adaptateurs | `api/startup_checks.py`, 2 tests | `core/mcp/bea/` — PAS `mcp/bea/` : le SDK pip `mcp` (paquet régulier site-packages) gagne sur un namespace package racine, `mcp.bea` ne résoudrait jamais. Fait. |
 | 5 | `learning/` | engine + loop + filtres | 5 modules core/api + tests | `core/learning/` |
 | 6 | `monitoring/` | mixte : code py + docs + compose monitoring | 4 modules + tests | code → `core/observability/`, docs → `docs/monitoring/`, `docker-compose-monitoring.yml` → `deploy/` |
 

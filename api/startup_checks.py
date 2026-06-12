@@ -150,7 +150,7 @@ def register_mcp_adapters(settings=None) -> dict:
 
     # ── Qdrant MCP sidecar ──────────────────────────────────────────────
     try:
-        from bea_mcp.qdrant_mcp_adapter import register_qdrant_mcp
+        from core.mcp.bea.qdrant_mcp_adapter import register_qdrant_mcp
         registered = register_qdrant_mcp(registry, settings)
         result["qdrant_mcp"] = registered
         if registered:
@@ -162,7 +162,7 @@ def register_mcp_adapters(settings=None) -> dict:
 
     # ── GitHub MCP sidecar ──────────────────────────────────────────────
     try:
-        from bea_mcp.github_mcp_adapter import register_github_mcp
+        from core.mcp.bea.github_mcp_adapter import register_github_mcp
         registered = register_github_mcp(registry, settings)
         result["github_mcp"] = registered
         if registered:

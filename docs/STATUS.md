@@ -100,7 +100,7 @@
 | Component | File | Why wired vs proven |
 |-----------|------|---------------------|
 | MemoryFacade | `core/memory_facade.py` | Registered in main.py:189-218 with K1 wrapper. Used by retrieval. Not stress-tested with live Qdrant. |
-| MCP server (bea_mcp) | `bea_mcp/bea_mcp_server.py` | 3 read-only tools (memory_search, mission_status, list_missions). Untested with live MCP clients. |
+| MCP server (bea_mcp) | `core/mcp/bea/bea_mcp_server.py` | 3 read-only tools (memory_search, mission_status, list_missions). Untested with live MCP clients. |
 | MCP registry | `core/mcp/mcp_registry.py` | Infrastructure ready, sidecars defined, not actively called by orchestrator |
 | Adapters | `kernel/adapters/*.py` | 5 adapter modules (capability/event/plan/mission/result/policy). Used at boot. |
 | Connectors (filesystem, HTTP, GitHub) | `connectors/*.py` | Code exists, agents use direct tools instead |
