@@ -90,7 +90,7 @@ class ModelSelector:
     def _get_learning(self):
         if self._learning is None:
             try:
-                from learning.learning_engine import LearningEngine
+                from core.learning.learning_engine import LearningEngine
                 self._learning = LearningEngine(self.s)
             except Exception as e:
                 log.debug("model_selector_no_learning", err=str(e)[:60])

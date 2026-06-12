@@ -701,7 +701,7 @@ class ActionExecutor:
     def _learn(self, action, result: str, success: bool) -> None:
         """Envoie le résultat au learning loop."""
         try:
-            from learning.learning_loop import learning_loop
+            from core.learning.learning_loop import learning_loop
             learning_loop(
                 agent_name=f"executor_{action.risk.lower()}",
                 output=result,

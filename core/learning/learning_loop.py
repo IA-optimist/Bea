@@ -317,7 +317,7 @@ class LearningLoop:
         Retourne "stored" | "needs_test" | "discarded".
         """
         try:
-            from learning.knowledge_validator import KnowledgeValidator
+            from core.learning.knowledge_validator import KnowledgeValidator
             from memory.vault_memory import get_vault_memory
 
             vm        = get_vault_memory()
@@ -395,7 +395,7 @@ def learning_loop(
     Raccourci : observe une sortie agent et retourne un LearningReport.
 
     Usage :
-        from learning.learning_loop import learning_loop
+        from core.learning.learning_loop import learning_loop
         report = learning_loop("forge-builder", output_text, context="mission X")
     """
     return get_learning_loop().observe(

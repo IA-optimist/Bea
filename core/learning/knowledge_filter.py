@@ -11,7 +11,7 @@ Score de confiance composite :
   score global     → accepted si >= ACCEPT_THRESHOLD
 
 Utilisation :
-    from learning.knowledge_filter import KnowledgeFilter, SourceType
+    from core.learning.knowledge_filter import KnowledgeFilter, SourceType
     kf = KnowledgeFilter()
     result = kf.evaluate(url="https://docs.python.org/3/...", content="...")
     if result.accepted:

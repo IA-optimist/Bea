@@ -112,7 +112,7 @@ class NightScheduler:
         learning_count = 0
         for action in failed_actions:
             try:
-                from learning.learning_loop import learning_loop
+                from core.learning.learning_loop import learning_loop
                 lr = learning_loop(
                     agent_name="night-worker",
                     output=f"FAILED action: {action.get('description', '')} — {action.get('result', '')}",

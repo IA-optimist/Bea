@@ -84,7 +84,7 @@ def _make_run(**kwargs):
 
 def test_learning_record_and_get_recent():
     """record_run doit persister, get_recent_runs retourne les N derniers."""
-    from learning.learning_engine import LearningEngine
+    from core.learning.learning_engine import LearningEngine
     s  = _make_settings()
     le = LearningEngine(s)
     le.clear()
@@ -100,7 +100,7 @@ def test_learning_record_and_get_recent():
 
 def test_learning_compute_success_rates():
     """compute_success_rates doit calculer les ratios corrects."""
-    from learning.learning_engine import LearningEngine
+    from core.learning.learning_engine import LearningEngine
     s  = _make_settings()
     le = LearningEngine(s)
     le.clear()
@@ -120,7 +120,7 @@ def test_learning_compute_success_rates():
 
 def test_learning_recommend_insufficient_data():
     """recommend_strategy avec < 3 runs doit indiquer pas assez de données."""
-    from learning.learning_engine import LearningEngine
+    from core.learning.learning_engine import LearningEngine
     s  = _make_settings()
     le = LearningEngine(s)
     le.clear()
@@ -135,7 +135,7 @@ def test_learning_recommend_insufficient_data():
 
 def test_learning_recommend_weak_agent():
     """recommend_strategy doit détecter un agent faible."""
-    from learning.learning_engine import LearningEngine
+    from core.learning.learning_engine import LearningEngine
     s  = _make_settings()
     le = LearningEngine(s)
     le.clear()
@@ -155,7 +155,7 @@ def test_learning_recommend_weak_agent():
 
 def test_learning_generate_report():
     """generate_report doit retourner une string non vide."""
-    from learning.learning_engine import LearningEngine
+    from core.learning.learning_engine import LearningEngine
     s  = _make_settings()
     le = LearningEngine(s)
     le.clear()

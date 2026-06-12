@@ -163,7 +163,7 @@ class BeaOrchestrator:
         """LearningEngine : analyse et recommandations basées sur l'historique."""
         if not self._learning:
             try:
-                from learning.learning_engine import LearningEngine
+                from core.learning.learning_engine import LearningEngine
                 self._learning = LearningEngine(self.s)
             except Exception as e:
                 log.debug("orchestrator_no_learning", err=str(e)[:60])
