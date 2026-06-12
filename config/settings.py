@@ -220,6 +220,12 @@ class Settings:
     # ── Sécurité ──────────────────────────────────────────────
     dry_run:          bool = field(default_factory=lambda: _b("DRY_RUN"))
     max_auto_actions: int  = field(default_factory=lambda: _i("MAX_AUTO_ACTIONS", 25))
+    # BEA_AUTO_APPROVE_MEDIUM : politique opérateur — exécute les actions
+    # MEDIUM (écritures workspace, gardées par ExecutionGuard) sans validation
+    # unitaire. Sans ce flag, SupervisedExecutor les refuse en annonçant une
+    # « interface d'approbation » qui ne reçoit rien : impasse. HIGH reste
+    # toujours bloqué quoi qu'il arrive.
+    auto_approve_medium: bool = field(default_factory=lambda: _b("BEA_AUTO_APPROVE_MEDIUM"))
 
     # ── Night Worker ──────────────────────────────────────────
     night_worker_max_cycles:    int = field(default_factory=lambda: _i("NIGHT_WORKER_MAX_CYCLES", 5))
