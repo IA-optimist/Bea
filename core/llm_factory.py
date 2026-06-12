@@ -587,11 +587,10 @@ class LLMFactory:
         }
         m = model_map.get(role, self.s.ollama_model_main)
 
-        # Pour builder/reviewer/improve : activer le mode JSON natif d'Ollama.
-        # format="json" force physiquement une sortie JSON valide, quel que soit le modèle.
-        # Sans cela, les modèles répondent en texte libre même avec un prompt strict.
-        # "improve" = rôle audit LLM → doit aussi retourner un JSON structuré.
-        json_roles = frozenset({"builder", "reviewer", "improve"})
+        # "reviewer" et "improve" → JSON natif Ollama (leurs prompts attendent du JSON structuré).
+        # "builder" EXCLU : forge-builder produit des blocs ### Fichier: (texte libre),
+        # forcer format="json" casse l'extraction regex et empêche la création de fichiers.
+        json_roles = frozenset({"reviewer", "improve"})
         kwargs: dict = {"model": m, "base_url": self.s.ollama_host, "temperature": 0.1}
         if role in json_roles:
             kwargs["format"] = "json"

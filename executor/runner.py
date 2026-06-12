@@ -274,7 +274,7 @@ class ActionExecutor:
         # ── ExecutionGuard : vérification post-écriture ───────────────────────
         try:
             from core.execution_guard import get_guard
-            guard_result = await get_guard().guard_write(a.target, a.content)
+            guard_result = await get_guard().guard_write(str(p), a.content)
             if not guard_result.passed:
                 return ExecutionResult(
                     False, "write_file", a.target, "",

@@ -95,6 +95,23 @@ class AgentSelector:
         "plan", "roadmap", "étapes", "phases", "strategy", "architecture",
     })
 
+    @staticmethod
+    def _ensure_file_builder(agents: list[str], g: str) -> list[str]:
+        """Garantit forge-builder quand le goal exige un livrable fichier.
+
+        Une mission au format '### Fichier:' sans forge-builder ne peut produire
+        AUCUN fichier (seul agent dont la sortie est parsée en actions create_file).
+        Le cap MAX_AGENTS et le path 'medium' le faisaient sauter silencieusement.
+        """
+        if "### fichier" in g and "forge-builder" not in agents:
+            agents = ["forge-builder"] + agents
+            if len(agents) > MAX_AGENTS_PER_MISSION:
+                # forge-builder vient d'être inséré en tête — couper la queue
+                agents = agents[:MAX_AGENTS_PER_MISSION]
+            log.info("forge_builder_forced", reason="file_deliverable_in_goal",
+                     agents=agents)
+        return agents
+
     def select_agents(
         self,
         goal: str,
@@ -184,6 +201,7 @@ class AgentSelector:
                         agents = _f
             except Exception as _exc:
                 log.warning("swallowed_exception", action="specialization_filter", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+            agents = self._ensure_file_builder(agents, g)
             log.info(
                 "agent_selector_mission_routing",
                 agents=agents, mission_type=mission_type,
@@ -193,7 +211,7 @@ class AgentSelector:
 
         # ── LOW → 1 agent strict ──────────────────────────────────────────────
         if cx == "low":
-            agent = "forge-builder" if "code" in g else "scout-research"
+            agent = "forge-builder" if ("code" in g or "### fichier" in g) else "scout-research"
             log.info(
                 "agent_selector_v1",
                 agents=[agent], goal=goal[:60], risk=risk_level,
@@ -206,6 +224,7 @@ class AgentSelector:
             agents = ["scout-research", "lens-reviewer"]
             if rl in ("MEDIUM", "HIGH"):
                 agents.append("shadow-advisor")
+            agents = self._ensure_file_builder(agents, g)
             log.info(
                 "agent_selector_v1",
                 agents=agents, goal=goal[:60], risk=risk_level,
@@ -324,7 +343,7 @@ class AgentSelector:
             log.warning("swallowed_exception", action="policymode_inject", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         # ── end PolicyMode apply ─────────────────────────────────────────────
 
-        return agents
+        return self._ensure_file_builder(agents, g)
 
 
 _selector_instance: AgentSelector | None = None

@@ -35,7 +35,9 @@ CB = Callable[[str], Awaitable[None]]
 
 # Timeout global par mode (secondes)
 SESSION_TIMEOUTS = {
-    "auto":     150,   # 2.5 min (optimise pour <60s missions simples)
+    "auto":     600,   # 10 min — forge-builder Codex seul prend 180-300s ; les missions
+                       # simples sont déjà court-circuitées vers CHAT par TaskRouter.
+                       # 150s tuait TOUTE mission auto avec génération de code.
     "night":    1800,  # 30 min
     "improve":  900,   # 15 min
     "chat":     60,
