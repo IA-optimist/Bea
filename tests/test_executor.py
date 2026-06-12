@@ -264,3 +264,62 @@ def run_all():
 if __name__ == "__main__":
     success = run_all()
     pass  # sys.exit removed for pytest compatibility
+
+
+# ══════════════════════════════════════════════════════════════
+# Test 7 : politique opérateur BEA_AUTO_APPROVE_MEDIUM
+# ══════════════════════════════════════════════════════════════
+
+def test_medium_auto_approve_via_settings():
+    """settings.auto_approve_medium=True → MEDIUM exécuté ; False → impasse 'attente'.
+
+    Régression 2026-06-12 : sans la politique, SupervisedExecutor refusait les
+    actions MEDIUM en annonçant une « interface d'approbation » qui ne recevait
+    rien (aucune file alimentée) — les missions approuvées ne produisaient
+    jamais leurs fichiers.
+    """
+    from executor.supervised_executor import SupervisedExecutor
+    from core.state import ActionSpec
+    from executor.runner import ExecutionResult
+    from config.settings import get_settings
+
+    s = get_settings()
+    s.dry_run = False
+
+    async def emit(msg: str):
+        pass
+
+    def make_action():
+        return ActionSpec(
+            id="t-med", action_type="create_file",
+            target="business/cvoptimia/mvp/src/routes/billing.js",
+            content="// stub", command="", old_str="", new_str="",
+            description="MEDIUM create_file",
+        )
+
+    calls = []
+
+    class _FakeExecutor:
+        async def execute(self, action, session_id="", agent=""):
+            calls.append(action.id)
+            return ExecutionResult(True, action.action_type, action.target, "ok")
+
+    async def run():
+        # Sans politique → impasse « attente de validation »
+        s.auto_approve_medium = False
+        sup = SupervisedExecutor(s, emit=emit)
+        sup.executor = _FakeExecutor()
+        r1 = await sup.execute(make_action(), session_id="t-pol")
+        assert not r1.success and "attente" in (r1.error or ""), r1
+
+        # Avec politique → exécution déléguée à l'executor
+        s.auto_approve_medium = True
+        sup2 = SupervisedExecutor(s, emit=emit)
+        sup2.executor = _FakeExecutor()
+        r2 = await sup2.execute(make_action(), session_id="t-pol")
+        assert r2.success, r2
+        assert calls, "l'executor n'a pas été appelé"
+        s.auto_approve_medium = False
+
+    asyncio.run(run())
+    _ok("politique BEA_AUTO_APPROVE_MEDIUM : False→attente, True→exécution")

@@ -155,7 +155,10 @@ class SupervisedExecutor:
                     target=action.target,
                     output="[DRY_RUN] action MEDIUM simulée",
                 )
-            if auto_approve_medium:
+            # Politique opérateur BEA_AUTO_APPROVE_MEDIUM (config/settings.py) :
+            # sans elle, le chemin « attente de validation » est une impasse
+            # (aucune file ne reçoit l'action). HIGH reste bloqué plus bas.
+            if auto_approve_medium or getattr(self.s, "auto_approve_medium", False):
                 return await self.executor.execute(action, session_id, agent)
 
             # Mode normal : mise en attente de validation via API
