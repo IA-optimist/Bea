@@ -52,7 +52,7 @@ _METRICS_CACHE: dict[str, object] = {}
 def _get_tracer(settings):
     """Retourne le LangfuseTracer singleton. Silencieux si absent/désactivé."""
     try:
-        from observability.langfuse_tracer import get_tracer
+        from core.observability.langfuse_tracer import get_tracer
         return get_tracer(settings)
     except Exception:
         return None
