@@ -17,14 +17,17 @@ NC='\033[0m' # No Color
 # Vérifier que les services sont actifs
 echo "📡 Vérification des services..."
 
-if ! curl -s http://72.62.177.55:8000/health > /dev/null; then
-    echo -e "${RED}✗ API non disponible sur http://72.62.177.55:8000${NC}"
+API_URL="${BEA_API_URL:-http://127.0.0.1:8000}"
+FRONTEND_URL="${BEA_FRONTEND_URL:-http://127.0.0.1:8000}"
+
+if ! curl -s "$API_URL/health" > /dev/null; then
+    echo -e "${RED}✗ API non disponible sur $API_URL${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ API disponible${NC}"
 
-if ! curl -s -I http://72.62.177.55:3001 | grep -q "200 OK"; then
-    echo -e "${RED}✗ Frontend non disponible sur http://72.62.177.55:3001${NC}"
+if ! curl -s -I "$FRONTEND_URL/app.html" | grep -q "200 OK"; then
+    echo -e "${RED}✗ Frontend non disponible sur $FRONTEND_URL${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Frontend disponible${NC}"

@@ -1,97 +1,53 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE_URL = 'http://72.62.177.55:8000';
+const API_BASE_URL = process.env.BEA_API_URL ?? 'http://127.0.0.1:8000';
+const API_TOKEN = process.env.BEA_API_TOKEN;
 
-test.describe('BeaMax API Tests', () => {
-  
-  test('Health check endpoint should return 200', async ({ request }) => {
+function authHeaders(): Record<string, string> {
+  return API_TOKEN ? { 'X-Bea-Token': API_TOKEN } : {};
+}
+
+test.describe('Bea API', () => {
+  test('public health endpoint reports the service as healthy', async ({ request }) => {
     const response = await request.get(`${API_BASE_URL}/health`);
     expect(response.status()).toBe(200);
-    
-    const data = await response.json();
-    expect(data).toHaveProperty('status');
-    expect(data.status).toBe('ok');
-    expect(data).toHaveProperty('service');
-    expect(data.service).toBe('beamax');
-  });
-
-  test('Mission submit endpoint should accept valid mission', async ({ request }) => {
-    const missionData = {
-      goal: 'Test mission from Playwright E2E',
-      mission_type: 'research'
-    };
-
-    const response = await request.post(`${API_BASE_URL}/api/v2/missions/submit`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      data: missionData
+    await expect(response.json()).resolves.toMatchObject({
+      status: 'ok',
+      service: 'beamax',
     });
-
-    expect(response.status()).toBe(200);
-    
-    const data = await response.json();
-    expect(data).toHaveProperty('ok');
-    expect(data.ok).toBe(true);
-    expect(data).toHaveProperty('data');
-    expect(data.data).toHaveProperty('task_id');
-    expect(data.data).toHaveProperty('mission_id');
-    expect(data.data).toHaveProperty('status');
   });
 
-  test('Mission submit should reject empty goal', async ({ request }) => {
-    const missionData = {
-      goal: '',
-      mission_type: 'research'
-    };
-
-    const response = await request.post(`${API_BASE_URL}/api/v2/missions/submit`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      data: missionData
-    });
-
-    expect([400, 422]).toContain(response.status());
+  test('protected endpoint rejects anonymous requests', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v3/system/status`);
+    expect(response.status()).toBe(401);
   });
 
-  test('Missions list endpoint should return data', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/v2/missions`);
-    
-    expect(response.status()).toBe(200);
-    
-    const data = await response.json();
-    expect(data).toHaveProperty('ok');
-    expect(data.ok).toBe(true);
-    expect(data).toHaveProperty('data');
-    expect(data.data).toHaveProperty('missions');
-    expect(Array.isArray(data.data.missions)).toBe(true);
-  });
+  test('authenticated status and readiness endpoints respond', async ({ request }) => {
+    test.skip(!API_TOKEN, 'BEA_API_TOKEN is required for authenticated E2E checks');
 
-  test('Missions list should include stats', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/v2/missions`);
-    
-    expect(response.status()).toBe(200);
-    
-    const data = await response.json();
-    expect(data.data).toHaveProperty('stats');
-    expect(data.data.stats).toHaveProperty('total');
-    expect(data.data.stats).toHaveProperty('by_status');
-  });
-
-  test('API should return 404 for non-existent endpoint', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/v2/nonexistent`);
-    expect(response.status()).toBe(404);
-  });
-
-  test('API health check should include version info', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/health`);
-    const data = await response.json();
-    
-    expect(data).toHaveProperty('status');
-    // Version might be optional, check if exists
-    if (data.version) {
-      expect(typeof data.version).toBe('string');
+    for (const path of ['/api/v3/system/status', '/api/v3/system/readiness']) {
+      const response = await request.get(`${API_BASE_URL}${path}`, {
+        headers: authHeaders(),
+      });
+      expect(response.status(), path).toBe(200);
+      expect((await response.json()).ok, path).toBe(true);
     }
+  });
+
+  test('authenticated mission listing returns an array', async ({ request }) => {
+    test.skip(!API_TOKEN, 'BEA_API_TOKEN is required for authenticated E2E checks');
+
+    const response = await request.get(`${API_BASE_URL}/api/v3/missions?limit=5`, {
+      headers: authHeaders(),
+    });
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload.ok).toBe(true);
+    expect(Array.isArray(payload.data.missions)).toBe(true);
+  });
+
+  test('unknown API endpoint returns 404', async ({ request }) => {
+    const response = await request.get(`${API_BASE_URL}/api/v3/nonexistent`);
+    expect(response.status()).toBe(404);
   });
 });

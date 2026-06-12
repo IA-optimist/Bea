@@ -70,7 +70,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      OLLAMA_HOST: "http://172.20.0.4:11434"
+      # Service DNS name (beamax-network) — ne pas remettre une IP de conteneur
+      # en dur : elle change à chaque recréation du réseau (cf. ab3a9b1).
+      OLLAMA_HOST: "http://ollama:11434"
       PYTHONUNBUFFERED: 1
     ports:
       # Hardening (audit Mo7): bind explicite loopback. En prod, Caddy/nginx

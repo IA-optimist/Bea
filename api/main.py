@@ -2,16 +2,10 @@
 BEA MAX — Canonical API (FastAPI)
 This is the ONE backend API. Loaded by main.py (the canonical entrypoint).
 
-Structure (1800+ lines — refactor into routers planned):
-  Lines ~70-220:   App init, CORS, router mounts
-  Lines ~220-260:  Startup, auth helpers
-  Lines ~260-330:  Pydantic models, lazy getters
-  Lines ~330-810:  POST /api/v2/task (main mission handler)
-  Lines ~810-1060: Task/mission CRUD endpoints
-  Lines ~1060-1180: Health, status, metrics, diagnostics, logs, restart
-  Lines ~1180-1310: Mode system, SSE stream, legacy aliases
-  Lines ~1310-1550: Decision memory, multimodal, auth, websocket
-  Lines ~1550-1800: Self-improvement, tools, knowledge, static mount
+Structure (~1000 lignes — le gros du refactor en routers est fait, cf. api/routes/):
+  app init, CORS, middlewares de sécurité, montage des routers,
+  startup/shutdown, health/status, SSE, websocket, montage statique.
+  Les endpoints métier vivent dans api/routes/*.
 
 Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """

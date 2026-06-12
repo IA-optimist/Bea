@@ -78,6 +78,9 @@ limiter = Limiter(
     key_func=get_rate_limit_key,
     default_limits=["100/minute"],  # Global default
     storage_uri=_STORAGE_URI,
+    # Bea loads configuration explicitly. Disable slowapi's implicit .env
+    # read, which uses the Windows locale encoding and breaks on UTF-8.
+    config_filename="",
 )
 
 

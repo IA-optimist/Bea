@@ -59,6 +59,31 @@ async def test_action_executor_rejects_paths_outside_workspace(monkeypatch, tmp_
     assert "outside workspace" in (result.error or "")
 
 
+@pytest.mark.asyncio
+async def test_action_executor_guards_resolved_workspace_path(monkeypatch, tmp_path):
+    from core.state import ActionSpec, RiskLevel
+    from executor import runner
+
+    workspace = tmp_path / "workspace"
+    monkeypatch.setattr(runner, "WORKSPACE", workspace)
+    monkeypatch.setattr(runner, "BACKUP_DIR", workspace / ".backups")
+    monkeypatch.setattr(runner, "LOGS_DIR", tmp_path / "logs")
+    monkeypatch.setattr(runner, "EXEC_LOG", tmp_path / "logs" / "executor.jsonl")
+
+    result = await runner.ActionExecutor().execute(
+        ActionSpec(
+            id="p1-write",
+            action_type="write_file",
+            target="reports/result.txt",
+            content="written",
+            risk=RiskLevel.LOW,
+        )
+    )
+
+    assert result.success is True
+    assert (workspace / "reports" / "result.txt").read_text(encoding="utf-8") == "written"
+
+
 def test_local_fallback_sandbox_rejects_shell_metacharacters(monkeypatch, tmp_path):
     from executor.desktop_env.sandbox import LocalFallbackSandbox
 
@@ -81,6 +106,30 @@ def test_api_main_mounts_only_slowapi_rate_limiter():
     assert "app.add_middleware(SlowAPIMiddleware)" in content
     assert "app.add_middleware(RateLimitMiddleware)" not in content
     assert "from api.rate_limiter import RateLimitMiddleware" not in content
+
+
+def test_slowapi_does_not_read_dotenv_implicitly():
+    content = Path("api/rate_limit_middleware.py").read_text(encoding="utf-8")
+
+    assert "config_filename=" in content
+
+
+def test_frontend_uses_existing_system_capabilities_route():
+    content = Path("static/app.html").read_text(encoding="utf-8")
+
+    assert "/api/v3/system/capabilities" not in content
+    assert "/api/v2/system/capabilities" in content
+
+
+def test_e2e_configuration_has_no_hardcoded_production_url():
+    for path in (
+        "playwright.config.ts",
+        "tests/e2e/api.spec.ts",
+        "tests/e2e/frontend.spec.ts",
+        "scripts/verify-e2e.sh",
+    ):
+        content = Path(path).read_text(encoding="utf-8")
+        assert "72.62.177.55" not in content, path
 
 
 def test_api_main_adds_cors_after_security_middlewares():

@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const frontendURL = process.env.BEA_FRONTEND_URL ?? 'http://127.0.0.1:8000';
+
 /**
  * Configuration Playwright pour BeaMax
  * Tests E2E pour API et Frontend
@@ -16,7 +18,7 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: 'http://72.62.177.55:3001',
+    baseURL: frontendURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

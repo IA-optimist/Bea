@@ -805,7 +805,7 @@ async function rejectMission(id){
 async function loadAdmin(){
   document.getElementById('admin-content').innerHTML='<div class="spin"></div>';
   const[status,health,metrics,caps]=await Promise.all([
-    api('/api/v3/system/status'),api('/api/v3/system/health'),api('/api/v3/metrics/summary'),api('/api/v3/system/capabilities')
+    api('/api/v3/system/status'),api('/api/v3/system/health'),api('/api/v3/metrics/summary'),api('/api/v2/system/capabilities')
   ]);
   let html='';
   if(status&&status.data){
@@ -928,7 +928,7 @@ async function toggleModule(type,id){
 
 async function loadSystem(){
   document.getElementById('sys-content').innerHTML='<div class="spin"></div>';
-  const[health,caps]=await Promise.all([api('/api/health'),api('/api/v3/system/capabilities')]);
+  const[health,caps]=await Promise.all([api('/api/health'),api('/api/v2/system/capabilities')]);
   let html='';
   if(health?.data){
     const comps=health.data.components||{};
