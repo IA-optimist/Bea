@@ -1,4 +1,4 @@
-.PHONY: ci-local ci-local-no-lint p2-hardening-apply
+.PHONY: ci-local ci-local-no-lint p2-hardening-apply clean-workspace
 
 ci-local:
 	bash scripts/ci/local_ci.sh
@@ -14,3 +14,8 @@ ci-local-no-lint:
 
 p2-hardening-apply:
 	bash scripts/github/apply_p2_repo_hardening.sh IA-optimist/Bea main
+
+# Hygiène locale : archive les vieux builds, purge les caches Python.
+# DRY_RUN=1 pour prévisualiser, KEEP_DAYS=N pour ajuster la rétention.
+clean-workspace:
+	bash scripts/clean_workspace.sh

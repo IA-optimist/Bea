@@ -126,6 +126,37 @@ Prefix conventions : `feat`, `fix`, `docs`, `test`, `refactor`, `ops`,
 | Infrastructure docs  | `docs/DEPLOYMENT_GUIDE.md`                  |
 | API versioning       | `docs/API_VERSIONING.md`                    |
 
+### Structure rules (audit 2026-06)
+
+- **Top-level freeze** : the repo already has 50+ top-level directories.
+  Do NOT create a new top-level directory — new code goes into an existing
+  package (`core/<area>/`, `api/routes/`, `business/`, ...). If you think a
+  new top-level is justified, document why in `ARCHITECTURE.md` in the same
+  PR.
+- **No micro-packages** : a package of 1–3 files that mirrors an existing
+  concept (`monitoring` / `observability` / `observer`, `workflow` vs
+  `core/workflow_runtime.py`) is debt, not structure. Extend the existing
+  one. Consolidation plan : `docs/refactor/consolidation_plan.md`.
+- **File size** : new modules should stay under ~800 lines ; if a file you
+  touch exceeds 1000 lines, prefer extracting a focused module over growing
+  it (split plan for the worst offender :
+  `docs/refactor/meta_orchestrator_split.md`).
+
+### Error handling & logging standard (audit 2026-06)
+
+The codebase has ~2900 `except Exception` blocks. For new/touched code :
+
+- **Never swallow silently** : every `except Exception` must at minimum
+  `log.warning(...)` with enough context (mission id, agent, step) to
+  diagnose later.
+- **Re-raise what must stop the world** : config errors, auth/security
+  failures and DB-schema errors must propagate, not be absorbed by a
+  resilience loop.
+- **Catch narrow when you know** : prefer `except (TimeoutError, OSError)`
+  over `except Exception` when the failure mode is known.
+- **structlog, not print()** : `print()` is for CLI entrypoints only
+  (`orchestrate-cli/`, scripts). Library/server code uses `structlog`.
+
 ## 6. Ops quick reference
 
 These scripts run on **VPS1 as root** (never from sandbox/CI) :
