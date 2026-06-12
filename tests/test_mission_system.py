@@ -485,6 +485,40 @@ def test_mission_system_submit_simple():
     pass
 
 
+def test_approve_accepts_awaiting_approval(temp_storage, monkeypatch):
+    """Le circuit superviseur doit pouvoir approuver une mission HIGH.
+
+    submit() place les missions HIGH-risk en AWAITING_APPROVAL ; approve()
+    ne doit pas les rejeter, et complete() (appelé par le run en arrière-plan
+    quand l'orchestrateur refuse d'exécuter) ne doit PAS écraser le statut
+    en PLAN_ONLY — sinon la fenêtre d'approbation est détruite.
+    """
+    import core.db as db_mod
+    monkeypatch.setattr(db_mod, "get_db", lambda: None)
+
+    from core.mission_system import (
+        MissionIntent, MissionResult, MissionSystem, MissionStatus,
+    )
+
+    ms = MissionSystem(storage=temp_storage)
+    r = MissionResult(
+        mission_id="m-high-1",
+        user_input="écris le fichier billing.js avec le webhook de paiement",
+        intent=MissionIntent.CREATE,
+        status=MissionStatus.AWAITING_APPROVAL,
+    )
+    ms._missions["m-high-1"] = r
+
+    # complete() pendant la fenêtre d'approbation → statut inchangé
+    out = ms.complete("m-high-1", result_text="refus orchestrateur")
+    assert out.status == MissionStatus.AWAITING_APPROVAL
+
+    # approve() depuis AWAITING_APPROVAL → APPROVED
+    approved = ms.approve("m-high-1", note="validation superviseur")
+    assert approved.status == MissionStatus.APPROVED
+    print("[OK] test_approve_accepts_awaiting_approval")
+
+
 # ═══════════════════════════════════════════════════════════════
 # RUN ALL TESTS
 # ═══════════════════════════════════════════════════════════════

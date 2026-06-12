@@ -341,9 +341,16 @@ class MissionSystem:
             self._save_mission(r)
 
     def approve(self, mission_id: str, note: str = "") -> MissionResult|None:
-        """Approuve une mission en attente de validation."""
+        """Approuve une mission en attente de validation.
+
+        Accepte PENDING_VALIDATION et AWAITING_APPROVAL : submit() place les
+        missions HIGH-risk en AWAITING_APPROVAL — sans cette branche, le
+        circuit superviseur était inatteignable pour elles.
+        """
         r = self._missions.get(mission_id)
-        if not r or r.status != MissionStatus.PENDING_VALIDATION:
+        if not r or r.status not in (
+            MissionStatus.PENDING_VALIDATION, MissionStatus.AWAITING_APPROVAL,
+        ):
             return r
 
         aq = self._get_action_queue()
@@ -369,11 +376,16 @@ class MissionSystem:
         if not r:
             return None
 
-        # Garde-fou 1 : jamais DONE sans approbation
-        if r.status == MissionStatus.PENDING_VALIDATION:
+        # Garde-fou 1 : jamais DONE sans approbation. AWAITING_APPROVAL inclus :
+        # le run en arrière-plan de l'API appelle complete() quand l'orchestrateur
+        # refuse d'exécuter une mission HIGH non approuvée — sans cette branche,
+        # le statut était écrasé en PLAN_ONLY et la fenêtre d'approbation détruite.
+        if r.status in (
+            MissionStatus.PENDING_VALIDATION, MissionStatus.AWAITING_APPROVAL,
+        ):
             log.warning(
                 "complete_blocked_pending_validation",
-                id=mission_id,
+                id=mission_id, status=str(r.status),
                 hint="Mission needs explicit approval before completion",
             )
             return r  # statut inchangé
