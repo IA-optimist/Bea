@@ -65,7 +65,7 @@ def _make_settings():
 
 def test_workflow_create_valid():
     """Création d'un workflow valide doit retourner un ID."""
-    from workflow.workflow_engine import WorkflowEngine
+    from core.workflow.workflow_engine import WorkflowEngine
     s  = _make_settings()
     engine = WorkflowEngine(s)
 
@@ -89,7 +89,7 @@ def test_workflow_create_valid():
 
 def test_workflow_create_invalid_missing_steps():
     """Un workflow sans steps doit lever WorkflowValidationError."""
-    from workflow.workflow_engine import WorkflowEngine, WorkflowValidationError
+    from core.workflow.workflow_engine import WorkflowEngine, WorkflowValidationError
     s  = _make_settings()
     engine = WorkflowEngine(s)
 
@@ -103,7 +103,7 @@ def test_workflow_create_invalid_missing_steps():
 
 def test_workflow_create_invalid_trigger():
     """Un trigger invalide doit lever WorkflowValidationError."""
-    from workflow.workflow_engine import WorkflowEngine, WorkflowValidationError
+    from core.workflow.workflow_engine import WorkflowEngine, WorkflowValidationError
     s  = _make_settings()
     engine = WorkflowEngine(s)
 
@@ -121,7 +121,7 @@ def test_workflow_create_invalid_trigger():
 
 def test_workflow_list():
     """list_workflows doit retourner les métadonnées sans les steps complets."""
-    from workflow.workflow_engine import WorkflowEngine
+    from core.workflow.workflow_engine import WorkflowEngine
     s  = _make_settings()
     engine = WorkflowEngine(s)
 
@@ -143,7 +143,7 @@ def test_workflow_list():
 
 def test_workflow_get():
     """get() doit retourner le workflow complet par ID."""
-    from workflow.workflow_engine import WorkflowEngine
+    from core.workflow.workflow_engine import WorkflowEngine
     s      = _make_settings()
     engine = WorkflowEngine(s)
 

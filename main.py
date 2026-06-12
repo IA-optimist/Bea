@@ -295,7 +295,7 @@ def create_api(settings) -> FastAPI:
     @app.get("/workspace", tags=["system"])
     async def workspace_info():
         try:
-            from observer.watcher import SystemObserver
+            from core.observability.watcher import SystemObserver
             snap = await SystemObserver(s).snapshot_workspace()
             return {"snapshot": snap}
         except Exception as e:

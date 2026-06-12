@@ -138,7 +138,7 @@ Tous accessibles via http://MONITORING_HOST:3002 (admin / ${GRAFANA_ADMIN_PASSWO
 ## 📁 Structure des Fichiers
 
 ```
-/root/Beamax-master/monitoring/
+/root/Beamax-master/deploy/monitoring/
 ├── docker-compose-monitoring.yml    # Compose file principal
 ├── prometheus/
 │   ├── prometheus.yml              # Config Prometheus

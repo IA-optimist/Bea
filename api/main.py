@@ -879,7 +879,7 @@ def _get_task_queue():
 def _get_metrics():
     try:
         from config.settings import get_settings
-        from monitoring.metrics import MetricsCollector
+        from core.observability.metrics import MetricsCollector
         return MetricsCollector(get_settings())
     except Exception:
         return None

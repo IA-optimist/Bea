@@ -223,7 +223,7 @@ Pour intégrer ce code dans votre API BeaMax:
 
 1. Ajouter dans main.py ou créer un nouveau fichier api/webhooks.py:
 
-    from monitoring.api_webhook_integration import webhook_router
+    from deploy.monitoring.api_webhook_integration import webhook_router  # exemple : copier dans api/
     
     # Dans votre app FastAPI
     app.include_router(webhook_router)

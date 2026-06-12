@@ -109,7 +109,7 @@ with task_duration.time():
 **Ajuster les seuils d'alerte**:
 ```bash
 # Éditer les règles
-nano /root/Beamax-master/monitoring/prometheus/alerts.yml
+nano /root/Beamax-master/deploy/monitoring/prometheus/alerts.yml
 
 # Recharger Prometheus
 curl -X POST http://localhost:9090/-/reload

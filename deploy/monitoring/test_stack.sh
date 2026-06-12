@@ -54,7 +54,7 @@ test_health() {
 
 echo "1️⃣  Checking Docker containers..."
 echo "-----------------------------------"
-cd /root/Beamax-master/monitoring
+cd /root/Beamax-master/deploy/monitoring
 docker compose -f docker-compose-monitoring.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
@@ -110,10 +110,10 @@ echo ""
 echo "8️⃣  Checking Grafana Dashboards..."
 echo "-----------------------------------"
 # This requires authentication, so we just check if provisioning directory exists
-if [ -d "/root/Beamax-master/monitoring/grafana/dashboards" ]; then
-    dashboard_count=$(ls -1 /root/Beamax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | wc -l)
+if [ -d "/root/Beamax-master/deploy/monitoring/grafana/dashboards" ]; then
+    dashboard_count=$(ls -1 /root/Beamax-master/deploy/monitoring/grafana/dashboards/*.json 2>/dev/null | wc -l)
     echo -e "${GREEN}✓${NC} $dashboard_count dashboard files found"
-    ls -1 /root/Beamax-master/monitoring/grafana/dashboards/*.json 2>/dev/null | xargs -n1 basename
+    ls -1 /root/Beamax-master/deploy/monitoring/grafana/dashboards/*.json 2>/dev/null | xargs -n1 basename
 else
     echo -e "${RED}✗${NC} Dashboard directory not found"
 fi

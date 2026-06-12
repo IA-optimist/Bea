@@ -87,7 +87,7 @@ class WorkflowAgent:
         wf_def = self._sanitize(wf_def, user_input)
 
         # 4. Créer via WorkflowEngine
-        from workflow.workflow_engine import WorkflowEngine
+        from core.workflow.workflow_engine import WorkflowEngine
         engine = WorkflowEngine(self.s)
         try:
             wf_id = await engine.create(wf_def)
@@ -111,7 +111,7 @@ class WorkflowAgent:
         Exécute un workflow par son ID.
         Retourne le rapport d'exécution de WorkflowEngine.
         """
-        from workflow.workflow_engine import WorkflowEngine
+        from core.workflow.workflow_engine import WorkflowEngine
         engine = WorkflowEngine(self.s)
         return await engine.execute(wf_id, emit=emit, extra_context=extra_context)
 
@@ -207,5 +207,5 @@ class WorkflowAgent:
 
     def list_workflows(self) -> list[dict]:
         """Liste tous les workflows disponibles."""
-        from workflow.workflow_engine import WorkflowEngine
+        from core.workflow.workflow_engine import WorkflowEngine
         return WorkflowEngine(self.s).list_workflows()
