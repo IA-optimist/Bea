@@ -198,7 +198,7 @@ class TestArchitectureRules(unittest.TestCase):
                                 "core", "orchestration")
         for f in os.listdir(orch_dir):
             if f.endswith(".py"):
-                with open(os.path.join(orch_dir, f)) as fh:
+                with open(os.path.join(orch_dir, f), encoding="utf-8", errors="replace") as fh:
                     content = fh.read()
                 self.assertNotIn("class MetaOrchestrator2", content)
                 self.assertNotIn("class AlternateOrchestrator", content)
@@ -209,7 +209,7 @@ class TestArchitectureRules(unittest.TestCase):
                                 "executor")
         for f in os.listdir(exec_dir):
             if f.endswith(".py") and not f.startswith("__"):
-                with open(os.path.join(exec_dir, f)) as fh:
+                with open(os.path.join(exec_dir, f), encoding="utf-8", errors="replace") as fh:
                     content = fh.read()
                 self.assertNotIn("class ExecutionResult2", content)
 

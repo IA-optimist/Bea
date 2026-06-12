@@ -434,13 +434,14 @@ def generate_report(result: ExperimentResult) -> str:
 ## Rollback
 {json.dumps(result.rollback_info, indent=2) if result.rollback_info else 'N/A'}
 """
-    # Save
+    # Save — encoding explicite : le rapport contient ✅/❌, l'encodage locale
+    # Windows (cp1252) ne sait pas les écrire → UnicodeEncodeError au runtime.
     report_path = os.path.join(REPORT_DIR, f"{result.experiment_id}.md")
-    with open(report_path, "w") as f:
+    with open(report_path, "w", encoding="utf-8") as f:
         f.write(md)
 
     json_path = os.path.join(REPORT_DIR, f"{result.experiment_id}.json")
-    with open(json_path, "w") as f:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result.to_dict(), f, indent=2, default=str)
 
     return report_path

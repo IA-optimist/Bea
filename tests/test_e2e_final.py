@@ -252,7 +252,7 @@ class TestNoLegacyLeakage(unittest.TestCase):
                 continue
             for f in os.listdir(path):
                 if f.endswith(".py"):
-                    with open(os.path.join(path, f)) as fh:
+                    with open(os.path.join(path, f), encoding="utf-8", errors="replace") as fh:
                         content = fh.read()
                     self.assertNotIn("telegram", content.lower(),
                                      f"Telegram reference in {subdir}/{f}")

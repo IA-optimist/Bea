@@ -64,7 +64,7 @@ class TestMissionStatusUnified(unittest.TestCase):
         result = subprocess.run(
             ["grep", "-rn", "class MissionStatus", "--include=*.py",
              _ROOT + "/core/"],
-            capture_output=True, text=True,
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         lines = [l for l in result.stdout.strip().split("\n")
                  if l and "__pycache__" not in l and "test" not in l.lower()]
@@ -84,7 +84,11 @@ class TestMissionStatusUnified(unittest.TestCase):
             return fp[len(root):].lstrip("/") if fp.startswith(root) else fp
 
         found_files = {_relfile(l) for l in definitions}
-        unexpected = found_files - ALLOWED
+        # Comparaison par suffixe : le chemin absolu peut diverger de _ROOT
+        # sur les caractères accentués (grep émet de l'UTF-8, le décodage
+        # locale Windows les altère) — le suffixe relatif, lui, est stable.
+        unexpected = {f for f in found_files
+                      if not any(f.endswith(a) for a in ALLOWED)}
         self.assertEqual(len(unexpected), 0,
                          f"MissionStatus defined in unexpected places: {unexpected}")
 

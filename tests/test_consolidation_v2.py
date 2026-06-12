@@ -126,8 +126,12 @@ class TestModelAutoUpdateWiring:
 class TestDeadCodeRemoval:
     """Cycle 6: Dead code removed."""
 
-    def test_CV20_cockpit_html_deleted(self):
-        assert not Path("static/cockpit.html").exists()
+    def test_CV20_cockpit_html_is_ops_dashboard(self):
+        # L'ancien cockpit missions (dead code) a été supprimé au Cycle 6.
+        # Un NOUVEAU cockpit ops a été reconstruit le 2026-06-06 (7572f39) :
+        # dashboard performance/improvements, pas l'ancien cockpit missions.
+        content = Path("static/cockpit.html").read_text(encoding="utf-8")
+        assert "/api/v3/performance" in content
 
     def test_CV21_cognitive_html_deleted(self):
         assert not Path("static/cognitive.html").exists()

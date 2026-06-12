@@ -337,7 +337,7 @@ class TestMetaOrchestratorIntegration:
 
     def test_MP28_transition_persists(self):
         """MetaOrchestrator._transition calls persistence."""
-        src = open(os.path.join(os.path.dirname(__file__), "..", "core", "meta_orchestrator.py")).read()
+        src = open(os.path.join(os.path.dirname(__file__), "..", "core", "meta_orchestrator.py"), encoding="utf-8").read()
         assert "mission_persistence" in src
         assert "get_mission_persistence" in src
 
@@ -437,7 +437,7 @@ class TestEdgeCases:
     @pytest.mark.xfail(reason="atomic write guarantee drift", strict=False)
     def test_MP38_atomic_write(self):
         """Persist file uses atomic write (tmp + rename)."""
-        src = open(os.path.join(os.path.dirname(__file__), "..", "core", "mission_persistence.py")).read()
+        src = open(os.path.join(os.path.dirname(__file__), "..", "core", "mission_persistence.py"), encoding="utf-8").read()
         assert ".tmp" in src
         assert "rename" in src
 

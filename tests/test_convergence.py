@@ -72,23 +72,16 @@ def test_bridge_feature_flag():
     assert "BEA_USE_CANONICAL_ORCHESTRATOR" in source
 
 
-@pytest.mark.skipif(not Path("static/cockpit.html").exists(),
-                    reason="static/cockpit.html supprimé (consolidé dans app.html)")
-def test_cockpit_v3_endpoints():
-    """Cockpit HTML calls v3 convergence endpoints."""
-    source = Path("static/cockpit.html").read_text(encoding="utf-8")
-    assert "/api/v3/missions" in source
-    assert "/api/v3/missions/" in source
-    assert "/api/v3/system/status" in source
+def test_cockpit_is_ops_dashboard_not_mission_ui():
+    """Le cockpit reconstruit (2026-06-06, 7572f39) est un dashboard ops.
 
-
-@pytest.mark.skipif(not Path("static/cockpit.html").exists(),
-                    reason="static/cockpit.html supprimé (consolidé dans app.html)")
-def test_cockpit_fallback_to_legacy():
-    """Cockpit falls back to legacy endpoints."""
+    L'ancien cockpit missions a été consolidé dans app.html ; le fichier
+    actuel ne doit PAS redevenir une UI missions parallèle (convergence :
+    une seule UI missions = app.html).
+    """
     source = Path("static/cockpit.html").read_text(encoding="utf-8")
-    assert "/api/missions" in source
-    assert "/api/health" in source
+    assert "/api/v3/performance" in source
+    assert "/api/v3/missions" not in source
 
 
 def test_no_existing_routes_modified():
