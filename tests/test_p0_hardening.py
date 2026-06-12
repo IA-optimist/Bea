@@ -153,7 +153,7 @@ def test_compose_files_do_not_mount_docker_socket():
 
 
 def test_monitoring_grafana_uses_env_configuration():
-    content = Path("monitoring/docker-compose-monitoring.yml").read_text(encoding="utf-8")
+    content = Path("deploy/monitoring/docker-compose-monitoring.yml").read_text(encoding="utf-8")
 
     assert "beamax2026" not in content
     assert "72.62.177.55" not in content
@@ -161,11 +161,18 @@ def test_monitoring_grafana_uses_env_configuration():
 
 
 def test_monitoring_tree_does_not_commit_grafana_secret_or_vps_ip():
-    for path in Path("monitoring").rglob("*"):
-        if path.is_file():
-            content = path.read_text(encoding="utf-8", errors="ignore")
-            assert "beamax2026" not in content, str(path)
-            assert "72.62.177.55" not in content, str(path)
+    # Stack éclaté par la consolidation (2026-06) : configs/scripts dans
+    # deploy/monitoring/, docs dans docs/monitoring/.
+    scanned = 0
+    for root in (Path("deploy/monitoring"), Path("docs/monitoring")):
+        assert root.is_dir(), str(root)
+        for path in root.rglob("*"):
+            if path.is_file():
+                scanned += 1
+                content = path.read_text(encoding="utf-8", errors="ignore")
+                assert "beamax2026" not in content, str(path)
+                assert "72.62.177.55" not in content, str(path)
+    assert scanned > 0
 
 
 def test_deploy_runs_after_ci_success():

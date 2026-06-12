@@ -174,7 +174,7 @@ class BeaOrchestrator:
         """MetricsCollector : observabilité légère sans dépendance externe."""
         if not self._metrics:
             try:
-                from monitoring.metrics import MetricsCollector
+                from core.observability.metrics import MetricsCollector
                 self._metrics = MetricsCollector(self.s)
             except Exception as e:
                 log.debug("orchestrator_no_metrics", err=str(e)[:60])
@@ -231,7 +231,7 @@ class BeaOrchestrator:
         """LLMPerformanceMonitor : détection de drift latence/erreur."""
         if not getattr(self, "_llm_perf", None):
             try:
-                from monitoring.metrics import LLMPerformanceMonitor
+                from core.observability.metrics import LLMPerformanceMonitor
                 self._llm_perf = LLMPerformanceMonitor(self.s)
             except Exception as e:
                 log.debug("orchestrator_no_llm_perf", err=str(e)[:60])

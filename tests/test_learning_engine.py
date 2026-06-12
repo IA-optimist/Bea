@@ -231,7 +231,7 @@ def test_model_selector_get_status():
 
 def test_metrics_inc_and_snapshot():
     """inc doit incrémenter, get_snapshot retourne les compteurs."""
-    from monitoring.metrics import MetricsCollector
+    from core.observability.metrics import MetricsCollector
     s  = _make_settings()
     mc = MetricsCollector(s)
     mc.clear()
@@ -247,7 +247,7 @@ def test_metrics_inc_and_snapshot():
 
 def test_metrics_record_run():
     """record_run doit alimenter le snapshot runs_total."""
-    from monitoring.metrics import MetricsCollector
+    from core.observability.metrics import MetricsCollector
     s  = _make_settings()
     mc = MetricsCollector(s)
     mc.clear()
@@ -267,7 +267,7 @@ def test_metrics_record_run():
 
 def test_metrics_record_latency():
     """record_latency doit alimenter les latences moyennes."""
-    from monitoring.metrics import MetricsCollector
+    from core.observability.metrics import MetricsCollector
     s  = _make_settings()
     mc = MetricsCollector(s)
     mc.clear()
@@ -285,7 +285,7 @@ def test_metrics_record_latency():
 
 def test_metrics_get_report():
     """get_report doit retourner un rapport texte lisible."""
-    from monitoring.metrics import MetricsCollector
+    from core.observability.metrics import MetricsCollector
     s  = _make_settings()
     mc = MetricsCollector(s)
     mc.clear()

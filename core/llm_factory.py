@@ -63,7 +63,7 @@ def _get_metrics(settings) -> object | None:
     try:
         ws = str(getattr(settings, "workspace_dir", ""))
         if ws not in _METRICS_CACHE:
-            from monitoring.metrics import MetricsCollector
+            from core.observability.metrics import MetricsCollector
             _METRICS_CACHE[ws] = MetricsCollector(settings)
         return _METRICS_CACHE[ws]
     except Exception:

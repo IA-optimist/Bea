@@ -230,7 +230,7 @@ class ModelSelector:
         """Lazy LLMPerformanceMonitor."""
         if not hasattr(self, "_llm_perf"):
             try:
-                from monitoring.metrics import LLMPerformanceMonitor
+                from core.observability.metrics import LLMPerformanceMonitor
                 self._llm_perf = LLMPerformanceMonitor(self.s)
             except Exception as e:
                 log.debug("model_selector_no_llm_perf", err=str(e)[:60])
