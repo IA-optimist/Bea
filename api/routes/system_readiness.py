@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import os
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/api/v3/system", tags=["system"])
+router = APIRouter(prefix="/api/v3/system", tags=["system"], dependencies=[Depends(require_auth)])
 
 # Expected routers and their signature routes.
 # If a route prefix is found in the mounted routes, the component is "loaded".

@@ -7,11 +7,12 @@ les appels tracés par les autres process (bot Telegram, cognition…).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from api._deps import require_auth
 from core.observability import get_tracer
 
-router = APIRouter(tags=["metrics"])
+router = APIRouter(tags=["metrics"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/api/v3/metrics/llm")
