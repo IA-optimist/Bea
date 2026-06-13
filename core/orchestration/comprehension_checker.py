@@ -4,9 +4,10 @@ Diagnostic de comprehension reelle pour BeaMax (Mistral-7B via Ollama).
 Auteur: BeaMax Research Lab | 2026-04-09
 """
 
+import asyncio
 import json
 import time
-import requests
+import httpx
 
 # ── Donnees Test 1 ────────────────────────────────────────────────────────────
 PHYSICAL_CAUSALITY_QUESTIONS = [
@@ -88,13 +89,13 @@ class ComprehensionChecker:
         if self.verbose:
             print(f"\n>> {'[CoS] ' if use_cos else ''}{question[:70]}...")
         try:
-            r = requests.post(f"{self.ollama_url}/api/generate",
-                              json=payload, timeout=self.timeout)
+            r = httpx.post(f"{self.ollama_url}/api/generate",
+                           json=payload, timeout=self.timeout)
             r.raise_for_status()
             ans = r.json().get("response", "").strip()
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             ans = "[ERREUR] Ollama inaccessible."
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             ans = "[ERREUR] Timeout."
         except Exception as e:
             ans = f"[ERREUR] {e}"
@@ -329,7 +330,7 @@ class ComprehensionChecker:
                 "Réponds en JSON : {\"understood\": true/false, \"clarification_needed\": \"<vide ou question>\"}. "
                 "Ne réponds qu'avec le JSON, rien d'autre."
             )
-            response = self.ask(prompt, use_cos=False)
+            response = await asyncio.to_thread(self.ask, prompt, False)
             import json as _json
             # Extraire le JSON de la réponse
             start = response.find("{")
