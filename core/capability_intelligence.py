@@ -61,7 +61,7 @@ SEMANTIC_TAGS = {
                              "doc_fetch", "search_pypi", "fetch_github_readme",
                              "api_healthcheck", "test_endpoint"],
     "code_generation":      ["build_complete_tool", "generate_tool_skeleton", "generate_tool_tests",
-                             "python_snippet"],
+                             "execute_code"],
     "analysis":             ["dependency_analyzer", "code_search_multi_file", "api_schema_generator",
                              "env_checker", "requirements_validator", "analyze_tool_need",
                              "search_codebase", "system_health_check"],
@@ -305,7 +305,7 @@ _CAPABILITY_MAP: dict[str, str] = {
     "build_complete_tool":    "code_generate",
     "generate_tool_skeleton": "code_generate",
     "generate_tool_tests":    "code_generate",
-    "python_snippet":         "code_execute",
+    "execute_code":           "code_execute",
     # Analysis
     "dependency_analyzer":    "code_analyze",
     "code_search_multi_file": "code_analyze",

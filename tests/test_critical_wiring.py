@@ -67,9 +67,10 @@ class TestToolExecutorPermissions:
         result = te.execute("git_push", {})
         self._assert_blocked(result)
 
-    def test_TW04_python_snippet_gated(self):
+    def test_TW04_execute_code_gated(self):
+        """execute_code (DockerSandbox) bloqué par approval_required ou Docker absent."""
         te = self._get_executor()
-        result = te.execute("python_snippet", {"code": "print(1)"})
+        result = te.execute("execute_code", {"code": "print(1)"})
         self._assert_blocked(result)
 
     def test_TW05_docker_restart_gated(self):

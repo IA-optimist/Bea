@@ -7,7 +7,6 @@ pytestmark = pytest.mark.integration
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.tool_executor import (
-    execute_python_snippet,
     read_file_content,
     run_shell_command,
     # query_vector_db,  # LEGACY désactivé
@@ -38,11 +37,9 @@ def test_tool_http():
     pass
 
 
+@pytest.mark.skip(reason="execute_code requires Docker; tested via test_code_execution_tool.py with mock")
 def test_tool_python():
-    result = execute_python_snippet("print(2 + 2)")
-    assert result["ok"], f"python failed: {result['error']}"
-    assert "4" in result["result"]
-    print(f"✅ python_snippet OK: {result['result'][:100]}")
+    pass
 
 
 @pytest.mark.skip(reason="_ensure_collection / query_vector_db removed (LEGACY désactivé in core.tool_executor)")
@@ -55,6 +52,7 @@ def test_executor_singleton():
     tools = ex.list_tools()
     assert "shell_command" in tools
     assert "http_get" in tools
+    assert "python_snippet" not in tools, "python_snippet must be removed — use execute_code"
     print(f"✅ ToolExecutor singleton OK: {tools}")
 
 
