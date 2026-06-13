@@ -138,7 +138,21 @@ class NightScheduler:
             report["errors"].append(f"vault_consolidation: {exc}")
         report["vault_pruned"] = pruned
 
-        # 4. Generate JSON report
+        # 4. Semantic consolidation — extract patterns from episodic memory
+        try:
+            from core.memory.semantic_consolidator import consolidate
+            _patterns = consolidate()
+            report["semantic_patterns"] = {
+                "domains": len(_patterns.get("domains", {})),
+                "episodes_processed": _patterns.get("episodes_processed", 0),
+            }
+            log.info("semantic_consolidation_done",
+                     domains=report["semantic_patterns"]["domains"],
+                     episodes=report["semantic_patterns"]["episodes_processed"])
+        except Exception as exc:
+            report["errors"].append(f"semantic_consolidation: {exc}")
+
+        # 5. Generate JSON report
         report["duration_s"] = round(time.time() - start_ts, 2)
         self._save_report(report)
         self._last_run = now

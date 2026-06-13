@@ -133,6 +133,7 @@ class ExecutionMixin:
         force_approved: bool,
         callback,
         pre_assess,
+        _skill_context: str = "",
     ):
         """
         Phase 3: Supervised execution with kernel agent registry, mission reasoning,
@@ -235,6 +236,12 @@ class ExecutionMixin:
                 )
                 trace.record("retrieve", "kernel_lessons_injected",
                              count=len(_kernel_lessons))
+
+        # ── Skill context (Voyager pattern — proven strategies) ───────
+        if _skill_context:
+            enriched_goal += "\n\n---\nProven strategies from past missions:\n" + _skill_context
+            trace.record("retrieve", "skill_context_injected",
+                         chars=len(_skill_context))
 
         # ── Phase 1-P42: Mission Reasoning State ──────────────────────
         _mission_state = None

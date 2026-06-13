@@ -503,6 +503,7 @@ class MetaOrchestrator(
                 force_approved=force_approved,
                 callback=callback,
                 pre_assess=None,
+                _skill_context=_skill_context,
             )
             # Record supervisor decisions in trace (with schema guard)
             _dtrace = outcome.decision_trace if isinstance(

@@ -22,6 +22,32 @@ class LearningMixin:
 
     def _post_mission_learning(self, mid: str, goal: str, mode: str, ctx) -> None:
         """Post-mission cognitive learning + guardian cleanup."""
+        # ── Episodic + procedural memory ──────────────────────────────────────
+        try:
+            from core.memory.episodic_store import store_episode
+            from core.memory.procedural_store import record_outcome
+            _success = ctx.status.value == "DONE" if hasattr(ctx.status, "value") else bool(ctx.status == "DONE")
+            _domain = str(
+                ctx.metadata.get("classification", {}).get("task_type", "general") or "general"
+            )
+            _agents = [mode] if mode else []
+            _duration = int((ctx.updated_at - ctx.created_at) * 1000) if (
+                hasattr(ctx, "updated_at") and hasattr(ctx, "created_at")
+            ) else 0
+            store_episode(
+                mission_id=mid,
+                goal=goal,
+                agents=_agents,
+                outcome_summary=(ctx.result or "")[:600],
+                success=_success,
+                domain=_domain,
+                duration_ms=_duration,
+            )
+            record_outcome(domain=_domain, agent=mode or "unknown", success=_success)
+        except Exception as _ep_err:
+            import structlog as _sl
+            _sl.get_logger(__name__).debug("episodic_store_skip", err=str(_ep_err)[:80])
+
         # Cognitive learning
         try:
             from core.cognitive_bridge import get_bridge
