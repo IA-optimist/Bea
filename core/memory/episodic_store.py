@@ -95,14 +95,19 @@ def recall_similar(goal: str, top_k: int = 3) -> list[dict[str, Any]]:
 
 
 def recent_episodes(limit: int = 100, domain: str | None = None) -> list[dict[str, Any]]:
-    where = "WHERE domain = ?" if domain else ""
-    params: tuple = (domain,) if domain else ()
     with _conn() as c:
-        rows = c.execute(
-            f"SELECT mission_id, goal, agents, outcome, success, domain, duration_ms, ts "
-            f"FROM bea_episodes {where} ORDER BY ts DESC LIMIT ?",
-            (*params, limit),
-        ).fetchall()
+        if domain:
+            rows = c.execute(
+                "SELECT mission_id, goal, agents, outcome, success, domain, duration_ms, ts "
+                "FROM bea_episodes WHERE domain = ? ORDER BY ts DESC LIMIT ?",
+                (domain, limit),
+            ).fetchall()
+        else:
+            rows = c.execute(
+                "SELECT mission_id, goal, agents, outcome, success, domain, duration_ms, ts "
+                "FROM bea_episodes ORDER BY ts DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
     return [
         {
             "mission_id": r[0], "goal": r[1], "agents": json.loads(r[2]),
