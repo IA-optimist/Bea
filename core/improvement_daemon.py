@@ -469,6 +469,40 @@ def get_cooldown_tracker() -> CooldownTracker:
 
 
 # ═══════════════════════════════════════════════════════════════
+# IMPROVEMENT MODE
+# ═══════════════════════════════════════════════════════════════
+# BEA_IMPROVEMENT_MODE controls how far each cycle goes:
+#   observe  — detect & rank weaknesses, log only, NO patches
+#   propose  — generate patch spec, write to proposals/ dir, NO execution
+#   sandbox  — apply patch + run tests, ALWAYS rollback (never promotes)
+#   merge    — full cycle: apply + test + promote if passing (default)
+_IMPROVEMENT_MODE = os.environ.get("BEA_IMPROVEMENT_MODE", "merge").strip().lower()
+_VALID_MODES = frozenset({"observe", "propose", "sandbox", "merge"})
+if _IMPROVEMENT_MODE not in _VALID_MODES:
+    log.warning("daemon.invalid_mode", mode=_IMPROVEMENT_MODE, valid=sorted(_VALID_MODES))
+    _IMPROVEMENT_MODE = "merge"
+
+_PROPOSALS_DIR = Path(os.environ.get("BEA_REPO_ROOT", ".")) / "workspace/self_improvement/proposals"
+
+
+def _save_proposal(spec_dict: dict, weakness: "Weakness") -> Path:
+    """Write a proposal JSON to workspace/self_improvement/proposals/."""
+    _PROPOSALS_DIR.mkdir(parents=True, exist_ok=True)
+    ts = str(time.time()).replace(".", "_")
+    name = f"proposal_{weakness.category}_{ts}.json"
+    path = _PROPOSALS_DIR / name
+    import json as _json
+    path.write_text(_json.dumps({
+        "weakness": weakness.__dict__,
+        "spec": spec_dict,
+        "generated_at": time.time(),
+        "mode": "propose",
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    log.info("daemon.proposal_saved", path=str(path), category=weakness.category)
+    return path
+
+
+# ═══════════════════════════════════════════════════════════════
 # EXPERIMENT PROPOSAL
 # ═══════════════════════════════════════════════════════════════
 
@@ -612,6 +646,7 @@ class DaemonState:
     def to_dict(self) -> dict:
         return {
             "running": self.running,
+            "mode": _IMPROVEMENT_MODE,
             "cycles_completed": self.cycles_completed,
             "last_cycle_at": self.last_cycle_at,
             "last_weakness": self.last_weakness,
@@ -718,6 +753,24 @@ def run_cycle(repo_root: Path | None = None) -> dict:
             _cooldown_tracker.tick()
             return result
 
+        # ── MODE: observe — log only, no action ──────────────────────────────
+        if _IMPROVEMENT_MODE == "observe":
+            top = candidates[0]
+            result["decision"] = "observe_only"
+            result["weakness"] = top.weakness.description
+            result["lesson"] = (
+                f"[observe] {len(candidates)} candidate(s) detected — "
+                f"top: {top.weakness.category} EV={top.expected_value:.3f}"
+            )
+            log.info("daemon.observe_only",
+                     candidates=len(candidates),
+                     top_category=top.weakness.category,
+                     top_ev=top.expected_value)
+            _state.cycles_completed += 1
+            _state.last_cycle_at = time.time()
+            _cooldown_tracker.tick()
+            return result
+
         best = candidates[0]
         _state.last_weakness = f"[EV={best.expected_value:.3f}] {best.weakness.description[:80]}"
         result["weakness"] = best.weakness.description
@@ -765,17 +818,53 @@ def run_cycle(repo_root: Path | None = None) -> dict:
         # 4. Create experiment spec
         spec = ExperimentSpec(**spec_dict)
 
+        # ── MODE: propose — save spec to proposals dir, no execution ─────────
+        if _IMPROVEMENT_MODE == "propose":
+            proposal_path = _save_proposal(spec_dict, chosen_weakness)
+            result["decision"] = "proposed"
+            result["weakness"] = chosen_weakness.description
+            result["lesson"] = f"[propose] Spec written to {proposal_path.name}"
+            _state.cycles_completed += 1
+            _state.last_cycle_at = time.time()
+            _cooldown_tracker.tick()
+            return result
+
         # 5. Generate safe patch
+        _original_content: str | None = None
+        _original_target: str | None = None
+
         def apply_patch(root, s):
+            nonlocal _original_content, _original_target
             modified = _generate_safe_patch(chosen_weakness, root, spec_dict)
             if modified is None:
                 raise ValueError("No applicable patch for this weakness")
             target = spec_dict["files_allowed"][0]
+            _original_content = (root / target).read_text(encoding="utf-8")
+            _original_target = target
             (root / target).write_text(modified, encoding="utf-8")
             return f"Auto-patch for {chosen_weakness.category}: {chosen_weakness.description[:80]}"
 
         # 6. Run experiment
         report = engine.run_experiment(spec, apply_patch=apply_patch)
+
+        # ── MODE: sandbox — always rollback after testing, never promotes ─────
+        if _IMPROVEMENT_MODE == "sandbox" and _original_content and _original_target:
+            try:
+                (repo_root / _original_target).write_text(
+                    _original_content, encoding="utf-8"
+                )
+                log.info("daemon.sandbox_rollback", target=_original_target)
+            except Exception as _rb_err:
+                log.warning("daemon.sandbox_rollback_failed", err=str(_rb_err)[:80])
+            result["experiment_run"] = True
+            result["decision"] = f"sandbox_tested:{report.decision}"
+            result["lesson"] = (
+                f"[sandbox] Tests ran (result={report.decision}), patch rolled back"
+            )
+            _state.cycles_completed += 1
+            _state.last_cycle_at = time.time()
+            _cooldown_tracker.tick()
+            return result
 
         result["experiment_run"] = True
         result["decision"] = report.decision

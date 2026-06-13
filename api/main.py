@@ -174,6 +174,23 @@ except Exception:
     def register_router(*a, **kw): pass
     def register_failure(*a, **kw): pass
 
+# ── Critical route mounting ───────────────────────────────────
+# Critical routes abort startup on import failure (no silent fallback).
+# Optional routes log a warning and continue.
+def _mount_critical(module_path: str, var_name: str = "router") -> None:
+    """Mount a router that MUST load — raises RuntimeError on failure."""
+    try:
+        import importlib
+        mod = importlib.import_module(module_path)
+        router = getattr(mod, var_name)
+        app.include_router(router)
+    except Exception as exc:
+        raise RuntimeError(
+            f"CRITICAL ROUTER FAILED [{module_path}.{var_name}] — "
+            f"startup aborted. Fix the import error before restarting. "
+            f"Cause: {exc}"
+        ) from exc
+
 # ── Import du routeur WebSockets v3 ───────────────────────────
 try:
     from api.ws import router as ws_router
@@ -313,11 +330,7 @@ try:
 except ImportError as _e:
     log.warning("dashboard_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.approval import router as approval_router
-    app.include_router(approval_router)
-except ImportError as _e:
-    log.warning("approval_router_unavailable", err=str(_e))
+_mount_critical("api.routes.approval")  # CRITICAL: human-in-the-loop gate
 
 # ── Import Convergence Router (v3 orchestration bridge) ────────
 try:
@@ -398,11 +411,7 @@ if _ENABLE_STUB_ROUTES:
     except Exception as _e:
         log.warning("finance_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.missions import router as missions_v3_router
-    app.include_router(missions_v3_router)
-except Exception as _e:
-    log.warning("missions_v3_router_unavailable", err=str(_e))
+_mount_critical("api.routes.missions")  # CRITICAL: core mission operations
 
 try:
     from api.routes.vault import router as vault_router
@@ -509,11 +518,7 @@ try:
 except Exception as _e:
     log.warning("operational_tools_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.system_readiness import router as system_readiness_router
-    app.include_router(system_readiness_router)
-except Exception as _e:
-    log.warning("system_readiness_router_unavailable", err=str(_e))
+_mount_critical("api.routes.system_readiness")  # CRITICAL: health endpoint (Docker healthcheck)
 
 try:
     from api.routes.plan_runner import router as plan_runner_router
@@ -567,11 +572,7 @@ try:
 except Exception as _e:
     log.warning("kernel_router_unavailable", err=str(_e))
 
-try:
-    from api.routes.security_audit import router as security_audit_router
-    app.include_router(security_audit_router)
-except Exception as _e:
-    log.warning("security_audit_router_unavailable", err=str(_e))
+_mount_critical("api.routes.security_audit")  # CRITICAL: security audit endpoints
 
 try:
     from api.routes.debug import router as debug_router

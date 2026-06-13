@@ -80,7 +80,8 @@ class Skill:
 # ── Embedding helpers ─────────────────────────────────────────
 
 def _hash_embed(text: str, size: int = _VECTOR_SIZE) -> list[float]:
-    """Deterministic fallback embedding from SHA-256 hash. Never fails."""
+    """Deterministic fallback embedding from SHA-256 hash. Never fails.
+    FOR STORAGE ONLY — not suitable for similarity search."""
     raw = hashlib.sha256(text.encode()).digest()
     # Repeat bytes to fill size
     repeated = (raw * ((size // len(raw)) + 1))[:size]
@@ -89,8 +90,45 @@ def _hash_embed(text: str, size: int = _VECTOR_SIZE) -> list[float]:
     return [v / norm for v in vec]
 
 
+def _word_embed(text: str, size: int = _VECTOR_SIZE) -> list[float]:
+    """Word-frequency projection — TF-IDF inspired, zero external deps.
+
+    Semantically better than _hash_embed: two texts sharing vocabulary
+    produce overlapping projections, yielding meaningful cosine similarity.
+    Each token is projected onto 8 deterministic slots via SHA-256 — same
+    word always lands in the same slots regardless of surrounding context.
+    """
+    import math
+    import re
+    tokens = re.findall(r'\w+', text.lower())
+    if not tokens:
+        return _hash_embed(text, size)
+
+    freq: dict[str, int] = {}
+    for tok in tokens:
+        freq[tok] = freq.get(tok, 0) + 1
+
+    vec = [0.0] * size
+    for tok, tf in freq.items():
+        h = int(hashlib.sha256(tok.encode()).hexdigest(), 16)
+        weight = math.log(1 + tf)
+        for i in range(8):
+            idx = (h >> (i * 10)) % size
+            sign = 1 if ((h >> (i * 3 + 1)) & 1) else -1
+            vec[idx] += sign * weight
+
+    norm = (sum(v * v for v in vec) ** 0.5) or 1.0
+    return [v / norm for v in vec]
+
+
 async def _ollama_embed(text: str) -> list[float]:
-    """Async Ollama embedding. Returns hash fallback on any failure."""
+    """Async embedding with 3-tier fallback.
+
+    Tier 1 (semantic, best): Ollama nomic-embed-text
+    Tier 2 (semantic, good): word-frequency projection — no external deps
+    Tier 3 (storage only): SHA-256 hash — never use for similarity queries
+    """
+    # Tier 1: Ollama
     try:
         import httpx
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -104,6 +142,16 @@ async def _ollama_embed(text: str) -> list[float]:
                     return emb
     except Exception as _e:
         log.debug("ollama_embed_failed", err=str(_e)[:80])
+
+    # Tier 2: word-frequency projection (semantically valid)
+    if text.strip():
+        try:
+            return _word_embed(text)
+        except Exception as _we:
+            log.debug("word_embed_failed", err=str(_we)[:80])
+
+    # Tier 3: hash fallback — for storage only, similarity queries will be noisy
+    log.debug("skill_embed_hash_fallback", text_len=len(text))
     return _hash_embed(text)
 
 
