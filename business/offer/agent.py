@@ -7,6 +7,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import BeaSession
+from business.fallbacks import build_offer_fallback_report
 from business.offer.schema import parse_offer_report
 
 log = structlog.get_logger()
@@ -110,18 +111,18 @@ class OfferDesignerAgent(BaseAgent):
     async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
-            return ""
+            report = build_offer_fallback_report(session)
+        else:
+            venture_data = session.metadata.get("venture_report", {})
+            source       = venture_data.get("best") or session.user_input or "demande"
+            report       = parse_offer_report(raw, source)
+            log.info(
+                "offer_designer_parsed",
+                offers=len(report.offers),
+                recommended=report.recommended,
+            )
 
-        venture_data = session.metadata.get("venture_report", {})
-        source       = venture_data.get("best") or session.user_input or "demande"
-        report       = parse_offer_report(raw, source)
-        log.info(
-            "offer_designer_parsed",
-            offers=len(report.offers),
-            recommended=report.recommended,
-        )
-
-        session.metadata["offer_report"]     = report.to_dict()
+        session.metadata["offer_report"] = report.to_dict()
         session.metadata["offer_report_obj"] = report
 
         # Execute business action: create real offer package (fail-open)
@@ -141,4 +142,30 @@ class OfferDesignerAgent(BaseAgent):
         except Exception as _e:
             log.debug("offer_artifacts_skipped", err=str(_e)[:80])
 
-        return report.summary_text()
+        # Build a revenue launch bundle so the workflow can move toward first euros.
+        try:
+            from business.revenue_launch import build_revenue_launch_package
+            from core.business_actions import get_business_executor
+
+            bundle = build_revenue_launch_package(session)
+            session.metadata["launch_bundle"] = bundle
+
+            result = get_business_executor().execute(
+                "revenue.launch_package",
+                bundle,
+                mission_id=getattr(session, "session_id", ""),
+                project_name=bundle.get("product_name", report.recommended or "offer"),
+            )
+            if result.get("ok"):
+                session.metadata["launch_artifacts"] = result
+                log.info(
+                    "launch_artifacts_created",
+                    project_dir=result.get("project_dir"),
+                    files=len(result.get("files_created", [])),
+                )
+        except Exception as _e:
+            log.debug("launch_artifacts_skipped", err=str(_e)[:80])
+
+        summary = report.summary_text()
+        session.set_output(self.name, summary, success=True)
+        return summary

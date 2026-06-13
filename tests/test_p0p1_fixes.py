@@ -85,8 +85,13 @@ async def test_meta_orchestrator_create_task():
     """Test that meta_orchestrator uses create_task, not ensure_future."""
     print("\n=== Test 4: asyncio.create_task usage ===")
     
-    with open('core/meta_orchestrator.py', "r", encoding="utf-8") as f:
-        content = f.read()
+    import inspect
+    from core.meta_orchestrator import MetaOrchestrator
+    content = "\n".join(
+        inspect.getsource(klass)
+        for klass in MetaOrchestrator.__mro__
+        if klass is not object
+    )
     
     # Check for ensure_future (should not be used for new code)
     lines = content.split('\n')

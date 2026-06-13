@@ -498,6 +498,22 @@ def _check_session_outcome(session: Any) -> tuple[bool, str, str]:
     rate = ok_count / total if total > 0 else 0.0
 
     # Success: ≥20% agents produced real output (matches orchestrator PARTIAL threshold)
+    # File-producing modes are only successful once their actions have been
+    # executed or explicitly queued for approval. Agent prose alone is not a
+    # deliverable and must not create a ghost-DONE mission.
+    if getattr(session, "needs_actions", False):
+        executed = getattr(session, "actions_executed", []) or []
+        pending = getattr(session, "actions_pending", []) or []
+        raw_actions = getattr(session, "_raw_actions", []) or []
+        if not executed and not pending:
+            return (
+                False,
+                "no file action was materialized despite needs_actions=True",
+                "actions_not_materialized",
+            )
+        if executed and (not raw_actions or len(executed) + len(pending) >= len(raw_actions)):
+            return True, "", ""
+
     if rate >= 0.20:
         return True, "", ""
 

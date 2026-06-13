@@ -504,9 +504,22 @@ class TestToolAvailability:
         assert ok is True
         assert "skipped" in out.lower() or ok
 
-    def test_mypy_unavailable_typecheck_ok(self, tmp_repo):
+    def test_mypy_unavailable_typecheck_ok(self, tmp_repo, monkeypatch):
         """VI32. mypy not installed → typecheck_ok=True (not a failure)."""
-        runner = TestRunner(tmp_repo, SandboxExecutor())
+        sandbox = SandboxExecutor()
+        monkeypatch.setattr(sandbox, "_check_docker", lambda: False)
+        monkeypatch.setattr(
+            sandbox,
+            "_run_subprocess_cmd",
+            lambda *args, **kwargs: SandboxResult(
+                success=False,
+                method="blocked",
+                validation_level="blocked",
+                error="mypy not found",
+                stderr="mypy not found",
+            ),
+        )
+        runner = TestRunner(tmp_repo, sandbox)
         ok, out = runner.run_typecheck(str(tmp_repo), ["core/tool_runner.py"])
         assert ok is True
         assert "skipped" in out.lower() or ok

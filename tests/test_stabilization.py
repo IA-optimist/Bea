@@ -208,6 +208,8 @@ def test_p8_shell_blocks_injection():
 
 
 def test_p8_shell_allowlist():
+    if os.name == "nt":
+        pytest.skip("POSIX command allowlist test")
     from core.tool_executor import run_shell_command
     os.environ.pop("BEA_EXECUTION_DISABLED", None)
     os.environ["BEA_SHELL_ALLOWLIST"] = "1"

@@ -56,6 +56,11 @@ def _workspace_path(raw: str, *, must_exist: bool = False) -> tuple[Path | None,
     base = WORKSPACE.resolve()
     candidate = Path(raw)
     if not candidate.is_absolute():
+        # Agents commonly describe paths from the repository root as
+        # ``workspace/...`` while this executor is already rooted at WORKSPACE.
+        # Strip that redundant prefix to avoid writing to workspace/workspace.
+        if candidate.parts and candidate.parts[0].lower() == base.name.lower():
+            candidate = Path(*candidate.parts[1:]) if len(candidate.parts) > 1 else Path(".")
         candidate = base / candidate
     try:
         resolved = candidate.resolve(strict=must_exist)

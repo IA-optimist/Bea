@@ -18,6 +18,7 @@ import sys
 import types
 import unittest
 import subprocess
+import shutil
 _silent_log = __import__("structlog").get_logger(__name__)
 
 if 'structlog' not in sys.modules:
@@ -61,6 +62,8 @@ class TestMissionStatusUnified(unittest.TestCase):
 
     def test_no_other_mission_status_class(self):
         """No other file defines 'class MissionStatus' (grep check)."""
+        if shutil.which("grep") is None:
+            self.skipTest("grep is not available")
         result = subprocess.run(
             ["grep", "-rn", "class MissionStatus", "--include=*.py",
              _ROOT + "/core/"],
@@ -127,6 +130,8 @@ class TestNoShellTrueInAgents(unittest.TestCase):
 
     def test_no_shell_true(self):
         agents_dir = os.path.join(_ROOT, "agents")
+        if shutil.which("grep") is None:
+            self.skipTest("grep is not available")
         result = subprocess.run(
             ["grep", "-rn", "shell=True", "--include=*.py", agents_dir],
             capture_output=True, text=True,
@@ -248,6 +253,8 @@ class TestNoLeakedSecrets(unittest.TestCase):
 
     def test_no_bot_token_in_source(self):
         """Telegram bot token must not appear in any Python source."""
+        if shutil.which("grep") is None:
+            self.skipTest("grep is not available")
         result = subprocess.run(
             ["grep", "-rn", "8729616478", "--include=*.py", _ROOT],
             capture_output=True, text=True,
@@ -260,6 +267,8 @@ class TestNoLeakedSecrets(unittest.TestCase):
 
     def test_no_hardcoded_production_ip(self):
         """No hardcoded production IP in Dart, Python source, or scripts."""
+        if shutil.which("grep") is None:
+            self.skipTest("grep is not available")
         result = subprocess.run(
             ["grep", "-rn", "77.42.40.146",
              "--include=*.py", "--include=*.dart",

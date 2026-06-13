@@ -129,46 +129,45 @@ class TestMetaOrchestratorWiring:
     # NOTE: la surface run_mission a été factorisée en helpers privés
     # (self._register_mission_guards, self._run_cognitive_analysis,
     #  self._post_mission_learning) — les imports / appels vérifiés ici
-    # sont présents dans ces helpers, appelés par run_mission. On inspecte
-    # désormais la source de la classe entière pour satisfaire ces
+    # sont présents dans ces helpers, appelés par run_mission. Depuis la
+    # PR 1 du découpage (docs/refactor/meta_orchestrator_split.md), certains
+    # helpers vivent dans des mixins (core/orchestration/learning_mixin.py) :
+    # on inspecte donc la source de TOUTE la MRO pour satisfaire ces
     # invariants architecturaux sans coupler les tests à l'organisation
-    # interne de run_mission.
+    # interne de la classe.
+
+    @staticmethod
+    def _mro_source():
+        """Source concaténée de MetaOrchestrator + ses mixins (hors object)."""
+        import inspect
+        from core.meta_orchestrator import MetaOrchestrator
+        return "\n".join(
+            inspect.getsource(klass)
+            for klass in MetaOrchestrator.__mro__
+            if klass is not object
+        )
 
     def test_MW01_guardian_registration_in_source(self):
         """MetaOrchestrator importe mission_guards (via _register_mission_guards)."""
-        import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator)
-        assert "from core.mission_guards import get_guardian" in source
+        assert "from core.mission_guards import get_guardian" in self._mro_source()
 
     def test_MW02_guardian_register_call(self):
         """MetaOrchestrator appelle guardian.register_mission() quelque part."""
-        import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator)
-        assert "register_mission" in source
+        assert "register_mission" in self._mro_source()
 
     def test_MW03_cognitive_pre_mission_in_source(self):
         """MetaOrchestrator appelle cognitive_bridge.pre_mission (via helper)."""
-        import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator)
+        source = self._mro_source()
         assert "from core.cognitive_bridge import get_bridge" in source
         assert "pre_mission" in source
 
     def test_MW04_cognitive_post_mission_in_source(self):
         """MetaOrchestrator appelle post_mission à la fin (via _post_mission_learning)."""
-        import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator)
-        assert "post_mission" in source
+        assert "post_mission" in self._mro_source()
 
     def test_MW05_guardian_release_in_source(self):
-        """MetaOrchestrator appelle release_mission pour cleanup (via helper)."""
-        import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        source = inspect.getsource(MetaOrchestrator)
-        assert "release_mission" in source
+        """MetaOrchestrator appelle release_mission pour cleanup (via LearningMixin)."""
+        assert "release_mission" in self._mro_source()
 
     def test_MW06_tool_permissions_in_executor(self):
         """ToolExecutor.execute() imports tool_permissions."""

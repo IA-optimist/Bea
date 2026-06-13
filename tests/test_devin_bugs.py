@@ -65,6 +65,9 @@ class TestAntiDuplicateMission:
     def test_DA06_no_notify_meta_orchestrator(self):
         """DA06: No phantom notify_meta_orchestrator function anywhere (excl. tests)."""
         import subprocess
+        import shutil
+        if shutil.which("grep") is None:
+            pytest.skip("grep is not available")
         result = subprocess.run(
             ["grep", "-rn", "notify_meta_orchestrator", "--include=*.py",
              "--exclude-dir=tests", "--exclude-dir=__pycache__", "."],

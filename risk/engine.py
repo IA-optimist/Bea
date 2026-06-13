@@ -120,7 +120,16 @@ _CORE_DIRS = (
     "tools/", "observer/", "memory/", "config/",
 )
 
-WORKSPACE = Path(os.getenv("WORKSPACE_DIR", "/app/workspace"))
+def _resolve_workspace() -> Path:
+    if configured := os.getenv("WORKSPACE_DIR"):
+        return Path(configured)
+    local_workspace = Path(__file__).resolve().parent.parent / "workspace"
+    if local_workspace.exists():
+        return local_workspace
+    return Path("/app/workspace")
+
+
+WORKSPACE = _resolve_workspace()
 
 
 # ══════════════════════════════════════════════════════════════

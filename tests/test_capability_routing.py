@@ -612,7 +612,7 @@ class TestIntegration:
         """MetaOrchestrator records routing in decision trace."""
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
+        src = inspect.getsource(MetaOrchestrator._route_mission)
         assert "capability_routed" in src or "capability_fallback" in src
 
     def test_CR75_registry_populated_from_agents(self):
@@ -804,13 +804,17 @@ class TestExtendedAPI:
     def test_CR98_meta_has_feedback_recording(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
+        src = inspect.getsource(MetaOrchestrator._route_mission)
         assert "record_decision" in src
 
     def test_CR99_meta_has_outcome_recording(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features sont dans les helpers
+        src = "\n".join(
+            inspect.getsource(klass)
+            for klass in MetaOrchestrator.__mro__
+            if klass is not object
+        )
         assert "record_outcome" in src
 
     def test_CR100_total_routes(self):

@@ -6,6 +6,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import BeaSession
+from business.fallbacks import build_saas_fallback_report
 from business.saas.schema import parse_saas_report
 
 log = structlog.get_logger()
@@ -144,7 +145,12 @@ class SaasBuilderAgent(BaseAgent):
     async def run(self, session: BeaSession) -> str:
         raw = await super().run(session)
         if not raw:
-            return ""
+            report = build_saas_fallback_report(session)
+            session.metadata["saas_report"] = report.to_dict()
+            session.metadata["saas_report_obj"] = report
+            fallback = report.summary_text()
+            session.set_output(self.name, fallback, success=True)
+            return fallback
 
         source = session.user_input or session.mission_summary or ""
         report = parse_saas_report(raw, source)

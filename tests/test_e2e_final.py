@@ -76,7 +76,11 @@ class TestMetaOrchestratorAlignment(unittest.TestCase):
     def test_pipeline_phases_present(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
+        src = "\n".join(
+            inspect.getsource(klass)
+            for klass in MetaOrchestrator.__mro__
+            if klass is not object
+        )
         for phase in ["classify", "assemble", "supervise", "reflection",
                        "learning_loop", "refine_skill", "trace"]:
             self.assertIn(phase, src, f"Missing phase: {phase}")
