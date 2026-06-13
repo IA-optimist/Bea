@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import subprocess
 
 import httpx
 
@@ -552,7 +553,7 @@ async def main() -> None:
     if pidfile.exists():
         old = pidfile.read_text(encoding="utf-8").strip()
         if old.isdigit() and old != str(os.getpid()):
-            os.system(f"taskkill /F /PID {old} >nul 2>&1")  # noqa: S605
+            subprocess.run(["taskkill", "/F", "/PID", old], capture_output=True)  # nosec B603
     pidfile.write_text(str(os.getpid()), encoding="utf-8")
     settings = get_settings()
     adapter = TelegramAdapter()

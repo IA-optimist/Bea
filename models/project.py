@@ -345,11 +345,18 @@ def update_project(
         if not updates:
             # No changes, return current
             return _row_to_project(current)
-        
-        # Build UPDATE query
-        set_clauses = [f"{k} = %s" for k in updates.keys()]
+
+        # Column whitelist: keys are always literals set above, never user-supplied.
+        _ALLOWED = frozenset({"name", "description", "config", "metadata", "is_active"})
+        unexpected = set(updates.keys()) - _ALLOWED
+        if unexpected:
+            raise ValueError(f"Unexpected column(s) in update: {unexpected}")
+
+        # Build UPDATE query — only whitelisted column names reach the f-string;
+        # values flow through %s placeholders.
+        set_clauses = [f"{k} = %s" for k in updates.keys()]  # nosec B608
         set_clauses.append("updated_at = NOW()")
-        query = f"UPDATE projects SET {', '.join(set_clauses)} WHERE id = %s RETURNING *"
+        query = f"UPDATE projects SET {', '.join(set_clauses)} WHERE id = %s RETURNING *"  # nosec B608
         
         cur.execute(query, list(updates.values()) + [str(project_id)])
         result = cur.fetchone()

@@ -8,11 +8,9 @@ requests==2.34.2
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
 sqlalchemy==2.0.23
-alembic==1.13.1
 
 # Cache & Queue
 redis==5.0.1
-celery==5.3.4
 
 # Web framework
 # C4 cycle 2 (audit follow-up): bumped 0.115.6 → 0.136.3 to close three
