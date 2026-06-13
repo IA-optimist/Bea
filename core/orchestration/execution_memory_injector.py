@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import structlog
 
-from typing import Any, Callable
+from typing import Callable
 
 from core.state import MissionStatus
 

@@ -13,8 +13,6 @@ This module keeps only:
 """
 from __future__ import annotations
 
-import asyncio
-import time
 import structlog
 
 from core.state import MissionStatus
