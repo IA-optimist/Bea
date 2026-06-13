@@ -17,7 +17,7 @@ import json
 import hashlib
 import time
 import uuid
-import requests
+import httpx as requests
 import numpy as np
 
 try:
