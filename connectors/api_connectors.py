@@ -15,7 +15,7 @@ from .base import ConnectorBase, ConnectorResult
 def _http_request(method: str, url: str, headers: dict | None = None,
                   json_body: dict | None = None, timeout: int = 15) -> tuple[int, str]:
     """Point réseau unique (mocké en test). Renvoie (status_code, body tronqué)."""
-    import requests  # import paresseux — déjà une dépendance du projet
+    import httpx as requests  # import paresseux — httpx remplace requests (async-safe)
     resp = requests.request(method, url, headers=headers or {}, json=json_body, timeout=timeout)
     return resp.status_code, (resp.text or "")[:1000]
 

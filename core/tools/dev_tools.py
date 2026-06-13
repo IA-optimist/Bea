@@ -325,7 +325,7 @@ def env_checker() -> dict:
         }
 
         try:
-            import requests as _req
+            import httpx as _req
             qdrant_url = _NETWORK_TARGETS["qdrant"]
             try:
                 resp = _req.get(qdrant_url, timeout=3)
@@ -341,7 +341,7 @@ def env_checker() -> dict:
                 issues.append("qdrant_unreachable")
                 logs.append(f"[WARN] qdrant unreachable: {e}")
         except ImportError:
-            network_checks["qdrant"] = {"ok": False, "error": "requests not available"}
+            network_checks["qdrant"] = {"ok": False, "error": "httpx not available"}
 
         # Check Python version
         import sys as _sys
@@ -382,7 +382,7 @@ def system_health_check() -> dict:
     import sys
     import socket
     try:
-        import requests
+        import httpx as requests
         checks = {}
         warnings = []
         errors = []

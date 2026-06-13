@@ -43,8 +43,8 @@ SessionLocal = sessionmaker(bind=engine)
 def send_telegram_alert(opportunity: dict):
     """Send Telegram notification for high-value opportunity"""
     try:
-        import requests
-        
+        import httpx as requests
+
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         chat_id = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "7216973216")  # Max's Telegram ID
         

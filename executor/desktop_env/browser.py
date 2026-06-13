@@ -7,7 +7,7 @@ import re
 import structlog
 
 try:
-    import requests
+    import httpx as requests
 except ImportError:
     requests = None
 
@@ -15,11 +15,11 @@ log = structlog.get_logger()
 
 class WebSurfer:
     """Un navigateur textuel léger pour lire documentation, GitHub, StackOverflow."""
-    
+
     def navigate(self, url: str) -> str:
         log.info("websurfer_navigate", url=url)
         if not requests:
-            return "❌ Erreur: 'requests' non installé. Pip install requests."
+            return "❌ Erreur: 'httpx' non installé. Pip install httpx."
 
         try:
             # Header très permissif pour éviter les bloqueurs basiques
@@ -52,7 +52,7 @@ class WebSurfer:
                 
             return text
             
-        except requests.exceptions.HTTPError as e:
+        except requests.HTTPStatusError as e:
             return f"❌ Erreur HTTP {e.response.status_code} sur {url}."
         except Exception as e:
             return f"❌ Erreur navigation vers {url}: {str(e)}"
