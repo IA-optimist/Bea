@@ -498,10 +498,9 @@ def validate_tool_structure(tool_code: str, tool_name: str) -> dict:
         if "return {" not in tool_code and "return{" not in tool_code:
             issues.append("Missing dict return (expected {status, output, error})")
 
-        danger_patterns = ["os.system(", "eval(", "exec(", "__import__"]
-        for p in danger_patterns:
-            if p in tool_code:
-                issues.append(f"Dangerous pattern detected: {p}")
+        from core.security.code_guard import check_code_safety
+        for violation in check_code_safety(tool_code):
+            issues.append(f"Unsafe code: {violation}")
 
         score = max(0.0, 1.0 - len(issues) * 0.2)
         return {"valid": len(issues) == 0, "issues": issues, "score": round(score, 2)}
