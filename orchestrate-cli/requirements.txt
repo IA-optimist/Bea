@@ -94,7 +94,7 @@ authlib>=1.2.0
 
 # Monitoring dependencies
 psutil>=5.9.0
-prometheus-client>=0.17.0
+prometheus-client>=0.25.0
 
 # Testing dependencies
 pytest>=7.4.0
