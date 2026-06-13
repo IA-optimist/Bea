@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -42,9 +43,15 @@ def execute_shell(args: dict) -> str:
         return "erreur: argument 'command' manquant"
     if _BLOCKLIST.search(cmd):
         return "REFUSÉ: commande bloquée (potentiellement destructive)."
+    _SHELL_META = set('|&;<>()$`')
+    needs_shell = any(c in _SHELL_META for c in cmd)
     try:
-        p = subprocess.run(cmd, shell=True, capture_output=True, text=True,  # nosec S602 — _BLOCKLIST guards above
-                           timeout=_TIMEOUT, encoding="utf-8", errors="replace")
+        if needs_shell:
+            p = subprocess.run(cmd, shell=True, capture_output=True, text=True,  # nosec S602
+                               timeout=_TIMEOUT, encoding="utf-8", errors="replace")
+        else:
+            p = subprocess.run(shlex.split(cmd, posix=False), capture_output=True, text=True,
+                               timeout=_TIMEOUT, encoding="utf-8", errors="replace")
         out = (p.stdout or "") + (("\n[stderr]\n" + p.stderr) if p.stderr else "")
         return _truncate(out.strip() or f"(code {p.returncode}, aucune sortie)")
     except subprocess.TimeoutExpired:
