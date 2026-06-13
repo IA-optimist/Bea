@@ -127,7 +127,7 @@ def scrub_secrets(params: Dict[str, Any]) -> Dict[str, Any]:
 _DEFAULT_GATED_TOOLS: Dict[str, ToolPermission] = {
     # Shell/code execution
     "shell_command": ToolPermission("shell_command", True, "high", "Arbitrary shell execution"),
-    "python_snippet": ToolPermission("python_snippet", True, "high", "Arbitrary code execution"),
+    "execute_code": ToolPermission("execute_code", True, "high", "Code execution via DockerSandbox"),
     # Destructive file ops
     "file_delete_safe": ToolPermission("file_delete_safe", True, "medium", "File deletion"),
     "replace_in_file": ToolPermission("replace_in_file", True, "medium", "File modification"),

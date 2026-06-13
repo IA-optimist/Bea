@@ -154,29 +154,6 @@ def execute_http_get(url: str, timeout: int = 8) -> dict:
         return _err(str(e))
 
 
-# ── Tool 2 : Python snippet ───────────────────────────────────────────────────
-
-_PYTHON_BLOCKED = ("import os", "import sys", "__import__", "open(", "exec(", "eval(")
-
-def execute_python_snippet(code: str, timeout: int = 8) -> dict:
-    """Exécute du Python dans un subprocess isolé."""
-    for banned in _PYTHON_BLOCKED:
-        if banned in code:
-            return _err(f"blocked_pattern: '{banned}' interdit")
-    try:
-        proc = subprocess.run(  # nosec B603 B607
-            ["python", "-c", code],
-            capture_output=True, text=True, timeout=timeout,
-        )
-        stdout = proc.stdout[:1000]
-        stderr = proc.stderr[:500]
-        result = stdout if stdout else f"(no stdout) stderr={stderr}"
-        return _ok(result)
-    except subprocess.TimeoutExpired:
-        return _err("timeout_exceeded")
-    except Exception as e:
-        return _err(str(e))
-
 
 # ── Tool 3 : Read file ────────────────────────────────────────────────────────
 
@@ -358,7 +335,6 @@ class ToolExecutor:
 
     _tools: dict = {
         "http_get":        execute_http_get,
-        "python_snippet":  execute_python_snippet,
         **({"execute_code": execute_code} if _EXEC_CODE_AVAILABLE else {}),
         **({"delegate": delegate} if _DELEGATE_AVAILABLE else {}),
         **({"tool_pipeline": tool_pipeline} if _TOOL_PIPELINE_AVAILABLE else {}),
@@ -445,7 +421,6 @@ class ToolExecutor:
         "shell_command": 10,
         "http_get": 8,
         "read_file": 5,
-        "python_snippet": 8,
         "execute_code": 120,
         "delegate": 600,
         "tool_pipeline": 180,
@@ -505,7 +480,6 @@ class ToolExecutor:
         "shell_command": ["cmd"],
         "http_get": ["url"],
         "read_file": ["path"],
-        "python_snippet": ["code"],
         "execute_code": ["code"],
         "delegate": ["task"],
         "tool_pipeline": ["steps"],
@@ -567,12 +541,11 @@ class ToolExecutor:
         log.warning("swallowed_exception", action="browser_required_params_import", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Tools qui acceptent un kwarg timeout
-    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "python_snippet", "execute_code", "delegate"}
+    _TIMEOUT_SUPPORTED: set = {"shell_command", "http_get", "execute_code", "delegate"}
 
     # action_type par tool (pour ExecutionPolicy)
     _action_types: dict[str, str] = {
         "http_get":        "external_api",
-        "python_snippet":  "execute",
         "execute_code":    "execute",
         "delegate":        "execute",
         "tool_pipeline":   "execute",
@@ -647,7 +620,7 @@ class ToolExecutor:
         "docker_restart": "medium", "docker_compose_build": "medium", "docker_compose_up": "medium",
         "http_post_json": "medium",
         # "memory_store_solution": "low", # "memory_store_error": "low", # "memory_store_patch": "low",  # LEGACY
-        "write_file_safe": "medium", "shell_command": "medium", "python_snippet": "medium",
+        "write_file_safe": "medium", "shell_command": "medium",
         "execute_code": "medium",
         "delegate": "medium",
         "tool_pipeline": "medium",

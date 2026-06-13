@@ -199,8 +199,8 @@ TOOL_ALTERNATIVES: dict[str, list[str]] = {
     "web_search": ["web_fetch"],
     "web_fetch": ["web_search"],
     "http_get": ["web_fetch"],
-    "shell_command": ["python_snippet"],
-    "python_snippet": ["shell_command"],
+    "shell_command": ["execute_code"],
+    "execute_code": ["shell_command"],
     "file_read": ["shell_command"],
 }
 

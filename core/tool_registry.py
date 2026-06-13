@@ -288,7 +288,7 @@ _SEMANTIC_DESCRIPTIONS: Dict[str, str] = {
     "write_file":               "Write or overwrite a file on disk safely with rollback",
     "write_file_safe":          "Write or overwrite a file on disk safely with rollback",
     "http_get":                 "Make an HTTP GET request to a URL",
-    "python_snippet":           "Execute a Python code snippet",
+    "execute_code":             "Execute Python code in an isolated DockerSandbox",
     "vector_search":            "Search similar items in Qdrant vector database",
     "git_status":               "Get git repository status",
     "git_log":                  "Get recent git commit history",
@@ -348,7 +348,7 @@ _SEMANTIC_DESCRIPTIONS: Dict[str, str] = {
 # Coût estimé (1=minimal, 5=coûteux)
 _TOOL_COSTS: Dict[str, int] = {
     "shell_command": 3, "read_file": 1, "write_file": 2, "write_file_safe": 2,
-    "http_get": 2, "python_snippet": 3, "vector_search": 2,
+    "http_get": 2, "execute_code": 4, "vector_search": 2,
     "git_status": 1, "git_log": 1, "git_diff": 1, "git_branch": 1,
     "git_commit": 4, "git_push": 5, "git_pull": 3,
     "git_branch_create": 2, "git_checkout": 2,

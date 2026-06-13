@@ -1,15 +1,13 @@
 """code_execution_tool — exécute du code Python dans le sandbox durci.
 
-Axe 3 (inspiration Hermes, « Programmatic Tool Calling »). Améliore
-`core.tool_executor.execute_python_snippet` (exécution in-process + blocklist
-de chaînes fragile) en faisant tourner le code dans `executor.desktop_env` :
+Remplace l'ancienne `execute_python_snippet` (subprocess host + denylist
+bypassable). Fait tourner le code dans `executor.desktop_env` :
 
 - `DockerSandbox` : `network_mode=none`, `read_only`, `cap_drop=["ALL"]`,
   `no-new-privileges`, mem/pids limités, workspace cloné en copy-on-write ;
 - `LocalFallbackSandbox` si Docker indisponible (opt-in `BEA_ALLOW_LOCAL_SANDBOX=1`).
 
-OPT-IN : ce module n'est PAS câblé dans `core/tool_executor`. Il s'active en
-l'ajoutant au bloc d'import des outils une fois validé + suite de tests verte.
+Câblé dans `core/tool_executor` via le bloc _EXEC_CODE_AVAILABLE.
 """
 from __future__ import annotations
 
