@@ -179,13 +179,13 @@ async def extract_video_frames(
     path = str(video_path)
 
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _extract_frames_cv2, path, fps)
     except Exception as e:
         log.debug("cv2_extract_failed", err=str(e)[:80])
 
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _extract_frames_pil, path, fps)
     except Exception as e:
         log.debug("pil_extract_failed", err=str(e)[:80])

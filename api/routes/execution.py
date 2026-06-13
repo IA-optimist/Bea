@@ -222,7 +222,6 @@ class DeployRequest(BaseModel):
 
 def _safe_artifact_dir(builds_dir, artifact_id: str):
     """Resolve artifact build dir; raise HTTPException 400 on path escape."""
-    from pathlib import Path
     try:
         resolved = (builds_dir / artifact_id).resolve()
         if not resolved.is_relative_to(builds_dir.resolve()):
