@@ -410,7 +410,10 @@ class CrossMissionConnector:
         # Note: embed() est async — dans un contexte sync, utiliser asyncio.run()
         # ou adapter selon le contexte d'appel
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         embedding = loop.run_until_complete(self.llm.embed(pattern))
 
         similar = self.store.search_by_embedding(embedding, top_k=top_k + 1)
@@ -450,7 +453,10 @@ class CrossMissionConnector:
 
         # Génère le pattern via LLM si absent
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         summary = mission.get("summary", mission.get("description", ""))
         prompt = (
             f"Extract the abstract structural pattern of this task. "
@@ -469,7 +475,10 @@ class CrossMissionConnector:
         pourrait s'appliquer à un nouveau contexte.
         """
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         prompt = (
             f"We discovered this abstract pattern from past experience:\n"
             f"Pattern: {pattern}\n\n"
@@ -603,7 +612,10 @@ class ArtificialCuriosity:
             f"Return only a number between 0 and 1. Nothing else."
         )
         try:
-            loop = asyncio.get_event_loop()
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
             if loop.is_running():
                 return 0.0  # cannot block running loop
             raw = loop.run_until_complete(

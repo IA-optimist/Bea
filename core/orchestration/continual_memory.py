@@ -149,7 +149,7 @@ class ContinualMemory:
         Upsert : si mission_id existe déjà, il est mis à jour.
         """
         tags = tags or []
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         # Embed in thread pool to avoid blocking the event loop
         vector = await loop.run_in_executor(None, self._embed, goal)
@@ -195,7 +195,7 @@ class ContinualMemory:
         Qdrant retourne déjà les vecteurs triés par cosine_sim.
         On re-trie ensuite avec le score boosté.
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         query_vec = await loop.run_in_executor(None, self._embed, current_goal)
 
         # Retrieve more candidates than needed so we can re-rank
@@ -253,7 +253,7 @@ class ContinualMemory:
         Résume les patterns appris récemment (30 derniers jours).
         Retourne un dict avec lessons apprises et patterns récurrents.
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         cutoff = time.time() - 30 * 86400  # 30 days ago
 
         # Scroll all points (paginate with offset)

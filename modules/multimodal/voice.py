@@ -224,7 +224,7 @@ async def speech_to_text(
 
     try:
         import asyncio
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, _whisper_local, audio_path_or_bytes, language
         )
