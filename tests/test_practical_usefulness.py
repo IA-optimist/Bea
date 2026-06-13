@@ -232,7 +232,11 @@ class TestTraceCompleteness(unittest.TestCase):
         # MetaOrchestrator.run_mission a été factorisé en helpers privés —
         # on inspecte la source de la classe entière pour préserver l'invariant
         # architectural (features présentes) sans coupler au body de run_mission.
-        src = inspect.getsource(MetaOrchestrator)
+        src = "\n".join(
+            inspect.getsource(klass)
+            for klass in MetaOrchestrator.__mro__
+            if klass is not object
+        )
         self.assertIn("output_formatter", src)
         self.assertIn("pre_execution", src)
 

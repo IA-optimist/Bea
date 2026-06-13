@@ -964,6 +964,18 @@ class BeaOrchestrator:
         total_failed: list[str] = []
 
         for wave_idx, wave_tasks in enumerate(priority_waves):
+            if session._raw_actions:
+                wave_tasks = [
+                    task for task in wave_tasks
+                    if task.get("agent") != "pulse-ops"
+                ]
+                if not wave_tasks:
+                    log.info(
+                        "pulse_ops_skipped",
+                        reason="forge-builder actions already extracted",
+                        count=len(session._raw_actions),
+                    )
+                    continue
             wave_priorities = sorted({t.get("priority", 2) for t in wave_tasks})
             log.debug("parallel_wave_start",
                       wave=wave_idx, priorities=wave_priorities,
@@ -1019,6 +1031,18 @@ class BeaOrchestrator:
         SupervisedExecutor centralise : analyse risque → décision → exécution.
         """
         raw = session._raw_actions
+        if not raw:
+            from agents.crew import extract_file_actions
+
+            forge_out = getattr(session.outputs.get("forge-builder"), "content", "")
+            raw = extract_file_actions(forge_out)
+            session._raw_actions = raw
+            if raw:
+                log.info(
+                    "forge_builder_actions_recovered",
+                    files=[a["target"] for a in raw],
+                    count=len(raw),
+                )
         if not raw:
             return
 
@@ -1103,6 +1127,19 @@ class BeaOrchestrator:
         """
         planned_names = [t.get("agent", "") for t in session.agents_plan if t.get("agent")]
         total = len(planned_names)
+
+        if session.needs_actions and session.actions_executed:
+            raw_actions = session._raw_actions or []
+            accounted_actions = len(session.actions_executed) + len(session.actions_pending)
+            if not raw_actions or accounted_actions >= len(raw_actions):
+                return {
+                    "label": "SUCCESS",
+                    "badge": "✅",
+                    "ok": len(session.actions_executed),
+                    "total": len(raw_actions) or len(session.actions_executed),
+                    "rate": 1.0,
+                    "failed": [],
+                }
 
         if total == 0:
             # Aucun plan : statut basé sur la présence d'une erreur session
@@ -1197,6 +1234,28 @@ class BeaOrchestrator:
         )
         if status_info["failed"]:
             status_note += f"\nAgents en échec : {', '.join(status_info['failed'])}"
+
+        if session.actions_executed:
+            targets = [
+                str(action.get("target", "")).strip()
+                for action in session.actions_executed
+                if action.get("target")
+            ]
+            target_lines = "\n".join(f"- `{target}`" for target in targets)
+            session.final_report = (
+                "## Résumé\n"
+                f"Mission matérialisée avec {len(targets)} livrable(s) créé(s) "
+                "par le pipeline d'exécution supervisé.\n\n"
+                "## Livrables créés\n"
+                f"{target_lines or '- Actions exécutées sans cible fichier déclarée.'}\n\n"
+                "## Exécution\n"
+                f"- {status_note}\n"
+                f"- Actions en attente : {len(session.actions_pending)}\n\n"
+                "## Recommandation\n"
+                "Contrôler les livrables créés avant toute action externe."
+            )
+            await emit(f"Rapport final\n\n{session.final_report[:3500]}")
+            return
 
         try:
             from core.llm_factory import LLMFactory

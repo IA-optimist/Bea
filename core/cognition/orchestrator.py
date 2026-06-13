@@ -292,6 +292,11 @@ Provide a comprehensive response addressing the mission goal."""
         
         # Phase 5: Skill discovery (for successful complex missions)
         complexity = mission_payload.get("classification", {}).get("complexity", 0)
+        if isinstance(complexity, str):
+            complexity = {"simple": 2, "moderate": 5, "complex": 8}.get(
+                complexity.lower(),
+                0,
+            )
         if outcome.success and complexity > 5:
             try:
                 # Extract steps from outcome (if available)

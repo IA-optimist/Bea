@@ -47,7 +47,11 @@ test.describe('Bea API', () => {
   });
 
   test('unknown API endpoint returns 404', async ({ request }) => {
-    const response = await request.get(`${API_BASE_URL}/api/v3/nonexistent`);
+    test.skip(!API_TOKEN, 'BEA_API_TOKEN is required to reach authenticated routing');
+
+    const response = await request.get(`${API_BASE_URL}/api/v3/nonexistent`, {
+      headers: authHeaders(),
+    });
     expect(response.status()).toBe(404);
   });
 });

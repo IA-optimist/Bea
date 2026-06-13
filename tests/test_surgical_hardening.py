@@ -164,8 +164,8 @@ class TestMetaOrchestratorCircuitBreakerIntegration:
     def test_outcome_actions_guard(self):
         """The getattr guard must prevent AttributeError on outcome.actions."""
         # Verify source contains the safe guard
-        from core import meta_orchestrator as mo
-        src = inspect.getsource(mo)
+        from core.meta_orchestrator import MetaOrchestrator
+        src = inspect.getsource(MetaOrchestrator._emit_completion_events)
         assert 'getattr(outcome, "actions", [])' in src or "getattr(outcome, 'actions', [])" in src, (
             "outcome.actions guard not found in meta_orchestrator source"
         )

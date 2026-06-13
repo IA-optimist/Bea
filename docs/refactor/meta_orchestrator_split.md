@@ -14,7 +14,7 @@ au risque minimal pour un fichier sans couverture de tests dédiée complète.
 
 ## Découpage cible (5 fichiers, ~600 lignes max chacun)
 
-| Nouveau fichier (core/orchestrator/) | Méthodes déplacées | Lignes actuelles |
+| Nouveau fichier (core/orchestration/ — paquet existant, pas de nouveau top-level) | Méthodes déplacées | Lignes actuelles |
 |---|---|---|
 | `routing_mixin.py` | `_classify_mission`, `_match_ai_os_capabilities`, `_route_mission`, `_enrich_kernel_registry`, `_apply_performance_intelligence`, `_kernel_planning` | 422–790 (~370) |
 | `execution_mixin.py` | `_execute_reasoning_prepass`, `_execute_creative_mode`, `_execute_supervised`, `_assemble_mission_context` | 321–363, 791–1606 (~860) |
@@ -51,3 +51,11 @@ Pour chaque PR :
 
 `core/meta_orchestrator.py` < 900 lignes, aucun fichier du paquet > 900
 lignes, comportement identique (aucun test modifié).
+
+## État final — 2026-06-12
+
+Découpage terminé : `MetaOrchestrator` hérite de `RoutingMixin`,
+`ExecutionMixin`, `OutcomeMixin`, `LearningMixin` et
+`CustomMissionHandlerMixin`. Tous les fichiers ciblés restent sous 900 lignes.
+Les tests d'inspection de source ont été adaptés pour suivre les méthodes
+héritées sans modifier les assertions comportementales.

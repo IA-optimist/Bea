@@ -8,6 +8,7 @@ from __future__ import annotations
 import structlog
 from agents.crew import BaseAgent
 from core.state import BeaSession
+from business.fallbacks import build_trade_ops_fallback_spec
 from business.trade_ops.schema import parse_trade_ops_spec
 
 log = structlog.get_logger()
@@ -135,7 +136,13 @@ class TradeOpsAgent(BaseAgent):
 
         raw = await super().run(session)
         if not raw:
-            return ""
+            spec = build_trade_ops_fallback_spec(session)
+            session.metadata["trade_ops_spec"] = spec.to_dict()
+            session.metadata["trade_ops_spec_obj"] = spec
+            session.metadata["trade_ops_system_prompt"] = spec.agent_config.system_prompt
+            fallback = spec.summary_text()
+            session.set_output(self.name, fallback, success=True)
+            return fallback
 
         system_prompt = template.get("system_prompt", "") if template else ""
         spec = parse_trade_ops_spec(raw, trade, company_name, system_prompt)

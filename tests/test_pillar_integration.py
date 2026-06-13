@@ -74,7 +74,11 @@ class TestMetaOrchestratorUsesUnifiedContracts(unittest.TestCase):
     def test_uses_facade_convenience(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
+        src = "\n".join(
+            inspect.getsource(klass)
+            for klass in MetaOrchestrator.__mro__
+            if klass is not object
+        )
         self.assertIn("store_outcome", src)
         self.assertIn("store_failure", src)
 
@@ -87,7 +91,7 @@ class TestMetaOrchestratorUsesUnifiedContracts(unittest.TestCase):
     def test_uses_classifier(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator)  # class source — features now in helpers
+        src = inspect.getsource(MetaOrchestrator._classify_mission)
         self.assertIn("mission_classifier", src)
 
 

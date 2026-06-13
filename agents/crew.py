@@ -20,6 +20,33 @@ from core.reasoning_framework import INJECT_SCOUT, INJECT_PLANNER, INJECT_BUILDE
 log = structlog.get_logger()
 
 
+def extract_file_actions(output: str) -> list[dict]:
+    """Convert ForgeBuilder ``### Fichier:`` blocks into executable actions."""
+    import re
+
+    parts = re.split(r"(?m)^### Fichier:\s*(.+)$", output or "")
+    actions: list[dict] = []
+    for idx in range(1, len(parts), 2):
+        path = parts[idx].strip()
+        content = parts[idx + 1].strip() if idx + 1 < len(parts) else ""
+        if content.startswith("```"):
+            content = "\n".join(content.split("\n")[1:])
+            if content.endswith("```"):
+                content = content[:-3].strip()
+        if path and content:
+            actions.append({
+                "action_type": "create_file",
+                "target": path,
+                "content": content,
+                "description": f"Créé par forge-builder: {path}",
+                "command": "",
+                "old_str": "",
+                "new_str": "",
+                "reversible": True,
+            })
+    return actions
+
+
 # ══════════════════════════════════════════════════════════════
 # BASE AGENT
 # ══════════════════════════════════════════════════════════════
@@ -544,6 +571,15 @@ class ForgeBuilder(BaseAgent):
             "(comment appeler / intégrer ce code)\n\n"
             "## Tests recommandés\n"
             "(cas nominaux et cas d'erreur à vérifier)\n\n"
+            "PROTOCOLE FICHIERS EXÉCUTABLE :\n"
+            "- Quand la mission demande de créer ou modifier des fichiers, produis "
+            "CHAQUE fichier avec l'en-tête exact `### Fichier: chemin/relatif.ext`, "
+            "suivi de son contenu complet.\n"
+            "- Ces blocs sont convertis automatiquement en actions create_file puis "
+            "exécutés par Bea : ne dis jamais que tu n'as pas accès aux fichiers.\n"
+            "- N'utilise pas de placeholders et fournis tous les fichiers nécessaires.\n\n"
+            "- Pour un lot multi-fichiers, reste compact : vise moins de 16 000 caractères "
+            "au total, sans retirer les sections indispensables.\n\n"
             "RÈGLES QUALITÉ :\n"
             "- Vérifier mentalement la logique avant de soumettre\n"
             "- Signaler les edge cases non gérés\n"
@@ -558,7 +594,8 @@ class ForgeBuilder(BaseAgent):
 
     def user_message(self, session: BeaSession) -> str:
         task    = self._task(session)
-        ctx     = self._ctx(session)
+        ctx_limit = 4000 if session.task_mode.value == "business" else 600
+        ctx     = self._ctx(session, limit=ctx_limit)
         mem     = self._mem_ctx(2)
         vec_ctx = self._vec_ctx(task or session.mission_summary, n=2, min_score=0.5)
         know    = self._knowledge_ctx(task or session.mission_summary)
@@ -828,6 +865,12 @@ class PulseOps(BaseAgent):
         out = await super().run(session)
         # Preserve forge-builder's direct actions — extend, don't overwrite.
         forge_actions = list(getattr(session, "_raw_actions", None) or [])
+        forge_out = getattr(getattr(session, "outputs", {}).get("forge-builder"), "content", "")
+        known_targets = {a.get("target") for a in forge_actions}
+        forge_actions.extend(
+            a for a in extract_file_actions(forge_out)
+            if a.get("target") not in known_targets
+        )
         try:
             raw = out.strip()
             if raw.startswith("```"):
@@ -967,34 +1010,13 @@ class ForgeBuilderWithCritic(SelfCriticMixin, ForgeBuilder):
         out = await self.run_with_self_critic(session)
         # Extract ### Fichier: blocks directly into session._raw_actions
         # This bypasses PulseOps context truncation (context_snapshot limits to 600 chars).
-        import re as _re
-        parts = _re.split(r"(?m)^### Fichier:\s*(.+)$", out)
-        if len(parts) > 1:
-            actions = []
-            for idx in range(1, len(parts), 2):
-                path = parts[idx].strip()
-                content = parts[idx + 1].strip() if idx + 1 < len(parts) else ""
-                if content.startswith("```"):
-                    content = "\n".join(content.split("\n")[1:])
-                    if content.endswith("```"):
-                        content = content[:-3].strip()
-                if path and content:
-                    actions.append({
-                        "action_type": "create_file",
-                        "target": path,
-                        "content": content,
-                        "description": f"Créé par forge-builder: {path}",
-                        "command": "",
-                        "old_str": "",
-                        "new_str": "",
-                        "reversible": True,
-                    })
-            if actions:
-                if not getattr(session, "_raw_actions", None):
-                    session._raw_actions = []
-                session._raw_actions.extend(actions)
-                log.info("forge_builder_actions_extracted",
-                         files=[a["target"] for a in actions], count=len(actions))
+        actions = extract_file_actions(out)
+        if actions:
+            if not getattr(session, "_raw_actions", None):
+                session._raw_actions = []
+            session._raw_actions.extend(actions)
+            log.info("forge_builder_actions_extracted",
+                     files=[a["target"] for a in actions], count=len(actions))
         return out
 
 

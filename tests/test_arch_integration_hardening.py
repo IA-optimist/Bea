@@ -124,8 +124,9 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
 
     def test_meta_orchestrator_sets_dispatcher_on_delegate(self):
         """Regression: run_mission() must set delegate.capability_dispatcher before supervise()."""
-        import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
+        import inspect
+        from core.meta_orchestrator import MetaOrchestrator
+        src = inspect.getsource(MetaOrchestrator._execute_supervised)
         # Verify the wiring code is present in source
         self.assertIn(
             "delegate.capability_dispatcher = _cap_dispatcher",
@@ -135,8 +136,9 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
 
     def test_wiring_is_guarded_by_none_check(self):
         """Wiring must be inside 'if _cap_dispatcher is not None' guard."""
-        import pathlib
-        src = pathlib.Path("core/meta_orchestrator.py").read_text(encoding="utf-8")
+        import inspect
+        from core.meta_orchestrator import MetaOrchestrator
+        src = inspect.getsource(MetaOrchestrator._execute_supervised)
         # Find the wiring line and verify it's guarded
         lines = src.splitlines()
         wiring_line_idx = None

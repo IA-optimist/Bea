@@ -68,6 +68,7 @@ ACTION_SKILLS: dict[str, list[str]] = {
     "offer.package": ["offer_design.basic", "persona.basic"],
     "workflow.blueprint": ["automation_opportunity.basic"],
     "saas.mvp_spec": ["saas_scope.basic", "persona.basic", "acquisition.basic"],
+    "revenue.launch_package": ["offer_design.basic", "acquisition.basic", "persona.basic"],
     "workflow.n8n_trigger": [],
 }
 
@@ -135,6 +136,24 @@ ACTION_REGISTRY: dict[str, BusinessAction] = {
             "user-stories.md",
             "tech-stack.md",
             "roadmap.md",
+        ],
+    ),
+    "revenue.launch_package": BusinessAction(
+        action_id="revenue.launch_package",
+        name="Generate Revenue Launch Package",
+        description="Produce a complete first-euros launch bundle with offer, landing page, outreach sequence, qualification checklist, and next steps.",
+        agent="revenue",
+        risk_level="low",
+        required_tools=["file_create", "create_directory"],
+        output_type="files",
+        expected_outputs=[
+            "README.md",
+            "offer.md",
+            "landing/index.html",
+            "outreach.md",
+            "qualification.md",
+            "next-steps.md",
+            "bundle.json",
         ],
     ),
     "workflow.n8n_trigger": BusinessAction(
@@ -515,6 +534,35 @@ class BusinessActionExecutor:
         checklist += "- [ ] Document conversion rate\n"
         self._write(project_dir / "launch-checklist.md", checklist)
         files.append("launch-checklist.md")
+
+        return files
+
+    def _execute_revenue_launch_package(
+        self, action: BusinessAction, output: dict, project_dir: Path
+    ) -> list[str]:
+        """Create a first-euros sales bundle for a chosen offer."""
+        from types import SimpleNamespace
+
+        try:
+            from business.revenue_launch import build_revenue_launch_package
+            bundle = output if output.get("file_contents") else build_revenue_launch_package(
+                SimpleNamespace(
+                    metadata={"offer_report": output},
+                    user_input=output.get("source", "") or output.get("product_name", ""),
+                    mission_summary=output.get("source", "") or output.get("product_name", ""),
+                )
+            )
+        except Exception:
+            bundle = output
+
+        files = []
+        file_contents = bundle.get("file_contents", {})
+        if not file_contents:
+            return files
+
+        for rel_path, content in file_contents.items():
+            self._write(project_dir / rel_path, content)
+            files.append(rel_path)
 
         return files
 

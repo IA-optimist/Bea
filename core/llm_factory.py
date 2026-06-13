@@ -575,6 +575,8 @@ class LLMFactory:
             "code":       self.s.ollama_model_code,
             "vision":     self.s.ollama_model_vision,
             "fast":       self.s.ollama_model_fast,
+            # Analystes business : prompts JSON structurés, mieux servis par le modèle rapide.
+            "analyst":    self.s.ollama_model_fast,
             "memory":     self.s.ollama_model_fast,
             "advisor":    self.s.ollama_model_fast,
             # llama3.1:8b : plus rapide, suit mieux les instructions JSON
@@ -716,6 +718,8 @@ class LLMFactory:
               if tracer else _null_ctx()) as gen_ctx:
             try:
                 resp = await asyncio.wait_for(llm.ainvoke(messages), timeout=timeout)
+                if not str(getattr(resp, "content", "") or "").strip():
+                    raise RuntimeError("empty LLM response")
                 ms   = int((time.monotonic() - t0) * 1000)
                 log.info(
                     "llm_call_ok",
@@ -792,12 +796,12 @@ class LLMFactory:
             except Exception as _exc:
                 log.warning("swallowed_exception", action="llm_metrics_record_err", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
-        # ── Fallback cloud (uniquement pour rôles non-LOCAL_ONLY) ─
+        # ── Fallback providers (uniquement pour rôles non-LOCAL_ONLY) ─
         if role not in LOCAL_ONLY_ROLES:
             preferred     = ROLE_PROVIDERS.get(role, "openai")
             fallback_chain = [
                 p for p in self._build_chain(role, preferred)
-                if p != provider and p != "ollama"
+                if p != provider
             ]
             for fb_provider in fallback_chain:
                 fb_llm = (
@@ -815,6 +819,8 @@ class LLMFactory:
                     resp2 = await asyncio.wait_for(
                         fb_llm.ainvoke(messages), timeout=timeout
                     )
+                    if not str(getattr(resp2, "content", "") or "").strip():
+                        raise RuntimeError("empty LLM fallback response")
                     ms2 = int((time.monotonic() - t1) * 1000)
                     log.info(
                         "llm_fallback_ok",
