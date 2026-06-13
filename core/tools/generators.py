@@ -194,7 +194,7 @@ class HttpTestTool(BaseTool):
             return ToolResult(ok=False, error="invalid_url: must start with http(s)://")
 
         try:
-            import requests
+            import httpx as requests
             start = time.time()
             resp = requests.get(url, timeout=self.timeout_seconds,
                                 headers={"User-Agent": "BeaMax/1.0"})

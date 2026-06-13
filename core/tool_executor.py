@@ -147,7 +147,7 @@ def execute_http_get(url: str, timeout: int = 8) -> dict:
         if blocked in url:
             return _err(f"blocked_url: {blocked} not allowed")
     try:
-        import requests as _req
+        import httpx as _req
         resp = _req.get(url, timeout=timeout)
         return _ok(f"status={resp.status_code} body={resp.text[:2000]}")
     except Exception as e:
