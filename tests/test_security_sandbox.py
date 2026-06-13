@@ -92,9 +92,9 @@ def test_evasion_payload_not_executed_on_host(payload, monkeypatch):
         return _orig_run(args, **kw)
     monkeypatch.setattr(_sp, "run", _spy_run)
 
-    import tempfile, os
+    import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        result = cet.execute_code(payload, workspace_path=tmp)
+        cet.execute_code(payload, workspace_path=tmp)
 
     # The sandbox executed the command (not a host subprocess of the payload)
     assert len(captured) == 1
