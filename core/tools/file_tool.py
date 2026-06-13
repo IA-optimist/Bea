@@ -30,8 +30,9 @@ _ALLOWED_EXTENSIONS = {".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".log", 
 def _safe_path(path_str: str) -> Path | None:
     """Resolve path within workspace sandbox. Returns None if escape attempt."""
     try:
-        target = (_WORKSPACE / path_str).resolve()
-        if not str(target).startswith(str(_WORKSPACE.resolve())):
+        workspace = _WORKSPACE.resolve()
+        target = (workspace / path_str).resolve()
+        if not target.is_relative_to(workspace):
             return None
         return target
     except Exception:

@@ -220,6 +220,20 @@ class DeployRequest(BaseModel):
     target_type: str = ""  # auto-select if empty
 
 
+def _safe_artifact_dir(builds_dir, artifact_id: str):
+    """Resolve artifact build dir; raise HTTPException 400 on path escape."""
+    from pathlib import Path
+    try:
+        resolved = (builds_dir / artifact_id).resolve()
+        if not resolved.is_relative_to(builds_dir.resolve()):
+            raise HTTPException(400, "invalid artifact_id: path traversal detected")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(400, f"invalid artifact_id: {exc}") from exc
+    return resolved
+
+
 @router.post("/deploy")
 async def deploy_artifact(req: DeployRequest):
     """Deploy a built artifact to a target."""
@@ -229,7 +243,7 @@ async def deploy_artifact(req: DeployRequest):
     from core.execution.deployment import DeploymentPipeline, DEPLOYMENT_TARGETS
 
     builds_dir = Path(os.environ.get("WORKSPACE_DIR", "workspace")) / "builds"
-    build_dir = builds_dir / req.artifact_id
+    build_dir = _safe_artifact_dir(builds_dir, req.artifact_id)
 
     if not build_dir.exists():
         raise HTTPException(404, f"No build found for artifact: {req.artifact_id}")
@@ -292,7 +306,7 @@ async def get_build_detail(artifact_id: str):
     import os
     from pathlib import Path
     builds_dir = Path(os.environ.get("WORKSPACE_DIR", "workspace")) / "builds"
-    build_dir = builds_dir / artifact_id
+    build_dir = _safe_artifact_dir(builds_dir, artifact_id)
     if not build_dir.exists():
         raise HTTPException(404, f"Build not found: {artifact_id}")
 

@@ -157,14 +157,38 @@ def execute_http_get(url: str, timeout: int = 8) -> dict:
 
 # ── Tool 3 : Read file ────────────────────────────────────────────────────────
 
-_FILE_BLOCKED = ("/etc", "/root", "/proc", "/sys", "\\Windows\\System32")
+_FILE_WORKSPACE = None  # lazy-init from env; None = no workspace constraint
+
+
+def _get_file_workspace():
+    from pathlib import Path as _Path
+    import os as _os
+    wd = _os.environ.get("WORKSPACE_DIR", "")
+    if wd:
+        return _Path(wd).resolve()
+    return None
+
+
+def _check_path_safe(path: str) -> str | None:
+    """Return error string if path escapes workspace, else None."""
+    from pathlib import Path as _Path
+    ws = _get_file_workspace()
+    if ws is None:
+        return None  # no workspace constraint configured
+    try:
+        target = (_Path(path) if _Path(path).is_absolute() else (ws / path)).resolve()
+        if not target.is_relative_to(ws):
+            return f"path_escape: '{path}' is outside workspace"
+    except Exception as _e:
+        return f"path_resolve_error: {_e}"
+    return None
+
 
 def read_file_content(path: str, max_lines: int = 100) -> dict:
-    """Lit un fichier local (chemin relatif uniquement)."""
-    if path.startswith("/") or path.startswith("\\"):
-        for blocked in _FILE_BLOCKED:
-            if path.startswith(blocked):
-                return _err(f"blocked_path: {blocked} not allowed")
+    """Lit un fichier local confiné au workspace."""
+    err = _check_path_safe(path)
+    if err:
+        return _err(err)
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             lines = f.readlines()[:max_lines]
@@ -175,18 +199,15 @@ def read_file_content(path: str, max_lines: int = 100) -> dict:
 
 # ── Tool 3b : Write file (safe, avec rollback) ────────────────────────────────
 
-_FILE_WRITE_BLOCKED = ("/etc", "/root", "/proc", "/sys", "\\Windows\\System32")
-
 def write_file_safe(path: str, content: str, force: bool = False) -> dict:
     """
     Écrit dans un fichier avec backup automatique avant modification.
     Rollback automatique si l'écriture échoue.
     Action_type : "write"
     """
-    if not force:
-        for blocked in _FILE_WRITE_BLOCKED:
-            if path.startswith(blocked):
-                return _err(f"blocked_path: {path}")
+    err = _check_path_safe(path)
+    if err and not force:
+        return _err(err)
 
     try:
         from core.rollback_manager import RollbackContext, save_diff
