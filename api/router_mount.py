@@ -408,13 +408,12 @@ def mount_all_routers(app, enable_stub_routes: bool = False) -> None:
     except Exception as _e:
         log.warning("execution_router_unavailable", err=str(_e))
 
-    # ── Venture — STUB ────────────────────────────────────────────
-    if enable_stub_routes:
-        try:
-            from api.routes.venture import router as venture_router
-            app.include_router(venture_router)
-        except Exception as _e:
-            log.warning("venture_router_unavailable", err=str(_e))
+    # ── Venture ───────────────────────────────────────────────────
+    try:
+        from api.routes.venture import router as venture_router
+        app.include_router(venture_router)
+    except Exception as _e:
+        log.warning("venture_router_unavailable", err=str(_e))
 
     # ── Strategy ──────────────────────────────────────────────────
     try:

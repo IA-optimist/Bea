@@ -70,6 +70,17 @@ if router:
         except Exception as e:
             return _err(str(e)[:200])
 
+    @router.get("/tools/gaps")
+    def get_tool_gaps():
+        """Analyze tool ecosystem for gaps and missing capabilities."""
+        try:
+            from core.tool_gap_analyzer import analyze_tool_gaps
+            return _ok(analyze_tool_gaps())
+        except ImportError:
+            return _ok([])
+        except Exception as e:
+            return _err(str(e)[:200])
+
     @router.get("/tools/{tool_name}")
     def get_tool_detail(tool_name: str):
         """Single tool performance detail."""
@@ -155,17 +166,6 @@ if router:
             return _ok(get_routing_explanation(mission_type, complexity, static))
         except ImportError:
             return _ok({"routing_mode": "static", "agents": []})
-        except Exception as e:
-            return _err(str(e)[:200])
-
-    @router.get("/tools/gaps")
-    def get_tool_gaps():
-        """Analyze tool ecosystem for gaps and missing capabilities."""
-        try:
-            from core.tool_gap_analyzer import analyze_tool_gaps
-            return _ok(analyze_tool_gaps())
-        except ImportError:
-            return _ok([])
         except Exception as e:
             return _err(str(e)[:200])
 

@@ -143,7 +143,13 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
                                 except Exception as _exc:
                                     log.debug("validation_flag_suppressed", exc_type=type(_exc).__name__)
 
-                            await mo.run_mission(_goal_capture, mission_id=_mid_capture, mode=_mode_capture)
+                            import asyncio as _asyncio
+                            await _asyncio.wait_for(
+                                mo.run_mission(_goal_capture, mission_id=_mid_capture, mode=_mode_capture),
+                                timeout=660.0,  # 11 min safety net — inner timeout is 600s
+                            )
+                        except _asyncio.TimeoutError:
+                            log.warning("canonical_execution_timeout", mission_id=_mid_capture)
                         except Exception as _exc:
                             import traceback
                             log.warning("canonical_execution_failed", mission_id=_mid_capture, err=str(_exc)[:120], tb=traceback.format_exc()[-300:])
