@@ -17,7 +17,7 @@ import json
 import hashlib
 import time
 import uuid
-import requests
+import httpx
 import numpy as np
 
 try:
@@ -76,7 +76,7 @@ class ContinualMemory:
     def _embed(self, text: str) -> list[float]:
         """Embedding via Ollama nomic-embed-text, fallback to hash-based vector."""
         try:
-            r = requests.post(
+            r = httpx.post(
                 f"{self.ollama_url}/api/embeddings",
                 json={"model": self.ollama_model, "prompt": text[:500]},
                 timeout=10,
@@ -102,14 +102,14 @@ class ContinualMemory:
     def _ensure_collection(self) -> None:
         """Create the Qdrant collection if it doesn't exist yet."""
         try:
-            r = requests.get(
+            r = httpx.get(
                 f"{self.qdrant_url}/collections/{self.collection}", timeout=5
             )
             if r.status_code == 404:
                 # Try to infer dim from a test embed
                 test_vec = self._embed("test")
                 dim = len(test_vec)
-                requests.put(
+                httpx.put(
                     f"{self.qdrant_url}/collections/{self.collection}",
                     json={"vectors": {"size": dim, "distance": "Cosine"}},
                     timeout=10,
@@ -171,7 +171,7 @@ class ContinualMemory:
         }
 
         def _upsert():
-            return requests.put(
+            return httpx.put(
                 f"{self.qdrant_url}/collections/{self.collection}/points",
                 json={"points": [point]},
                 timeout=15,
@@ -202,7 +202,7 @@ class ContinualMemory:
         candidates = min(n * 4, 50)
 
         def _search():
-            return requests.post(
+            return httpx.post(
                 f"{self.qdrant_url}/collections/{self.collection}/points/search",
                 json={
                     "vector": query_vec,
@@ -276,7 +276,7 @@ class ContinualMemory:
             }
             if offset_val is not None:
                 body["offset"] = offset_val
-            return requests.post(
+            return httpx.post(
                 f"{self.qdrant_url}/collections/{self.collection}/points/scroll",
                 json=body,
                 timeout=15,
@@ -327,7 +327,7 @@ class ContinualMemory:
         )
 
         def _llm_call():
-            return requests.post(
+            return httpx.post(
                 f"{self.ollama_url}/api/generate",
                 json={
                     "model": self.llm_model,

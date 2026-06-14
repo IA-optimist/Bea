@@ -325,10 +325,10 @@ def env_checker() -> dict:
         }
 
         try:
-            import requests as _req
+            import httpx as _hx
             qdrant_url = _NETWORK_TARGETS["qdrant"]
             try:
-                resp = _req.get(qdrant_url, timeout=3)
+                resp = _hx.get(qdrant_url, timeout=3)
                 network_checks["qdrant"] = {
                     "url": qdrant_url,
                     "status": resp.status_code,
@@ -341,7 +341,7 @@ def env_checker() -> dict:
                 issues.append("qdrant_unreachable")
                 logs.append(f"[WARN] qdrant unreachable: {e}")
         except ImportError:
-            network_checks["qdrant"] = {"ok": False, "error": "requests not available"}
+            network_checks["qdrant"] = {"ok": False, "error": "httpx not available"}
 
         # Check Python version
         import sys as _sys
@@ -382,7 +382,7 @@ def system_health_check() -> dict:
     import sys
     import socket
     try:
-        import requests
+        import httpx
         checks = {}
         warnings = []
         errors = []
@@ -404,7 +404,7 @@ def system_health_check() -> dict:
 
         # Qdrant
         try:
-            r = requests.get("http://qdrant:6333/health", timeout=3)
+            r = httpx.get("http://qdrant:6333/health", timeout=3)
             checks["qdrant"] = {"ok": r.status_code == 200, "detail": f"HTTP {r.status_code}"}
         except Exception as e:
             checks["qdrant"] = {"ok": False, "detail": str(e)[:60]}
@@ -421,7 +421,7 @@ def system_health_check() -> dict:
 
         # Ollama
         try:
-            r = requests.get("http://ollama:11434/api/tags", timeout=3)
+            r = httpx.get("http://ollama:11434/api/tags", timeout=3)
             checks["ollama"] = {"ok": r.status_code == 200, "detail": f"HTTP {r.status_code}"}
         except Exception as e:
             checks["ollama"] = {"ok": False, "detail": str(e)[:60]}

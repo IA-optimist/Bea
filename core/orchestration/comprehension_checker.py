@@ -6,7 +6,7 @@ Auteur: BeaMax Research Lab | 2026-04-09
 
 import json
 import time
-import requests
+import httpx
 
 # ── Donnees Test 1 ────────────────────────────────────────────────────────────
 PHYSICAL_CAUSALITY_QUESTIONS = [
@@ -88,13 +88,13 @@ class ComprehensionChecker:
         if self.verbose:
             print(f"\n>> {'[CoS] ' if use_cos else ''}{question[:70]}...")
         try:
-            r = requests.post(f"{self.ollama_url}/api/generate",
-                              json=payload, timeout=self.timeout)
+            r = httpx.post(f"{self.ollama_url}/api/generate",
+                           json=payload, timeout=self.timeout)
             r.raise_for_status()
             ans = r.json().get("response", "").strip()
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             ans = "[ERREUR] Ollama inaccessible."
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             ans = "[ERREUR] Timeout."
         except Exception as e:
             ans = f"[ERREUR] {e}"

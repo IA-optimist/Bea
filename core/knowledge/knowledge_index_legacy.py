@@ -51,7 +51,7 @@ def _pseudo_vector(text: str) -> list:
 def _ensure_knowledge_collection() -> bool:
     """Crée la collection bea_knowledge si elle n'existe pas. Timeout=3s."""
     try:
-        import requests as _req
+        import httpx as _req
         r = _req.get(f"{QDRANT_URL}/collections/{KNOWLEDGE_COLLECTION}", timeout=3)
         if r.status_code == 200:
             return True
@@ -71,7 +71,7 @@ def _ensure_knowledge_collection() -> bool:
 def _upsert_knowledge_point(point_id: int, vector: list, payload: dict) -> bool:
     """Upsert un point dans bea_knowledge. Timeout=3s."""
     try:
-        import requests as _req
+        import httpx as _req
         body = {"points": [{"id": point_id, "vector": vector, "payload": payload}]}
         r = _req.put(
             f"{QDRANT_URL}/collections/{KNOWLEDGE_COLLECTION}/points",
@@ -169,7 +169,7 @@ def search_similar_tasks(
         if not _ensure_knowledge_collection():
             return []
 
-        import requests as _req
+        import httpx as _req
         text_for_vector = f"{task_type} {goal}"
         vector = _pseudo_vector(text_for_vector)
 
@@ -210,7 +210,7 @@ def get_task_stats(task_type: str = "") -> dict:
         dict avec total, success_rate, avg_duration, common_errors
     """
     try:
-        import requests as _req
+        import httpx as _req
         if not _ensure_knowledge_collection():
             return {"total": 0, "error": "qdrant_unavailable"}
 

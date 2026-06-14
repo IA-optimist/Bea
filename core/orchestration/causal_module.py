@@ -299,8 +299,8 @@ class CausalLLMWrapper:
         self.auto_extract = auto_extract
 
     def _call_ollama(self, messages: list[dict]) -> str:
-        import requests
-        resp = requests.post(
+        import httpx
+        resp = httpx.post(
             f"{self.ollama_url}/api/chat",
             json={"model": self.model, "messages": messages, "stream": False},
             timeout=120,

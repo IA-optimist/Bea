@@ -254,7 +254,7 @@ class ToolRegistry:
     def _web_search(self, query: str) -> str:
         """Web search implementation"""
         try:
-            import requests
+            import httpx as requests
             
             # Simple web search (placeholder)
             response = requests.get(f"https://api.duckduckgo.com/?q={query}&format=json")
@@ -341,7 +341,7 @@ class ToolRegistry:
     def _api_integration(self, endpoint: str, method: str = 'GET', headers: Dict[str, str] = None, data: Dict[str, Any] = None) -> str:
         """API integration implementation"""
         try:
-            import requests
+            import httpx as requests
             
             response = requests.request(method, endpoint, headers=headers, json=data)
             

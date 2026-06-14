@@ -51,7 +51,7 @@ def _scroll_all_points(collection: str = KNOWLEDGE_COLLECTION) -> List[dict]:
     Retourne [] si Qdrant indisponible.
     """
     try:
-        import requests as _req
+        import httpx as _req
         points = []
         offset = None
 
@@ -92,7 +92,7 @@ def _delete_points(point_ids: List[int], collection: str = KNOWLEDGE_COLLECTION)
     if not point_ids:
         return 0
     try:
-        import requests as _req
+        import httpx as _req
         resp = _req.post(
             f"{QDRANT_URL}/collections/{collection}/points/delete",
             json={"points": point_ids},
