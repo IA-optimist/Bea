@@ -19,7 +19,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-import time
 from pathlib import Path
 
 # ── Feature flags ─────────────────────────────────────────────
@@ -30,7 +29,7 @@ _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
 from typing import Any
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket
+from fastapi import Depends, FastAPI, Request, WebSocket
 from api._deps import require_auth, get_start_time
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded

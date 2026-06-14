@@ -156,8 +156,9 @@ def test_v3_routes_use_header_aware_auth_dependency():
 
 
 def test_prometheus_metrics_requires_auth():
-    content = Path("api/main.py").read_text(encoding="utf-8")
-    metrics_pos = content.index('@app.get("/metrics", include_in_schema=False)')
+    # /metrics moved to api/routes/misc_endpoints.py during M1 refactor
+    content = Path("api/routes/misc_endpoints.py").read_text(encoding="utf-8")
+    metrics_pos = content.index('@router.get("/metrics", include_in_schema=False)')
     handler = content[metrics_pos: metrics_pos + 220]
 
     assert "Depends(require_auth)" in handler
