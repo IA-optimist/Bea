@@ -153,7 +153,7 @@ def test_opportunity_detection_bounded():
     _coord._last_opportunity_scan = 0  # reset rate limiter (singleton lives in coordination)
     suggestions = op.detect_opportunities()
     assert isinstance(suggestions, list)
-    assert len(suggestions) <= op._MAX_SUGGESTIONS
+    assert len(suggestions) <= _coord._MAX_SUGGESTIONS
 
 
 def test_opportunity_rate_limited():

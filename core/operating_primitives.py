@@ -53,7 +53,6 @@ from core.primitives.economics import (
 # ── coordination ─────────────────────────────────────────────
 from core.primitives.coordination import (
     MAX_CONCURRENT_MISSIONS,
-    _MAX_SUGGESTIONS,
     can_accept_mission,
     prioritize_missions,
     get_operational_signals,
