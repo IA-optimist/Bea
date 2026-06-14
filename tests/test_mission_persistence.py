@@ -352,8 +352,9 @@ class TestMetaOrchestratorIntegration:
 
     def test_MP31_startup_hook(self):
         """Startup code references mission recovery."""
-        main_path = os.path.join(os.path.dirname(__file__), "..", "api", "main.py")
-        with open(main_path, encoding="utf-8") as f:
+        # Since M1 refactor, startup logic lives in api/lifespan.py
+        lifespan_path = os.path.join(os.path.dirname(__file__), "..", "api", "lifespan.py")
+        with open(lifespan_path, encoding="utf-8") as f:
             src = f.read()
         assert "mission_recovery_complete" in src or "recover_from_persistence" in src
 

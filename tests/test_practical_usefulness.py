@@ -238,7 +238,10 @@ class TestTraceCompleteness(unittest.TestCase):
             if klass is not object
         )
         self.assertIn("output_formatter", src)
-        self.assertIn("pre_execution", src)
+        # pre_execution moved to execution_goal_builder after M1 refactor
+        from core.orchestration import execution_goal_builder
+        egb_src = inspect.getsource(execution_goal_builder)
+        self.assertIn("pre_execution", egb_src)
 
 
 if __name__ == "__main__":

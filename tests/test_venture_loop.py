@@ -318,9 +318,10 @@ class TestVentureLoop:
 class TestVentureAPI:
     def test_VL31_venture_router_mounted(self):
         import importlib
-        main_mod = importlib.import_module("api.main")
-        source = __import__("inspect").getsource(main_mod)
-        assert "venture_router" in source
+        import inspect
+        # Routers mounted via api.router_mount since M1 refactor
+        mount_src = inspect.getsource(importlib.import_module("api.router_mount"))
+        assert "venture_router" in mount_src
 
     def test_VL32_api_hypotheses_exists(self):
         import importlib

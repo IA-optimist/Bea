@@ -149,7 +149,8 @@ def test_portfolio_slot_allocation():
 
 def test_opportunity_detection_bounded():
     import core.operating_primitives as op
-    op._last_opportunity_scan = 0  # reset rate limiter
+    import core.primitives.coordination as _coord
+    _coord._last_opportunity_scan = 0  # reset rate limiter (singleton lives in coordination)
     suggestions = op.detect_opportunities()
     assert isinstance(suggestions, list)
     assert len(suggestions) <= op._MAX_SUGGESTIONS
@@ -157,7 +158,8 @@ def test_opportunity_detection_bounded():
 
 def test_opportunity_rate_limited():
     import core.operating_primitives as op
-    op._last_opportunity_scan = 0
+    import core.primitives.coordination as _coord
+    _coord._last_opportunity_scan = 0
     op.detect_opportunities()
     r2 = op.detect_opportunities()
     # Second call should be rate-limited
@@ -168,6 +170,7 @@ def test_opportunity_with_failure_data():
     from core.mission_performance_tracker import MissionPerformanceTracker, MissionOutcome
     import core.mission_performance_tracker as mpt_mod
     import core.operating_primitives as op
+    import core.primitives.coordination as _coord
 
     mpt = MissionPerformanceTracker(persist_path=f"/tmp/opp_fail_{time.time()}.json")
     for i in range(10):
@@ -176,7 +179,7 @@ def test_opportunity_with_failure_data():
 
     old = mpt_mod._tracker
     mpt_mod._tracker = mpt
-    op._last_opportunity_scan = 0
+    _coord._last_opportunity_scan = 0
     try:
         suggestions = op.detect_opportunities()
         failure_sug = [s for s in suggestions if s.source == "failure_pattern"]
