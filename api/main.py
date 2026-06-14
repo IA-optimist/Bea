@@ -12,9 +12,6 @@ Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """
 from __future__ import annotations
 
-import structlog
-_silent_log = structlog.get_logger(__name__)
-
 from dotenv import load_dotenv
 load_dotenv()
 

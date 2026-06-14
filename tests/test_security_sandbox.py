@@ -130,7 +130,7 @@ def test_execute_code_has_high_permission():
     """execute_code must be declared as high-risk in tool_permissions."""
     from core.tool_permissions import get_tool_permissions
     perms = get_tool_permissions()
-    perm = perms._gated_tools.get("execute_code")
-    assert perm is not None, "execute_code missing from gated tools"
+    perm = perms._permissions.get("execute_code")
+    assert perm is not None, "execute_code missing from tool permissions registry"
     assert perm.risk_level == "high", f"execute_code risk should be 'high', got {perm.risk_level!r}"
     assert perm.requires_approval is True

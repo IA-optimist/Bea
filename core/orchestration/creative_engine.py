@@ -407,11 +407,13 @@ class CrossMissionConnector:
         if not pattern:
             return []
 
-        # Note: embed() est async — dans un contexte sync, utiliser asyncio.run()
-        # ou adapter selon le contexte d'appel
         import asyncio
-        loop = asyncio.get_event_loop()
-        embedding = loop.run_until_complete(self.llm.embed(pattern))
+        try:
+            asyncio.get_running_loop()
+            return []  # called from async context — can't block; caller should use async variant
+        except RuntimeError:
+            pass
+        embedding = asyncio.run(self.llm.embed(pattern))
 
         similar = self.store.search_by_embedding(embedding, top_k=top_k + 1)
         # Exclure la mission elle-même
@@ -450,7 +452,11 @@ class CrossMissionConnector:
 
         # Génère le pattern via LLM si absent
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            asyncio.get_running_loop()
+            return ""  # called from async context — can't block; caller should use async variant
+        except RuntimeError:
+            pass
         summary = mission.get("summary", mission.get("description", ""))
         prompt = (
             f"Extract the abstract structural pattern of this task. "
@@ -458,7 +464,7 @@ class CrossMissionConnector:
             f"Be concise (1-2 sentences).\n\n"
             f"Task: {summary}\n\nAbstract pattern:"
         )
-        pattern = loop.run_until_complete(
+        pattern = asyncio.run(
             self.llm.complete(prompt, temperature=0.3, max_tokens=100)
         )
         return pattern.strip()
@@ -469,7 +475,11 @@ class CrossMissionConnector:
         pourrait s'appliquer à un nouveau contexte.
         """
         import asyncio
-        loop = asyncio.get_event_loop()
+        try:
+            asyncio.get_running_loop()
+            return ""  # called from async context — can't block; caller should use async variant
+        except RuntimeError:
+            pass
         prompt = (
             f"We discovered this abstract pattern from past experience:\n"
             f"Pattern: {pattern}\n\n"
@@ -477,7 +487,7 @@ class CrossMissionConnector:
             f"How could this pattern be applied to the new context? "
             f"Give a concrete, actionable suggestion."
         )
-        result = loop.run_until_complete(
+        result = asyncio.run(
             self.llm.complete(prompt, temperature=0.6, max_tokens=300)
         )
         return result.strip()
@@ -603,10 +613,12 @@ class ArtificialCuriosity:
             f"Return only a number between 0 and 1. Nothing else."
         )
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                return 0.0  # cannot block running loop
-            raw = loop.run_until_complete(
+            asyncio.get_running_loop()
+            return 0.0  # called from async context — cannot block running loop
+        except RuntimeError:
+            pass
+        try:
+            raw = asyncio.run(
                 self.llm.complete(prompt, temperature=0.1, max_tokens=10)
             )
             return max(0.0, min(1.0, float(raw.strip())))
