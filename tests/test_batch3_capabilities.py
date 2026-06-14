@@ -130,11 +130,15 @@ def test_tool_gap_unmet_needs():
 # ═══════════════════════════════════════════════════════════════
 
 def test_api_main_registers_routers():
+    # After M1 refactor, routers are mounted via api/router_mount.py
+    with open("api/router_mount.py", encoding="utf-8") as f:
+        mount_src = f.read()
+    assert "convergence_router" in mount_src
+    assert "performance_router" in mount_src
+    # cockpit is integrated inline (not a named router variable)
     with open("api/main.py", encoding="utf-8") as f:
         src = f.read()
-    assert "convergence_router" in src
-    assert "performance_router" in src
-    assert "cockpit_router" in src
+    assert "cockpit" in src
     ast.parse(src)
 
 

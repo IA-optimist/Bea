@@ -80,11 +80,15 @@ def test_single_lifecycle_authority():
         ms_src = f.read()
     assert "MissionStatus.DONE" in ms_src  # it controls transitions
 
-    # meta_orchestrator exists but should NOT be actively called from API
+    # MetaOrchestrator should NOT be directly imported in api/main.py
+    # (it's only accessed via get_orchestrator() factory, and routers via router_mount.py)
     with open("api/main.py", encoding="utf-8") as f:
         api_src = f.read()
-    # MetaOrchestrator is NOT directly called from main API
-    assert "MetaOrchestrator" not in api_src or "convergence" in api_src
+    assert "import MetaOrchestrator" not in api_src
+    # But the convergence router must wire it — check router_mount
+    with open("api/router_mount.py", encoding="utf-8") as f:
+        mount_src = f.read()
+    assert "convergence_router" in mount_src
 
 
 @pytest.mark.skip(reason="stale: removed files")

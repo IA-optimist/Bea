@@ -123,33 +123,33 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
             pass  # Expected: __slots__ blocks it — the try/except in production code handles this
 
     def test_meta_orchestrator_sets_dispatcher_on_delegate(self):
-        """Regression: run_mission() must set delegate.capability_dispatcher before supervise()."""
+        """Regression: dispatcher wiring must happen before supervise()."""
         import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator._execute_supervised)
-        # Verify the wiring code is present in source
+        from core.orchestration import execution_policy_gate
+        # After orchestrator split, wiring lives in execution_policy_gate
+        src = inspect.getsource(execution_policy_gate)
         self.assertIn(
-            "delegate.capability_dispatcher = _cap_dispatcher",
+            "delegate.capability_dispatcher = cap_dispatcher",
             src,
-            "meta_orchestrator.py must wire dispatcher onto delegate instance"
+            "execution_policy_gate.py must wire dispatcher onto delegate instance"
         )
 
     def test_wiring_is_guarded_by_none_check(self):
-        """Wiring must be inside 'if _cap_dispatcher is not None' guard."""
+        """Wiring must be inside 'if cap_dispatcher is not None' guard."""
         import inspect
-        from core.meta_orchestrator import MetaOrchestrator
-        src = inspect.getsource(MetaOrchestrator._execute_supervised)
+        from core.orchestration import execution_policy_gate
+        src = inspect.getsource(execution_policy_gate)
         # Find the wiring line and verify it's guarded
         lines = src.splitlines()
         wiring_line_idx = None
         for i, line in enumerate(lines):
-            if "delegate.capability_dispatcher = _cap_dispatcher" in line:
+            if "delegate.capability_dispatcher = cap_dispatcher" in line:
                 wiring_line_idx = i
                 break
         self.assertIsNotNone(wiring_line_idx, "Wiring line not found in source")
         # Check the preceding ~5 lines for a None guard
         context = "\n".join(lines[max(0, wiring_line_idx - 6):wiring_line_idx])
-        self.assertIn("_cap_dispatcher is not None", context,
+        self.assertIn("cap_dispatcher is not None", context,
                       "Wiring line must be guarded by None check")
 
 

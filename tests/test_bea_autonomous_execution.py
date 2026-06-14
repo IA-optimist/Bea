@@ -80,9 +80,10 @@ def test_materialized_actions_override_low_optional_agent_success_rate():
 
 
 def test_execution_mixin_preserves_cognition_outcome_object():
-    from core.orchestration.execution_mixin import ExecutionMixin
+    from core.orchestration import execution_supervised_runner
 
-    source = inspect.getsource(ExecutionMixin._execute_supervised)
+    # After orchestrator split, the call lives in execution_supervised_runner
+    source = inspect.getsource(execution_supervised_runner)
 
     assert "execute_mission_with_delegate_cognition" in source
     assert "return str(result)" not in source

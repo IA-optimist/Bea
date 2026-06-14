@@ -111,9 +111,9 @@ class TestAPIEndpoints:
         """Economic router is mounted in main app."""
         import inspect
         import importlib
-        main_mod = importlib.import_module("api.main")
-        source = inspect.getsource(main_mod)
-        assert "economic_router" in source
+        # After M1 refactor, routers are mounted via api.router_mount
+        mount_src = inspect.getsource(importlib.import_module("api.router_mount"))
+        assert "economic_router" in mount_src
 
     def test_EW07_memory_endpoint_returns_list(self):
         """Memory endpoint returns structured response."""
