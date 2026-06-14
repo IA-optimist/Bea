@@ -23,12 +23,48 @@ Constants (anti-loop invariants — never weaken these):
 """
 from __future__ import annotations
 
+import contextvars
 import structlog
 log = structlog.get_logger(__name__)
 
 import time
 from dataclasses import dataclass
 from typing import Callable, List, Optional
+
+# ── Per-context gate bypass (replaces process-global BEA_SKIP_IMPROVEMENT_GATE) ──
+# Each asyncio coroutine / thread has its own context, so setting this ContextVar
+# in one request cannot bleed into concurrent requests (unlike os.environ).
+_skip_gate_ctx: contextvars.ContextVar[bool | None] = contextvars.ContextVar(
+    "bea_skip_improvement_gate", default=None
+)
+
+
+def is_gate_skipped() -> bool:
+    """Return True if the gate should be skipped in the current execution context.
+
+    Resolution order:
+    1. ContextVar — set per-coroutine / per-thread by :func:`skip_gate_for_context`.
+    2. Process env var BEA_SKIP_IMPROVEMENT_GATE — retained for backwards compat
+       (existing test fixtures using ``os.environ`` continue to work).
+    """
+    import os as _os  # local to avoid top-level side-effects at kernel import time
+    ctx_val = _skip_gate_ctx.get()
+    if ctx_val is not None:
+        return ctx_val
+    return _os.getenv("BEA_SKIP_IMPROVEMENT_GATE", "").lower() in ("1", "true", "yes")
+
+
+def skip_gate_for_context(skip: bool = True) -> contextvars.Token:
+    """Activate or deactivate the bypass for the *current* execution context only.
+
+    Returns a token that can be passed to :func:`restore_gate` to undo the change.
+    """
+    return _skip_gate_ctx.set(skip)
+
+
+def restore_gate(token: contextvars.Token) -> None:
+    """Undo a :func:`skip_gate_for_context` call."""
+    _skip_gate_ctx.reset(token)
 
 try:
     import structlog
@@ -101,7 +137,7 @@ class ImprovementGate:
         Never raises. Returns ImprovementDecision(allowed=False, reason=...) on error.
         """
         import os as _os
-        if _os.getenv("BEA_SKIP_IMPROVEMENT_GATE"):
+        if is_gate_skipped():
             return ImprovementDecision(allowed=True, reason="test_bypass")
         # 0 — Security layer gate (R4, Pass 23 — fail-open)
         # Operator-approval channel: BEA_OPERATOR_APPROVE_IMPROVEMENT satisfies the R4
