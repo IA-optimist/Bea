@@ -621,15 +621,15 @@ class BeaOrchestrator:
         # 5. Observer workspace
         await self._run_observer(session)
 
-        # 6. Actions (seulement si needs_actions ET pulse-ops dans le plan)
-        pulse_in_plan = any(
-            t.get("agent") == "pulse-ops"
-            for t in session.agents_plan
-        )
-        if session.needs_actions and pulse_in_plan:
+        # 6. Actions — toujours tenter si needs_actions (fallback forge-builder intégré)
+        if session.needs_actions:
+            pulse_in_plan = any(
+                t.get("agent") == "pulse-ops"
+                for t in session.agents_plan
+            )
+            if not pulse_in_plan:
+                log.info("pulse_ops_absent", note="using forge-builder fallback in _process_actions")
             await self._process_actions(session, emit)
-        elif session.needs_actions and not pulse_in_plan:
-            log.info("skip_actions", reason="pulse-ops not in plan")
 
         # 7. Rapport final — statut calculé une seule fois ici (évite double log)
         session_status = self._compute_session_status(session)
