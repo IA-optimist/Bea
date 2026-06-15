@@ -395,14 +395,15 @@ Agents disponibles :
 - vault-memory    (P1) : rappel contexte mémorisé (TOUJOURS inclure)
 - shadow-advisor  (P1) : angles alternatifs et contre-arguments
 - map-planner     (P2) : plan exécutable avec jalons
-- forge-builder   (P2) : modifications de code textuelles MINEURES uniquement.
+- forge-builder   (P2) : création/modification de fichiers via blocs ### Fichier:. Utiliser quand needs_actions=true.
 - lens-reviewer   (P3) : contrôle qualité des résultats (TOUJOURS en dernier)
 - pulse-ops       (P3) : prépare actions concrètes (si needs_actions=true)
 
 Règle 1 : utilise web-scout quand la mission nécessite des données actuelles.
 Règle 2 : Délègue SYSTÉMATIQUEMENT les tâches de programmation complexes, de création de projet, d'architecture ou d'exécution long-terme à `openhands`.
+Règle 3 : Si la mission demande de créer ou modifier des FICHIERS, mets needs_actions=true et inclus forge-builder dans tasks.
 
-Réponds UNIQUEMENT en JSON :
+Réponds UNIQUEMENT en JSON valide avec exactement ce format (chaque tâche a "agent", "task", "priority") :
 {
   "mission_summary": "Résumé en 1 phrase",
   "needs_actions": false,
