@@ -728,9 +728,9 @@ class VaultMemory(BaseAgent):
 
 class ShadowAdvisor(BaseAgent):
     name, role = "shadow-advisor", "advisor"
-    # timeout_s 30s : Ollama a 30s, puis OpenAI-fast fallback (~2s).
-    # advisor n'est plus LOCAL_ONLY → fallback cloud activé (R-06 SRE).
-    timeout_s = 30
+    # Advisor utilise OpenRouter (cloud) — les appels prennent 20-35s.
+    # 30s était trop court (causait 40% d'erreurs métriques).
+    timeout_s = 120
 
     _JSON_SCHEMA = """\
 {
