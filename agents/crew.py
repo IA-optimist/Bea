@@ -616,18 +616,30 @@ class ForgeBuilder(BaseAgent):
         )
 
     def user_message(self, session: BeaSession) -> str:
+        import re as _re
         task    = self._task(session)
         ctx_limit = 4000 if session.task_mode.value == "business" else 600
         ctx     = self._ctx(session, limit=ctx_limit)
         mem     = self._mem_ctx(2)
         vec_ctx = self._vec_ctx(task or session.mission_summary, n=2, min_score=0.5)
         know    = self._knowledge_ctx(task or session.mission_summary)
+        # If the goal explicitly mentions a file path, add a hard instruction to materialize it
+        _goal = session.user_input or session.mission_summary or ""
+        _paths = _re.findall(r'workspace/[\w/.\-]+|[\w/.\-]+\.(?:py|md|js|ts|yaml|json|sh)', _goal)
+        _file_reminder = (
+            f"\n\n⚠️ IMPÉRATIF : Cette mission demande la création de fichier(s). "
+            f"Tu DOIS produire chacun avec son en-tête exact `### Fichier: {p}` suivi de son contenu complet. "
+            f"Sans ce bloc, le fichier ne sera PAS créé."
+            for p in _paths[:3]
+        )
+        _file_reminder_str = "".join(_file_reminder) if _paths else ""
         return (
             f"Mission : {session.mission_summary}\nTâche : {task}"
             + (f"\n\nContexte :\n{ctx}" if ctx else "")
             + (f"\n\n{vec_ctx}" if vec_ctx else "")
             + (f"\n\n{mem}" if mem else "")
             + (f"\n\n{know}" if know else "")
+            + _file_reminder_str
         )
 
 
