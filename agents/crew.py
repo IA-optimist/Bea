@@ -419,8 +419,10 @@ Réponds UNIQUEMENT en JSON valide avec exactement ce format (chaque tâche a "a
         return f"Mission : {session.user_input}{ctx}"
 
     async def run(self, session: BeaSession) -> str:
-        out = await super().run(session)
+        # Wrap everything — including the LLM call — so a timeout also gets the fallback plan
+        out = ""
         try:
+            out = await super().run(session)
             raw = out.strip()
             if raw.startswith("```"):
                 raw = raw.split("```")[1].lstrip("json").strip()
@@ -438,7 +440,8 @@ Réponds UNIQUEMENT en JSON valide avec exactement ce format (chaque tâche a "a
                     )
                     log.info("forge_builder_injected", reason="needs_actions=True but missing from plan")
         except Exception as e:
-            log.error("director_parse_failed", err=str(e))
+            # LLM timeout, JSON parse error, or any other failure → safe fallback
+            log.error("director_failed", err=str(e)[:120])
             session.mission_summary = session.user_input
             session.agents_plan = [
                 {"agent": "scout-research", "task": session.user_input, "priority": 1},
