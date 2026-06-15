@@ -428,6 +428,14 @@ Réponds UNIQUEMENT en JSON :
             session.agents_plan     = data.get("tasks", [])
             # OR-logic: preserve task-router's True (file-write intent) even if director defaults False
             session.needs_actions   = session.needs_actions or data.get("needs_actions", False)
+            # If file writes are needed but director forgot forge-builder, inject it
+            if session.needs_actions:
+                plan_agents = [t.get("agent") for t in session.agents_plan]
+                if "forge-builder" not in plan_agents and "pulse-ops" not in plan_agents:
+                    session.agents_plan.append(
+                        {"agent": "forge-builder", "task": session.user_input, "priority": 2}
+                    )
+                    log.info("forge_builder_injected", reason="needs_actions=True but missing from plan")
         except Exception as e:
             log.error("director_parse_failed", err=str(e))
             session.mission_summary = session.user_input
