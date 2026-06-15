@@ -1042,10 +1042,25 @@ class ForgeBuilderWithCritic(SelfCriticMixin, ForgeBuilder):
     critic_pass_score = 6.5
 
     async def run(self, session: BeaSession) -> str:
+        import re as _re
         out = await self.run_with_self_critic(session)
         # Extract ### Fichier: blocks directly into session._raw_actions
         # This bypasses PulseOps context truncation (context_snapshot limits to 600 chars).
         actions = extract_file_actions(out)
+        # Fallback: if no ### Fichier: blocks but goal has an explicit file path,
+        # wrap the LLM prose output into a file block automatically.
+        if not actions:
+            _goal = session.user_input or session.mission_summary or ""
+            _paths = _re.findall(
+                r'(workspace/[\w/.\-]+\.(?:py|md|js|ts|yaml|json|sh|txt))',
+                _goal, _re.IGNORECASE,
+            )
+            if _paths and out.strip():
+                target = _paths[0]
+                out = out + f"\n\n### Fichier: {target}\n{out.strip()}\n"
+                actions = extract_file_actions(out)
+                log.info("forge_builder_file_fallback", target=target,
+                         reason="no Fichier block in LLM output")
         if actions:
             if not getattr(session, "_raw_actions", None):
                 session._raw_actions = []
