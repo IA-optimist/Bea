@@ -35,7 +35,10 @@ class CodexDirectChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         try:
-            loop = asyncio.get_event_loop()
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
             if loop.is_running():
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:

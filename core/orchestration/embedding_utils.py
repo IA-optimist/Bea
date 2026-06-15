@@ -94,7 +94,7 @@ class EmbeddingProvider:
         try:
             # Run in thread pool to avoid blocking event loop
             import asyncio
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             vector = await loop.run_in_executor(
                 None, 
                 lambda: self._sentence_model.encode(text, convert_to_numpy=True).tolist()

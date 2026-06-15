@@ -836,10 +836,10 @@ def check():
     """Simple check - MetaOrchestrator can be instantiated."""
     try:
         mo = MetaOrchestrator()
-        print(f"✓ MetaOrchestrator instantiated: {type(mo)}")
+        log.info("meta_orchestrator.check_ok", type=str(type(mo)))
         return True
     except Exception as e:
-        print(f"✗ MetaOrchestrator failed: {e}")
+        log.error("meta_orchestrator.check_failed", err=str(e))
         return False
 
 

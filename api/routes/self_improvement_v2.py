@@ -73,7 +73,7 @@ async def si_run_validation(_user: dict = _auth):
         import asyncio
         from core.self_improvement.validation_runner import ValidationRunner
         runner = ValidationRunner()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         report = await loop.run_in_executor(None, runner.run_validation_suite, "http://localhost:8000")
         return {"ok": True, "data": report.to_dict()}
     except Exception as e:
