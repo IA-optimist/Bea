@@ -4,6 +4,7 @@ Diagnostic de comprehension reelle pour BeaMax (Mistral-7B via Ollama).
 Auteur: BeaMax Research Lab | 2026-04-09
 """
 
+import asyncio
 import json
 import time
 import httpx
@@ -329,7 +330,7 @@ class ComprehensionChecker:
                 "Réponds en JSON : {\"understood\": true/false, \"clarification_needed\": \"<vide ou question>\"}. "
                 "Ne réponds qu'avec le JSON, rien d'autre."
             )
-            response = self.ask(prompt, use_cos=False)
+            response = await asyncio.to_thread(self.ask, prompt, False)
             import json as _json
             # Extraire le JSON de la réponse
             start = response.find("{")
