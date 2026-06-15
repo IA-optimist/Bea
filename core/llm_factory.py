@@ -207,7 +207,10 @@ LOCAL_ONLY_ROLES: frozenset[str] = frozenset({"code", "vision", "uncensored", "m
 
 # Rôles qui doivent toujours utiliser leur propre provider (pas d'override kernel).
 # "analyst" : business layer — attend JSON strict via OpenRouter, pas Codex.
-_OVERRIDE_EXEMPT_ROLES: frozenset[str] = frozenset({"analyst"})
+# "research" : Codex gpt-5.5 coupe les connexions streaming à ~30s côté serveur
+#   pour les prompts research longs (token refresh + payload) → timeout systématique.
+#   OpenRouter gpt-oss-20b:free est fiable pour ce rôle.
+_OVERRIDE_EXEMPT_ROLES: frozenset[str] = frozenset({"analyst", "research"})
 
 # Rôles qui acceptent le fallback ollama si aucun cloud n'est dispo.
 # Ces rôles préfèrent un LLM cloud mais fonctionnent 100% en local si

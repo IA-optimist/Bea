@@ -560,13 +560,16 @@ class BeaOrchestrator:
             _is_business = (getattr(getattr(session, "task_mode", None), "value", "") == "business")
             if _shape and session.agents_plan and not _is_business:
                 # Agent relevance map based on output shape
+                # lens-reviewer kept in all non-patch shapes as fallback:
+                # if scout-research fails, lens-reviewer can still synthesize
+                # from vault-memory context → mission PARTIAL instead of FAILED.
                 _SHAPE_AGENTS = {
-                    "direct_answer": {"scout-research"},
-                    "diagnosis":     {"scout-research", "shadow-advisor"},
+                    "direct_answer": {"scout-research", "lens-reviewer"},
+                    "diagnosis":     {"scout-research", "shadow-advisor", "lens-reviewer"},
                     "patch":         {"scout-research", "forge-builder", "lens-reviewer"},
                     "plan":          {"scout-research", "map-planner", "forge-builder"},
                     "report":        {"scout-research", "map-planner", "lens-reviewer"},
-                    "warning":       {"scout-research", "shadow-advisor"},
+                    "warning":       {"scout-research", "shadow-advisor", "lens-reviewer"},
                 }
 
                 _relevant = _SHAPE_AGENTS.get(_shape)
