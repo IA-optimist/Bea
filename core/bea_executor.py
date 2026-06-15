@@ -564,11 +564,11 @@ class BeaOrchestrator:
                 # if scout-research fails, lens-reviewer can still synthesize
                 # from vault-memory context → mission PARTIAL instead of FAILED.
                 _SHAPE_AGENTS = {
-                    "direct_answer": {"scout-research", "lens-reviewer"},
+                    "direct_answer": {"scout-research", "shadow-advisor", "lens-reviewer"},
                     "diagnosis":     {"scout-research", "shadow-advisor", "lens-reviewer"},
                     "patch":         {"scout-research", "forge-builder", "lens-reviewer"},
                     "plan":          {"scout-research", "map-planner", "forge-builder"},
-                    "report":        {"scout-research", "map-planner", "lens-reviewer"},
+                    "report":        {"scout-research", "shadow-advisor", "map-planner", "lens-reviewer"},
                     "warning":       {"scout-research", "shadow-advisor", "lens-reviewer"},
                 }
 
