@@ -505,14 +505,16 @@ def _check_session_outcome(session: Any) -> tuple[bool, str, str]:
         executed = getattr(session, "actions_executed", []) or []
         pending = getattr(session, "actions_pending", []) or []
         raw_actions = getattr(session, "_raw_actions", []) or []
-        if not executed and not pending:
+        if executed and (not raw_actions or len(executed) + len(pending) >= len(raw_actions)):
+            return True, "", ""
+        # No file actions materialized — but if agents produced meaningful text output
+        # (rate ≥ 20%) the mission is still valuable (research / analysis tasks).
+        if not executed and not pending and rate < 0.20:
             return (
                 False,
                 "no file action was materialized despite needs_actions=True",
                 "actions_not_materialized",
             )
-        if executed and (not raw_actions or len(executed) + len(pending) >= len(raw_actions)):
-            return True, "", ""
 
     if rate >= 0.20:
         return True, "", ""

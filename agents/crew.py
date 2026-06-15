@@ -431,14 +431,22 @@ Réponds UNIQUEMENT en JSON valide avec exactement ce format (chaque tâche a "a
             session.agents_plan     = data.get("tasks", [])
             # OR-logic: preserve task-router's True (file-write intent) even if director defaults False
             session.needs_actions   = session.needs_actions or data.get("needs_actions", False)
-            # If file writes are needed but director forgot forge-builder, inject it
+            # Inject forge-builder only when the task explicitly mentions file/code creation.
+            # Pure research/analysis tasks (search, plan, explain) don't need forge-builder even
+            # if needs_actions is True — the execution_supervisor accepts text output (rate ≥ 20%).
             if session.needs_actions:
                 plan_agents = [t.get("agent") for t in session.agents_plan]
                 if "forge-builder" not in plan_agents and "pulse-ops" not in plan_agents:
-                    session.agents_plan.append(
-                        {"agent": "forge-builder", "task": session.user_input, "priority": 2}
+                    import re as _re
+                    _file_kw = _re.search(
+                        r'\b(cree?[sz]?|ecris?|genere?[sz]?|cr[eé]e?|fichier|\.py\b|\.md\b|\.js\b|\.ts\b|script|module|workspace)',
+                        session.user_input, _re.IGNORECASE,
                     )
-                    log.info("forge_builder_injected", reason="needs_actions=True but missing from plan")
+                    if _file_kw:
+                        session.agents_plan.append(
+                            {"agent": "forge-builder", "task": session.user_input, "priority": 2}
+                        )
+                        log.info("forge_builder_injected", reason="file-creation keyword detected")
         except Exception as e:
             # LLM timeout, JSON parse error, or any other failure → safe fallback
             log.error("director_failed", err=str(e)[:120])
