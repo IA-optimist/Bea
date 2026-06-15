@@ -176,16 +176,16 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
     TaskMode.RESEARCH: [
         {"agent": "vault-memory",   "task": "Rappel contexte pertinent",   "priority": 1},
         {"agent": "scout-research", "task": "Recherche et synthese",        "priority": 2, "timeout": 45},
-        {"agent": "shadow-advisor", "task": "Angles alternatifs",           "priority": 2, "timeout": 35},
-        {"agent": "lens-reviewer",  "task": "Validation qualite",           "priority": 3, "timeout": 30},
+        {"agent": "shadow-advisor", "task": "Angles alternatifs",           "priority": 2, "timeout": 120},
+        {"agent": "lens-reviewer",  "task": "Validation qualite",           "priority": 3, "timeout": 60},
     ],
 
     TaskMode.PLAN: [
         {"agent": "vault-memory",   "task": "Rappel contexte pertinent",   "priority": 1},
         {"agent": "scout-research", "task": "Contexte et contraintes",      "priority": 2, "timeout": 45},
-        {"agent": "map-planner",    "task": "Plan detaille",                "priority": 2, "timeout": 35},
-        {"agent": "shadow-advisor", "task": "Risques et angles oublies",    "priority": 2, "timeout": 35},
-        {"agent": "lens-reviewer",  "task": "Validation du plan",           "priority": 3, "timeout": 30},
+        {"agent": "map-planner",    "task": "Plan detaille",                "priority": 2, "timeout": 60},
+        {"agent": "shadow-advisor", "task": "Risques et angles oublies",    "priority": 2, "timeout": 120},
+        {"agent": "lens-reviewer",  "task": "Validation du plan",           "priority": 3, "timeout": 60},
     ],
 
     TaskMode.CODE: [
@@ -199,7 +199,7 @@ _AGENT_PLANS: dict[TaskMode, list[dict]] = {
     TaskMode.AUTO: [
         {"agent": "vault-memory",   "task": "Rappel memoire",               "priority": 1},
         {"agent": "scout-research", "task": "Recherche",                    "priority": 2},
-        {"agent": "shadow-advisor", "task": "Perspectives alternatives",    "priority": 2, "timeout": 45},
+        {"agent": "shadow-advisor", "task": "Perspectives alternatives",    "priority": 2, "timeout": 120},
         {"agent": "map-planner",    "task": "Planification",                "priority": 2},
         {"agent": "forge-builder",  "task": "Construction / code",          "priority": 3},
         {"agent": "lens-reviewer",  "task": "Controle qualite",             "priority": 4},
