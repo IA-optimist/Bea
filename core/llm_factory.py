@@ -181,17 +181,17 @@ ROLE_PROVIDERS: dict[str, str] = {
     "director":  "codex",       # orchestrateur → Codex via gateway Hermes (fallback ollama)
     "builder":   "codex_direct", # worker → gpt-5.5 direct (OAuth), fallback ollama
     "reviewer":  "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
-    "research":  "ollama",      # worker → Bea v3.1
+    "research":  "openrouter",  # scout-research → haiku (fiable, rapide)
     "planner":   "openrouter",
     "context":   "openrouter",
     "ops":       "openrouter",
     "improve":   "openrouter",  # Sonnet 4.5 → fallback anthropic → ollama
     "analyst":   "openrouter",  # Business analysis, strategy — Sonnet via OpenRouter
     "fast":      "openrouter",  # GPT-4o-mini via OpenRouter
-    "default":   "ollama",      # worker → Bea v3.1
+    "default":   "openrouter",  # worker → haiku (was bea-v31, too unreliable)
     "cognition":  "openrouter",  # Phase 3.5: AI cognition needs reliable cloud model
     # Cloud-preferred roles (were ollama-only, now openrouter with ollama fallback)
-    "advisor":    "ollama",      # worker → Bea v3.1
+    "advisor":    "openrouter",  # shadow-advisor → haiku (was bea-v31, too unreliable)
     "memory":     "openrouter",  # vault-memory — needs real LLM
     # Local-only : jamais de cloud même en fallback
     "code":       "ollama",

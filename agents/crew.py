@@ -426,12 +426,14 @@ Réponds UNIQUEMENT en JSON :
             data = json.loads(raw)
             session.mission_summary = data.get("mission_summary", session.user_input)
             session.agents_plan     = data.get("tasks", [])
-            session.needs_actions   = data.get("needs_actions", False)
+            # OR-logic: preserve task-router's True (file-write intent) even if director defaults False
+            session.needs_actions   = session.needs_actions or data.get("needs_actions", False)
         except Exception as e:
             log.error("director_parse_failed", err=str(e))
             session.mission_summary = session.user_input
             session.agents_plan = [
                 {"agent": "scout-research", "task": session.user_input, "priority": 1},
+                {"agent": "forge-builder",  "task": session.user_input, "priority": 2},
                 {"agent": "lens-reviewer",  "task": "Vérifier résultats",  "priority": 3},
             ]
         return out
