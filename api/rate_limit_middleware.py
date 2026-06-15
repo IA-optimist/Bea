@@ -42,16 +42,40 @@ def get_rate_limit_key(request: Request) -> str:
 # not installed or REDIS_URL is unset. Production MUST set REDIS_URL and
 # install redis>=3.0 for distributed rate limiting across workers.
 import os
+import re
+import socket
 import logging as _logging
 
 _rl_log = _logging.getLogger(__name__)
 REDIS_URL = os.getenv("REDIS_URL", "").strip()
 _STORAGE_URI = "memory://"
 
+
+def _redis_reachable(url: str, timeout: float = 1.0) -> bool:
+    """TCP-probe Redis at startup; returns False if unreachable."""
+    try:
+        m = re.match(r"redis://([^:/]+):(\d+)", url)
+        if not m:
+            return False
+        host, port = m.group(1), int(m.group(2))
+        with socket.create_connection((host, port), timeout=timeout):
+            pass
+        return True
+    except Exception:
+        return False
+
+
 if REDIS_URL:
     try:
-        import redis as _redis_pkg  # noqa: F401 — probe availability
-        _STORAGE_URI = REDIS_URL
+        import redis as _redis_pkg  # noqa: F401 — probe package availability
+        if _redis_reachable(REDIS_URL):
+            _STORAGE_URI = REDIS_URL
+        else:
+            _rl_log.warning(
+                "rate_limit.redis_unreachable — Redis at %s not reachable, "
+                "falling back to memory:// (non-distributed).",
+                REDIS_URL,
+            )
     except ImportError:
         _rl_log.warning(
             "rate_limit.redis_package_missing — falling back to memory:// "
@@ -81,6 +105,9 @@ limiter = Limiter(
     # Bea loads configuration explicitly. Disable slowapi's implicit .env
     # read, which uses the Windows locale encoding and breaks on UTF-8.
     config_filename="",
+    # Silently swallow storage backend errors (e.g. Redis ConnectionError)
+    # so a transient storage outage never brings down the API itself.
+    swallow_errors=True,
 )
 
 
