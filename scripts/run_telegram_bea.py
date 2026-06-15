@@ -395,7 +395,10 @@ def _build_handler(settings):
         if not approve:
             return "Auto-amélioration annulée. 🚫"
         # Ton « oui » via Telegram = approbation OPÉRATEUR -> on lève le garde pour CE changement.
-        os.environ["BEA_SKIP_IMPROVEMENT_GATE"] = "1"
+        # On utilise un ContextVar plutôt que os.environ pour éviter qu'une approbation
+        # ne bypasse le gate pour TOUTES les coroutines concurrentes du process.
+        from core.improvement_gate import skip_gate_for_context, restore_gate
+        _gate_token = skip_gate_for_context(True)
 
         def _exec():
             from core.self_improvement.improvement_memory import get_improvement_memory
@@ -417,7 +420,7 @@ def _build_handler(settings):
         except Exception as e:                # noqa: BLE001
             return f"Erreur à l'application : {str(e)[:140]}"
         finally:
-            os.environ.pop("BEA_SKIP_IMPROVEMENT_GATE", None)
+            restore_gate(_gate_token)
 
     _IMPROVE_TRIGGER = _re.compile(
         r"\b(am[ée]liore[\s-]?toi|auto[\s-]?am[ée]lior|am[ée]liore ton code|/improve)", _re.I)

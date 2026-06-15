@@ -194,10 +194,10 @@ class HttpTestTool(BaseTool):
             return ToolResult(ok=False, error="invalid_url: must start with http(s)://")
 
         try:
-            import requests
+            import httpx
             start = time.time()
-            resp = requests.get(url, timeout=self.timeout_seconds,
-                                headers={"User-Agent": "BeaMax/1.0"})
+            resp = httpx.get(url, timeout=self.timeout_seconds,
+                             headers={"User-Agent": "BeaMax/1.0"})
             elapsed_ms = (time.time() - start) * 1000
 
             checks = {
@@ -222,9 +222,9 @@ class HttpTestTool(BaseTool):
                 error="" if all_ok else f"expected {expected_status}, got {resp.status_code}",
             )
 
-        except requests.Timeout:
+        except httpx.TimeoutException:
             return ToolResult(ok=False, error="timeout", retryable=True)
-        except requests.ConnectionError as e:
+        except httpx.ConnectError as e:
             return ToolResult(ok=False, error=f"connection_error: {str(e)[:200]}", retryable=True)
         except Exception as e:
             return ToolResult(ok=False, error=f"test_error: {str(e)[:200]}")

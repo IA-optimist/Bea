@@ -49,7 +49,8 @@ class TestConnectorWiring:
         assert any("/api/v3/connectors" in p for p in routes)
 
     def test_CV07_connector_route_mounted(self):
-        content = Path("api/main.py").read_text(encoding="utf-8")
+        # After M1 refactor, routers are mounted via api/router_mount.py
+        content = Path("api/router_mount.py").read_text(encoding="utf-8")
         assert "connectors_router" in content
 
     def test_CV08_execute_endpoint(self):
@@ -75,7 +76,8 @@ class TestStrategyAPIWiring:
         assert any("promotions" in p for p in routes)
 
     def test_CV11_strategy_route_mounted(self):
-        content = Path("api/main.py").read_text(encoding="utf-8")
+        # After M1 refactor, routers are mounted via api/router_mount.py
+        content = Path("api/router_mount.py").read_text(encoding="utf-8")
         assert "strategy_router" in content
 
     def test_CV12_strategy_check_endpoint(self):

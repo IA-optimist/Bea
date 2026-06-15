@@ -266,12 +266,11 @@ class TestShutdownIntegration:
     def test_PP16_shutdown_hook_exists(self):
         """API shutdown handler calls save_performance."""
         import inspect
-        # Find the shutdown handler in api.main
         import importlib
-        main_mod = importlib.import_module("api.main")
-        source = inspect.getsource(main_mod)
-        assert "save_performance" in source
-        assert "lifespan" in source and "_on_shutdown" in source
+        # Since M1 refactor startup/shutdown lives in api.lifespan
+        lifespan_src = inspect.getsource(importlib.import_module("api.lifespan"))
+        assert "save_performance" in lifespan_src
+        assert "_on_shutdown" in lifespan_src
 
     def test_PP17_snapshot_loop_saves_periodically(self):
         """Metrics bridge snapshot loop includes kernel performance save."""

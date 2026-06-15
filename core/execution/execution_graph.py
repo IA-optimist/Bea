@@ -102,6 +102,31 @@ SCHEMA_ARTIFACT_SEQUENCES: dict[str, list[dict]] = {
             "phase": "building",
         },
     ],
+    # Lowercase aliases matching ARTIFACT_TEMPLATES keys (used directly as schema_type)
+    "landing_page": [
+        {"template": "landing_page", "name": "Landing Page", "capability": "venture_planning", "phase": "building"},
+    ],
+    "automation_workflow": [
+        {"template": "automation_workflow", "name": "Automation Workflow", "capability": "strategy_reasoning", "phase": "building"},
+    ],
+    "api_service": [
+        {"template": "api_service", "name": "API Service", "capability": "product_design", "phase": "building"},
+    ],
+    "mvp_feature": [
+        {"template": "mvp_feature", "name": "MVP Feature", "capability": "product_design", "phase": "building"},
+    ],
+    "marketing_experiment": [
+        {"template": "marketing_experiment", "name": "Marketing Experiment", "capability": "strategy_reasoning", "phase": "building"},
+    ],
+    "content_asset": [
+        {"template": "content_asset", "name": "Content Asset", "capability": "market_intelligence", "phase": "thinking"},
+    ],
+    "data_pipeline": [
+        {"template": "data_pipeline", "name": "Data Pipeline", "capability": "product_design", "phase": "building"},
+    ],
+    "operational_workflow": [
+        {"template": "operational_workflow", "name": "Operational Workflow", "capability": "strategy_reasoning", "phase": "building"},
+    ],
 }
 
 

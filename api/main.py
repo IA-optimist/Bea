@@ -2,24 +2,20 @@
 BEA MAX — Canonical API (FastAPI)
 This is the ONE backend API. Loaded by main.py (the canonical entrypoint).
 
-Structure (~1000 lignes — le gros du refactor en routers est fait, cf. api/routes/):
-  app init, CORS, middlewares de sécurité, montage des routers,
-  startup/shutdown, health/status, SSE, websocket, montage statique.
-  Les endpoints métier vivent dans api/routes/*.
+Structure (refactor M1 — api/main.py is now a pure orchestration file):
+  - App instantiation, CORS, middlewares, rate limiting
+  - Router mounting (~35 routers from api/routes/)
+  - Startup/shutdown logic lives in api/lifespan.py
+  - Miscellaneous inline endpoints in api/routes/misc_endpoints.py
 
 Legacy v1 routes (/api/mission, /api/health, etc.) are included as aliases.
 """
 from __future__ import annotations
 
-import structlog
-_silent_log = structlog.get_logger(__name__)
-
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-import time
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 # ── Feature flags ─────────────────────────────────────────────
@@ -30,7 +26,7 @@ _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
 from typing import Any
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket
+from fastapi import Depends, FastAPI, Request, WebSocket
 from api._deps import require_auth, get_start_time
 from api.rate_limit_middleware import limiter, custom_rate_limit_handler
 from slowapi.errors import RateLimitExceeded
@@ -42,16 +38,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+# ── Lifespan (startup / shutdown) — extracted to api/lifespan.py ──────────────
+from api.lifespan import lifespan
+
 log = structlog.get_logger()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await _on_startup()
-    try:
-        yield
-    finally:
-        await _on_shutdown()
 
 
 # ── App ───────────────────────────────────────────────────────
@@ -76,7 +66,7 @@ if _enable_docs:
     @app.get("/openapi.json", include_in_schema=False)
     async def get_openapi_schema(user: dict = Depends(require_auth)):
         """OpenAPI schema endpoint — requires authentication.
-        
+
         Protects API documentation from unauthorized access.
         /docs and /redoc will fetch this endpoint automatically.
         """
@@ -167,444 +157,11 @@ try:
 except Exception as _tc_err:
     log.debug("training_collector_hook_skipped", err=str(_tc_err)[:120])
 
-# ── Router Registry ───────────────────────────────────────────
-try:
-    from api.router_registry import register_router, register_failure
-except Exception:
-    def register_router(*a, **kw): pass
-    def register_failure(*a, **kw): pass
+# ── Router mounting — see api/router_mount.py ─────────────────
+from api.router_mount import mount_all_routers
 
-# ── Critical route mounting ───────────────────────────────────
-# Critical routes abort startup on import failure (no silent fallback).
-# Optional routes log a warning and continue.
-def _mount_critical(module_path: str, var_name: str = "router") -> None:
-    """Mount a router that MUST load — raises RuntimeError on failure."""
-    try:
-        import importlib
-        mod = importlib.import_module(module_path)
-        router = getattr(mod, var_name)
-        app.include_router(router)
-    except Exception as exc:
-        raise RuntimeError(
-            f"CRITICAL ROUTER FAILED [{module_path}.{var_name}] — "
-            f"startup aborted. Fix the import error before restarting. "
-            f"Cause: {exc}"
-        ) from exc
+mount_all_routers(app, _ENABLE_STUB_ROUTES)
 
-# ── Import du routeur WebSockets v3 ───────────────────────────
-try:
-    from api.ws import router as ws_router
-    app.include_router(ws_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur SSE Streaming ───────────────────────────
-try:
-    from api.stream_router import router as stream_router
-    app.include_router(stream_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Learning ─────────────────────────────────
-try:
-    from api.routes.learning import router as learning_router
-    app.include_router(learning_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Training (Phase 3 — Bio-inspired AGI) ────
-try:
-    from api.routes.training import router as training_router
-    app.include_router(training_router)
-except Exception as _e:
-    log.warning("training_router_unavailable", err=str(_e)[:120])
-
-# ── Import du routeur Autonomy (daemon control plane) ─────────
-try:
-    from api.routes.autonomy import router as autonomy_router
-    app.include_router(autonomy_router)
-except Exception as _e:
-    log.warning("autonomy_router_unavailable", err=str(_e)[:120])
-
-# ── Import du routeur Multimodal ───────────────────────────────
-try:
-    from api.routes.multimodal import router as multimodal_router
-    app.include_router(multimodal_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur RAG ──────────────────────────────────────
-try:
-    from api.routes.rag import router as rag_router
-    app.include_router(rag_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-
-# ── Import du routeur Chat (Phase 5.3 — AGI Cognition) ──
-try:
-    from api.routes.chat import router as chat_router
-    app.include_router(chat_router)
-    from api.routes.webhook import router as webhook_router
-    app.include_router(webhook_router)
-    from api.routes.metrics_llm import router as metrics_llm_router
-    app.include_router(metrics_llm_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import Business Performance Router (Phase 7.3) ──
-try:
-    from api.routes.business import router as business_router
-    app.include_router(business_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-# ── Import du routeur Agent Builder ───────────────────────────
-try:
-    from api.routes.agent_builder import router as agent_builder_router
-    app.include_router(agent_builder_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Phase 9 Mission Control ──────────────────
-try:
-    from api.routes.mission_control import router as mission_control_router
-    app.include_router(mission_control_router)
-except Exception as _e:
-    log.warning("mission_control_router_unavailable", err=str(_e))
-
-# ── Import du routeur Browser (Phase 8) — STUB ───────────────
-if _ENABLE_STUB_ROUTES:
-    try:
-        from api.routes.browser import router as browser_router
-        app.include_router(browser_router)
-    except Exception as _e:
-        log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Routing Diagnostics ──────────────────────
-try:
-    from api.routes.routing_diagnostics import router as routing_diag_router
-    if routing_diag_router:
-        app.include_router(routing_diag_router)
-except Exception as _e:
-    log.warning("routing_diagnostics_router_unavailable", err=str(_e))
-
-# ── Import du routeur Monitoring (Phase 3 + Phase 8) ──────────
-try:
-    from api.routes.monitoring import router as monitoring_router
-    app.include_router(monitoring_router)
-except Exception as _e:
-    log.warning("monitoring_router_unavailable", err=str(_e))
-# ── Import du routeur Projects (Phase 2.1) ────────────────────────────
-try:
-    from api.routes.projects import router as projects_router
-    app.include_router(projects_router)
-except Exception as _e:
-    log.warning("projects_router_unavailable", err=str(_e))
-
-
-# ── Import du routeur Voice & Call (Phase 10) — STUB ──────────
-if _ENABLE_STUB_ROUTES:
-    try:
-        from api.routes.voice import router as voice_router
-        app.include_router(voice_router)
-    except Exception as _e:
-        log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Objective Engine ─────────────────────────
-try:
-    from api.routes.objectives import router as objectives_router
-    app.include_router(objectives_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import du routeur Self-Improvement Loop ────────────────────
-try:
-    from api.routes.self_improvement import router as self_improvement_router
-    app.include_router(self_improvement_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-try:
-    from api.routes.dashboard import router as dashboard_router
-    app.include_router(dashboard_router)
-except ImportError as _e:
-    log.warning("dashboard_router_unavailable", err=str(_e))
-
-_mount_critical("api.routes.approval")  # CRITICAL: human-in-the-loop gate
-
-# ── Import Convergence Router (v3 orchestration bridge) ────────
-try:
-    from api.routes.convergence import router as convergence_router
-    app.include_router(convergence_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Import Performance Intelligence Router (v3) ───────────────
-try:
-    from api.routes.performance import router as performance_router
-    if performance_router:
-        app.include_router(performance_router)
-except Exception as _e:
-    log.warning("router_import_failed", err=str(_e)[:120])
-
-# ── Cockpit Router REMOVED — cockpit.html deleted ────────────
-
-# ── Import Observability Router (V3) ──────────────────────────
-try:
-    from api.routes.observability import router as observability_router
-    if observability_router:
-        app.include_router(observability_router)
-except Exception as _e:
-    log.warning("observability_router_unavailable", err=str(_e))
-
-# ── Import Mobile Metrics Router ─────────────────────────────
-try:
-    from api.routes.metrics_mobile import router as metrics_mobile_router
-    if metrics_mobile_router:
-        app.include_router(metrics_mobile_router)
-except Exception as _e:
-    log.warning("metrics_mobile_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.extensions import router as extensions_router
-    app.include_router(extensions_router)
-except Exception as _e:
-    log.warning("extensions_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.token_management import router as token_mgmt_router
-    if token_mgmt_router:
-        app.include_router(token_mgmt_router)
-except Exception as _exc:
-    log.warning("swallowed_exception", action="main_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-
-# ── Skills & trace routers ──
-try:
-    from api.routes.skills import router as skills_router
-    app.include_router(skills_router)
-except Exception as _e:
-    log.warning("skills_router_unavailable", err=str(_e))
-
-# Trace router removed in audit phase-11 (2026-04-25). Both /api/v1/trace/* endpoints
-# had zero callers in code, tests, frontend, or docs. Restore from git history if needed.
-
-# ── V3 feature routes (finance, missions, vault, identity, modules_v3) ──
-try:
-    from api.routes.system import router as system_router
-    app.include_router(system_router)
-except Exception as _e:
-    log.warning("system_router_unavailable", err=str(_e))
-
-# Finance — gated behind ENABLE_STUB_ROUTES feature flag.
-# Webhook router is always mounted (Stripe needs to call it externally),
-# with signature verification as auth.
-try:
-    from api.routes.finance import webhook_router as finance_webhook_router
-    app.include_router(finance_webhook_router)  # Webhook: no auth (Stripe signature verification)
-except Exception as _e:
-    log.warning("finance_webhook_router_unavailable", err=str(_e))
-
-if _ENABLE_STUB_ROUTES:
-    try:
-        from api.routes.finance import router as finance_router
-        app.include_router(finance_router)
-    except Exception as _e:
-        log.warning("finance_router_unavailable", err=str(_e))
-
-_mount_critical("api.routes.missions")  # CRITICAL: core mission operations
-
-try:
-    from api.routes.vault import router as vault_router
-    app.include_router(vault_router)
-except Exception as _e:
-    log.warning("vault_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.identity import router as identity_router
-    app.include_router(identity_router)
-except Exception as _e:
-    log.warning("identity_router_unavailable", err=str(_e))
-
-# NOTE: connectors_router must be mounted BEFORE modules_v3_router.
-# modules_v3 defines GET /api/v3/connectors (bare prefix="/api/v3"),
-# which shadows connectors.py's prefix="/api/v3/connectors" if mounted first.
-# Mounting connectors_router first ensures the real connector registry is served.
-try:
-    from api.routes.connectors import router as connectors_router
-    app.include_router(connectors_router)
-except Exception as _e:
-    log.warning("connectors_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.modules_v3 import router as modules_v3_router
-    app.include_router(modules_v3_router)
-except Exception as _e:
-    log.warning("modules_v3_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.cognitive import router as cognitive_router
-    app.include_router(cognitive_router)
-except Exception as _e:
-    log.warning("cognitive_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.action_console import router as console_router
-    app.include_router(console_router)
-except Exception as _e:
-    log.warning("console_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.mcp_management import router as mcp_mgmt_router
-    app.include_router(mcp_mgmt_router)
-except Exception as _e:
-    log.warning("mcp_mgmt_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.self_model import router as self_model_router
-    app.include_router(self_model_router)
-except Exception as _e:
-    log.warning("self_model_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.capability_routing import router as capability_routing_router
-    app.include_router(capability_routing_router)
-except Exception as _e:
-    log.warning("capability_routing_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.cognitive_events import router as cognitive_events_router
-    app.include_router(cognitive_events_router)
-except Exception as _e:
-    log.warning("cognitive_events_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.mission_persistence import router as mission_persistence_router
-    app.include_router(mission_persistence_router)
-except Exception as _e:
-    log.warning("mission_persistence_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.business_actions import router as business_actions_router
-    app.include_router(business_actions_router)
-except Exception as _e:
-    log.warning("business_actions_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.business_artifacts import router as business_artifacts_router
-    app.include_router(business_artifacts_router)
-except Exception as _e:
-    log.warning("business_artifacts_router_unavailable", err=str(_e))
-try:
-    from api.routes.opportunities import router as opportunities_router
-    app.include_router(opportunities_router)
-except Exception as _e:
-    log.warning("opportunities_router_unavailable", err=str(_e))
-try:
-    from api.routes.products import router as products_router
-    app.include_router(products_router)
-except Exception as _e:
-    log.warning("products_router_unavailable", err=str(_e))
-
-
-try:
-    from api.routes.domain_skills import router as domain_skills_router
-    app.include_router(domain_skills_router)
-except Exception as _e:
-    log.warning("domain_skills_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.operational_tools import router as operational_tools_router
-    app.include_router(operational_tools_router)
-except Exception as _e:
-    log.warning("operational_tools_router_unavailable", err=str(_e))
-
-_mount_critical("api.routes.system_readiness")  # CRITICAL: health endpoint (Docker healthcheck)
-
-try:
-    from api.routes.plan_runner import router as plan_runner_router
-    app.include_router(plan_runner_router)
-except Exception as _e:
-    log.warning("plan_runner_router_unavailable", err=str(_e))
-
-# Playbooks — STUB (static templates, never executed)
-if _ENABLE_STUB_ROUTES:
-    try:
-        from api.routes.playbooks import router as playbooks_router
-        app.include_router(playbooks_router)
-    except Exception as _e:
-        log.warning("playbooks_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.economic import router as economic_router
-    app.include_router(economic_router)
-except Exception as _e:
-    log.warning("economic_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.models import router as models_router
-    app.include_router(models_router)
-except Exception as _e:
-    log.warning("models_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.execution import router as execution_router
-    app.include_router(execution_router)
-except Exception as _e:
-    log.warning("execution_router_unavailable", err=str(_e))
-
-# Venture — STUB (0 experiments, static data)
-if _ENABLE_STUB_ROUTES:
-    try:
-        from api.routes.venture import router as venture_router
-        app.include_router(venture_router)
-    except Exception as _e:
-        log.warning("venture_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.strategy import router as strategy_router
-    app.include_router(strategy_router)
-except Exception as _e:
-    log.warning("strategy_router_unavailable", err=str(_e))
-
-try:
-    from api.routes.kernel import router as kernel_router
-    app.include_router(kernel_router)
-except Exception as _e:
-    log.warning("kernel_router_unavailable", err=str(_e))
-
-_mount_critical("api.routes.security_audit")  # CRITICAL: security audit endpoints
-
-try:
-    from api.routes.debug import router as debug_router
-    app.include_router(debug_router)
-except Exception as _e:
-    log.warning("debug_router_unavailable", err=str(_e))
-
-# ── Previously unregistered routes — now mounted (2026-03-30) ─────────────────
-# system_v2: /api/system/mode/uncensored, /api/v2/decision-memory/*, /health, etc.
-try:
-    from api.routes.system_v2 import router as system_v2_router
-    app.include_router(system_v2_router)
-except Exception as _e:
-    log.warning("system_v2_router_unavailable", err=str(_e))
-
-# self_improvement_v2: /api/v2/self-improvement/failures, /proposals, /validate, etc.
-try:
-    from api.routes.self_improvement_v2 import router as self_improvement_v2_router
-    app.include_router(self_improvement_v2_router)
-except Exception as _e:
-    log.warning("self_improvement_v2_router_unavailable", err=str(_e))
-
-# modules: /modules/agents, /modules/skills, /modules/mcp, /modules/connectors
-# (distinct from modules_v3 which uses /api/v3/* prefix)
-try:
-    from api.routes.modules import router as modules_router
-    app.include_router(modules_router)
-except Exception as _e:
-    log.warning("modules_router_unavailable", err=str(_e))
-
-# NOTE: GET /health is handled by system_v2_router (mounted at line ~475, include_in_schema=False).
-# The Docker healthcheck uses that route. No duplicate needed here.
 
 # ── Session info endpoint (used by mobile app for role detection) ──
 @app.get("/api/v2/session", include_in_schema=False)
@@ -635,176 +192,29 @@ async def root_redirect():
     return RedirectResponse(url="/app.html")
 
 
-# ── Prometheus Metrics Endpoint ────────────────────────────────
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, REGISTRY
+# ── Auth cookie compatibility aliases ─────────────────────────
+# Auth router is mounted inside mount_all_routers. These aliases let
+# internal code that imported from api.main continue to work.
+from api.routes import auth as _auth_routes
 
-@app.get("/metrics", include_in_schema=False)
-async def prometheus_metrics(user: dict = Depends(require_auth)):
-    """
-    Prometheus-compatible metrics endpoint.
-    
-    Exposes all registered Prometheus metrics including:
-    - Business engine metrics (scans, builds, deploys)
-    - System metrics (CPU, memory, etc.)
-    - API metrics (requests, latency, etc.)
-    """
-    return Response(
-        content=generate_latest(REGISTRY),
-        media_type=CONTENT_TYPE_LATEST
-    )
+_COOKIE_NAME = _auth_routes.COOKIE_NAME
+_COOKIE_MAX_AGE = _auth_routes.COOKIE_MAX_AGE
+_COOKIE_SECURE = _auth_routes.COOKIE_SECURE
+_set_auth_cookie = _auth_routes.set_auth_cookie
 
 
-# ── Startup : workspace cleanup ────────────────────────────────
-async def _on_startup():
-    # SECURITY: Enforce production secrets (JWT, admin password, API token)
-    # Raises RuntimeError if BEA_PRODUCTION=true and secrets are insecure
+# ── WebSocket stream alias ────────────────────────────────────
+
+@app.websocket("/ws/stream")
+async def ws_stream_alias(websocket: WebSocket):
     try:
-        from config.settings import get_settings
-        settings = get_settings()
-        settings.enforce_production_secrets()
-        log.info("production_secrets_validated", production_mode=settings.production_mode)
-    except RuntimeError as e:
-        log.critical("PRODUCTION_STARTUP_BLOCKED", error=str(e))
-        raise
-    
-    try:
-        from core.workspace_cleaner import run_cleanup
-        metrics = run_cleanup()
-        log.info("startup_cleanup_done", **metrics)
-    except Exception as exc:
-        log.warning("startup_cleanup_failed", err=str(exc)[:80])
-
-    # Auto-collect failures from missions in store
-    try:
-        from core.self_improvement.failure_collector import FailureCollector
-        from api.mission_store import MissionStateStore
-        collector = FailureCollector()
-        new_failures = collector.collect_from_store(MissionStateStore.get())
-        log.info("self_improvement_startup_collect", failures_found=len(new_failures))
-        if new_failures:
-            from core.self_improvement.improvement_planner import ImprovementPlanner
-            ImprovementPlanner().plan_from_failures(new_failures)
-    except Exception as exc:
-        log.warning("self_improvement_startup_collect_failed", err=str(exc)[:80])
-
-    # Install observability instrumentation (metrics bridge)
-    try:
-        from core.metrics_bridge import install_instrumentation
-        bridge_results = install_instrumentation(start_snapshots=True)
-        log.info("metrics_bridge_installed", results=bridge_results)
-    except Exception as exc:
-        log.warning("metrics_bridge_install_failed", err=str(exc)[:80])
-
-    # Install adaptive model routing (live metrics → routing decisions)
-    try:
-        from core.adaptive_routing import install_adaptive_routing
-        routing_results = install_adaptive_routing()
-        log.info("adaptive_routing_installed", results=routing_results)
-    except Exception as exc:
-        log.warning("adaptive_routing_install_failed", err=str(exc)[:80])
-
-    # Load cognitive event journal from disk (survive restarts)
-    try:
-        from core.cognitive_events.store import get_journal
-        loaded = get_journal().load_from_disk(days=3)
-        log.info("cognitive_journal_loaded", events_restored=loaded)
-    except Exception as exc:
-        log.warning("cognitive_journal_load_failed", err=str(exc)[:80])
-
-    # Recover mission state from persistence
-    try:
-        from core.meta_orchestrator import get_orchestrator
-        recovery = get_orchestrator().recover_from_persistence()
-        log.info("mission_recovery_complete", **recovery)
-    except Exception as exc:
-        log.warning("mission_recovery_failed", err=str(exc)[:80])
-
-    # ── MCP sidecar auto-registration (Cycle 2 Phase A) ──────────────────
-    # Fail-open: flags default false, never blocks startup.
-    # Enable with QDRANT_MCP_ENABLED=true / GITHUB_MCP_ENABLED=true in .env
-    try:
-        from api.startup_checks import register_mcp_adapters
-        mcp_result = register_mcp_adapters()
-        log.info("mcp_adapters_startup", **mcp_result)
-    except Exception as exc:
-        log.warning("mcp_adapters_startup_failed", err=str(exc)[:80])
-
-    # ── Auto-register all mounted routers with the registry ───────
-    try:
-        from api.router_registry import register_router as _auto_reg
-        from fastapi.routing import APIRoute, APIRouter
-        _seen = set()
-        for route in app.routes:
-            if isinstance(route, APIRoute):
-                prefix = route.path.rsplit("/", 1)[0] if "/" in route.path else ""
-                tags = list(route.tags) if route.tags else []
-                name = tags[0] if tags else prefix.strip("/").replace("/", "_") or "root"
-                if name not in _seen:
-                    r = APIRouter()
-                    r.routes = [rt for rt in app.routes if isinstance(rt, APIRoute) and (list(rt.tags) or [""])[0] == (tags[0] if tags else "")]
-                    _auto_reg(name, r, prefix=prefix, tags=tags)
-                    _seen.add(name)
-        log.info("router_registry_auto_populated", count=len(_seen))
-    except Exception as exc:
-        log.warning("router_registry_auto_failed", err=str(exc)[:80])
-
-
-
-    # Initialize project CRUD pool
-    try:
-        import os
-        from core.db.project_crud import init_pool
-        dsn = os.getenv("DATABASE_URL")
-        if not dsn:
-            log.warning("project_crud_pool_skipped", reason="DATABASE_URL not set")
-        else:
-            await init_pool(dsn)
-            log.info("project_crud_pool_initialized")
-    except Exception as exc:
-        log.warning("project_crud_pool_init_failed", err=str(exc)[:80])
-
-    # ── Continuous self-improvement daemon (opt-in) ──────────────────────────
-    # Runs the hardened improvement loop in a background thread inside the API
-    # process — the same process where real missions execute and accumulate the
-    # runtime telemetry (metrics_store) the loop reads. As usage signal builds up,
-    # the daemon detects real weaknesses and applies safe, sandboxed, regression-
-    # tested patches (max 1/cycle, max 3 files, CRITICAL zones auto-blocked,
-    # rollback on failure). Enable with BEA_CONTINUOUS_IMPROVEMENT=1.
-    # The kernel cooldown (24h) and consecutive-failure cap stay active; operator
-    # approval (BEA_OPERATOR_APPROVE_IMPROVEMENT) only lifts the R4 human-approval
-    # gate, which the operator has explicitly granted at host level.
-    try:
-        import os
-        if os.getenv("BEA_CONTINUOUS_IMPROVEMENT", "").lower() in ("1", "true", "yes"):
-            os.environ.setdefault("BEA_OPERATOR_APPROVE_IMPROVEMENT", "1")
-            from core.improvement_daemon import start_daemon
-            daemon_status = start_daemon()
-            log.info("continuous_improvement_daemon_started", **daemon_status)
-        else:
-            log.info("continuous_improvement_daemon_disabled",
-                     hint="set BEA_CONTINUOUS_IMPROVEMENT=1 to enable")
-    except Exception as exc:
-        log.warning("continuous_improvement_daemon_failed", err=str(exc)[:80])
-
-async def _on_shutdown():
-    # Stop the continuous self-improvement daemon gracefully (if it was started).
-    try:
-        from core.improvement_daemon import stop_daemon
-        stop_daemon()
-        log.info("continuous_improvement_daemon_stopped")
-    except Exception as exc:
-        log.warning("continuous_improvement_daemon_stop_failed", err=str(exc)[:80])
-
-    # Save kernel performance data to survive restarts
-    try:
-        from kernel.runtime.boot import save_performance
-        saved = save_performance()
-        log.info("kernel_performance_saved_on_shutdown", success=saved)
-    except Exception as exc:
-        log.warning("kernel_performance_save_failed", err=str(exc)[:80])
-
-
-_start_time = time.time()
+        from api.ws import ws_handler
+        await ws_handler(websocket)
+    except Exception:
+        try:
+            await websocket.close()
+        except Exception as _exc:
+            log.warning("swallowed_exception", action="main_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
 
 # ── Auth optionnel ────────────────────────────────────────────
@@ -895,10 +305,6 @@ def _get_monitoring_agent():
         return MonitoringAgent()
 
 
-
-
-
-
 # ── Multimodal endpoints ──────────────────────────────────────
 # Removed: 3 inline stubs that returned "not implemented".
 # Real multimodal is served by api/routes/multimodal.py (v2):
@@ -910,97 +316,11 @@ def _get_monitoring_agent():
 # Provider implementations in modules/multimodal/ (image, voice, video).
 
 
-# ── Auth endpoints ────────────────────────────────────────────
-
-
-# ── Auth routes ───────────────────────────────────────────────
-#
-# Audit Mo3: the 6 auth endpoints (json_login, json_logout, login_for_access_token,
-# login_alias, auth_me, refresh_token) used to live inline here. They moved to
-# `api/routes/auth.py` so this file shrinks and the auth surface is reviewable
-# in one focused module. Cookie helpers also moved there.
-#
-# Compatibility aliases below let any internal caller that imported the old
-# names from `api.main` continue to work without churn.
-from api.routes import auth as _auth_routes
-
-_COOKIE_NAME = _auth_routes.COOKIE_NAME
-_COOKIE_MAX_AGE = _auth_routes.COOKIE_MAX_AGE
-_COOKIE_SECURE = _auth_routes.COOKIE_SECURE
-_set_auth_cookie = _auth_routes.set_auth_cookie
-
-app.include_router(_auth_routes.router)
-
-
-# ── WebSocket stream alias ────────────────────────────────────
-
-@app.websocket("/ws/stream")
-async def ws_stream_alias(websocket: WebSocket):
-    try:
-        from api.ws import ws_handler
-        await ws_handler(websocket)
-    except Exception:
-        try:
-            await websocket.close()
-        except Exception as _exc:
-            log.warning("swallowed_exception", action="main_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-
-
-# ── v2 Chat Alias (frontend compatibility) ────────────────────
-
-@app.post("/api/v2/chat", include_in_schema=False)
-async def chat_v2_alias(request: Request, user: dict = Depends(require_auth)):
-    """Alias for /api/v3/chat to maintain frontend compatibility.
-
-    Hardening (audit Mo4): auth déclarée explicitement dans la signature.
-    L'auth était précédemment implicite (déléguée à chat() via les headers),
-    ce qui (a) cachait la contrainte d'OpenAPI/Swagger et (b) devenait silencieusement
-    ouverte si chat() était refactorisé.
-    """
-    try:
-        from api.routes.chat import chat
-        body = await request.json()
-        from pydantic import BaseModel
-        from typing import List
-        
-        class ChatMessage(BaseModel):
-            role: str
-            content: str
-            timestamp: str = None
-        
-        class ChatRequest(BaseModel):
-            message: str
-            project_id: int = 1
-            conversation_history: List[ChatMessage] = []
-            enable_tot: bool = True
-            enable_self_correction: bool = True
-        
-        req = ChatRequest(**body)
-        x_bea_token = request.headers.get("x-bea-token")
-        authorization = request.headers.get("authorization")
-        return await chat(req, x_bea_token, authorization)
-    except Exception as e:
-        log.error("chat_v2_alias_error", err=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ── Router Registry Status ────────────────────────────────────
-
-@app.get("/api/v3/system/registry", tags=["system"])
-async def router_registry_status(user: dict = Depends(require_auth)):
-    """Show status of all registered API routers. Admin-only (exposes API surface)."""
-    try:
-        from api.router_registry import get_registry_status
-        return get_registry_status()
-    except Exception as e:
-        return {"error": str(e)}
-
-
 # _ORPHAN_REMOVED — dead code cleaned up in refactor cycle
 # si_v2_router — self-improvement v2 endpoints mounted via si_v2_router
 # cockpit_router — cockpit monitoring endpoints (integrated into main)
 
-# NOTE: POST /api/v2/task is handled by missions_v3_router (missions.py, mounted at line ~311).
+# NOTE: POST /api/v2/task is handled by missions_v3_router (missions.py).
 # POST /api/v2/tasks/{id}/approve and /reject are also in missions.py.
 # Stubs removed — they returned fake data (pass + static dict) and were never reached.
 

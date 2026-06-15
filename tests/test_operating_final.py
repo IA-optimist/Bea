@@ -196,11 +196,11 @@ def test_operating_summary():
 
 def test_focus_recommendation_with_objectives():
     from core.operating_primitives import ObjectiveTracker, recommend_focus
-    import core.operating_primitives as op
+    import core.primitives.objectives as _obj_mod
     path = f"/tmp/bea_focus_obj_{int(time.time()*1000)}.json"
-    # The global singleton is named _tracker, not _objective_tracker
-    op._tracker = ObjectiveTracker(persist_path=path)
-    tracker = op._tracker
+    # After primitives split, singleton lives in core.primitives.objectives
+    _obj_mod._tracker = ObjectiveTracker(persist_path=path)
+    tracker = _obj_mod._tracker
 
     obj = tracker.create("Failing Project", mission_type="coding_task")
     for i in range(6):

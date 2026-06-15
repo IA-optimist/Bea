@@ -169,7 +169,7 @@ def test_all_access_matrix_tools_exist():
 def test_git_commit_blocks_master():
     """Committing directly to master should be blocked."""
     from agents.bea_team.tools import tool_git_commit
-    with patch("agents.bea_team.tools._git", return_value="master"):
+    with patch("agents.bea_team.tools._git._git", return_value="master"):
         result = tool_git_commit("test commit")
         assert result.success is False
         assert "master" in result.error.lower()

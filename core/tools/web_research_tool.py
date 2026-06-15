@@ -51,7 +51,7 @@ def fetch_url(url: str, timeout: int = 10) -> dict:
         blocked = _check_url(url)
         if blocked:
             return _err(blocked)
-        import requests as _req
+        import httpx as _req
         resp = _req.get(url, timeout=timeout)
         raw = resp.content[:_MAX_BYTES].decode("utf-8", errors="replace")
         ct = resp.headers.get("content-type", "")
@@ -71,7 +71,7 @@ def doc_fetch(url: str, timeout: int = 10) -> dict:
         blocked = _check_url(url)
         if blocked:
             return _err(blocked)
-        import requests as _req
+        import httpx as _req
         resp = _req.get(url, timeout=timeout)
         raw = resp.content[:_MAX_BYTES].decode("utf-8", errors="replace")
         text = _strip_html(raw)
@@ -86,7 +86,7 @@ def http_post_json(url: str, payload: dict, timeout: int = 10) -> dict:
         blocked = _check_url(url)
         if blocked:
             return _err(blocked)
-        import requests as _req
+        import httpx as _req
         resp = _req.post(url, json=payload, timeout=timeout)
         try:
             body = resp.json()
@@ -101,7 +101,7 @@ def http_post_json(url: str, payload: dict, timeout: int = 10) -> dict:
 
 def search_pypi(package: str) -> dict:
     try:
-        import requests as _req
+        import httpx as _req
         url = f"https://pypi.org/pypi/{package}/json"
         resp = _req.get(url, timeout=10)
         if resp.status_code == 404:
@@ -124,7 +124,7 @@ def search_pypi(package: str) -> dict:
 
 def fetch_github_readme(owner: str, repo: str) -> dict:
     try:
-        import requests as _req
+        import httpx as _req
         url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/README.md"
         resp = _req.get(url, timeout=10)
         if resp.status_code == 404:
@@ -142,8 +142,8 @@ def check_url_status(url: str) -> dict:
         blocked = _check_url(url)
         if blocked:
             return _err(blocked)
-        import requests as _req
-        resp = _req.head(url, timeout=10, allow_redirects=True)
+        import httpx as _req
+        resp = _req.head(url, timeout=10, follow_redirects=True)
         return _ok(f"status_code={resp.status_code} url={resp.url}",
                    logs=[f"HEAD {url} → {resp.status_code}"])
     except Exception as e:

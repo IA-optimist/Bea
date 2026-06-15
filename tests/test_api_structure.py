@@ -119,19 +119,20 @@ class TestMainReduction:
 class TestMountedRouters:
     def test_AS16_system_v2_mounted(self):
         import inspect
-        main_src = inspect.getsource(importlib.import_module("api.main"))
-        assert "system_v2_router" in main_src
+        # Routers are mounted via api.router_mount since M1 refactor
+        mount_src = inspect.getsource(importlib.import_module("api.router_mount"))
+        assert "system_v2_router" in mount_src
 
     def test_AS17_si_v2_mounted(self):
         import inspect
-        main_src = inspect.getsource(importlib.import_module("api.main"))
-        assert "si_v2_router" in main_src
+        mount_src = inspect.getsource(importlib.import_module("api.router_mount"))
+        assert "self_improvement_v2_router" in mount_src
 
     def test_AS18_registry_endpoint_exists(self):
         import inspect
-        main_src = inspect.getsource(importlib.import_module("api.main"))
-        assert "router_registry_status" in main_src
-        assert "/api/v3/system/registry" in main_src
+        misc_src = inspect.getsource(importlib.import_module("api.routes.misc_endpoints"))
+        assert "router_registry_status" in misc_src
+        assert "/api/v3/system/registry" in misc_src
 
 
 class TestBackwardCompat:

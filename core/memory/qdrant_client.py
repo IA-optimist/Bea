@@ -17,9 +17,8 @@ class QdrantWrapper:
 
     def _sess(self):
         if self._session is None:
-            import requests
-            self._session = requests.Session()
-            self._session.headers.update(self.headers)
+            import httpx
+            self._session = httpx.Client(headers=self.headers)
         return self._session
 
     def health(self):

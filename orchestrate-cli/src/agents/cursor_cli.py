@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional
 from loguru import logger
 
 try:
-    import requests  # noqa: F401
+    import httpx  # noqa: F401  # requests→httpx
     import pydantic  # noqa: F401
     from cursor import Cursor  # noqa: F401
     CURSOR_AVAILABLE = True

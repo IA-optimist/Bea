@@ -43,7 +43,7 @@ def execute_shell(args: dict) -> str:
     if _BLOCKLIST.search(cmd):
         return "REFUSÉ: commande bloquée (potentiellement destructive)."
     try:
-        p = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+        p = subprocess.run(cmd, shell=True, capture_output=True, text=True,  # nosec S602 — _BLOCKLIST guards above
                            timeout=_TIMEOUT, encoding="utf-8", errors="replace")
         out = (p.stdout or "") + (("\n[stderr]\n" + p.stderr) if p.stderr else "")
         return _truncate(out.strip() or f"(code {p.returncode}, aucune sortie)")

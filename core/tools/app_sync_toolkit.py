@@ -37,7 +37,7 @@ def check_api_fields(base_url: str = "http://localhost:8000") -> dict:
     fields_missing = []
 
     try:
-        import requests as _req
+        import httpx as _req
 
         data = None
         for path in ["/api/v2/missions/list", "/api/v2/missions/recent", "/api/v2/missions"]:

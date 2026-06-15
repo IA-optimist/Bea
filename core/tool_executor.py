@@ -147,7 +147,7 @@ def execute_http_get(url: str, timeout: int = 8) -> dict:
         if blocked in url:
             return _err(f"blocked_url: {blocked} not allowed")
     try:
-        import requests as _req
+        import httpx as _req
         resp = _req.get(url, timeout=timeout)
         return _ok(f"status={resp.status_code} body={resp.text[:2000]}")
     except Exception as e:
@@ -300,7 +300,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
 # def _ensure_collection(collection: str = _COLLECTION) -> bool:
 #     """Crée la collection si elle n'existe pas. Retourne True si prête."""
 #     try:
-#         import requests as _req
+#         import httpx as _req
 #         # Vérifie si la collection existe
 #         r = _req.get(f"{_QDRANT_BASE}/collections/{collection}", timeout=3)
 #         if r.status_code == 200:
@@ -328,7 +328,7 @@ def run_shell_command(cmd: str, timeout: int = 8) -> dict:
 # def query_vector_db(query: str, collection: str = _COLLECTION, top_k: int = 3) -> dict:
 #     """Requête Qdrant. Auto-crée la collection si absente. Fail-open si Qdrant indisponible."""
 #     try:
-#         import requests as _req
+#         import httpx as _req
 
 #         # Auto-création si nécessaire
 #         if not _ensure_collection(collection):

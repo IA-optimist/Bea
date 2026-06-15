@@ -368,9 +368,9 @@ class TestAPI:
     def test_MI29_router_mounted(self):
         import inspect
         import importlib
-        main_mod = importlib.import_module("api.main")
-        source = inspect.getsource(main_mod)
-        assert "models_router" in source
+        # Routers mounted via api.router_mount since M1 refactor
+        mount_src = inspect.getsource(importlib.import_module("api.router_mount"))
+        assert "models_router" in mount_src
 
     def test_MI30_status_endpoint(self):
         import asyncio
