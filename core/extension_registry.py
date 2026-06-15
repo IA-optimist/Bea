@@ -58,11 +58,13 @@ class HealthStatus(str, Enum):
 # --- Validation helpers ---
 
 _ID_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{1,62}[a-z0-9]$')
+# Shell/SQL substring patterns — intentionally kept for non-Python text (prompts, configs, descriptions)
 _DANGEROUS_PATTERNS = [
-    "rm -rf", "sudo", "eval(", "exec(", "__import__",
-    "os.system", "subprocess.call", "subprocess.Popen",
+    "rm -rf", "sudo",
     "shutil.rmtree", "; rm ", "| rm ", "&& rm ",
 ]
+# Python-code patterns delegated to AST checker (see _check_dangerous_code)
+_PYTHON_PATTERNS_REMOVED = ["eval(", "exec(", "__import__", "os.system", "subprocess.call", "subprocess.Popen"]  # noqa: F841
 
 
 def _validate_id(ext_id: str) -> str | None:
@@ -72,10 +74,23 @@ def _validate_id(ext_id: str) -> str | None:
 
 
 def _check_dangerous(text: str) -> str | None:
+    """Check text (non-Python: prompts, configs) for shell/SQL danger patterns."""
     lower = text.lower()
     for pattern in _DANGEROUS_PATTERNS:
         if pattern.lower() in lower:
             return f"Dangerous pattern detected: '{pattern}'"
+    return None
+
+
+def _check_dangerous_code(python_source: str) -> str | None:
+    """AST-based safety check for Python source code supplied by extensions."""
+    try:
+        from core.security.code_guard import check_code_safety
+        violations = check_code_safety(python_source)
+        if violations:
+            return f"Unsafe code: {'; '.join(violations)}"
+    except Exception:
+        pass
     return None
 
 
