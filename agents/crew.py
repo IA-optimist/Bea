@@ -118,8 +118,9 @@ class BaseAgent(ABC):
                 HumanMessage(content=_user_msg),
             ]
             # safe_invoke : circuit breaker Ollama + fallback cloud automatique
-            resp = await factory.safe_invoke(
-                messages, role=self.role, timeout=float(self.timeout_s)
+            resp = await asyncio.wait_for(
+                factory.safe_invoke(messages, role=self.role, timeout=float(self.timeout_s)),
+                timeout=30,
             )
             out = resp.content if resp else ""
             ms  = int((time.monotonic() - t0) * 1000)
