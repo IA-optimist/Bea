@@ -174,6 +174,54 @@ async def _on_startup(app) -> None:  # noqa: ANN001
     except Exception as exc:
         log.warning("continuous_improvement_daemon_failed", err=str(exc)[:80])
 
+    # ── Objective runner — convert active objectives to missions every 30 min ─
+    # Polls active objectives, picks the next best action, and submits it as a
+    # mission so Béa autonomously works toward its long-horizon goals. Opt-in via
+    # BEA_OBJECTIVE_RUNNER=1 (disabled by default — requires stable LLM budget).
+    try:
+        if os.getenv("BEA_OBJECTIVE_RUNNER", "").lower() in ("1", "true", "yes"):
+            import asyncio as _asyncio
+
+            async def _objective_runner_loop() -> None:
+                interval = int(os.getenv("BEA_OBJECTIVE_RUNNER_INTERVAL", "1800"))  # 30 min
+                while True:
+                    await _asyncio.sleep(interval)
+                    try:
+                        from core.objectives.objective_engine import get_objective_engine
+                        eng = get_objective_engine()
+                        nba = eng.get_next_best_action()
+                        action_type = nba.get("action_type", "no_active_objectives")
+                        if action_type in ("no_active_objectives", "no_actionable_sub"):
+                            log.debug("objective_runner.no_action", reason=action_type)
+                            continue
+                        # Build a concrete mission goal from the next-best-action
+                        node_title = nba.get("node_title") or ""
+                        obj_title = nba.get("objective_title") or ""
+                        rationale = nba.get("rationale") or ""
+                        goal = (
+                            f"[Objectif: {obj_title}] {node_title}"
+                            if node_title and obj_title else rationale
+                        )
+                        obj_id = nba.get("objective_id", "")
+                        if not goal:
+                            log.debug("objective_runner.empty_goal", nba=nba)
+                            continue
+                        from core.orchestration_bridge import submit_mission as bridge_submit
+                        result = bridge_submit(goal)
+                        log.info("objective_runner.mission_submitted",
+                                 objective_id=obj_id, mission_id=result.get("mission_id"),
+                                 action=action_type, goal=goal[:80])
+                    except Exception as _exc:
+                        log.warning("objective_runner.cycle_error", err=str(_exc)[:120])
+
+            _asyncio.create_task(_objective_runner_loop())
+            log.info("objective_runner_started",
+                     interval_s=int(os.getenv("BEA_OBJECTIVE_RUNNER_INTERVAL", "1800")))
+        else:
+            log.debug("objective_runner_disabled", hint="set BEA_OBJECTIVE_RUNNER=1 to enable")
+    except Exception as exc:
+        log.warning("objective_runner_init_failed", err=str(exc)[:80])
+
 
 async def _on_shutdown() -> None:
     """Run all shutdown tasks in order. All failures are logged, none are re-raised."""

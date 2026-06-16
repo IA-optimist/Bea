@@ -175,6 +175,20 @@ async def create_objective(req: CreateObjectiveRequest) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/{objective_id}/activate", summary="Activer un objectif (NEW → ACTIVE)")
+async def activate_objective(objective_id: str) -> dict:
+    try:
+        eng = _engine()
+        ok = eng.activate(objective_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail=f"Objective {objective_id} not found or cannot be activated")
+        return {"ok": True, "objective_id": objective_id, "status": "ACTIVE"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{objective_id}/pause", summary="Mettre en pause un objectif")
 async def pause_objective(objective_id: str, reason: str = "") -> dict:
     try:
