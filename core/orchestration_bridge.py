@@ -459,10 +459,13 @@ class OrchestrationBridge:
 
     def list_missions(self, status_filter: str | None = None, limit: int = 20) -> list[dict]:
         """Alias for list_missions_canonical — used by API routes."""
-        missions = self.list_missions_canonical(limit=limit)
+        # When filtering by status, fetch a large pool first so the status filter
+        # is applied to all missions, not just the most-recent `limit` ones.
+        fetch_limit = limit if not status_filter else max(limit * 20, 500)
+        missions = self.list_missions_canonical(limit=fetch_limit)
         if status_filter:
             missions = [m for m in missions if m.get("status") == status_filter.upper()]
-        return missions
+        return missions[:limit]
 
     def list_missions_canonical(self, limit: int = 20) -> list[dict]:
         """
