@@ -162,6 +162,10 @@ class MemoryFacade:
         self._backends["knowledge_jsonl"].available = True
         self._backends["knowledge_jsonl"].last_check = time.time()
 
+        # Cached MemoryBus singleton — created once so the embedding model is
+        # loaded only on first call, not on every search/store invocation.
+        self._memory_bus = None
+
     # ── Store ─────────────────────────────────────────────────────────────────
 
     def store(
@@ -263,12 +267,18 @@ class MemoryFacade:
             log.debug("memory_exception", err=str(_exc)[:120], location="memory_facade:240")
             return False
 
+    def _get_memory_bus(self):
+        """Return cached MemoryBus singleton (model loads once, not per call)."""
+        if self._memory_bus is None and self._settings:
+            from memory.memory_bus import MemoryBus
+            self._memory_bus = MemoryBus(self._settings)
+        return self._memory_bus
+
     def _store_memory_bus(self, content: str, content_type: str, tags: list[str], metadata: dict) -> bool:
         """Route to memory/memory_bus.py."""
         try:
-            from memory.memory_bus import MemoryBus
-            if self._settings:
-                bus = MemoryBus(self._settings)
+            bus = self._get_memory_bus()
+            if bus:
                 bus.remember(content, metadata={"type": content_type, **metadata}, tags=tags)
                 self._backends["memory_bus"].available = True
                 return True
@@ -283,9 +293,8 @@ class MemoryFacade:
     def _store_memory_bus_patch(self, content: str, metadata: dict) -> bool:
         """Route patch to MemoryBus.remember_patch()."""
         try:
-            from memory.memory_bus import MemoryBus
-            if self._settings:
-                bus = MemoryBus(self._settings)
+            bus = self._get_memory_bus()
+            if bus:
                 bus.remember_patch(content, success=metadata.get("success", True), model=metadata.get("model", ""))
                 return True
             return False
@@ -374,32 +383,17 @@ class MemoryFacade:
         """
         results: list[MemoryEntry] = []
 
-        # 1. Try memory_toolkit search
-        try:
-            from core.tools.memory_toolkit import memory_search_similar
-            search_result = memory_search_similar(query=query, top_k=top_k)
-            if search_result.get("success") and search_result.get("output"):
-                for item in search_result.get("results", []):
-                    results.append(MemoryEntry(
-                        content=str(item.get("payload", {}).get("solution", item.get("content", ""))),
-                        content_type=item.get("payload", {}).get("type", "solution"),
-                        tags=item.get("payload", {}).get("tags", []),
-                        source="memory_toolkit",
-                        score=item.get("score", 0.5),
-                    ))
-        except Exception as _exc:
-            log.debug("memory_exception", err=str(_exc)[:120], location="memory_facade:346")
-            pass
+        # memory_toolkit is a consumer shim that calls back into MemoryFacade.search()
+        # — calling it here creates infinite recursion. Skip it; direct backends suffice.
 
-        # 2. Try memory_bus search.
+        # 1. Try memory_bus search.
         # Root-cause fix: the previous implementation silently skipped vector search
         # whenever called from an async context (which is always the case during real
         # missions). We now run bus.search() on a fresh event loop in a daemon thread
         # so it never blocks or deadlocks the main event loop thread.
         try:
-            from memory.memory_bus import MemoryBus
-            if self._settings:
-                bus = MemoryBus(self._settings)
+            bus = self._get_memory_bus()
+            if bus:
                 _result_q: _queue_module.Queue = _queue_module.Queue()
 
                 def _run_bus_search():
@@ -415,7 +409,7 @@ class MemoryFacade:
 
                 _t = threading.Thread(target=_run_bus_search, daemon=True)
                 _t.start()
-                _t.join(timeout=3.0)  # 3s cap — memory search must be fast
+                _t.join(timeout=15.0)  # 15s — bus loads embedding model on cold start (~10s)
 
                 if not _t.is_alive():
                     try:
@@ -566,7 +560,7 @@ class MemoryFacade:
             status.last_check = now
             try:
                 if name == "memory_toolkit":
-                    from core.tools.memory_toolkit import memory_search_similar  # noqa: F401
+                    from core.tools.memory_toolkit import search_memory  # noqa: F401
                     status.available = True
                 elif name == "memory_bus":
                     from memory.memory_bus import MemoryBus  # noqa: F401
