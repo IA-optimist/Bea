@@ -76,8 +76,14 @@ class ProposalStore:
             self._loaded = True
 
     def add(self, proposal: ImprovementProposal) -> str:
-        """Add a proposal. Returns proposal_id."""
+        """Add a proposal. Returns proposal_id. Skips duplicates (same title, pending)."""
         self._ensure_loaded()
+
+        # Dedup: skip if a pending proposal with the same title already exists
+        for existing in self._proposals.values():
+            if existing.status == "pending" and existing.title == proposal.title:
+                logger.debug("improvement_proposal_dedup_skipped", title=proposal.title[:60])
+                return existing.proposal_id
 
         # Evict oldest if at capacity (prefer evicting resolved first)
         if len(self._proposals) >= self.MAX_PROPOSALS:
