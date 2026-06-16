@@ -436,7 +436,8 @@ def _build_handler(settings):
         if text.startswith(("/start", "/help")):
             return ("Béa en ligne \U0001f7e2\n"
                     "Parle-moi directement — je me souviens du fil de la conversation.\n"
-                    "/reset — repartir de zéro · /whoami — ton id")
+                    "/reset — repartir de zero  /whoami — ton id\n"
+                    "/report — rapport instantane  /stats — usage LLM")
         if text.startswith("/reset"):
             history.pop(event.chat_id, None)
             return "Fil de conversation effacé. 🧹"
@@ -459,6 +460,42 @@ def _build_handler(settings):
         # Auto-amélioration : déclencheur explicite.
         if _IMPROVE_TRIGGER.search(text):
             return await _propose_improvement(event.chat_id)
+
+        if text.startswith("/report"):
+            try:
+                import datetime
+                api_url   = os.getenv("BEA_API_URL",   "http://127.0.0.1:8000")
+                api_token = os.getenv("BEA_API_TOKEN", "")
+                hdrs      = {"X-Bea-Token": api_token}
+                async with httpx.AsyncClient(timeout=10) as _c:
+                    health   = (await _c.get(f"{api_url}/health",              headers=hdrs)).json()
+                    missions = (await _c.get(f"{api_url}/api/v3/missions?limit=20", headers=hdrs)).json()
+                    improv   = (await _c.get(f"{api_url}/api/v3/self-improvement/proposals?limit=5", headers=hdrs)).json()
+                now   = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+                lines = [f"Rapport Béa — {now}", ""]
+                api_ok = health.get("status") in ("ok", "healthy")
+                lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
+                all_m  = missions.get("missions") or missions.get("items") or []
+                cutoff = datetime.datetime.now().timestamp() - 86400
+                recent = [m for m in all_m
+                          if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
+                if recent:
+                    done = sum(1 for m in recent if m.get("status") in ("completed","done","DONE"))
+                    fail = sum(1 for m in recent if m.get("status") in ("failed","error","FAILED"))
+                    lines.append(f"\nMissions 24h : {len(recent)} ({done} ok, {fail} echecs)")
+                    for m in recent[:3]:
+                        s = m.get("status","?")
+                        g = (m.get("goal") or m.get("title") or "")[:60]
+                        lines.append(f"  [{s}] {g}")
+                else:
+                    lines.append("\nAucune mission dans les dernieres 24h")
+                props   = improv.get("proposals") or improv.get("items") or []
+                pending = [p for p in props if p.get("status") in ("pending","proposed",None)]
+                if pending:
+                    lines.append(f"\nPropositions en attente : {len(pending)}")
+                return "\n".join(lines)
+            except Exception as e:  # noqa: BLE001
+                return f"Rapport indisponible : {e}"
 
         # Tout le reste -> Béa (mémoire de conversation + mémoire hybride).
         if not text:
@@ -549,6 +586,90 @@ async def _analyze_photo(client, adapter, file_id: str, question: str) -> str:
     return "Désolée, l'analyse de l'image a échoué (modèles vision indisponibles)."
 
 
+async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> None:
+    """Envoie un rapport quotidien à 8h00 heure locale à tous les utilisateurs autorisés."""
+    import datetime
+
+    api_url   = os.getenv("BEA_API_URL",   "http://127.0.0.1:8000")
+    api_token = os.getenv("BEA_API_TOKEN", "")
+    headers   = {"X-Bea-Token": api_token}
+
+    async def _fetch(path: str) -> dict:
+        try:
+            r = await client.get(f"{api_url}{path}", headers=headers, timeout=10)
+            return r.json() if r.status_code == 200 else {}
+        except Exception:  # noqa: BLE001
+            return {}
+
+    async def _build_report() -> str:
+        health   = await _fetch("/health")
+        metrics  = await _fetch("/api/v3/metrics")
+        missions = await _fetch("/api/v3/missions?limit=20&status=all")
+        improv   = await _fetch("/api/v3/self-improvement/proposals?limit=5")
+
+        now = datetime.datetime.now().strftime("%d/%m/%Y")
+        lines = [f"Rapport Béa — {now}", ""]
+
+        # Santé
+        api_ok = health.get("status") in ("ok", "healthy")
+        lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
+        db_ok = health.get("database") in ("ok", "connected", True)
+        if not db_ok:
+            lines.append("  BDD : HORS LIGNE")
+
+        # Missions dernières 24h
+        all_missions = missions.get("missions") or missions.get("items") or []
+        cutoff = datetime.datetime.now().timestamp() - 86400
+        recent = [m for m in all_missions
+                  if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
+        if recent:
+            total = len(recent)
+            done  = sum(1 for m in recent if m.get("status") in ("completed", "done", "DONE"))
+            fail  = sum(1 for m in recent if m.get("status") in ("failed", "error", "FAILED"))
+            lines.append(f"\nMissions 24h : {total} ({done} ok, {fail} echecs)")
+            for m in recent[:3]:
+                s = m.get("status", "?")
+                g = (m.get("goal") or m.get("title") or "")[:60]
+                lines.append(f"  [{s}] {g}")
+        else:
+            lines.append("\nAucune mission dans les dernieres 24h")
+
+        # Métriques
+        if metrics:
+            total_m = metrics.get("total_missions") or metrics.get("missions_total", 0)
+            if total_m:
+                lines.append(f"\nTotal missions : {total_m}")
+
+        # Propositions d'amélioration en attente
+        props = improv.get("proposals") or improv.get("items") or []
+        pending = [p for p in props if p.get("status") in ("pending", "proposed", None)]
+        if pending:
+            lines.append(f"\nPropositions en attente : {len(pending)}")
+            for p in pending[:2]:
+                cat  = p.get("category") or p.get("improvement_type") or "?"
+                desc = (p.get("description") or p.get("title") or "")[:60]
+                lines.append(f"  [{cat}] {desc}")
+
+        return "\n".join(lines)
+
+    while True:
+        now = datetime.datetime.now()
+        target = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        if now >= target:
+            target += datetime.timedelta(days=1)
+        await asyncio.sleep((target - now).total_seconds())
+
+        try:
+            report = await _build_report()
+            recipients = allowed_ids or set()
+            for uid in recipients:
+                await _tg(client, adapter.base_url, "sendMessage",
+                          {"chat_id": uid, "text": report})
+            log.info("rapport_quotidien_envoyé recipients=%d", len(recipients))
+        except Exception as e:  # noqa: BLE001
+            log.warning("daily_report_error: %s", e)
+
+
 async def main() -> None:
     _load_dotenv()  # avant get_settings() : settings lit os.environ
     # Single-instance : tue l'instance précédente du bot (fin des orphelins en conflit).
@@ -569,6 +690,10 @@ async def main() -> None:
 
     offset = 0
     async with httpx.AsyncClient(timeout=40) as client:
+        # Rapport quotidien 8h00 — tâche parallèle, ne bloque pas le polling.
+        asyncio.create_task(
+            _daily_report_loop(client, adapter, _allowlist()))
+
         while True:
             try:
                 r = await client.get(f"{adapter.base_url}/getUpdates",
