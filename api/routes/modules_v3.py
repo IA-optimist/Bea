@@ -260,10 +260,7 @@ def test_skill(skill_id: str):
 
 
 # ── Connectors ──
-
-@router.get("/connectors")
-def list_connectors(provider: str | None = None):
-    return {"connectors": _get_mgr().list_connectors(provider)}
+# NOTE: GET /api/v3/connectors is served by api.routes.connectors (mounted first).
 
 @router.post("/connectors")
 def create_connector(req: ConnectorRequest, request: Request):

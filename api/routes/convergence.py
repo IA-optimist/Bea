@@ -445,23 +445,19 @@ async def system_health():
     })
 
 
-@router.get("/system/readiness")
-async def system_readiness():
+@router.get("/system/liveness")
+async def system_liveness():
     """
-    Readiness probe — returns HTTP 200 only when the system can process missions.
+    Liveness check — verifies live infrastructure connectivity (LLM + Qdrant + orchestrator).
 
-    Unlike /system/health (which checks imports), this checks LIVE connectivity
-    to external infrastructure required for real mission execution.
-
-    HTTP 200 → system is ready to process missions
-    HTTP 503 → system is not ready (infra missing or LLM unavailable)
+    Returns HTTP 200 if all infra probes pass, HTTP 503 if any probe fails.
+    Use this for deeper health monitoring, NOT for Docker HEALTHCHECK (use
+    /api/v3/system/readiness from api.routes.system_readiness for that).
 
     Checks:
       - At least one LLM API key is configured
       - Qdrant is reachable (if configured)
       - Core orchestrator initializes without error
-
-    Designed for Kubernetes readinessProbe / load balancer health gates.
     """
     import socket
     from fastapi.responses import JSONResponse as _JSONResponse

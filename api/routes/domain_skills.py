@@ -10,13 +10,7 @@ from api._deps import require_auth
 router = APIRouter(prefix="/api/v3/skills", tags=["domain-skills"])
 
 
-@router.get("")
-async def list_skills(_user: dict = Depends(require_auth)):
-    """List all registered domain skills."""
-    from core.skills.domain_loader import get_domain_registry
-    skills = get_domain_registry().list_all()
-    return {"ok": True, "data": [s.to_dict() for s in skills]}
-
+# NOTE: GET /api/v3/skills is served by api.routes.modules_v3 (mounted first via /api/v3 prefix).
 
 @router.get("/stats")
 async def skill_stats(_user: dict = Depends(require_auth)):

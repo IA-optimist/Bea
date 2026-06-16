@@ -833,13 +833,7 @@ async def get_mission(mission_id: str, x_bea_token: Annotated[Optional[str], Hea
 # ══════════════════════════════════════════════════════════════
 # AGENTS
 # ══════════════════════════════════════════════════════════════
-
-@router.get("/api/v2/agents")
-async def list_agents(x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
-    """Liste tous les agents enregistrés."""
-    _check_auth(x_bea_token, authorization)
-    return list_registered_agents()
-
+# NOTE: GET /api/v2/agents is served by api.routes.agent_builder (mounted first).
 
 
 @router.post("/api/v2/agents/{agent_id}/trigger")
