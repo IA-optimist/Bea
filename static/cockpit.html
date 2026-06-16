@@ -74,6 +74,10 @@
         <h2>🔌 Connecteurs</h2>
         <div id="connectors-body" class="muted">Chargement…</div>
       </div>
+      <div class="panel" id="llm-panel">
+        <h2>🤖 LLM (24h) <span class="pill muted">/api/v3/metrics/llm</span></h2>
+        <div id="llm-body" class="muted">Chargement…</div>
+      </div>
     </div>
   </section>
 
@@ -202,6 +206,27 @@ async function loadOverview(){
       '<div class="row"><span>Actifs</span><strong style="margin-left:auto">' + esc(running) + '</strong></div>' +
       '<div class="row"><span>Total</span><strong style="margin-left:auto">' + esc(total) + '</strong></div>';
   }).catch(e => fail('workflow-runtime-body', e));
+
+  // LLM metrics (last 24h)
+  api('/api/v3/metrics/llm?hours=24').then(d => {
+    const calls = d.calls ?? 0;
+    const cost  = typeof d.cost_usd === 'number' ? d.cost_usd.toFixed(3) : '—';
+    const err   = d.error_rate != null ? Math.round(d.error_rate * 100) + '%' : '—';
+    const toks  = d.total_tokens ?? 0;
+    let html = '<div class="row"><span>Appels</span><strong style="margin-left:auto">' + esc(calls) + '</strong></div>';
+    html    += '<div class="row"><span>Tokens</span><strong style="margin-left:auto">' + esc(toks) + '</strong></div>';
+    html    += '<div class="row"><span>Coût</span><strong style="margin-left:auto">$' + esc(cost) + '</strong></div>';
+    const errColor = (d.error_rate || 0) > 0.10 ? 'var(--ko)' : 'var(--ok)';
+    html    += '<div class="row"><span>Erreurs</span><strong style="margin-left:auto;color:' + errColor + '">' + esc(err) + '</strong></div>';
+    // Top models by calls
+    const byModel = d.by_model || {};
+    const sorted = Object.entries(byModel).sort((a,b) => (b[1].calls||0) - (a[1].calls||0)).slice(0, 4);
+    if (sorted.length) {
+      html += '<div style="margin-top:8px;font-size:0.85em;color:var(--dim)">Top modèles :</div>';
+      for (const [m, s] of sorted) html += '<div class="row" style="font-size:0.85em"><span>' + esc(m) + '</span><span style="margin-left:auto">' + esc(s.calls||0) + ' appels</span></div>';
+    }
+    document.getElementById('llm-body').innerHTML = html;
+  }).catch(e => fail('llm-body', e));
 
   // Connecteurs
   api('/api/v3/connectors').then(d => {
