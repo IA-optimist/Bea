@@ -54,6 +54,8 @@
 
 <nav class="tabs">
   <div class="tab active" data-screen="overview" onclick="showScreen('overview')">Vue d'ensemble</div>
+  <div class="tab" data-screen="missions" onclick="showScreen('missions')">Missions</div>
+  <div class="tab" data-screen="objectives" onclick="showScreen('objectives')">Objectifs</div>
   <div class="tab" data-screen="performance" onclick="showScreen('performance')">Performance</div>
   <div class="tab" data-screen="improvements" onclick="showScreen('improvements')">Auto-amélioration</div>
 </nav>
@@ -78,6 +80,29 @@
         <h2>🤖 LLM (24h) <span class="pill muted">/api/v3/metrics/llm</span></h2>
         <div id="llm-body" class="muted">Chargement…</div>
       </div>
+    </div>
+  </section>
+
+  <!-- ── Missions récentes ── -->
+  <section id="screen-missions" class="screen">
+    <div class="panel">
+      <h2>📋 Missions récentes <span class="pill muted">/api/v3/missions</span></h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn" onclick="loadMissions()">Toutes</button>
+        <button class="btn" onclick="loadMissions('COMPLETED')">Complétées</button>
+        <button class="btn" onclick="loadMissions('FAILED')">Échouées</button>
+        <button class="btn" onclick="loadMissions('READY')">En attente</button>
+        <button class="btn" onclick="loadMissions('RUNNING')">En cours</button>
+      </div>
+      <div id="missions-body" class="muted">Chargement…</div>
+    </div>
+  </section>
+
+  <!-- ── Objectifs autonomes ── -->
+  <section id="screen-objectives" class="screen">
+    <div class="panel">
+      <h2>🎯 Objectifs autonomes <span class="pill muted">/api/v2/objectives</span></h2>
+      <div id="objectives-body" class="muted">Chargement…</div>
     </div>
   </section>
 
@@ -127,7 +152,70 @@ function showScreen(name){
   if (el) el.classList.add('active');
   if (name === 'performance') loadPerformance();
   else if (name === 'improvements') loadImprovements();
+  else if (name === 'missions') loadMissions();
+  else if (name === 'objectives') loadObjectives();
   else loadOverview();
+}
+
+// ── Écran Missions ──
+const _STATUS_COLORS = {
+  COMPLETED: 'var(--ok)', DONE: 'var(--ok)',
+  FAILED: 'var(--bad)', ERROR: 'var(--bad)',
+  RUNNING: 'var(--acc)', READY: 'var(--warn)', default: 'var(--sub)'
+};
+async function loadMissions(status){
+  const body = document.getElementById('missions-body');
+  body.innerHTML = '<span class="muted">Chargement…</span>';
+  try{
+    const qs = status ? '?status=' + encodeURIComponent(status) + '&limit=30' : '?limit=30';
+    const data = await api('/api/v3/missions' + qs);
+    const missions = (data.data || data).missions || data.missions || (Array.isArray(data) ? data : []);
+    if (!missions.length){ body.innerHTML = '<span class="muted">Aucune mission' + (status ? ' ' + status : '') + '.</span>'; return; }
+    let html = '<table><tr><th>Mission</th><th>Statut</th><th>Date</th></tr>';
+    for (const m of missions){
+      const st = (m.status || '?').toUpperCase();
+      const col = _STATUS_COLORS[st] || _STATUS_COLORS.default;
+      const goal = esc(m.goal || m.title || m.mission_id || '—').substring(0, 70);
+      const ts = m.created_at ? new Date(m.created_at * 1000).toLocaleString('fr') : '—';
+      html += '<tr><td>' + goal + '</td><td style="color:' + col + ';font-weight:600">' + esc(st) + '</td><td class="muted">' + esc(ts) + '</td></tr>';
+    }
+    body.innerHTML = html + '</table>';
+  }catch(e){ fail('missions-body', e); }
+}
+
+// ── Écran Objectifs ──
+async function loadObjectives(){
+  const body = document.getElementById('objectives-body');
+  body.innerHTML = '<span class="muted">Chargement…</span>';
+  try{
+    const data = await api('/api/v2/objectives');
+    const objs = data.objectives || (Array.isArray(data) ? data : []);
+    if (!objs.length){ body.innerHTML = '<span class="muted">Aucun objectif configuré.</span>'; return; }
+    const _OCOLS = { ACTIVE: 'var(--ok)', NEW: 'var(--warn)', PAUSED: 'var(--sub)', ARCHIVED: 'var(--sub)' };
+    body.innerHTML = objs.map(o => {
+      const st = (o.status || 'NEW').toUpperCase();
+      const col = _OCOLS[st] || 'var(--sub)';
+      const oid = o.objective_id || '';
+      const score = o.priority_score != null ? Math.round(o.priority_score * 100) + '%' : '—';
+      const subs = (o.sub_objectives || []).length;
+      return '<div class="card">' +
+        '<div class="row"><strong>' + esc(o.title || oid) + '</strong>' +
+        '<span class="pill" style="margin-left:auto;border-color:' + col + ';color:' + col + '">' + esc(st) + '</span></div>' +
+        '<div class="muted" style="margin:4px 0;font-size:.85em">' + esc(o.description || '') + '</div>' +
+        '<div class="row" style="font-size:.82em;color:var(--sub)">' +
+          '<span>Priorité: ' + score + '</span>' +
+          (subs ? '<span style="margin-left:8px">' + subs + ' sous-objectifs</span>' : '') +
+        '</div>' +
+        (st === 'NEW' ? '<div style="margin-top:8px"><button class="btn btn-ok" onclick="activateObj(\'' + esc(oid) + '\',this)">Activer</button></div>' : '') +
+        '</div>';
+    }).join('');
+  }catch(e){ fail('objectives-body', e); }
+}
+async function activateObj(id, btn){
+  try{
+    await api('/api/v2/objectives/' + encodeURIComponent(id) + '/activate', {method:'POST'});
+    loadObjectives();
+  }catch(e){ alert('Erreur activation: ' + (e.message || e)); }
 }
 
 // ── Écran Performance ── (/api/v3/performance/tools)
