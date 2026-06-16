@@ -271,6 +271,11 @@ class MemoryFacade:
         """Return cached MemoryBus singleton (model loads once, not per call)."""
         if self._memory_bus is None:
             if self._settings is None:
+                # Auto-load settings only when QDRANT_HOST is explicitly configured
+                # so unit tests with no Qdrant env don't spin up the bus.
+                import os
+                if not os.environ.get("QDRANT_HOST"):
+                    return None
                 try:
                     from config.settings import get_settings
                     self._settings = get_settings()
