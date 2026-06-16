@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: const Center(child: Text('J', style: TextStyle(
+                child: const Center(child: Text('B', style: TextStyle(
                   fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white,
                 ))),
               ),

@@ -12,6 +12,8 @@ import 'capabilities_screen.dart';
 import 'aios_dashboard_screen.dart';
 import 'admin_panel_screen.dart';
 import 'monitoring_screen.dart';
+import 'security_screen.dart';
+import 'business_screen.dart';
 
 /// Settings — configuration + advanced access point.
 /// Normal: server, account, logout.
@@ -174,6 +176,20 @@ class SettingsScreen extends StatelessWidget {
                   label: 'Monitoring LLM',
                   subtitle: 'Coût, erreurs, latence, par modèle',
                   onTap: () => _push(context, const MonitoringScreen()),
+                ),
+                const Divider(height: 1, indent: 52),
+                _NavItem(
+                  icon: Icons.security_rounded,
+                  label: 'Outils Sécurité',
+                  subtitle: 'HexStrike V2 — recon, scanning, exploitation',
+                  onTap: () => _push(context, const SecurityScreen()),
+                ),
+                const Divider(height: 1, indent: 52),
+                _NavItem(
+                  icon: Icons.trending_up_rounded,
+                  label: 'Business',
+                  subtitle: 'Ventures, actions, métriques économiques',
+                  onTap: () => _push(context, const BusinessScreen()),
                 ),
               ])),
             )),

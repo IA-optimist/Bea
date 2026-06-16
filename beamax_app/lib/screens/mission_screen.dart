@@ -1072,7 +1072,7 @@ class _BeaAvatar extends StatelessWidget {
           border: Border.all(color: JvColors.cyan.withValues(alpha: 0.35)),
         ),
         child: const Center(
-          child: Text('J',
+          child: Text('B',
               style: TextStyle(
                   color: JvColors.cyan,
                   fontSize: 13,
@@ -1196,7 +1196,7 @@ class _EmptyHint extends StatelessWidget {
                       Border.all(color: JvColors.cyan.withValues(alpha: 0.25)),
                 ),
                 child: const Center(
-                  child: Text('J',
+                  child: Text('B',
                       style: TextStyle(
                           color: JvColors.cyan,
                           fontSize: 30,
