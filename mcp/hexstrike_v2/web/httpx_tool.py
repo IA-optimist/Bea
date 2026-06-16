@@ -1,9 +1,4 @@
-"""
-Httpx Tool — Web category
-
-Auto-extracted from hexstrike_server.py
-TODO: Review and enhance implementation
-"""
+"""Httpx Tool — Web category (HTTP probing and fingerprinting)."""
 from __future__ import annotations
 
 import logging
@@ -17,69 +12,38 @@ logger = logging.getLogger(__name__)
 
 
 def check_httpx_installed() -> bool:
-    """Check if httpx is installed"""
-    # TODO: Implement proper check
+    # httpx (Go tool from projectdiscovery) — not to confuse with Python httpx lib
     return shutil.which("httpx") is not None
 
 
 def httpx_handler(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute httpx.
-    
-    TODO: Extract implementation from hexstrike_server.py::httpx()
-    
-    Args:
-        params: Tool parameters
-            - target (str): Target to scan
-            - options (str): Additional options
-    
-    Returns:
-        Result dictionary
-    """
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
-    
-    # TODO: Build proper command
-    command = f"httpx {options} {target}"
-    
-    # Execute
-    result = execute_command(command, timeout=300)
-    
+    # httpx: -u for single URL; common flags for status/title/tech
+    command = f"httpx -u {target} -status-code -title -tech-detect {options}".strip()
+
+    result = execute_command(command, timeout=120)
     if not result.success:
         raise RuntimeError(f"httpx failed: {result.stderr or result.error}")
-    
-    return {
-        "target": target,
-        "output": result.stdout,
-        "duration_seconds": result.duration_seconds,
-    }
+    return {"target": target, "output": result.stdout, "duration_seconds": result.duration_seconds}
 
 
-# Register the tool
 registry.register(
     name="httpx",
     category="web",
-    description="Httpx tool",
+    description="Fast HTTP probing: status codes, titles, tech detection, redirects",
     handler=httpx_handler,
     parameters={
-        "target": {
-            "type": "string",
-            "required": True,
-            "description": "Target to scan"
-        },
-        "options": {
-            "type": "string",
-            "required": False,
-            "description": "Additional options"
-        },
+        "target": {"type": "string", "required": True, "description": "Target URL or domain"},
+        "options": {"type": "string", "required": False, "description": "Extra httpx flags (e.g. -follow-redirects -json)"},
     },
-    risk_level="medium",
-    requires_approval=True,
+    risk_level="low",
+    requires_approval=False,
     check_fn=check_httpx_installed,
-    tags=["web", "httpx"],
+    tags=["web", "httpx", "probing"],
 )
 
 logger.info("httpx tool registered")

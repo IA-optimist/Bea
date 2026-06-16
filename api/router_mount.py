@@ -431,6 +431,13 @@ def mount_all_routers(app, enable_stub_routes: bool = False) -> None:
 
     _mount_critical(app, "api.routes.security_audit")  # CRITICAL: security audit endpoints
 
+    # ── Security Tools (HexStrike V2) ─────────────────────────────
+    try:
+        from api.routes.security_tools import router as security_tools_router
+        app.include_router(security_tools_router)
+    except Exception as _e:
+        log.warning("security_tools_router_unavailable", err=str(_e))
+
     # ── Debug ─────────────────────────────────────────────────────
     try:
         from api.routes.debug import router as debug_router

@@ -1,9 +1,4 @@
-"""
-Dnsenum Tool — Recon category
-
-Auto-extracted from hexstrike_server.py
-TODO: Review and enhance implementation
-"""
+"""Dnsenum Tool — Recon category (DNS enumeration)."""
 from __future__ import annotations
 
 import logging
@@ -17,69 +12,37 @@ logger = logging.getLogger(__name__)
 
 
 def check_dnsenum_installed() -> bool:
-    """Check if dnsenum is installed"""
-    # TODO: Implement proper check
     return shutil.which("dnsenum") is not None
 
 
 def dnsenum_handler(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute dnsenum.
-    
-    TODO: Extract implementation from hexstrike_server.py::dnsenum()
-    
-    Args:
-        params: Tool parameters
-            - target (str): Target to scan
-            - options (str): Additional options
-    
-    Returns:
-        Result dictionary
-    """
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
-    
-    # TODO: Build proper command
-    command = f"dnsenum {options} {target}"
-    
-    # Execute
+    # dnsenum: target (domain) comes first, then options
+    command = f"dnsenum {target} {options}".strip()
+
     result = execute_command(command, timeout=300)
-    
     if not result.success:
         raise RuntimeError(f"dnsenum failed: {result.stderr or result.error}")
-    
-    return {
-        "target": target,
-        "output": result.stdout,
-        "duration_seconds": result.duration_seconds,
-    }
+    return {"target": target, "output": result.stdout, "duration_seconds": result.duration_seconds}
 
 
-# Register the tool
 registry.register(
     name="dnsenum",
     category="recon",
-    description="Dnsenum tool",
+    description="DNS enumeration: subdomains, MX, NS, zone transfer attempts",
     handler=dnsenum_handler,
     parameters={
-        "target": {
-            "type": "string",
-            "required": True,
-            "description": "Target to scan"
-        },
-        "options": {
-            "type": "string",
-            "required": False,
-            "description": "Additional options"
-        },
+        "target": {"type": "string", "required": True, "description": "Domain to enumerate"},
+        "options": {"type": "string", "required": False, "description": "Extra dnsenum flags"},
     },
     risk_level="medium",
     requires_approval=True,
     check_fn=check_dnsenum_installed,
-    tags=["recon", "dnsenum"],
+    tags=["recon", "dnsenum", "dns"],
 )
 
 logger.info("dnsenum tool registered")

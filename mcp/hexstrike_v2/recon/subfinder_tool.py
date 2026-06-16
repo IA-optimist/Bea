@@ -17,33 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 def check_subfinder_installed() -> bool:
-    """Check if subfinder is installed"""
-    # TODO: Implement proper check
     return shutil.which("subfinder") is not None
 
 
 def subfinder_handler(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute subfinder.
-    
-    TODO: Extract implementation from hexstrike_server.py::subfinder()
-    
-    Args:
-        params: Tool parameters
-            - target (str): Target to scan
-            - options (str): Additional options
-    
-    Returns:
-        Result dictionary
-    """
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
-    
-    # TODO: Build proper command
-    command = f"subfinder {options} {target}"
+    command = f"subfinder -d {target} {options}".strip()
     
     # Execute
     result = execute_command(command, timeout=300)

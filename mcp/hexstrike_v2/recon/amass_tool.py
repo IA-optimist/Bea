@@ -17,45 +17,21 @@ logger = logging.getLogger(__name__)
 
 
 def check_amass_installed() -> bool:
-    """Check if amass is installed"""
-    # TODO: Implement proper check
     return shutil.which("amass") is not None
 
 
 def amass_handler(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute amass.
-    
-    TODO: Extract implementation from hexstrike_server.py::amass()
-    
-    Args:
-        params: Tool parameters
-            - target (str): Target to scan
-            - options (str): Additional options
-    
-    Returns:
-        Result dictionary
-    """
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
+    command = f"amass enum -d {target} {options}".strip()
     
-    # TODO: Build proper command
-    command = f"amass {options} {target}"
-    
-    # Execute
     result = execute_command(command, timeout=300)
-    
     if not result.success:
         raise RuntimeError(f"amass failed: {result.stderr or result.error}")
-    
-    return {
-        "target": target,
-        "output": result.stdout,
-        "duration_seconds": result.duration_seconds,
-    }
+    return {"target": target, "output": result.stdout, "duration_seconds": result.duration_seconds}
 
 
 # Register the tool

@@ -1,9 +1,4 @@
-"""
-Wpscan Tool — Scanning category
-
-Auto-extracted from hexstrike_server.py
-TODO: Review and enhance implementation
-"""
+"""Wpscan Tool — Scanning category (WordPress vulnerability scanner)."""
 from __future__ import annotations
 
 import logging
@@ -17,69 +12,40 @@ logger = logging.getLogger(__name__)
 
 
 def check_wpscan_installed() -> bool:
-    """Check if wpscan is installed"""
-    # TODO: Implement proper check
     return shutil.which("wpscan") is not None
 
 
 def wpscan_handler(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute wpscan.
-    
-    TODO: Extract implementation from hexstrike_server.py::wpscan()
-    
-    Args:
-        params: Tool parameters
-            - target (str): Target to scan
-            - options (str): Additional options
-    
-    Returns:
-        Result dictionary
-    """
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
-    
-    # TODO: Build proper command
-    command = f"wpscan {options} {target}"
-    
-    # Execute
+    enumerate = params.get("enumerate", "")
+    enum_flag = f"--enumerate {enumerate}" if enumerate else ""
+    # wpscan requires --url flag
+    command = f"wpscan --url {target} {enum_flag} {options}".strip()
+
     result = execute_command(command, timeout=300)
-    
     if not result.success:
         raise RuntimeError(f"wpscan failed: {result.stderr or result.error}")
-    
-    return {
-        "target": target,
-        "output": result.stdout,
-        "duration_seconds": result.duration_seconds,
-    }
+    return {"target": target, "output": result.stdout, "duration_seconds": result.duration_seconds}
 
 
-# Register the tool
 registry.register(
     name="wpscan",
     category="scanning",
-    description="Wpscan tool",
+    description="WordPress vulnerability scanner: plugins, themes, users, CVEs",
     handler=wpscan_handler,
     parameters={
-        "target": {
-            "type": "string",
-            "required": True,
-            "description": "Target to scan"
-        },
-        "options": {
-            "type": "string",
-            "required": False,
-            "description": "Additional options"
-        },
+        "target": {"type": "string", "required": True, "description": "WordPress site URL"},
+        "enumerate": {"type": "string", "required": False, "description": "Enumerate: u (users), p (plugins), t (themes), vp (vulnerable plugins)"},
+        "options": {"type": "string", "required": False, "description": "Extra wpscan flags"},
     },
     risk_level="medium",
     requires_approval=True,
     check_fn=check_wpscan_installed,
-    tags=["scanning", "wpscan"],
+    tags=["scanning", "wpscan", "wordpress"],
 )
 
 logger.info("wpscan tool registered")
