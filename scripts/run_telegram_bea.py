@@ -468,14 +468,19 @@ def _build_handler(settings):
                 api_token = os.getenv("BEA_API_TOKEN", "")
                 hdrs      = {"X-Bea-Token": api_token}
                 async with httpx.AsyncClient(timeout=10) as _c:
-                    health   = (await _c.get(f"{api_url}/health",              headers=hdrs)).json()
-                    missions = (await _c.get(f"{api_url}/api/v3/missions?limit=20", headers=hdrs)).json()
-                    improv   = (await _c.get(f"{api_url}/api/v3/self-improvement/proposals?limit=5", headers=hdrs)).json()
+                    health   = (await _c.get(f"{api_url}/health",                              headers=hdrs)).json()
+                    llm      = (await _c.get(f"{api_url}/api/v3/metrics/llm",                  headers=hdrs)).json()
+                    missions = (await _c.get(f"{api_url}/api/v3/missions?limit=20",            headers=hdrs)).json()
+                    improv   = (await _c.get(f"{api_url}/api/v2/self-improvement/proposals?limit=5", headers=hdrs)).json()
                 now   = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
                 lines = [f"Rapport Béa — {now}", ""]
                 api_ok = health.get("status") in ("ok", "healthy")
                 lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
-                all_m  = missions.get("missions") or missions.get("items") or []
+                calls    = llm.get("calls", 0)
+                cost     = llm.get("cost_usd", 0.0)
+                err_rate = llm.get("error_rate", 0.0)
+                lines.append(f"\nLLM : {calls} appels · ${cost:.3f} · erreurs {int(err_rate*100)}%")
+                all_m  = missions.get("data", {}).get("missions") or missions.get("missions") or []
                 cutoff = datetime.datetime.now().timestamp() - 86400
                 recent = [m for m in all_m
                           if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
@@ -492,7 +497,7 @@ def _build_handler(settings):
                 props   = improv.get("proposals") or improv.get("items") or []
                 pending = [p for p in props if p.get("status") in ("pending","proposed",None)]
                 if pending:
-                    lines.append(f"\nPropositions en attente : {len(pending)}")
+                    lines.append(f"\nAmeliorations en attente : {len(pending)}")
                 return "\n".join(lines)
             except Exception as e:  # noqa: BLE001
                 return f"Rapport indisponible : {e}"
@@ -603,9 +608,9 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
 
     async def _build_report() -> str:
         health   = await _fetch("/health")
-        metrics  = await _fetch("/api/v3/metrics")
-        missions = await _fetch("/api/v3/missions?limit=20&status=all")
-        improv   = await _fetch("/api/v3/self-improvement/proposals?limit=5")
+        llm      = await _fetch("/api/v3/metrics/llm")
+        missions = await _fetch("/api/v3/missions?limit=20")
+        improv   = await _fetch("/api/v2/self-improvement/proposals?limit=5")
 
         now = datetime.datetime.now().strftime("%d/%m/%Y")
         lines = [f"Rapport Béa — {now}", ""]
@@ -613,19 +618,25 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
         # Santé
         api_ok = health.get("status") in ("ok", "healthy")
         lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
-        db_ok = health.get("database") in ("ok", "connected", True)
-        if not db_ok:
-            lines.append("  BDD : HORS LIGNE")
+
+        # Métriques LLM
+        if llm:
+            calls     = llm.get("calls", 0)
+            cost      = llm.get("cost_usd", 0.0)
+            err_rate  = llm.get("error_rate", 0.0)
+            lines.append(f"\nLLM : {calls} appels · ${cost:.3f} · erreurs {int(err_rate*100)}%")
+            if err_rate > 0.15:
+                lines.append("  Alerte : taux d'erreur LLM élevé")
 
         # Missions dernières 24h
-        all_missions = missions.get("missions") or missions.get("items") or []
+        all_missions = missions.get("data", {}).get("missions") or missions.get("missions") or []
         cutoff = datetime.datetime.now().timestamp() - 86400
         recent = [m for m in all_missions
                   if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
         if recent:
             total = len(recent)
-            done  = sum(1 for m in recent if m.get("status") in ("completed", "done", "DONE"))
-            fail  = sum(1 for m in recent if m.get("status") in ("failed", "error", "FAILED"))
+            done  = sum(1 for m in recent if m.get("status", "").upper() in ("COMPLETED", "DONE"))
+            fail  = sum(1 for m in recent if m.get("status", "").upper() in ("FAILED", "ERROR"))
             lines.append(f"\nMissions 24h : {total} ({done} ok, {fail} echecs)")
             for m in recent[:3]:
                 s = m.get("status", "?")
@@ -634,17 +645,11 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
         else:
             lines.append("\nAucune mission dans les dernieres 24h")
 
-        # Métriques
-        if metrics:
-            total_m = metrics.get("total_missions") or metrics.get("missions_total", 0)
-            if total_m:
-                lines.append(f"\nTotal missions : {total_m}")
-
         # Propositions d'amélioration en attente
         props = improv.get("proposals") or improv.get("items") or []
         pending = [p for p in props if p.get("status") in ("pending", "proposed", None)]
         if pending:
-            lines.append(f"\nPropositions en attente : {len(pending)}")
+            lines.append(f"\nAmeliorations en attente : {len(pending)}")
             for p in pending[:2]:
                 cat  = p.get("category") or p.get("improvement_type") or "?"
                 desc = (p.get("description") or p.get("title") or "")[:60]
