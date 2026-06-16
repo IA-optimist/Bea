@@ -45,8 +45,12 @@ _DEFAULT_GLOBAL_TIMEOUT = 120    # secondes pour tout le batch
 # de 40s les tuait systématiquement en mode auto (le fix du 2026-06-10 ne
 # couvrait que le chemin BUSINESS). Surchargeable par env.
 _SLOW_AGENT_TIMEOUTS = {
-    "forge-builder": int(os.getenv("BEA_FORGE_AGENT_TIMEOUT", "420")),
-    "pulse-ops":     int(os.getenv("BEA_PULSE_AGENT_TIMEOUT", "180")),
+    "forge-builder":  int(os.getenv("BEA_FORGE_AGENT_TIMEOUT",  "420")),
+    "pulse-ops":      int(os.getenv("BEA_PULSE_AGENT_TIMEOUT",  "180")),
+    # shadow-advisor and lens-reviewer call multi-step LLM chains (schema parse +
+    # scoring + context provider) — 40s default killed them every time.
+    "shadow-advisor": int(os.getenv("BEA_SHADOW_AGENT_TIMEOUT", "120")),
+    "lens-reviewer":  int(os.getenv("BEA_LENS_AGENT_TIMEOUT",   "120")),
 }
 
 _TRACE_LOG = Path("workspace/execution_trace.jsonl")
