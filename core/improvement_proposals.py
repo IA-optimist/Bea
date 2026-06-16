@@ -156,9 +156,20 @@ class ProposalStore:
 
     def list_all(self) -> list[dict]:
         self._ensure_loaded()
+
+        def _ts(x: dict) -> float:
+            v = x.get("created_at", 0)
+            if isinstance(v, (int, float)):
+                return float(v)
+            try:
+                import datetime
+                return datetime.datetime.fromisoformat(str(v)).timestamp()
+            except Exception:
+                return 0.0
+
         return sorted(
             [p.to_dict() for p in self._proposals.values()],
-            key=lambda x: x["created_at"],
+            key=_ts,
             reverse=True,
         )
 
