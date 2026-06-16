@@ -10,11 +10,16 @@ Usage (depuis le répertoire Béa, venv activé) :
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 import time
 import urllib.request
 from pathlib import Path
+
+log = logging.getLogger("bea.watchdog")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s",
+                    stream=sys.stderr)
 
 # ── .env chargé en premier ────────────────────────────────────────────────────
 _env_path = Path(__file__).resolve().parents[1] / ".env"
@@ -70,7 +75,7 @@ def _save_state(state: dict[str, bool]) -> None:
 
 def _send_tg(text: str) -> None:
     if not BOT_TOKEN or not ALERT_CHAT:
-        print(f"[watchdog] no TG creds — alert: {text}", file=sys.stderr)
+        log.warning("no TG creds — alert: %s", text)
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     body = json.dumps({"chat_id": ALERT_CHAT, "text": text}).encode()
@@ -79,7 +84,7 @@ def _send_tg(text: str) -> None:
                                      headers={"Content-Type": "application/json"})
         urllib.request.urlopen(req, timeout=10)
     except Exception as e:
-        print(f"[watchdog] TG send failed: {e}", file=sys.stderr)
+        log.warning("TG send failed: %s", e)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -106,9 +111,9 @@ def run() -> None:
         ts = time.strftime("%d/%m %H:%M")
         msg = f"[Watchdog Béa — {ts}]\n" + "\n".join(alerts)
         _send_tg(msg)
-        print(msg)
+        log.warning(msg)
     else:
-        print(f"[watchdog] {time.strftime('%H:%M:%S')} — all OK")
+        log.info("%s — all OK", time.strftime("%H:%M:%S"))
 
 
 if __name__ == "__main__":
