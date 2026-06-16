@@ -81,18 +81,21 @@ class LLMTracer:
             since_ts = time.time() - since_hours * 3600
             where = "WHERE ts >= ?"
             params = [since_ts]
+        # nosec B608 — `where` is a hardcoded literal ("" or "WHERE ts >= ?"),
+        # never built from user input. Actual value comes from `params` via ? binding.
         row = self._conn.execute(
-            f"SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) cost, "
-            f"COALESCE(SUM(prompt_tokens+completion_tokens),0) toks, "
-            f"COALESCE(SUM(CASE WHEN ok=0 THEN 1 ELSE 0 END),0) errs FROM llm_calls {where}",
+            "SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) cost, "
+            "COALESCE(SUM(prompt_tokens+completion_tokens),0) toks, "
+            "COALESCE(SUM(CASE WHEN ok=0 THEN 1 ELSE 0 END),0) errs FROM llm_calls "
+            + where,  # nosec B608
             params,
         ).fetchone()
         n = row["n"] or 0
         by_model = {
             r["model"]: {"calls": r["c"], "cost_usd": round(r["cost"], 6)}
             for r in self._conn.execute(
-                f"SELECT model, COUNT(*) c, COALESCE(SUM(cost_usd),0) cost "
-                f"FROM llm_calls {where} GROUP BY model",
+                "SELECT model, COUNT(*) c, COALESCE(SUM(cost_usd),0) cost "
+                "FROM llm_calls " + where + " GROUP BY model",  # nosec B608
                 params,
             ).fetchall()
         }
