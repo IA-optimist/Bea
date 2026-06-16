@@ -126,9 +126,12 @@ def test_task_persistence():
 
 def test_task_bounded():
     import core.workflow_runtime as wr
+    import core.workflow.scheduler as _sched_mod
     from core.workflow_runtime import ScheduledTask
     old = wr.MAX_SCHEDULED_TASKS
+    old_sched = _sched_mod.MAX_SCHEDULED_TASKS
     wr.MAX_SCHEDULED_TASKS = 3
+    _sched_mod.MAX_SCHEDULED_TASKS = 3
     mgr = ScheduledTaskManager(persist_path=f"/tmp/bea_sched_bound_{int(time.time()*1000)}.json")
     mgr._tasks.clear()
     mgr._loaded = True
@@ -142,6 +145,7 @@ def test_task_bounded():
             _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_SCHEDULED_TASKS = old
+        _sched_mod.MAX_SCHEDULED_TASKS = old_sched
 
 
 from core.workflow_runtime import ScheduledTaskManager
@@ -291,8 +295,11 @@ def test_workflow_persistence():
 
 def test_workflow_bounded_concurrency():
     import core.workflow_runtime as wr
+    import core.workflow.executor as _exec_mod
     old = wr.MAX_CONCURRENT_WORKFLOWS
+    old_exec = _exec_mod.MAX_CONCURRENT_WORKFLOWS
     wr.MAX_CONCURRENT_WORKFLOWS = 2
+    _exec_mod.MAX_CONCURRENT_WORKFLOWS = 2
     engine = WorkflowEngine(persist_path=f"/tmp/bea_wf_bound_{int(time.time()*1000)}.json")
     engine._executions.clear()
     engine._loaded = True
@@ -306,6 +313,7 @@ def test_workflow_bounded_concurrency():
             _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_CONCURRENT_WORKFLOWS = old
+        _exec_mod.MAX_CONCURRENT_WORKFLOWS = old_exec
 
 
 from core.workflow_runtime import WorkflowEngine
@@ -507,9 +515,15 @@ def test_resource_signals():
 
 def test_resource_pressure_increases():
     import core.workflow_runtime as wr
+    import core.workflow.executor as _exec_mod
+    import core.workflow.monitor as _mon_mod
     from core.workflow_runtime import WorkflowEngine, ScheduledTaskManager, ResourceMonitor
     old = wr.MAX_CONCURRENT_WORKFLOWS
+    old_exec = _exec_mod.MAX_CONCURRENT_WORKFLOWS
+    old_mon = _mon_mod.MAX_CONCURRENT_WORKFLOWS
     wr.MAX_CONCURRENT_WORKFLOWS = 5
+    _exec_mod.MAX_CONCURRENT_WORKFLOWS = 5
+    _mon_mod.MAX_CONCURRENT_WORKFLOWS = 5
     engine = WorkflowEngine(persist_path=f"/tmp/bea_res_press_{int(time.time()*1000)}.json")
     engine._executions.clear()
     engine._loaded = True
@@ -522,6 +536,8 @@ def test_resource_pressure_increases():
         assert signals["pressure"]["concurrency"] > 0.5
     finally:
         wr.MAX_CONCURRENT_WORKFLOWS = old
+        _exec_mod.MAX_CONCURRENT_WORKFLOWS = old_exec
+        _mon_mod.MAX_CONCURRENT_WORKFLOWS = old_mon
 
 
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
@@ -546,8 +562,11 @@ def test_failure_cluster_detection():
 
 def test_max_workflow_depth_enforced():
     import core.workflow_runtime as wr
+    import core.workflow.executor as _exec_mod
     old = wr.MAX_WORKFLOW_DEPTH
+    old_exec = _exec_mod.MAX_WORKFLOW_DEPTH
     wr.MAX_WORKFLOW_DEPTH = 5
+    _exec_mod.MAX_WORKFLOW_DEPTH = 5
     engine = WorkflowEngine(persist_path="/tmp/bea_depth.json")
     try:
         engine.create_workflow("deep", [{"name": f"s{i}", "action": "noop"} for i in range(10)])
@@ -556,6 +575,7 @@ def test_max_workflow_depth_enforced():
         _silent_log.debug("suppressed_exception", src='test_workflow_runtime.py')
     finally:
         wr.MAX_WORKFLOW_DEPTH = old
+        _exec_mod.MAX_WORKFLOW_DEPTH = old_exec
 
 
 def test_no_runaway_execution():

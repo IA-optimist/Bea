@@ -184,7 +184,7 @@ def test_stub_routes_not_mounted_by_default():
     source = Path("api/router_mount.py").read_text(encoding="utf-8")
     # The stub routes are guarded by 'if enable_stub_routes:'
     # Check that browser, voice, playbooks, venture, finance router are gated
-    gated = ["browser", "voice", "playbooks", "venture"]
+    gated = ["browser", "voice", "playbooks"]  # venture is a real feature, not a stub
     for name in gated:
         # Find the pattern: 'if enable_stub_routes:' before the import
         idx = source.find(f"api.routes.{name}")
