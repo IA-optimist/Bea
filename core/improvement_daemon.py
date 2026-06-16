@@ -678,7 +678,8 @@ def run_cycle(repo_root: Path | None = None) -> dict:
     Fail-open: if the gate check itself fails, cycle proceeds with a WARNING.
     """
     if repo_root is None:
-        repo_root = Path(os.environ.get("BEA_REPO_ROOT", "/app"))
+        # Default to CWD — the launcher always cd's to the repo root first.
+        repo_root = Path(os.environ.get("BEA_REPO_ROOT", "."))
 
     result = {
         "weaknesses_found": 0,
