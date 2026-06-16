@@ -467,31 +467,46 @@ def _build_handler(settings):
                 api_url   = os.getenv("BEA_API_URL",   "http://127.0.0.1:8000")
                 api_token = os.getenv("BEA_API_TOKEN", "")
                 hdrs      = {"X-Bea-Token": api_token}
+                _prod_urls = [
+                    ("AutoContentFlow", "https://autocontentflow-app-production.up.railway.app/health"),
+                    ("CVOptimIA",       "https://cvoptimia-app-production.up.railway.app/health"),
+                ]
                 async with httpx.AsyncClient(timeout=10) as _c:
-                    health   = (await _c.get(f"{api_url}/health",                              headers=hdrs)).json()
-                    llm      = (await _c.get(f"{api_url}/api/v3/metrics/llm",                  headers=hdrs)).json()
-                    missions = (await _c.get(f"{api_url}/api/v3/missions?limit=20",            headers=hdrs)).json()
+                    health   = (await _c.get(f"{api_url}/health",                                    headers=hdrs)).json()
+                    llm      = (await _c.get(f"{api_url}/api/v3/metrics/llm?hours=24",               headers=hdrs)).json()
+                    missions = (await _c.get(f"{api_url}/api/v3/missions?limit=20",                  headers=hdrs)).json()
                     improv   = (await _c.get(f"{api_url}/api/v2/self-improvement/proposals?limit=5", headers=hdrs)).json()
-                now   = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-                lines = [f"Rapport Béa — {now}", ""]
-                api_ok = health.get("status") in ("ok", "healthy")
-                lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
+                    prod     = []
+                    for _name, _url in _prod_urls:
+                        try:
+                            _r = await _c.get(_url, timeout=8)
+                            prod.append((_name, _r.status_code < 400))
+                        except Exception:  # noqa: BLE001
+                            prod.append((_name, False))
+                now      = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+                lines    = [f"Rapport Béa — {now}", ""]
+                api_ok   = health.get("status") in ("ok", "healthy")
+                prod_ok  = all(ok for _, ok in prod)
+                lines.append(f"Systeme : {'operationnel' if (api_ok and prod_ok) else 'ALERTE'}")
+                if not api_ok:
+                    lines.append("  API Béa : HORS LIGNE")
+                for _name, _ok in prod:
+                    status_str = "ok" if _ok else "HORS LIGNE"
+                    lines.append(f"  {_name} : {status_str}")
                 calls    = llm.get("calls", 0)
                 cost     = llm.get("cost_usd", 0.0)
                 err_rate = llm.get("error_rate", 0.0)
-                lines.append(f"\nLLM : {calls} appels · ${cost:.3f} · erreurs {int(err_rate*100)}%")
+                lines.append(f"\nLLM 24h : {calls} appels · ${cost:.3f} · erreurs {int(err_rate*100)}%")
                 all_m  = missions.get("data", {}).get("missions") or missions.get("missions") or []
                 cutoff = datetime.datetime.now().timestamp() - 86400
-                recent = [m for m in all_m
-                          if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
+                recent = [m for m in all_m if (m.get("created_at") or 0) > cutoff or not m.get("created_at")]
                 if recent:
-                    done = sum(1 for m in recent if m.get("status") in ("completed","done","DONE"))
-                    fail = sum(1 for m in recent if m.get("status") in ("failed","error","FAILED"))
+                    done = sum(1 for m in recent if m.get("status", "").upper() in ("COMPLETED","DONE"))
+                    fail = sum(1 for m in recent if m.get("status", "").upper() in ("FAILED","ERROR"))
                     lines.append(f"\nMissions 24h : {len(recent)} ({done} ok, {fail} echecs)")
                     for m in recent[:3]:
-                        s = m.get("status","?")
                         g = (m.get("goal") or m.get("title") or "")[:60]
-                        lines.append(f"  [{s}] {g}")
+                        lines.append(f"  [{m.get('status','?')}] {g}")
                 else:
                     lines.append("\nAucune mission dans les dernieres 24h")
                 props   = improv.get("proposals") or improv.get("items") or []
@@ -606,18 +621,42 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
         except Exception:  # noqa: BLE001
             return {}
 
+    _PROD_URLS = [
+        ("AutoContentFlow", "https://autocontentflow-app-production.up.railway.app/health"),
+        ("CVOptimIA",       "https://cvoptimia-app-production.up.railway.app/health"),
+    ]
+
+    async def _check_prod() -> list[tuple[str, bool]]:
+        results = []
+        for name, url in _PROD_URLS:
+            try:
+                async with httpx.AsyncClient(timeout=8) as _c:
+                    r = await _c.get(url)
+                    results.append((name, r.status_code < 400))
+            except Exception:  # noqa: BLE001
+                results.append((name, False))
+        return results
+
     async def _build_report() -> str:
         health   = await _fetch("/health")
         llm      = await _fetch("/api/v3/metrics/llm?hours=24")
         missions = await _fetch("/api/v3/missions?limit=20")
         improv   = await _fetch("/api/v2/self-improvement/proposals?limit=5")
+        prod     = await _check_prod()
 
         now = datetime.datetime.now().strftime("%d/%m/%Y")
         lines = [f"Rapport Béa — {now}", ""]
 
-        # Santé
-        api_ok = health.get("status") in ("ok", "healthy")
-        lines.append(f"Systeme : {'operationnel' if api_ok else 'degradé'}")
+        # Santé systèmes
+        api_ok   = health.get("status") in ("ok", "healthy")
+        prod_ok  = all(ok for _, ok in prod)
+        all_ok   = api_ok and prod_ok
+        lines.append(f"Systeme : {'operationnel' if all_ok else 'ALERTE'}")
+        if not api_ok:
+            lines.append("  API Béa : HORS LIGNE")
+        for name, ok in prod:
+            if not ok:
+                lines.append(f"  {name} Railway : HORS LIGNE")
 
         # Métriques LLM
         if llm:
