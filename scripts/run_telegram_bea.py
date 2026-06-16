@@ -621,20 +621,26 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
         except Exception:  # noqa: BLE001
             return {}
 
-    _PROD_URLS = [
-        ("AutoContentFlow", "https://autocontentflow-app-production.up.railway.app/health"),
-        ("CVOptimIA",       "https://cvoptimia-app-production.up.railway.app/health"),
-    ]
+    _PROD = {
+        "AutoContentFlow": "https://autocontentflow-app-production.up.railway.app",
+        "CVOptimIA":       "https://cvoptimia-app-production.up.railway.app",
+    }
 
-    async def _check_prod() -> list[tuple[str, bool]]:
-        results = []
-        for name, url in _PROD_URLS:
+    async def _check_prod() -> dict[str, dict]:
+        """Returns {name: {"ok": bool, "stats": dict}} for each SaaS."""
+        results: dict[str, dict] = {}
+        for name, base in _PROD.items():
+            entry: dict = {"ok": False, "stats": {}}
             try:
                 async with httpx.AsyncClient(timeout=8) as _c:
-                    r = await _c.get(url)
-                    results.append((name, r.status_code < 400))
+                    h = await _c.get(f"{base}/health")
+                    entry["ok"] = h.status_code < 400
+                    s = await _c.get(f"{base}/public/stats")
+                    if s.status_code == 200:
+                        entry["stats"] = s.json()
             except Exception:  # noqa: BLE001
-                results.append((name, False))
+                pass
+            results[name] = entry
         return results
 
     async def _build_report() -> str:
@@ -642,6 +648,7 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
         llm      = await _fetch("/api/v3/metrics/llm?hours=24")
         missions = await _fetch("/api/v3/missions?limit=20")
         improv   = await _fetch("/api/v2/self-improvement/proposals?limit=5")
+        objectives = await _fetch("/api/v2/objectives?include_archived=false")
         prod     = await _check_prod()
 
         now = datetime.datetime.now().strftime("%d/%m/%Y")
@@ -649,14 +656,22 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
 
         # Santé systèmes
         api_ok   = health.get("status") in ("ok", "healthy")
-        prod_ok  = all(ok for _, ok in prod)
+        prod_ok  = all(v["ok"] for v in prod.values())
         all_ok   = api_ok and prod_ok
         lines.append(f"Systeme : {'operationnel' if all_ok else 'ALERTE'}")
         if not api_ok:
             lines.append("  API Béa : HORS LIGNE")
-        for name, ok in prod:
-            if not ok:
+        for name, v in prod.items():
+            if not v["ok"]:
                 lines.append(f"  {name} Railway : HORS LIGNE")
+
+        # Métriques business SaaS
+        acf_stats = prod.get("AutoContentFlow", {}).get("stats", {})
+        cvo_stats = prod.get("CVOptimIA",       {}).get("stats", {})
+        acf_n = acf_stats.get("articles_generated") or acf_stats.get("total_articles", 0)
+        cvo_n = cvo_stats.get("analyses_generated") or cvo_stats.get("total_analyses", 0)
+        if acf_n or cvo_n:
+            lines.append(f"\nSaaS cumule : {acf_n} articles ACF · {cvo_n} analyses CVOptimIA")
 
         # Métriques LLM
         if llm:
@@ -693,6 +708,16 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
                 cat  = p.get("category") or p.get("improvement_type") or "?"
                 desc = (p.get("description") or p.get("title") or "")[:60]
                 lines.append(f"  [{cat}] {desc}")
+
+        # Objectifs autonomes actifs
+        obj_list = objectives.get("objectives") or []
+        active_objs = [o for o in obj_list if (o.get("status") or "").upper() == "ACTIVE"]
+        if active_objs:
+            lines.append(f"\nObjectifs actifs ({len(active_objs)}) :")
+            for o in active_objs[:3]:
+                prog = int((o.get("current_progress") or 0) * 100)
+                title = (o.get("title") or "")[:50]
+                lines.append(f"  {prog}% — {title}")
 
         return "\n".join(lines)
 
