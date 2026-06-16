@@ -7,7 +7,9 @@ les appels tracés par les autres process (bot Telegram, cognition…).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
 
 from api._deps import require_auth
 from core.observability import get_tracer
@@ -16,9 +18,10 @@ router = APIRouter(tags=["metrics"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/api/v3/metrics/llm")
-def llm_metrics() -> dict:
-    """Stats agrégées : {calls, cost_usd, total_tokens, error_rate, by_model}."""
-    return get_tracer().stats()
+def llm_metrics(hours: Optional[int] = Query(None, description="Restrict to last N hours. Omit for all-time.")) -> dict:
+    """Stats agrégées : {calls, cost_usd, total_tokens, error_rate, by_model}.
+    Pass ?hours=24 to get current-day stats (excludes historical failures)."""
+    return get_tracer().stats(since_hours=hours)
 
 
 @router.get("/api/v3/metrics/llm/mission/{mission_id}")

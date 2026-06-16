@@ -608,7 +608,7 @@ async def _daily_report_loop(client, adapter, allowed_ids: set[str] | None) -> N
 
     async def _build_report() -> str:
         health   = await _fetch("/health")
-        llm      = await _fetch("/api/v3/metrics/llm")
+        llm      = await _fetch("/api/v3/metrics/llm?hours=24")
         missions = await _fetch("/api/v3/missions?limit=20")
         improv   = await _fetch("/api/v2/self-improvement/proposals?limit=5")
 

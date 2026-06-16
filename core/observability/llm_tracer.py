@@ -73,27 +73,39 @@ class LLMTracer:
                         span.cost_usd, (time.time() - t0) * 1000, ok=True,
                         mission_id=mission_id)
 
-    def stats(self) -> dict:
+    def stats(self, since_hours: int | None = None) -> dict:
+        import time
+        where = ""
+        params: list = []
+        if since_hours is not None:
+            since_ts = time.time() - since_hours * 3600
+            where = "WHERE ts >= ?"
+            params = [since_ts]
         row = self._conn.execute(
-            "SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) cost, "
-            "COALESCE(SUM(prompt_tokens+completion_tokens),0) toks, "
-            "COALESCE(SUM(CASE WHEN ok=0 THEN 1 ELSE 0 END),0) errs FROM llm_calls"
+            f"SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) cost, "
+            f"COALESCE(SUM(prompt_tokens+completion_tokens),0) toks, "
+            f"COALESCE(SUM(CASE WHEN ok=0 THEN 1 ELSE 0 END),0) errs FROM llm_calls {where}",
+            params,
         ).fetchone()
         n = row["n"] or 0
         by_model = {
             r["model"]: {"calls": r["c"], "cost_usd": round(r["cost"], 6)}
             for r in self._conn.execute(
-                "SELECT model, COUNT(*) c, COALESCE(SUM(cost_usd),0) cost "
-                "FROM llm_calls GROUP BY model"
+                f"SELECT model, COUNT(*) c, COALESCE(SUM(cost_usd),0) cost "
+                f"FROM llm_calls {where} GROUP BY model",
+                params,
             ).fetchall()
         }
-        return {
+        result = {
             "calls": n,
             "cost_usd": round(row["cost"], 6),
             "total_tokens": row["toks"],
             "error_rate": round((row["errs"] / n), 4) if n else 0.0,
             "by_model": by_model,
         }
+        if since_hours is not None:
+            result["window_hours"] = since_hours
+        return result
 
     def cost_by_mission(self, mission_id: str) -> float:
         r = self._conn.execute(
