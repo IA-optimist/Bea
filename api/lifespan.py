@@ -86,6 +86,27 @@ async def _on_startup(app) -> None:  # noqa: ANN001
     except Exception as exc:
         log.warning("mission_recovery_failed", err=str(exc)[:80])
 
+    # Register MetaOrchestrator as execution backend in BeaKernel.
+    # Without this, kernel.execute() logs kernel_execute_no_orchestrator and
+    # every mission falls back to fallback_message with zero real output.
+    # main.py did this registration but run_api_local.py skips main.py.
+    try:
+        from kernel.runtime.kernel import get_kernel, register_orchestrator
+        from core.meta_orchestrator import get_meta_orchestrator
+        _jk = get_kernel()
+        _meta_orch = get_meta_orchestrator()
+        register_orchestrator(_meta_orch.run_mission)
+        log.info("bea_kernel_orchestrator_registered",
+                 booted=_jk.status().to_dict().get("booted", False))
+        try:
+            from core.orchestration.business_missions import register_business_handlers
+            register_business_handlers(_meta_orch)
+            log.info("business_handlers_registered")
+        except Exception as _biz_err:
+            log.warning("business_handlers_register_failed", err=str(_biz_err)[:120])
+    except Exception as exc:
+        log.warning("kernel_orchestrator_register_failed", err=str(exc)[:120])
+
     # ── MCP sidecar auto-registration (Cycle 2 Phase A) ──────────────────
     # Fail-open: flags default false, never blocks startup.
     # Enable with QDRANT_MCP_ENABLED=true / GITHUB_MCP_ENABLED=true in .env
