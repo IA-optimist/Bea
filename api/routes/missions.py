@@ -14,7 +14,7 @@ import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from api.mission_outputs import extract_agent_outputs
-from api.mission_agents import list_registered_agents, schedule_agent_trigger
+from api.mission_agents import schedule_agent_trigger
 from api.mission_approval import (
     approve_mission_for_resume,
     approve_task_payload,
