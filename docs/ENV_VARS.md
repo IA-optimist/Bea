@@ -115,8 +115,10 @@ Sources : `config/settings.py`, `api/main.py`, `scripts/run_api_local.py`.
 
 | Variable | Défaut | Requis | Description |
 |---|---|---|---|
-| `BEA_CONTINUOUS_IMPROVEMENT` | `0` | NON | `1` active la boucle d'auto-amélioration continue |
-| `BEA_OPERATOR_APPROVE_IMPROVEMENT` | `0` | NON | `1` approuve automatiquement les améliorations R4 (garde cooldown) |
+| `BEA_CONTINUOUS_IMPROVEMENT` | `0` | NON | `1` active le daemon d'auto-amélioration (tourne toutes les 30 min) |
+| `BEA_IMPROVEMENT_MODE` | `propose` | NON | `propose` = sauvegarde les specs sans modifier le code ; `merge` = applique le patch + tests Docker de régression |
+| `BEA_REPO_ROOT` | `.` (CWD) | NON | Chemin absolu vers la racine du repo — nécessaire si le process ne démarre pas depuis le repo (ex. `C:\Users\maxen\DOCUME~1\BA00F6~1`) |
+| `BEA_OPERATOR_APPROVE_IMPROVEMENT` | `0` | NON | `1` approuve automatiquement les améliorations R4 (garde cooldown 24h + cap échecs) |
 | `BEA_SKIP_IMPROVEMENT_GATE` | `0` | NON | `1` bypasse TOTALEMENT la gate d'amélioration (dangereux, tests seulement) |
 | `BEA_AUTO_APPROVE_MEDIUM` | `0` | NON | `1` approuve automatiquement les actions à risque medium |
 | `BEA_AUTONOMY_PAUSED` | `0` | NON | `1` met en pause le daemon d'autonomie |

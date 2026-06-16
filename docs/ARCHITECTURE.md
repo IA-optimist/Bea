@@ -1,7 +1,7 @@
-# BeaMax Architecture
+# Béa Architecture
 
-> Single source of truth for the BeaMax architecture as of SHA `889a1c3`.
-> Verified by direct code reading + 5 audit agents on 2026-04-08.
+> Single source of truth for the Béa architecture as of SHA `1631240`.
+> Last verified: 2026-06-16. For per-component maturity see [`STATUS.md`](STATUS.md).
 
 ---
 
@@ -305,29 +305,57 @@ States: `CLOSED` (normal) → `OPEN` (fast-fail) → `HALF` (recovery probe).
 
 ---
 
-## Self-improvement pipeline
+## Auto-improvement daemon
+
+**Files**: `core/improvement_daemon.py`, `core/improvement_detector.py`, `core/improvement_loop.py`
+
+The improvement daemon is the system that makes Béa genuinely self-improving. It runs as a
+background thread inside the API process, triggered every 30 minutes by `ImprovementLoop.run_cycle()`.
+
+```
+Every 30 min:
+1. detect_improvements()
+   ├── metrics_store (in-memory: mission failures, tool counters)
+   └── workspace/tool_performance.jsonl (persistent latency + success rates)
+   → Weakness list: failure_pattern / tool_issue / slow_tool
+
+2. For each weakness (ranked by severity × frequency):
+   _propose_experiment()
+   ├── builds spec JSON (hypothesis, files_allowed, risk_class)
+   └── if mode=propose  → save to workspace/self_improvement/proposals/<name>.json
+       if mode=merge    → apply patch + run Docker regression tests → promote/rollback
+
+3. Gate checks (kernel/improvement/gate.py):
+   ├── R4 security (CRITICAL files blocked; lifted by BEA_OPERATOR_APPROVE_IMPROVEMENT=1)
+   ├── 24h cooldown (workspace/self_improvement/history.json)
+   └── Consecutive failure cap (≥3 → block)
+
+4. Emit observability event: daemon.proposal_saved / daemon.proposals_generated
+```
+
+**Key env vars**:
+- `BEA_CONTINUOUS_IMPROVEMENT=1` — activates the daemon
+- `BEA_IMPROVEMENT_MODE=propose` (default, safe) or `merge` (applies patch + runs tests)
+- `BEA_REPO_ROOT=<abs_path>` — must match the actual repo root on Windows
+
+**First successful run**: 2026-06-16 — weakness `failure_pattern:mission_failure` (10× in 1h)
+detected from live missions, spec saved to `workspace/self_improvement/proposals/`.
+
+---
+
+## Legacy self-improvement engine
 
 **Files**: `core/self_improvement/`
 
+Lower-level primitives used by the improvement daemon's `merge` path:
+
 ```
-1. FailureCollector.collect()       → Recent mission failures
-2. ImprovementPlanner.plan()        → Improvement proposals
-3. CandidateGenerator.generate()    → Code or workspace candidates
-4. For each candidate:
-   - Code patch  → PromotionPipeline.execute()
-                   ├── Sandbox test (no network)
-                   ├── Critic review
-                   ├── Test runner (pytest)
-                   └── Decision: PROMOTE / REVIEW / REJECT
-   - Workspace   → SafeExecutor.execute()
-5. Emit observability event
+FailureCollector → ImprovementPlanner → CandidateGenerator
+  → PromotionPipeline (sandbox + critic + pytest + PROMOTE/REVIEW/REJECT)
+  → SafeExecutor (workspace candidates)
 ```
 
-**Key safety properties**:
-- Sandbox runs with `--network=none`
-- Secret scrubbing before returning results
-- Test regression detection
-- Disabled by default in `BEA_PRODUCTION=true` mode
+Sandbox runs with `--network=none`; secret scrubbing before returning results.
 
 ---
 
@@ -346,6 +374,18 @@ Registered at startup via `register_business_handlers()` (called from `main.py:1
 | `business.optimize_taxes` | `handle_optimize_taxes()` | ✅ WIRED — calls `TaxOptimizer` (France calculation) |
 | `business.track_revenue` | `handle_track_revenue()` | 🚧 WIRED but `RevenueEngine` is dataclasses-only |
 
+### Live businesses built by Béa
+
+Two SaaS businesses have been fully designed, coded, and deployed to Railway by Béa autonomously:
+
+| Business | Stack | URL | Status |
+|----------|-------|-----|--------|
+| **AutoContentFlow** | Express + PostgreSQL + Stripe + OpenRouter | `https://autocontentflow-app-production.up.railway.app` | Live — Stripe test mode |
+| **CVOptimIA** | Express + PostgreSQL + Stripe + OpenRouter | Railway (mutualized deploy pending) | Live — Stripe live billing |
+
+Both businesses were generated via `business.build_product` missions routed to the forge-builder
+agent, then deployed via Railway CLI (`railway up`). Code lives at `Béa/workspace/business/`.
+
 ---
 
 ## Configuration
@@ -359,7 +399,7 @@ All settings read from environment variables with sensible defaults. Production 
 
 `enforce_llm_key()` raises `RuntimeError` at startup if no LLM provider key is configured (unless `DRY_RUN=true`).
 
-See [API_REFERENCE.md](API_REFERENCE.md) for the full list of env vars.
+See [ENV_VARS.md](ENV_VARS.md) for the full list of environment variables.
 
 ---
 
@@ -388,12 +428,13 @@ See [API_REFERENCE.md](API_REFERENCE.md) for the full list of env vars.
 
 ## Deployment
 
-### Local dev
-```bash
-python main.py
+### Local dev (Windows — primary)
+```batch
+python scripts\run_api_local.py
 ```
+Loads `.env`, starts API on `127.0.0.1:8000`. Set `BEA_API_BIND=0.0.0.0` for Tailscale access.
 
-### Docker (single command)
+### Docker (Linux / CI)
 ```bash
 docker-compose up -d
 ```

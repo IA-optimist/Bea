@@ -18,14 +18,17 @@
 | [`API_VERSIONING.md`](API_VERSIONING.md) | v1 / v2 / v3 surface map + sunset plan |
 | [`AUDIT_ROADMAP.md`](AUDIT_ROADMAP.md) | Phase-by-phase audit progress + remaining debt |
 | [`AUTONOMY.md`](AUTONOMY.md) | Autonomy daemon + skills + REST API operator guide |
+| [`ENV_VARS.md`](ENV_VARS.md) | All environment variables (auth, LLM, databases, features) |
 
 ## Operational scripts
 
 Located in `scripts/` (at repo root):
 
-- `scripts/rotate_secrets.sh` — interactive secret rotation on VPS1
-- `scripts/verify_prod.sh` — read-only prod diagnostic
-- `scripts/migrate_to_nonroot.sh` — container UID=1000 migration
+- `scripts/run_api_local.py` — Windows launcher (loads `.env`, starts FastAPI on `127.0.0.1:8000`)
+- `scripts/run_telegram_bea.py` — Telegram bot (Codex gpt-5.5, vision, YouTube)
+- `scripts/rotate_secrets.sh` — interactive secret rotation (Linux/VPS)
+- `scripts/verify_prod.sh` — read-only prod diagnostic (Linux/VPS)
+- `scripts/migrate_to_nonroot.sh` — container UID=1000 migration (Linux/VPS)
 
 ## CI / Workflows
 

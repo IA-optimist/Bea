@@ -6,6 +6,77 @@ All notable changes to **Beamax** are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-06-16
+
+### Added
+- **Auto-improvement daemon end-to-end** (`core/improvement_daemon.py`): first `proposal_saved`
+  event confirmed in production. Daemon runs every 30 min, detects `failure_pattern` /
+  `slow_tool` / `tool_issue` weaknesses, saves spec JSONs to
+  `workspace/self_improvement/proposals/` in `propose` mode.
+- `BEA_IMPROVEMENT_MODE=propose` in `.env` — safe default that generates proposals without
+  patching code (set `merge` to enable live patching + Docker regression tests).
+- `workspace/tool_performance.jsonl` — persistent tool latency/failure tracker, seeded and
+  read by `core/improvement_detector.py`.
+- `BEA_REPO_ROOT` env var + `repo_root = Path(os.environ.get("BEA_REPO_ROOT", "."))` default
+  in `run_cycle()` — fixes Windows path resolution (`/app` never existed here).
+
+### Fixed
+- `core/improvement_daemon.py`: `repo_root` defaulted to `/app` (Linux container path), causing
+  `_propose_experiment()` to silently return `None` on Windows for every candidate. Now defaults
+  to `"."` (CWD), which the launcher always sets to the repo root via `cd /d`.
+- `core/improvement_loop.py`: `run_tests()` raised `RuntimeError` when `BEA_ENABLE_SI` was unset,
+  crashing every daemon cycle. Now returns a skip result so `propose` mode keeps working.
+- `core/improvement_daemon.py`: `failure_pattern` weakness had no `suggested_target`, causing
+  `_propose_experiment()` to return `None` immediately. Added `suggested_target="executor/retry_policy.py"`.
+
+## [0.15.0] — 2026-06-12
+
+### Added
+- **forge-builder agent** committed and passing full Windows test suite (`8354cde`).
+- **Consolidation 6 micro-paquets** (`49d6197`): new canonical paths
+  `core/observability`, `core/workflow`, `core/learning`, `core/mcp/bea`,
+  `deploy/monitoring`.
+- **CVOptimIA** — 2nd autonomous business, deployed on Railway. Stripe live billing active.
+  CV/ATS optimization SaaS for the French market.
+- PR #40–44: supervisor circuit fixes (approve HIGH, metrics_bridge, `BEA_AUTO_APPROVE_MEDIUM`,
+  forge timeout 420s).
+
+## [0.14.0] — 2026-06-07
+
+### Added
+- **Global rename jarvis → bea** (`aaee8c6`): case-aware replacement on 823 files / 4249
+  occurrences. New names: `BEA_*` env vars, `beamax` Postgres DB, `bea` role,
+  `beamax-postgres/redis/qdrant` Docker containers, `com.beamax.beamax_app` Android package.
+- **Auto-improvement continuous daemon** (`f6650e2`): `core/improvement_daemon.run_cycle()` +
+  hardened `ImprovementLoop` V3. Gate: R4 escalation + 24h cooldown + failure cap.
+  Wired into `api/main.py` lifespan. Opt-in via `BEA_CONTINUOUS_IMPROVEMENT=1`.
+- **Mobile APK rebuilt** (`3f2fb83`): Flutter 3.41.9, `--dart-define` injection for Tailscale
+  host, `BEA_API_BIND=0.0.0.0` + firewall rule for remote access.
+- gemma4/Gemma-3 12B training environment (`project_gemma4_training`) on Blackwell GPU.
+
+## [0.13.0] — 2026-06-06
+
+### Added
+- **AutoContentFlow** deployed on Railway — SEO article SaaS, async generation pipeline,
+  Stripe checkout, PWA. Built autonomously by Béa (Codex gpt-5.5).
+- **Béa brain = Codex gpt-5.5** (`d7bf573`): `scripts/run_telegram_bea.py` wired to
+  `gateway/codex_provider.py` hitting ChatGPT Codex backend directly.
+- **Vision**: Telegram photos → OpenRouter VL; YouTube analysis via `gateway/youtube_analyzer.py`
+  (transcription + frames + vision).
+- **Cookbook** (`core/cookbook/model_advisor`) + **connectors** (`connectors/`: base / api /
+  dynamic / email / http / github / filesystem / bootstrap).
+- `/api/v3/metrics/llm` endpoint.
+- Flutter SDK + Android SDK installed; first APK built (51 MB).
+- Docker Desktop back in service (`EnableDockerAI:false` fix): stack
+  `beamax-postgres/redis/qdrant` healthy, 402 tests passing.
+
+## [0.12.0] — 2026-06-02
+
+### Added
+- **Béa V3 training** (`adapters/lora-mistral-bea-v3-fr`): hybrid 294 reasoning FR +
+  700 tool_use deduped, continue-from-V2. FR concept-coverage 9% → 26% (+17 pts).
+  Pairwise wins 10-1 vs V2. Branch `feature/bea-v3-fr-business` (12 commits).
+
 ### Security
 - Sandbox Docker hardened: `network_mode="none"` (opt-in bridge), `read_only=True`,
   tmpfs `/tmp`+`/run`, `mem_limit=512m`, `pids_limit=128`, `cap_drop=["ALL"]`,

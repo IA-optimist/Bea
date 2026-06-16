@@ -1,7 +1,20 @@
-# BeaMax — Component Status
+# Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: 2026-04-08, SHA `889a1c3`.
-> Verified by direct code reading + 5 audit agents + gate test results.
+> Honest per-component maturity rating. Last verified: **2026-06-16**, SHA `1631240`.
+> Verified by direct code reading + runtime observation + gate test results.
+
+## Summary (June 2026)
+
+| Area | State |
+|---|---|
+| API (590+ routes) | 🟢 Running — PID stable, 400+ tests passing |
+| Auto-improvement daemon | 🟢 **End-to-end working** — first `proposal_saved` 2026-06-16 |
+| Business engine | 🟢 AutoContentFlow + CVOptimIA live on Railway |
+| Telegram bot | 🟢 Codex gpt-5.5, vision (photos + YouTube), persistent task |
+| Mobile APK | 🟢 Flutter 3.41.9, Tailscale access, rebuilt 2026-06-07 |
+| Docker stack | 🟢 Back in service 2026-06-05 (postgres/redis/qdrant healthy) |
+| Renommage jarvis→bea | ✅ Done 2026-06-07, 823 files, commit `aaee8c6` |
+| Forge-builder | 🟢 Committed 2026-06-12, suite verte Windows |
 
 **Maturity legend:**
 - 🟢 **PROVEN** — Real implementation, used in runtime, gate-tested
