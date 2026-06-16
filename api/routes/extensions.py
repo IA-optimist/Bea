@@ -14,9 +14,8 @@ from __future__ import annotations
 try:
     from fastapi import APIRouter, Depends, HTTPException, Request, Body
     from fastapi.responses import JSONResponse
-    from api._deps import require_auth
 except ImportError:
-    # Stub for environments without FastAPI
+    # Stub for environments without FastAPI (unit tests that mock the router)
     class _Stub:
         def __getattr__(self, name):
             return lambda *a, **kw: lambda f: f
@@ -27,19 +26,22 @@ except ImportError:
         return None  # type: ignore
     def Depends(*a, **kw):
         return None  # type: ignore
-    require_auth = None  # type: ignore
     class JSONResponse:  # type: ignore
         def __init__(self, *a, **kw): pass
+
+# Hard import — never stub require_auth. If api._deps is missing this module
+# fails to load and the router is never registered (fail-closed).
+from api._deps import require_auth
 
 from core.extension_registry import get_extension_registry
 
 
 # Defense-in-depth: router-level auth (in addition to global middleware).
-# Prevents exposure if middleware fails to load.
+# No conditional fallback — if require_auth is unavailable, fail hard at import.
 router = APIRouter(
     prefix="/api/v3/extensions",
     tags=["extensions"],
-    dependencies=[Depends(require_auth)] if require_auth else [],
+    dependencies=[Depends(require_auth)],
 )
 
 

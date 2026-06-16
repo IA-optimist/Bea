@@ -91,10 +91,10 @@ jobs:
           TESTING: true
         run: |
           set -euo pipefail
-          # Coverage threshold = broad baseline across core/api/kernel. Keep it
-          # ratcheted upward as uncovered modules get tests; do not narrow --cov
-          # back to core-only. -n auto = one worker per CPU core (pytest-xdist).
-          COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-45}"
+          # Coverage threshold — ratchet: raise only, never lower.
+          # History: 45 (2026-05-18) → 55 (2026-05-25) → 60 (2026-06-16).
+          # Next target: 65 once dead stale tests are removed.
+          COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-60}"
           pytest tests/ -v -n auto --dist=loadfile \
             --cov=core --cov=api --cov=kernel --cov-report=xml --cov-report=term \
             --cov-fail-under="$COVERAGE_FAIL_UNDER"
@@ -153,9 +153,6 @@ jobs:
   bandit:
     name: bandit (delta gate)
     runs-on: ubuntu-latest
-    # Non-blocking for the first run-in window; remove continue-on-error
-    # once the team has triaged the initial findings into the baseline.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 

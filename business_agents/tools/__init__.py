@@ -1,1 +1,0 @@
-"""Business agent tool bindings."""
