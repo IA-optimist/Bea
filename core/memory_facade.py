@@ -269,9 +269,18 @@ class MemoryFacade:
 
     def _get_memory_bus(self):
         """Return cached MemoryBus singleton (model loads once, not per call)."""
-        if self._memory_bus is None and self._settings:
-            from memory.memory_bus import MemoryBus
-            self._memory_bus = MemoryBus(self._settings)
+        if self._memory_bus is None:
+            if self._settings is None:
+                try:
+                    from config.settings import get_settings
+                    self._settings = get_settings()
+                except Exception:
+                    return None
+            try:
+                from memory.memory_bus import MemoryBus
+                self._memory_bus = MemoryBus(self._settings)
+            except Exception as _exc:
+                log.debug("memory_bus_init_failed", err=str(_exc)[:120])
         return self._memory_bus
 
     def _store_memory_bus(self, content: str, content_type: str, tags: list[str], metadata: dict) -> bool:
@@ -416,8 +425,11 @@ class MemoryFacade:
                         _status, _val = _result_q.get_nowait()
                         if _status == "ok" and isinstance(_val, list):
                             for item in _val:
+                                # MemoryBus returns {"text": ..., "score": ..., "metadata": ...}
+                                # (not "content") — handle both keys for compatibility
+                                _content = item.get("content") or item.get("text", "")
                                 results.append(MemoryEntry(
-                                    content=str(item.get("content", "")),
+                                    content=str(_content),
                                     content_type=item.get("metadata", {}).get("type", "general"),
                                     source="memory_bus",
                                     score=item.get("score", 0.4),
