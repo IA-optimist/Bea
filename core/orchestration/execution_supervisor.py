@@ -509,7 +509,7 @@ def _check_session_outcome(session: Any) -> tuple[bool, str, str]:
             return True, "", ""
         # No file actions materialized — but if agents produced meaningful text output
         # (rate ≥ 20%) the mission is still valuable (research / analysis tasks).
-        if not executed and not pending and rate < 0.20:
+        if not executed and not pending:
             return (
                 False,
                 "no file action was materialized despite needs_actions=True",
