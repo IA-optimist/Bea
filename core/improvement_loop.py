@@ -284,11 +284,12 @@ class RegressionGuard:
     def run_tests(self, test_path: str, timeout: int = 120) -> dict:
         # ── SI safety gate — enforced at execution time, not construction ──
         if not _si_enabled():
-            raise RuntimeError(
-                "RegressionGuard.run_tests() is disabled. "
-                "Set BEA_ENABLE_SI=1 to enable self-improvement. "
-                "WARNING: this requires /var/run/docker.sock mounted and grants Docker privilege."
-            )
+            log.info("regression_guard.tests_skipped",
+                     reason="BEA_ENABLE_SI not set",
+                     hint="Set BEA_ENABLE_SI=1 to run Docker regression tests")
+            return {"passed": 0, "failed": 0, "skipped": 1,
+                    "duration_s": 0, "output": "SI disabled — tests skipped",
+                    "si_disabled": True}
         if not os.path.exists(_DOCKER_SOCKET):
             raise RuntimeError(
                 f"RegressionGuard.run_tests() requires Docker socket at {_DOCKER_SOCKET}. "

@@ -264,6 +264,8 @@ def detect_weaknesses(window_s: float = 3600) -> list[Weakness]:
                     threshold=3,
                     severity="medium" if count < 10 else "high",
                     description=f"Recurring failure pattern: {category} ({count}x in {window_s/3600:.0f}h)",
+                    suggested_target="executor/retry_policy.py",
+                    suggested_fix=f"Add recovery handling for recurring {category} failures",
                 ))
     except Exception as _exc:
         log.warning("swallowed_exception", action="detect_recurring_failure_pattern", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
