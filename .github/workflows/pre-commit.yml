@@ -5,10 +5,10 @@ name: Security — Pre-commit Hooks
 # `.pre-commit-config.yaml` (install with `pre-commit install`).
 on:
   workflow_dispatch:
-  # push:
-  #   branches: ["**"]
-  # pull_request:
-  #   branches: [main, develop]
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
 
 permissions:
   contents: read

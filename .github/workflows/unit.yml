@@ -23,6 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -33,17 +34,18 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
       
-      - name: Install core dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install structlog pydantic fastapi httpx pytest pytest-asyncio
-          pip install sentence-transformers langchain langchain-core langchain-openai
-          pip install qdrant-client || true
-          pip install ruff
+          pip install -r requirements.txt
+          pip install pytest-xdist pytest-timeout ruff
       
-      - name: Lint (non-blocking)
-        run: ruff check . --exit-zero --select E,W,F --ignore E501,F401,F811
+      - name: Lint
+        run: ruff check .
       
-      - name: Test kernel evaluation scorer
-        run: |
-          python -c "from kernel.evaluation.scorer import KernelScore, KernelEvaluator, get_evaluator; print('kernel.evaluation.scorer importable')"
+      - name: Tests
+        env:
+          DATABASE_URL: postgresql://localhost:5432/beamax_test
+          REDIS_URL: redis://localhost:6379
+          TESTING: true
+        run: python -m pytest tests -q -m "not integration" -n auto --dist=loadfile

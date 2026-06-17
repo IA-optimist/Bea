@@ -138,7 +138,7 @@ if ($pathHasNonAscii) {
     if ($LASTEXITCODE -eq 0) {
         Run-Check "pip-audit-delta-gate" {
             $report = Join-Path $env:TEMP "audit.json"
-            & $Python -m pip_audit -r requirements.lock --format json --output $report --strict 2>$null
+            & $Python -m pip_audit -r requirements.txt --format json --output $report --strict 2>$null
             & $Python scripts/check_pip_audit_baseline.py $report quality/pip-audit-baseline.json
         }
     } else {

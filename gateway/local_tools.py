@@ -9,6 +9,7 @@ Garde-fous : timeout, blocklist de commandes catastrophiques, troncature des sor
 from __future__ import annotations
 
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -48,6 +49,9 @@ def execute_shell(args: dict) -> str:
     try:
         if needs_shell:
             p = subprocess.run(cmd, shell=True, capture_output=True, text=True,  # nosec S602
+                               timeout=_TIMEOUT, encoding="utf-8", errors="replace")
+        elif os.name == "nt":
+            p = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True,
                                timeout=_TIMEOUT, encoding="utf-8", errors="replace")
         else:
             p = subprocess.run(shlex.split(cmd, posix=False), capture_output=True, text=True,

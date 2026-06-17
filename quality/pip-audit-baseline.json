@@ -3,7 +3,7 @@
   "notes": [
     "Each ignored vulnerability MUST be matched by a TODO row in requirements.txt explaining why the bump is deferred and what blocks it.",
     "",
-    "All CVEs deferred by the original audit are now closed (2026-05-30). The ignored_ids list is empty — any new vulnerability surfaced by pip-audit will fail CI immediately.",
+    "All currently reported CVEs are closed. The ignored_ids list is empty — any vulnerability surfaced by pip-audit will fail CI immediately.",
     "",
     "History (oldest → newest):",
     "",

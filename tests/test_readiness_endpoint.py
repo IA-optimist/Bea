@@ -2,7 +2,7 @@
 tests/test_readiness_endpoint.py — Pass 34: /api/v3/system/readiness tests
 
 Covers:
-  R1.  Endpoint registered on the convergence router at correct path
+  R1.  Endpoint registered on the canonical system readiness router
   R2.  Returns HTTP 200 when all probes pass
   R3.  Returns HTTP 503 when no LLM key configured
   R4.  Returns HTTP 503 when Qdrant unreachable
@@ -63,8 +63,8 @@ def _patch_context(settings_mock, socket_result=0, orchestrator_ok=True):
 # ─── R1: Router registration ──────────────────────────────────────────────────
 
 def test_R1_endpoint_registered():
-    """GET /api/v3/system/readiness must be registered on the convergence router."""
-    from api.routes.convergence import router
+    """GET /api/v3/system/readiness must be registered on the canonical router."""
+    from api.routes.system_readiness import router
     paths = [r.path for r in router.routes]
     assert "/api/v3/system/readiness" in paths, f"Missing. Got: {paths}"
 
@@ -74,7 +74,7 @@ def test_R1_endpoint_registered():
 class TestReadinessEndpoint:
 
     async def _run(self, settings_mock, socket_result=0, orchestrator_ok=True):
-        from api.routes.convergence import system_readiness
+        from api.routes.system_readiness import system_readiness
         patches = _patch_context(settings_mock, socket_result, orchestrator_ok)
         for p in patches:
             p.start()

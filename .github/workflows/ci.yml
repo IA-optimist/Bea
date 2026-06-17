@@ -7,10 +7,10 @@ name: CI/CD Pipeline
 # uncomment the `push` / `pull_request` blocks below.
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [ main, develop ]
-  # pull_request:
-  #   branches: [ main ]
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -106,7 +106,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  # Security scan: known-CVE check on the locked dependencies.
+  # Security scan: known-CVE check on the portable direct requirements.
   # Delta gate via quality/pip-audit-baseline.json — fails on any CVE not
   # already acknowledged in the baseline (mirrors the TODO rows in
   # requirements.txt). Bump the baseline only with a written justification.
@@ -127,11 +127,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pip-audit
 
-      - name: Run pip-audit on requirements.lock
+      - name: Run pip-audit on requirements.txt
         # --exit-zero: surface every finding to JSON without short-circuiting
         # on the first vuln. The delta gate decides what's actually failing.
         run: |
-          pip-audit -r requirements.lock --format json --output audit.json --strict || true
+          pip-audit -r requirements.txt --format json --output audit.json --strict || true
           cat audit.json | python -m json.tool | head -60 || true
 
       - name: Compare to pip-audit baseline

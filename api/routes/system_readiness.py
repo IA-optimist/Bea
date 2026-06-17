@@ -7,8 +7,10 @@ Uses runtime route introspection (not the unused router_registry).
 from __future__ import annotations
 
 import os
+import socket
 import structlog
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 
 from api._deps import require_auth
 
@@ -55,6 +57,77 @@ EXPECTED_COMPONENTS = {
 }
 
 
+def _runtime_probes() -> tuple[bool, dict]:
+    ready = True
+    probes = {}
+
+    try:
+        from config.settings import get_settings
+        settings = get_settings()
+        active_providers = []
+        if getattr(settings, "openrouter_api_key", ""):
+            active_providers.append("openrouter")
+        if getattr(settings, "anthropic_api_key", ""):
+            active_providers.append("anthropic")
+        if getattr(settings, "openai_api_key", ""):
+            active_providers.append("openai")
+        strategy = os.environ.get("MODEL_STRATEGY", "") or (active_providers[0] if active_providers else "none")
+        has_llm = bool(active_providers)
+        probes["llm_key"] = {
+            "ok": has_llm,
+            "providers": active_providers,
+            "strategy": strategy,
+            "detail": (
+                f"providers={active_providers} strategy={strategy}"
+                if has_llm
+                else "no LLM key configured"
+            ),
+        }
+        if not has_llm:
+            ready = False
+    except Exception as exc:
+        probes["llm_key"] = {"ok": False, "detail": str(exc)[:120]}
+        ready = False
+
+    try:
+        from config.settings import get_settings
+        settings = get_settings()
+        host = getattr(settings, "qdrant_host", "") or "qdrant"
+        port = int(getattr(settings, "qdrant_port", 6333) or 6333)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        qdrant_ok = result == 0
+        probes["qdrant"] = {
+            "ok": qdrant_ok,
+            "host": f"{host}:{port}",
+            "detail": "reachable" if qdrant_ok else "unreachable",
+        }
+        if not qdrant_ok:
+            ready = False
+    except Exception as exc:
+        probes["qdrant"] = {"ok": False, "detail": str(exc)[:120]}
+        ready = False
+
+    try:
+        from core.meta_orchestrator import get_meta_orchestrator
+        orchestrator = get_meta_orchestrator()
+        breaker = getattr(orchestrator, "_circuit_breaker", None)
+        breaker_open = None
+        if breaker is not None and hasattr(breaker, "status"):
+            breaker_open = bool(breaker.status().get("open", False))
+        probes["orchestrator"] = {
+            "ok": True,
+            "detail": f"circuit_breaker={breaker_open}",
+        }
+    except Exception as exc:
+        probes["orchestrator"] = {"ok": False, "detail": str(exc)[:120]}
+        ready = False
+
+    return ready, probes
+
+
 def build_readiness_payload(
     mounted_paths: set[str],
     expected_components: dict[str, str] | None = None,
@@ -72,11 +145,15 @@ def build_readiness_payload(
 
     total_routes = len(mounted_paths)
     production = os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
-    allowed_failures = 0 if production else 5
-    ready = len(failed) <= allowed_failures
+    allowed_failures = 0 if production else len(expected)
+    components_ready = len(failed) <= allowed_failures
+    probes_ready, probes = _runtime_probes()
+    ready = components_ready and probes_ready
 
     return {
         "ready": ready,
+        "status": "ready" if ready else "not_ready",
+        "probes": probes,
         "total_routes_mounted": total_routes,
         "components": {
             "loaded": len(loaded),
@@ -110,4 +187,9 @@ async def system_readiness():
                 if hasattr(sub, "path"):
                     mounted_paths.add(sub.path)
 
-    return build_readiness_payload(mounted_paths)
+    payload = build_readiness_payload(mounted_paths)
+    status_code = 200 if payload["ready"] else 503
+    return JSONResponse(
+        {"ok": payload["ready"], "data": payload},
+        status_code=status_code,
+    )

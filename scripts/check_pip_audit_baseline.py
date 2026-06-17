@@ -21,7 +21,7 @@ The baseline format::
 
 To bump the baseline:
 
-  1. Run ``pip-audit -r requirements.lock --format json > audit.json`` locally
+  1. Run ``pip-audit -r requirements.txt --format json > audit.json`` locally
      (or download it from the failed CI artifact).
   2. Add the new vulnerability ID to ``ignored_ids`` with a written
      justification in the corresponding row of ``requirements.txt``.
@@ -29,7 +29,7 @@ To bump the baseline:
 
 Usage::
 
-    pip-audit -r requirements.lock --format json --output audit.json --strict
+    pip-audit -r requirements.txt --format json --output audit.json --strict
     python scripts/check_pip_audit_baseline.py audit.json \\
         quality/pip-audit-baseline.json
 """

@@ -12,14 +12,14 @@ name: Kernel Architecture CI
 # Auto-triggers disabled 2026-05-30 — see ci.yml header for rationale.
 on:
   workflow_dispatch:
-  # push:
-  #   branches: ["**"]
-  #   paths-ignore:
-  #     - "docs/**"
-  #     - "*.md"
-  #     - "LICENSE"
-  # pull_request:
-  #   branches: [main]
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "LICENSE"
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: kernel-ci-${{ github.ref }}

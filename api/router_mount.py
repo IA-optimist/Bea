@@ -28,6 +28,20 @@ def _mount_critical(app, module_path: str, var_name: str = "router") -> None:
         ) from exc
 
 
+def _materialize_included_routers(app) -> None:
+    """Restore the pre-FastAPI-0.137 flat route list."""
+
+    def expand(routes):
+        for route in routes:
+            original_router = getattr(route, "original_router", None)
+            if original_router is None:
+                yield route
+            else:
+                yield from expand(original_router.routes)
+
+    app.router.routes = list(expand(app.router.routes))
+
+
 def mount_all_routers(app, enable_stub_routes: bool = False) -> None:
     """Mount all API routers onto the FastAPI app.
 
@@ -474,3 +488,5 @@ def mount_all_routers(app, enable_stub_routes: bool = False) -> None:
     # ── Auth routes ───────────────────────────────────────────────
     from api.routes import auth as _auth_routes
     app.include_router(_auth_routes.router)
+
+    _materialize_included_routers(app)
