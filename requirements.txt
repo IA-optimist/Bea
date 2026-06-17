@@ -90,7 +90,7 @@ structlog==25.5.0
 # Resolver constraints chained the whole stack — langchain 1.3.2 requires
 # langchain-core >= 1.4.0, which is the CVE fix. Validated in side-venv:
 # 94/94 hardening tests pass, smoke harness 13/13 module imports OK.
-langchain==1.3.2
+langchain==1.3.9
 langchain-core==1.4.0
 langchain-openai==1.2.2
 langchain-community==0.4.2
