@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-16**, SHA `1631240`.
+> Honest per-component maturity rating. Last verified: **2026-06-19**, SHA `cb19eae`.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
