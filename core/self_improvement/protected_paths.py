@@ -49,6 +49,9 @@ PROTECTED_FILES: frozenset[str] = frozenset({
     "docker-compose.yml",
     "docker/Dockerfile",
 
+    # Kernel gate (self-improvement controller)
+    "kernel/improvement/gate.py",
+
     # Self-improvement core controller (prevent self-modification loops)
     "core/self_improvement_loop.py",
     "core/self_improvement/protected_paths.py",

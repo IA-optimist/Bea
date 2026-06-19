@@ -166,8 +166,14 @@ class ImprovementGate:
                         reason=f"security_gate: {_sec_result.reason[:80]}",
                     )
             except Exception as _se:
-                _log.debug("improvement_gate_security_check_skipped", err=str(_se)[:60])
-                # Fail-open: if security layer unavailable, continue to history check
+                _log.warning(
+                    "improvement_gate_security_check_failed",
+                    err=str(_se)[:80],
+                )
+                return ImprovementDecision(
+                    allowed=False,
+                    reason=f"security_gate_error: {str(_se)[:60]}",
+                )
         else:
             _log.info("improvement_gate_operator_approved",
                       channel="BEA_OPERATOR_APPROVE_IMPROVEMENT")
@@ -229,7 +235,7 @@ class ImprovementGate:
             if p.exists():
                 return json.loads(p.read_text("utf-8")) or []
         except Exception as _exc:
-            log.warning("swallowed_exception", action="gate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+            log.warning("gate_swallow", action="gate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
         return []
 
     def record(self, outcome: str, metadata: dict | None = None) -> None:
