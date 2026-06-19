@@ -20,6 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from core.coding_agent.failure_memory import FailureMemory
 from core.coding_agent.repo_map import build_repo_map
 from core.coding_agent.swe_lite import run_swe_lite_v1
 
@@ -37,6 +38,7 @@ class GateResult:
     pr_body: str
     diff: str
     rollback_command: str
+    memory_suggestions: tuple[dict, ...]
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -123,6 +125,11 @@ def _diff(worktree: Path) -> str:
     return output if ok else ""
 
 
+def _changed_files(worktree: Path, base: str = "HEAD") -> list[str]:
+    ok, output = _run(["git", "diff", base, "--name-only"], worktree, timeout=60)
+    return [line.strip() for line in output.splitlines() if line.strip()] if ok else []
+
+
 def _rollback(root: Path, path: Path, branch: str) -> tuple[bool, str]:
     outputs: list[str] = []
     ok1, out1 = _run(["git", "worktree", "remove", "--force", str(path)], root, timeout=120)
@@ -132,10 +139,21 @@ def _rollback(root: Path, path: Path, branch: str) -> tuple[bool, str]:
     return ok1 and ok2, "\n".join(outputs)
 
 
-def render_pr_body(issue_title: str, score: float, diff: str, gates: dict[str, dict[str, object]]) -> str:
+def render_pr_body(issue_title: str, score: float, diff: str, gates: dict[str, dict[str, object]], memory_suggestions: tuple[dict, ...]) -> str:
     gate_lines = []
     for name, result in gates.items():
         gate_lines.append(f"- {name}: {'passed' if result.get('passed') else 'failed'}")
+
+    suggestion_lines = ["### Past similar issues", ""]
+    if memory_suggestions:
+        for item in memory_suggestions:
+            rec = item["record"]
+            suggestion_lines.append(f"- **{rec['issue']}** ({rec['outcome']}, score={item['score']:.2f})")
+            suggestion_lines.append(f"  - cause: {rec['cause']}")
+            suggestion_lines.append(f"  - fix: {rec['successful_correction']}")
+    else:
+        suggestion_lines.append("- No matching issues in memory yet.")
+
     return "\n".join(
         [
             f"## {issue_title}",
@@ -151,6 +169,8 @@ def render_pr_body(issue_title: str, score: float, diff: str, gates: dict[str, d
             "",
             f"Score: {score:.3f}",
             "",
+            *suggestion_lines,
+            "",
             "### Diff",
             "```diff",
             diff.strip(),
@@ -161,17 +181,37 @@ def render_pr_body(issue_title: str, score: float, diff: str, gates: dict[str, d
 
 def run_gate(root: str | Path = ".", task_id: str = f"sprint3-{int(time.time())}", issue_title: str = "Sprint 3 gate", base: str = DEFAULT_BASE_BRANCH, rollback: bool = True, print_body: bool = True) -> GateResult:
     root_path = Path(root).resolve()
+    memory_path = root_path / "workspace" / "coding_agent" / "failure_memory.json"
+    memory = FailureMemory(memory_path)
+
     ok, worktree, branch, error = _create_worktree(root_path, task_id, base)
     if not ok:
-        result = GateResult(False, task_id, issue_title, str(worktree), branch, 0.0, "", "", f"git worktree remove --force {worktree}")
+        result = GateResult(
+            False, task_id, issue_title, str(worktree), branch, 0.0, "", "",
+            f"git worktree remove --force {worktree}", (),
+        )
         if print_body:
             print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
         return result
 
+    prior_suggestions = memory.search(issue_title, top_k=3)
+    suggestion_payload = tuple({"score": score, "record": rec.to_dict()} for score, rec in prior_suggestions)
+
     patch_ok, patch_error = _apply_sample_patch(worktree)
     if not patch_ok:
         _rollback(root_path, worktree, branch)
-        result = GateResult(False, task_id, issue_title, str(worktree), branch, 0.0, "", "", f"git worktree remove --force {worktree}")
+        failure_rec = memory.record_failure(
+            issue=issue_title,
+            cause="deterministic sample patch could not be applied",
+            files_touched=(),
+            error_text=patch_error,
+            tags=("sprint3-gate",),
+        )
+        result = GateResult(
+            False, task_id, issue_title, str(worktree), branch, 0.0, "", "",
+            f"git worktree remove --force {worktree}",
+            ({"score": 1.0, "record": failure_rec.to_dict()},),
+        )
         if print_body:
             print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
         return result
@@ -180,14 +220,48 @@ def run_gate(root: str | Path = ".", task_id: str = f"sprint3-{int(time.time())}
     gates_ok, gates = _run_gates(worktree)
     swe = run_swe_lite_v1(worktree)
     diff = _diff(worktree)
-    score = round((0.35 if gates_ok else 0.0) + (0.35 if swe.passed else 0.0) + (0.15 if repo_map.symbols else 0.0) + (0.15 if diff.strip() else 0.0), 3)
-    pr_body = render_pr_body(issue_title, score, diff, gates)
+    changed_files = _changed_files(worktree)
+    score = round(
+        (0.35 if gates_ok else 0.0)
+        + (0.35 if swe.passed else 0.0)
+        + (0.15 if repo_map.symbols else 0.0)
+        + (0.15 if diff.strip() else 0.0),
+        3,
+    )
+
     rollback_ok = True
     rollback_output = ""
     if rollback:
         rollback_ok, rollback_output = _rollback(root_path, worktree, branch)
+
     ok = patch_ok and gates_ok and swe.passed and bool(repo_map.symbols) and bool(diff.strip()) and rollback_ok
-    result = GateResult(ok, task_id, issue_title, str(worktree), branch, score, pr_body, diff, f"git worktree remove --force {worktree} && git branch -D {branch}")
+
+    if ok:
+        record = memory.record_success(
+            issue=issue_title,
+            cause="Sprint 3 gate passed: ruff + pytest + swe-lite OK",
+            files_touched=changed_files,
+            error_text="",
+            successful_correction="Factorise EXCLUDED_DIRS and adds DEFAULT_MAX_FILES in core/coding_agent/repo_map.py.",
+            tags=("sprint3-gate",),
+        )
+    else:
+        failed_gate = next((name for name, res in gates.items() if not res.get("passed")), "unknown")
+        record = memory.record_failure(
+            issue=issue_title,
+            cause=f"gate failed at step: {failed_gate}",
+            files_touched=changed_files,
+            error_text=(gates.get(failed_gate, {}).get("output_tail", "") if failed_gate in gates else "") or rollback_output,
+            tags=("sprint3-gate",),
+        )
+
+    suggestions = suggestion_payload + ({"score": 1.0, "record": record.to_dict()},)
+    pr_body = render_pr_body(issue_title, score, diff, gates, suggestions)
+    result = GateResult(
+        ok, task_id, issue_title, str(worktree), branch, score, pr_body, diff,
+        f"git worktree remove --force {worktree} && git branch -D {branch}",
+        suggestions,
+    )
     if print_body:
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     return result
