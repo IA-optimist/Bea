@@ -54,6 +54,14 @@ async def _on_startup(app) -> None:  # noqa: ANN001
     except Exception as exc:
         log.warning("self_improvement_startup_collect_failed", err=str(exc)[:80])
 
+    # Initialize OpenTelemetry tracing (optional dependency)
+    try:
+        from core.observability.tracing import init_tracing
+        provider = init_tracing(service_name="bea-max-api")
+        log.info("tracing_initialized", provider_type=type(provider).__name__ if provider else "noop")
+    except Exception as exc:
+        log.warning("tracing_init_failed", err=str(exc)[:80])
+
     # Install observability instrumentation (metrics bridge)
     try:
         from core.metrics_bridge import install_instrumentation
@@ -233,6 +241,14 @@ async def _on_shutdown() -> None:
         log.info("continuous_improvement_daemon_stopped")
     except Exception as exc:
         log.warning("continuous_improvement_daemon_stop_failed", err=str(exc)[:80])
+
+    # Flush OpenTelemetry spans before exiting
+    try:
+        from core.observability.tracing import shutdown_tracing
+        shutdown_tracing()
+        log.info("tracing_shutdown_complete")
+    except Exception as exc:
+        log.warning("tracing_shutdown_failed", err=str(exc)[:80])
 
     # Save kernel performance data to survive restarts
     try:

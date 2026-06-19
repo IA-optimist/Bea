@@ -1,0 +1,20 @@
+[project]
+name = "hexstrike-v2"
+version = "0.1.0"
+description = "Modular penetration-testing tool suite (future home of the vendored Bea module)."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    # "psutil",  # enable once this package is fully extracted and psutil is approved
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["hexstrike_v2"]

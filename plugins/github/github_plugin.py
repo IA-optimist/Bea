@@ -26,6 +26,7 @@ class GitHubPlugin:
         risk_level="medium",
         required_config=["GITHUB_PERSONAL_ACCESS_TOKEN", "GITHUB_DEFAULT_OWNER"],
         requires_approval=True,
+        signature="hmac-sha256:9531813fd3ee4dfa55522e0b18930ce9d2e08297cf072dbdd1011a86ba82650b",
         tags=["github", "scm"],
     )
     

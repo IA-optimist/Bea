@@ -259,13 +259,26 @@ The residual security debt is now concentrated in the broader exception-swallows
 
 | Maturity | Components | LOC estimate |
 |----------|-----------|--------------|
-| 🟢 PROVEN | Cognitive core, kernel, execution, auth, gate tests | ~50,000 |
-| 🟡 WIRED | MemoryFacade, MCP, connectors, business handlers | ~10,000 |
-| 🔵 SCAFFOLDING | business top-level, marketplace, data intelligence, desktop_env, plugins | ~3,500 |
+| 🟢 PROVEN | Cognitive core, kernel, execution, auth, gate tests, observability store, eval publisher, plugin signatures | ~50,000 |
+| 🟡 WIRED | MemoryFacade, MCP (manifests + signed tool loader), connectors, business handlers, plugins (signed) | ~10,000 |
+| 🔵 SCAFFOLDING | business top-level, marketplace, data intelligence, desktop_env | ~3,500 |
 | 🔴 STUB | HexStrike v2 tools, multimodal endpoints, voice, browser | ~2,000 |
-| ⚫ PLANNED | Full HexStrike v2 (139 tools), Stripe integration, deploy automation | — |
+| ⚫ PLANNED | Full HexStrike v2 split, Stripe integration hardening, deploy automation | — |
 
-**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. The system is honest about this distinction in this STATUS.md (READMEs from earlier merges may overclaim — defer to this file).
+**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. MCP and plugin layers now have signatures. HexStrike v2 is staged for external extraction under `subprojects/hexstrike_v2/`.
+
+---
+
+## Task 6 — Observability & public surface
+
+| # | Item | Status |
+|---|------|--------|
+| 6.1 | OpenTelemetry tracing shim (`core/observability/tracing.py`, wired in startup) | 🟢 Done |
+| 6.2 | Eval scores auto-published (`core/observability/eval_publisher.py`, `GET/POST /api/v1/evaluations`) | 🟢 Done |
+| 6.3 | V1 → V2 migration guide endpoint (`GET /api/v1/migration`, sunset 2026-10-01) | 🟢 Done |
+| 6.4 | Plugin registry signatures (`plugins/signatures.py`, metadata signed, registry verifies) | 🟢 Done |
+| 6.5 | Canonical frontend ADR-002 (web SPA canonical; Flutter/React Native not in this repo) | 🟢 Done |
+| 6.6 | HexStrike v2 staged for split (`subprojects/hexstrike_v2/`, vendored module deprecated) | 🟡 In progress |
 
 ---
 
@@ -276,4 +289,4 @@ The residual security debt is now concentrated in the broader exception-swallows
 - **Before claiming a feature**: Verify the maturity level here.
 - **Before running tests**: Gate tests must pass. Full suite has ~170 known stale failures (documented in CODE_REVIEW.md).
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20

@@ -25,6 +25,7 @@ class StripePlugin:
         risk_level="high",
         required_config=["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_DEFAULT_CURRENCY"],
         requires_approval=True,
+        signature="hmac-sha256:b953ba0ea929f4cf7dbf4b322ee67bb541b521085e4e2873601e478b8ad1abe5",
         tags=["payments", "stripe"],
     )
     

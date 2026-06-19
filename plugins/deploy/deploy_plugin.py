@@ -26,6 +26,7 @@ class DeployPlugin:
         risk_level="high",
         required_config=["VERCEL_TOKEN", "RAILWAY_TOKEN", "DEPLOY_DEFAULT_PLATFORM"],
         requires_approval=True,
+        signature="hmac-sha256:b9e03eafb3e11b6e880cf49c1b23de25cd980b3428edf55112d0f31c30649157",
         tags=["deployment"],
     )
     

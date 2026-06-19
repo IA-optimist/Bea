@@ -16,6 +16,7 @@ import uuid
 
 from api._deps import require_auth
 from config.settings import get_settings
+from core.observability.eval_publisher import load_eval_scores, publish_eval_scores
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
@@ -250,6 +251,60 @@ async def list_memory(
         return APIResponse(
             status="success",
             data={"memories": [], "total": 0}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/evaluations", response_model=APIResponse)
+async def trigger_evaluations(
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Run the deterministic evaluation harnesses and publish scores."""
+    try:
+        scores = publish_eval_scores()
+        return APIResponse(status="published", data=scores)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/evaluations", response_model=APIResponse)
+async def get_evaluations(
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Return the latest published evaluation scores."""
+    try:
+        scores = load_eval_scores()
+        return APIResponse(status="success", data=scores)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/migration", response_model=APIResponse)
+async def get_v1_migration_guide(
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Return the V1 → V2/V3 migration matrix for deprecated routes."""
+    try:
+        routes_list = [
+            {"v1": "POST /api/v1/missions", "v2": "POST /api/v2/missions", "v3": "POST /api/v3/missions", "status": "deprecated"},
+            {"v1": "GET /api/v1/missions", "v2": "GET /api/v2/missions", "v3": "GET /api/v3/missions", "status": "deprecated"},
+            {"v1": "GET /api/v1/missions/{mission_id}", "v2": "GET /api/v2/missions/{mission_id}", "v3": "GET /api/v3/missions/{mission_id}", "status": "deprecated"},
+            {"v1": "POST /api/v1/missions/{mission_id}/cancel", "v2": "POST /api/v2/missions/{mission_id}/cancel", "v3": "POST /api/v3/missions/{mission_id}/cancel", "status": "deprecated"},
+            {"v1": "GET /api/v1/missions/{mission_id}/result", "v2": "GET /api/v2/missions/{mission_id}/result", "v3": "GET /api/v3/missions/{mission_id}/result", "status": "deprecated"},
+            {"v1": "POST /api/v1/memory/search", "v2": "POST /api/v2/memory/search", "v3": "POST /api/v3/memory/search", "status": "deprecated"},
+            {"v1": "GET /api/v1/memory", "v2": "GET /api/v2/memory", "v3": "GET /api/v3/memory", "status": "deprecated"},
+            {"v1": "POST /api/v1/memory/store", "v2": "POST /api/v2/memory", "v3": "POST /api/v3/memory", "status": "deprecated"},
+            {"v1": "GET /api/v1/memory/{memory_id}", "v2": "GET /api/v2/memory/{memory_id}", "v3": "GET /api/v3/memory/{memory_id}", "status": "deprecated"},
+            {"v1": "DELETE /api/v1/memory/{memory_id}", "v2": "DELETE /api/v2/memory/{memory_id}", "v3": "DELETE /api/v3/memory/{memory_id}", "status": "deprecated"},
+        ]
+        return APIResponse(
+            status="success",
+            data={
+                "sunset": "2026-10-01T00:00:00Z",
+                "notes": "V1 stable surface remains available until sunset. New integrations should target V2/V3.",
+                "routes": routes_list,
+            },
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
