@@ -84,6 +84,10 @@ jobs:
           pip install ruff==0.15.8
           ruff check .
 
+      - name: Enforce kernel import boundaries
+        run: python scripts/check_kernel_import_boundaries.py
+
+      # Integration tests run here (postgres/redis services available). Only stale tests excluded.
       - name: Run tests with coverage gate
         env:
           DATABASE_URL: postgresql://bea:test123@localhost:5432/beamax_test
@@ -106,6 +110,10 @@ jobs:
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+
+      - name: Stale test audit (non-blocking)
+        run: python -m pytest tests/ -m stale --tb=no -q || true
+        continue-on-error: true
 
   # Security scan: known-CVE check on the portable direct requirements.
   # Delta gate via quality/pip-audit-baseline.json — fails on any CVE not
