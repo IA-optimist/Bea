@@ -100,6 +100,6 @@ class SurgicalEditor:
             log.error("surgical_edit_error", err=str(e)[:80])
             return f"❌ Erreur lors du remplacement : {str(e)}"
 
-    def create_patch(self, filepath: str, patch_content: str) -> str:
+    def create_patch(self, filepath: str, patch_content: str) -> None:
         """Optionnel: Appliquer un VRAI unified diff (plus robuste si le LLM le gère bien)."""
-        pass # A implémenter plus tard si besoin
+        return None

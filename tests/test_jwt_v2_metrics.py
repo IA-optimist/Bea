@@ -19,7 +19,7 @@ prometheus_client = pytest.importorskip("prometheus_client")
 
 @pytest.fixture
 def secret() -> str:
-    return "test-secret-for-jwt-v2-metrics"
+    return "test-secret-for-jwt-v2-metrics-32-bytes+"
 
 
 @pytest.fixture

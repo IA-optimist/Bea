@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 
 from api.access_enforcement import is_public_path
 
@@ -20,6 +21,7 @@ EXPECTED_PUBLIC_PATHS = {
 
 
 def test_public_route_allowlist_is_explicit_and_middleware_is_mounted():
+    warnings.filterwarnings("ignore", message=r"Config file '' not found\.")
     from api.main import app
 
     middleware_names = {m.cls.__name__ for m in app.user_middleware}

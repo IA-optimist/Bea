@@ -2,6 +2,10 @@
 BEA MAX v3 — Docker Sandbox
 Environnement d'exécution isolé pour les missions autonomes.
 """
+from __future__ import annotations
+
+from typing import Any, Protocol, runtime_checkable
+
 import os
 import uuid
 import shutil
@@ -26,10 +30,17 @@ def _parse_command(cmd: str) -> tuple[list[str] | None, str | None]:
         return None, "Commande vide"
     return args, None
 
-class DesktopEnvironment:
+
+@runtime_checkable
+class DesktopEnvironment(Protocol):
     """Interface pour l'environnement d'exécution."""
+
+    workspace_path: Path
+
     def start(self) -> None: ...
+
     def execute(self, cmd: str) -> tuple[int, str]: ...
+
     def stop(self) -> None: ...
 
 class DockerSandbox(DesktopEnvironment):
@@ -39,9 +50,9 @@ class DockerSandbox(DesktopEnvironment):
         self.workspace_path = Path(workspace_path).absolute()
         self.image = image
         self.container_id = f"bea-sandbox-{uuid.uuid4().hex[:8]}"
-        self.container = None
-        self._client = None
-        self.tmp_workspace = None # Phase 12: Copy-on-Write tmp dir
+        self.container: Any | None = None
+        self._client: Any | None = None
+        self.tmp_workspace: Path | None = None  # Phase 12: Copy-on-Write tmp dir
         self._available = self._check_docker()
 
     def _check_docker(self) -> bool:
@@ -63,6 +74,9 @@ class DockerSandbox(DesktopEnvironment):
 
         log.info("sandbox_starting", container=self.container_id, image=self.image)
         try:
+            client = self._client
+            if client is None:
+                raise RuntimeError("Docker client unavailable")
             # Phase 12 : SÉCURITÉ COPY-ON-WRITE
             # Crée un dossier temporaire et y copie le workspace pour protéger l'hôte.
             # `ignore` list exclut les fichiers sensibles qui ne doivent JAMAIS
@@ -87,7 +101,7 @@ class DockerSandbox(DesktopEnvironment):
             #   - tmpfs /tmp           : tmpfs writable pour /tmp
             #   - mem_limit / pids_limit / cap_drop=ALL / no-new-privileges
             _net = "bridge" if os.getenv("BEA_SANDBOX_ALLOW_NETWORK") == "1" else "none"
-            self.container = self._client.containers.run(
+            self.container = client.containers.run(
                 image=self.image,
                 name=self.container_id,
                 command="tail -f /dev/null",  # Maintient le conteneur en vie
@@ -116,7 +130,10 @@ class DockerSandbox(DesktopEnvironment):
                 log.error("sandbox_start_failed", err=str(_img_e)[:100])
                 raise
             log.info("sandbox_pulling_image", image=self.image)
-            self._client.images.pull(self.image)
+            client = self._client
+            if client is None:
+                raise RuntimeError("Docker client unavailable")
+            client.images.pull(self.image)
             self.start()  # Ré-essaie après pull
 
     def sync_to_host(self) -> None:
@@ -142,10 +159,13 @@ class DockerSandbox(DesktopEnvironment):
             args, parse_error = _parse_command(cmd)
             if parse_error:
                 return -1, parse_error
-            exit_code, output = self.container.exec_run(
+            assert args is not None
+            exec_result = self.container.exec_run(
                 cmd=args,
                 workdir="/workspace"
             )
+            exit_code = int(getattr(exec_result, "exit_code", exec_result[0]))
+            output = getattr(exec_result, "output", exec_result[1])
             return exit_code, output.decode("utf-8", errors="replace")
         except Exception as e:
             return -1, f"Erreur d'exécution Sandbox: {str(e)}"
@@ -190,6 +210,7 @@ class LocalFallbackSandbox(DesktopEnvironment):
             args, parse_error = _parse_command(cmd)
             if parse_error:
                 return -1, parse_error
+            assert args is not None
             result = subprocess.run(
                 args,
                 cwd=str(self.workspace_path),
@@ -203,4 +224,4 @@ class LocalFallbackSandbox(DesktopEnvironment):
             return -1, str(e)
             
     def stop(self) -> None:
-        pass
+        return None

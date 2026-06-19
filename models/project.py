@@ -17,7 +17,7 @@ from typing import Any, Optional
 from uuid import UUID, uuid4
 
 import structlog
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 log = structlog.get_logger(__name__)
 
@@ -47,6 +47,8 @@ def _get_db_connection():
 # Pydantic Models
 class ProjectConfig(BaseModel):
     """Project-specific configuration schema."""
+    model_config = ConfigDict(extra="allow")
+
     priority: str = "medium"  # low, medium, high, critical
     auto_deploy: bool = False
     budget_daily_usd: Optional[float] = None
@@ -61,17 +63,13 @@ class ProjectConfig(BaseModel):
     track_all_revenue: Optional[bool] = None
     reporting_frequency: Optional[str] = None
     
-    class Config:
-        extra = "allow"  # Allow additional fields
-
 
 class ProjectMetadata(BaseModel):
     """Project metadata schema."""
+    model_config = ConfigDict(extra="allow")
+
     tags: list[str] = Field(default_factory=list)
     owner: Optional[str] = None
-    
-    class Config:
-        extra = "allow"
 
 
 class Project(BaseModel):
@@ -91,6 +89,14 @@ class Project(BaseModel):
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
+
+    @field_serializer("id")
+    def _serialize_id(self, value: UUID) -> str:
+        return str(value)
+
+    @field_serializer("created_at", "updated_at")
+    def _serialize_datetime(self, value: datetime) -> str:
+        return value.isoformat()
     
     @field_validator("name")
     @classmethod
@@ -100,12 +106,6 @@ class Project(BaseModel):
             raise ValueError("Project name must contain only alphanumeric characters, hyphens, and underscores")
         return v.lower().strip()
     
-    class Config:
-        json_encoders = {
-            UUID: str,
-            datetime: lambda v: v.isoformat()
-        }
-
 
 # CRUD Operations
 

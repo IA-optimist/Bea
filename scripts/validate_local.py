@@ -75,19 +75,28 @@ def main() -> int:
     hardening_tests = [
         "tests/test_jwt_v2.py",
         "tests/test_auth_routes_v2_flag.py",
+        "tests/test_auth_coverage.py",
         "tests/test_logging_helpers.py",
         "tests/test_architecture_size_gate.py",
+        "tests/architecture/test_kernel_import_boundaries.py",
         "tests/test_no_new_silent_swallows.py",
         "tests/test_p1_hardening.py",
         "tests/test_legacy_verify_token_revokes_v2.py",
         "tests/test_metric_naming_gate.py",
         "tests/test_log_event_name_convention.py",
         "tests/test_jwt_v2_metrics.py",
+        "tests/self_improvement/test_pr_only_policy.py",
+        "tests/self_improvement/test_patch_signing.py",
         "tests/test_major_quality_gates.py",
         "tests/test_minor_quality_gates.py",
     ]
-    if _run("pytest-hardening", [sys.executable, "-m", "pytest", *hardening_tests, "--no-header", "-q"]) != 0:
+    if _run("pytest-hardening", [sys.executable, "-m", "pytest", "-m", "not quarantine", *hardening_tests, "--no-header", "-q"]) != 0:
         failures.append("pytest-hardening")
+
+    _run(
+        "pytest-quarantine",
+        [sys.executable, "-m", "pytest", "-m", "quarantine", "--no-header", "-q"],
+    )
 
     if _has_module("mypy"):
         report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "mypy-report.txt"

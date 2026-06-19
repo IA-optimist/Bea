@@ -176,8 +176,9 @@ class TestAdoptionGate(unittest.TestCase):
         exp = self._clean_experiment()
         review = critic.review(exp)
         decision = gate.decide(exp, review)
-        self.assertEqual(decision.outcome, "AUTO_ADOPT")
-        self.assertFalse(decision.requires_human_review)
+        self.assertEqual(decision.outcome, "APPROVE_FOR_REVIEW")
+        self.assertTrue(decision.requires_human_review)
+        self.assertTrue(decision.auto_adopt_eligible)
 
     def test_reject_on_critic_reject(self):
         from core.self_improvement.improvement_loop import AdoptionGate, CriticReview, ExperimentResult
@@ -226,7 +227,7 @@ class TestImprovementLoop(unittest.TestCase):
                 "schema_intact": True, "trace_intact": True, "safety_intact": True,
             },
         )
-        self.assertIn(decision.outcome, ("AUTO_ADOPT", "APPROVE_FOR_REVIEW"))
+        self.assertEqual(decision.outcome, "APPROVE_FOR_REVIEW")
 
     def test_full_evaluation_reject(self):
         from core.self_improvement.improvement_loop import get_improvement_loop

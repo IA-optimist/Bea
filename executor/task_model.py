@@ -44,7 +44,7 @@ class ExecutionTask:
     # Planification
     priority:       int   = 5        # 1 = haute, 9 = basse
     handler_name:   str   = "generic"
-    payload:        dict  = field(default_factory=dict)
+    payload:        dict[str, object] = field(default_factory=dict)
 
     # Retry / timeout
     max_attempts:   int   = 3
@@ -70,7 +70,7 @@ class ExecutionTask:
             return NotImplemented
         return (self.created_at, self.id) < (other.created_at, other.id)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         rp = None
         if self.retry_policy is not None:
             rp = {

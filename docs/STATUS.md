@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-16**, SHA `1631240`.
+> Honest per-component maturity rating. Last verified: **2026-06-19**, SHA `fcd547c`.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
@@ -79,7 +79,7 @@ Packaging truth:
 ### Tests & CI
 | Component | Status |
 |-----------|--------|
-| Gate tests | **802/802 pass** ✅ |
+| Gate tests | Current hardening lane green ✅ |
 | Mission persistence regression | 17 tests, all green |
 | Terminal state truth (ghost-DONE fix) | 20 tests, all green |
 | Cognitive upgrade tests | Phase 1+2+3 covered |
@@ -229,8 +229,8 @@ The residual security debt is now concentrated in the broader exception-swallows
 ### Code quality
 - Bare `except Exception: pass` patterns reduced to ~0 in source; remaining silent paths use structured `swallowed_exception` logs.
 - 4 copies of `_check_auth` (1 canonical + 3 local in routes)
-- 2 incompatible `class Mission` definitions (kernel + business)
-- `_extract_final_output` had a duplicate (now fixed)
+- `class Mission` still exists in more than one layer for now
+- `_extract_final_output` duplicate already removed
 
 ### Repo hygiene
 - `.env.agents` is not present in the current tree
@@ -250,7 +250,7 @@ The residual security debt is now concentrated in the broader exception-swallows
 - Health endpoint in Dockerfile points to `/health`; verify `compose.prod.yml` alignment
 
 ### Tests
-- **Gate tests: 802/802 pass** ✅
+- **Gate tests: current hardening lane green** ✅
 - Full suite: ~4730 pass / 170 fail (most failures are stale tests for deleted UI patterns)
 
 ---

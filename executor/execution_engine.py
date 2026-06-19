@@ -28,7 +28,7 @@ from __future__ import annotations
 import heapq
 import threading
 import time
-from typing import Any
+from typing import cast
 
 import structlog
 
@@ -68,7 +68,7 @@ class ExecutionEngine:
         print(engine.status(tid))
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Queue interne : heap de (priority, created_at, task)
         self._heap: list[tuple[int, float, ExecutionTask]] = []
         self._heap_lock = threading.Lock()
@@ -152,7 +152,7 @@ class ExecutionEngine:
             priority=task.priority,
             description=task.description[:80],
         )
-        return task.id
+        return cast(str, task.id)
 
     def cancel(self, task_id: str) -> bool:
         """
@@ -193,7 +193,7 @@ class ExecutionEngine:
                     task_id=task_id, status=task.status)
         return False
 
-    def status(self, task_id: str) -> dict | None:
+    def status(self, task_id: str) -> dict[str, object] | None:
         """Retourne l'état courant d'une tâche, ou None si inconnue."""
         with self._tasks_lock:
             task = self._tasks.get(task_id)
@@ -204,7 +204,7 @@ class ExecutionEngine:
         status: str | None = None,
         mission_id: str | None = None,
         limit: int = 50,
-    ) -> list[dict]:
+    ) -> list[dict[str, object]]:
         """
         Liste les tâches avec filtres optionnels.
         Triées par created_at décroissant (plus récentes en premier).
@@ -220,7 +220,7 @@ class ExecutionEngine:
         tasks.sort(key=lambda t: t.created_at, reverse=True)
         return [t.to_dict() for t in tasks[:limit]]
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, object]:
         """Statistiques globales du moteur."""
         with self._tasks_lock:
             all_tasks = list(self._tasks.values())
@@ -516,11 +516,11 @@ class ExecutionEngine:
         Exécute le handler dans un thread séparé avec timeout strict.
         Lève _TimeoutSignal si le timeout est dépassé.
         """
-        result_holder: list[Any] = [None]
+        result_holder: list[str | None] = [None]
         error_holder:  list[BaseException | None] = [None]
         done_event = threading.Event()
 
-        def _run():
+        def _run() -> None:
             try:
                 from executor.handlers import get_handler
                 handler = get_handler(task.handler_name)
@@ -544,7 +544,10 @@ class ExecutionEngine:
         if error_holder[0] is not None:
             raise error_holder[0]
 
-        return result_holder[0]
+        result = result_holder[0]
+        if result is None:
+            return ""
+        return result
 
     @staticmethod
     def _sleep_interruptible(seconds: float, cancel_event: threading.Event) -> None:

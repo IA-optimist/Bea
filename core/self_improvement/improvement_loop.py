@@ -181,8 +181,8 @@ class AdoptionGate:
     """
     Final gate for improvement adoption.
 
-    Auto-adopt ONLY for low-risk, non-schema, non-security changes
-    that pass all benchmarks and improve at least one metric.
+    PR-only by default. Even low-risk changes are sent for human review
+    unless a future explicit promotion path is reintroduced.
     """
 
     # Modules that NEVER allow auto-adopt
@@ -203,24 +203,19 @@ class AdoptionGate:
                 requires_human_review=False,
             )
 
-        # Check auto-adopt eligibility
+        # Check promotion eligibility, but keep the default path PR-only.
         auto_eligible = self._check_auto_eligible(experiment, review)
-
-        if auto_eligible and review.verdict == "ACCEPT" and review.confidence >= 0.7:
-            return AdoptionDecision(
-                candidate_id=experiment.candidate_id,
-                outcome="AUTO_ADOPT",
-                reason="Low-risk, all benchmarks pass, critic accepts",
-                requires_human_review=False,
-                auto_adopt_eligible=True,
-            )
 
         if review.verdict == "ACCEPT":
             return AdoptionDecision(
                 candidate_id=experiment.candidate_id,
                 outcome="APPROVE_FOR_REVIEW",
-                reason="Improvement detected but requires human review",
+                reason=(
+                    "Improvement detected; PR-only default keeps a human review "
+                    "step even when auto-eligible"
+                ),
                 requires_human_review=True,
+                auto_adopt_eligible=auto_eligible,
                 review_report=self._build_review_report(experiment, review),
             )
 
@@ -233,7 +228,7 @@ class AdoptionGate:
         )
 
     def _check_auto_eligible(self, experiment: ExperimentResult, review: CriticReview) -> bool:
-        """Auto-adopt only for low-risk changes outside protected scopes."""
+        """Flag low-risk changes that would have been auto-eligible."""
         if experiment.risk_level not in ("LOW",):
             return False
         if not experiment.schema_intact or not experiment.trace_intact or not experiment.safety_intact:
