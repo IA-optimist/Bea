@@ -30,7 +30,7 @@ from fastapi import APIRouter, Depends, Request
 
 logger = logging.getLogger("bea.api.system_v2")
 
-# Fail-hard on auth import: silent fail-open (_auth = None) would make
+# Fail-hard on auth import: a silent fail-open fallback would make
 # every route parameter default to None, bypassing Depends entirely.
 from api._deps import require_auth
 _auth = Depends(require_auth)
@@ -120,7 +120,7 @@ async def set_policy_mode(request: Request, _user: dict = _auth):
 @router.get("/api/v2/metrics/recent")
 async def get_recent_metrics(_user: dict = _auth):
     try:
-        from core.observability import get_observability_store
+        from core.observability.store import get_observability_store
         store = get_observability_store()
         return {"stats": store.get_stats(), "recent": store.get_recent(20)}
     except Exception as e:

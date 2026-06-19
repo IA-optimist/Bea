@@ -152,7 +152,11 @@ async def submit_task(
                         error_type="",
                     ))
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="mission_telemetry_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_telemetry_emit_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
                 return
             # ── Knowledge Memory lookup (fail-open) ──────────────────────────
             _km_bonus_confidence = 0.0
@@ -182,7 +186,11 @@ async def submit_task(
                     if _ms_km2 is not None:
                         _ms_km2.decision_trace["knowledge_match"] = False
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="knowledge_match_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_knowledge_match_trace_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
             # ── end knowledge lookup ──────────────────────────────────────────
 
             # ── Mission Planning (fail-open) ──────────────────────────────────
@@ -272,7 +280,11 @@ async def submit_task(
                         _ms_tt2.decision_trace["available_tools"] = []
                         _ms_tt2.decision_trace["tool_executor_ready"] = False
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="tool_executor_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_tool_executor_trace_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
             # ── end tool trace ────────────────────────────────────────────────
 
             # ── Tool pre-execution (fail-open) ────────────────────────────────
@@ -294,7 +306,11 @@ async def submit_task(
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
             except Exception as _exc:
-                log.warning("swallowed_exception", action="context_enrichment", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_context_enrichment_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
             # ── end tool pre-execution ────────────────────────────────────────
 
             # ── kernel.execute() via KernelAdapter (Pass 26 — R8) ───────────
@@ -467,14 +483,22 @@ async def submit_task(
                             )
                         )
                     except Exception as _exc:
-                        log.warning("swallowed_exception", action="mission_telemetry_emit_v2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                        log.warning(
+                            "missions_telemetry_emit_v2_failed",
+                            exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200],
+                        )
                     # ── Knowledge Memory confidence bonus ──────────────────────────────
                     try:
                         if _km_bonus_confidence > 0:
                             _current_conf = float(_ms_ref.decision_trace.get("confidence_score", 0.5))
                             _ms_ref.decision_trace["confidence_score"] = min(1.0, round(_current_conf + _km_bonus_confidence, 3))
                     except Exception as _exc:
-                        log.warning("swallowed_exception", action="confidence_bonus_apply", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                        log.warning(
+                            "missions_confidence_bonus_apply_failed",
+                            exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200],
+                        )
                     # ── end km bonus ───────────────────────────────────────────────────
                     # ── Mission Planning trace ─────────────────────────────────────────
                     try:
@@ -482,10 +506,18 @@ async def submit_task(
                         _ms_ref.decision_trace["plan_steps"] = _plan_steps_count
                         _ms_ref.decision_trace["plan_success_rate"] = _plan_success_rate
                     except Exception as _exc:
-                        log.warning("swallowed_exception", action="plan_trace_record", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                        log.warning(
+                            "missions_plan_trace_record_failed",
+                            exc_type=type(_exc).__name__,
+                            exc_msg=str(_exc)[:200],
+                        )
                     # ── end plan trace ─────────────────────────────────────────────────
             except Exception as _exc:
-                log.warning("swallowed_exception", action="plan_trace_wrap", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_plan_trace_wrap_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
 
             # Ajout ExecutionPolicy dans decision_trace (fail-open)
             try:
@@ -527,7 +559,11 @@ async def submit_task(
                         _ms_ep2.decision_trace["execution_policy_decision"] = "unknown"
                         _ms_ep2.decision_trace["execution_reason"] = str(_ep_err)
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="execution_policy_trace", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_execution_policy_trace_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
 
             # Policy mode
             try:
@@ -541,7 +577,11 @@ async def submit_task(
                     if _ms_pm2 is not None:
                         _ms_pm2.decision_trace["policy_mode_used"] = "BALANCED"
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="policy_mode_default", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_policy_mode_default_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
 
             # ── Tool results dans decision_trace (fail-open) ──────────────────
             try:
@@ -552,7 +592,11 @@ async def submit_task(
                         k for k, v in _tool_run_results.items() if v.get("ok")
                     ]
             except Exception as _exc:
-                log.warning("swallowed_exception", action="tool_run_results_aggregate", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_tool_run_results_aggregate_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
             # ── end tool results trace ────────────────────────────────────────
 
             ms.set_final_output(result.mission_id, _final)
@@ -590,7 +634,11 @@ async def submit_task(
                         error_type="" if (_final and _final.strip()) else "empty_output",
                     ))
                 except Exception as _exc:
-                    log.warning("swallowed_exception", action="mission_completion_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    log.warning(
+                        "missions_completion_emit_failed",
+                        exc_type=type(_exc).__name__,
+                        exc_msg=str(_exc)[:200],
+                    )
 
             # ── Knowledge Memory store (fail-open) ────────────────────────────
             try:
@@ -609,12 +657,16 @@ async def submit_task(
                     execution_policy_decision=_dt_km_s.get("execution_policy_decision", "unknown"),
                 )
             except Exception as _exc:
-                log.warning("swallowed_exception", action="decision_metrics_record", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_decision_metrics_record_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
             # ── end km store ──────────────────────────────────────────────────
 
             # ── Observability + Self-Improvement trigger (fail-open) ──────────────
             try:
-                from core.observability import get_observability_store, MissionMetrics
+                from core.observability.store import get_observability_store, MissionMetrics
                 import time as _time
                 _obs = get_observability_store()
                 _dur = int((getattr(ms, "_end_ts", _time.time()) - getattr(ms, "_start_ts", _time.time())) * 1000)
@@ -629,7 +681,11 @@ async def submit_task(
                     tools_used=[],  # a enrichir quand les agents utiliseront le tool_registry
                 ))
             except Exception as _exc:
-                log.warning("swallowed_exception", action="mission_event_emit", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_event_emit_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
 
             try:
                 from core.self_improvement import get_self_improvement_manager
@@ -637,7 +693,11 @@ async def submit_task(
                 # Analyse asynchrone legere — ne bloque pas la reponse
                 _sim.analyze_patterns()  # resultat ignore ici, mis en cache implicitement
             except Exception as _exc:
-                log.warning("swallowed_exception", action="self_improvement_pattern_analyze", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                log.warning(
+                    "missions_self_improvement_pattern_analyze_failed",
+                    exc_type=type(_exc).__name__,
+                    exc_msg=str(_exc)[:200],
+                )
             # ── fin Observability ─────────────────────────────────────────────────
 
         except Exception as e:
