@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beamax"
+version = "0.1.0"
+description = "BeaMax / Bea: a self-improving AI operating system for controlled mission execution"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "IA-optimist" }]
+keywords = ["ai", "agents", "fastapi", "automation", "orchestration"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/IA-optimist/Bea"
+Repository = "https://github.com/IA-optimist/Bea"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main", "beamax_cli", "docker_sdk", "metrics_scrape_example"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "adapters*",
+  "agents*",
+  "api*",
+  "business*",
+  "config*",
+  "connectors*",
+  "core*",
+  "executor*",
+  "gateway*",
+  "integrations*",
+  "interfaces*",
+  "kernel*",
+  "memory*",
+  "mcp*",
+  "models*",
+  "modules*",
+  "night_worker*",
+  "plugins*",
+  "quality*",
+  "risk*",
+  "scripts*",
+  "security*",
+  "storage*",
+  "tools*",
+]
+exclude = [
+  "tests*",
+  "docs*",
+  "mobile*",
+  "node_modules*",
+  ".venv*",
+  ".git*",
+  "workspace*",
+  "deploy*",
+  "examples*",
+  "archive*",
+  "test-results*",
+  "__pycache__*",
+]
