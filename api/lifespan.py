@@ -94,6 +94,22 @@ async def _on_startup(app) -> None:  # noqa: ANN001
     except Exception as exc:
         log.warning("mission_recovery_failed", err=str(exc)[:80])
 
+    # Phase checkpointing recovery (ADR-003): cancel stale EXECUTING missions from a
+    # prior crash so they don't ghost in the queue. phase_cursor tells us where they died.
+    try:
+        from core.mission_system import get_mission_system
+        ms = get_mission_system()
+        stale = ms.list_missions(status="EXECUTING", limit=100)
+        for m in stale:
+            crash_phase = getattr(m, "phase_cursor", "") or "unknown"
+            ms.set_phase_cursor(m.mission_id, f"crashed_at:{crash_phase}")
+            ms.cancel(m.mission_id, reason=f"startup_recovery crashed_at:{crash_phase}")
+        if stale:
+            log.warning("startup_stale_missions_reset", count=len(stale),
+                        ids=[m.mission_id for m in stale[:5]])
+    except Exception as exc:
+        log.warning("startup_phase_recovery_failed", err=str(exc)[:80])
+
     # Register MetaOrchestrator as execution backend in BeaKernel.
     # Without this, kernel.execute() logs kernel_execute_no_orchestrator and
     # every mission falls back to fallback_message with zero real output.

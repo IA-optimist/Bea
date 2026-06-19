@@ -97,6 +97,16 @@ class MetaOrchestrator(
         self._circuit_breaker = _CircuitBreaker(failure_threshold=5, reset_s=60.0)
         # Custom mission handlers registry {mission_type: handler_fn}
         self._custom_handlers: dict[str, Callable] = {}
+    # ── Phase checkpointing (ADR-003) ────────────────────────────────────────
+
+    def _checkpoint(self, mission_id: str, phase: str) -> None:
+        """Write phase cursor for crash recovery. Always fail-open."""
+        try:
+            from core.mission_system import get_mission_system
+            get_mission_system().set_phase_cursor(mission_id, phase)
+        except Exception:
+            pass
+
     # ── Lazy accessors ──────────────────────────────────────────────────────
     @property
     def bea(self):
@@ -405,6 +415,7 @@ class MetaOrchestrator(
             self._classify_mission(
                 goal, mode, ctx, trace, _k_classification_obj
             )
+            self._checkpoint(mid, "classify")
             # ── Phase 0b: Match AI OS capabilities (extracted method) ────
             self._match_ai_os_capabilities(
                 goal, ctx, trace, _kernel_precomp_ok
@@ -452,10 +463,12 @@ class MetaOrchestrator(
             rich_ctx = self._assemble_mission_context(mid, goal, ctx, trace)
             # CREATED -> PLANNED
             self._transition(ctx, MissionStatus.PLANNED)
+            self._checkpoint(mid, "plan")
             trace.record("plan", "planned",
                          reason=f"approach={getattr(rich_ctx, 'suggested_approach', 'default')}")
             # PLANNED -> RUNNING
             self._transition(ctx, MissionStatus.RUNNING)
+            self._checkpoint(mid, "execute")
             # ── Creative Mode dispatcher ──────────────────────────────────────────────────
             _creative_ctx = await self._execute_creative_mode(goal, mode, mid, ctx, trace)
             if _creative_ctx is not None:
@@ -549,6 +562,7 @@ class MetaOrchestrator(
             # Skip success handler if mission already in terminal state (fast-path)
             if ctx.status in (MissionStatus.DONE, MissionStatus.FAILED, MissionStatus.CANCELLED):
                 log.info("mission.already_terminal", mission_id=mid, status=ctx.status.value)
+                self._checkpoint(mid, "done")
                 return ctx
             if outcome is not None and outcome.success:
                 # Delegate to success outcome handler (evaluation, retry, memory, learning)

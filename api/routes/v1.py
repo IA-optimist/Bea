@@ -9,14 +9,19 @@ This module defines the stable v1 API surface. All routes here are:
 
 Deprecated routes should be moved to api/routes/legacy/ with deprecation headers.
 """
-from fastapi import APIRouter, HTTPException, Depends
+import structlog
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
 
-from api._deps import require_auth
+from api._deps import require_auth, _get_mission_system, _get_orchestrator
 from config.settings import get_settings
 from core.observability.eval_publisher import load_eval_scores, publish_eval_scores
+
+log = structlog.get_logger(__name__)
+
+_V1_SUNSET = "2026-10-01T00:00:00Z"
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
@@ -80,29 +85,35 @@ class MemoryStoreRequest(BaseModel):
 
 # ── Mission Endpoints ───────────────────────────────────────────────────────
 
-@router.post("/missions", response_model=APIResponse)
+@router.post("/missions", response_model=APIResponse, status_code=201)
 async def submit_mission(
     req: MissionRequest,
+    background_tasks: BackgroundTasks,
     user: dict = Depends(require_auth),
 ) -> APIResponse:
-    """
-    Submit a new mission to Bea.
-    
-    This is the primary entry point for mission execution.
-    """
+    """Submit a new mission to Bea (v1 stable surface)."""
     try:
-        mission_id = f"mission_{uuid.uuid4().hex[:12]}"
-        
-        # In production, this would call the actual orchestrator
-        # For now, return a stub response
+        ms = _get_mission_system()
+        result = ms.submit(req.goal)
+        mission_id = result.mission_id
+
+        async def _execute() -> None:
+            try:
+                orch = _get_orchestrator()
+                if orch and hasattr(orch, "run"):
+                    await orch.run(mission_id=mission_id, user_input=req.goal)
+            except Exception as exc:
+                log.error("v1_mission_exec_failed", mission_id=mission_id, err=str(exc)[:120])
+
+        background_tasks.add_task(_execute)
         return APIResponse(
             status="submitted",
             data=MissionResponse(
                 mission_id=mission_id,
                 status="submitted",
                 goal=req.goal,
-                message=f"Mission submitted. Use GET /api/v1/missions/{mission_id} to check status.",
-            )
+                message=f"Mission submitted. Poll GET /api/v1/missions/{mission_id} for status.",
+            ),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -116,10 +127,14 @@ async def list_missions(
 ) -> APIResponse:
     """List recent missions."""
     try:
-        # Stub implementation
+        ms = _get_mission_system()
+        missions = ms.list_missions(status=status, limit=limit)
         return APIResponse(
             status="success",
-            data={"missions": [], "total": 0}
+            data={
+                "missions": [m.to_dict() for m in missions],
+                "total": len(missions),
+            },
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -132,16 +147,24 @@ async def get_mission_status(
 ) -> APIResponse:
     """Get the current status of a mission."""
     try:
-        # Stub implementation
+        ms = _get_mission_system()
+        r = ms.get(mission_id)
+        if not r:
+            raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found")
+        d = r.to_dict()
         return APIResponse(
             status="success",
             data=MissionStatusResponse(
                 mission_id=mission_id,
-                status="unknown",
-                goal="",
-                created_at="",
-            )
+                status=d.get("status", "unknown"),
+                goal=d.get("user_input", ""),
+                progress=d.get("progress"),
+                created_at=d.get("created_at", ""),
+                completed_at=d.get("completed_at"),
+            ),
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -153,10 +176,14 @@ async def cancel_mission(
 ) -> APIResponse:
     """Cancel a running mission."""
     try:
-        return APIResponse(
-            status="cancelled",
-            data={"mission_id": mission_id}
-        )
+        ms = _get_mission_system()
+        r = ms.get(mission_id)
+        if not r:
+            raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found")
+        ms.cancel(mission_id, reason="v1_api_cancel")
+        return APIResponse(status="cancelled", data={"mission_id": mission_id})
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -168,10 +195,21 @@ async def get_mission_result(
 ) -> APIResponse:
     """Get the final result of a completed mission."""
     try:
+        ms = _get_mission_system()
+        r = ms.get(mission_id)
+        if not r:
+            raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found")
+        d = r.to_dict()
         return APIResponse(
             status="success",
-            data={"mission_id": mission_id, "result": None}
+            data={
+                "mission_id": mission_id,
+                "status": d.get("status", "unknown"),
+                "result": d.get("result") or d.get("final_output"),
+            },
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -301,7 +339,7 @@ async def get_v1_migration_guide(
         return APIResponse(
             status="success",
             data={
-                "sunset": "2026-10-01T00:00:00Z",
+                "sunset": _V1_SUNSET,
                 "notes": "V1 stable surface remains available until sunset. New integrations should target V2/V3.",
                 "routes": routes_list,
             },

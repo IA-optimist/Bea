@@ -965,6 +965,17 @@ class MissionSystem:
                 return None
         return self._gm
 
+    # ── Phase checkpointing (ADR-003) ─────────────────────────────────────────
+
+    def set_phase_cursor(self, mission_id: str, phase: str) -> None:
+        """Record the last completed phase for crash recovery (ADR-003)."""
+        r = self._missions.get(mission_id)
+        if r is None:
+            return
+        r.phase_cursor = phase
+        self._save_mission(r)
+        log.debug("phase_cursor_set", mission_id=mission_id, phase=phase)
+
     # ── Persistance ───────────────────────────────────────────────────────────
 
     def _save_mission(self, result: MissionResult) -> None:
