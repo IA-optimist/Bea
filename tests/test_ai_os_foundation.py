@@ -315,23 +315,23 @@ class TestAPIEndpoints:
 
     def test_AO33_readiness_endpoint(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         # readiness consolidée sous /system/readiness (refactor : plus de /api/v3/readiness)
         assert "/api/v3/system/readiness" in paths
 
     def test_AO34_agents_endpoint(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/agents" in paths
 
     def test_AO35_skills_readiness_endpoint(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills" in paths
 
     def test_AO36_tools_readiness_endpoint(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/tools/readiness" in paths
 
 

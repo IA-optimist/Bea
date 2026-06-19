@@ -601,32 +601,32 @@ class TestAPIRoutes:
     def test_SM56_router_mounted(self):
         """SM56."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         self_model_paths = [p for p in paths if "self-model" in p]
         assert len(self_model_paths) >= 1
 
     def test_SM57_main_route_exists(self):
         """SM57."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model" in paths
 
     def test_SM58_compact_route_exists(self):
         """SM58."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/compact" in paths
 
     def test_SM59_llm_context_route_exists(self):
         """SM59."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/llm-context" in paths
 
     def test_SM60_readiness_route_exists(self):
         """SM60."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/readiness" in paths
 
 
@@ -771,25 +771,25 @@ class TestExtendedAPIRoutes:
     def test_SM71_summary_route_exists(self):
         """SM71."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/summary" in paths
 
     def test_SM72_runtime_route_exists(self):
         """SM72."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/runtime" in paths
 
     def test_SM73_limitations_route_exists(self):
         """SM73."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/limitations" in paths
 
     def test_SM74_autonomy_route_exists(self):
         """SM74."""
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/self-model/autonomy" in paths
 
     @pytest.mark.skipif(
@@ -854,5 +854,5 @@ class TestExtendedAPIRoutes:
     def test_SM80_total_self_model_routes(self):
         """SM80."""
         from api.main import app
-        paths = [r.path for r in app.routes if "self-model" in r.path]
+        paths = [r.path for r in app.routes if hasattr(r, "path") and "self-model" in r.path]
         assert len(paths) >= 10  # 7 original + 4 new

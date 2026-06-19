@@ -44,7 +44,7 @@ class OpenHandsLocalClient:
             "-i",
             str(int(max_iterations)),
         ]
-        
+
         try:
             process = await asyncio.create_subprocess_exec(
                 *args,

@@ -367,7 +367,7 @@ class TestAPI:
 
     def test_MP32_routes_mounted(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/mission-state" in paths
         assert "/api/v3/mission-state/stats" in paths
         assert "/api/v3/mission-state/active" in paths
@@ -375,12 +375,12 @@ class TestAPI:
 
     def test_MP33_resolve_approval_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/mission-state/{mission_id}/resolve-approval" in paths
 
     def test_MP34_mission_detail_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/mission-state/{mission_id}" in paths
 
     def test_MP35_routes_auth_protected(self):

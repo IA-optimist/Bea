@@ -15,8 +15,8 @@ paths = [
   '''plugins/.*README''',        # Docs exemples de config (sk_live_xxx placeholders)
 ]
 
-# Faux-positifs connus — fingerprints spécifiques à allowlister.
-# Vérifiés et confirmés non-secrets avant d'être ajoutés ici.
-[[allowlist.commits]]
-description = "patch_signature.py:164 — nom de variable `private_key` + appel load_pem_private_key(), pas un vrai secret."
-commits = ["9a54d39842e98c8f8d17fdf02bb02e4b8cfe4fa6"]
+# Faux-positifs connus — commits qui déclenchent des FP (nom de variable, pas un vrai secret).
+# Format gitleaks v8: commits = liste de strings directement dans [allowlist].
+commits = [
+  "9a54d39842e98c8f8d17fdf02bb02e4b8cfe4fa6",  # patch_signature.py:164 — variable `private_key`, pas un secret
+]

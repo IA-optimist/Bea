@@ -490,47 +490,47 @@ class TestOperationalAPI:
 
     def test_OI47_tools_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/tools" in paths
 
     def test_OI48_tools_readiness_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/tools/readiness" in paths
 
     def test_OI49_tools_execute_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/tools/{tool_id}/execute" in paths
 
     def test_OI50_plans_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans" in paths
 
     def test_OI51_plans_approve_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/approve" in paths
 
     def test_OI52_templates_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/templates" in paths
 
     def test_OI53_templates_instantiate_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/templates/{template_id}/instantiate" in paths
 
     def test_OI54_execution_history_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/execution-history" in paths
 
     def test_OI55_execution_patterns_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/execution-history/patterns" in paths
 
 

@@ -514,39 +514,39 @@ class TestAPIRoutes:
 
     def test_CR61_routing_status_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing" in paths
 
     def test_CR62_capabilities_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/capabilities" in paths
 
     def test_CR63_resolve_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/resolve" in paths
 
     def test_CR64_route_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/route" in paths
 
     def test_CR65_refresh_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/refresh" in paths
 
     def test_CR66_providers_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         # Path template
         cap_routes = [p for p in paths if "capability-routing/providers" in p]
         assert len(cap_routes) >= 1
 
     def test_CR67_total_routes(self):
         from api.main import app
-        paths = [r.path for r in app.routes if "capability-routing" in r.path]
+        paths = [r.path for r in app.routes if hasattr(r, "path") and "capability-routing" in r.path]
         assert len(paths) >= 6
 
     def test_CR68_no_secret_leakage_in_spec(self):
@@ -788,17 +788,17 @@ class TestExtendedAPI:
 
     def test_CR91_history_route_exists(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/history" in paths
 
     def test_CR92_provider_stats_route_exists(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/provider-stats" in paths
 
     def test_CR93_summary_route_exists(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/capability-routing/summary" in paths
 
     def test_CR98_meta_has_feedback_recording(self):
@@ -819,7 +819,7 @@ class TestExtendedAPI:
 
     def test_CR100_total_routes(self):
         from api.main import app
-        paths = [r.path for r in app.routes if "capability-routing" in r.path]
+        paths = [r.path for r in app.routes if hasattr(r, "path") and "capability-routing" in r.path]
         assert len(paths) >= 9  # 6 original + 3 new
 
 
