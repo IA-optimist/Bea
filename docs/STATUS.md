@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-20**, SHA `7740e5b`.
+> Honest per-component maturity rating. Last verified: **2026-06-20**, SHA `0b4c6f1`.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
@@ -21,6 +21,9 @@ Packaging truth:
 | Docker stack | 🟢 Back in service 2026-06-05 (postgres/redis/qdrant healthy) |
 | Renommage jarvis→bea | ✅ Done 2026-06-07, 823 files, commit `aaee8c6` |
 | Forge-builder | 🟢 Committed 2026-06-12, suite verte Windows |
+| Provider fallback chain | 🟢 FallbackChainProvider T5.2 — 12 tests |
+| Sandbox killswitch | 🟢 DockerSandbox timeout+kill() T5.3 — 11 tests |
+| Windows CI job | 🟢 Added `test-windows` job T5.4 |
 
 **Maturity legend:**
 - 🟢 **PROVEN** — Real implementation, used in runtime, gate-tested
