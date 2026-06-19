@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 
 import structlog
@@ -30,9 +31,9 @@ class ToolResult:
     error:       str  = ""
     risk:        str  = "safe"
     duration_ms: int  = 0
-    meta:        dict = field(default_factory=dict)
+    meta:        dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "tool": self.tool,
@@ -44,9 +45,9 @@ class ToolResult:
         }
 
 
-def _timed(fn):
+def _timed(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator that measures execution time and wraps exceptions."""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         t0 = time.monotonic()
         try:
             result = fn(*args, **kwargs)

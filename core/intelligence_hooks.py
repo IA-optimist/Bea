@@ -18,6 +18,8 @@ Hooks:
 """
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
 log = structlog.get_logger(__name__)
 
@@ -34,7 +36,7 @@ def _hooks_enabled() -> bool:
     return os.environ.get("BEA_INTELLIGENCE_HOOKS", "").lower() in ("1", "true", "yes")
 
 
-def post_mission_submit(mission_id: str, goal: str, **kwargs) -> dict:
+def post_mission_submit(mission_id: str, goal: str, **kwargs: Any) -> dict[str, Any]:
     """
     Called after a mission is submitted.
 
@@ -48,7 +50,7 @@ def post_mission_submit(mission_id: str, goal: str, **kwargs) -> dict:
     if not _hooks_enabled():
         return {}
 
-    enrichment = {}
+    enrichment: dict[str, Any] = {}
     try:
         # Knowledge graph: find similar missions
         try:
@@ -78,7 +80,7 @@ def post_step_complete(
     tool: str = "",
     duration_s: float = 0.0,
     error_type: str = "",
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Called after each mission step completes.
@@ -132,7 +134,7 @@ def post_mission_complete(
     tools_used: list[str] | None = None,
     errors: list[str] | None = None,
     strategy: str = "",
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Called after a mission completes.
@@ -199,7 +201,7 @@ def post_mission_complete(
         log.debug("post_mission_hook_err", err=str(e)[:60])
 
 
-def periodic_health() -> dict:
+def periodic_health() -> dict[str, Any]:
     """
     Periodic health check that gathers intelligence layer status.
 
@@ -208,33 +210,34 @@ def periodic_health() -> dict:
     if not _hooks_enabled():
         return {"hooks_enabled": False}
 
-    status = {"hooks_enabled": True, "components": {}}
+    components: dict[str, Any] = {}
+    status: dict[str, Any] = {"hooks_enabled": True, "components": components}
 
     try:
         # Observability health
         try:
             from core.observability_intelligence import get_system_health
-            status["components"]["observability"] = get_system_health()
+            components["observability"] = get_system_health()
         except ImportError:
-            status["components"]["observability"] = {"status": "not_installed"}
+            components["observability"] = {"status": "not_installed"}
 
         # Knowledge graph stats
         try:
             from core.memory.knowledge_graph import get_knowledge_graph
             graph = get_knowledge_graph(auto_load=False)
-            status["components"]["knowledge_graph"] = graph.stats()
+            components["knowledge_graph"] = graph.stats()
         except ImportError:
-            status["components"]["knowledge_graph"] = {"status": "not_installed"}
+            components["knowledge_graph"] = {"status": "not_installed"}
 
         # Tool evolution pending proposals
         try:
             from core.tools.evolution_engine import _PROPOSALS, _WEAKNESSES
-            status["components"]["tool_evolution"] = {
+            components["tool_evolution"] = {
                 "pending_proposals": len(_PROPOSALS),
                 "tracked_weaknesses": len(_WEAKNESSES),
             }
         except ImportError:
-            status["components"]["tool_evolution"] = {"status": "not_installed"}
+            components["tool_evolution"] = {"status": "not_installed"}
 
     except Exception as e:
         log.debug("periodic_health_err", err=str(e)[:60])

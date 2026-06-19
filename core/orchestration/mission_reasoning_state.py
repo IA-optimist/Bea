@@ -249,7 +249,7 @@ class MissionReasoningState:
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Heuristic patterns per task type
-_TASK_TYPE_PATTERNS: dict[str, dict] = {
+_TASK_TYPE_PATTERNS: dict[str, dict[str, list[str]]] = {
     "code": {
         "failure_modes": [
             "syntax error leaves system broken",
@@ -302,10 +302,10 @@ _COMPLEXITY_PRECONDITIONS: dict[str, list[str]] = {
 def build(
     goal: str,
     mission_id: str,
-    classification: dict | None = None,
-    context: dict | None = None,
+    classification: dict[str, Any] | None = None,
+    context: dict[str, Any] | None = None,
     prior_failures: list[str] | None = None,
-    memory_lessons: list[dict] | None = None,
+    memory_lessons: list[dict[str, Any]] | None = None,
 ) -> MissionReasoningState:
     """
     Build a MissionReasoningState from goal + available signals.
@@ -344,10 +344,10 @@ def build(
 def _build_internal(
     goal: str,
     mission_id: str,
-    classification: dict,
-    context: dict,
+    classification: dict[str, Any],
+    context: dict[str, Any],
     prior_failures: list[str],
-    memory_lessons: list[dict],
+    memory_lessons: list[dict[str, Any]],
 ) -> MissionReasoningState:
     task_type  = str(classification.get("task_type", "general") or "general").lower()
     complexity = str(classification.get("complexity", "moderate") or "moderate").lower()
@@ -428,7 +428,7 @@ def _build_internal(
 
 # ── Inference helpers ──────────────────────────────────────────────────────────
 
-def _infer_initial_state(goal: str, task_type: str, context: dict) -> str:
+def _infer_initial_state(goal: str, task_type: str, context: dict[str, Any]) -> str:
     prior = context.get("prior_skills", [])
     memories = context.get("relevant_memories", [])
 
@@ -466,8 +466,8 @@ def _infer_target_state(goal: str, task_type: str) -> str:
     return f"goal achieved: {goal[:80]}"
 
 
-def _extract_dependencies(goal: str, task_type: str, context: dict) -> list[str]:
-    deps = []
+def _extract_dependencies(goal: str, task_type: str, context: dict[str, Any]) -> list[str]:
+    deps: list[str] = []
     dep_keywords = {
         "database": "database access",
         "api": "external API availability",

@@ -1,9 +1,10 @@
 """test_toolkit — outils de test et healthcheck pour Bea."""
 from __future__ import annotations
 import subprocess  # nosec B404
+from typing import Any
 
 
-def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
+def _ok(output: str, logs: list[str] | None = None, risk_level: str = "low", **extra: Any) -> dict[str, Any]:
     base = {
         "ok": True, "status": "ok",
         "output": output, "result": output,
@@ -13,7 +14,7 @@ def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dic
     return base
 
 
-def _err(error: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
+def _err(error: str, logs: list[str] | None = None, risk_level: str = "low", **extra: Any) -> dict[str, Any]:
     base = {
         "ok": False, "status": "error",
         "output": "", "result": "",
@@ -23,7 +24,7 @@ def _err(error: str, logs: list = None, risk_level: str = "low", **extra) -> dic
     return base
 
 
-def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict:
+def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict[str, Any]:
     """Lance pytest sur test_path. Retourne passed/failed count."""
     try:
         import os
@@ -61,7 +62,7 @@ def run_unit_tests(test_path: str = "tests/", timeout: int = 60) -> dict:
         return _err(str(e), passed=0, failed=0)
 
 
-def run_smoke_tests() -> dict:
+def run_smoke_tests() -> dict[str, Any]:
     """Teste les endpoints clés de Bea en localhost."""
     base_url = "http://localhost:8000"
     endpoints_ok = []
@@ -97,7 +98,7 @@ def run_smoke_tests() -> dict:
         return _err(str(e), endpoints_ok=[], endpoints_fail=[])
 
 
-def api_healthcheck(base_url: str = "http://localhost:8000") -> dict:
+def api_healthcheck(base_url: str = "http://localhost:8000") -> dict[str, Any]:
     """Vérifie /health et /api/v2/system/status. Retourne healthy bool + details."""
     details = {}
     logs = []
@@ -135,7 +136,7 @@ def api_healthcheck(base_url: str = "http://localhost:8000") -> dict:
         return _err(str(e), healthy=False, details={})
 
 
-def test_endpoint(method: str, url: str, payload: dict = None, expected_status: int = 200) -> dict:
+def test_endpoint(method: str, url: str, payload: dict[str, Any] | None = None, expected_status: int = 200) -> dict[str, Any]:
     """Test HTTP générique sur un endpoint."""
     try:
         import requests as _req
@@ -166,4 +167,4 @@ def test_endpoint(method: str, url: str, payload: dict = None, expected_status: 
 
 # Prevent pytest from collecting test_endpoint as a test case.
 # test_endpoint is a utility function ("test an endpoint"), not a pytest test.
-test_endpoint.__test__ = False
+setattr(test_endpoint, "__test__", False)

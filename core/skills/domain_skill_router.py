@@ -40,7 +40,7 @@ class SkillMeta:
     expected_output_type: str = "report"             # report | artifact | action | assessment
     tags: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id, "name": self.name, "domain": self.domain,
             "subdomain": self.subdomain, "description": self.description,
@@ -62,7 +62,7 @@ class BaseDomainRouter(ABC):
       - capability_to_domain_map(): mapping from capability_id → domain string
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._skills: dict[str, SkillMeta] = {}
         self._loaded = False
 

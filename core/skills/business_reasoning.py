@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 import structlog
 
@@ -77,7 +78,7 @@ class FeasibilityScore:
             3,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "complexity": self.complexity,
             "estimated_demand": self.estimated_demand,
@@ -106,7 +107,7 @@ class BusinessOpportunity:
     feasibility: FeasibilityScore = field(default_factory=FeasibilityScore)
     next_steps: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "summary": self.summary,
             "target_customer": self.target_customer,
@@ -157,7 +158,7 @@ class LandingPageStructure:
     call_to_action: str = ""
     contact_method: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "headline": self.headline,
             "problem_statement": self.problem_statement,

@@ -16,7 +16,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 import structlog
 
@@ -39,13 +39,13 @@ class ConfidenceScore:
     """Structured confidence assessment for a decision."""
     decision_type: DecisionType = DecisionType.ROUTING
     chosen_option: str = ""
-    alternatives_considered: List[str] = field(default_factory=list)
+    alternatives_considered: list[str] = field(default_factory=list)
     score: float = 0.5  # 0.0-1.0
-    factors: List[Dict[str, Any]] = field(default_factory=list)
+    factors: list[dict[str, Any]] = field(default_factory=list)
     reasoning: str = ""
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "decision_type": self.decision_type.value,
             "chosen_option": self.chosen_option,
@@ -64,16 +64,16 @@ class DecisionConfidence:
     provides explainability and calibration feedback.
     """
 
-    def __init__(self, reputation_tracker=None, learning_traces=None):
+    def __init__(self, reputation_tracker: Any | None = None, learning_traces: Any | None = None) -> None:
         self._reputation = reputation_tracker
         self._traces = learning_traces
-        self._history: List[ConfidenceScore] = []
+        self._history: list[ConfidenceScore] = []
         self._max_history = 1000
 
     def score_agent_selection(
         self,
         chosen_agent: str,
-        candidates: List[str],
+        candidates: list[str],
         task_context: str = "",
     ) -> ConfidenceScore:
         """Score confidence in selecting a specific agent."""
@@ -175,10 +175,10 @@ class DecisionConfidence:
         self._record(result)
         return result
 
-    def get_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(self, limit: int = 50) -> list[dict[str, Any]]:
         return [s.to_dict() for s in self._history[-limit:]]
 
-    def calibration_report(self) -> Dict[str, Any]:
+    def calibration_report(self) -> dict[str, Any]:
         """How well-calibrated are our confidence scores?"""
         if not self._history:
             return {"total_decisions": 0, "avg_confidence": 0}

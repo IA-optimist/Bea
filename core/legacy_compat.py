@@ -163,7 +163,7 @@ AUTHORITY_MAP = {
 }
 
 
-def get_authority_map() -> dict:
+def get_authority_map() -> dict[str, object]:
     """Return the system authority map."""
     return AUTHORITY_MAP
 
@@ -197,6 +197,6 @@ DEPRECATIONS = [
 ]
 
 
-def get_deprecations() -> list:
+def get_deprecations() -> list[dict[str, str]]:
     """Return list of identified deprecations."""
     return DEPRECATIONS

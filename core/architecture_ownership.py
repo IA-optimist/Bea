@@ -19,12 +19,13 @@ KNOWN DUPLICATIONS (to be resolved):
   - Planner: planner.py AND mission_planner.py (canonical: planner.py)
 """
 from __future__ import annotations
+from typing import Any
 
 # ═══════════════════════════════════════════════════════════════
 # CANONICAL OWNERSHIP MAP
 # ═══════════════════════════════════════════════════════════════
 
-OWNERSHIP = {
+OWNERSHIP: dict[str, dict[str, Any]] = {
     # --- Lifecycle ---
     "mission_lifecycle": {
         "canonical": "core.mission_system.MissionSystem",
@@ -122,11 +123,11 @@ OWNERSHIP = {
 }
 
 
-def get_ownership_map() -> dict:
+def get_ownership_map() -> dict[str, dict[str, Any]]:
     return OWNERSHIP
 
 
-def get_known_duplications() -> list[dict]:
+def get_known_duplications() -> list[dict[str, Any]]:
     """Return known duplication issues that should be resolved."""
     return [
         {
@@ -168,7 +169,7 @@ def get_known_duplications() -> list[dict]:
 # DEPRECATION REGISTRY
 # ═══════════════════════════════════════════════════════════════
 
-DEPRECATED_MODULES = {
+DEPRECATED_MODULES: dict[str, dict[str, Any]] = {
     "core.orchestrator": {
         "replacement": "core.meta_orchestrator.MetaOrchestrator",
         "reason": "Legacy orchestrator superseded by MetaOrchestrator",
@@ -187,22 +188,22 @@ DEPRECATED_MODULES = {
 }
 
 
-def get_deprecated_modules() -> dict:
+def get_deprecated_modules() -> dict[str, dict[str, Any]]:
     return DEPRECATED_MODULES
 
 
-def validate_ownership() -> dict:
+def validate_ownership() -> dict[str, object]:
     """
     Validate architecture ownership rules.
     Returns {"valid": bool, "violations": list, "duplications": list}
     """
-    violations = []
+    violations: list[str] = []
     duplications = get_known_duplications()
 
     # Check that canonical files exist
     import os
     for resp, info in OWNERSHIP.items():
-        canonical = info.get("canonical", "")
+        canonical = str(info.get("canonical", ""))
         if not canonical:
             continue
         # Convert module path to file path

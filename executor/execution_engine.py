@@ -28,8 +28,6 @@ from __future__ import annotations
 import heapq
 import threading
 import time
-from typing import cast
-
 import structlog
 
 from executor.task_model import (
@@ -152,7 +150,7 @@ class ExecutionEngine:
             priority=task.priority,
             description=task.description[:80],
         )
-        return cast(str, task.id)
+        return task.id
 
     def cancel(self, task_id: str) -> bool:
         """

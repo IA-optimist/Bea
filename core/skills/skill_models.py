@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
-from typing import Optional
+from typing import Any
 
 
 @dataclass
@@ -45,22 +45,22 @@ class Skill:
     risk_level: str = "low"         # low / medium / high
     use_count: int = 0
     success_count: int = 0
-    last_used_at: Optional[float] = None
+    last_used_at: float | None = None
 
     # Provenance
     source_mission_id: str = ""
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["steps"] = [asdict(s) for s in self.steps]
         return d
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Skill":
+    def from_dict(cls, d: dict[str, Any]) -> "Skill":
         steps_raw = d.pop("steps", [])
-        steps = [SkillStep(**s) if isinstance(s, dict) else s for s in steps_raw]
+        steps: list[SkillStep] = [SkillStep(**s) if isinstance(s, dict) else s for s in steps_raw]
         return cls(steps=steps, **d)
 
     def text_for_search(self) -> str:

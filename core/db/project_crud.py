@@ -14,7 +14,7 @@ log = structlog.get_logger(__name__)
 _pool: Optional[asyncpg.Pool] = None
 
 
-async def init_pool(dsn: str):
+async def init_pool(dsn: str) -> None:
     """Initialize connection pool.
 
     Configuration robuste (aligné sur FIX 3 de la branche master) :
@@ -138,8 +138,8 @@ async def update_project(
         return None
     
     # Build dynamic UPDATE
-    updates = []
-    params = []
+    updates: list[str] = []
+    params: list[Any] = []
     param_idx = 1
     
     if name is not None:
@@ -189,6 +189,7 @@ async def delete_project(project_id: str, soft: bool = True) -> bool:
         return False
     
     async with _pool.acquire() as conn:
+        result: str
         if soft:
             result = await conn.execute(
                 "UPDATE projects SET deleted_at = NOW() WHERE id = $1",

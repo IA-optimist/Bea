@@ -22,6 +22,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class Role(str, Enum):
@@ -68,7 +69,7 @@ class SecretPolicy:
     max_uses_per_hour: int = 100
     expires_at: float | None = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "allowed_agents": self.allowed_agents,
             "allowed_domains": self.allowed_domains,
@@ -80,7 +81,7 @@ class SecretPolicy:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "SecretPolicy":
+    def from_dict(cls, data: dict[str, Any]) -> "SecretPolicy":
         return cls(
             allowed_agents=data.get("allowed_agents", ["*"]),
             allowed_domains=data.get("allowed_domains", ["*"]),
@@ -107,7 +108,7 @@ class SecretMetadata:
     last_used_at: float | None = None
     revoked: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.secret_id, "name": self.name,
             "type": self.secret_type, "description": self.description[:200],
@@ -138,7 +139,7 @@ def check_permission(role: str, action: str) -> bool:
 class PolicyEngine:
     """Evaluates access requests against secret policies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._use_counts: dict[str, list[float]] = {}  # secret_id → [timestamps]
 
     def check_use(

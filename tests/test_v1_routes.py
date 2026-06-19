@@ -31,6 +31,7 @@ def test_v1_migration_guide_returns_matrix(client) -> None:
 def test_v1_evaluations_returns_placeholder(client, tmp_path: Path) -> None:
     from core.observability import eval_publisher
 
+    original = eval_publisher._DEFAULT_SCORE_FILE
     tmp_file = tmp_path / "eval_scores.json"
     eval_publisher._DEFAULT_SCORE_FILE = tmp_file
     try:
@@ -39,4 +40,4 @@ def test_v1_evaluations_returns_placeholder(client, tmp_path: Path) -> None:
         body = resp.json()
         assert body["data"]["status"] in ("ok", "not_run")
     finally:
-        eval_publisher._DEFAULT_SCORE_FILE = None
+        eval_publisher._DEFAULT_SCORE_FILE = original

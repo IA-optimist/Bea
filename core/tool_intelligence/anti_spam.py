@@ -5,7 +5,7 @@ Fail-open: if check fails, always returns (allowed=True).
 """
 import structlog
 from collections import defaultdict
-from typing import Dict, List
+from typing import Any
 
 logger = structlog.get_logger(__name__)
 log = logger  # M3 emitter alias
@@ -15,10 +15,10 @@ MAX_RETRY_PER_TASK = 3
 MAX_TOTAL_TOOLS_PER_OBJECTIVE = 30
 
 # In-memory state (resets on container restart — intentional, lightweight)
-_task_tool_history: Dict[str, List[str]] = defaultdict(list)
-_objective_tool_counts: Dict[str, int] = defaultdict(int)
+_task_tool_history: dict[str, list[str]] = defaultdict(list)
+_objective_tool_counts: dict[str, int] = defaultdict(int)
 
-def check_tool_allowed(tool_name: str, task_id: str = "", objective_id: str = "") -> dict:
+def check_tool_allowed(tool_name: str, task_id: str = "", objective_id: str = "") -> dict[str, Any]:
     """
     Returns {allowed: bool, reason: str, action: str}.
     action: 'proceed' | 'replan' | 'request_validation' | 'stop'

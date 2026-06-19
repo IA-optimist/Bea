@@ -7,6 +7,7 @@ Each chain produces a comprehensive artifact bundle.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -19,7 +20,7 @@ class SkillChain:
     action_sequence: list[str]  # business actions to execute
     tags: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "chain_id": self.chain_id,
             "name": self.name,
@@ -84,7 +85,7 @@ CHAIN_REGISTRY: dict[str, SkillChain] = {
 }
 
 
-def list_chains() -> list[dict]:
+def list_chains() -> list[dict[str, Any]]:
     return [c.to_dict() for c in CHAIN_REGISTRY.values()]
 
 

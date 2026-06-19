@@ -18,7 +18,7 @@ import structlog
 log = structlog.get_logger(__name__)
 
 
-def _get_db_connection():
+def _get_db_connection() -> Any:
     """Get PostgreSQL connection."""
     try:
         import psycopg2
@@ -40,7 +40,7 @@ def _get_db_connection():
 def store_memory(
     key: str,
     value: str,
-    tags: Optional[list[str]] = None,
+    tags: list[str] | None = None,
     project_id: Optional[str | UUID] = None
 ) -> bool:
     """
@@ -90,7 +90,7 @@ def store_memory(
 def get_memory(
     key: str,
     project_id: Optional[str | UUID] = None
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Retrieve a memory entry by key, optionally filtered by project.
     
@@ -131,7 +131,7 @@ def get_memory(
 
 def search_memories(
     query: Optional[str] = None,
-    tags: Optional[list[str]] = None,
+    tags: list[str] | None = None,
     project_id: Optional[str | UUID] = None,
     limit: int = 10
 ) -> list[dict[str, Any]]:
@@ -155,8 +155,8 @@ def search_memories(
         proj_id_str = str(project_id) if project_id else None
         
         # Build query dynamically
-        conditions = []
-        params = []
+        conditions: list[str] = []
+        params: list[Any] = []
         
         if proj_id_str:
             conditions.append("project_id = %s")
