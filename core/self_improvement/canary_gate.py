@@ -10,7 +10,7 @@ compile/syntax errors so bad patches never reach PROMOTE.
 """
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -87,7 +87,7 @@ class CanaryGate:
             return CanaryResult(passed=True, reason="no_python_files", skipped=True)
 
         try:
-            proc = subprocess.run(
+            proc = subprocess.run(  # nosec B603 B607
                 [sys.executable, "-m", "py_compile"] + [str(f) for f in py_files],
                 capture_output=True,
                 text=True,

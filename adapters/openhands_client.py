@@ -31,7 +31,7 @@ class OpenHandsLocalClient:
             (Success, Log Résumé)
         """
         log.info("openhands_mission_delegated", prompt_preview=prompt[:50])
-        
+
         target_path = Path(target_workspace).absolute()
         args = [
             sys.executable,

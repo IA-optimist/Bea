@@ -20,7 +20,7 @@ EXPECTED_PUBLIC_PATHS = {
 }
 
 
-@pytest.mark.parametrize("path", EXPECTED_PUBLIC_PATHS)
+@pytest.mark.parametrize("path", sorted(EXPECTED_PUBLIC_PATHS))
 def test_public_path_allowlist(path: str) -> None:
     assert is_public_path(path), f"{path} should be public"
 

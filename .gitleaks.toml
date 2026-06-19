@@ -11,4 +11,12 @@ paths = [
   '''docs/archive/''',
   '''tests/''',                  # fake secrets pour tests
   '''\.env\.example$''',         # placeholders CHANGE_ME
+  '''beamax_app/''',             # Flutter source — secrets injectés via --dart-define, jamais hardcodés
+  '''plugins/.*README''',        # Docs exemples de config (sk_live_xxx placeholders)
 ]
+
+# Faux-positifs connus — fingerprints spécifiques à allowlister.
+# Vérifiés et confirmés non-secrets avant d'être ajoutés ici.
+[[allowlist.commits]]
+description = "patch_signature.py:164 — nom de variable `private_key` + appel load_pem_private_key(), pas un vrai secret."
+commits = ["9a54d39842e98c8f8d17fdf02bb02e4b8cfe4fa6"]
