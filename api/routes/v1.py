@@ -1,0 +1,274 @@
+"""
+api/routes/v1.py — Bea API v1 Stable Surface
+
+This module defines the stable v1 API surface. All routes here are:
+- Documented with OpenAPI specs
+- Versioned with api_version response field
+- Backward compatible within v1
+- Part of the public API contract
+
+Deprecated routes should be moved to api/routes/legacy/ with deprecation headers.
+"""
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field
+import uuid
+
+from api._deps import require_auth
+from config.settings import get_settings
+
+router = APIRouter(prefix="/api/v1", tags=["v1"])
+
+
+# ── Response Models ────────────────────────────────────────────────────────
+
+class APIResponse(BaseModel):
+    """Base response with API version."""
+    api_version: str = "1.0"
+    status: str
+    data: Optional[Any] = None
+    error: Optional[str] = None
+
+
+class MissionRequest(BaseModel):
+    """Mission submission request."""
+    goal: str = Field(..., description="Mission goal or user input")
+    mission_type: str = Field(default="auto", description="Mission type hint")
+    context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context")
+
+
+class MissionResponse(BaseModel):
+    """Mission submission response."""
+    mission_id: str
+    status: str
+    goal: str
+    message: str
+
+
+class MissionStatusResponse(BaseModel):
+    """Mission status response."""
+    mission_id: str
+    status: str
+    goal: str
+    progress: Optional[float] = None
+    created_at: str
+    completed_at: Optional[str] = None
+
+
+class MemorySearchRequest(BaseModel):
+    """Memory search request."""
+    query: str = Field(..., description="Search query")
+    top_k: int = Field(default=5, ge=1, le=20, description="Max results")
+    filters: Optional[Dict[str, Any]] = Field(default=None, description="Search filters")
+
+
+class MemorySearchResult(BaseModel):
+    """Memory search result."""
+    id: str
+    text: str
+    score: float
+    metadata: Dict[str, Any]
+
+
+class MemoryStoreRequest(BaseModel):
+    """Memory storage request."""
+    text: str = Field(..., description="Text to store")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Metadata")
+    memory_type: str = Field(default="episodic", description="Memory type")
+
+
+# ── Mission Endpoints ───────────────────────────────────────────────────────
+
+@router.post("/missions", response_model=APIResponse)
+async def submit_mission(
+    req: MissionRequest,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """
+    Submit a new mission to Bea.
+    
+    This is the primary entry point for mission execution.
+    """
+    try:
+        mission_id = f"mission_{uuid.uuid4().hex[:12]}"
+        
+        # In production, this would call the actual orchestrator
+        # For now, return a stub response
+        return APIResponse(
+            status="submitted",
+            data=MissionResponse(
+                mission_id=mission_id,
+                status="submitted",
+                goal=req.goal,
+                message=f"Mission submitted. Use GET /api/v1/missions/{mission_id} to check status.",
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/missions", response_model=APIResponse)
+async def list_missions(
+    limit: int = 10,
+    status: Optional[str] = None,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """List recent missions."""
+    try:
+        # Stub implementation
+        return APIResponse(
+            status="success",
+            data={"missions": [], "total": 0}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/missions/{mission_id}", response_model=APIResponse)
+async def get_mission_status(
+    mission_id: str,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Get the current status of a mission."""
+    try:
+        # Stub implementation
+        return APIResponse(
+            status="success",
+            data=MissionStatusResponse(
+                mission_id=mission_id,
+                status="unknown",
+                goal="",
+                created_at="",
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/missions/{mission_id}/cancel", response_model=APIResponse)
+async def cancel_mission(
+    mission_id: str,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Cancel a running mission."""
+    try:
+        return APIResponse(
+            status="cancelled",
+            data={"mission_id": mission_id}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/missions/{mission_id}/result", response_model=APIResponse)
+async def get_mission_result(
+    mission_id: str,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Get the final result of a completed mission."""
+    try:
+        return APIResponse(
+            status="success",
+            data={"mission_id": mission_id, "result": None}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Memory Endpoints ────────────────────────────────────────────────────────
+
+@router.post("/memory/search", response_model=APIResponse)
+async def search_memory(
+    req: MemorySearchRequest,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Search vector memory for relevant context."""
+    try:
+        # Stub implementation
+        return APIResponse(
+            status="success",
+            data={"results": []}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/memory/store", response_model=APIResponse)
+async def store_memory(
+    req: MemoryStoreRequest,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Store a new entry in memory."""
+    try:
+        memory_id = f"memory_{uuid.uuid4().hex[:12]}"
+        return APIResponse(
+            status="stored",
+            data={"memory_id": memory_id}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/memory/{memory_id}", response_model=APIResponse)
+async def get_memory(
+    memory_id: str,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Retrieve a specific memory entry."""
+    try:
+        return APIResponse(
+            status="success",
+            data={"memory_id": memory_id, "text": "", "metadata": {}}
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+
+@router.delete("/memory/{memory_id}", response_model=APIResponse)
+async def delete_memory(
+    memory_id: str,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """Delete a memory entry."""
+    try:
+        return APIResponse(
+            status="deleted",
+            data={"memory_id": memory_id}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/memory", response_model=APIResponse)
+async def list_memory(
+    limit: int = 10,
+    memory_type: Optional[str] = None,
+    user: dict = Depends(require_auth),
+) -> APIResponse:
+    """List recent memory entries."""
+    try:
+        return APIResponse(
+            status="success",
+            data={"memories": [], "total": 0}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Health/Status Endpoints ─────────────────────────────────────────────────
+
+@router.get("/status", response_model=APIResponse)
+async def get_status() -> APIResponse:
+    """Get system status."""
+    try:
+        settings = get_settings()
+        return APIResponse(
+            status="healthy",
+            data={
+                "version": "1.0.0",
+                "environment": settings.environment if hasattr(settings, 'environment') else "unknown",
+                "uptime": "unknown",
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,0 +1,32 @@
+{
+  "manifest_version": "1.0",
+  "tool_id": "network:http",
+  "name": "HTTP Request",
+  "description": "Make HTTP requests to external services",
+  "version": "1.0.0",
+  "author": "Bea Team",
+  "permissions": [
+    {
+      "resource_type": "network",
+      "scope": "network",
+      "allowed_patterns": [
+        "https://**",
+        "http://localhost:*"
+      ],
+      "denied_patterns": [
+        "http://10.0.0.0/**",
+        "http://192.168.**"
+      ],
+      "requires_approval": false
+    }
+  ],
+  "risk_level": "medium",
+  "requires_secrets": [
+    "API_TOKEN"
+  ],
+  "requires_network": true,
+  "requires_approval": false,
+  "dangerous_actions": [],
+  "signature": "sha256:b20f169022ce6240722deb28bad7a9273e6f2fcc5c77af6ea80bf8180423d498",
+  "created_at": "2026-06-19T00:00:00Z"
+}

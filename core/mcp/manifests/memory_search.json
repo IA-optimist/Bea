@@ -1,0 +1,26 @@
+{
+  "manifest_version": "1.0",
+  "tool_id": "memory:search",
+  "name": "Memory Search",
+  "description": "Search vector memory for relevant context",
+  "version": "1.0.0",
+  "author": "Bea Team",
+  "permissions": [
+    {
+      "resource_type": "api",
+      "scope": "read",
+      "allowed_patterns": [
+        "memory/**"
+      ],
+      "denied_patterns": [],
+      "requires_approval": false
+    }
+  ],
+  "risk_level": "low",
+  "requires_secrets": [],
+  "requires_network": false,
+  "requires_approval": false,
+  "dangerous_actions": [],
+  "signature": "sha256:a9919c36bd1a9498ba5e5e8c6448010a2283a13312d0c368378a809dc848540b",
+  "created_at": "2026-06-19T00:00:00Z"
+}

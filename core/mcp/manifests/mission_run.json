@@ -1,0 +1,29 @@
+{
+  "manifest_version": "1.0",
+  "tool_id": "mission:run",
+  "name": "Run Mission",
+  "description": "Submit and execute a Bea mission",
+  "version": "1.0.0",
+  "author": "Bea Team",
+  "permissions": [
+    {
+      "resource_type": "api",
+      "scope": "write",
+      "allowed_patterns": [
+        "mission/**"
+      ],
+      "denied_patterns": [],
+      "requires_approval": true
+    }
+  ],
+  "risk_level": "high",
+  "requires_secrets": [],
+  "requires_network": false,
+  "requires_approval": true,
+  "dangerous_actions": [
+    "destructive_mission",
+    "payment_mission"
+  ],
+  "signature": "sha256:2921ceaded55392b6f910729aaa7e567258ef806290805916c0e28e8e4cfa474",
+  "created_at": "2026-06-19T00:00:00Z"
+}
