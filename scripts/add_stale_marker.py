@@ -4,7 +4,6 @@ or xfail(drift/removed/missing/absent/not implemented/not wired).
 Does NOT modify logic — only inserts the decorator line.
 """
 import re
-import sys
 from pathlib import Path
 
 TESTS_DIR = Path("tests")
