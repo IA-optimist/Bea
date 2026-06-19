@@ -43,6 +43,13 @@ def main() -> int:
     failures: list[str] = []
     skips: list[str] = []
 
+    # Lock-drift check must be first (mirrors CI order: step 1 before ruff)
+    if _run(
+        "lock-drift",
+        [sys.executable, "scripts/check_requirements_lock.py", "requirements.txt", "requirements.lock"],
+    ) != 0:
+        failures.append("lock-drift")
+
     if _run("ruff", [sys.executable, "-m", "ruff", "check", "."]) != 0:
         failures.append("ruff")
 

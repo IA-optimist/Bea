@@ -1,12 +1,13 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-19**, SHA `cb19eae`.
+> Honest per-component maturity rating. Last verified: **2026-06-20**, SHA `7740e5b`.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
 - License: MIT
-- Build metadata: `pyproject.toml`
+- Build metadata: `pyproject.toml` (PEP 621, `name=beamax`, `version=0.1.0`)
 - Version line: SemVer `0.x` until the public API is frozen
+- Wheel validated: `python -m build` → `beamax-0.1.0-py3-none-any.whl`, `import beamax_cli / core / api` OK (T1.5 ✅)
 
 ## Summary (June 2026)
 
