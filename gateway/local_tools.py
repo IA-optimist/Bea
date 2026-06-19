@@ -14,10 +14,12 @@ import re
 import shlex
 import subprocess
 import sys
+import logging
 from pathlib import Path
 
 _TIMEOUT = 30          # s par exécution
 _MAX_OUT = 4000        # chars de sortie renvoyés au modèle
+logger = logging.getLogger(__name__)
 
 # Commandes manifestement catastrophiques -> refus dur (le modèle n'est pas parfait).
 _BLOCKLIST = re.compile(
@@ -45,12 +47,10 @@ def execute_shell(args: dict) -> str:
     if _BLOCKLIST.search(cmd):
         return "REFUSÉ: commande bloquée (potentiellement destructive)."
     _SHELL_META = set('|&;<>()$`')
-    needs_shell = any(c in _SHELL_META for c in cmd)
+    if any(c in _SHELL_META for c in cmd):
+        return "REFUSÉ: commande avec métacaractères shell non autorisée."
     try:
-        if needs_shell:
-            p = subprocess.run(cmd, shell=True, capture_output=True, text=True,  # nosec S602
-                               timeout=_TIMEOUT, encoding="utf-8", errors="replace")
-        elif os.name == "nt":
+        if os.name == "nt":
             p = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True,
                                timeout=_TIMEOUT, encoding="utf-8", errors="replace")
         else:
@@ -61,6 +61,7 @@ def execute_shell(args: dict) -> str:
     except subprocess.TimeoutExpired:
         return f"erreur: timeout après {_TIMEOUT}s"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_execute_shell_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -76,6 +77,7 @@ def execute_python(args: dict) -> str:
     except subprocess.TimeoutExpired:
         return f"erreur: timeout après {_TIMEOUT}s"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_execute_python_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -86,6 +88,7 @@ def read_file(args: dict) -> str:
     try:
         return _truncate(Path(path).expanduser().read_text(encoding="utf-8", errors="replace"))
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_read_file_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -100,6 +103,7 @@ def write_file(args: dict) -> str:
         p.write_text(str(content), encoding="utf-8")
         return f"ok: {len(str(content))} chars écrits dans {p}"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_write_file_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -121,6 +125,7 @@ def edit_file(args: dict) -> str:
         p.write_text(content.replace(old, str(new)), encoding="utf-8")
         return f"ok: {n if args.get('all') else 1} remplacement(s) dans {p}"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_edit_file_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -138,6 +143,7 @@ def list_dir(args: dict) -> str:
             out.append(f"📁 {c.name}/" if c.is_dir() else f"📄 {c.name}  ({c.stat().st_size} o)")
         return "\n".join(out) or "(dossier vide)"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_list_dir_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -166,9 +172,11 @@ def grep_search(args: dict) -> str:
                         if len(out) >= 60:
                             return "\n".join(out) + "\n…(tronqué)"
             except Exception:  # noqa: BLE001
+                logger.debug("local_tools_grep_search_file_failed", path=str(f), exc_info=True)
                 continue
         return "\n".join(out) if out else "AUCUN_RESULTAT"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_grep_search_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -184,6 +192,7 @@ def glob_search(args: dict) -> str:
                 if not any(s in str(p) for s in ("__pycache__", ".git", ".venv"))]
         return "\n".join(hits) if hits else "AUCUN_FICHIER"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_glob_search_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -224,6 +233,7 @@ def web_search(args: dict) -> str:
             out.append(f"- {title}\n  {url}\n  {snippet[:220]}")
         return "\n".join(out) if out else "AUCUN_RESULTAT_WEB"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_web_search_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -242,6 +252,7 @@ def _ssrf_block(url: str) -> str:
     try:
         infos = socket.getaddrinfo(host, None)
     except Exception:  # noqa: BLE001
+        logger.debug("local_tools_ssrf_resolve_failed", host=host, exc_info=True)
         return ""        # ne résout pas -> l'appel échouera normalement (pas un bypass)
     for info in infos:
         try:
@@ -274,6 +285,7 @@ def web_fetch(args: dict) -> str:
         text = " ".join(soup.get_text(" ", strip=True).split())
         return _truncate(text or "(page vide)")
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_web_fetch_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -342,6 +354,7 @@ def image_generate(args: dict) -> str:
             return f"erreur: génération image HTTP {r.status_code}"
         return "service image saturé (réessaie dans un instant)."
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_image_generate_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -362,6 +375,7 @@ def delegate_task(args: dict) -> str:
             return f"[sous-agent] {(r.json().get('response') or '')[:1500]}"
         return f"erreur: agent HTTP {r.status_code}"
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_delegate_task_failed", exc_info=True)
         return f"erreur: agent indisponible ({e})"
 
 
@@ -454,6 +468,7 @@ def knowledge_search(args: dict) -> str:
         return "\n\n".join(f"[source: {h['source']} · pertinence {h['score']}]\n{h['text'][:700]}"
                            for h in hits)
     except Exception as e:  # noqa: BLE001
+        logger.debug("local_tools_knowledge_search_failed", exc_info=True)
         return f"erreur: {e}"
 
 
@@ -589,7 +604,7 @@ def parse_tool_call(text: str) -> dict | None:
         if isinstance(d, dict) and d.get("tool"):
             return {"tool": d["tool"], "arguments": d.get("arguments", {}) or {}}
     except Exception:  # noqa: BLE001
-        pass
+        logger.debug("parse_tool_call_structured_output_failed", exc_info=True)
     return None
 
 
