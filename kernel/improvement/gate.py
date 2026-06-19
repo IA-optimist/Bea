@@ -311,9 +311,16 @@ class ImprovementGate:
             history = []
             if p.exists():
                 history = json.loads(p.read_text("utf-8")) or []
+            # T4.5 — Record build digest for reproducibility
+            try:
+                from core.self_improvement.build_digest import compute_build_digest
+                _bd = compute_build_digest()
+            except Exception:
+                _bd = {}
             history.append({
                 "timestamp": time.time(),
                 "outcome": outcome,
+                "build_digest": _bd,
                 **(metadata or {}),
             })
             p.write_text(json.dumps(history[-100:], indent=2, default=str), encoding="utf-8")
