@@ -21,9 +21,11 @@ class StripePlugin:
         version="1.0.0",
         description="Stripe payment processing, subscription management, and billing operations",
         author="Bea Team",
+        capability_type="integration",
         risk_level="high",
-        required_secrets=["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY"],
-        required_configs=["STRIPE_DEFAULT_CURRENCY"],
+        required_config=["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_DEFAULT_CURRENCY"],
+        requires_approval=True,
+        tags=["payments", "stripe"],
     )
     
     def __init__(self):

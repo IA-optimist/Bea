@@ -8,6 +8,14 @@ import httpx
 from bea_sdk.exceptions import MemoryError
 
 
+def _unwrap(response: httpx.Response) -> Any:
+    """Extract data from the APIResponse envelope used by Bea v1."""
+    payload = response.json()
+    if isinstance(payload, dict) and "data" in payload:
+        return payload["data"]
+    return payload
+
+
 class MemoryClient:
     """
     Client for memory-related operations.
@@ -47,7 +55,7 @@ class MemoryClient:
             }
             response = self._client.post("/api/v1/memory/search", json=payload)
             response.raise_for_status()
-            return response.json().get("results", [])
+            return _unwrap(response).get("results", [])
         except httpx.HTTPStatusError as e:
             raise MemoryError(f"Memory search failed: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -78,7 +86,7 @@ class MemoryClient:
             }
             response = self._client.post("/api/v1/memory/store", json=payload)
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             raise MemoryError(f"Memory storage failed: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -97,7 +105,7 @@ class MemoryClient:
         try:
             response = self._client.get(f"/api/v1/memory/{memory_id}")
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise MemoryError(f"Memory not found: {memory_id}")
@@ -118,7 +126,7 @@ class MemoryClient:
         try:
             response = self._client.delete(f"/api/v1/memory/{memory_id}")
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             raise MemoryError(f"Memory deletion failed: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -146,7 +154,7 @@ class MemoryClient:
 
             response = self._client.get("/api/v1/memory", params=params)
             response.raise_for_status()
-            return response.json().get("memories", [])
+            return _unwrap(response).get("memories", [])
         except httpx.HTTPStatusError as e:
             raise MemoryError(f"Failed to list memory: {e.response.status_code}")
         except httpx.RequestError as e:

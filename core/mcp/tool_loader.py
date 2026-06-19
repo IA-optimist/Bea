@@ -17,8 +17,6 @@ Hot-load workflow:
 from __future__ import annotations
 
 import json
-import importlib
-import sys
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -159,42 +157,29 @@ class MCPToolLoader:
         tool_id: str,
         implementation_path: Optional[str],
     ) -> Any:
-        """Load tool implementation from path or create stub."""
+        """Load tool implementation.
+
+        External Python files are intentionally *not* executed to avoid arbitrary
+        code execution from dropped manifests. Only built-in stubs or explicitly
+        allow-listed implementations are supported.
+        """
         if implementation_path:
-            # Load from Python module
-            try:
-                module_path = Path(implementation_path)
-                if module_path.exists():
-                    spec = importlib.util.spec_from_file_location(
-                        f"tool_{tool_id}",
-                        implementation_path,
-                    )
-                    if spec and spec.loader:
-                        module = importlib.util.module_from_spec(spec)
-                        sys.modules[f"tool_{tool_id}"] = module
-                        spec.loader.exec_module(module)
-                        
-                        # Look for tool class
-                        tool_class = getattr(module, "Tool", None)
-                        if tool_class:
-                            return tool_class()
-                        
-                        # Look for execute function
-                        execute_fn = getattr(module, "execute", None)
-                        if execute_fn:
-                            return type("ToolWrapper", (), {"execute": execute_fn})()
-                        
-                        raise ToolLoadError(tool_id, "No Tool class or execute function found")
-                else:
-                    raise ToolLoadError(tool_id, f"Implementation path not found: {implementation_path}")
-            except Exception as e:
-                raise ToolLoadError(tool_id, f"Failed to load implementation: {e}")
-        else:
-            # Create stub implementation for core tools
-            return type("ToolStub", (), {
+            raise ToolLoadError(
+                tool_id,
+                "External Python implementations are disabled for security",
+            )
+
+        return type(
+            "ToolStub",
+            (),
+            {
                 "tool_id": tool_id,
-                "execute": lambda **kwargs: {"result": f"Stub execution for {tool_id}", "kwargs": kwargs},
-            })()
+                "execute": lambda self, **kwargs: {
+                    "result": f"Stub execution for {tool_id}",
+                    "kwargs": kwargs,
+                },
+            },
+        )()
     
     def unload_tool(self, tool_id: str) -> bool:
         """Unload a tool."""
@@ -225,26 +210,24 @@ class MCPToolLoader:
         return count
     
     def load_from_directory(self, directory: Path) -> int:
-        """Load all tools from a directory of manifests."""
+        """Load all manifests from a directory.
+
+        Implementation files next to manifests are intentionally ignored.
+        """
         count = 0
         if not directory.exists():
             log.warning("manifest_directory_not_found", path=str(directory))
             return 0
-        
+
         for manifest_file in directory.glob("*.json"):
             try:
                 manifest = self.load_manifest_from_file(manifest_file)
-                
-                # Look for implementation file
-                impl_file = manifest_file.with_suffix(".py")
-                impl_path = str(impl_file) if impl_file.exists() else None
-                
-                self.load_tool(manifest, impl_path)
+                self.load_tool(manifest, implementation_path=None)
                 count += 1
-                
+
             except ToolLoadError as e:
                 log.warning("tool_load_failed", file=str(manifest_file), error=str(e))
-        
+
         log.info("tools_loaded_from_directory", count=count, directory=str(directory))
         return count
     

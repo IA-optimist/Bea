@@ -1,254 +1,47 @@
-"""
-tests/test_mcp_server.py — Test MCP Server with Third-Party Client
+"""tests/test_mcp_server.py — Bea MCP server tests.
 
-Tests the Bea MCP server to ensure it can be called from external MCP clients
-like Claude Desktop, Claude Code, or other MCP-compatible tools.
+Requires the ``mcp`` package to be installed. If it is absent, the whole module is
+skipped.
 """
-import json
-import subprocess
+from __future__ import annotations
+
+import os
 import sys
-import time
 from pathlib import Path
 
+import pytest
 
-def test_mcp_server_stdio():
-    """Test that the MCP server can start and respond to stdio requests."""
-    print("Testing MCP server stdio transport...")
-    
-    # Start the MCP server in stdio mode
-    server_path = Path(__file__).parent.parent / "core" / "mcp" / "bea" / "bea_mcp_server.py"
-    
-    try:
-        # Send a simple initialization request
-        init_request = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {
-                    "name": "test-client",
-                    "version": "1.0.0"
-                }
-            }
-        }
-        
-        # Start the server process
-        proc = subprocess.Popen(
-            [sys.executable, str(server_path)],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        
-        # Send initialization request
-        proc.stdin.write(json.dumps(init_request) + "\n")
-        proc.stdin.flush()
-        
-        # Wait for response with timeout
-        try:
-            response_line = proc.stdout.readline()
-            if response_line:
-                response = json.loads(response_line)
-                print(f"✓ Server initialized successfully: {response.get('result', {}).get('serverInfo', {})}")
-                return True
-            else:
-                print("✗ No response from server")
-                return False
-        except subprocess.TimeoutExpired:
-            print("✗ Server response timeout")
-            proc.terminate()
-            return False
-        except json.JSONDecodeError as e:
-            print(f"✗ Invalid JSON response: {e}")
-            proc.terminate()
-            return False
-        finally:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                
-    except FileNotFoundError:
-        print(f"✗ MCP server not found at {server_path}")
-        return False
-    except Exception as e:
-        print(f"✗ Error testing MCP server: {e}")
-        return False
+os.environ.setdefault("MCP_SIGNING_SECRET", "test-secret")
+
+mcp_module = pytest.importorskip("mcp.server.fastmcp")
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from core.mcp.bea.bea_mcp_server import _build_server, _MCP_AVAILABLE
 
 
-def test_mcp_tools_discovery():
-    """Test that MCP tools can be discovered."""
-    print("\nTesting MCP tools discovery...")
-    
-    server_path = Path(__file__).parent.parent / "core" / "mcp" / "bea" / "bea_mcp_server.py"
-    
-    try:
-        proc = subprocess.Popen(
-            [sys.executable, str(server_path)],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        
-        # Initialize first
-        init_request = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "test-client", "version": "1.0.0"}
-            }
-        }
-        proc.stdin.write(json.dumps(init_request) + "\n")
-        proc.stdin.flush()
-        proc.stdout.readline()  # Consume init response
-        
-        # Request tools list
-        tools_request = {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/list",
-            "params": {}
-        }
-        proc.stdin.write(json.dumps(tools_request) + "\n")
-        proc.stdin.flush()
-        
-        response_line = proc.stdout.readline()
-        if response_line:
-            response = json.loads(response_line)
-            tools = response.get('result', {}).get('tools', [])
-            tool_names = [tool.get('name') for tool in tools]
-            
-            expected_tools = ['memory_search', 'mission_status', 'list_missions', 'run_mission']
-            found_tools = [name for name in expected_tools if name in tool_names]
-            
-            if len(found_tools) == len(expected_tools):
-                print(f"✓ All expected tools found: {found_tools}")
-                return True
-            else:
-                print(f"✗ Missing tools: {set(expected_tools) - set(found_tools)}")
-                return False
-        else:
-            print("✗ No response to tools/list request")
-            return False
-            
-    except Exception as e:
-        print(f"✗ Error testing tools discovery: {e}")
-        return False
-    finally:
-        if 'proc' in locals():
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+def test_mcp_server_builds() -> None:
+    assert _MCP_AVAILABLE, "mcp package should be available after importorskip"
+    server = _build_server()
+    assert server.name == "bea"
+    tools = getattr(server, "_tools", {})
+    assert "run_mission" in tools
+    assert "memory_search" in tools
+    assert "mission_status" in tools
+    assert "list_missions" in tools
 
 
-def test_mcp_tool_call():
-    """Test that an MCP tool can be called."""
-    print("\nTesting MCP tool call...")
-    
-    server_path = Path(__file__).parent.parent / "core" / "mcp" / "bea" / "bea_mcp_server.py"
-    
-    try:
-        proc = subprocess.Popen(
-            [sys.executable, str(server_path)],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        
-        # Initialize
-        init_request = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "test-client", "version": "1.0.0"}
-            }
-        }
-        proc.stdin.write(json.dumps(init_request) + "\n")
-        proc.stdin.flush()
-        proc.stdout.readline()
-        
-        # Call list_missions tool
-        tool_call_request = {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/call",
-            "params": {
-                "name": "list_missions",
-                "arguments": {"limit": 5}
-            }
-        }
-        proc.stdin.write(json.dumps(tool_call_request) + "\n")
-        proc.stdin.flush()
-        
-        response_line = proc.stdout.readline()
-        if response_line:
-            response = json.loads(response_line)
-            if 'result' in response:
-                result = response['result']
-                if 'content' in result and len(result['content']) > 0:
-                    print(f"✓ Tool call successful: list_missions returned data")
-                    return True
-                else:
-                    print(f"✗ Tool call returned no content: {result}")
-                    return False
-            else:
-                print(f"✗ Tool call error: {response.get('error')}")
-                return False
-        else:
-            print("✗ No response to tool call")
-            return False
-            
-    except Exception as e:
-        print(f"✗ Error testing tool call: {e}")
-        return False
-    finally:
-        if 'proc' in locals():
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+def test_run_mission_tool_creates_mission_file(monkeypatch, tmp_path: Path) -> None:
+    missions_dir = tmp_path / "missions"
+    monkeypatch.setattr(
+        "core.mcp.bea.bea_mcp_server._MISSIONS_DIR",
+        missions_dir,
+    )
+    server = _build_server()
+    run_mission = server._tools["run_mission"].fn
+    result = run_mission(goal="integration test")
 
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("MCP Server Third-Party Client Test")
-    print("=" * 60)
-    
-    results = []
-    
-    results.append(("Server Initialization", test_mcp_server_stdio()))
-    results.append(("Tools Discovery", test_mcp_tools_discovery()))
-    results.append(("Tool Call", test_mcp_tool_call()))
-    
-    print("\n" + "=" * 60)
-    print("Test Results:")
-    print("=" * 60)
-    
-    for test_name, passed in results:
-        status = "✓ PASS" if passed else "✗ FAIL"
-        print(f"{test_name}: {status}")
-    
-    all_passed = all(passed for _, passed in results)
-    
-    print("=" * 60)
-    if all_passed:
-        print("All tests passed! MCP server is ready for third-party clients.")
-        sys.exit(0)
-    else:
-        print("Some tests failed. MCP server needs fixes.")
-        sys.exit(1)
+    assert "mission_" in result
+    assert '"status": "submitted"' in result
+    assert missions_dir.exists()
+    assert any(missions_dir.glob("mission_*.json"))

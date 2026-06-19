@@ -159,8 +159,10 @@ except Exception as _tc_err:
 
 # ── Router mounting — see api/router_mount.py ─────────────────
 from api.router_mount import mount_all_routers
+from api.routes import v1 as _v1_router
 
 mount_all_routers(app, _ENABLE_STUB_ROUTES)
+app.include_router(_v1_router.router)
 
 
 # ── Session info endpoint (used by mobile app for role detection) ──

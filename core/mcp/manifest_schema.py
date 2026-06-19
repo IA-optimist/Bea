@@ -28,11 +28,13 @@ Manifest structure:
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 
 class RiskLevel(str, Enum):
@@ -105,23 +107,41 @@ class ToolManifest:
         }
 
     def compute_signature(self, private_key: Optional[str] = None) -> str:
-        """Compute SHA256 signature of manifest content (excluding signature field)."""
+        """Compute HMAC-SHA256 signature of manifest content (signature excluded).
+
+        Requires ``MCP_SIGNING_SECRET`` environment variable or an explicit key.
+        """
+        key = private_key or os.environ.get("MCP_SIGNING_SECRET", "")
+        if not key:
+            raise RuntimeError(
+                "Manifest signing requires MCP_SIGNING_SECRET environment variable"
+            )
         data = self.to_dict()
         data.pop("signature", None)
         payload = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-        return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        sig = hmac.new(key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        return "hmac-sha256:" + sig
 
     def sign(self, private_key: Optional[str] = None) -> str:
         """Sign the manifest and set the signature field."""
         self.signature = self.compute_signature(private_key)
         return self.signature
 
-    def verify_signature(self) -> bool:
-        """Verify the manifest signature."""
+    def verify_signature(self, public_key: Optional[str] = None) -> bool:
+        """Verify the manifest HMAC signature.
+
+        Returns False if the signature is missing, malformed, or if no key is
+        configured to verify it.
+        """
         if not self.signature:
             return False
-        expected = self.compute_signature()
-        return self.signature == expected
+        if not self.signature.startswith("hmac-sha256:"):
+            return False
+        key = public_key or os.environ.get("MCP_SIGNING_SECRET", "")
+        if not key:
+            return False
+        expected = self.compute_signature(key)
+        return hmac.compare_digest(self.signature, expected)
 
     def to_json(self) -> str:
         """Export manifest as JSON string."""
@@ -236,15 +256,32 @@ CORE_TOOL_MANIFESTS: Dict[str, ToolManifest] = {
     "shell:execute": ToolManifest(
         tool_id="shell:execute",
         name="Shell Execute",
-        description="Execute shell commands with safety constraints",
+        description="Execute a small set of read-only git and test commands",
         version="1.0.0",
         author="Bea Team",
         permissions=[
             Permission(
                 resource_type="system",
                 scope=PermissionScope.EXECUTE,
-                allowed_patterns=["git *", "python *", "npm *", "pip *", "docker *"],
-                denied_patterns=["rm -rf /", "sudo *", "chmod 777 /"],
+                allowed_patterns=[
+                    "git status *",
+                    "git diff *",
+                    "git log *",
+                    "python -m pytest *",
+                ],
+                denied_patterns=[
+                    "rm *",
+                    "sudo *",
+                    "chmod 777 *",
+                    "eval *",
+                    "exec *",
+                    "curl *",
+                    "wget *",
+                    "bash *",
+                    "sh *",
+                    ">*",
+                    "|*",
+                ],
                 requires_approval=True,
             )
         ],
@@ -256,20 +293,43 @@ CORE_TOOL_MANIFESTS: Dict[str, ToolManifest] = {
     "network:http": ToolManifest(
         tool_id="network:http",
         name="HTTP Request",
-        description="Make HTTP requests to external services",
+        description="Make HTTP requests to explicitly allowed external services",
         version="1.0.0",
         author="Bea Team",
         permissions=[
             Permission(
                 resource_type="network",
                 scope=PermissionScope.NETWORK,
-                allowed_patterns=["https://**", "http://localhost:*"],
-                denied_patterns=["http://10.0.0.0/**", "http://192.168.**"],
+                allowed_patterns=["https://*.bea-project.dev/**"],
+                denied_patterns=[
+                    "http://127.",
+                    "http://localhost",
+                    "http://10.",
+                    "http://192.168.",
+                    "http://172.16.",
+                    "http://172.17.",
+                    "http://172.18.",
+                    "http://172.19.",
+                    "http://172.20.",
+                    "http://172.21.",
+                    "http://172.22.",
+                    "http://172.23.",
+                    "http://172.24.",
+                    "http://172.25.",
+                    "http://172.26.",
+                    "http://172.27.",
+                    "http://172.28.",
+                    "http://172.29.",
+                    "http://172.30.",
+                    "http://172.31.",
+                    "http://169.254.",
+                    "http://metadata",
+                ],
             )
         ],
         risk_level=RiskLevel.MEDIUM,
         requires_network=True,
-        requires_secrets=["API_TOKEN"],
+        requires_approval=True,
     ),
 
     "memory:search": ToolManifest(
