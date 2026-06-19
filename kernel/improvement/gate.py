@@ -111,6 +111,10 @@ def register_history_provider(fn: Callable[[], List[dict]]) -> None:
     _log.debug("kernel_improvement_history_registered")
 
 
+class PatchSignatureViolation(Exception):
+    """Raised by the gate when a patch has an invalid or missing ed25519 signature."""
+
+
 class ImprovementGate:
     """
     The single authority for improvement gating.
@@ -123,6 +127,67 @@ class ImprovementGate:
 
     No exceptions. No workarounds. No bypass.
     """
+
+    # ── Patch-signature validation (called before apply, not before check) ───
+
+    def validate_patch_signature(
+        self,
+        patch_content: "str | dict",
+        sig_data: dict,
+    ) -> None:
+        """Validate the ed25519 signature on a candidate patch.
+
+        Must be called before any patch is applied to the codebase.
+
+        Args:
+            patch_content: The raw patch — a dict (CandidatePatch.to_dict()) or str.
+            sig_data: The signature envelope from sign_patch().
+
+        Raises:
+            PatchSignatureViolation: if the signature is absent, UNSIGNED,
+                wrong algorithm, or cryptographically invalid.
+        """
+        # Reject UNSIGNED and non-ed25519 immediately — no crypto import needed.
+        algorithm = sig_data.get("algorithm", "")
+        raw_sig = sig_data.get("signature", "")
+        if raw_sig == "UNSIGNED" or algorithm != "ed25519":
+            raise PatchSignatureViolation(
+                f"Patch has no valid ed25519 signature — "
+                f"algorithm={algorithm!r}, signature={raw_sig!r}. Rejected."
+            )
+
+        # Lazy import: the kernel is allowed to call into core once a patch is
+        # being evaluated (this is a *validation* path, not a boot-time dependency).
+        try:
+            from core.self_improvement.patch_signature import (  # noqa: PLC0415
+                SignatureError,
+                load_verification_key,
+                verify_patch_signature,
+            )
+        except ImportError as exc:
+            _log.error("patch_signature_import_failed", err=str(exc)[:80])
+            raise PatchSignatureViolation(
+                f"Cannot import patch_signature module: {exc}"
+            ) from exc
+
+        verify_key = load_verification_key()
+        if verify_key is None:
+            _log.warning(
+                "patch_signature_no_verify_key",
+                msg=(
+                    "BEA_PATCH_VERIFY_KEY is not set — "
+                    "signature structure checked but cryptographic verification skipped (dev mode)"
+                ),
+            )
+            return  # dev/CI mode: key not pinned yet, structural check already passed
+
+        try:
+            verify_patch_signature(patch_content, sig_data, verify_key)
+        except SignatureError as exc:
+            _log.error("patch_signature_invalid", err=str(exc)[:120])
+            raise PatchSignatureViolation(
+                f"Patch signature verification failed: {exc}"
+            ) from exc
 
     def check(self, mission_id: str = "") -> ImprovementDecision:
         """
