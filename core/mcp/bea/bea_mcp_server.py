@@ -8,10 +8,11 @@ Feature flag : MCP_SERVER_ENABLED=true
 Dependency   : mcp>=1.0.0  (pip install mcp)
 Transport    : stdio (default) or SSE
 
-Tools exposed (read-safe, no state mutation):
-  - memory_search(query, top_k)   → vector memory search
-  - mission_status(mission_id)    → read a mission from workspace
-  - list_missions(limit)          → list recent missions
+Tools exposed:
+  - memory_search(query, top_k)         → vector memory search
+  - mission_status(mission_id)            → read a mission from workspace
+  - list_missions(limit)                → list recent missions
+  - run_mission(goal, mission_type)     → submit a new mission
 
 Startup (standalone):
     python -m bea_mcp.bea_mcp_server
@@ -28,7 +29,7 @@ Or use stdio transport with Claude Desktop / Claude Code:
     }
 
 Security:
-  - Read-only tools only (no mission submission, no action execution)
+  - run_mission is a WRITE tool (submits work); all other tools are read-only
   - BEA_MCP_ALLOWED_ORIGINS env var for SSE CORS (default: localhost only)
   - No secrets exposed via tool responses
 """
@@ -37,8 +38,11 @@ from __future__ import annotations
 import json
 import os
 import sys
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+
 
 import structlog
 
@@ -178,6 +182,44 @@ def _build_server() -> Any:
         except Exception as exc:
             log.warning("mcp_list_missions_failed", error=str(exc))
             return json.dumps({"error": str(exc), "missions": []})
+
+    @mcp.tool()
+    def run_mission(goal: str, mission_type: str = "auto") -> str:
+        """
+        Submit a new Bea mission.
+
+        Args:
+            goal:         The mission goal or user request.
+            mission_type: Optional type hint (auto, coding, research, business).
+
+        Returns:
+            JSON string with the submitted mission_id and status:
+            {"mission_id": "mission_abc123", "status": "submitted"}
+        """
+        mission_id = f"mission_{uuid.uuid4().hex[:12]}"
+        try:
+            _MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+            mission_file = _MISSIONS_DIR / f"{mission_id}.json"
+            with open(mission_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "id": mission_id,
+                        "status": "submitted",
+                        "goal": goal,
+                        "mission_type": mission_type,
+                        "created_at": datetime.utcnow().isoformat(),
+                    },
+                    f,
+                    ensure_ascii=False,
+                )
+            log.info("mcp_run_mission_submitted", mission_id=mission_id)
+            return json.dumps(
+                {"mission_id": mission_id, "status": "submitted"},
+                ensure_ascii=False,
+            )
+        except Exception as exc:
+            log.warning("mcp_run_mission_failed", error=str(exc))
+            return json.dumps({"error": str(exc)})
 
     return mcp
 

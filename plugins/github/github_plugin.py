@@ -22,9 +22,11 @@ class GitHubPlugin:
         version="1.0.0",
         description="GitHub repository management, issues, and PR operations",
         author="Bea Team",
+        capability_type="integration",
         risk_level="medium",
-        required_secrets=["GITHUB_PERSONAL_ACCESS_TOKEN"],
-        required_configs=["GITHUB_DEFAULT_OWNER"],
+        required_config=["GITHUB_PERSONAL_ACCESS_TOKEN", "GITHUB_DEFAULT_OWNER"],
+        requires_approval=True,
+        tags=["github", "scm"],
     )
     
     def __init__(self):

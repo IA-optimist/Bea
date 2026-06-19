@@ -22,9 +22,11 @@ class DeployPlugin:
         version="1.0.0",
         description="Deploy applications to Vercel, Railway, Docker, and other platforms",
         author="Bea Team",
+        capability_type="integration",
         risk_level="high",
-        required_secrets=["VERCEL_TOKEN", "RAILWAY_TOKEN"],
-        required_configs=["DEPLOY_DEFAULT_PLATFORM"],
+        required_config=["VERCEL_TOKEN", "RAILWAY_TOKEN", "DEPLOY_DEFAULT_PLATFORM"],
+        requires_approval=True,
+        tags=["deployment"],
     )
     
     def __init__(self):

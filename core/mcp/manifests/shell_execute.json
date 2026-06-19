@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "tool_id": "shell:execute",
   "name": "Shell Execute",
-  "description": "Execute shell commands with safety constraints",
+  "description": "Execute a small set of read-only git and test commands",
   "version": "1.0.0",
   "author": "Bea Team",
   "permissions": [
@@ -10,16 +10,23 @@
       "resource_type": "system",
       "scope": "execute",
       "allowed_patterns": [
-        "git *",
-        "python *",
-        "npm *",
-        "pip *",
-        "docker *"
+        "git status *",
+        "git diff *",
+        "git log *",
+        "python -m pytest *"
       ],
       "denied_patterns": [
-        "rm -rf /",
+        "rm *",
         "sudo *",
-        "chmod 777 /"
+        "chmod 777 *",
+        "eval *",
+        "exec *",
+        "curl *",
+        "wget *",
+        "bash *",
+        "sh *",
+        ">*",
+        "|*"
       ],
       "requires_approval": true
     }
@@ -27,11 +34,11 @@
   "risk_level": "high",
   "requires_secrets": [],
   "requires_network": false,
-  "requires_approval": true,
+  "requires_approval": false,
   "dangerous_actions": [
     "destructive_command",
     "privilege_escalation"
   ],
-  "signature": "sha256:2e83f9ef181f2c59597378de42f9d7fe0482e03d652c195d415efa51c553f0b0",
-  "created_at": "2026-06-19T00:00:00Z"
+  "signature": "hmac-sha256:d3aa60627b95910edd8decb154fedccfcb5f68e945bb3f5b574a44e16898a3a2",
+  "created_at": "2026-06-19T13:01:12.017789"
 }

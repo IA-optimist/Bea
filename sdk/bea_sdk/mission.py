@@ -8,6 +8,14 @@ import httpx
 from bea_sdk.exceptions import MissionError
 
 
+def _unwrap(response: httpx.Response) -> Any:
+    """Extract data from the APIResponse envelope used by Bea v1."""
+    payload = response.json()
+    if isinstance(payload, dict) and "data" in payload:
+        return payload["data"]
+    return payload
+
+
 class MissionClient:
     """
     Client for mission-related operations.
@@ -47,7 +55,7 @@ class MissionClient:
             }
             response = self._client.post("/api/v1/missions", json=payload)
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             raise MissionError(f"Mission submission failed: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -66,7 +74,7 @@ class MissionClient:
         try:
             response = self._client.get(f"/api/v1/missions/{mission_id}")
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise MissionError(f"Mission not found: {mission_id}")
@@ -96,7 +104,7 @@ class MissionClient:
 
             response = self._client.get("/api/v1/missions", params=params)
             response.raise_for_status()
-            return response.json().get("missions", [])
+            return _unwrap(response).get("missions", [])
         except httpx.HTTPStatusError as e:
             raise MissionError(f"Failed to list missions: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -115,7 +123,7 @@ class MissionClient:
         try:
             response = self._client.post(f"/api/v1/missions/{mission_id}/cancel")
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             raise MissionError(f"Failed to cancel mission: {e.response.status_code}")
         except httpx.RequestError as e:
@@ -134,7 +142,7 @@ class MissionClient:
         try:
             response = self._client.get(f"/api/v1/missions/{mission_id}/result")
             response.raise_for_status()
-            return response.json()
+            return _unwrap(response)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise MissionError(f"Mission not found: {mission_id}")
