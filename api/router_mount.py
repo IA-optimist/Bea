@@ -489,4 +489,14 @@ def mount_all_routers(app, enable_stub_routes: bool = False) -> None:
     from api.routes import auth as _auth_routes
     app.include_router(_auth_routes.router)
 
+    # ── v1 Stable Surface ─────────────────────────────────────────
+    # Router already carries prefix="/api/v1" — do NOT add prefix here.
+    # V1DeprecationMiddleware in api/middleware.py tags every /api/v1/*
+    # response with RFC 8594 Deprecation + Sunset headers automatically.
+    try:
+        from api.routes.v1 import router as v1_router
+        app.include_router(v1_router)
+    except Exception as _e:
+        log.warning("v1_router_unavailable", err=str(_e))
+
     _materialize_included_routers(app)

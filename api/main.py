@@ -120,6 +120,15 @@ try:
     # Tags every /api/v1/* response with RFC 8594 Deprecation + Sunset headers
     # and emits a structlog warning. Sunset target : 2026-10-01.
     app.add_middleware(V1DeprecationMiddleware)
+    # DeprecationMiddleware (api/deprecation_middleware.py) handles fine-grained
+    # route-level deprecation notices (X-Deprecated / Warning headers) for specific
+    # deprecated paths. Different from V1DeprecationMiddleware (which covers all
+    # /api/v1/* wholesale). Both coexist without overlap.
+    try:
+        from api.deprecation_middleware import DeprecationMiddleware
+        app.add_middleware(DeprecationMiddleware)
+    except ImportError as _dm_err:
+        log.warning("deprecation_middleware_unavailable", err=str(_dm_err))
 except ImportError as _enf_err:
     log.error("access_enforcement_MISSING", err=str(_enf_err),
               note="Security middleware unavailable — API will rely on per-route auth only")

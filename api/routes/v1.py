@@ -13,9 +13,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
+import time
 
-from api._deps import require_auth
+import structlog
+
+from api._deps import require_auth, _get_mission_system
 from config.settings import get_settings
+
+log = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
@@ -86,24 +91,25 @@ async def submit_mission(
 ) -> APIResponse:
     """
     Submit a new mission to Bea.
-    
+
     This is the primary entry point for mission execution.
     """
     try:
-        mission_id = f"mission_{uuid.uuid4().hex[:12]}"
-        
-        # In production, this would call the actual orchestrator
-        # For now, return a stub response
+        ms = _get_mission_system()
+        result = ms.submit(req.goal)
+        mission_id = result.mission_id
+        log.info("v1.submit_mission", mission_id=mission_id, goal=req.goal[:80])
         return APIResponse(
             status="submitted",
             data=MissionResponse(
                 mission_id=mission_id,
-                status="submitted",
+                status=str(result.status),
                 goal=req.goal,
                 message=f"Mission submitted. Use GET /api/v1/missions/{mission_id} to check status.",
             )
         )
     except Exception as e:
+        log.warning("v1.submit_mission.error", err=str(e)[:120])
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -115,12 +121,24 @@ async def list_missions(
 ) -> APIResponse:
     """List recent missions."""
     try:
-        # Stub implementation
+        ms = _get_mission_system()
+        missions = ms.list_missions(status=status, limit=limit)
+        missions_data = [
+            {
+                "mission_id": m.mission_id,
+                "status": str(m.status),
+                "goal": m.user_input,
+                "created_at": m.created_at,
+                "updated_at": m.updated_at,
+            }
+            for m in missions
+        ]
         return APIResponse(
             status="success",
-            data={"missions": [], "total": 0}
+            data={"missions": missions_data, "total": len(missions_data)}
         )
     except Exception as e:
+        log.warning("v1.list_missions.error", err=str(e)[:120])
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -131,17 +149,25 @@ async def get_mission_status(
 ) -> APIResponse:
     """Get the current status of a mission."""
     try:
-        # Stub implementation
+        ms = _get_mission_system()
+        m = ms.get(mission_id)
+        if m is None:
+            raise HTTPException(status_code=404, detail=f"Mission {mission_id!r} not found")
         return APIResponse(
             status="success",
             data=MissionStatusResponse(
-                mission_id=mission_id,
-                status="unknown",
-                goal="",
-                created_at="",
+                mission_id=m.mission_id,
+                status=str(m.status),
+                goal=m.user_input,
+                progress=None,
+                created_at=str(m.created_at),
+                completed_at=str(m.updated_at) if m.is_done() else None,
             )
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        log.warning("v1.get_mission_status.error", mission_id=mission_id, err=str(e)[:120])
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -184,13 +210,32 @@ async def search_memory(
 ) -> APIResponse:
     """Search vector memory for relevant context."""
     try:
-        # Stub implementation
+        from core.memory.vector_memory_legacy import VectorMemory
+        vm = VectorMemory()
+        raw_results = vm.search_similar(
+            query=req.query,
+            limit=req.top_k,
+        )
+        results = [
+            MemorySearchResult(
+                id=r.get("id", str(uuid.uuid4())),
+                text=r.get("content", ""),
+                score=float(r.get("score", 0.0)),
+                metadata={k: v for k, v in r.items() if k not in ("id", "content", "score")},
+            )
+            for r in raw_results
+        ]
         return APIResponse(
             status="success",
-            data={"results": []}
+            data={"results": [r.model_dump() for r in results]}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        log.warning("v1.search_memory.error", query=req.query[:60], err=str(e)[:120])
+        # Graceful degradation: return empty rather than 500 if memory backend unavailable
+        return APIResponse(
+            status="success",
+            data={"results": [], "warning": "Memory backend unavailable"}
+        )
 
 
 @router.post("/memory/store", response_model=APIResponse)
