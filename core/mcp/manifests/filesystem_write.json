@@ -1,0 +1,36 @@
+{
+  "manifest_version": "1.0",
+  "tool_id": "filesystem:write",
+  "name": "Filesystem Write",
+  "description": "Write or modify files within allowed paths",
+  "version": "1.0.0",
+  "author": "Bea Team",
+  "permissions": [
+    {
+      "resource_type": "filesystem",
+      "scope": "write",
+      "allowed_patterns": [
+        "workspace/**",
+        "data/**"
+      ],
+      "denied_patterns": [
+        "/etc/**",
+        "/sys/**",
+        "/proc/**",
+        "*.exe",
+        "*.dll"
+      ],
+      "requires_approval": true
+    }
+  ],
+  "risk_level": "medium",
+  "requires_secrets": [],
+  "requires_network": false,
+  "requires_approval": false,
+  "dangerous_actions": [
+    "overwrite_system_file",
+    "delete_critical_file"
+  ],
+  "signature": "hmac-sha256:a982e387da07345d156bb20d1de040e731cfb5df2375237167f6e3a5384abdde",
+  "created_at": "2026-06-19T13:01:12.017789"
+}

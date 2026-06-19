@@ -12,7 +12,7 @@ import ast
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 import sys
 
 EXCLUDED_DIRS = {
@@ -42,7 +42,7 @@ class SymbolInfo:
     token_estimate: int
     docstring: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -53,7 +53,7 @@ class ImportInfo:
     names: tuple[str, ...]
     lineno: int
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -66,7 +66,7 @@ class RepoMap:
     token_budget: int = 12000
     parser: str = "ast"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "root": self.root,
             "files": list(self.files),
@@ -169,7 +169,9 @@ def _iter_python_files(root: Path, max_files: int) -> list[Path]:
 
 
 def _docstring(node: ast.AST) -> str:
-    return ast.get_docstring(node) or ""
+    if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+        return ast.get_docstring(node) or ""
+    return ""
 
 
 def _analyze_file(root: Path, path: Path) -> tuple[list[SymbolInfo], list[ImportInfo]]:

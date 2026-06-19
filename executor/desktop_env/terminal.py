@@ -24,18 +24,22 @@ class PersistentTerminal:
     """
     def __init__(self, env: DesktopEnvironment):
         self._env = env
-        self._process = None
+        self._process: asyncio.subprocess.Process | None = None
         self._lock = asyncio.Lock()
         
     async def start(self) -> None:
         """Lance le processus Bash interactif."""
         if isinstance(self._env, DockerSandbox):
-            if not self._env.container:
+            container = self._env.container
+            if container is None:
                 self._env.start()
+                container = self._env.container
             
             # Sous docker, on lance `docker exec -i ... /bin/bash` via subprocess
             # pour avoir un pipe in/out constant. (L'alternative est docker.py socket stream)
-            cmd = ["docker", "exec", "-i", self._env.container.name, "/bin/bash"]
+            if container is None:
+                raise RuntimeError("Container Docker indisponible")
+            cmd = ["docker", "exec", "-i", container.name, "/bin/bash"]
         else:
             # Fallback Windows / Unix
             shell = "powershell.exe" if os.name == "nt" else "/bin/bash"
@@ -94,7 +98,7 @@ class PersistentTerminal:
             
             # Lecture du flux jusqu'à rencontrer notre marqueur de fin (ou timeout)
             try:
-                async def read_until_marker():
+                async def read_until_marker() -> None:
                     nonlocal exit_code
                     while True:
                         if not self._process or not self._process.stdout:
@@ -131,7 +135,7 @@ class PersistentTerminal:
                 
             return exit_code, output.strip()
 
-    def close(self):
+    def close(self) -> None:
         if self._process and self._process.returncode is None:
             try:
                 self._process.kill()

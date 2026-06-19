@@ -1,6 +1,7 @@
 """web_research_tool — fetch HTTP + recherche PyPI/GitHub."""
 from __future__ import annotations
 import re
+from typing import Any
 
 _BLOCKED_HOSTS = (  # nosec B104 — SSRF blocklist, not a bind
     "localhost", "127.0.0.1", "0.0.0.0",
@@ -15,7 +16,7 @@ _BLOCKED_HOSTS = (  # nosec B104 — SSRF blocklist, not a bind
 _MAX_BYTES = 50 * 1024  # 50KB
 
 
-def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:
+def _ok(output: str, logs: list[str] | None = None, risk_level: str = "low") -> dict[str, Any]:
     return {
         "ok": True, "status": "ok",
         "output": output, "result": output,
@@ -23,7 +24,7 @@ def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:
     }
 
 
-def _err(error: str, logs: list = None, risk_level: str = "low") -> dict:
+def _err(error: str, logs: list[str] | None = None, risk_level: str = "low") -> dict[str, Any]:
     return {
         "ok": False, "status": "error",
         "output": "", "result": "",
@@ -46,7 +47,7 @@ def _strip_html(text: str) -> str:
     return text.strip()
 
 
-def fetch_url(url: str, timeout: int = 10) -> dict:
+def fetch_url(url: str, timeout: int = 10) -> dict[str, Any]:
     try:
         blocked = _check_url(url)
         if blocked:
@@ -65,7 +66,7 @@ def fetch_url(url: str, timeout: int = 10) -> dict:
         return _err(str(e))
 
 
-def doc_fetch(url: str, timeout: int = 10) -> dict:
+def doc_fetch(url: str, timeout: int = 10) -> dict[str, Any]:
     """Alias fetch_url — retourne texte propre (HTML strippé)."""
     try:
         blocked = _check_url(url)
@@ -80,7 +81,7 @@ def doc_fetch(url: str, timeout: int = 10) -> dict:
         return _err(str(e))
 
 
-def http_post_json(url: str, payload: dict, timeout: int = 10) -> dict:
+def http_post_json(url: str, payload: dict[str, Any], timeout: int = 10) -> dict[str, Any]:
     """HTTP POST avec corps JSON. Bloqué sur adresses privées."""
     try:
         blocked = _check_url(url)
@@ -99,7 +100,7 @@ def http_post_json(url: str, payload: dict, timeout: int = 10) -> dict:
         return _err(str(e))
 
 
-def search_pypi(package: str) -> dict:
+def search_pypi(package: str) -> dict[str, Any]:
     try:
         import httpx as _req
         url = f"https://pypi.org/pypi/{package}/json"
@@ -122,7 +123,7 @@ def search_pypi(package: str) -> dict:
         return _err(str(e))
 
 
-def fetch_github_readme(owner: str, repo: str) -> dict:
+def fetch_github_readme(owner: str, repo: str) -> dict[str, Any]:
     try:
         import httpx as _req
         url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/README.md"
@@ -137,7 +138,7 @@ def fetch_github_readme(owner: str, repo: str) -> dict:
         return _err(str(e))
 
 
-def check_url_status(url: str) -> dict:
+def check_url_status(url: str) -> dict[str, Any]:
     try:
         blocked = _check_url(url)
         if blocked:

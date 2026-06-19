@@ -88,7 +88,9 @@ if all gates green and not protected → open auto-PR
 
 ## Signing requirement
 
-Once implemented (Task 4 Step 4 of the consolidation roadmap), every auto-applied patch must carry a cryptographic signature. The promotion pipeline rejects unsigned patches or patches whose signature does not verify against the known agent key.
+Every auto-applied patch carries a cryptographic signature. The promotion
+pipeline rejects unsigned patches or patches whose signature does not verify
+against the configured agent key.
 
 ## Monitoring and audit
 

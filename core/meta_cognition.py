@@ -22,7 +22,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import structlog
 
@@ -49,9 +49,9 @@ class RiskLevel(str, Enum):
 class PreActionAnalysis:
     """Structured reasoning before executing a mission step."""
     task_interpretation: str = ""
-    assumptions: List[str] = field(default_factory=list)
-    risks: List[Dict[str, str]] = field(default_factory=list)  # [{risk, level, mitigation}]
-    missing_information: List[str] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
+    risks: list[dict[str, str]] = field(default_factory=list)  # [{risk, level, mitigation}]
+    missing_information: list[str] = field(default_factory=list)
     confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
     confidence_score: float = 0.5  # 0.0-1.0
     recommended_approach: str = ""
@@ -60,7 +60,7 @@ class PreActionAnalysis:
     reasoning: str = ""
     analyzed_at: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "task_interpretation": self.task_interpretation,
             "assumptions": self.assumptions,
@@ -99,9 +99,9 @@ class MetaCognition:
     def analyze(
         self,
         task: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         agent_id: str = "",
-        tools_available: Optional[List[str]] = None,
+        tools_available: list[str] | None = None,
     ) -> PreActionAnalysis:
         """Generate a pre-action analysis for a task."""
         try:
@@ -141,7 +141,7 @@ class MetaCognition:
             return f"Analysis / investigation: {task[:100]}"
         return f"General task: {task[:100]}"
 
-    def _identify_assumptions(self, task: str, context: Optional[Dict] = None) -> List[str]:
+    def _identify_assumptions(self, task: str, context: dict[str, Any] | None = None) -> list[str]:
         assumptions = []
         if not context or not context.get("files_read"):
             assumptions.append("Assuming current codebase state is up to date")
@@ -153,7 +153,7 @@ class MetaCognition:
             assumptions.append("Assuming data preservation required")
         return assumptions
 
-    def _assess_risks(self, task: str, context: Optional[Dict] = None) -> List[Dict[str, str]]:
+    def _assess_risks(self, task: str, context: dict[str, Any] | None = None) -> list[dict[str, str]]:
         risks = []
         task_lower = task.lower()
         for level, keywords in self.RISK_KEYWORDS.items():
@@ -180,7 +180,7 @@ class MetaCognition:
         }
         return mitigations.get(keyword, f"Extra caution for {level}-risk operation")
 
-    def _find_gaps(self, task: str, context: Optional[Dict], tools: Optional[List[str]]) -> List[str]:
+    def _find_gaps(self, task: str, context: dict[str, Any] | None, tools: list[str] | None) -> list[str]:
         gaps = []
         if not context:
             gaps.append("No context provided — operating with task description only")
@@ -191,8 +191,8 @@ class MetaCognition:
         return gaps
 
     def _calculate_confidence(
-        self, task: str, context: Optional[Dict], analysis: PreActionAnalysis
-    ) -> tuple:
+        self, task: str, context: dict[str, Any] | None, analysis: PreActionAnalysis
+    ) -> tuple[ConfidenceLevel, float]:
         score = 0.7  # Base confidence
         task_lower = task.lower()
         # Uncertainty keywords lower confidence

@@ -336,9 +336,9 @@ class CanonicalMissionContext:
     source_system:  str = ""      # "mission_system" | "meta_orchestrator" | "workflow_graph"
     created_at:     float = field(default_factory=time.time)
     updated_at:     float = field(default_factory=time.time)
-    metadata:       dict = field(default_factory=dict)
+    metadata:       dict[str, object] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "mission_id": self.mission_id,
             "goal": self.goal[:300],

@@ -27,7 +27,7 @@ This document captures the threats introduced when Béa runs in continuous self-
 - Gate is implemented in `kernel/improvement/gate.py`, which cannot be modified by a patch without going through the gate itself.
 - `kernel/improvement/gate.py` requires a 24h cooldown and limits consecutive failures to 3.
 - Protected paths (`core/self_improvement/protected_paths.py`) block merges touching `kernel/`, `core/security/`, `api/auth.py`, CI, or payment code.
-- All auto-applied patches must be signed (TODO: See Task 4 Step 4 of the consolidation roadmap).
+- All auto-applied patches must be signed and verified before promotion.
 
 ### T2 — Secrets exposure via generated patches
 
@@ -84,7 +84,7 @@ Before enabling `BEA_IMPROVEMENT_MODE=merge` or `BEA_AUTO_APPROVE_MEDIUM=1`:
 - [ ] `BEA_API_TOKEN`, `BEA_ADMIN_PASSWORD`, and DB passwords are strong and not defaults.
 - [ ] Telegram `TELEGRAM_ALLOWED_USERS` is limited to the operator.
 - [ ] `scripts/verify_prod.sh` passes.
-- [ ] Patch signing is configured (future requirement once implemented).
+- [ ] Patch signing key is configured and verified in the promotion pipeline.
 - [ ] A recent backup exists (`scripts/backup_db.sh`).
 
 ## References

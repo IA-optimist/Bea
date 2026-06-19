@@ -97,7 +97,7 @@ class RetryPolicy:
     base_delay:      float = 1.0       # secondes
     max_delay:       float = 30.0      # secondes
     backoff_factor:  float = 2.0
-    retryable_errors: tuple = field(default_factory=lambda: _RETRYABLE_TYPES)
+    retryable_errors: tuple[type[BaseException], ...] = field(default_factory=lambda: _RETRYABLE_TYPES)
 
     def should_retry(self, attempt: int, error: BaseException) -> bool:
         return should_retry(attempt, error, self)

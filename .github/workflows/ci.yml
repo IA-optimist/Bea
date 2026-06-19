@@ -78,6 +78,9 @@ jobs:
       - name: Check requirements lock drift
         run: python scripts/check_requirements_lock.py requirements.txt requirements.lock
 
+      - name: Enforce kernel import boundaries
+        run: python scripts/check_kernel_import_boundaries.py
+
       - name: Run linting (ruff, blocking on curated rule set)
         run: |
           set -euo pipefail
@@ -103,6 +106,41 @@ jobs:
           pytest tests/ -v -n auto --dist=loadfile -m "not stale" \
             --cov=core --cov=api --cov=kernel --cov-report=xml --cov-report=term \
             --cov-fail-under="$COVERAGE_FAIL_UNDER"
+
+      - name: Run quarantined tests (non-blocking)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          pytest -m quarantine tests/ -q --no-header
+
+  security-strict-mypy:
+    name: security-strict-mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install minimal deps for strict auth/kernel checks
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install mypy structlog pydantic fastapi pydantic-settings
+
+      - name: Run strict mypy on security-critical files
+        run: |
+          python -m mypy \
+            api/auth.py \
+            api/routes/auth.py \
+            kernel/convergence/event_bridge.py \
+            --strict \
+            --follow-imports=skip \
+            --ignore-missing-imports \
+            --show-error-codes
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457  # v3

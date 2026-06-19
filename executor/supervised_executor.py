@@ -29,7 +29,7 @@ import os
 import subprocess
 from pathlib import Path
 import structlog
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Protocol, cast
 
 from core.state import ActionSpec, RiskLevel
 from executor.runner import ActionExecutor, ActionResult as ExecutionResult  # TODO(tech-debt): migrate to executor.contracts.ExecutionResult — fields incompatible (action_type vs raw_output)
@@ -38,6 +38,10 @@ from risk.engine import RiskEngine
 log = structlog.get_logger()
 
 CB = Callable[[str], Awaitable[None]]
+
+
+class _SettingsLike(Protocol):
+    dry_run: bool
 
 
 class SupervisedExecutor:
@@ -49,7 +53,7 @@ class SupervisedExecutor:
     HIGH   → bloquée obligatoirement + notification
     """
 
-    def __init__(self, settings, emit: CB | None = None):
+    def __init__(self, settings: _SettingsLike, emit: CB | None = None) -> None:
         self.s        = settings
         self.executor = ActionExecutor(settings)
         self.risk     = RiskEngine()
@@ -133,7 +137,7 @@ class SupervisedExecutor:
                 return ExecutionResult(
                     success=True,
                     action_type=action.action_type,
-                    target=action.target,
+                    target=cast(str, action.target),
                     output="[DRY_RUN] action LOW simulée",
                 )
             return await self.executor.execute(action, session_id, agent)
@@ -152,7 +156,7 @@ class SupervisedExecutor:
                 return ExecutionResult(
                     success=True,
                     action_type=action.action_type,
-                    target=action.target,
+                    target=cast(str, action.target),
                     output="[DRY_RUN] action MEDIUM simulée",
                 )
             # Politique opérateur BEA_AUTO_APPROVE_MEDIUM (config/settings.py) :
@@ -169,7 +173,7 @@ class SupervisedExecutor:
             return ExecutionResult(
                 success=False,
                 action_type=action.action_type,
-                target=action.target,
+                target=cast(str, action.target),
                 output="",
                 error="Action MEDIUM en attente de validation (approval required)",
             )
@@ -345,14 +349,14 @@ class SupervisedExecutor:
 
     async def create_workflow(
         self,
-        workflow_def: dict,
+        workflow_def: dict[str, object],
         session_id: str = "",
     ) -> ExecutionResult:
         """
         Crée un workflow via WorkflowEngine (MEDIUM).
         Retourne ExecutionResult avec output=workflow_id si succès.
         """
-        wf_name = workflow_def.get("name", "workflow")
+        wf_name = cast(str, workflow_def.get("name", "workflow"))
         action  = ActionSpec(
             id="create_wf",
             action_type="create_workflow",
@@ -379,7 +383,7 @@ class SupervisedExecutor:
 
     async def schedule_task(
         self,
-        task_def: dict,
+        task_def: dict[str, object],
         session_id: str = "",
     ) -> ExecutionResult:
         """
@@ -388,7 +392,7 @@ class SupervisedExecutor:
         """
         import json
         import time
-        task_name = task_def.get("name", "task")
+        task_name = cast(str, task_def.get("name", "task"))
         action    = ActionSpec(
             id="sched",
             action_type="schedule_task",
@@ -425,4 +429,4 @@ class SupervisedExecutor:
             target=target,
             command=command,
         )
-        return report.level.value
+        return str(report.level.value)

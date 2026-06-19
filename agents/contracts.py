@@ -62,13 +62,13 @@ class AgentContract:
 
     confidence:              float       = 1.0
     reasoning_summary:       str         = ""
-    used_memory:             list        = field(default_factory=list)
-    generated_memory:        list        = field(default_factory=list)
+    used_memory:             list[str]   = field(default_factory=list)
+    generated_memory:        list[str]   = field(default_factory=list)
     next_recommended_agent:  str         = ""
     risk_level:              str         = "low"
     duration_ms:             int         = 0
     error:                   str         = ""
-    metadata:                dict        = field(default_factory=dict)
+    metadata:                dict[str, object] = field(default_factory=dict)
 
     # Auto
     id:                      str         = field(default_factory=lambda: str(uuid.uuid4())[:10])
@@ -83,7 +83,7 @@ class AgentContract:
         """True si la confiance est faible et une peer-review est recommandée."""
         return self.confidence < 0.65 or self.status == AgentStatus.PARTIAL
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "id":                      self.id,
             "agent_id":                self.agent_id,
@@ -201,7 +201,7 @@ class ReviewResult:
             feedback      = feedback,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "reviewer_id":   self.reviewer_id,
             "reviewed_id":   self.reviewed_id,

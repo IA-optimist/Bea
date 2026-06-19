@@ -20,12 +20,14 @@ All calls are fail-open. Kernel event emission NEVER blocks runtime.
 """
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
 
 log = structlog.get_logger("kernel.convergence.events")
 
 
-def emit_kernel_event(event_type: str, **kwargs) -> bool:
+def emit_kernel_event(event_type: str, **kwargs: Any) -> bool:
     """
     Record a kernel canonical event in kernel memory.
 
@@ -59,7 +61,7 @@ def emit_kernel_event(event_type: str, **kwargs) -> bool:
         try:
             _update_performance(event_type, kwargs)
         except Exception as _exc:
-            log.warning("swallowed_exception", action="event_bridge_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+            log.warning("structured_exception", action="event_bridge_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         return True
     except Exception as e:
@@ -67,7 +69,7 @@ def emit_kernel_event(event_type: str, **kwargs) -> bool:
         return False
 
 
-def _update_performance(event_type: str, kwargs: dict) -> None:
+def _update_performance(event_type: str, kwargs: dict[str, Any]) -> None:
     """
     Update performance store from execution events.
 
@@ -80,11 +82,11 @@ def _update_performance(event_type: str, kwargs: dict) -> None:
     tool_id = kwargs.get("tool_id", "")
     capability_id = kwargs.get("capability_id", "")
     provider_id = kwargs.get("provider_id", "")
-    duration_ms = 0
+    duration_ms = 0.0
     try:
         duration_ms = float(kwargs.get("duration_ms", 0))
     except (ValueError, TypeError) as _exc:
-        log.warning("swallowed_exception", action="event_bridge_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+        log.warning("structured_exception", action="event_bridge_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     # Resolve missing identity via lookup (fail-open)
     if tool_id and (not capability_id or not provider_id):
@@ -96,7 +98,7 @@ def _update_performance(event_type: str, kwargs: dict) -> None:
             if not provider_id and resolution["provider_id"]:
                 provider_id = resolution["provider_id"]
         except Exception as _exc:
-            log.warning("swallowed_exception", action="event_bridge_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+            log.warning("structured_exception", action="event_bridge_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     if event_type == "tool.completed":
         store.record_tool_outcome(

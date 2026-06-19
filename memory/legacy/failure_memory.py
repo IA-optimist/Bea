@@ -16,6 +16,7 @@ import time
 import hashlib
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
+from typing import Any
 import structlog
 
 log = structlog.get_logger()
@@ -62,7 +63,7 @@ class FailureMemory:
             old_str: (vide)
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings: Any) -> None:
         self.s = settings
         self._path = self._resolve_path()
         self._entries: list[FailureEntry] = []
@@ -78,7 +79,7 @@ class FailureMemory:
 
     # ── Chargement / sauvegarde ───────────────────────────────
 
-    def _load(self):
+    def _load(self) -> None:
         if self._loaded:
             return
         self._loaded = True
@@ -91,7 +92,7 @@ class FailureMemory:
             log.warning("failure_memory_load_error", err=str(e))
             self._entries = []
 
-    def _save(self):
+    def _save(self) -> None:
         try:
             # Tronquer si trop grand
             if len(self._entries) > _MAX_ENTRIES:
@@ -105,7 +106,7 @@ class FailureMemory:
 
     # ── API publique ──────────────────────────────────────────
 
-    def record_rejection(self, patch, reason: str, model: str = "") -> None:
+    def record_rejection(self, patch: Any, reason: str, model: str = "") -> None:
         """
         Enregistre un rejet de patch.
         `patch` peut être un PatchSpec ou un dict avec les mêmes champs.
@@ -143,7 +144,7 @@ class FailureMemory:
         log.info("failure_memory_recorded",
                  patch_id=entry.patch_id, file=entry.file, reason=reason[:60])
 
-    def has_failed_before(self, patch, threshold: int = 1) -> bool:
+    def has_failed_before(self, patch: Any, threshold: int = 1) -> bool:
         """
         Retourne True si un patch similaire (même file + old_str) a déjà été rejeté
         au moins `threshold` fois.
@@ -196,7 +197,7 @@ class FailureMemory:
         self._load()
         return list({e.file for e in self._entries})
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, object]:
         self._load()
         from collections import Counter
         by_file = Counter(e.file for e in self._entries)
@@ -207,7 +208,7 @@ class FailureMemory:
             "top_reasons": dict(by_reason.most_common(5)),
         }
 
-    def clear(self):
+    def clear(self) -> None:
         """Vide la mémoire (utile pour les tests)."""
         self._entries = []
         self._loaded  = True

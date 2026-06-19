@@ -8,6 +8,7 @@ Provides multiple output formats:
   - LLM-consumable text (for MetaOrchestrator reasoning)
 """
 from __future__ import annotations
+from typing import Any, cast
 
 from core.self_model.model import SelfModel
 from core.self_model import queries
@@ -25,13 +26,13 @@ def with_summary(model: SelfModel) -> SelfModel:
     return model
 
 
-def to_full_dict(model: SelfModel) -> dict:
+def to_full_dict(model: SelfModel) -> dict[str, Any]:
     """Full serialization — for API responses."""
     model = with_summary(model)
-    return model.to_dict()
+    return cast(dict[str, Any], model.to_dict())
 
 
-def to_compact(model: SelfModel) -> dict:
+def to_compact(model: SelfModel) -> dict[str, Any]:
     """Compact summary — for lightweight consumers."""
     return {
         "readiness": queries.readiness_score(model),
@@ -45,7 +46,7 @@ def to_compact(model: SelfModel) -> dict:
     }
 
 
-def to_health_card(model: SelfModel) -> dict:
+def to_health_card(model: SelfModel) -> dict[str, Any]:
     """Health card — for dashboard display."""
     return {
         "readiness_score": queries.readiness_score(model),
@@ -87,9 +88,9 @@ def to_llm_context(model: SelfModel) -> str:
     approval = queries.what_requires_approval(model)
     if approval:
         lines.append(f"### Requires Approval ({len(approval)})")
-        for a in approval[:10]:
-            risk = f" (risk: {a.get('risk', '?')})" if a.get("risk") else ""
-            lines.append(f"- {a['id']}{risk}")
+        for approval_item in approval[:10]:
+            risk = f" (risk: {approval_item.get('risk', '?')})" if approval_item.get("risk") else ""
+            lines.append(f"- {approval_item['id']}{risk}")
         lines.append("")
 
     # Degraded/unavailable
@@ -128,12 +129,12 @@ def to_llm_context(model: SelfModel) -> str:
     lines.append("")
 
     # Autonomy flags
-    a = model.autonomy
+    autonomy: Any = model.autonomy
     lines.append("### Autonomy Flags")
-    lines.append(f"- Tools require approval: {a.requires_approval_for_tools}")
-    lines.append(f"- Code patches require approval: {a.requires_approval_for_code_patch}")
-    lines.append(f"- External calls require approval: {a.requires_approval_for_external_calls}")
-    lines.append(f"- Max risk auto-approve: {a.max_risk_auto_approve}")
-    lines.append(f"- Max files per patch: {a.max_files_per_patch}")
+    lines.append(f"- Tools require approval: {autonomy.requires_approval_for_tools}")
+    lines.append(f"- Code patches require approval: {autonomy.requires_approval_for_code_patch}")
+    lines.append(f"- External calls require approval: {autonomy.requires_approval_for_external_calls}")
+    lines.append(f"- Max risk auto-approve: {autonomy.max_risk_auto_approve}")
+    lines.append(f"- Max files per patch: {autonomy.max_files_per_patch}")
 
     return "\n".join(lines)

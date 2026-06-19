@@ -42,7 +42,7 @@ log = structlog.get_logger()
 _TRACER_CACHE: dict[str, "LangfuseTracer"] = {}
 
 
-def get_tracer(settings) -> "LangfuseTracer":
+def get_tracer(settings: Any) -> "LangfuseTracer":
     """Retourne le tracer Langfuse singleton pour ce workspace."""
     ws = str(getattr(settings, "workspace_dir", "default"))
     if ws not in _TRACER_CACHE:
@@ -60,7 +60,7 @@ class GenerationContext:
 
     __slots__ = ("_gen", "_t0", "_active")
 
-    def __init__(self, gen=None):
+    def __init__(self, gen: Any | None = None) -> None:
         self._gen    = gen
         self._t0     = time.monotonic()
         self._active = gen is not None
@@ -106,9 +106,9 @@ class LangfuseTracer:
     Les méthodes ne lèvent JAMAIS d'exception — tout est try/except.
     """
 
-    def __init__(self, settings):
-        self.s        = settings
-        self._client  = None
+    def __init__(self, settings: Any) -> None:
+        self.s = settings
+        self._client: Any | None = None
         self._enabled = False
         self._init()
 
@@ -127,7 +127,7 @@ class LangfuseTracer:
                 )
                 return
 
-            from langfuse import Langfuse  # type: ignore[import]
+            from langfuse import Langfuse
             self._client = Langfuse(
                 public_key=public_key,
                 secret_key=secret_key,
@@ -158,7 +158,7 @@ class LangfuseTracer:
         self,
         session_id: str,
         role: str,
-        messages: list,
+        messages: list[Any],
         model: str = "unknown",
         agent_name: str = "",
     ) -> Generator[GenerationContext, None, None]:
@@ -174,13 +174,18 @@ class LangfuseTracer:
             yield GenerationContext(gen=None)
             return
 
-        trace = None
-        gen   = None
+        client = self._client
+        if client is None:
+            yield GenerationContext(gen=None)
+            return
+
+        trace: Any = None
+        gen: Any = None
         try:
             # Sérialiser les messages pour Langfuse
             input_repr = self._serialize_messages(messages)
 
-            trace = self._client.trace(
+            trace = client.trace(
                 name=f"bea/{role}",
                 session_id=session_id or "no-session",
                 tags=[role, agent_name or "unknown", "bea"],
@@ -204,9 +209,9 @@ class LangfuseTracer:
             yield ctx
         finally:
             # Flush non-bloquant
-            if self._client and gen:
+            if client and gen:
                 try:
-                    self._client.flush()
+                    client.flush()
                 except Exception as _exc:
                     log.warning("swallowed_exception", action="langfuse_tracer_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
@@ -220,8 +225,11 @@ class LangfuseTracer:
         """Ajoute un score à une trace (ex: qualité de la réponse LLM)."""
         if not self.enabled or not trace_id:
             return
+        client = self._client
+        if client is None:
+            return
         try:
-            self._client.score(
+            client.score(
                 trace_id=trace_id,
                 name=name,
                 value=value,
@@ -232,16 +240,17 @@ class LangfuseTracer:
 
     def flush(self) -> None:
         """Force le flush du client (utile avant shutdown)."""
-        if self._client:
+        client = self._client
+        if client is not None:
             try:
-                self._client.flush()
+                client.flush()
             except Exception as _exc:
                 log.warning("swallowed_exception", action="langfuse_tracer_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
     @staticmethod
-    def _serialize_messages(messages: list) -> list[dict]:
+    def _serialize_messages(messages: list[Any]) -> list[dict[str, Any]]:
         """Sérialise les LangChain messages en format Langfuse."""
-        result = []
+        result: list[dict[str, Any]] = []
         for m in messages:
             try:
                 role    = getattr(m, "type", "unknown")

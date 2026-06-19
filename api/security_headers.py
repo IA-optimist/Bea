@@ -12,8 +12,11 @@ Headers:
 """
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
 
 
 # Paths qui doivent bypasser la CSP stricte (Swagger/redoc ont besoin d'inline).
@@ -25,14 +28,18 @@ def _is_csp_exempt(path: str) -> bool:
     return any(path.startswith(p) for p in _CSP_EXEMPT_PREFIXES)
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
     """
     Adds security headers to all responses.
     
     Production-ready defaults following OWASP recommendations.
     """
     
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         response = await call_next(request)
         
         # HSTS: Force HTTPS for 1 year (31536000 seconds)

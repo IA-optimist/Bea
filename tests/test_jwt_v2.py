@@ -75,7 +75,7 @@ class FakeRedis:
 
 @pytest.fixture
 def secret() -> str:
-    return "test-secret-for-jwt-v2-do-not-use-in-prod"
+    return "test-secret-for-jwt-v2-do-not-use-in-prod-32+"
 
 
 @pytest.fixture
@@ -154,7 +154,10 @@ def test_verify_rejects_tampered_signature(secret: str, store: FakeRedis):
 
 def test_verify_rejects_wrong_secret(secret: str, store: FakeRedis):
     pair = jwt_v2.create_token_pair(sub="alice", role="user", secret=secret)
-    assert jwt_v2.verify_access_token(pair.access_token, "wrong-secret") is None
+    assert jwt_v2.verify_access_token(
+        pair.access_token,
+        "wrong-secret-value-that-is-long-enough-but-still-wrong",
+    ) is None
 
 
 def test_verify_rejects_expired_token(monkeypatch: pytest.MonkeyPatch,

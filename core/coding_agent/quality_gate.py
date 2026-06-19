@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 
 PYTHON_DIRS = ("api/", "agents/", "core/", "executor/", "memory/", "tools/")
@@ -34,7 +35,7 @@ class QualityGateCommand:
     required: bool = True
     reason: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -47,7 +48,7 @@ class QualityGatePlan:
     risk_level: str
     score: float
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["commands"] = [cmd.to_dict() for cmd in self.commands]
         return data

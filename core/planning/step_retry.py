@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 import structlog
 
 log = structlog.get_logger("planning.step_retry")
@@ -47,7 +48,7 @@ class RetryStrategy:
     prompt_suffix: str = ""           # Extra instruction appended to prompt
     simplify: bool = False            # Strip examples from prompt
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "strategy_type": self.strategy_type.value,
             "temperature": self.temperature,
@@ -77,7 +78,7 @@ _ESCALATION = [
 ]
 
 
-def detect_incomplete_output(output: dict, schema: list) -> list[str]:
+def detect_incomplete_output(output: dict[str, Any], schema: list[dict[str, Any]]) -> list[str]:
     """
     Detect if LLM output is incomplete or malformed.
 
@@ -100,7 +101,7 @@ def detect_incomplete_output(output: dict, schema: list) -> list[str]:
         issues.append("json_parse_failed: output contains raw_output (JSON parse failed)")
 
     # Get schema field names
-    schema_fields = {}
+    schema_fields: dict[str, Any] = {}
     for s in (schema or []):
         name = s.get("name", "")
         if name:
@@ -192,11 +193,11 @@ def apply_strategy_to_prompt(prompt: str, strategy: RetryStrategy) -> str:
 class RetryTrace:
     """Records all retry attempts for a step execution."""
     total_attempts: int = 1
-    strategies_used: list[dict] = field(default_factory=list)
+    strategies_used: list[dict[str, Any]] = field(default_factory=list)
     issues_per_attempt: list[list[str]] = field(default_factory=list)
     final_attempt: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "total_attempts": self.total_attempts,
             "strategies_used": self.strategies_used,

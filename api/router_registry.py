@@ -31,7 +31,7 @@ class RouterEntry:
     error: str = ""
     route_count: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
             "prefix": self.prefix,
@@ -45,9 +45,9 @@ class RouterEntry:
 class RouterRegistry:
     """Central registry for all API routers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._routers: dict[str, RouterEntry] = {}
-        self._load_errors: list[dict] = []
+        self._load_errors: list[dict[str, str]] = []
 
     def register(self, name: str, router: APIRouter, prefix: str = "", tags: list[str] | None = None) -> None:
         """Register a successfully loaded router."""
@@ -81,7 +81,7 @@ class RouterRegistry:
             return entry.router
         return None
 
-    def get_status(self) -> dict:
+    def get_status(self) -> dict[str, object]:
         """Get full registry status summary."""
         loaded = [e for e in self._routers.values() if e.loaded]
         failed = [e for e in self._routers.values() if not e.loaded]
@@ -121,7 +121,7 @@ def get_router(name: str) -> Optional[APIRouter]:
     return _registry.get(name)
 
 
-def get_registry_status() -> dict:
+def get_registry_status() -> dict[str, object]:
     return _registry.get_status()
 
 

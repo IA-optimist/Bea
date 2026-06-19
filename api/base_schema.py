@@ -10,7 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 
-class StrictBaseModel(BaseModel):
+class StrictBaseModel(BaseModel):  # type: ignore[misc]
     """
     Base model with strict validation enabled.
     

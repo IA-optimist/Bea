@@ -27,6 +27,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TypedDict
 
 import structlog
 
@@ -121,6 +122,12 @@ class ModelProfile:
     strengths: set[str]     # Routing dimensions this model excels at
     cost_tier: str          # free | cheap | medium | expensive | premium
     is_local: bool = False
+
+
+class ModelHealthRecord(TypedDict):
+    calls: int
+    successes: int
+    last_failure_ts: float
 
 
 # Canonical model profiles — these match the OpenRouter config
@@ -383,8 +390,8 @@ def score_model(profile: ModelProfile, dimension: RoutingDimension,
 class ModelHealthTracker:
     """Track model success/failure rates for routing decisions."""
 
-    def __init__(self):
-        self._records: dict[str, dict] = {}  # model_id -> {calls, successes, last_failure_ts}
+    def __init__(self) -> None:
+        self._records: dict[str, ModelHealthRecord] = {}
 
     def record(self, model_id: str, success: bool) -> None:
         if model_id not in self._records:
@@ -570,7 +577,7 @@ def resolve_role(role: str, budget: str = "balanced",
 # RECENT DECISIONS BUFFER — for diagnostics
 # ═══════════════════════════════════════════════════════════════
 
-_recent_decisions: list[dict] = []
+_recent_decisions: list[dict[str, object]] = []
 _MAX_RECENT = 50
 
 
@@ -590,6 +597,6 @@ def record_decision(decision: RoutingDecision) -> None:
         _recent_decisions.pop(0)
 
 
-def get_recent_decisions(limit: int = 20) -> list[dict]:
+def get_recent_decisions(limit: int = 20) -> list[dict[str, object]]:
     """Return recent routing decisions for diagnostics."""
     return list(reversed(_recent_decisions[-limit:]))

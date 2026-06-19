@@ -14,7 +14,7 @@ Mission types:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 import structlog
 
@@ -26,9 +26,9 @@ log = structlog.get_logger("business_missions")
 # ══════════════════════════════════════════════════════════════
 
 async def handle_scan_opportunities(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Scan business opportunities from multiple sources.
     
@@ -52,8 +52,8 @@ async def handle_scan_opportunities(
     from business.automation.opportunity_scanner import OpportunityScanner
     
     params = mission.get("params", {})
-    days_back = params.get("days_back", 30)
-    min_score = params.get("min_score", 60.0)
+    days_back = int(params.get("days_back", 30))
+    min_score = float(params.get("min_score", 60.0))
     
     log.info("business_scan_start", days_back=days_back)
     
@@ -102,9 +102,9 @@ async def handle_scan_opportunities(
 
 
 async def handle_build_product(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Build a complete SaaS product from an opportunity.
     
@@ -131,7 +131,7 @@ async def handle_build_product(
     params = mission.get("params", {})
     opportunity = params.get("opportunity", {})
     stack = params.get("stack", "react_fastapi")
-    features = params.get("features", ["auth", "payments", "dashboard"])
+    features = list(params.get("features", ["auth", "payments", "dashboard"]))
     
     log.info("business_build_start", 
              title=opportunity.get("title"),
@@ -181,9 +181,9 @@ async def handle_build_product(
 
 
 async def handle_deploy_product(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Deploy a product to production.
     
@@ -243,9 +243,9 @@ async def handle_deploy_product(
 
 
 async def handle_check_compliance(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Check legal compliance for a product.
     
@@ -293,9 +293,9 @@ async def handle_check_compliance(
 
 
 async def handle_optimize_taxes(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Calculate optimal fiscal structure.
     
@@ -338,9 +338,9 @@ async def handle_optimize_taxes(
 
 
 async def handle_track_revenue(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Track revenue across product portfolio.
     
@@ -381,9 +381,9 @@ async def handle_track_revenue(
 # HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════
 
-def _count_sources(opportunities: List) -> Dict[str, int]:
+def _count_sources(opportunities: list[Any]) -> dict[str, int]:
     """Count opportunities by source."""
-    counts = {}
+    counts: dict[str, int] = {}
     for opp in opportunities:
         source = opp.source
         counts[source] = counts.get(source, 0) + 1
@@ -404,7 +404,7 @@ BUSINESS_MISSION_HANDLERS = {
 }
 
 
-def register_business_handlers(orchestrator):
+def register_business_handlers(orchestrator: Any) -> None:
     """
     Register business mission handlers with MetaOrchestrator.
     

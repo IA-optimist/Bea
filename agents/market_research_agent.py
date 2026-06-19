@@ -30,7 +30,7 @@ class Competitor:
     weaknesses: list[str] = field(default_factory=list)
     market_share_est: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name, "url": self.url, "category": self.category,
             "pricing": self.pricing,
@@ -50,7 +50,7 @@ class Persona:
     budget: str = ""
     channels: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name, "role": self.role, "age_range": self.age_range,
             "pain_points": self.pain_points[:5], "goals": self.goals[:3],
@@ -67,7 +67,7 @@ class MarketSize:
     growth_rate: str = ""
     currency: str = "USD"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "tam": self.tam, "sam": self.sam, "som": self.som,
             "growth_rate": self.growth_rate, "currency": self.currency,
@@ -88,7 +88,7 @@ class MarketReport:
     confidence: float = 0.0     # 0-1 confidence in analysis
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "opportunity": self.opportunity,
             "market_size": self.market_size.to_dict(),

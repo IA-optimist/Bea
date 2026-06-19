@@ -33,7 +33,7 @@ class Verdict(str, Enum):
 
 @dataclass
 class ValidationResult:
-    verdict: str                       # KEEP | DISCARD | NEEDS_TEST
+    verdict: Verdict                   # KEEP | DISCARD | NEEDS_TEST
     knowledge_type: str                # best_practice | anti_pattern | fix | heuristic | ...
     credibility_score: float           # 0.0 → 1.0
     utility_score: float               # 0.0 → 1.0
@@ -45,7 +45,7 @@ class ValidationResult:
     reasons: list[str] = field(default_factory=list)
     global_score: float = 0.0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "verdict": self.verdict,
             "knowledge_type": self.knowledge_type,
@@ -236,14 +236,14 @@ class KnowledgeValidator:
         self,
         items: list[dict[str, Any]],
         existing_knowledge: list[str] | None = None,
-    ) -> list[tuple[dict, ValidationResult]]:
+    ) -> list[tuple[dict[str, Any], ValidationResult]]:
         """
         Valide un batch de connaissances.
         items = [{"content": "...", "topic": "...", "source_trust": 0.8, "type": "..."}]
         Retourne [(item, result), ...] triés : KEEP → NEEDS_TEST → DISCARD
         """
         existing = existing_knowledge or []
-        results = []
+        results: list[tuple[dict[str, Any], ValidationResult]] = []
         accumulated = list(existing)
 
         for item in items:
@@ -259,8 +259,7 @@ class KnowledgeValidator:
                 accumulated.append(item.get("content", ""))
 
         # Tri : KEEP > NEEDS_TEST > DISCARD
-        order = {Verdict.KEEP: 0, Verdict.NEEDS_TEST: 1, Verdict.DISCARD: 2}
-        results.sort(key=lambda x: order.get(x[1].verdict, 3))
+        results.sort(key=lambda item: self._verdict_rank(item[1].verdict))
         return results
 
     # ── Méthodes privées ──────────────────────────────────────────────────────
@@ -391,9 +390,18 @@ class KnowledgeValidator:
         utility: float,
         reusability: float,
         is_testable: bool,
-    ) -> str:
+    ) -> Verdict:
         if global_score >= self.KEEP_THRESHOLD and credibility >= self.MIN_CREDIBILITY:
             return Verdict.KEEP
         if global_score >= self.NEEDS_TEST_MIN:
             return Verdict.NEEDS_TEST
         return Verdict.DISCARD
+
+    @staticmethod
+    def _verdict_rank(verdict: Verdict) -> int:
+        order: dict[Verdict, int] = {
+            Verdict.KEEP: 0,
+            Verdict.NEEDS_TEST: 1,
+            Verdict.DISCARD: 2,
+        }
+        return order[verdict]

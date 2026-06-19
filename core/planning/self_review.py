@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Any
 import structlog
 
 log = structlog.get_logger("planning.self_review")
@@ -28,7 +29,7 @@ class ReviewIssue:
     description: str
     fixable: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "category": self.category,
             "severity": self.severity,
@@ -46,7 +47,7 @@ class ReviewResult:
     reviewed: bool = True
     improvement_applied: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "passed": self.passed,
             "score": round(self.score, 3),
@@ -58,8 +59,8 @@ class ReviewResult:
 
 def review_mission_result(
     goal: str,
-    run_result: dict,
-    step_outputs: dict | None = None,
+    run_result: dict[str, Any],
+    step_outputs: dict[str, Any] | None = None,
 ) -> ReviewResult:
     """
     Self-review a mission result before delivery.
@@ -159,7 +160,7 @@ def review_mission_result(
     )
 
 
-def _extract_text_from_outputs(outputs: dict) -> str:
+def _extract_text_from_outputs(outputs: dict[str, Any]) -> str:
     """Extract text content from step outputs for coherence checking."""
     texts: list[str] = []
     for step_id, output in outputs.items():

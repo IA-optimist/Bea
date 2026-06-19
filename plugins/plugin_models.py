@@ -19,9 +19,16 @@ class PluginMetadata:
     requires_approval: bool = False
     tags: list = field(default_factory=list)
     author: str = ""
+    signature: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+    def canonical_payload(self) -> dict:
+        """Return a dict suitable for signing (signature excluded)."""
+        d = self.to_dict()
+        d.pop("signature", None)
+        return d
 
 
 @dataclass

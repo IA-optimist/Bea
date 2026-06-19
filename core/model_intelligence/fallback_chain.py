@@ -12,6 +12,7 @@ Design:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 import structlog
 
 log = structlog.get_logger("model_intelligence.fallback_chain")
@@ -79,7 +80,7 @@ class FallbackChain:
         """Record that a model failed for this chain."""
         self._failed.add(model_id)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "task_class": self.task_class,
             "budget_mode": self.budget_mode,
@@ -95,7 +96,7 @@ class FallbackChainManager:
     Tracks model failures in-memory (resets on restart).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._failure_log: dict[str, set[str]] = {}  # task_class → set of failed model_ids
 
     def get_chain(
@@ -148,7 +149,7 @@ class FallbackChainManager:
         """Record that a model failed for a task class."""
         self._failure_log.setdefault(task_class, set()).add(model_id)
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, list[str]]:
         return {
             task: list(models)
             for task, models in self._failure_log.items()

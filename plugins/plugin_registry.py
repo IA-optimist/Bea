@@ -15,6 +15,7 @@ from typing import Optional, Any
 import structlog
 
 from plugins.plugin_models import PluginMetadata, PluginStatus
+from plugins.signatures import verify_plugin_metadata
 
 log = structlog.get_logger("plugins.registry")
 
@@ -44,6 +45,10 @@ class PluginRegistry:
                 raise TypeError("plugin.metadata must be PluginMetadata instance")
             if not callable(getattr(plugin, "invoke", None)):
                 raise TypeError("plugin must implement invoke(action, params, context)")
+
+            # Verify plugin signature when one is present
+            if meta.signature and not verify_plugin_metadata(meta):
+                raise ValueError("plugin metadata signature verification failed")
         except Exception as e:
             log.warning("plugin_registration_failed", error=str(e))
             return False

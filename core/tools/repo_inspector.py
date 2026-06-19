@@ -18,7 +18,7 @@ import re
 import subprocess  # nosec B404
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 
@@ -60,7 +60,7 @@ def _safe_path(path_str: str) -> Optional[Path]:
         return None
 
 
-def read_file(path: str, max_lines: int = 200) -> dict:
+def read_file(path: str, max_lines: int = 200) -> dict[str, Any]:
     """
     Read a file from the repo. Returns content truncated to max_lines.
     Risk: LOW (read-only)
@@ -79,7 +79,7 @@ def read_file(path: str, max_lines: int = 200) -> dict:
         if safe.suffix not in _CODE_EXTENSIONS and safe.suffix:
             return {"ok": False, "error": f"extension_blocked: {safe.suffix}"}
 
-        lines = safe.read_text(encoding="utf-8", errors="replace").splitlines()
+        lines: list[str] = safe.read_text(encoding="utf-8", errors="replace").splitlines()
         total = len(lines)
         content = "\n".join(lines[:max_lines])
         if total > max_lines:
@@ -92,7 +92,7 @@ def read_file(path: str, max_lines: int = 200) -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dict:
+def grep_repo(pattern: str, directory: str = "", extensions: list[str] | None = None) -> dict[str, Any]:
     """
     Search for a regex pattern across repo files.
     Risk: LOW (read-only grep)
@@ -107,7 +107,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
 
         exts = set(extensions or [".py"])
         compiled = re.compile(pattern)
-        matches = []
+        matches: list[dict[str, Any]] = []
 
         for root, dirs, files in os.walk(search_dir):
             dirs[:] = [d for d in dirs if d not in _SKIP_DIRS and not d.startswith(".")]
@@ -148,7 +148,7 @@ def grep_repo(pattern: str, directory: str = "", extensions: list = None) -> dic
         return {"ok": False, "error": str(e)[:200]}
 
 
-def git_status() -> dict:
+def git_status() -> dict[str, Any]:
     """
     Get git status of the repo.
     Risk: LOW (read-only git command)
@@ -174,7 +174,7 @@ def git_status() -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def git_log(n: int = 5) -> dict:
+def git_log(n: int = 5) -> dict[str, Any]:
     """
     Get recent git commits.
     Risk: LOW (read-only)
@@ -196,7 +196,7 @@ def git_log(n: int = 5) -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def list_directory(path: str = "", max_items: int = 50) -> dict:
+def list_directory(path: str = "", max_items: int = 50) -> dict[str, Any]:
     """
     List files in a directory.
     Risk: LOW (read-only)
@@ -209,7 +209,7 @@ def list_directory(path: str = "", max_items: int = 50) -> dict:
         if not target.is_dir():
             return {"ok": False, "error": f"not_a_directory: {path}"}
 
-        items = []
+        items: list[str] = []
         for entry in sorted(target.iterdir())[:max_items]:
             if entry.name.startswith(".") or entry.name in _SKIP_DIRS:
                 continue
@@ -227,7 +227,7 @@ def list_directory(path: str = "", max_items: int = 50) -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def tree(path: str = "", max_depth: int = 2) -> dict:
+def tree(path: str = "", max_depth: int = 2) -> dict[str, Any]:
     """
     Show directory tree up to max_depth.
     Risk: LOW (read-only)
@@ -241,7 +241,7 @@ def tree(path: str = "", max_depth: int = 2) -> dict:
             return {"ok": False, "error": f"not_a_directory: {path}"}
 
         max_depth = min(max_depth, 3)  # cap
-        lines = []
+        lines: list[str] = []
         _tree_walk(target, "", 0, max_depth, lines, max_items=100)
 
         ms = int((time.monotonic() - t0) * 1000)
@@ -251,7 +251,7 @@ def tree(path: str = "", max_depth: int = 2) -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def file_stats(path: str) -> dict:
+def file_stats(path: str) -> dict[str, Any]:
     """
     Get file statistics: line count, size, imports, classes, functions.
     Risk: LOW (read-only analysis)
@@ -267,9 +267,9 @@ def file_stats(path: str) -> dict:
         size = safe.stat().st_size
 
         # Python-specific analysis
-        imports = []
-        classes = []
-        functions = []
+        imports: list[str] = []
+        classes: list[dict[str, Any]] = []
+        functions: list[dict[str, Any]] = []
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
             if stripped.startswith("import ") or stripped.startswith("from "):
@@ -296,7 +296,7 @@ def file_stats(path: str) -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
-def run_tests(test_path: str = "tests/", pattern: str = "", timeout: int = 60) -> dict:
+def run_tests(test_path: str = "tests/", pattern: str = "", timeout: int = 60) -> dict[str, Any]:
     """
     Run pytest on a specific path with optional pattern filter.
     Risk: LOW (read-only test execution in container)
@@ -480,8 +480,8 @@ def _parse_branch(status_output: str) -> str:
 
 def _tree_walk(
     path: Path, prefix: str, depth: int, max_depth: int,
-    lines: list, max_items: int = 100,
-):
+    lines: list[str], max_items: int = 100,
+) -> None:
     """Recursive tree builder."""
     if depth > max_depth or len(lines) >= max_items:
         return

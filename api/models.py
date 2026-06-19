@@ -30,11 +30,11 @@ class MissionLogEvent:
     agent_id:    str   = ""
     tool_name:   str   = ""
     risk_level:  str   = "safe"
-    data:        dict  = field(default_factory=dict)
+    data:        dict[str, object] = field(default_factory=dict)
     event_id:    str   = field(default_factory=lambda: str(uuid.uuid4())[:10])
     timestamp:   float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         d = asdict(self)
         # Ensure event_type is a string value
         d["event_type"] = self.event_type.value if hasattr(self.event_type, "value") else str(self.event_type)
@@ -54,7 +54,7 @@ class MissionSummary:
     duration_ms:       int
     created_at:        float
     completed_at:      float = 0.0
-    metadata:          dict  = field(default_factory=dict)
+    metadata:          dict[str, object] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return asdict(self)

@@ -5,11 +5,13 @@ Ne crée pas de nouveaux agents — réutilise les agents existants avec un cont
 """
 from __future__ import annotations
 
+from typing import cast
+
 import structlog
 
 log = structlog.get_logger()
 
-DOMAIN_PROFILES: dict[str, dict] = {
+DOMAIN_PROFILES: dict[str, dict[str, object]] = {
     "software_dev": {
         "preferred_agents": ["scout-research", "map-planner", "forge-builder", "shadow-advisor", "lens-reviewer"],
         "context_prefix": "Tu agis en tant qu'ingénieur logiciel senior.",
@@ -96,7 +98,7 @@ def detect_domain(goal: str) -> str:
 class DomainRouter:
     """Route une mission vers le profil d'agents et le contexte appropriés."""
 
-    def route(self, goal: str) -> dict:
+    def route(self, goal: str) -> dict[str, object]:
         """
         Retourne :
           { domain, context_prefix, preferred_agents, max_agents }
@@ -106,7 +108,7 @@ class DomainRouter:
         result = {
             "domain":           domain,
             "context_prefix":   profile["context_prefix"],
-            "preferred_agents": list(profile["preferred_agents"]),
+            "preferred_agents": cast(list[str], profile["preferred_agents"]),
             "max_agents":       profile["max_agents"],
         }
         log.info("domain_router", domain=domain, goal=goal[:60])

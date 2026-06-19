@@ -87,7 +87,7 @@ class ExecutionResult:
             self.retryable = self.error_class in _RETRYABLE
         return self
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "execution_id": self.execution_id,
             "task_id": self.task_id,

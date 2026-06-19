@@ -25,6 +25,11 @@ dependencies = []
 Homepage = "https://github.com/IA-optimist/Bea"
 Repository = "https://github.com/IA-optimist/Bea"
 
+[project.scripts]
+bea-validate = "scripts.validate_local:main"
+bea-benchmark = "scripts.bea_benchmark:main"
+bea-api-local = "scripts.run_api_local:main"
+
 [tool.setuptools]
 include-package-data = true
 py-modules = ["main", "beamax_cli", "docker_sdk", "metrics_scrape_example"]

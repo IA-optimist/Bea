@@ -2,12 +2,13 @@
 from __future__ import annotations
 import os
 import subprocess  # nosec B404
+from typing import Any
 
 _BEA_ROOT = os.environ.get("BEA_ROOT", "/opt/beamax")
 _ALLOWED_ROOTS = (_BEA_ROOT, "/tmp")  # nosec B108 — path-prefix allowlist, not a write target.
 
 
-def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:
+def _ok(output: str, logs: list[str] | None = None, risk_level: str = "low") -> dict[str, Any]:
     return {
         "ok": True, "status": "ok",
         "output": output, "result": output,
@@ -15,7 +16,7 @@ def _ok(output: str, logs: list = None, risk_level: str = "low") -> dict:
     }
 
 
-def _err(error: str, logs: list = None, risk_level: str = "low") -> dict:
+def _err(error: str, logs: list[str] | None = None, risk_level: str = "low") -> dict[str, Any]:
     return {
         "ok": False, "status": "error",
         "output": "", "result": "",
@@ -30,7 +31,7 @@ def _check_path(repo_path: str) -> str | None:
     return f"blocked_path: {repo_path} not under allowed roots"
 
 
-def _run(args: list[str], repo_path: str, timeout: int = 15, risk_level: str = "low") -> dict:
+def _run(args: list[str], repo_path: str, timeout: int = 15, risk_level: str = "low") -> dict[str, Any]:
     logs = [f"cmd={args}"]
     try:
         proc = subprocess.run(  # nosec B603 B607
@@ -50,7 +51,7 @@ def _run(args: list[str], repo_path: str, timeout: int = 15, risk_level: str = "
         return _err(str(e), logs=logs, risk_level=risk_level)
 
 
-def git_status(repo_path: str) -> dict:
+def git_status(repo_path: str) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -60,7 +61,7 @@ def git_status(repo_path: str) -> dict:
         return _err(str(e))
 
 
-def git_diff(repo_path: str, file: str = None) -> dict:
+def git_diff(repo_path: str, file: str | None = None) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -73,7 +74,7 @@ def git_diff(repo_path: str, file: str = None) -> dict:
         return _err(str(e))
 
 
-def git_log(repo_path: str, n: int = 5) -> dict:
+def git_log(repo_path: str, n: int = 5) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -83,7 +84,7 @@ def git_log(repo_path: str, n: int = 5) -> dict:
         return _err(str(e))
 
 
-def git_branch(repo_path: str) -> dict:
+def git_branch(repo_path: str) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -93,7 +94,7 @@ def git_branch(repo_path: str) -> dict:
         return _err(str(e))
 
 
-def git_pull(repo_path: str) -> dict:
+def git_pull(repo_path: str) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -103,7 +104,7 @@ def git_pull(repo_path: str) -> dict:
         return _err(str(e))
 
 
-def git_branch_create(repo_path: str, branch_name: str) -> dict:
+def git_branch_create(repo_path: str, branch_name: str) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -113,7 +114,7 @@ def git_branch_create(repo_path: str, branch_name: str) -> dict:
         return _err(str(e))
 
 
-def git_checkout(repo_path: str, branch: str) -> dict:
+def git_checkout(repo_path: str, branch: str) -> dict[str, Any]:
     try:
         blocked = _check_path(repo_path)
         if blocked:
@@ -123,7 +124,7 @@ def git_checkout(repo_path: str, branch: str) -> dict:
         return _err(str(e))
 
 
-def git_commit(repo_path: str, message: str, files: list, approval_mode: str = "SUPERVISED") -> dict:
+def git_commit(repo_path: str, message: str, files: list[str], approval_mode: str = "SUPERVISED") -> dict[str, Any]:
     try:
         if approval_mode != "auto":
             return _err("blocked_by_policy: git_commit requires approval_mode=auto", risk_level="high")
@@ -138,7 +139,7 @@ def git_commit(repo_path: str, message: str, files: list, approval_mode: str = "
         return _err(str(e), risk_level="high")
 
 
-def git_push(repo_path: str, branch: str = "master", approval_mode: str = "SUPERVISED") -> dict:
+def git_push(repo_path: str, branch: str = "master", approval_mode: str = "SUPERVISED") -> dict[str, Any]:
     try:
         if approval_mode != "auto":
             return _err("blocked_by_policy: git_push requires approval_mode=auto", risk_level="high")

@@ -19,6 +19,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Iterator
 import structlog
 
 log = structlog.get_logger("self_improvement.codebase_awareness")
@@ -47,11 +48,11 @@ class ModuleContext:
     imported_by: list[str] = field(default_factory=list)
     classes: list[str] = field(default_factory=list)
     functions: list[str] = field(default_factory=list)
-    patterns: dict = field(default_factory=dict)  # detected conventions
+    patterns: dict[str, Any] = field(default_factory=dict)  # detected conventions
     line_count: int = 0
     complexity: str = ""  # low, medium, high
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "path": self.path,
             "layer": self.layer,
@@ -78,7 +79,7 @@ class ImpactAnalysis:
     existing_abstractions: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "target_file": self.target_file,
             "direct_dependents": self.direct_dependents,
@@ -242,7 +243,7 @@ class CodebaseAwareness:
 
         # Get patterns from neighboring files
         parent = Path(filepath).parent
-        sibling_patterns: list[dict] = []
+        sibling_patterns: list[dict[str, Any]] = []
         for sibling in self._iter_python_files():
             if str(sibling.parent) == str(self._root / parent) and str(sibling) != filepath:
                 try:
@@ -344,7 +345,7 @@ class CodebaseAwareness:
             except Exception as _exc:
                 log.warning("swallowed_exception", action="codebase_awareness_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
-    def _iter_python_files(self):
+    def _iter_python_files(self) -> Iterator[Path]:
         """Iterate all Python files in repo, excluding venv/cache."""
         skip = {".git", "__pycache__", "venv", ".venv", "node_modules", ".tox"}
         for root, dirs, files in os.walk(self._root):
@@ -353,9 +354,9 @@ class CodebaseAwareness:
                 if f.endswith(".py"):
                     yield Path(root) / f
 
-    def _detect_patterns(self, content: str) -> dict:
+    def _detect_patterns(self, content: str) -> dict[str, bool | str]:
         """Detect coding patterns in content."""
-        patterns = {}
+        patterns: dict[str, bool | str] = {}
 
         # Logging style
         if "structlog" in content:
@@ -393,7 +394,7 @@ class ChangeClassification:
     pre_conditions: list[str] = field(default_factory=list)  # what must be true before applying
     post_conditions: list[str] = field(default_factory=list)  # what must be true after applying
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "risk_level": self.risk_level,
             "category": self.category,
@@ -486,14 +487,14 @@ class ChangeReport:
     files_modified: list[str] = field(default_factory=list)
     lines_added: int = 0
     lines_removed: int = 0
-    classification: dict = field(default_factory=dict)
-    impact: dict = field(default_factory=dict)
+    classification: dict[str, Any] = field(default_factory=dict)
+    impact: dict[str, Any] = field(default_factory=dict)
     consistency_warnings: list[str] = field(default_factory=list)
     tests_affected: list[str] = field(default_factory=list)
     tests_passed: bool = False
     follow_up: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "change_id": self.change_id,
             "what": self.description,

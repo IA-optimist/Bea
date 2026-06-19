@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Any
 import structlog
 
 log = structlog.get_logger()
@@ -79,7 +80,7 @@ class PolicyDecision:
     allowed:    bool
     reason:     str          = ""
     suggestion: str          = ""
-    metadata:   dict         = field(default_factory=dict)
+    metadata:   dict[str, object] = field(default_factory=dict)
 
     def deny(self, reason: str, suggestion: str = "") -> "PolicyDecision":
         self.allowed    = False
@@ -122,7 +123,7 @@ class SessionPolicy:
     Instance par session — créé par PolicyEngine.
     """
 
-    def __init__(self, session_id: str, limits: dict):
+    def __init__(self, session_id: str, limits: dict[str, int | float]) -> None:
         self.session_id   = session_id
         self.limits       = limits
         self.actions_done = 0
@@ -131,10 +132,10 @@ class SessionPolicy:
         self.cost_usd     = 0.0
         self.started_at   = time.monotonic()
 
-    def record_action(self):
+    def record_action(self) -> None:
         self.actions_done += 1
 
-    def record_llm_call(self, provider: str, tokens: int = 0):
+    def record_llm_call(self, provider: str, tokens: int = 0) -> None:
         self.tokens_used += tokens
         if provider != "ollama":
             self.cloud_calls += 1
@@ -155,7 +156,7 @@ class SessionPolicy:
             return False, f"Session timeout ({int(elapsed)}s/{self.limits['session_timeout_s']}s)"
         return True, ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         elapsed = time.monotonic() - self.started_at
         return {
             "session_id":   self.session_id,
@@ -191,7 +192,7 @@ class PolicyEngine:
         llm = settings.get_llm(route.provider)
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings: Any) -> None:
         self.s        = settings
         self._sessions: dict[str, SessionPolicy] = {}
 
@@ -362,7 +363,7 @@ class PolicyEngine:
 
     # ── Rapport ───────────────────────────────────────────
 
-    def get_report(self) -> dict:
+    def get_report(self) -> dict[str, object]:
         """Rapport global de toutes les sessions actives."""
         return {
             "active_sessions": len(self._sessions),
@@ -371,7 +372,7 @@ class PolicyEngine:
             "dry_run": getattr(self.s, "dry_run", False),
         }
 
-    def clear_sessions(self):
+    def clear_sessions(self) -> None:
         """Purge les sessions terminées (pour gestion mémoire)."""
         before = len(self._sessions)
         self._sessions.clear()

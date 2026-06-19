@@ -1,5 +1,6 @@
 """app_sync_toolkit — vérification et synchronisation des champs API Bea."""
 from __future__ import annotations
+from typing import Any
 
 _REQUIRED_FIELDS = [
     "mission_id", "goal", "status", "agent_outputs",
@@ -7,7 +8,7 @@ _REQUIRED_FIELDS = [
 ]
 
 
-def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
+def _ok(output: str, logs: list[str] | None = None, risk_level: str = "low", **extra: Any) -> dict[str, Any]:
     base = {
         "ok": True, "status": "ok",
         "output": output, "result": output,
@@ -17,7 +18,7 @@ def _ok(output: str, logs: list = None, risk_level: str = "low", **extra) -> dic
     return base
 
 
-def _err(error: str, logs: list = None, risk_level: str = "low", **extra) -> dict:
+def _err(error: str, logs: list[str] | None = None, risk_level: str = "low", **extra: Any) -> dict[str, Any]:
     base = {
         "ok": False, "status": "error",
         "output": "", "result": "",
@@ -27,7 +28,7 @@ def _err(error: str, logs: list = None, risk_level: str = "low", **extra) -> dic
     return base
 
 
-def check_api_fields(base_url: str = "http://localhost:8000") -> dict:
+def check_api_fields(base_url: str = "http://localhost:8000") -> dict[str, Any]:
     """
     Vérifie la présence des champs requis dans la réponse de l'API missions.
     Appelle GET /api/v2/missions/list (fallback /api/v2/missions/recent).
@@ -95,7 +96,7 @@ def check_api_fields(base_url: str = "http://localhost:8000") -> dict:
         return _err(str(e), fields_ok=[], fields_missing=[], patch_needed=False)
 
 
-def sync_app_fields(base_url: str = "http://localhost:8000") -> dict:
+def sync_app_fields(base_url: str = "http://localhost:8000") -> dict[str, Any]:
     """
     Appelle check_api_fields et retourne un rapport.
     Si des champs manquent, décrit le patch nécessaire (sans l'appliquer).
