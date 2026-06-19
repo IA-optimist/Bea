@@ -66,11 +66,6 @@ def restore_gate(token: contextvars.Token) -> None:
     """Undo a :func:`skip_gate_for_context` call."""
     _skip_gate_ctx.reset(token)
 
-try:
-    import structlog
-    _log = structlog.get_logger("kernel.improvement.gate")
-except ImportError:
-    _log = structlog.get_logger("kernel.improvement.gate")
 
 
 # ── Safety invariants — hard-coded, never configurable at runtime ─────────────
@@ -108,7 +103,7 @@ def register_history_provider(fn: Callable[[], List[dict]]) -> None:
     """
     global _history_provider
     _history_provider = fn
-    _log.debug("kernel_improvement_history_registered")
+    log.debug("kernel_improvement_history_registered")
 
 
 class PatchSignatureViolation(Exception):
@@ -150,7 +145,7 @@ class ImprovementGate:
         # Reject UNSIGNED and non-ed25519 immediately — no crypto import needed.
         algorithm = sig_data.get("algorithm", "")
         raw_sig = sig_data.get("signature", "")
-        if raw_sig == "UNSIGNED" or algorithm != "ed25519":
+        if not raw_sig or raw_sig == "UNSIGNED" or algorithm != "ed25519":
             raise PatchSignatureViolation(
                 f"Patch has no valid ed25519 signature — "
                 f"algorithm={algorithm!r}, signature={raw_sig!r}. Rejected."
@@ -165,14 +160,14 @@ class ImprovementGate:
                 verify_patch_signature,
             )
         except ImportError as exc:
-            _log.error("patch_signature_import_failed", err=str(exc)[:80])
+            log.error("patch_signature_import_failed", err=str(exc)[:80])
             raise PatchSignatureViolation(
                 f"Cannot import patch_signature module: {exc}"
             ) from exc
 
         verify_key = load_verification_key()
         if verify_key is None:
-            _log.warning(
+            log.warning(
                 "patch_signature_no_verify_key",
                 msg=(
                     "BEA_PATCH_VERIFY_KEY is not set — "
@@ -184,7 +179,7 @@ class ImprovementGate:
         try:
             verify_patch_signature(patch_content, sig_data, verify_key)
         except SignatureError as exc:
-            _log.error("patch_signature_invalid", err=str(exc)[:120])
+            log.error("patch_signature_invalid", err=str(exc)[:120])
             raise PatchSignatureViolation(
                 f"Patch signature verification failed: {exc}"
             ) from exc
@@ -221,7 +216,7 @@ class ImprovementGate:
                     action_target="kernel.improvement.gate",
                 )
                 if not _sec_result.allowed:
-                    _log.info(
+                    log.info(
                         "improvement_gate_security_blocked",
                         reason=_sec_result.reason[:80],
                         escalated=_sec_result.escalated,
@@ -231,7 +226,7 @@ class ImprovementGate:
                         reason=f"security_gate: {_sec_result.reason[:80]}",
                     )
             except Exception as _se:
-                _log.warning(
+                log.warning(
                     "improvement_gate_security_check_failed",
                     err=str(_se)[:80],
                 )
@@ -240,13 +235,13 @@ class ImprovementGate:
                     reason=f"security_gate_error: {str(_se)[:60]}",
                 )
         else:
-            _log.info("improvement_gate_operator_approved",
+            log.info("improvement_gate_operator_approved",
                       channel="BEA_OPERATOR_APPROVE_IMPROVEMENT")
 
         try:
             history = self._get_history()
         except Exception as e:
-            _log.warning("improvement_gate_history_failed", err=str(e)[:80])
+            log.warning("improvement_gate_history_failed", err=str(e)[:80])
             return ImprovementDecision(
                 allowed=False,
                 reason=f"gate_error: {str(e)[:60]}",
@@ -322,9 +317,9 @@ class ImprovementGate:
                 **(metadata or {}),
             })
             p.write_text(json.dumps(history[-100:], indent=2, default=str), encoding="utf-8")
-            _log.info("improvement_gate_recorded", outcome=outcome)
+            log.info("improvement_gate_recorded", outcome=outcome)
         except Exception as e:
-            _log.warning("improvement_gate_record_failed", err=str(e)[:80])
+            log.warning("improvement_gate_record_failed", err=str(e)[:80])
 
 
 # ── Module-level singleton ────────────────────────────────────────────────────
