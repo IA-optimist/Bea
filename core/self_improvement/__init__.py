@@ -197,6 +197,25 @@ def get_self_improvement_manager() -> SelfImprovementManager:
 #   from core.self_improvement import LessonMemory
 #   from core.self_improvement.lesson_memory import LessonMemory  (preferred)
 from core.self_improvement.lesson_memory import Lesson, LessonMemory  # noqa: E402
+# ── Optional re-exports (lazy to avoid hard dependency on Sprint 3 harness) ──
+# These imports are only available when benchmark/eval harness files are present.
+try:
+    from core.self_improvement.benchmark_harness import (  # noqa: E402
+        BeaBenchmarkReport,
+        BenchmarkComparison,
+        ComponentScore,
+        run_bea_benchmark,
+    )
+    from core.self_improvement.eval_harness import (  # noqa: E402
+        AgentEvalReport,
+        EvalTask,
+        EvalTaskResult,
+        build_frozen_eval_tasks,
+        run_agent_harness,
+    )
+except ImportError:
+    BeaBenchmarkReport = BenchmarkComparison = ComponentScore = run_bea_benchmark = None
+    AgentEvalReport = EvalTask = EvalTaskResult = build_frozen_eval_tasks = run_agent_harness = None
 
 __all__ = [
     "check_improvement_allowed",
@@ -206,3 +225,16 @@ __all__ = [
     "Lesson",
     "LessonMemory",
 ]
+
+if BeaBenchmarkReport is not None:
+    __all__.extend([
+        "BeaBenchmarkReport",
+        "BenchmarkComparison",
+        "ComponentScore",
+        "run_bea_benchmark",
+        "AgentEvalReport",
+        "EvalTask",
+        "EvalTaskResult",
+        "build_frozen_eval_tasks",
+        "run_agent_harness",
+    ])

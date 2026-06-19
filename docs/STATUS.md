@@ -3,6 +3,11 @@
 > Honest per-component maturity rating. Last verified: **2026-06-16**, SHA `1631240`.
 > Verified by direct code reading + runtime observation + gate test results.
 
+Packaging truth:
+- License: MIT
+- Build metadata: `pyproject.toml`
+- Version line: SemVer `0.x` until the public API is frozen
+
 ## Summary (June 2026)
 
 | Area | State |
@@ -99,12 +104,12 @@
 ### Web canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
-| Web SPA | `static/app.html` (973 lines) | Single canonical web app, French, sessionStorage auth |
+| Web SPA | `static/app.html` (973 lines) | Canonical web control surface; kept alongside API and Flutter |
 
 ### Mobile canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
-| Flutter app | `beamax_app/` (~7,400 lines) | Documented as canonical in all docs (ROADMAP, RUNTIME_TRUTH, etc.). Secure storage, token refresh, WS reconnect. |
+| Flutter app | `beamax_app/` (~7,400 lines) | Canonical mobile path. Secure storage, token refresh, WS reconnect. |
 
 ---
 
@@ -196,51 +201,53 @@
 
 ### React frontend (`frontend/`)
 36 TS/TSX files. React 18 + Vite + Tailwind + Recharts. Beautiful UI.
-- **Status**: 🔴 Backend integration BROKEN
-- API client calls `/api/v2/system/status` and `/api/v2/products/deploy` — these routes do not exist in v2
-- `.catch(() => null)` swallows errors, dashboard shows empty data
-- **Action needed**: Update `frontend/src/api/client.ts` BASE_URL or backend routes
+- **Status**: 🟡 Wired, with some legacy route debt
+- The client now uses same-origin auth and the remaining API surface is mostly v2/v3 mixed
+- `Dashboard` still suppresses some fetch failures, so empty panels can hide backend drift
+- **Action needed**: keep pruning stale `/api/v2/*` calls as the shell migrates to the stable surface
 
 ### React Native mobile (`mobile/`)
 2,767 lines. Expo SDK 50.
-- **Status**: 🔵 Scaffolding, secondary to Flutter
-- Same broken API client as frontend (`/api/v2/*` mismatch)
-- Not documented anywhere — Flutter (`beamax_app/`) remains canonical
-- **Action needed**: Decide canonical mobile (Flutter or React Native) or document coexistence
+- **Status**: 🟡 Secondary / legacy
+- Kept for compatibility; Flutter remains canonical mobile
+- Freeze this surface unless it is intentionally revived
 
 ---
 
 ## ⚠️ Known issues
 
-### Security (4 issues)
-| # | File | Issue | Severity |
-|---|------|-------|----------|
-| 1 | `api/routes/extensions.py` | No `Depends()` at router level — relies entirely on middleware | HIGH |
-| 2 | `api/routes/venture.py:26-29` | `_auth = None` if import fails → fail-open | HIGH |
-| 3 | `api/routes/metrics_mobile.py:52-54` | `if t:` — silent bypass when `BEA_API_TOKEN` not set | HIGH |
-| 4 | `api/main.py:75-81` | Middleware ImportError logged but app starts in degraded mode | MEDIUM |
+### Security
+The remaining high-risk auth drifts listed in earlier audits are now resolved:
+
+- `api/routes/extensions.py` keeps router-level `Depends(require_auth)`.
+- `api/routes/venture.py` imports `require_auth` hard and does not fall back to a permissive router.
+- `api/routes/metrics_mobile.py` no longer has a silent bypass when `BEA_API_TOKEN` is absent.
+- `api/main.py` fails closed in production if the access-enforcement middleware cannot load.
+
+The residual security debt is now concentrated in the broader exception-swallows / legacy API surface, not in these auth entry points.
 
 ### Code quality
-- 333 `except Exception: pass` patterns in `core/` and `api/` (silent failures)
+- Bare `except Exception: pass` patterns reduced to ~0 in source; remaining silent paths use structured `swallowed_exception` logs.
 - 4 copies of `_check_auth` (1 canonical + 3 local in routes)
 - 2 incompatible `class Mission` definitions (kernel + business)
 - `_extract_final_output` had a duplicate (now fixed)
 
 ### Repo hygiene
-- `.env.agents` committed (placeholders only, but bad practice)
+- `.env.agents` is not present in the current tree
 - 3 unused dependencies in `requirements.txt`: `beautifulsoup4`, `lxml`, `pandas`
 - Missing dependencies: `psutil` (causes `hexstrike_v2` import failure), `structlog`, `langchain_*`
 - Outdated versions: `pytest==7.4.4` (current 8.x), `fastapi==0.109.0` (current 0.115.x)
 
 ### CI gates
-- `ruff check . --exit-zero` — always passes
-- `mypy core/ --ignore-missing-imports` with `continue-on-error: true` — always passes
-- Coverage upload with `continue-on-error: true` — always passes
-- Only `pytest` actually blocks merge
+- `ruff check .` is **blocking**
+- `mypy` runs as a **delta gate** via `scripts/check_mypy_baseline.py`
+- Coverage gate is **blocking** with `--cov-fail-under=60`
+- `pytest` blocks merge
+- `scripts/validate_local.py` mirrors the key gates locally
 
 ### Docker
-- Container runs as **root** (no `USER appuser`)
-- Health endpoints inconsistent: `/api/v2/health` (Dockerfile) vs `/health` (compose.prod.yml)
+- Dockerfile runs as non-root user `bea` (`USER bea` line 69)
+- Health endpoint in Dockerfile points to `/health`; verify `compose.prod.yml` alignment
 
 ### Tests
 - **Gate tests: 802/802 pass** ✅
@@ -269,4 +276,4 @@
 - **Before claiming a feature**: Verify the maturity level here.
 - **Before running tests**: Gate tests must pass. Full suite has ~170 known stale failures (documented in CODE_REVIEW.md).
 
-Last updated: 2026-04-08
+Last updated: 2026-06-19
