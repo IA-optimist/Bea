@@ -7,6 +7,7 @@ like Claude Desktop, Claude Code, or other MCP-compatible tools.
 import json
 import subprocess
 import sys
+import threading
 import pytest
 from pathlib import Path
 
@@ -54,15 +55,35 @@ def _send(proc, obj):
     proc.stdin.flush()
 
 
-def _recv(proc):
-    """Read one line from stdout and parse JSON."""
-    line = proc.stdout.readline()
+def _recv(proc, timeout: float = 10.0):
+    """Read one line from stdout and parse JSON.
+
+    Uses a threading.Timer to kill the subprocess if readline blocks
+    longer than *timeout* seconds, preventing the test from hanging.
+    """
+    result = [None]
+    timed_out = threading.Event()
+
+    def _kill():
+        timed_out.set()
+        proc.kill()
+
+    timer = threading.Timer(timeout, _kill)
+    timer.start()
+    try:
+        line = proc.stdout.readline()
+    finally:
+        timer.cancel()
+
+    if timed_out.is_set():
+        raise TimeoutError(f"_recv timed out after {timeout}s waiting for MCP server response")
     if not line:
         return None
     return json.loads(line)
 
 
 @_skip_mcp
+@pytest.mark.timeout(10)
 def test_mcp_server_stdio():
     """Test that the MCP server can start and respond to stdio requests."""
     print("Testing MCP server stdio transport...")
@@ -84,6 +105,7 @@ def test_mcp_server_stdio():
 
 
 @_skip_mcp
+@pytest.mark.timeout(10)
 def test_mcp_tools_discovery():
     """Test that MCP tools can be discovered."""
     print("\nTesting MCP tools discovery...")
@@ -118,6 +140,7 @@ def test_mcp_tools_discovery():
 
 
 @_skip_mcp
+@pytest.mark.timeout(10)
 def test_mcp_tool_call():
     """Test that an MCP tool can be called."""
     print("\nTesting MCP tool call...")

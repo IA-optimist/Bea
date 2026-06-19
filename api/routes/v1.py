@@ -9,11 +9,10 @@ This module defines the stable v1 API surface. All routes here are:
 
 Deprecated routes should be moved to api/routes/legacy/ with deprecation headers.
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
-import time
 
 import structlog
 
@@ -110,12 +109,12 @@ async def submit_mission(
         )
     except Exception as e:
         log.warning("v1.submit_mission.error", err=str(e)[:120])
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/missions", response_model=APIResponse)
 async def list_missions(
-    limit: int = 10,
+    limit: int = Query(default=10, ge=1, le=100),
     status: Optional[str] = None,
     user: dict = Depends(require_auth),
 ) -> APIResponse:
@@ -139,7 +138,7 @@ async def list_missions(
         )
     except Exception as e:
         log.warning("v1.list_missions.error", err=str(e)[:120])
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/missions/{mission_id}", response_model=APIResponse)
@@ -161,6 +160,7 @@ async def get_mission_status(
                 goal=m.user_input,
                 progress=None,
                 created_at=str(m.created_at),
+                # TODO: use m.completed_at when MissionSystem exposes it; updated_at is a proxy
                 completed_at=str(m.updated_at) if m.is_done() else None,
             )
         )
@@ -168,7 +168,7 @@ async def get_mission_status(
         raise
     except Exception as e:
         log.warning("v1.get_mission_status.error", mission_id=mission_id, err=str(e)[:120])
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/missions/{mission_id}/cancel", response_model=APIResponse)
@@ -183,7 +183,7 @@ async def cancel_mission(
             data={"mission_id": mission_id}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/missions/{mission_id}/result", response_model=APIResponse)
@@ -198,7 +198,7 @@ async def get_mission_result(
             data={"mission_id": mission_id, "result": None}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ── Memory Endpoints ────────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ async def store_memory(
             data={"memory_id": memory_id}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/memory/{memory_id}", response_model=APIResponse)
@@ -281,7 +281,7 @@ async def delete_memory(
             data={"memory_id": memory_id}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/memory", response_model=APIResponse)
@@ -297,7 +297,7 @@ async def list_memory(
             data={"memories": [], "total": 0}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ── Health/Status Endpoints ─────────────────────────────────────────────────
@@ -316,4 +316,4 @@ async def get_status() -> APIResponse:
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
