@@ -272,6 +272,7 @@ def test_performance_api_has_execution_endpoints():
     ast.parse(src)
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_telemetry_ui():
     with open("static/cockpit.html", encoding="utf-8") as f:

@@ -106,6 +106,7 @@ class TestMetaOrchestratorCanonical(unittest.TestCase):
         self.assertNotIn("OrchestratorV2(", content)
 
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="core/background_dispatcher.py missing (drift)", strict=False)
     def test_background_dispatcher_uses_meta(self):
         with open(os.path.join(_ROOT, "core", "background_dispatcher.py")) as f:
@@ -294,6 +295,7 @@ class TestNoLeakedSecrets(unittest.TestCase):
 class TestRepoHygiene(unittest.TestCase):
     """Repo is clean and organized."""
 
+    @pytest.mark.stale
     @pytest.mark.skip(reason="stale: APK delivery changed")
     def test_no_apks_in_repo(self):
         result = subprocess.run(

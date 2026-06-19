@@ -463,6 +463,7 @@ def test_lifecycle_review_re_run():
 # AUTHORITY MAP DOCUMENT EXISTS
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: format changed")
 def test_authority_map_exists():
     assert Path("docs/orchestration_authority_map.md").exists()

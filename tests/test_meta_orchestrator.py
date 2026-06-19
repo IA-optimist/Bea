@@ -162,6 +162,7 @@ def test_valid_state_transitions(meta_orchestrator):
     print("[OK] test_valid_state_transitions")
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="transition error message drift", strict=False)
 def test_invalid_state_transition_raises(meta_orchestrator):
     """Invalid state transitions should raise ValueError."""

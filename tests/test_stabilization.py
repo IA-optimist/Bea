@@ -31,6 +31,7 @@ sys.path.insert(0, '.')
 # P1 — CANONICAL ORCHESTRATOR
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_p1_get_orchestrator_returns_meta():
     """api/main.py _get_orchestrator() routes to MetaOrchestrator."""
@@ -93,6 +94,7 @@ def test_p2_dangerous_actions_classified():
     assert not d["requires_approval"]
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="tool_executor kill switch assertion drift", strict=False)
 def test_p2_tool_executor_kill_switch():
     """Global kill switch blocks tool execution."""
@@ -111,6 +113,7 @@ def test_p2_tool_executor_kill_switch():
 # P3 — NO MOCK EXECUTION
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed")
 def test_p3_no_simulation_in_runtime():
     """Runtime path has no simulated execution strings."""
@@ -122,6 +125,7 @@ def test_p3_no_simulation_in_runtime():
     assert '"status": "PLANNED"' in src
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: format changed")
 def test_p3_step_results_structured():
     """Step results are structured dicts, not strings."""
@@ -135,6 +139,7 @@ def test_p3_step_results_structured():
 # P4 — MISSION STATUS
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: enum changed")
 def test_p4_mission_status_exists():
     """MissionStatus enum exists in state.py (canonical location)."""
@@ -265,6 +270,7 @@ def test_no_new_orchestrator():
     # MetaOrchestrator, BeaOrchestrator, OrchestratorV2
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_governance_wired():
     """Governance module is wired into real execution paths."""

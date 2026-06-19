@@ -282,6 +282,7 @@ class TestModelSelection:
 
 class TestRuntimeIntegration:
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="skill-task map drift", strict=False)
     def test_MI22_skill_task_map_complete(self):
         """All 16 domain skills have task mappings."""

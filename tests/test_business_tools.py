@@ -138,6 +138,7 @@ class TestHttpTestTool(unittest.TestCase):
 
 # ── Goal Decomposition ───────────────────────────────────────────────────────
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="core.goal_decomposer module not implemented")
 class TestGoalDecomposer(unittest.TestCase):
 
@@ -247,6 +248,7 @@ class TestRegistryExpansion(unittest.TestCase):
 
 # ── Evaluation Scenarios ─────────────────────────────────────────────────────
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="core.goal_decomposer module not implemented")
 class TestEvaluationScenarios(unittest.TestCase):
     """Verify the AI-OS can plan real business workflows end-to-end."""

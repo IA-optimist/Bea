@@ -103,6 +103,7 @@ class TestMemoryEffectiveness(unittest.TestCase):
         self.assertIsInstance(ctx.relevant_memories, list)
         self.assertIsInstance(ctx.recent_failures, list)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="memory.working_memory module absent (drift)", strict=False)
     def test_working_memory_bounded(self):
         from memory.working_memory import WorkingMemory
@@ -205,6 +206,7 @@ class TestMissionLoopStability(unittest.TestCase):
         r = reflect(goal="Important task", result="")
         self.assertEqual(r.verdict, ReflectionVerdict.EMPTY)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="executor.observation module absent (drift)", strict=False)
     def test_budget_prevents_runaway(self):
         from executor.observation import ExecutionBudget, Observation, ObservationType

@@ -55,6 +55,7 @@ def test_file_write_rollback():
             _silent_log.debug("suppressed_exception", src='test_tools_extended.py')
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: import changed")
 def test_file_create():
     import os

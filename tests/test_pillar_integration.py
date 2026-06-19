@@ -180,6 +180,7 @@ class TestEndToEndFlow(unittest.TestCase):
         self.assertEqual(outcome.retries, 1)
         self.assertIn("retry", outcome.recovery_actions)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="memory.memory_ranker module absent", strict=False)
     def test_memory_ranker_integration(self):
         """Verify memory ranker works with real memory items."""

@@ -8,6 +8,7 @@ from memory.vault_memory import VaultEntry, VaultMemory
 import pytest
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="VaultMemory.cleanup_expired not implemented yet", strict=False)
 def test_cleanup_expired_removes_expires_at_entries(tmp_path):
     vm = VaultMemory(vault_path=str(tmp_path / "vault.json"))
@@ -29,6 +30,7 @@ def test_cleanup_expired_removes_expires_at_entries(tmp_path):
     assert "kept" in vm._entries
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="VaultMemory.cleanup_expired not implemented yet", strict=False)
 def test_cleanup_expired_supports_ttl_seconds(tmp_path):
     vm = VaultMemory(vault_path=str(tmp_path / "vault.json"))

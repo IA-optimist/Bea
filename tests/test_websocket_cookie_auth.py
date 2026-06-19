@@ -23,6 +23,7 @@ class _DummyStream:
 import pytest
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="ws cookie auth path not implemented yet", strict=False)
 def test_mission_websocket_accepts_cookie_auth(monkeypatch):
     monkeypatch.setenv("BEA_API_TOKEN", "test-static-token")

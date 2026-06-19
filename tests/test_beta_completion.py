@@ -326,6 +326,7 @@ def test_performance_api_has_lifecycle_endpoints():
     ast.parse(src)
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_confidence_panel():
     with open("static/cockpit.html", encoding="utf-8") as f:

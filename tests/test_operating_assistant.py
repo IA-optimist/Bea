@@ -101,6 +101,7 @@ def test_value_risk_reduces_score():
 # STRATEGY SELECTION
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_strategy_default():
     from core.operating_primitives import select_strategy
@@ -300,6 +301,7 @@ def test_workflow_project_execution():
     assert completed.success_rate == 1.0
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_workflow_iterative_strategy():
     """Strategy improves over multiple missions."""
@@ -365,6 +367,7 @@ def test_api_has_operating_endpoints():
     assert "/operating/objectives" in src
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_operating_panels():
     with open("static/cockpit.html", encoding="utf-8") as f:

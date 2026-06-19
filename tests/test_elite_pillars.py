@@ -106,6 +106,7 @@ class TestContextAssembler(unittest.TestCase):
         self.assertIn("Fix API", prompt)
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: module removed")
 class TestExecutionSupervisor(unittest.TestCase):
     def _run(self, coro):

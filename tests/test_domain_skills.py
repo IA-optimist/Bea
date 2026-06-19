@@ -328,6 +328,7 @@ class TestAgentSkillMapping:
         assert "skills-used.json" in src
         assert "skills_used" in src
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="skill files drift", strict=False)
     def test_DS38_all_skill_files_present(self):
         """Every skill has all 4 required files."""

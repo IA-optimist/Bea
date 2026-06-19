@@ -135,6 +135,7 @@ def test_tool_chain_unknown():
 # PART 3 — AUTO-DISCOVERY
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_auto_discovery_returns_report():
     from core.capability_intelligence import run_auto_discovery
@@ -161,6 +162,7 @@ def test_auto_discovery_never_raises():
 # PART 4 — RELIABILITY PROFILING
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_reliability_record_and_retrieve():
     from core.capability_intelligence import (
@@ -260,6 +262,7 @@ def test_match_git_goal():
     assert any("git" in t for t in tool_names[:5])
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_match_test_goal():
     from core.capability_intelligence import match_capabilities

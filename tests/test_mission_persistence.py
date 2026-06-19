@@ -435,6 +435,7 @@ class TestEdgeCases:
             assert len(errors) == 0
             assert store.stats()["total"] == 20
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="atomic write guarantee drift", strict=False)
     def test_MP38_atomic_write(self):
         """Persist file uses atomic write (tmp + rename)."""

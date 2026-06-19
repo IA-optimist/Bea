@@ -98,6 +98,7 @@ def test_e2e_budget_via_connector():
 # E2E: WORKFLOW RUNTIME WITH CONNECTORS
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: API changed")
 def test_e2e_workflow_with_connectors():
     """Multi-step workflow using real connectors."""
@@ -314,6 +315,7 @@ def test_connector_registry_complete():
         assert name in CONNECTOR_REGISTRY
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_all_core_files_parse():
     core_files = [
@@ -329,6 +331,7 @@ def test_all_core_files_parse():
             ast.parse(fh.read())
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_no_parallel_orchestration():
     """Ensure no duplicate orchestration paths were created."""

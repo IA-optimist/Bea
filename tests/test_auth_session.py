@@ -89,6 +89,7 @@ class TestServerAuth:
         content = _auth_subsystem_source()
         assert 'No token provided' in content
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="ROLE_PERMISSIONS mapping non-implémenté (feature drift)", strict=False)
     def test_auth_me_returns_role_permissions(self):
         """A6: /auth/me returns role and permissions."""
@@ -151,6 +152,7 @@ class TestSessionLogic:
 
 class TestWebSessionContracts:
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="SessionStore class non-implémenté dans static/app.html (feature drift)", strict=False)
     def test_session_store_in_html(self):
         """A13: SessionStore.save exists in web frontend."""
@@ -162,6 +164,7 @@ class TestWebSessionContracts:
         assert "bea_login_mode" in content
         assert "bea_remember_me" in content
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="bea_admin_pw storage non-implémenté (feature drift)", strict=False)
     def test_session_clear_in_html(self):
         """A14: SessionStore.clear removes all keys."""
@@ -171,6 +174,7 @@ class TestWebSessionContracts:
         # Must clear all storage keys
         assert "bea_admin_pw" in content
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="remember-me checkbox non-implémenté (feature drift)", strict=False)
     def test_remember_me_checkbox(self):
         """A15: Remember me checkbox in login form."""

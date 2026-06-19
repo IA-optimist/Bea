@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="manifest_version field not wired yet", strict=False)
 def test_integrations_mcp_manifest_has_fingerprint() -> None:
     from integrations.mcp.mcp_models import MCPServer, MCPTool
@@ -20,6 +21,7 @@ def test_integrations_mcp_manifest_has_fingerprint() -> None:
     assert len(tool_data["manifest_fingerprint"]) == 64
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="manifest_version field not wired yet", strict=False)
 def test_core_mcp_manifest_has_fingerprint() -> None:
     from core.mcp.mcp_registry import MCPServerEntry

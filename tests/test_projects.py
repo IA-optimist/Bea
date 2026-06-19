@@ -250,6 +250,7 @@ class TestProjectIntegration:
         finally:
             delete_project(project.id, hard_delete=True)
     
+    @pytest.mark.stale
     @pytest.mark.skip(
         reason="memory.legacy.project_memory est un module MORT (utilisé nulle part en prod) "
         "et son store_memory insère une chaîne brute, incompatible avec le schéma JSONB actuel "

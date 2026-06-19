@@ -15,6 +15,7 @@ from core.tool_executor import (
 )
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: shell disabled in container")
 def test_tool_shell():
     result = run_shell_command("echo hello_bea && date")
@@ -32,6 +33,7 @@ def test_tool_read_file():
     print(f"✅ read_file OK: {result['result'][:100]}")
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="execute_http_get removed (LEGACY désactivé in core.tool_executor)")
 def test_tool_http():
     pass
@@ -42,6 +44,7 @@ def test_tool_python():
     pass
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="_ensure_collection / query_vector_db removed (LEGACY désactivé in core.tool_executor)")
 def test_tool_vector_search():
     pass

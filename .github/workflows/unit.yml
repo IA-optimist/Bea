@@ -48,4 +48,4 @@ jobs:
           DATABASE_URL: postgresql://localhost:5432/beamax_test
           REDIS_URL: redis://localhost:6379
           TESTING: true
-        run: python -m pytest tests -q -m "not integration" -n auto --dist=loadfile
+        run: python -m pytest tests -q -m "not integration and not stale" -n auto --dist=loadfile

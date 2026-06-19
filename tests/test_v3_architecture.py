@@ -218,6 +218,7 @@ def test_memory_cleanup():
 
 # ── ÉTAPE 5 : tool_executor — error classification ───────────────────────────
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: taxonomy changed")
 def test_error_classification():
     """_classify_error(FileNotFoundError()) → 'environment_error'."""
@@ -338,6 +339,7 @@ def test_planner_mission_routing():
 
 # ── ÉTAPE 7 : tool_executor — nouveaux tools enregistrés ─────────────────────
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: count changed")
 def test_new_tools_registered():
     """Vérifie que les nouveaux tools v3 sont dans ToolExecutor._tools."""

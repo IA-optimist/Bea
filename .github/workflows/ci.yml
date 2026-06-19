@@ -93,9 +93,10 @@ jobs:
           set -euo pipefail
           # Coverage threshold — ratchet: raise only, never lower.
           # History: 45 (2026-05-18) → 55 (2026-05-25) → 60 (2026-06-16).
-          # Next target: 65 once dead stale tests are removed.
+          # T3.2: stale tests quarantined — excluded from blocking lane via -m "not stale".
+          # Next target: 65 on this clean lane.
           COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-60}"
-          pytest tests/ -v -n auto --dist=loadfile \
+          pytest tests/ -v -n auto --dist=loadfile -m "not stale" \
             --cov=core --cov=api --cov=kernel --cov-report=xml --cov-report=term \
             --cov-fail-under="$COVERAGE_FAIL_UNDER"
       

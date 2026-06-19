@@ -323,6 +323,7 @@ class TestSkillService(unittest.TestCase):
 class TestMetaOrchestratorIntegration(unittest.TestCase):
     """Test that MetaOrchestrator references skill system correctly."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="skill import pattern drift in run_mission", strict=False)
     def test_skill_import_in_orchestrator(self):
         """Verify MetaOrchestrator integrates skill system via context_assembler."""

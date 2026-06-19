@@ -337,6 +337,7 @@ def test_api_has_all_endpoints():
         assert ep in src, f"Missing: {ep}"
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_has_new_panels():
     with open("static/cockpit.html", encoding="utf-8") as f:

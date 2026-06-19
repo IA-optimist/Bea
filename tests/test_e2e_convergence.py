@@ -27,6 +27,7 @@ def test_full_module_chain_imports():
     # Import chain: all convergence modules must load
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: types changed")
 def test_canonical_types_complete():
     """CanonicalMissionStatus covers all legacy states."""

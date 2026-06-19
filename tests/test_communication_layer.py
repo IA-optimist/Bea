@@ -164,6 +164,7 @@ def test_messaging_draft():
     assert r.data["message"]["platform"] == "webhook"
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_messaging_format_webhook():
     from core.connectors import messaging_connector
@@ -217,6 +218,7 @@ def test_messaging_dry_send():
     assert r.data["dry_run"] is True
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_messaging_content_limit():
     from core.connectors import messaging_connector
@@ -267,6 +269,7 @@ def test_api_connector_blocks_internal():
     assert not r.success
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: moved")
 def test_api_connector_rate_limiting():
     from core.connectors import api_connector, _api_rate_limits
@@ -298,6 +301,7 @@ def test_api_connector_requires_url():
 # APPROVAL AUDIT TRAIL
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: import changed")
 def test_approval_audit():
     from core.connectors import log_approval_event, get_approval_audit, _approval_log
@@ -321,6 +325,7 @@ def test_approval_audit_bounded():
     assert len(conn._approval_log) <= 500
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_execute_connector_logs_approval():
     """Executing a connector that requires approval logs an approval event."""
@@ -395,6 +400,7 @@ def test_scenario_multiplatform_messaging():
 # ARCHITECTURE COHERENCE
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_connectors_no_duplicate_orchestration():
     with open("core/connectors.py", encoding="utf-8") as f:
@@ -405,6 +411,7 @@ def test_connectors_no_duplicate_orchestration():
     assert "MetaOrchestrator" not in src
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_all_files_parse():
     for f in ["core/connectors.py", "api/routes/performance.py"]:

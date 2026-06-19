@@ -91,6 +91,7 @@ def test_single_lifecycle_authority():
     assert "convergence_router" in mount_src
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_no_parallel_orchestration():
     """Verify no module duplicates mission execution logic."""
@@ -382,6 +383,7 @@ def test_ownership_validation():
     assert result["duplications_count"] >= 3
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_completeness():
     """Cockpit covers all major system views."""
