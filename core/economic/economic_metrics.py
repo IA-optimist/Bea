@@ -15,6 +15,8 @@ Integrates with ObjectiveHorizonManager's EvaluationMetric system.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
+
 from core.objectives.objective_horizon import EvaluationMetric
 
 
@@ -27,8 +29,8 @@ class EconomicKPI:
     time_period: str = "monthly"  # monthly, quarterly, annual
     assumptions: list[str] | None = None
 
-    def to_dict(self) -> dict:
-        d = self.metric.to_dict()
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = dict(self.metric.to_dict())
         d.update({
             "kpi_type": self.kpi_type,
             "currency": self.currency,
@@ -38,7 +40,7 @@ class EconomicKPI:
         return d
 
     @classmethod
-    def from_dict(cls, d: dict) -> "EconomicKPI":
+    def from_dict(cls, d: dict[str, Any]) -> "EconomicKPI":
         metric = EvaluationMetric.from_dict(d)
         return cls(
             metric=metric,
