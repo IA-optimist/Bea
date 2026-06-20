@@ -15,7 +15,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, HTTPException, Header, Query, Depends, Response
+from fastapi import APIRouter, HTTPException, Query, Depends, Response
 from pydantic import BaseModel, Field
 
 from api._deps import require_auth
@@ -90,36 +90,15 @@ class ErrorResponse(BaseModel):
     details: Optional[str] = None
 
 
-# Authentication is now enforced at router level via api._deps.require_auth.
-# The previous verify_token() function was a CRITICAL BYPASS that accepted
-# any Bearer token starting with 'jv-' without backend verification.
-# All endpoints now rely on the canonical require_auth (constant-time compare,
-# JWT validation, access token verification via TokenManager).
-#
-# For backward compatibility with internal in-function calls, we keep a
-# fail-closed stub that always rejects. Endpoints should use the router-level
-# dependency instead.
-
-def verify_token(authorization: Optional[str]) -> bool:
-    """DEPRECATED — always returns False.
-
-    The canonical auth is Depends(require_auth) from api._deps at the router
-    level. This stub exists only for backward compatibility with legacy
-    in-function auth checks. Do not use for new code.
-    """
-    return False
-
-
 # Route Handlers
 
 @router.post("", response_model=ProjectResponse, status_code=201, dependencies=[])
 async def create_project_endpoint(
     request: CreateProjectRequest,
-    authorization: Optional[str] = Header(None)
 ) -> ProjectResponse:
     """
     Create a new project.
-    
+
     Requires Bearer token authentication.
     """
     try:
@@ -149,12 +128,11 @@ async def create_project_endpoint(
 
 @router.get("", response_model=ProjectListResponse, dependencies=[])
 async def list_projects_endpoint(
-    authorization: Optional[str] = Header(None),
     active_only: bool = Query(True, description="Only return active projects")
 ) -> ProjectListResponse:
     """
     List all projects.
-    
+
     Requires Bearer token authentication.
     """
     try:
@@ -184,11 +162,10 @@ async def list_projects_endpoint(
 @router.get("/{project_id}", response_model=ProjectResponse, dependencies=[])
 async def get_project_endpoint(
     project_id: str,
-    authorization: Optional[str] = Header(None)
 ) -> ProjectResponse:
     """
     Get a project by ID.
-    
+
     Requires Bearer token authentication.
     """
     try:
@@ -224,11 +201,10 @@ async def get_project_endpoint(
 async def update_project_endpoint(
     project_id: str,
     request: UpdateProjectRequest,
-    authorization: Optional[str] = Header(None)
 ) -> ProjectResponse:
     """
     Update a project.
-    
+
     Requires Bearer token authentication.
     """
     try:
@@ -277,12 +253,11 @@ async def update_project_endpoint(
 )
 async def delete_project_endpoint(
     project_id: str,
-    authorization: Optional[str] = Header(None),
     hard_delete: bool = Query(False, description="Permanently delete instead of soft delete")
 ) -> None:
     """
     Delete a project (soft delete by default).
-    
+
     Requires Bearer token authentication.
     Use ?hard_delete=true to permanently delete.
     """
@@ -310,7 +285,6 @@ async def health_check():
 @router.post("/{project_id}/switch")
 async def switch_project(
     project_id: str,
-    authorization: Optional[str] = Header(None)
 ):
     """Switch current project context."""
     from core.project_context import set_project
