@@ -29,13 +29,11 @@ repos:
             docs/archive/.*|
             beamax_app/.*|
             frontend/.*|
-            mobile/.*|
             .*\.min\.(js|css)|
             README\.md|
             ARCHITECTURE\.md|
             core/_legacy/README\.md|
             orchestrate-cli/.*|
-            orchestrate-mobile/.*|
             tests/.*
           )$
 
@@ -64,10 +62,8 @@ repos:
           )$
 
   # ── Ruff (lint only, NO autofix to avoid massive churn) ─────────
-  # The repo has ~107 pre-existing ruff errors (mostly orchestrate-mobile/
-  # and legacy code paths). This hook lints only the files staged for
-  # commit, so new code is held to ruff.toml standards without forcing
-  # a sweeping cleanup of the existing baseline.
+  # This hook lints only files staged for commit, so new code is held
+  # to ruff.toml standards without forcing a sweeping cleanup.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.10
     hooks:

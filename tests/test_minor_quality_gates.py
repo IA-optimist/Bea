@@ -30,7 +30,6 @@ def test_hyphenated_subprojects_are_documented_as_non_importable():
     content = Path('docs/architecture/MAJOR_DEBT_MAP.md').read_text(encoding='utf-8')
 
     assert 'orchestrate-cli/' in content
-    assert 'orchestrate-mobile/' in content
     assert 'non-importable' in content
     assert 'sub-projects' in content
 
