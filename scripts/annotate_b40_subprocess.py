@@ -53,7 +53,7 @@ def _migrate_text(text: str) -> tuple[str, int]:
     for line in lines:
         ids: list[str] = []
         for pat, tid in _PATTERNS:
-            if pat.search(line) and f"nosec {tid}" not in line and f"nosec B604" not in line:
+            if pat.search(line) and f"nosec {tid}" not in line and "nosec B604" not in line:
                 ids.append(tid)
         # B607 piggybacks on B603's location.
         if "B603" in ids and "nosec B607" not in line:

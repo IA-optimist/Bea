@@ -176,7 +176,7 @@ class ClaudeCode:
 
     async def refactor_code(self, code: str, refactoring_goals: List[str] = None) -> Dict[str, Any]:
         """Refactor code using Claude"""
-        logger.info(f"Refactoring code with Claude")
+        logger.info("Refactoring code with Claude")
 
         try:
             goals = refactoring_goals or ['improve_readability', 'enhance_performance', 'add_error_handling']

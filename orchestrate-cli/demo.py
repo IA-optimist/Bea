@@ -512,7 +512,7 @@ async def main():
 
     # Print summary
     summary = results.get('summary', {})
-    print(f"\n📊 Demo Summary:")
+    print("\n📊 Demo Summary:")
     print(f"   Total Scenarios: {summary.get('total_scenarios', 0)}")
     print(f"   Successful Scenarios: {summary.get('successful_scenarios', 0)} ✅")
     print(f"   Failed Scenarios: {summary.get('failed_scenarios', 0)} ❌")
@@ -524,12 +524,12 @@ async def main():
     print(f"\n📄 Results saved to: {results_file}")
 
     # Show next steps
-    print(f"\n🚀 Next Steps:")
-    print(f"1. Configure your API keys in .env file")
-    print(f"2. Run 'python main.py --help' to see all commands")
-    print(f"3. Try: python main.py run langchain 'Create a simple Python app'")
-    print(f"4. Test individual agents: python main.py agent gemini get_version")
-    print(f"5. Run comprehensive tests: python test_all_cli.py")
+    print("\n🚀 Next Steps:")
+    print("1. Configure your API keys in .env file")
+    print("2. Run 'python main.py --help' to see all commands")
+    print("3. Try: python main.py run langchain 'Create a simple Python app'")
+    print("4. Test individual agents: python main.py agent gemini get_version")
+    print("5. Run comprehensive tests: python test_all_cli.py")
 
 if __name__ == "__main__":
     asyncio.run(main())

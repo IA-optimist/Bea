@@ -387,28 +387,28 @@ class OrchestrateTester:
 
         # Summary
         summary = results.get('summary', {})
-        print(f"\n📊 SUMMARY:")
+        print("\n📊 SUMMARY:")
         print(f"   Total Tests: {summary.get('total_tests', 0)}")
         print(f"   Passed: {summary.get('passed_tests', 0)} ✅")
         print(f"   Failed: {summary.get('failed_tests', 0)} ❌")
         print(f"   Overall Status: {summary.get('overall_status', 'unknown').upper()}")
 
         # Frameworks
-        print(f"\n🏗️ FRAMEWORKS:")
+        print("\n🏗️ FRAMEWORKS:")
         frameworks = results.get('framework_tests', {})
         for framework, status in frameworks.items():
             status_icon = "✅" if status.get('orchestrator_created') else "❌"
             print(f"   {status_icon} {framework}: {status.get('status', 'unknown')}")
 
         # CLI Agents
-        print(f"\n🤖 CLI AGENTS:")
+        print("\n🤖 CLI AGENTS:")
         cli_agents = results.get('cli_agent_tests', {})
         for agent, status in cli_agents.items():
             status_icon = "✅" if status.get('available') else "⚠️"
             print(f"   {status_icon} {agent}: {status.get('status', 'unknown')}")
 
         # Performance
-        print(f"\n⚡ PERFORMANCE:")
+        print("\n⚡ PERFORMANCE:")
         perf = results.get('performance_tests', {})
         if perf.get('success'):
             metrics = perf.get('performance_metrics', {})
@@ -419,7 +419,7 @@ class OrchestrateTester:
             print(f"   All Under 1s: {'✅' if perf.get('all_under_1s') else '❌'}")
 
         # Integration
-        print(f"\n🔗 INTEGRATION:")
+        print("\n🔗 INTEGRATION:")
         integration = results.get('integration_tests', {})
         if integration.get('success'):
             scenarios = integration.get('scenarios', {})

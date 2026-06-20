@@ -144,7 +144,7 @@ class DeployPlugin:
                 "deployment_id": deployment_id,
                 "platform": platform,
                 "status": "running",
-                "url": f"https://example.com",
+                "url": "https://example.com",
                 "updated_at": "2026-06-19T00:00:00Z"
             }
         }

@@ -34,7 +34,7 @@ class AIOrchestrationWorkflow:
         Returns:
             Dict containing workflow results
         """
-        print(f"🚀 Starting comprehensive AI orchestration workflow...")
+        print("🚀 Starting comprehensive AI orchestration workflow...")
         print(f"📋 Project: {project_description}")
 
         workflow_results = {
@@ -437,11 +437,11 @@ async def main():
     with open('workflow_results.json', 'w') as f:
         json.dump(results, f, indent=2, default=str)
 
-    print(f"\n📄 Results saved to: workflow_results.json")
+    print("\n📄 Results saved to: workflow_results.json")
 
     # Print summary
     summary = results.get('summary', {})
-    print(f"\n📊 Workflow Summary:")
+    print("\n📊 Workflow Summary:")
     print(f"   Total Phases: {summary.get('total_phases', 0)}")
     print(f"   Completed Phases: {summary.get('completed_phases', 0)}")
     print(f"   Failed Phases: {summary.get('failed_phases', 0)}")

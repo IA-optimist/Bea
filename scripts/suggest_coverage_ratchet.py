@@ -38,7 +38,7 @@ def _parse_coverage(path: Path) -> tuple[float, list[tuple[str, float]]]:
     # Coverage.py XML schema: <coverage line-rate="0.5698" ...>
     rate_attr = root.get("line-rate")
     if rate_attr is None:
-        raise SystemExit(f"unexpected coverage.xml format: missing line-rate attribute")
+        raise SystemExit("unexpected coverage.xml format: missing line-rate attribute")
     overall = float(rate_attr) * 100.0
 
     modules: list[tuple[str, float]] = []
