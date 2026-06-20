@@ -19,11 +19,10 @@ Security:
 """
 from __future__ import annotations
 
-import os
 import time
 
 try:
-    from fastapi import APIRouter, Header, HTTPException, Query
+    from fastapi import APIRouter, Header, Query
     from fastapi.responses import JSONResponse, PlainTextResponse
 except ImportError:
     APIRouter = None
@@ -33,10 +32,7 @@ if APIRouter:
 
     _start_time = time.time()
 
-    def _check_auth(token: str | None) -> None:
-        api_token = os.getenv("BEA_API_TOKEN", "")
-        if api_token and token != api_token:
-            raise HTTPException(status_code=401, detail="Unauthorized")
+    from api._deps import _check_auth
 
     # ── Health (no auth) ──────────────────────────────────────
 

@@ -98,5 +98,5 @@ def agent_role_map() -> dict[str, str]:
     mapping: dict[str, str] = {}
     for role_def in ROLE_DEFINITIONS.values():
         for agent in role_def.assigned_agents:
-            mapping[agent] = role_def.role
+            mapping[agent] = str(role_def.role)
     return mapping

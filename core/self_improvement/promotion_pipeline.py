@@ -459,12 +459,11 @@ class PromotionPipeline:
                 finally:
                     agent.cleanup_sandbox(snap)
             except ImportError:
-                # GitAgent unavailable — fall back to syntax-only validation
+                # GitAgent unavailable — fail-closed: never auto-promote without sandbox
                 elapsed = (time.monotonic() - start) * 1000
-                rl = risk_level.lower() if isinstance(risk_level, str) else "low"
                 return PromotionDecision(
-                    decision="REVIEW" if rl != "low" else "PROMOTE",
-                    reason="Syntax validated (sandbox unavailable)",
+                    decision="REVIEW",
+                    reason="Sandbox unavailable (GitAgent import failed) — human review required",
                     patch_id=patch_id,
                     files_changed=files,
                     duration_ms=elapsed,
