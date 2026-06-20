@@ -27,7 +27,7 @@ def amass_handler(params: Dict[str, Any]) -> Dict[str, Any]:
 
     options = params.get("options", "")
     command = f"amass enum -d {target} {options}".strip()
-    
+
     result = execute_command(command, timeout=300)
     if not result.success:
         raise RuntimeError(f"amass failed: {result.stderr or result.error}")

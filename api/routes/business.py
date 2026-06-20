@@ -114,10 +114,10 @@ async def get_skills_library(
     - limit: Max skills to return
     """
     learning = LifelongLearningEngine()
-    
+
     # Get all skills
     all_skills_data = learning.get_all_skills()
-    
+
     # Parse skills
     skills = []
     for skill_data in all_skills_data:
@@ -125,13 +125,13 @@ async def get_skills_library(
         failure = skill_data.get("failure_count", 0)
         total = success + failure
         success_rate = success / total if total > 0 else 0.0
-        
+
         # Apply filters
         if validated is not None and skill_data.get("is_validated") != validated:
             continue
         if min_success_rate is not None and success_rate < min_success_rate:
             continue
-        
+
         skills.append(SkillResponse(
             skill_id=skill_data["skill_id"],
             name=skill_data["name"],
@@ -144,15 +144,15 @@ async def get_skills_library(
             code=skill_data.get("code"),
             tags=skill_data.get("tags", []),
         ))
-    
+
     # Sort by success rate
     skills.sort(key=lambda s: s.success_rate, reverse=True)
-    
+
     # Limit
     skills = skills[:limit]
-    
+
     validated_count = sum(1 for s in skills if s.validated)
-    
+
     return SkillsLibraryResponse(
         skills=skills,
         total_count=len(skills),
@@ -171,12 +171,12 @@ async def suggest_skills(
     Uses semantic similarity to find skills that match the goal.
     """
     learning = LifelongLearningEngine()
-    
+
     suggestions = await learning.suggest_skills_for_goal(
         goal=req.goal,
         limit=req.limit
     )
-    
+
     return SkillSuggestionResponse(
         suggestions=suggestions,
         goal=req.goal,

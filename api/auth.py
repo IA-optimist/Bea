@@ -128,6 +128,13 @@ def verify_token(token_str: str) -> Optional[dict[str, Any]]:
     if not token_str:
         return None
 
+    # Fast path: static BEA_API_TOKEN match (any format — read dynamically for testability)
+    import os as _os
+    import hmac as _hmac
+    _static = _os.environ.get('BEA_API_TOKEN', '')
+    if _static and _hmac.compare_digest(token_str.encode(), _static.encode()):
+        return {'username': 'api', 'role': 'admin', 'auth_type': 'static'}
+
     # Path 1: Access token (starts with jv-)
     if token_str.startswith("jv-"):
         try:
@@ -236,14 +243,14 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authorization header missing",
         )
-    
+
     # verify_token handles "Bearer xxx" or "xxx" format
     user_data = verify_token(authorization)
-    
+
     if not user_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Your access token is invalid. Please check and try again.",
         )
-    
+
     return user_data

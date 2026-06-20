@@ -39,18 +39,18 @@ def nmap_handler(params: Dict[str, Any]) -> Dict[str, Any]:
     target = params.get("target")
     if not target:
         raise ValueError("Missing required parameter: target")
-    
+
     options = params.get("options", "")
-    
+
     # TODO: Build proper command
     command = f"nmap {options} {target}"
-    
+
     # Execute
     result = execute_command(command, timeout=300)
-    
+
     if not result.success:
         raise RuntimeError(f"nmap failed: {result.stderr or result.error}")
-    
+
     return {
         "target": target,
         "output": result.stdout,

@@ -59,7 +59,7 @@ class OpportunityListResponse(BaseModel):
 
 class ScanRequest(BaseModel):
     """Trigger manual scan"""
-    sources: Optional[List[str]] = Field(default=["product_hunt", "reddit", "hackernews"], 
+    sources: Optional[List[str]] = Field(default=["product_hunt", "reddit", "hackernews"],
                                          description="Sources to scan")
     min_score: Optional[float] = Field(default=70.0, ge=0.0, le=100.0,
                                        description="Minimum total score threshold")
@@ -96,7 +96,7 @@ async def list_opportunities(
     """
     try:
         query = db.query(Opportunity)
-        
+
         # Apply filters
         if source:
             query = query.filter(Opportunity.source == source)
@@ -104,23 +104,23 @@ async def list_opportunities(
             query = query.filter(Opportunity.total_score >= min_score)
         if analyzed is not None:
             query = query.filter(Opportunity.analyzed == analyzed)
-        
+
         # Total count
         total = query.count()
-        
+
         # Sorting
         sort_column = {
             "total_score": desc(Opportunity.total_score),
             "discovered_at": desc(Opportunity.discovered_at),
             "demand_score": desc(Opportunity.demand_score),
         }.get(sort_by, desc(Opportunity.total_score))
-        
+
         query = query.order_by(sort_column)
-        
+
         # Pagination
         offset = (page - 1) * page_size
         items = query.offset(offset).limit(page_size).all()
-        
+
         return _response(data={
             "items": [opp.to_dict() for opp in items],
             "total": total,
@@ -128,7 +128,7 @@ async def list_opportunities(
             "page_size": page_size,
             "pages": (total + page_size - 1) // page_size,
         })
-    
+
     except Exception as e:
         logger.error(f"list_opportunities_failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -141,10 +141,10 @@ async def get_opportunity(
 ):
     """Get single opportunity by ID"""
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
-    
+
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     return _response(data=opportunity.to_dict())
 
 
@@ -175,10 +175,10 @@ async def trigger_scan(
             except Exception as e:
                 logger.error(f"scan_all_failed: {e}", exc_info=True)
                 opportunities = []
-            
+
             # Filter by score
             high_value = [opp for opp in opportunities if opp.total_score >= request.min_score]
-            
+
             # Store top N
             stored_count = 0
             for opp_data in sorted(high_value, key=lambda x: x.total_score, reverse=True)[:request.limit]:
@@ -186,7 +186,7 @@ async def trigger_scan(
                 existing = db.query(Opportunity).filter(Opportunity.url == opp_data.url).first()
                 if existing:
                     continue
-                
+
                 opportunity = Opportunity(
                     title=opp_data.title,
                     description=opp_data.description,
@@ -205,16 +205,16 @@ async def trigger_scan(
                     pain_points=opp_data.pain_points,
                     raw_data=opp_data.to_dict(),
                 )
-                
+
                 db.add(opportunity)
                 db.commit()
                 stored_count += 1
-            
+
             logger.info(f"scan_completed: total={len(opportunities)} high_value={len(high_value)} stored={stored_count}")
-        
+
         # Run in background
         background_tasks.add_task(_run_scan)
-        
+
         return _response(
             message="Scan started in background",
             data={
@@ -223,7 +223,7 @@ async def trigger_scan(
                 "limit": request.limit,
             }
         )
-    
+
     except Exception as e:
         logger.error(f"trigger_scan_failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -236,13 +236,13 @@ async def delete_opportunity(
 ):
     """Delete opportunity by ID"""
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
-    
+
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     db.delete(opportunity)
     db.commit()
-    
+
     return _response(message=f"Opportunity {opportunity_id} deleted")
 
 
@@ -263,14 +263,14 @@ async def get_stats(db: Session = Depends(get_db)):
         analyzed = db.query(Opportunity).filter(Opportunity.analyzed).count()
         mvp_generated = db.query(Opportunity).filter(Opportunity.mvp_generated).count()
         deployed = db.query(Opportunity).filter(Opportunity.deployed).count()
-        
+
         # By source
         sources = {}
         for source in ["product_hunt", "reddit", "hackernews", "indie_hackers"]:
             count = db.query(Opportunity).filter(Opportunity.source == source).count()
             if count > 0:
                 sources[source] = count
-        
+
         # By score range
         score_ranges = {
             "excellent": db.query(Opportunity).filter(Opportunity.total_score >= 85).count(),
@@ -278,10 +278,10 @@ async def get_stats(db: Session = Depends(get_db)):
             "medium": db.query(Opportunity).filter(Opportunity.total_score >= 50, Opportunity.total_score < 70).count(),
             "low": db.query(Opportunity).filter(Opportunity.total_score < 50).count(),
         }
-        
+
         # Top opportunities
         top_opportunities = db.query(Opportunity).order_by(desc(Opportunity.total_score)).limit(5).all()
-        
+
         return _response(data={
             "total": total,
             "analyzed": analyzed,
@@ -300,7 +300,7 @@ async def get_stats(db: Session = Depends(get_db)):
                 for opp in top_opportunities
             ],
         })
-    
+
     except Exception as e:
         logger.error(f"get_stats_failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -351,15 +351,15 @@ async def analyze_feasibility(
     """
     # Validate opportunity exists
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
-    
+
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # Check if already analyzed
     existing = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
-    
+
     if existing:
         return _response(
             message="Opportunity already analyzed",
@@ -370,17 +370,17 @@ async def analyze_feasibility(
                 "recommendation": existing.recommendation,
             }
         )
-    
+
     # Background analysis task
     async def _run_analysis():
         try:
             analyzer = FeasibilityAnalyzer()
-            
+
             logger.info(f"Starting feasibility analysis for opportunity {opportunity_id}")
-            
+
             # Run analysis (cognition-powered, may take 4-8 minutes)
             analysis_result = await analyzer.analyze(opportunity, project_id=project_id)
-            
+
             # Store in database
             analysis = OpportunityAnalysis(
                 opportunity_id=opportunity_id,
@@ -404,7 +404,7 @@ async def analyze_feasibility(
                 full_analysis=analysis_result.get("full_analysis"),
                 raw_output=analysis_result,
             )
-            
+
             db.add(analysis)
 
             # Re-fetch the opportunity in the same session to avoid stale-object issues
@@ -415,7 +415,7 @@ async def analyze_feasibility(
 
             db.commit()
             db.refresh(analysis)
-            
+
             logger.info(
                 f"feasibility_analysis_stored "
                 f"opportunity_id={opportunity_id} "
@@ -423,14 +423,14 @@ async def analyze_feasibility(
                 f"recommendation={analysis.recommendation} "
                 f"confidence={analysis.confidence_score:.3f}"
             )
-        
+
         except Exception as e:
             logger.error(f"feasibility_analysis_background_failed opportunity_id={opportunity_id}: {e}", exc_info=True)
             db.rollback()
-    
+
     # Run in background
     background_tasks.add_task(_run_analysis)
-    
+
     return _response(
         message="Feasibility analysis started",
         data={
@@ -456,14 +456,14 @@ async def get_analysis(
     - 200: Analysis complete (full result)
     """
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
-    
+
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     analysis = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
-    
+
     if not analysis:
         # Check if analysis is in progress (opportunity.analyzed = FALSE)
         if not opportunity.analyzed:
@@ -476,7 +476,7 @@ async def get_analysis(
                 status_code=404,
                 detail="Analysis not found (may have been deleted)"
             )
-    
+
     return _response(data=analysis.to_dict())
 
 
@@ -489,18 +489,18 @@ async def delete_analysis(
     analysis = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
-    
+
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
-    
+
     # Also reset opportunity.analyzed = FALSE
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if opportunity:
         opportunity.analyzed = False
-    
+
     db.delete(analysis)
     db.commit()
-    
+
     return _response(message=f"Analysis deleted (opportunity {opportunity_id} can be re-analyzed)")
 
 
@@ -577,19 +577,19 @@ async def generate_mvp(
     analysis = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
-    
+
     if not analysis:
         raise HTTPException(
             status_code=400,
             detail=f"No feasibility analysis found for opportunity {opportunity_id}. Run POST /opportunities/{opportunity_id}/analyze first."
         )
-    
+
     if not analysis.approved:
         raise HTTPException(
             status_code=400,
             detail=f"Analysis for opportunity {opportunity_id} is not approved. Set approved=true before generating MVP."
         )
-    
+
     # Check if already generated
     if opportunity.mvp_generated:
         logger.warning(f"mvp_already_generated opportunity_id={opportunity_id}")
@@ -602,21 +602,21 @@ async def generate_mvp(
                 "status_endpoint": f"/api/v3/business/opportunities/{opportunity_id}/mvp",
             }
         }
-    
+
     # Run MVP generation in background
     async def _run_generation():
         try:
             logger.info(f"background_mvp_generation_started opportunity_id={opportunity_id}")
-            
+
             generator = MVPGenerator()
             result = generator.generate(opportunity, analysis)
-            
+
             if result["success"]:
                 fresh_opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
                 if fresh_opp:
                     fresh_opp.mvp_generated = True
                 db.commit()
-                
+
                 logger.info(
                     f"background_mvp_generation_completed "
                     f"opportunity_id={opportunity_id} "
@@ -629,14 +629,14 @@ async def generate_mvp(
                     f"opportunity_id={opportunity_id} "
                     f"error={result.get('error')}"
                 )
-        
+
         except Exception as e:
             logger.error(f"background_mvp_generation_exception opportunity_id={opportunity_id}: {e}", exc_info=True)
             db.rollback()
-    
+
     # Add background task
     background_tasks.add_task(_run_generation)
-    
+
     return {
         "status": "success",
         "message": "MVP generation started",
@@ -682,26 +682,26 @@ async def get_mvp_status(
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # Check if generated
     if not opportunity.mvp_generated:
         raise HTTPException(
             status_code=202,
             detail="MVP generation in progress. Please try again in 2-4 minutes."
         )
-    
+
     # Get analysis for project slug
     from models.opportunity_analysis import OpportunityAnalysis
     db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
     ).first()
-    
+
     # Calculate output dir
     from core.business.mvp_generator import MVPGenerator
     generator = MVPGenerator()
     project_slug = generator._slugify(opportunity.title)
     output_dir = generator.workspace_dir / project_slug
-    
+
     return {
         "status": "success",
         "data": {
@@ -746,12 +746,12 @@ async def deploy_mvp(
     from core.business.github_automation import GitHubAutomation
     from core.business.deploy_manager import DeployManager
     import time
-    
+
     # 1. Validate opportunity
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # 2. Validate analysis exists
     analysis = (
         db.query(OpportunityAnalysis)
@@ -764,66 +764,66 @@ async def deploy_mvp(
             status_code=400,
             detail=f"No analysis found for opportunity {opportunity_id}. Run analysis first."
         )
-    
+
     # 3. Validate MVP generated
     if not opportunity.mvp_generated:
         raise HTTPException(
             status_code=400,
             detail=f"MVP not generated for opportunity {opportunity_id}. Generate MVP first."
         )
-    
+
     # 4. Check if already deployed
     existing = db.query(OpportunityDeployment).filter(
         OpportunityDeployment.opportunity_id == opportunity_id,
         OpportunityDeployment.status.in_(["deploying", "live"])
     ).first()
-    
+
     if existing:
         return {
             "status": "already_deployed",
             "message": f"MVP already deployed: {existing.url}",
             "data": existing.to_dict(),
         }
-    
+
     # 5. Start background deployment
     logger.info(f"background_deployment_started opportunity_id={opportunity_id} project_id={project_id}")
-    
+
     async def _run_deployment():
         """Background deployment task"""
         start_time = time.time()
-        
+
         try:
             # Get MVP directory — must match the path used by MVPGenerator
             from core.business.mvp_generator import MVPGenerator
             generator = MVPGenerator()
             project_slug = generator._slugify(opportunity.title)
             mvp_dir = str(generator.workspace_dir / project_slug)
-            
+
             # GitHub automation
             logger.info(f"deploying_to_github opportunity_id={opportunity_id}")
             github = GitHubAutomation()
             github_result = github.create_and_push(opportunity, mvp_dir)
-            
+
             if not github_result["success"]:
                 logger.error(f"github_automation_failed opportunity_id={opportunity_id}: {github_result.get('message')}")
                 return
-            
+
             logger.info(f"github_push_completed opportunity_id={opportunity_id} repo={github_result['repo_name']}")
-            
+
             # VPS deployment
             logger.info(f"deploying_to_vps opportunity_id={opportunity_id}")
             deployer = DeployManager()
             deploy_result = deployer.deploy(opportunity, github_result["repo_url"], project_slug)
-            
+
             if not deploy_result["success"]:
                 logger.error(f"vps_deployment_failed opportunity_id={opportunity_id}: {deploy_result.get('message')}")
                 return
-            
+
             logger.info(f"vps_deployment_completed opportunity_id={opportunity_id} url={deploy_result['url']}")
-            
+
             # Create deployment record
             duration = int(time.time() - start_time)
-            
+
             deployment = OpportunityDeployment(
                 opportunity_id=opportunity_id,
                 repo_name=github_result["repo_name"],
@@ -836,26 +836,26 @@ async def deploy_mvp(
                 status="live",
                 deploy_duration_seconds=duration,
             )
-            
+
             db.add(deployment)
             fresh_opp2 = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
             if fresh_opp2:
                 fresh_opp2.deployed = True
             db.commit()
-            
+
             logger.info(
                 f"background_deployment_completed "
                 f"opportunity_id={opportunity_id} "
                 f"url={deploy_result['url']} "
                 f"duration={duration}s"
             )
-        
+
         except Exception as e:
             logger.error(f"background_deployment_failed opportunity_id={opportunity_id}: {e}", exc_info=True)
             db.rollback()
-    
+
     background_tasks.add_task(_run_deployment)
-    
+
     return {
         "status": "success",
         "message": "Deployment started",
@@ -883,12 +883,12 @@ async def get_deployment_status(
     """
     from models.opportunity import Opportunity
     from models.opportunity_deployment import OpportunityDeployment
-    
+
     # Check opportunity exists
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # Get latest deployment
     deployment = (
         db.query(OpportunityDeployment)
@@ -896,13 +896,13 @@ async def get_deployment_status(
         .order_by(OpportunityDeployment.deployed_at.desc())
         .first()
     )
-    
+
     if not deployment:
         raise HTTPException(
             status_code=404,
             detail=f"No deployment found for opportunity {opportunity_id}"
         )
-    
+
     # Return status
     if deployment.status == "deploying":
         return JSONResponse(
@@ -913,7 +913,7 @@ async def get_deployment_status(
                 "data": deployment.to_dict(),
             }
         )
-    
+
     return {
         "status": "success",
         "data": deployment.to_dict(),
@@ -944,7 +944,7 @@ async def undeploy_mvp(
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opportunity:
         raise HTTPException(status_code=404, detail=f"Opportunity {opportunity_id} not found")
-    
+
     # Get active deployment
     deployment = (
         db.query(OpportunityDeployment)
@@ -955,34 +955,34 @@ async def undeploy_mvp(
         .order_by(OpportunityDeployment.deployed_at.desc())
         .first()
     )
-    
+
     if not deployment:
         raise HTTPException(
             status_code=404,
             detail=f"No active deployment found for opportunity {opportunity_id}"
         )
-    
+
     # Undeploy
     logger.info(f"undeploying_mvp opportunity_id={opportunity_id} subdomain={deployment.subdomain}")
-    
+
     deployer = DeployManager()
     project_slug = deployment.subdomain.split('.')[0]  # Extract slug from subdomain
     success = deployer.undeploy(project_slug)
-    
+
     if not success:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to undeploy MVP for opportunity {opportunity_id}"
         )
-    
+
     # Update status
     deployment.status = "removed"
     deployment.removed_at = datetime.now(timezone.utc)
     opportunity.deployed = False
     db.commit()
-    
+
     logger.info(f"mvp_undeployed opportunity_id={opportunity_id}")
-    
+
     return {
         "status": "success",
         "message": f"MVP undeployed successfully: {deployment.subdomain}",

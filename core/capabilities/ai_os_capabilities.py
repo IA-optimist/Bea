@@ -18,7 +18,7 @@ class RetryStrategy:
     max_attempts: int = 1
     backoff_seconds: float = 1.0
     retryable_errors: tuple[str, ...] = ("TRANSIENT", "TIMEOUT")
-    
+
     def to_dict(self) -> dict:
         return {"max_attempts": self.max_attempts, "backoff_seconds": self.backoff_seconds,
                 "retryable_errors": list(self.retryable_errors)}
@@ -31,7 +31,7 @@ class TimeoutProfile:
     execution_seconds: int = 120
     review_seconds: int = 30
     total_seconds: int = 300
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -50,7 +50,7 @@ class AIOSCapability:
     timeout_profile: TimeoutProfile = field(default_factory=TimeoutProfile)
     policy_requirements: dict = field(default_factory=lambda: {"min_approval": "none", "budget_usd": 0.50})
     enabled: bool = True
-    
+
     def to_dict(self) -> dict:
         return {
             "name": self.name,

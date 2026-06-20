@@ -14,7 +14,7 @@ log = structlog.get_logger("plugins.stripe")
 
 class StripePlugin:
     """Stripe payment plugin for Bea."""
-    
+
     metadata = PluginMetadata(
         plugin_id="stripe",
         name="Stripe Payment Integration",
@@ -28,12 +28,12 @@ class StripePlugin:
         signature="hmac-sha256:b953ba0ea929f4cf7dbf4b322ee67bb541b521085e4e2873601e478b8ad1abe5",
         tags=["payments", "stripe"],
     )
-    
+
     def __init__(self):
         self._secret_key: Optional[str] = None
         self._publishable_key: Optional[str] = None
         self._default_currency: Optional[str] = None
-    
+
     async def invoke(self, action: str, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute a Stripe action.
@@ -64,17 +64,17 @@ class StripePlugin:
         except Exception as e:
             log.error("stripe_plugin_error", action=action, error=str(e))
             return {"error": str(e)}
-    
+
     async def _create_payment_intent(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create a Stripe payment intent."""
         amount = params.get("amount")
         currency = params.get("currency", self._default_currency or "usd")
         customer_id = params.get("customer_id")
         metadata = params.get("metadata", {})
-        
+
         if not amount:
             return {"error": "Amount is required"}
-        
+
         # Stub implementation - would use Stripe API in production
         return {
             "success": True,
@@ -88,15 +88,15 @@ class StripePlugin:
                 "metadata": metadata
             }
         }
-    
+
     async def _confirm_payment(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Confirm a payment."""
         payment_intent_id = params.get("payment_intent_id")
         params.get("payment_method_id")
-        
+
         if not payment_intent_id:
             return {"error": "Payment intent ID is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -107,16 +107,16 @@ class StripePlugin:
                 "amount": 1000
             }
         }
-    
+
     async def _create_customer(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create a Stripe customer."""
         email = params.get("email")
         name = params.get("name")
         metadata = params.get("metadata", {})
-        
+
         if not email:
             return {"error": "Email is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -127,16 +127,16 @@ class StripePlugin:
                 "metadata": metadata
             }
         }
-    
+
     async def _create_subscription(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create a subscription."""
         customer_id = params.get("customer_id")
         price_id = params.get("price_id")
         quantity = params.get("quantity", 1)
-        
+
         if not customer_id or not price_id:
             return {"error": "Customer ID and price ID are required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -151,15 +151,15 @@ class StripePlugin:
                 }]
             }
         }
-    
+
     async def _cancel_subscription(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Cancel a subscription."""
         subscription_id = params.get("subscription_id")
         at_period_end = params.get("at_period_end", True)
-        
+
         if not subscription_id:
             return {"error": "Subscription ID is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -169,14 +169,14 @@ class StripePlugin:
                 "cancel_at_period_end": at_period_end
             }
         }
-    
+
     async def _get_invoice(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Get invoice details."""
         invoice_id = params.get("invoice_id")
-        
+
         if not invoice_id:
             return {"error": "Invoice ID is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -188,7 +188,7 @@ class StripePlugin:
                 "created": "2026-06-19T00:00:00Z"
             }
         }
-    
+
     async def health_check(self) -> str:
         """Health check for the plugin."""
         try:

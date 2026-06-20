@@ -271,7 +271,7 @@ if os.path.exists(mission_screen_path):
         ms_code = f.read()
     has_state_ui = "WsConnectionState" in ms_code
     test("Mission screen uses WsConnectionState", has_state_ui)
-    
+
     has_color_mapping = "JvColors.green" in ms_code and "JvColors.orange" in ms_code
     test("UI color maps to states", has_color_mapping)
 else:

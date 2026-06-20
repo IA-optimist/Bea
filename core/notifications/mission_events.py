@@ -34,14 +34,14 @@ async def on_mission_status_change(
     """
     # Only notify on terminal statuses
     terminal_statuses = ["DONE", "COMPLETED", "FAILED", "CANCELLED"]
-    
+
     if new_status not in terminal_statuses:
         return
-    
+
     # Skip if already was in terminal status (avoid duplicate notifications)
     if old_status in terminal_statuses:
         return
-    
+
     try:
         # Send notification asynchronously
         await send_notification(
@@ -52,12 +52,12 @@ async def on_mission_status_change(
             result=result if new_status in ("DONE", "COMPLETED") else "",
             error=error if new_status == "FAILED" else "",
         )
-        
+
         log.info("mission_notification_triggered",
                  mission_id=mission_id,
                  status=new_status,
                  user_id=user_id)
-    
+
     except Exception as e:
         # Never let notification errors break mission execution
         log.error("mission_notification_error",

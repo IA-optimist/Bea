@@ -20,7 +20,7 @@ class RoleDefinition:
     output_type: str
     success_criteria: str
     assigned_agents: tuple[str, ...] = ()
-    
+
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["assigned_agents"] = list(self.assigned_agents)

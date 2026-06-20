@@ -15,7 +15,7 @@ log = structlog.get_logger("plugins.github")
 
 class GitHubPlugin:
     """GitHub integration plugin for Bea."""
-    
+
     metadata = PluginMetadata(
         plugin_id="github",
         name="GitHub Integration",
@@ -29,11 +29,11 @@ class GitHubPlugin:
         signature="hmac-sha256:9531813fd3ee4dfa55522e0b18930ce9d2e08297cf072dbdd1011a86ba82650b",
         tags=["github", "scm"],
     )
-    
+
     def __init__(self):
         self._token: Optional[str] = None
         self._default_owner: Optional[str] = None
-    
+
     async def invoke(self, action: str, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute a GitHub action.
@@ -64,16 +64,16 @@ class GitHubPlugin:
         except Exception as e:
             log.error("github_plugin_error", action=action, error=str(e))
             return {"error": str(e)}
-    
+
     async def _create_repo(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new GitHub repository."""
         name = params.get("name")
         description = params.get("description", "")
         private = params.get("private", False)
-        
+
         if not name:
             return {"error": "Repository name is required"}
-        
+
         # Stub implementation - would use GitHub API in production
         return {
             "success": True,
@@ -84,11 +84,11 @@ class GitHubPlugin:
                 "url": f"https://github.com/{self._default_owner or 'user'}/{name}",
             }
         }
-    
+
     async def _list_repos(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """List repositories for an owner."""
         owner = params.get("owner", self._default_owner)
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -96,16 +96,16 @@ class GitHubPlugin:
                 {"name": "example-repo", "private": False, "url": f"https://github.com/{owner}/example-repo"}
             ]
         }
-    
+
     async def _create_issue(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create an issue in a repository."""
         repo = params.get("repo")
         title = params.get("title")
         body = params.get("body", "")
-        
+
         if not repo or not title:
             return {"error": "Repository and title are required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -117,7 +117,7 @@ class GitHubPlugin:
                 "url": f"https://github.com/{self._default_owner or 'user'}/{repo}/issues/1"
             }
         }
-    
+
     async def _create_pr(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Create a pull request."""
         repo = params.get("repo")
@@ -125,10 +125,10 @@ class GitHubPlugin:
         head = params.get("head")
         base = params.get("base", "main")
         body = params.get("body", "")
-        
+
         if not repo or not title or not head:
             return {"error": "Repository, title, and head branch are required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -142,16 +142,16 @@ class GitHubPlugin:
                 "url": f"https://github.com/{self._default_owner or 'user'}/{repo}/pull/1"
             }
         }
-    
+
     async def _get_file(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Get file content from a repository."""
         repo = params.get("repo")
         path = params.get("path")
         params.get("ref", "main")
-        
+
         if not repo or not path:
             return {"error": "Repository and path are required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -161,7 +161,7 @@ class GitHubPlugin:
                 "sha": "abc123"
             }
         }
-    
+
     async def _update_file(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Update a file in a repository."""
         repo = params.get("repo")
@@ -169,10 +169,10 @@ class GitHubPlugin:
         content = params.get("content")
         params.get("message", f"Update {path}")
         params.get("sha")
-        
+
         if not repo or not path or not content:
             return {"error": "Repository, path, and content are required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -182,7 +182,7 @@ class GitHubPlugin:
                 "sha": "def456"
             }
         }
-    
+
     async def health_check(self) -> str:
         """Health check for the plugin."""
         try:

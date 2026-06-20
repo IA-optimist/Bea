@@ -23,43 +23,43 @@ except ImportError:
 
 class AiderCLI:
     """Aider CLI integration for AI-powered pair programming"""
-    
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
         self.available = AIDER_AVAILABLE
         self.api_key = self.config.get('api_key') or self._get_api_key()
         self.model = self.config.get('model', 'gpt-4')
         self.aider = None
-        
+
     def _get_api_key(self) -> Optional[str]:
         """Get API key from environment"""
         import os
         return os.getenv('OPENAI_API_KEY') or os.getenv('AIDER_API_KEY')
-    
+
     def check_availability(self) -> bool:
         """Check if Aider CLI is available"""
         if not self.available:
             logger.error("Aider CLI not available")
             return False
-        
+
         if not self.api_key:
             logger.error("API key not configured")
             return False
-        
+
         try:
             # Check if aider command is available
-            result = subprocess.run(['aider', '--version'], 
+            result = subprocess.run(['aider', '--version'],
                                   capture_output=True, text=True, timeout=10)
             return result.returncode == 0
         except Exception as e:
             logger.error(f"Aider CLI check failed: {e}")
             return False
-    
+
     async def initialize_aider(self):
         """Initialize Aider"""
         if not self.check_availability():
             raise Exception("Aider CLI not available")
-        
+
         try:
             self.aider = aider.Aider(
                 api_key=self.api_key,
@@ -69,15 +69,15 @@ class AiderCLI:
         except Exception as e:
             logger.error(f"Failed to initialize Aider: {e}")
             raise
-    
+
     async def edit_files(self, edits: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Edit multiple files using Aider"""
         logger.info(f"Editing files with Aider: {len(edits)} files")
-        
+
         try:
             if not self.aider:
                 await self.initialize_aider()
-            
+
             results = []
             for edit in edits:
                 result = await self.aider.edit_file(
@@ -86,21 +86,21 @@ class AiderCLI:
                     edit['changes']
                 )
                 results.append(result)
-            
+
             return {
                 'edits': edits,
                 'results': results,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"File editing failed: {e}")
             return {'error': str(e)}
-    
+
     async def refactor_code(self, file_path: str, refactoring_type: str) -> Dict[str, Any]:
         """Refactor code using Aider"""
         logger.info(f"Refactoring code with Aider: {refactoring_type}")
-        
+
         try:
             refactoring_instructions = {
                 'extract_method': "Extract a method from the selected code",
@@ -113,30 +113,30 @@ class AiderCLI:
                 'add_error_handling': "Add proper error handling",
                 'optimize_performance': "Optimize for performance"
             }
-            
-            instructions = refactoring_instructions.get(refactoring_type, 
+
+            instructions = refactoring_instructions.get(refactoring_type,
                                                        f"Refactor the code for {refactoring_type}")
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'refactoring_type': refactoring_type,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Code refactoring failed: {e}")
             return {'error': str(e)}
-    
+
     async def add_tests(self, file_path: str, test_framework: str = 'pytest') -> Dict[str, Any]:
         """Add tests to code using Aider"""
         logger.info(f"Adding {test_framework} tests to {file_path}")
-        
+
         try:
             instructions = f"""
             Add comprehensive {test_framework} tests for the following code:
@@ -147,53 +147,53 @@ class AiderCLI:
             - Add proper mocking where needed
             - Follow {test_framework} best practices
             """
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'test_framework': test_framework,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Test addition failed: {e}")
             return {'error': str(e)}
-    
+
     async def fix_bugs(self, file_path: str, error_description: str = None) -> Dict[str, Any]:
         """Fix bugs in code using Aider"""
         logger.info(f"Fixing bugs in {file_path}")
-        
+
         try:
             instructions = "Fix the following bugs in the code:"
-            
+
             if error_description:
                 instructions += f"\n\nError description: {error_description}"
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'error_description': error_description,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Bug fixing failed: {e}")
             return {'error': str(e)}
-    
+
     async def improve_code(self, file_path: str, focus_areas: List[str] = None) -> Dict[str, Any]:
         """Improve code quality using Aider"""
         logger.info(f"Improving code quality in {file_path}")
-        
+
         try:
             areas = focus_areas or ['readability', 'performance', 'maintainability']
             instructions = f"""
@@ -207,27 +207,27 @@ class AiderCLI:
             - Documentation and comments
             - Best practices adherence
             """
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'focus_areas': areas,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Code improvement failed: {e}")
             return {'error': str(e)}
-    
+
     async def generate_documentation(self, file_path: str, doc_type: str = 'inline') -> Dict[str, Any]:
         """Generate documentation using Aider"""
         logger.info(f"Generating {doc_type} documentation in {file_path}")
-        
+
         try:
             instructions = {
                 'inline': "Add comprehensive inline documentation including comments and docstrings",
@@ -235,29 +235,29 @@ class AiderCLI:
                 'api': "Generate API documentation for all public interfaces",
                 'tutorial': "Generate a tutorial file explaining how to use the code"
             }
-            
+
             instruction = instructions.get(doc_type, instructions['inline'])
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instruction
             )
-            
+
             return {
                 'file_path': file_path,
                 'doc_type': doc_type,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Documentation generation failed: {e}")
             return {'error': str(e)}
-    
+
     async def analyze_code(self, file_path: str, analysis_type: str = 'comprehensive') -> Dict[str, Any]:
         """Analyze code using Aider"""
         logger.info(f"Analyzing code with Aider: {analysis_type}")
-        
+
         try:
             instructions = {
                 'comprehensive': "Perform a comprehensive code analysis including quality, performance, security, and maintainability",
@@ -266,29 +266,29 @@ class AiderCLI:
                 'architecture': "Analyze the code architecture and design patterns",
                 'complexity': "Analyze code complexity and suggest improvements"
             }
-            
+
             instruction = instructions.get(analysis_type, instructions['comprehensive'])
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instruction
             )
-            
+
             return {
                 'file_path': file_path,
                 'analysis_type': analysis_type,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Code analysis failed: {e}")
             return {'error': str(e)}
-    
+
     async def create_feature(self, feature_description: str, file_paths: List[str]) -> Dict[str, Any]:
         """Create a new feature using Aider"""
         logger.info(f"Creating feature: {feature_description}")
-        
+
         try:
             instructions = f"""
             Implement the following feature:
@@ -297,30 +297,30 @@ class AiderCLI:
             
             Make the following changes to the files:
             """
-            
+
             for i, file_path in enumerate(file_paths):
                 instructions += f"\n- File {i+1}: {file_path}"
-            
+
             result = await self.aider.edit_files(
                 file_paths,
                 instructions
             )
-            
+
             return {
                 'feature_description': feature_description,
                 'file_paths': file_paths,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Feature creation failed: {e}")
             return {'error': str(e)}
-    
+
     async def review_code(self, file_path: str, review_focus: List[str] = None) -> Dict[str, Any]:
         """Review code using Aider"""
         logger.info(f"Reviewing code in {file_path}")
-        
+
         try:
             focus = review_focus or ['quality', 'performance', 'security', 'best_practices']
             instructions = f"""
@@ -334,27 +334,27 @@ class AiderCLI:
             - Suggested improvements
             - Potential bugs
             """
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'review_focus': focus,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Code review failed: {e}")
             return {'error': str(e)}
-    
+
     async def migrate_code(self, file_path: str, target_framework: str, version: str = None) -> Dict[str, Any]:
         """Migrate code to a new framework using Aider"""
         logger.info(f"Migrating code to {target_framework}")
-        
+
         try:
             instructions = f"""
             Migrate the following code to {target_framework}"
@@ -365,15 +365,15 @@ class AiderCLI:
             - Performance improvements
             - Best practices for the new framework
             """
-            
+
             if version:
                 instructions += f"\nTarget version: {version}"
-            
+
             result = await self.aider.edit_file(
                 file_path,
                 instructions
             )
-            
+
             return {
                 'file_path': file_path,
                 'target_framework': target_framework,
@@ -381,19 +381,19 @@ class AiderCLI:
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Code migration failed: {e}")
             return {'error': str(e)}
-    
+
     async def batch_edit(self, edit_requests: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Perform batch edits using Aider"""
         logger.info(f"Performing batch edits: {len(edit_requests)} requests")
-        
+
         try:
             if not self.aider:
                 await self.initialize_aider()
-            
+
             results = []
             for request in edit_requests:
                 result = await self.aider.edit_file(
@@ -402,21 +402,21 @@ class AiderCLI:
                     request.get('changes')
                 )
                 results.append(result)
-            
+
             return {
                 'edit_requests': edit_requests,
                 'results': results,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Batch editing failed: {e}")
             return {'error': str(e)}
-    
+
     async def create_project_structure(self, project_description: str, language: str = 'python') -> Dict[str, Any]:
         """Create project structure using Aider"""
         logger.info(f"Creating project structure: {project_description}")
-        
+
         try:
             instructions = f"""
             Create a comprehensive project structure for:
@@ -433,56 +433,56 @@ class AiderCLI:
             - Documentation structure
             - Test structure
             """
-            
+
             # Create a temporary file to work with
             temp_file = f"{language}_project_structure.py"
             result = await self.aider.edit_file(
                 temp_file,
                 instructions
             )
-            
+
             return {
                 'project_description': project_description,
                 'language': language,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"Project structure creation failed: {e}")
             return {'error': str(e)}
-    
+
     def get_version(self) -> Dict[str, Any]:
         """Get Aider CLI version"""
         if not self.check_availability():
             return {"error": "Aider CLI not available"}
-        
+
         try:
-            process = subprocess.run(['aider', '--version'], 
+            process = subprocess.run(['aider', '--version'],
                                   capture_output=True, text=True, timeout=10)
-            
+
             return {
                 'version': process.stdout.strip(),
                 'available': True,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             return {
                 'error': str(e),
                 'available': False,
                 'timestamp': asyncio.get_event_loop().time()
             }
-    
+
     def install_aider(self) -> Dict[str, Any]:
         """Install Aider CLI"""
         logger.info("Installing Aider CLI")
-        
+
         try:
             # Install via pip
-            process = subprocess.run(['pip', 'install', 'aider-chat'], 
+            process = subprocess.run(['pip', 'install', 'aider-chat'],
                                   capture_output=True, text=True, timeout=60)
-            
+
             if process.returncode == 0:
                 logger.info("Aider CLI installed successfully")
                 return {
@@ -497,7 +497,7 @@ class AiderCLI:
                     'error': process.stderr,
                     'timestamp': asyncio.get_event_loop().time()
                 }
-                
+
         except Exception as e:
             logger.error(f"Aider CLI installation failed: {e}")
             return {
@@ -505,25 +505,25 @@ class AiderCLI:
                 'error': str(e),
                 'timestamp': asyncio.get_event_loop().time()
             }
-    
+
     def configure_api_key(self, api_key: str) -> bool:
         """Configure API key"""
         try:
             # Store API key in config
             self.config['api_key'] = api_key
             self.api_key = api_key
-            
+
             # Set up authentication
-            process = subprocess.run(['aider', 'auth', 'login', api_key], 
+            process = subprocess.run(['aider', 'auth', 'login', api_key],
                                   capture_output=True, text=True, timeout=30)
-            
+
             if process.returncode == 0:
                 logger.info("API key configured successfully")
                 return True
             else:
                 logger.error(f"Failed to configure API key: {process.stderr}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"Failed to configure API key: {e}")
             return False

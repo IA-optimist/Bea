@@ -47,7 +47,7 @@ class RedisMemoryCache:
     - Knowledge graph: 4 hours
     - Improvement lessons: 24 hours
     """
-    
+
     def __init__(self, redis_url: str | None = None, default_ttl: int = 3600):
         """
         Initialize Redis cache.
@@ -60,11 +60,11 @@ class RedisMemoryCache:
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.default_ttl = default_ttl
         self._client: Any | None = None
-        
+
         if not _REDIS_AVAILABLE:
             log.warning("redis_cache.init_skipped", reason="redis not installed")
             return
-        
+
         try:
             self._client = redis.from_url(
                 self.redis_url,
@@ -78,7 +78,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.connection_failed", error=str(e))
             self._client = None
-    
+
     def _get_host(self) -> str:
         """Extract hostname from redis_url for logging."""
         if not self.redis_url:
@@ -92,11 +92,11 @@ class RedisMemoryCache:
             return host_part
         except Exception:
             return "unknown"
-    
+
     def is_available(self) -> bool:
         """Check if cache is available."""
         return _REDIS_AVAILABLE and self._client is not None
-    
+
     def get(self, key: str) -> dict[str, Any] | None:
         """
         Get cached entry.
@@ -122,7 +122,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.get_failed", key=key, error=str(e))
             return None
-    
+
     def set(self, key: str, value: dict[str, Any], ttl: int | None = None) -> bool:
         """
         Set cached entry with TTL.
@@ -152,7 +152,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.set_failed", key=key, error=str(e))
             return False
-    
+
     def delete(self, key: str) -> bool:
         """Invalidate cache entry."""
         if not self.is_available():
@@ -167,7 +167,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.delete_failed", key=key, error=str(e))
             return False
-    
+
     def delete_pattern(self, pattern: str) -> int:
         """
         Invalidate all keys matching pattern.
@@ -193,7 +193,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.pattern_delete_failed", pattern=pattern, error=str(e))
             return 0
-    
+
     def flush_all(self) -> bool:
         """
         Clear entire cache (USE WITH CAUTION).
@@ -213,7 +213,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.flush_failed", error=str(e))
             return False
-    
+
     def stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
@@ -242,7 +242,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.stats_failed", error=str(e))
             return {"available": False, "error": str(e)}
-    
+
     def close(self) -> None:
         """Close Redis connection."""
         client = self._client

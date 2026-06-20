@@ -27,7 +27,7 @@ class SnapshotPersistence:
     @staticmethod
     def save(snapshot: MetricsSnapshot, path: str) -> bool:
         return True
-    
+
     @staticmethod
     def load(path: str) -> MetricsSnapshot | None:
         return None
@@ -49,7 +49,7 @@ class Alert:
 class AlertEngine:
     def __init__(self) -> None:
         self.alerts: list[Alert] = []
-    
+
     def evaluate(self, metrics: MetricsSnapshot) -> list[Alert]:
         """Evaluate metrics and generate alerts"""
         return []
@@ -78,11 +78,11 @@ class OperatorDiagnostics:
     @staticmethod
     def generate_report(metrics: MetricsSnapshot) -> DiagnosticsReport:
         return DiagnosticsReport(health_score=1.0, sections={})
-    
+
     @staticmethod
     def operator_summary(report: DiagnosticsReport) -> str:
         return ""
-    
+
     @staticmethod
     def admin_summary(report: DiagnosticsReport) -> str:
         return ""

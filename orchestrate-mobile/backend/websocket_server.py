@@ -74,13 +74,13 @@ class WebSocketManager:
         self.workflows: Dict[str, Workflow] = {}
         self.messages: List[Message] = []
         self.websocket_clients: Set[WebSocket] = set()
-    
+
     async def connect(self, websocket: WebSocket, client_id: str):
         await websocket.accept()
         self.active_connections[client_id] = websocket
         self.websocket_clients.add(websocket)
         logger.info(f"Client {client_id} connected")
-        
+
         # Send initial data
         await self.send_to_client(client_id, {
             'type': 'init',
@@ -89,12 +89,12 @@ class WebSocketManager:
                 'workflows': list(self.workflows.values()),
             }
         })
-    
+
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
             del self.active_connections[client_id]
         logger.info(f"Client {client_id} disconnected")
-    
+
     async def send_to_client(self, client_id: str, message: dict):
         if client_id in self.active_connections:
             try:
@@ -102,7 +102,7 @@ class WebSocketManager:
             except Exception as e:
                 logger.error(f"Error sending to client {client_id}: {e}")
                 self.disconnect(client_id)
-    
+
     async def broadcast(self, message: dict):
         disconnected = set()
         for websocket in self.websocket_clients:
@@ -111,11 +111,11 @@ class WebSocketManager:
             except Exception as e:
                 logger.error(f"Error broadcasting: {e}")
                 disconnected.add(websocket)
-        
+
         # Clean up disconnected clients
         for websocket in disconnected:
             self.websocket_clients.discard(websocket)
-    
+
     async def handle_agent_update(self, agent_id: str, data: dict):
         # Update agent
         agent = self.agents.get(agent_id)
@@ -124,15 +124,15 @@ class WebSocketManager:
             agent.progress = data.get('progress', agent.progress)
             agent.message = data.get('message', agent.message)
             agent.last_update = datetime.now()
-            
+
             # Broadcast update
             await self.broadcast({
                 'type': 'agent_update',
                 'data': agent.dict()
             })
-            
+
             logger.info(f"Agent {agent_id} updated: {agent.status}")
-    
+
     async def handle_workflow_update(self, workflow_id: str, data: dict):
         # Update workflow
         workflow = self.workflows.get(workflow_id)
@@ -142,13 +142,13 @@ class WebSocketManager:
             workflow.steps = data.get('steps', workflow.steps)
             if workflow.status == 'completed':
                 workflow.end_time = datetime.now()
-            
+
             # Broadcast update
             await self.broadcast({
                 'type': 'workflow_update',
                 'data': workflow.dict()
             })
-            
+
             logger.info(f"Workflow {workflow_id} updated: {workflow.status}")
 
 # Global WebSocket manager
@@ -195,7 +195,7 @@ def initialize_sample_data():
             active_workflows=['workflow_1']
         )
     })
-    
+
     # Sample workflows
     ws_manager.workflows.update({
         'workflow_1': Workflow(
@@ -251,34 +251,34 @@ async def root():
 async def websocket_endpoint(websocket: WebSocket):
     client_id = f"client_{len(ws_manager.active_connections)}"
     await ws_manager.connect(websocket, client_id)
-    
+
     try:
         while True:
             # Receive messages from client
             data = await websocket.receive_text()
             message = json.loads(data)
-            
+
             message_type = message.get('type')
-            
+
             if message_type == 'agent_command':
                 # Handle agent commands
                 agent_id = message.get('agent_id')
                 command = message.get('command')
-                
+
                 # Simulate command execution
                 await ws_manager.handle_agent_update(agent_id, {
                     'status': 'running',
                     'progress': 0.5,
                     'message': f'Executing command: {command}'
                 })
-                
+
             elif message_type == 'start_workflow':
                 # Handle workflow start
                 workflow_id = message.get('workflow_id')
                 name = message.get('name')
                 agent_ids = message.get('agent_ids')
                 framework = message.get('framework')
-                
+
                 # Create new workflow
                 workflow = Workflow(
                     id=workflow_id,
@@ -292,9 +292,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     config={},
                     framework=framework
                 )
-                
+
                 ws_manager.workflows[workflow_id] = workflow
-                
+
                 # Start agents
                 for agent_id in agent_ids:
                     if agent_id in ws_manager.agents:
@@ -304,22 +304,22 @@ async def websocket_endpoint(websocket: WebSocket):
                             'progress': 0.0,
                             'message': f'Started workflow: {name}'
                         })
-                
+
                 await ws_manager.broadcast({
                     'type': 'workflow_update',
                     'data': workflow.dict()
                 })
-                
+
             elif message_type == 'stop_workflow':
                 # Handle workflow stop
                 workflow_id = message.get('workflow_id')
-                
+
                 if workflow_id in ws_manager.workflows:
                     workflow = ws_manager.workflows[workflow_id]
                     workflow.status = 'completed'
                     workflow.progress = 1.0
                     workflow.end_time = datetime.now()
-                    
+
                     # Stop agents
                     for agent_id in workflow.agent_ids:
                         if agent_id in ws_manager.agents:
@@ -329,19 +329,19 @@ async def websocket_endpoint(websocket: WebSocket):
                                 'progress': 0.0,
                                 'message': 'Workflow completed'
                             })
-                    
+
                     await ws_manager.broadcast({
                         'type': 'workflow_update',
                         'data': workflow.dict()
                     })
-            
+
             elif message_type == '3d_update':
                 # Handle 3D visualization updates
                 await ws_manager.broadcast({
                     'type': '3d_update',
                     'data': message.get('data')
                 })
-                
+
     except WebSocketDisconnect:
         ws_manager.disconnect(client_id)
 
@@ -349,7 +349,7 @@ async def websocket_endpoint(websocket: WebSocket):
 class KimiAgentService:
     def __init__(self):
         self.agents: Dict[str, Any] = {}
-    
+
     async def start_agent(self, agent_id: str, prompt: str, config: dict):
         """Start a Kimi agent with the given prompt"""
         try:
@@ -358,41 +358,41 @@ class KimiAgentService:
             for i in range(10):
                 progress += 0.1
                 await asyncio.sleep(0.5)  # Simulate work
-                
+
                 # Update progress
                 await ws_manager.handle_agent_update(agent_id, {
                     'progress': progress,
                     'message': f'Processing... {progress * 100:.0f}%'
                 })
-            
+
             # Complete
             await ws_manager.handle_agent_update(agent_id, {
                 'status': 'completed',
                 'progress': 1.0,
                 'message': 'Task completed successfully'
             })
-            
+
         except Exception as e:
             await ws_manager.handle_agent_update(agent_id, {
                 'status': 'error',
                 'progress': 0.0,
                 'message': f'Error: {str(e)}'
             })
-    
+
     async def process_prompt(self, agent_id: str, prompt: str):
         """Process a prompt using Kimi Agent SDK"""
         # This would integrate with the actual Kimi Agent SDK
         # For now, we'll simulate the process
-        
+
         logger.info(f"Processing prompt for agent {agent_id}: {prompt}")
-        
+
         # Start processing
         await ws_manager.handle_agent_update(agent_id, {
             'status': 'running',
             'progress': 0.0,
             'message': f'Starting: {prompt}'
         })
-        
+
         # Simulate processing
         steps = [
             "Understanding the request...",
@@ -400,14 +400,14 @@ class KimiAgentService:
             "Generating response...",
             "Finalizing results..."
         ]
-        
+
         for i, step in enumerate(steps):
             await ws_manager.handle_agent_update(agent_id, {
                 'progress': (i + 1) / len(steps),
                 'message': step
             })
             await asyncio.sleep(1)
-        
+
         # Complete
         await ws_manager.handle_agent_update(agent_id, {
             'status': 'completed',

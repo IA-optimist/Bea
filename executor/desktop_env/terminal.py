@@ -26,7 +26,7 @@ class PersistentTerminal:
         self._env = env
         self._process: asyncio.subprocess.Process | None = None
         self._lock = asyncio.Lock()
-        
+
     async def start(self) -> None:
         """Lance le processus Bash interactif."""
         if isinstance(self._env, DockerSandbox):
@@ -34,7 +34,7 @@ class PersistentTerminal:
             if container is None:
                 self._env.start()
                 container = self._env.container
-            
+
             # Sous docker, on lance `docker exec -i ... /bin/bash` via subprocess
             # pour avoir un pipe in/out constant. (L'alternative est docker.py socket stream)
             if container is None:
@@ -46,7 +46,7 @@ class PersistentTerminal:
             cmd = [shell]
 
         log.info("terminal_starting", cmd=cmd)
-        
+
         self._process = await asyncio.create_subprocess_exec(
             *cmd,
             stdin=asyncio.subprocess.PIPE,
@@ -54,7 +54,7 @@ class PersistentTerminal:
             stderr=asyncio.subprocess.STDOUT,  # On merge stdout/stderr
             cwd=str(self._env.workspace_path)
         )
-        
+
         # Injection du setup initial
         if os.name != "nt" or isinstance(self._env, DockerSandbox):
             # Désactiver l'écho et les prompts fioritures, préparer la syntaxe.
@@ -62,11 +62,11 @@ class PersistentTerminal:
             if self._process.stdin:
                 self._process.stdin.write(setup.encode())
                 await self._process.stdin.drain()
-            
+
             # Flush initial ("ready")
             if self._process.stdout:
                 await self._process.stdout.readline()
-                
+
     async def execute(self, command: str, timeout_s: int = 120) -> tuple[int, str]:
         """
         Exécute une commande et attend sa terminaison avec timeout.
@@ -74,7 +74,7 @@ class PersistentTerminal:
         """
         if not self._process or self._process.returncode is not None:
             await self.start()
-            
+
         if not self._process or not self._process.stdin or not self._process.stdout:
             return -1, "Processus terminal mort ou injoignable."
 
@@ -95,7 +95,7 @@ class PersistentTerminal:
 
             output_lines = []
             exit_code = 0
-            
+
             # Lecture du flux jusqu'à rencontrer notre marqueur de fin (ou timeout)
             try:
                 async def read_until_marker() -> None:
@@ -106,9 +106,9 @@ class PersistentTerminal:
                         line_bytes = await self._process.stdout.readline()
                         if not line_bytes: # EOF
                             break
-                            
+
                         line = line_bytes.decode('utf-8', errors='replace').rstrip('\r\n')
-                        
+
                         # Détection du marqueur de fin
                         if _END_MARKER in line:
                             # Parse l'exit code attaché au marqueur (ex: __BEA_CMD_END_123456__0)
@@ -116,7 +116,7 @@ class PersistentTerminal:
                             if match:
                                 exit_code = int(match.group(1))
                             break
-                        
+
                         output_lines.append(line)
 
                 await asyncio.wait_for(read_until_marker(), timeout=timeout_s)
@@ -125,14 +125,14 @@ class PersistentTerminal:
                 # Si necessaire, on pourrait envoyer SIGINT au process enfant.
                 output_lines.append(f"\n[Terminé de force après {timeout_s}s - Timeout]")
                 exit_code = 124 # Bash timeout convention
-            
+
             output = "\n".join(output_lines)
-            
+
             # Sécurité tokens LLM : Si l'output est trop lourd (ex: build logs, npm install)
             # On tronque intelligemment (les 1000 premiers chars + les 2000 derniers)
             if len(output) > 5000:
                 output = output[:1000] + "\n\n... [TRONQUÉ] ...\n\n" + output[-2000:]
-                
+
             return exit_code, output.strip()
 
     def close(self) -> None:

@@ -38,10 +38,10 @@ async def run_consolidation(user: dict = Depends(require_admin)):
     """
     try:
         from core.cognitive_consolidation import run_nightly_consolidation
-        
+
         log.info("consolidation.triggered_via_api", trigger="manual")
         result = await run_nightly_consolidation()
-        
+
         return {
             "ok": True,
             "data": result,
@@ -73,10 +73,10 @@ async def get_workspace_stats(user: dict = Depends(require_auth)):
     """
     try:
         from core.global_workspace import get_workspace
-        
+
         workspace = get_workspace()
         stats = await workspace.get_stats()
-        
+
         return {
             "ok": True,
             "data": stats
@@ -109,14 +109,14 @@ async def get_recent_broadcasts(
     """
     try:
         from core.global_workspace import get_workspace
-        
+
         workspace = get_workspace()
         broadcasts = await workspace.get_recent(
             limit=limit,
             min_confidence=min_confidence,
             agent_filter=agent
         )
-        
+
         return {
             "ok": True,
             "data": {
@@ -146,13 +146,13 @@ async def get_high_confidence_broadcasts(
     """
     try:
         from core.global_workspace import get_workspace
-        
+
         workspace = get_workspace()
         broadcasts = await workspace.get_high_confidence(
             threshold=threshold,
             limit=limit
         )
-        
+
         return {
             "ok": True,
             "data": {

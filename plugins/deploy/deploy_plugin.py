@@ -15,7 +15,7 @@ log = structlog.get_logger("plugins.deploy")
 
 class DeployPlugin:
     """Deployment plugin for Bea."""
-    
+
     metadata = PluginMetadata(
         plugin_id="deploy",
         name="Deployment Operations",
@@ -29,12 +29,12 @@ class DeployPlugin:
         signature="hmac-sha256:b9e03eafb3e11b6e880cf49c1b23de25cd980b3428edf55112d0f31c30649157",
         tags=["deployment"],
     )
-    
+
     def __init__(self):
         self._vercel_token: Optional[str] = None
         self._railway_token: Optional[str] = None
         self._default_platform: Optional[str] = None
-    
+
     async def invoke(self, action: str, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute a deployment action.
@@ -62,16 +62,16 @@ class DeployPlugin:
         except Exception as e:
             log.error("deploy_plugin_error", action=action, error=str(e))
             return {"error": str(e)}
-    
+
     async def _deploy_vercel(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Deploy application to Vercel."""
         project_name = params.get("project_name")
         params.get("directory", ".")
         environment = params.get("environment", "production")
-        
+
         if not project_name:
             return {"error": "Project name is required"}
-        
+
         # Stub implementation - would use Vercel API in production
         return {
             "success": True,
@@ -84,16 +84,16 @@ class DeployPlugin:
                 "deployment_id": "vercel_deploy_123"
             }
         }
-    
+
     async def _deploy_railway(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Deploy application to Railway."""
         project_name = params.get("project_name")
         params.get("directory", ".")
         environment = params.get("environment", "production")
-        
+
         if not project_name:
             return {"error": "Project name is required"}
-        
+
         # Stub implementation - would use Railway API in production
         return {
             "success": True,
@@ -106,17 +106,17 @@ class DeployPlugin:
                 "deployment_id": "railway_deploy_456"
             }
         }
-    
+
     async def _deploy_docker(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Deploy application as Docker container."""
         image_name = params.get("image_name")
         tag = params.get("tag", "latest")
         registry = params.get("registry", "docker.io")
         ports = params.get("ports", [])
-        
+
         if not image_name:
             return {"error": "Image name is required"}
-        
+
         # Stub implementation - would use Docker API in production
         return {
             "success": True,
@@ -128,15 +128,15 @@ class DeployPlugin:
                 "container_id": "container_789"
             }
         }
-    
+
     async def _get_status(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Get deployment status."""
         deployment_id = params.get("deployment_id")
         platform = params.get("platform", self._default_platform)
-        
+
         if not deployment_id:
             return {"error": "Deployment ID is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -148,15 +148,15 @@ class DeployPlugin:
                 "updated_at": "2026-06-19T00:00:00Z"
             }
         }
-    
+
     async def _rollback(self, params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Rollback deployment."""
         deployment_id = params.get("deployment_id")
         target_version = params.get("target_version")
-        
+
         if not deployment_id:
             return {"error": "Deployment ID is required"}
-        
+
         # Stub implementation
         return {
             "success": True,
@@ -167,7 +167,7 @@ class DeployPlugin:
                 "previous_version": "v1.0.0"
             }
         }
-    
+
     async def health_check(self) -> str:
         """Health check for the plugin."""
         try:

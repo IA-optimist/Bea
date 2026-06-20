@@ -38,7 +38,7 @@ class TraceAnalysis:
     capabilities_used: list[str] = field(default_factory=list)
     agents_involved: list[str] = field(default_factory=list)
     outcome: str = "unknown"
-    
+
     def to_dict(self) -> dict:
         return {
             "mission_id": self.mission_id,
@@ -82,7 +82,7 @@ def analyze_trace(mission_id: str) -> TraceAnalysis:
     """Analyze a mission trace for intelligence."""
     segments = load_trace(mission_id)
     analysis = TraceAnalysis(mission_id=mission_id, total_events=len(segments))
-    
+
     for seg in segments:
         if seg.phase == "execute":
             analysis.agents_involved.append(seg.action)
@@ -94,12 +94,12 @@ def analyze_trace(mission_id: str) -> TraceAnalysis:
             analysis.capabilities_used.append(seg.action)
         elif seg.phase == "complete":
             analysis.outcome = seg.action  # "DONE" or "FAILED"
-        
+
         if seg.duration_ms:
             analysis.total_duration_ms += seg.duration_ms
         if seg.error:
             analysis.error_types.append(seg.error)
-    
+
     return analysis
 
 
@@ -107,17 +107,17 @@ def error_patterns(limit: int = 50) -> dict:
     """Detect error patterns across recent traces."""
     if not TRACE_DIR.exists():
         return {"patterns": [], "total_traces": 0}
-    
+
     error_counts: dict[str, int] = {}
     total = 0
-    
+
     for f in sorted(TRACE_DIR.glob("*.jsonl"))[-limit:]:
         total += 1
         mid = f.stem
         analysis = analyze_trace(mid)
         for err in analysis.error_types:
             error_counts[err] = error_counts.get(err, 0) + 1
-    
+
     patterns = sorted(error_counts.items(), key=lambda x: -x[1])
     return {
         "total_traces": total,
@@ -129,9 +129,9 @@ def capability_reliability() -> dict:
     """Score capability reliability from traces."""
     if not TRACE_DIR.exists():
         return {}
-    
+
     cap_stats: dict[str, dict] = {}
-    
+
     for f in sorted(TRACE_DIR.glob("*.jsonl"))[-100:]:
         analysis = analyze_trace(f.stem)
         for cap in analysis.capabilities_used:
@@ -140,7 +140,7 @@ def capability_reliability() -> dict:
             cap_stats[cap]["total"] += 1
             if analysis.outcome == "DONE":
                 cap_stats[cap]["success"] += 1
-    
+
     return {
         cap: {
             "total": s["total"],

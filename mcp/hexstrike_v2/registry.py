@@ -46,11 +46,11 @@ class ToolRegistry:
         tool = registry.get_tool("nmap_scan")
         result = tool.handler({"target": "example.com"})
     """
-    
+
     def __init__(self):
         self._tools: Dict[str, ToolDefinition] = {}
         self._categories: Dict[str, List[str]] = {}
-    
+
     def register(
         self,
         name: str,
@@ -67,7 +67,7 @@ class ToolRegistry:
         """Register a new security tool"""
         if name in self._tools:
             logger.warning(f"Tool '{name}' already registered, overwriting")
-        
+
         tool = ToolDefinition(
             name=name,
             category=category,
@@ -80,40 +80,40 @@ class ToolRegistry:
             check_fn=check_fn,
             tags=tags or [],
         )
-        
+
         self._tools[name] = tool
-        
+
         # Update category index
         if category not in self._categories:
             self._categories[category] = []
         if name not in self._categories[category]:
             self._categories[category].append(name)
-        
+
         logger.debug(f"Registered tool: {name} ({category}, risk={risk_level})")
-    
+
     def get_tool(self, name: str) -> Optional[ToolDefinition]:
         """Get a tool by name"""
         return self._tools.get(name)
-    
+
     def get_tools_by_category(self, category: str) -> List[ToolDefinition]:
         """Get all tools in a category"""
         tool_names = self._categories.get(category, [])
         return [self._tools[name] for name in tool_names if name in self._tools]
-    
+
     def get_all_tools(self) -> List[ToolDefinition]:
         """Get all registered tools"""
         return list(self._tools.values())
-    
+
     def get_categories(self) -> List[str]:
         """Get all categories"""
         return list(self._categories.keys())
-    
+
     def is_available(self, name: str) -> bool:
         """Check if a tool is available (installed, configured, etc.)"""
         tool = self.get_tool(name)
         if not tool:
             return False
-        
+
         # Check if check_fn exists and passes
         if tool.check_fn:
             try:
@@ -121,9 +121,9 @@ class ToolRegistry:
             except Exception as e:
                 logger.debug(f"Tool '{name}' check failed: {e}")
                 return False
-        
+
         return True
-    
+
     def execute(self, name: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute a tool by name.
@@ -144,13 +144,13 @@ class ToolRegistry:
                 "error": f"Tool '{name}' not found",
                 "tool": name,
             }
-        
+
         # Check if requires approval
         if tool.requires_approval:
             logger.warning(f"Tool '{name}' requires approval before execution")
             # In production, this would check an approval system
             # For now, just log it
-        
+
         # Check if available
         if not self.is_available(name):
             return {
@@ -159,7 +159,7 @@ class ToolRegistry:
                 "tool": name,
                 "required_env": tool.requires_env,
             }
-        
+
         # Execute
         try:
             result = tool.handler(params)
@@ -177,7 +177,7 @@ class ToolRegistry:
                 "tool": name,
                 "risk_level": tool.risk_level,
             }
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get registry statistics"""
         return {

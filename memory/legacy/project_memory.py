@@ -23,7 +23,7 @@ def _get_db_connection() -> Any:
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        
+
         conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST", "postgres"),
             database=os.getenv("POSTGRES_DB", "bea"),
@@ -59,10 +59,10 @@ def store_memory(
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         # Convert UUID to string if needed
         proj_id_str = str(project_id) if project_id else None
-        
+
         cur.execute("""
             INSERT INTO vault_memory (key, value, tags, project_id, created_at, updated_at)
             VALUES (%s, %s, %s, %s, NOW(), NOW())
@@ -72,11 +72,11 @@ def store_memory(
                 project_id = EXCLUDED.project_id,
                 updated_at = NOW()
         """, (key, value, tags or [], proj_id_str))
-        
+
         conn.commit()
         log.debug("memory_stored", key=key, project_id=proj_id_str)
         return True
-        
+
     except Exception as e:
         if conn:
             conn.rollback()
@@ -105,9 +105,9 @@ def get_memory(
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         proj_id_str = str(project_id) if project_id else None
-        
+
         if proj_id_str:
             # Project-scoped lookup
             cur.execute("""
@@ -117,10 +117,10 @@ def get_memory(
         else:
             # Global lookup (includes project_id=NULL entries)
             cur.execute("SELECT * FROM vault_memory WHERE key = %s", (key,))
-        
+
         result = cur.fetchone()
         return dict(result) if result else None
-        
+
     except Exception as e:
         log.error("get_memory_failed", key=key, error=str(e))
         return None
@@ -151,27 +151,27 @@ def search_memories(
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         proj_id_str = str(project_id) if project_id else None
-        
+
         # Build query dynamically
         conditions: list[str] = []
         params: list[Any] = []
-        
+
         if proj_id_str:
             conditions.append("project_id = %s")
             params.append(proj_id_str)
-        
+
         if query:
             conditions.append("value ILIKE %s")
             params.append(f"%{query}%")
-        
+
         if tags:
             conditions.append("tags && %s")
             params.append(tags)
-        
+
         where_clause = " AND ".join(conditions) if conditions else "TRUE"
-        
+
         sql = f"""
             SELECT * FROM vault_memory
             WHERE {where_clause}
@@ -179,12 +179,12 @@ def search_memories(
             LIMIT %s
         """
         params.append(limit)
-        
+
         cur.execute(sql, params)
         results = cur.fetchall()
-        
+
         return [dict(row) for row in results]
-        
+
     except Exception as e:
         log.error("search_memories_failed", error=str(e))
         return []
@@ -211,9 +211,9 @@ def delete_memory(
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         proj_id_str = str(project_id) if project_id else None
-        
+
         if proj_id_str:
             cur.execute("""
                 DELETE FROM vault_memory 
@@ -226,15 +226,15 @@ def delete_memory(
                 WHERE key = %s
                 RETURNING id
             """, (key,))
-        
+
         result = cur.fetchone()
         conn.commit()
-        
+
         if result:
             log.debug("memory_deleted", key=key, project_id=proj_id_str)
             return True
         return False
-        
+
     except Exception as e:
         if conn:
             conn.rollback()
@@ -259,9 +259,9 @@ def get_project_memory_stats(project_id: str | UUID) -> dict[str, Any]:
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         proj_id_str = str(project_id)
-        
+
         # Get counts
         cur.execute("""
             SELECT 
@@ -270,13 +270,13 @@ def get_project_memory_stats(project_id: str | UUID) -> dict[str, Any]:
             FROM vault_memory
             WHERE project_id = %s
         """, (proj_id_str,))
-        
+
         result = cur.fetchone()
-        
+
         if result:
             return dict(result)
         return {"total_entries": 0, "unique_tags": 0}
-        
+
     except Exception as e:
         log.error("get_project_memory_stats_failed", project_id=str(project_id), error=str(e))
         return {"total_entries": 0, "unique_tags": 0, "error": str(e)}

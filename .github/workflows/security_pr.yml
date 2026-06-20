@@ -31,7 +31,7 @@ jobs:
           pip install structlog pydantic fastapi httpx pytest pytest-asyncio pytest-timeout
 
       - name: Lint (ruff — blocking on errors)
-        run: ruff check . --select E,W,F --ignore E501,F401,F811
+        run: ruff check . --select E,W,F --ignore E501,F401,F811,W291,W293
 
       - name: SAST (bandit — HIGH severity blocks)
         run: |

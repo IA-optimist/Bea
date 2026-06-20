@@ -31,12 +31,12 @@ class NotificationService:
     - Dispatches notifications to channels (Telegram, Email)
     - Stores subscription data
     """
-    
+
     def __init__(self):
         self.subscriptions: dict[str, list[NotificationSubscription]] = {}
         self._load_subscriptions()
         self._clients = {}  # Lazy-loaded channel clients
-        
+
     def _load_subscriptions(self):
         """Load subscriptions from disk"""
         try:
@@ -60,7 +60,7 @@ class NotificationService:
         except Exception as e:
             log.warning("notification_subscriptions_load_failed", err=str(e))
             self.subscriptions = {}
-    
+
     def _save_subscriptions(self):
         """Persist subscriptions to disk"""
         try:
@@ -73,7 +73,7 @@ class NotificationService:
                 json.dump(data, f, indent=2)
         except Exception as e:
             log.error("notification_subscriptions_save_failed", err=str(e))
-    
+
     def subscribe(
         self,
         user_id: str,
@@ -95,33 +95,33 @@ class NotificationService:
         """
         if mission_statuses is None:
             mission_statuses = ["DONE", "FAILED"]
-        
+
         sub = NotificationSubscription(
             user_id=user_id,
             channel=channel,
             destination=destination,
             mission_statuses=mission_statuses,
         )
-        
+
         if user_id not in self.subscriptions:
             self.subscriptions[user_id] = []
-        
+
         # Remove existing subscription with same channel
         self.subscriptions[user_id] = [
             s for s in self.subscriptions[user_id]
             if s.channel != channel
         ]
-        
+
         self.subscriptions[user_id].append(sub)
         self._save_subscriptions()
-        
+
         log.info("notification_subscription_created",
                  user_id=user_id,
                  channel=channel.value,
                  destination=destination)
-        
+
         return sub
-    
+
     def unsubscribe(self, user_id: str, channel: NotificationChannel) -> bool:
         """Remove subscription for a channel"""
         if user_id in self.subscriptions:
@@ -137,11 +137,11 @@ class NotificationService:
                          channel=channel.value)
                 return True
         return False
-    
+
     def get_subscriptions(self, user_id: str) -> list[NotificationSubscription]:
         """Get all subscriptions for a user"""
         return self.subscriptions.get(user_id, [])
-    
+
     async def send_notification(self, payload: NotificationPayload):
         """
         Send notification to all subscribed channels for user
@@ -151,39 +151,39 @@ class NotificationService:
         """
         user_id = payload.user_id
         subs = self.get_subscriptions(user_id)
-        
+
         if not subs:
             log.debug("no_notification_subscriptions", user_id=user_id)
             return
-        
+
         # Filter subscriptions by mission status
         active_subs = [
             s for s in subs
             if s.enabled and payload.status in s.mission_statuses
         ]
-        
+
         if not active_subs:
             log.debug("no_active_subscriptions_for_status",
                       user_id=user_id,
                       status=payload.status)
             return
-        
+
         # Send to each channel
         tasks = []
         for sub in active_subs:
             task = self._send_to_channel(sub, payload)
             tasks.append(task)
-        
+
         # Execute all sends concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         success_count = sum(1 for r in results if r is True)
         log.info("notification_dispatch_complete",
                  user_id=user_id,
                  mission_id=payload.mission_id,
                  total=len(tasks),
                  success=success_count)
-    
+
     async def _send_to_channel(
         self,
         subscription: NotificationSubscription,
@@ -196,12 +196,12 @@ class NotificationService:
                 log.warning("notification_channel_not_configured",
                             channel=subscription.channel.value)
                 return False
-            
+
             success = await client.send(
                 destination=subscription.destination,
                 payload=payload,
             )
-            
+
             if success:
                 log.info("notification_sent",
                          channel=subscription.channel.value,
@@ -211,7 +211,7 @@ class NotificationService:
                 log.warning("notification_send_failed",
                             channel=subscription.channel.value,
                             mission_id=payload.mission_id)
-            
+
             return success
         except Exception as e:
             log.error("notification_send_error",
@@ -219,7 +219,7 @@ class NotificationService:
                       err=str(e),
                       mission_id=payload.mission_id)
             return False
-    
+
     def _get_client(self, channel: NotificationChannel):
         """Lazy-load channel client"""
         if channel not in self._clients:
@@ -229,7 +229,7 @@ class NotificationService:
             elif channel == NotificationChannel.EMAIL:
                 from .email_client import EmailNotificationClient
                 self._clients[channel] = EmailNotificationClient()
-        
+
         return self._clients.get(channel)
 
 

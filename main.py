@@ -102,7 +102,7 @@ def create_api(settings) -> FastAPI:
                 log.info("bea_kernel_ready",
                          status=_jk.status().to_dict()["booted"],
                          orchestrator=True)
-                
+
                 # Register business mission handlers
                 try:
                     from core.orchestration.business_missions import register_business_handlers

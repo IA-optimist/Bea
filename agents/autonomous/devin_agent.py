@@ -10,7 +10,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from core.events import (
     Action, Observation, TerminalAction, FileReadAction,
     FileWriteAction, FileEditAction, FinishAction,
-    SaveMemoryAction, 
+    SaveMemoryAction,
     PythonExecuteAction, BackgroundAction
 )
 from core.event_stream import EventStream
@@ -58,34 +58,34 @@ class DevinAgent:
             self._llm = LLMFactory.get_model(model_hint, temperature=0.2)
         else:
             self._llm = None
-            
+
         from core.memory import MemoryBank
         from core.context_manager import ContextCompressor
         self.memory_bank = MemoryBank()
         self.compressor = ContextCompressor(max_raw_events=12)
-            
+
     def _format_history(self, stream: EventStream, repo_map: str = "") -> list:
         """Convertit l'EventStream en liste de messages LangChain (avec compression/RAG)."""
         messages = [SystemMessage(content=SYSTEM_PROMPT)]
-        
+
         if repo_map:
             messages.append(SystemMessage(content=f"CARTE DU PROJET ACTUELLE :\n```\n{repo_map}\n```"))
-            
+
         events = stream.get_events()
-        
+
         # Phase 9: Context Compression (Éviter OOM Token)
         summary, recent_events = self.compressor.compress_history(events)
-        
+
         if summary:
             messages.append(SystemMessage(content=f"RÉSUMÉ DES ANCIENNES ACTIONS:\n{summary}"))
-            
+
         # Phase 8: RAG Mémoire Épisodique (Déclenchée si la dernière observation est une erreur)
         obs_events = [e for e in recent_events if isinstance(e, Observation)]
         if obs_events and getattr(obs_events[-1], "is_error", False):
             mem_injection = self.memory_bank.query(str(getattr(obs_events[-1], "content", "")))
             if mem_injection:
                  messages.append(SystemMessage(content=mem_injection))
-        
+
         for e in recent_events:
             if isinstance(e, Action):
                 messages.append(AIMessage(content=f"ACTION CHOISIE :\nType: {getattr(e, 'action_type', 'unknown')}\nDetails: {e.model_dump_json()}"))
@@ -101,30 +101,30 @@ class DevinAgent:
         """Appelle le LLM pour générer la prochaine Action."""
         if not self._llm:
             raise RuntimeError("LLMFactory injoignable.")
-            
+
         messages = self._format_history(stream, repo_map)
-        
+
         try:
             # Invocation du LLM (on attend un JSON string).
             # Note: en prod v3, on utiliserait le with_structured_output de Langchain.
             # Ici on parse le JSON à la main pour le blueprint.
             response = await self._llm.ainvoke(messages)
             content = response.content.strip()
-            
+
             # Nettoyage Markdown ```json ... ```
             if content.startswith("```json"):
                 content = content[7:-3]
             elif content.startswith("```"):
                 content = content[3:-3]
-                
+
             data = json.loads(content)
-            
+
             thought = data.get("thought", "")
             action_type = data.get("action_type")
             kwargs = data.get("kwargs", {})
-            
+
             log.debug("devin_agent_thought", thought=thought[:100])
-            
+
             # Mapping manuel en attendant un parseur polymorphe Pydantic
             if action_type == "run_terminal":
                 return TerminalAction(command=kwargs.get("command", ""), reasoning=thought)
@@ -134,9 +134,9 @@ class DevinAgent:
                 return FileWriteAction(file_path=kwargs.get("file_path", ""), content=kwargs.get("content", ""), reasoning=thought)
             elif action_type == "edit_file":
                 return FileEditAction(
-                    file_path=kwargs.get("file_path", ""), 
-                    old_content=kwargs.get("old_content", ""), 
-                    new_content=kwargs.get("new_content", ""), 
+                    file_path=kwargs.get("file_path", ""),
+                    old_content=kwargs.get("old_content", ""),
+                    new_content=kwargs.get("new_content", ""),
                     reasoning=thought
                 )
             elif action_type == "save_memory":
@@ -161,7 +161,7 @@ class DevinAgent:
                 return FinishAction(success=kwargs.get("success", True), summary=kwargs.get("summary", ""), reasoning=thought)
             else:
                 return FinishAction(success=False, summary=f"Agent returned unknown action: {action_type}", reasoning=thought)
-                
+
         except json.JSONDecodeError:
             log.error("devin_agent_json_error", raw=response.content)
             # En cas de hallucination JSON, on simule une observation d'erreur artificielle pour que l'agent se corrige

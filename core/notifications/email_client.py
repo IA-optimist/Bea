@@ -24,20 +24,20 @@ class EmailNotificationClient:
     - SMTP_PASSWORD: SMTP password
     - EMAIL_FROM: Sender email address
     """
-    
+
     def __init__(self):
         self.smtp_host = os.getenv("SMTP_HOST", "")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self.smtp_user = os.getenv("SMTP_USER", "")
         self.smtp_password = os.getenv("SMTP_PASSWORD", "")
         self.email_from = os.getenv("EMAIL_FROM", "noreply@beamax.ai")
-        
+
         self.enabled = bool(self.smtp_host and self.smtp_user and self.smtp_password)
-        
+
         if not self.enabled:
             log.warning("email_notifications_disabled",
                         reason="SMTP credentials not configured")
-    
+
     async def send(self, destination: str, payload: NotificationPayload) -> bool:
         """
         Send notification via email
@@ -52,33 +52,33 @@ class EmailNotificationClient:
         if not self.enabled:
             log.debug("email_notification_skipped", reason="not_enabled")
             return False
-        
+
         try:
             subject = f"[BeaMax] Mission {payload.status}: {payload.title[:50]}"
             html_body = self._format_html(payload)
             text_body = self._format_text(payload)
-            
+
             # Create message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
             msg["From"] = self.email_from
             msg["To"] = destination
-            
+
             # Attach text and HTML parts
             msg.attach(MIMEText(text_body, "plain", "utf-8"))
             msg.attach(MIMEText(html_body, "html", "utf-8"))
-            
+
             # Send via SMTP
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
                 server.send_message(msg)
-            
+
             log.info("email_notification_sent",
                      to=destination,
                      mission_id=payload.mission_id)
             return True
-        
+
         except smtplib.SMTPException as e:
             log.error("smtp_error",
                       err=str(e),
@@ -91,7 +91,7 @@ class EmailNotificationClient:
                       mission_id=payload.mission_id,
                       to=destination)
             return False
-    
+
     def _format_text(self, payload: NotificationPayload) -> str:
         """Format notification as plain text email"""
         emoji = {
@@ -100,7 +100,7 @@ class EmailNotificationClient:
             "CANCELLED": "⊗",
             "COMPLETED": "✓",
         }.get(payload.status, "•")
-        
+
         lines = [
             f"{emoji} Mission {payload.status}",
             "",
@@ -108,25 +108,25 @@ class EmailNotificationClient:
             f"Goal: {payload.title}",
             "",
         ]
-        
+
         if payload.status in ("DONE", "COMPLETED") and payload.result:
             lines.append("Result:")
             lines.append(payload.result[:1000])
             if len(payload.result) > 1000:
                 lines.append("... (truncated)")
-        
+
         elif payload.status == "FAILED" and payload.error:
             lines.append("Error:")
             lines.append(payload.error[:1000])
             if len(payload.error) > 1000:
                 lines.append("... (truncated)")
-        
+
         lines.append("")
         lines.append("---")
         lines.append("BeaMax Notification System")
-        
+
         return "\n".join(lines)
-    
+
     def _format_html(self, payload: NotificationPayload) -> str:
         """Format notification as HTML email"""
         status_color = {
@@ -135,14 +135,14 @@ class EmailNotificationClient:
             "FAILED": "#dc3545",
             "CANCELLED": "#6c757d",
         }.get(payload.status, "#007bff")
-        
+
         emoji = {
             "DONE": "✅",
             "FAILED": "❌",
             "CANCELLED": "⛔",
             "COMPLETED": "✅",
         }.get(payload.status, "ℹ️")
-        
+
         html = f"""
         <html>
         <head>
@@ -164,7 +164,7 @@ class EmailNotificationClient:
                     <p><strong>Mission ID:</strong> <span class="mission-id">{payload.mission_id}</span></p>
                     <p><strong>Goal:</strong> {self._escape_html(payload.title)}</p>
         """
-        
+
         if payload.status in ("DONE", "COMPLETED") and payload.result:
             result_preview = payload.result[:1000]
             if len(payload.result) > 1000:
@@ -173,7 +173,7 @@ class EmailNotificationClient:
                     <p><strong>Result:</strong></p>
                     <pre style="background-color: white; padding: 10px; border-radius: 5px; overflow-x: auto;">{self._escape_html(result_preview)}</pre>
             """
-        
+
         elif payload.status == "FAILED" and payload.error:
             error_preview = payload.error[:1000]
             if len(payload.error) > 1000:
@@ -182,7 +182,7 @@ class EmailNotificationClient:
                     <p><strong>Error:</strong></p>
                     <pre style="background-color: #ffe6e6; padding: 10px; border-radius: 5px; overflow-x: auto;">{self._escape_html(error_preview)}</pre>
             """
-        
+
         html += """
                 </div>
                 <div class="footer">
@@ -192,9 +192,9 @@ class EmailNotificationClient:
         </body>
         </html>
         """
-        
+
         return html
-    
+
     def _escape_html(self, text: str) -> str:
         """Escape HTML special characters"""
         return (text

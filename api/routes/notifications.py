@@ -26,7 +26,7 @@ class SubscribeRequest(BaseModel):
     channel: str  # "email" or "telegram"
     destination: str  # email address or telegram chat_id
     mission_statuses: Optional[list[str]] = None  # ["DONE", "FAILED"] by default
-    
+
     @field_validator("channel")
     @classmethod
     def validate_channel(cls, v):
@@ -34,7 +34,7 @@ class SubscribeRequest(BaseModel):
         if v not in ("email", "telegram"):
             raise ValueError("channel must be 'email' or 'telegram'")
         return v
-    
+
     @field_validator("destination")
     @classmethod
     def validate_destination(cls, v):
@@ -47,7 +47,7 @@ class SubscribeRequest(BaseModel):
 class UnsubscribeRequest(BaseModel):
     """Notification unsubscribe request"""
     channel: str  # "email" or "telegram"
-    
+
     @field_validator("channel")
     @classmethod
     def validate_channel(cls, v):
@@ -61,7 +61,7 @@ class TestNotificationRequest(BaseModel):
     """Test notification request"""
     channel: str
     destination: str
-    
+
     @field_validator("channel")
     @classmethod
     def validate_channel(cls, v):
@@ -115,13 +115,13 @@ async def subscribe_notifications(
     - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM
     """
     _check_auth(x_bea_token, authorization)
-    
+
     # Extract user_id from token (simplified - use "default" for now)
     # In production, parse JWT token to get actual user_id
     user_id = "default"
-    
+
     service = get_notification_service()
-    
+
     try:
         channel = NotificationChannel(req.channel)
         subscription = service.subscribe(
@@ -130,12 +130,12 @@ async def subscribe_notifications(
             destination=req.destination,
             mission_statuses=req.mission_statuses or ["DONE", "FAILED"],
         )
-        
+
         log.info("notification_subscription_created_via_api",
                  user_id=user_id,
                  channel=req.channel,
                  destination=req.destination)
-        
+
         return {
             "ok": True,
             "data": {
@@ -145,7 +145,7 @@ async def subscribe_notifications(
                 "mission_statuses": subscription.mission_statuses,
             }
         }
-    
+
     except Exception as e:
         log.error("notification_subscription_failed",
                   err=str(e),
@@ -173,13 +173,13 @@ async def unsubscribe_notifications(
     """
     _check_auth(x_bea_token, authorization)
     user_id = "default"
-    
+
     service = get_notification_service()
-    
+
     try:
         channel = NotificationChannel(req.channel)
         success = service.unsubscribe(user_id=user_id, channel=channel)
-        
+
         if success:
             log.info("notification_subscription_removed_via_api",
                      user_id=user_id,
@@ -196,7 +196,7 @@ async def unsubscribe_notifications(
                 "ok": False,
                 "error": f"No active subscription found for {req.channel}",
             }
-    
+
     except Exception as e:
         log.error("notification_unsubscribe_failed",
                   err=str(e),
@@ -216,10 +216,10 @@ async def get_subscriptions(
     """
     _check_auth(x_bea_token, authorization)
     user_id = "default"
-    
+
     service = get_notification_service()
     subscriptions = service.get_subscriptions(user_id)
-    
+
     return {
         "ok": True,
         "data": {
@@ -258,10 +258,10 @@ async def test_notification(
     ```
     """
     _check_auth(x_bea_token, authorization)
-    
+
     try:
         from core.notifications.models import NotificationPayload
-        
+
         test_payload = NotificationPayload(
             mission_id="test-notification",
             user_id="test",
@@ -269,7 +269,7 @@ async def test_notification(
             title="Test Notification from BeaMax",
             result="If you receive this message, your notification setup is working correctly!",
         )
-        
+
         if req.channel == "telegram":
             client = TelegramNotificationClient()
             success = await client.send(req.destination, test_payload)
@@ -279,7 +279,7 @@ async def test_notification(
             success = await client.send(req.destination, test_payload)
         else:
             raise HTTPException(status_code=400, detail="Invalid channel")
-        
+
         if success:
             return {
                 "ok": True,
@@ -294,7 +294,7 @@ async def test_notification(
                 "ok": False,
                 "error": "Failed to send test notification. Check logs for details.",
             }
-    
+
     except Exception as e:
         log.error("test_notification_failed", err=str(e))
         raise HTTPException(status_code=500, detail=str(e))

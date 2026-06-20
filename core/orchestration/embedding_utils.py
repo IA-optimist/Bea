@@ -75,7 +75,7 @@ class EmbeddingProvider:
         # Final fallback: null vector
         log.error("embed_null_vector", reason="all_providers_failed")
         return [0.0] * EMBEDDING_DIM
-    
+
     async def _embed_sentence_transformer(self, text: str) -> list[float] | None:
         """Embed using sentence-transformers (native 384-dim)."""
         if not self._sentence_model:
@@ -96,7 +96,7 @@ class EmbeddingProvider:
             import asyncio
             loop = asyncio.get_running_loop()
             vector = await loop.run_in_executor(
-                None, 
+                None,
                 lambda: self._sentence_model.encode(text, convert_to_numpy=True).tolist()
             )
             log.debug("sentence_transformer_embed_success", dim=len(vector))

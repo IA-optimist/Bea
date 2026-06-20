@@ -35,7 +35,7 @@ class ToolDescriptor:
     })
     idempotent: bool = False
     trace_enabled: bool = True
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 

@@ -19,7 +19,7 @@ class StrictBaseModel(BaseModel):  # type: ignore[misc]
     - Validates assignment (prevents injection via setattr)
     - Strict mode (no type coercion, prevents "1" becoming 1)
     """
-    
+
     model_config = ConfigDict(
         extra="forbid",           # Reject unknown fields
         validate_assignment=True, # Validate on attribute changes

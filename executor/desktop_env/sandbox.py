@@ -34,7 +34,7 @@ class DesktopEnvironment:
 
 class DockerSandbox(DesktopEnvironment):
     """Exécution isolée dans un conteneur Docker avec montage du workspace."""
-    
+
     def __init__(self, workspace_path: str, image: str = "python:3.11-slim-bookworm"):
         self.workspace_path = Path(workspace_path).absolute()
         self.image = image
@@ -188,7 +188,7 @@ class DockerSandbox(DesktopEnvironment):
                 log.warning("sandbox_stop_error", err=str(e)[:80])
             finally:
                 self.container = None
-                
+
         # Nettoyage de l'espace temporaire (Copy-On-Write)
         if self.tmp_workspace and self.tmp_workspace.exists():
             shutil.rmtree(str(self.tmp_workspace), ignore_errors=True)
@@ -230,6 +230,6 @@ class LocalFallbackSandbox(DesktopEnvironment):
             return result.returncode, out.strip()
         except Exception as e:
             return -1, str(e)
-            
+
     def stop(self) -> None:
         pass

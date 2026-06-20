@@ -15,36 +15,36 @@ from models.base import Base
 
 class OpportunityDeployment(Base):
     __tablename__ = "opportunity_deployments"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False, index=True)
-    
+
     # GitHub
     repo_name = Column(String(255), nullable=False)
     repo_url = Column(Text, nullable=False)
     clone_url = Column(Text)
     html_url = Column(Text)
-    
+
     # Deployment
     deployed_at = Column(TIMESTAMP, default=_utc_now)
     deploy_path = Column(Text, nullable=False)
     subdomain = Column(String(255), nullable=False, unique=True, index=True)
     url = Column(Text, nullable=False)
-    
+
     # Status
     status = Column(String(50), default="deploying", index=True)  # deploying, live, down, removed
     last_health_check = Column(TIMESTAMP)
     uptime_percent = Column(DECIMAL(5, 2), default=100.0)
-    
+
     # Metadata
     deploy_duration_seconds = Column(Integer)
     docker_image_tag = Column(String(100))
-    
+
     # Timestamps
     created_at = Column(TIMESTAMP, default=_utc_now)
     updated_at = Column(TIMESTAMP, default=_utc_now, onupdate=_utc_now)
     removed_at = Column(TIMESTAMP)
-    
+
     def to_dict(self):
         """Convert to dict for API responses"""
         return {

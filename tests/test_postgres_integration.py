@@ -35,20 +35,20 @@ def test_without_postgres():
     print("\n" + "="*60)
     print("TEST 1: VaultMemory without PostgreSQL")
     print("="*60)
-    
+
     # Ensure DATABASE_URL is not set for this test
     original_db_url = os.environ.get('DATABASE_URL')
     if 'DATABASE_URL' in os.environ:
         del os.environ['DATABASE_URL']
-    
+
     try:
         vm = VaultMemory()
-        
+
         # Verify PostgreSQL is not enabled
         assert vm._pg_backend is None, "PostgreSQL backend should be None"
         assert not bool(vm._pg_backend), "PostgreSQL should not be enabled"
         print("✓ PostgreSQL backend not initialized (expected)")
-        
+
         # Store entry (with timestamp to ensure uniqueness)
         import time
         entry = vm.store(
@@ -60,20 +60,20 @@ def test_without_postgres():
         )
         assert entry is not None, "Entry should be stored"
         print(f"✓ Entry stored successfully: {entry.id}")
-        
+
         # Retrieve entry
         results = vm.retrieve(query='test', max_k=5)
         assert len(results) > 0, "Should retrieve entries"
         print(f"✓ Retrieved {len(results)} entries")
-        
+
         # sync_to_postgres should gracefully handle absence of PostgreSQL
         stats = vm.sync_to_postgres()
         assert stats['synced'] == 0, "Should not sync without PostgreSQL"
         assert stats['failed'] == 0, "Should not fail"
         print(f"✓ sync_to_postgres handled gracefully: {stats}")
-        
+
         print("\n✅ TEST 1 PASSED: Backward compatibility maintained")
-        
+
     finally:
         # Restore original DATABASE_URL
         if original_db_url:
@@ -85,25 +85,25 @@ def test_with_postgres():
     print("\n" + "="*60)
     print("TEST 2: VaultMemory with PostgreSQL (if configured)")
     print("="*60)
-    
+
     database_url = os.environ.get('DATABASE_URL')
-    
+
     if not database_url:
         print("⚠️  DATABASE_URL not set - skipping PostgreSQL tests")
         print("   Set DATABASE_URL to test PostgreSQL integration:")
         print("   DATABASE_URL='postgresql://user:pass@host:5432/db' python3 test_postgres_integration.py")
         return
-    
+
     vm = VaultMemory()
-    
+
     if not bool(vm._pg_backend):
         print("⚠️  PostgreSQL configured but not available")
         print("   Connection may have failed - check credentials")
         print(f"   Backend available: {vm._pg_backend is not None}")
         return
-    
+
     print("✓ PostgreSQL backend initialized and available")
-    
+
     # Store entry (should dual-write to PostgreSQL)
     import time
     entry = vm.store(
@@ -113,16 +113,16 @@ def test_with_postgres():
         confidence=0.9,
         tags=['test', 'postgres', 'dual-write']
     )
-    
+
     if entry:
         print(f"✓ Entry stored with dual-write: {entry.id}")
         print("  - JSON/SQLite: OK")
         print("  - PostgreSQL: OK (if backend available)")
-    
+
     # Test sync
     stats = vm.sync_to_postgres()
     print(f"✓ Bulk sync completed: {stats}")
-    
+
     print("\n✅ TEST 2 PASSED: PostgreSQL integration working")
 
 
@@ -131,12 +131,12 @@ def test_api_compatibility():
     print("\n" + "="*60)
     print("TEST 3: API Compatibility")
     print("="*60)
-    
+
     vm = VaultMemory()
-    
+
     required_methods = [
         'store',
-        'retrieve', 
+        'retrieve',
         'get_context_for_prompt',
         'feedback',
         'invalidate',
@@ -148,11 +148,11 @@ def test_api_compatibility():
         'stats',
         'sync_to_postgres',  # New method
     ]
-    
+
     for method in required_methods:
         assert hasattr(vm, method), f"Missing method: {method}"
         print(f"✓ Method present: {method}")
-    
+
     print("\n✅ TEST 3 PASSED: All API methods present")
 
 
@@ -160,12 +160,12 @@ if __name__ == '__main__':
     print("\n" + "#"*60)
     print("# PostgreSQL Integration Tests for VaultMemory")
     print("#"*60)
-    
+
     try:
         test_without_postgres()
         test_with_postgres()
         test_api_compatibility()
-        
+
         print("\n" + "#"*60)
         print("# 🎉 ALL TESTS PASSED")
         print("#"*60)
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         print("  ✓ Graceful failure handling")
         print("  ✓ No breaking changes to VaultMemory API")
         print("  ✓ New sync_to_postgres() method for bulk migration")
-        
+
     except AssertionError as e:
         print(f"\n❌ TEST FAILED: {e}")
         exit(1)

@@ -120,7 +120,7 @@ if mid:
     missions = r.json().get("data", {}).get("missions", []) if r.status_code == 200 else []
     m_status = next((m["status"] for m in missions if m["mission_id"] == mid), "?")
     test("D", f"Mission {mid[:12]} completed", m_status in ("DONE", "COMPLETED"), f"status={m_status}")
-    
+
     # Check trace exists
     trace_path = f"workspace/traces/{mid}.jsonl"
     if os.path.exists(trace_path):

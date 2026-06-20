@@ -27,7 +27,7 @@ def _get_db_connection():
     try:
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        
+
         conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST", "postgres"),
             database=os.getenv("POSTGRES_DB", "bea"),
@@ -62,7 +62,7 @@ class ProjectConfig(BaseModel):
     min_opportunity_score: Optional[float] = None
     track_all_revenue: Optional[bool] = None
     reporting_frequency: Optional[str] = None
-    
+
 
 class ProjectMetadata(BaseModel):
     """Project metadata schema."""
@@ -97,7 +97,7 @@ class Project(BaseModel):
     @field_serializer("created_at", "updated_at")
     def _serialize_datetime(self, value: datetime) -> str:
         return value.isoformat()
-    
+
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
@@ -105,7 +105,7 @@ class Project(BaseModel):
         if not v.replace("-", "").replace("_", "").isalnum():
             raise ValueError("Project name must contain only alphanumeric characters, hyphens, and underscores")
         return v.lower().strip()
-    
+
 
 # CRUD Operations
 
@@ -139,17 +139,17 @@ def create_project(
         "metadata": ProjectMetadata(**(metadata or {}))
     }
     project = Project(**project_data)
-    
+
     conn = None
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         # Check for duplicate name
         cur.execute("SELECT id FROM projects WHERE name = %s", (project.name,))
         if cur.fetchone():
             raise ValueError(f"Project with name '{project.name}' already exists")
-        
+
         # Insert project
         cur.execute("""
             INSERT INTO projects (id, name, description, config, metadata, is_active, created_at, updated_at)
@@ -165,15 +165,15 @@ def create_project(
             project.created_at,
             project.updated_at
         ))
-        
+
         result = cur.fetchone()
         conn.commit()
-        
+
         log.info("project_created", project_id=str(project.id), name=project.name)
-        
+
         # Return fresh instance from DB
         return _row_to_project(result)
-        
+
     except Exception as e:
         if conn:
             conn.rollback()
@@ -198,15 +198,15 @@ def get_project(project_id: str | UUID) -> Optional[Project]:
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         cur.execute("SELECT * FROM projects WHERE id = %s", (str(project_id),))
         result = cur.fetchone()
-        
+
         if not result:
             return None
-        
+
         return _row_to_project(result)
-        
+
     except Exception as e:
         log.error("get_project_failed", project_id=str(project_id), error=str(e))
         return None
@@ -229,15 +229,15 @@ def get_project_by_name(name: str) -> Optional[Project]:
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         cur.execute("SELECT * FROM projects WHERE name = %s", (name.lower(),))
         result = cur.fetchone()
-        
+
         if not result:
             return None
-        
+
         return _row_to_project(result)
-        
+
     except Exception as e:
         log.error("get_project_by_name_failed", name=name, error=str(e))
         return None
@@ -260,17 +260,17 @@ def list_projects(active_only: bool = True) -> list[Project]:
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         query = "SELECT * FROM projects"
         if active_only:
             query += " WHERE is_active = true"
         query += " ORDER BY created_at DESC"
-        
+
         cur.execute(query)
         results = cur.fetchall()
-        
+
         return [_row_to_project(row) for row in results]
-        
+
     except Exception as e:
         log.error("list_projects_failed", error=str(e))
         return []
@@ -308,13 +308,13 @@ def update_project(
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         # Fetch current project
         cur.execute("SELECT * FROM projects WHERE id = %s", (str(project_id),))
         current = cur.fetchone()
         if not current:
             return None
-        
+
         # Build update dict
         updates = {}
         if name is not None:
@@ -323,25 +323,25 @@ def update_project(
             if cur.fetchone():
                 raise ValueError(f"Project name '{name}' already exists")
             updates["name"] = name.lower()
-        
+
         if description is not None:
             updates["description"] = description
-        
+
         if config is not None:
             # Merge with existing config
             current_config = current.get("config", {})
             merged_config = {**current_config, **config}
             updates["config"] = json.dumps(merged_config)
-        
+
         if metadata is not None:
             # Merge with existing metadata
             current_metadata = current.get("metadata", {})
             merged_metadata = {**current_metadata, **metadata}
             updates["metadata"] = json.dumps(merged_metadata)
-        
+
         if is_active is not None:
             updates["is_active"] = is_active
-        
+
         if not updates:
             # No changes, return current
             return _row_to_project(current)
@@ -357,15 +357,15 @@ def update_project(
         set_clauses = [f"{k} = %s" for k in updates.keys()]  # nosec B608
         set_clauses.append("updated_at = NOW()")
         query = f"UPDATE projects SET {', '.join(set_clauses)} WHERE id = %s RETURNING *"  # nosec B608
-        
+
         cur.execute(query, list(updates.values()) + [str(project_id)])
         result = cur.fetchone()
         conn.commit()
-        
+
         log.info("project_updated", project_id=str(project_id), updates=list(updates.keys()))
-        
+
         return _row_to_project(result)
-        
+
     except Exception as e:
         if conn:
             conn.rollback()
@@ -391,7 +391,7 @@ def delete_project(project_id: str | UUID, hard_delete: bool = False) -> bool:
     try:
         conn = _get_db_connection()
         cur = conn.cursor()
-        
+
         if hard_delete:
             cur.execute("DELETE FROM projects WHERE id = %s RETURNING id", (str(project_id),))
         else:
@@ -399,15 +399,15 @@ def delete_project(project_id: str | UUID, hard_delete: bool = False) -> bool:
                 "UPDATE projects SET is_active = false, updated_at = NOW() WHERE id = %s RETURNING id",
                 (str(project_id),)
             )
-        
+
         result = cur.fetchone()
         conn.commit()
-        
+
         if result:
             log.info("project_deleted", project_id=str(project_id), hard_delete=hard_delete)
             return True
         return False
-        
+
     except Exception as e:
         if conn:
             conn.rollback()

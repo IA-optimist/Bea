@@ -145,7 +145,7 @@ has_timeout_classify = 'error_class="TIMEOUT"' in te_code
 has_clamp = "min(max(int(_max_timeout), 5), 120)" in te_code
 t7_pass = has_thread_timeout and has_timeout_classify and has_clamp
 print(f"  {'✅' if has_thread_timeout else '❌'} Thread-based timeout guard")
-print(f"  {'✅' if has_timeout_classify else '❌'} Timeout → TIMEOUT classification")  
+print(f"  {'✅' if has_timeout_classify else '❌'} Timeout → TIMEOUT classification")
 print(f"  {'✅' if has_clamp else '❌'} Timeout clamped 5-120s")
 print(f"  Result: {'PASS' if t7_pass else 'FAIL'}")
 print()

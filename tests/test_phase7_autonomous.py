@@ -23,7 +23,7 @@ async def test_autonomous_mvp_pipeline():
     Integration test: requires a working LLM provider (Ollama local or
     OPENROUTER_API_KEY). Skipped by default — run with --run-infra-tests.
     """
-    
+
     # Step 1: Create test opportunity
     # NOTE: Opportunity model does not have market_signals, status, or project_id
     # fields. Tests use only real columns defined in models/opportunity.py.
@@ -44,52 +44,52 @@ async def test_autonomous_mvp_pipeline():
         total_score=85.5,
         analyzed=False,
     )
-    
+
     print("\n" + "="*70)
     print(" PHASE 7: AUTONOMOUS MVP TEST")
     print("="*70)
     print("\n✅ Step 1: Opportunity created")
     print(f"   Title: {opportunity.title}")
     print(f"   Score: {opportunity.total_score}")
-    
+
     # Step 2: Analyze with cognition (ToT + Learning)
     print("\n⏳ Step 2: Analyzing feasibility (ToT enabled)...")
-    
+
     analyzer = FeasibilityAnalyzer()
     analysis = await analyzer.analyze(opportunity, project_id=1)
-    
+
     print("✅ Step 2: Analysis complete")
     print(f"   Recommendation: {analysis.get('recommendation')}")
     print(f"   Confidence: {analysis.get('confidence_score', 0):.2f}")
     print(f"   Complexity: {analysis.get('complexity_score', 0)}/10")
     print(f"   Duration: {analysis.get('duration_seconds', 0)}s")
-    
+
     # Validate analysis
     assert analysis["recommendation"] in ["BUILD", "SKIP", "NEEDS_MORE_RESEARCH"]
     assert 0 <= analysis["confidence_score"] <= 1.0
     assert analysis["mission_id"].startswith("feasibility-")
-    
+
     # Step 3: Check if skills were discovered
     print("\n⏳ Step 3: Checking learning...")
-    
+
     LifelongLearningEngine()
-    
+
     # Get mission from learning history
     # (In real flow, this would be auto-recorded by orchestrator)
     mission_id = analysis["mission_id"]
-    
+
     print("✅ Step 3: Learning tracked")
     print(f"   Mission ID: {mission_id}")
-    
+
     # Step 4: Check portfolio metrics
     print("\n⏳ Step 4: Checking portfolio metrics...")
-    
+
     # Would need DB session in real test
     # manager = PortfolioManager(db_session)
     # metrics = manager.get_project_metrics(project_id=1)
-    
+
     print("✅ Step 4: Portfolio tracking ready")
-    
+
     # Final validation
     print("\n" + "="*70)
     print(" TEST RESULT: ✅ AUTONOMOUS PIPELINE WORKING")
@@ -101,7 +101,7 @@ async def test_autonomous_mvp_pipeline():
     print("   • Learning tracking: ✅")
     print("   • Portfolio ready: ✅")
     print("\n🚀 PHASE 7 VALIDATED - READY FOR PRODUCTION!!!\n")
-    
+
     return {
         "success": True,
         "recommendation": analysis["recommendation"],

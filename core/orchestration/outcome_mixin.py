@@ -47,7 +47,7 @@ class OutcomeMixin:
         delegate = ctx.metadata.get("_exec_delegate", self.bea)
         _mission_timeout = ctx.metadata.get("_exec_mission_timeout", 600)
         needs_approval = ctx.metadata.get("_exec_needs_approval", False)
-        
+
         self._circuit_breaker.record_success()
         # RUNNING -> REVIEW
         self._transition(ctx, MissionStatus.REVIEW)
@@ -133,11 +133,11 @@ class OutcomeMixin:
                          retries=outcome.retries,
                          duration_ms=outcome.duration_ms,
                          confidence=result_confidence)
-        
+
         # ── Memory and event storage ───────────────────────────
         await self._store_mission_memories(mid, goal, mode, ctx, enriched_goal)
         self._emit_completion_events(mid, goal, outcome, result_confidence, trace)
-        
+
         # ── Phase 3a: Output formatting ───────────────
         try:
             from core.orchestration.output_formatter import format_output
@@ -182,7 +182,7 @@ class OutcomeMixin:
 
         # ── Phase 5: Store to memory ──────────────────────
         self._store_to_memory_facade(mid, goal, ctx, trace)
-        
+
         return result_confidence
 
     async def _handle_kernel_retry(
@@ -301,7 +301,7 @@ class OutcomeMixin:
                             mission_id=mid, err=str(_retry_err)[:80])
                 # Stay with original result
                 self._transition(ctx, MissionStatus.REVIEW, reason="retry_failed")
-        
+
         return result_confidence
 
     def _emit_completion_events(
@@ -323,10 +323,10 @@ class OutcomeMixin:
             sd.discover_from_mission(mid, goal, tools_used, success=True)
         except Exception as _sd_err:
             log.debug("skill_discovery_failed", err=str(_sd_err)[:60])
-        
+
         trace.record("complete", "done",
                      reason=f"duration={outcome.duration_ms}ms retries={outcome.retries} confidence={result_confidence}")
-        
+
         # Journal: mission completed
         try:
             from core.cognitive_events.emitter import emit_mission_completed
@@ -336,14 +336,14 @@ class OutcomeMixin:
             )
         except Exception as _exc:
             log.warning("swallowed_exception", action="mission_outcome_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_completed as _ms_completed
             _ms_completed("canonical", duration_ms=outcome.duration_ms)
         except Exception as _exc:
             log.warning("swallowed_exception", action="metrics_store_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         # Kernel event: mission completed (dual emission)
         try:
             from kernel.convergence.event_bridge import emit_kernel_event
@@ -352,7 +352,7 @@ class OutcomeMixin:
                               confidence=result_confidence)
         except Exception as _exc:
             log.warning("swallowed_exception", action="cognitive_event_emit_completed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         # Kernel working memory: clear mission slot (it is done)
         try:
             from kernel.runtime.boot import get_runtime as _get_kernel_rt
@@ -391,14 +391,14 @@ class OutcomeMixin:
             )
         except Exception as _exc:
             log.warning("swallowed_exception", action="mission_outcome_emit_failed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         # Metrics store counter (admin panel)
         try:
             from core.metrics_store import emit_mission_failed as _ms_failed
             _ms_failed("canonical", reason=outcome.error_class)
         except Exception as _exc:
             log.warning("swallowed_exception", action="metrics_store_emit_failed", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         # Kernel event: mission failed (dual emission)
         try:
             from kernel.convergence.event_bridge import emit_kernel_event

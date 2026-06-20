@@ -27,13 +27,13 @@ def subfinder_handler(params: Dict[str, Any]) -> Dict[str, Any]:
 
     options = params.get("options", "")
     command = f"subfinder -d {target} {options}".strip()
-    
+
     # Execute
     result = execute_command(command, timeout=300)
-    
+
     if not result.success:
         raise RuntimeError(f"subfinder failed: {result.stderr or result.error}")
-    
+
     return {
         "target": target,
         "output": result.stdout,

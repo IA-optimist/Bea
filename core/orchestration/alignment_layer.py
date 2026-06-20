@@ -156,14 +156,14 @@ class DebateProtocol:
         """
         # Dans un vrai système, ces arguments seraient générés par LLM
         # avec des system prompts opposés pour forcer les deux perspectives
-        
+
         user = context.get("user", "l'utilisateur")
         scope = context.get("scope", "non spécifié")
         reversible = context.get("reversible", True)
-        
+
         pro = self._build_pro_argument(proposed_action, user, scope)
         contra = self._build_contra_argument(proposed_action, reversible, scope)
-        
+
         return pro, contra
 
     def _build_pro_argument(self, action: str, user: str, scope: str) -> str:
@@ -220,7 +220,7 @@ class ReasoningLogger:
     def __init__(self, log_path: Path = Path("/tmp/bea_alignment.jsonl")):  # nosec B108 — default log path; callers may override.
         self.log_path = log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Logger standard en parallèle
         self.logger = logging.getLogger("bea.alignment")
         if not self.logger.handlers:
@@ -324,7 +324,7 @@ class CorrigibilityLayer:
         TOUJOURS True pour stop/explain — c'est inviolable.
         """
         request_lower = request.lower()
-        
+
         for pattern in (
             self.STOP_PATTERNS + self.EXPLAIN_PATTERNS + self.OVERRIDE_PATTERNS
         ):
@@ -335,7 +335,7 @@ class CorrigibilityLayer:
     def classify_corrigibility(self, request: str) -> Optional[str]:
         """Identifie le type de demande de contrôle."""
         request_lower = request.lower()
-        
+
         for pattern in self.STOP_PATTERNS:
             if re.search(pattern, request_lower, re.IGNORECASE):
                 return "stop"
@@ -556,7 +556,7 @@ def run_alignment_tests() -> list[dict]:
     Vérifie que le système se comporte comme attendu.
     """
     alignment = AlignmentLayer(log_path=Path("/tmp/bea_alignment_test.jsonl"))  # nosec B108 — test path.
-    
+
     test_cases = [
         {
             "name": "Test 1 — Accès non autorisé",
@@ -594,19 +594,19 @@ def run_alignment_tests() -> list[dict]:
             "expected_category": ActionCategory.AUTONOMOUS,
         },
     ]
-    
+
     results = []
     print("\n" + "="*60)
     print("BEAMAX ALIGNMENT TESTS")
     print("="*60)
-    
+
     for tc in test_cases:
         decision = alignment.check_action(tc["action"], tc["context"])
-        
+
         passed_allowed = decision.allowed == tc["expected_allowed"]
         passed_category = decision.category == tc["expected_category"]
         passed = passed_allowed and passed_category
-        
+
         status = "✅ PASS" if passed else "❌ FAIL"
         print(f"\n{status} — {tc['name']}")
         print(f"  Action    : {tc['action']}")
@@ -614,22 +614,22 @@ def run_alignment_tests() -> list[dict]:
         print(f"  Autorisé  : {decision.allowed} (attendu: {tc['expected_allowed']})")
         print(f"  Règle     : {decision.rule_applied}")
         print(f"  Confiance : {decision.confidence.value}")
-        
+
         if decision.requires_confirmation:
             print(f"  Prompt    : {decision.confirmation_prompt[:80]}...")
-        
+
         results.append({
             "test": tc["name"],
             "passed": passed,
             "decision": decision.to_dict(),
         })
-    
+
     total = len(results)
     passed_count = sum(1 for r in results if r["passed"])
     print(f"\n{'='*60}")
     print(f"Résultat : {passed_count}/{total} tests passés")
     print("="*60)
-    
+
     return results
 
 

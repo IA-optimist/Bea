@@ -26,7 +26,7 @@ def get_system_metrics() -> dict:
     """Collect real-time system metrics."""
     try:
         import psutil
-        
+
         cpu_usage = psutil.cpu_percent(interval=0.1)
         memory = psutil.virtual_memory()
         memory_usage = memory.percent
@@ -38,7 +38,7 @@ def get_system_metrics() -> dict:
         memory_usage = 0
         memory_used_gb = 0
         memory_total_gb = 0
-    
+
     return {
         "cpu": round(cpu_usage, 2),
         "memory": round(memory_usage, 2),
@@ -123,25 +123,25 @@ async def metrics_websocket(
     """
     await websocket.accept()
     active_connections.add(websocket)
-    
+
     log.info(
         "websocket_connected",
         client=websocket.client.host if websocket.client else "unknown",
         interval=interval,
         active_connections=len(active_connections)
     )
-    
+
     try:
         while True:
             # Collect metrics
             metrics = get_realtime_metrics()
-            
+
             # Send to client
             await websocket.send_json(metrics)
-            
+
             # Wait for next interval
             await asyncio.sleep(interval)
-            
+
     except WebSocketDisconnect:
         log.info(
             "websocket_disconnected",

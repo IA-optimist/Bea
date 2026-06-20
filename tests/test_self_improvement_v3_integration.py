@@ -695,13 +695,13 @@ class TestGitWorkspace:
                 pytest.skip("Not a real git repo — worktree test env-dependent")
         except PermissionError:
             pytest.skip("No permission to access .git — env-dependent")
-        
+
         agent = GitAgent(bea_root)
         has_wt = agent.has_worktree_support()
-        
+
         if not has_wt:
             pytest.skip("Git worktree not available in this environment")
-        
+
         # Create worktree sandbox
         snap = agent.create_sandbox("vi50-worktree-test")
         try:

@@ -13,18 +13,18 @@ import httpx
 
 class TelegramAlertManager:
     """Handle Alertmanager alerts and send to Telegram"""
-    
+
     def __init__(self, bot_token: str, chat_id: str):
         self.bot_token = bot_token
         self.chat_id = chat_id
         self.api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    
+
     def format_alert(self, alert: Dict[str, Any]) -> str:
         """Format alert data into readable message"""
         status = alert.get('status', 'unknown').upper()
         labels = alert.get('labels', {})
         annotations = alert.get('annotations', {})
-        
+
         # Emoji based on severity
         severity = labels.get('severity', 'info')
         emoji_map = {
@@ -33,7 +33,7 @@ class TelegramAlertManager:
             'info': 'ℹ️'
         }
         emoji = emoji_map.get(severity, '📊')
-        
+
         # Build message
         message_parts = [
             f"{emoji} ALERT: {status}",
@@ -43,27 +43,27 @@ class TelegramAlertManager:
             f"🔧 Component: {labels.get('component', 'Unknown')}",
             "",
         ]
-        
+
         # Add summary and description
         if summary := annotations.get('summary'):
             message_parts.append(f"📌 {summary}")
-        
+
         if description := annotations.get('description'):
             message_parts.append(f"📝 {description}")
-        
+
         # Add instance info
         if instance := labels.get('instance'):
             message_parts.append(f"🖥️ Instance: {instance}")
-        
+
         # Add timestamps
         if starts_at := alert.get('startsAt'):
             message_parts.append(f"⏰ Started: {starts_at}")
-        
+
         if status == 'RESOLVED' and (ends_at := alert.get('endsAt')):
             message_parts.append(f"✅ Resolved: {ends_at}")
-        
+
         return "\n".join(message_parts)
-    
+
     async def send_message(self, message: str) -> bool:
         """Send message to Telegram"""
         try:
@@ -82,27 +82,27 @@ class TelegramAlertManager:
         except Exception as e:
             print(f"Error sending telegram message: {e}")
             return False
-    
+
     async def process_webhook(self, payload: Dict[str, Any], priority: str = 'default') -> List[bool]:
         """Process Alertmanager webhook payload"""
         alerts = payload.get('alerts', [])
         results = []
-        
+
         # Add header for multiple alerts
         if len(alerts) > 1:
             header = f"📬 Batch Alert ({len(alerts)} alerts) - Priority: {priority.upper()}\n"
             await self.send_message(header)
-        
+
         # Send each alert
         for alert in alerts:
             message = self.format_alert(alert)
             success = await self.send_message(message)
             results.append(success)
-            
+
             # Small delay to avoid rate limiting
             if len(alerts) > 1:
                 await asyncio.sleep(0.5)
-        
+
         return results
 
 
@@ -147,9 +147,9 @@ async def test_webhook():
     """Test the webhook with sample data"""
     bot_token = os.getenv('TELEGRAM_BOT_TOKEN', 'YOUR_BOT_TOKEN')
     chat_id = os.getenv('TELEGRAM_CHAT_ID', 'YOUR_CHAT_ID')
-    
+
     manager = TelegramAlertManager(bot_token, chat_id)
-    
+
     # Sample alert payload
     sample_payload = {
         "alerts": [
@@ -169,7 +169,7 @@ async def test_webhook():
             }
         ]
     }
-    
+
     results = await manager.process_webhook(sample_payload, "test")
     print(f"Test results: {results}")
 
