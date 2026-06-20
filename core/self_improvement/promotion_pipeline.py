@@ -498,21 +498,20 @@ class PromotionPipeline:
             PromotionDecision (for intents) or PromotionResult (legacy) — never raises.
         """
         # Validate patch signature before any processing (fail-closed).
-        # sig_data is optional: missing/None = dev mode (gate logs warning but passes).
+        # Gate handles dev mode (no BEA_PATCH_VERIFY_KEY) vs production.
         sig_data = getattr(candidate, "sig_data", None)
-        if sig_data is not None:
-            try:
-                from kernel.improvement.gate import get_gate, PatchSignatureViolation
-                patch_content = candidate.to_dict() if hasattr(candidate, "to_dict") else {}
-                get_gate().validate_patch_signature(patch_content, sig_data)
-            except PatchSignatureViolation as exc:
-                patch_id = getattr(candidate, "patch_id", "") or getattr(candidate, "run_id", "")
-                log.warning("promotion_pipeline.signature_rejected", patch_id=patch_id, err=str(exc)[:120])
-                return PromotionDecision(
-                    decision="REJECT",
-                    reason=f"signature_violation: {exc}",
-                    patch_id=patch_id,
-                )
+        try:
+            from kernel.improvement.gate import get_gate, PatchSignatureViolation
+            patch_content = candidate.to_dict() if hasattr(candidate, "to_dict") else {}
+            get_gate().validate_patch_signature(patch_content, sig_data)
+        except PatchSignatureViolation as exc:
+            patch_id = getattr(candidate, "patch_id", "") or getattr(candidate, "run_id", "")
+            log.warning("promotion_pipeline.signature_rejected", patch_id=patch_id, err=str(exc)[:120])
+            return PromotionDecision(
+                decision="REJECT",
+                reason=f"signature_violation: {exc}",
+                patch_id=patch_id,
+            )
 
         # Dispatch: if candidate has .intents, use the new pipeline
         intents = getattr(candidate, "intents", None)

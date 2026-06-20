@@ -128,31 +128,25 @@ class ImprovementGate:
     def validate_patch_signature(
         self,
         patch_content: "str | dict",
-        sig_data: dict,
+        sig_data: "dict | None",
     ) -> None:
         """Validate the ed25519 signature on a candidate patch.
 
         Must be called before any patch is applied to the codebase.
+        Handles unsigned patches (sig_data None or empty) based on
+        whether BEA_PATCH_VERIFY_KEY is configured:
+          - key absent → dev mode: warn and pass through
+          - key present → production: unsigned patches are rejected
 
         Args:
             patch_content: The raw patch — a dict (CandidatePatch.to_dict()) or str.
-            sig_data: The signature envelope from sign_patch().
+            sig_data: The signature envelope from sign_patch(), or None if unsigned.
 
         Raises:
-            PatchSignatureViolation: if the signature is absent, UNSIGNED,
-                wrong algorithm, or cryptographically invalid.
+            PatchSignatureViolation: if unsigned in production, wrong algorithm,
+                or cryptographically invalid.
         """
-        # Reject UNSIGNED and non-ed25519 immediately — no crypto import needed.
-        algorithm = sig_data.get("algorithm", "")
-        raw_sig = sig_data.get("signature", "")
-        if not raw_sig or raw_sig == "UNSIGNED" or algorithm != "ed25519":
-            raise PatchSignatureViolation(
-                f"Patch has no valid ed25519 signature — "
-                f"algorithm={algorithm!r}, signature={raw_sig!r}. Rejected."
-            )
-
-        # Lazy import: the kernel is allowed to call into core once a patch is
-        # being evaluated (this is a *validation* path, not a boot-time dependency).
+        # Lazy import — validation path only, not boot-time.
         try:
             from core.self_improvement.patch_signature import (  # noqa: PLC0415
                 SignatureError,
@@ -166,6 +160,39 @@ class ImprovementGate:
             ) from exc
 
         verify_key = load_verification_key()
+
+        raw_sig = (sig_data or {}).get("signature", "")
+
+        # Explicitly UNSIGNED marker — always reject, regardless of key config.
+        if raw_sig == "UNSIGNED":
+            raise PatchSignatureViolation(
+                "Patch is explicitly marked UNSIGNED — cannot promote unsigned patches. Rejected."
+            )
+
+        # No signature present at all: dev mode vs. production decision.
+        has_sig = bool(sig_data and raw_sig)
+        if not has_sig:
+            if verify_key is None:
+                log.warning(
+                    "patch_unsigned_dev_mode",
+                    msg=(
+                        "Patch has no signature — BEA_PATCH_VERIFY_KEY not set, "
+                        "dev mode pass-through"
+                    ),
+                )
+                return  # dev mode: key not pinned, no signature required
+            raise PatchSignatureViolation(
+                "Patch is unsigned but BEA_PATCH_VERIFY_KEY is configured — "
+                "all patches must be signed in production."
+            )
+
+        # Structural check: algorithm must be ed25519
+        algorithm = (sig_data or {}).get("algorithm", "")
+        if algorithm != "ed25519":
+            raise PatchSignatureViolation(
+                f"Unsupported signature algorithm: {algorithm!r} (expected 'ed25519'). Rejected."
+            )
+
         if verify_key is None:
             log.warning(
                 "patch_signature_no_verify_key",
@@ -174,10 +201,10 @@ class ImprovementGate:
                     "signature structure checked but cryptographic verification skipped (dev mode)"
                 ),
             )
-            return  # dev/CI mode: key not pinned yet, structural check already passed
+            return  # dev mode: key not pinned, structural check passed
 
         try:
-            verify_patch_signature(patch_content, sig_data, verify_key)
+            verify_patch_signature(patch_content, sig_data, verify_key)  # type: ignore[arg-type]
         except SignatureError as exc:
             log.error("patch_signature_invalid", err=str(exc)[:120])
             raise PatchSignatureViolation(

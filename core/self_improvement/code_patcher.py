@@ -111,6 +111,16 @@ class PatchIntent:
     strategy: str = ""      # timeout_tuning, retry_optimization, error_handling, etc.
     mode: str = PatchMode.EXACT_REPLACE  # Patch mode
 
+    def to_dict(self) -> dict:
+        return {
+            "file_path": self.file_path,
+            "old_text": self.old_text,
+            "new_text": self.new_text,
+            "reason": self.reason,
+            "strategy": self.strategy,
+            "mode": self.mode,
+        }
+
 
 @dataclass
 class CodePatch:
