@@ -13,7 +13,6 @@ Auth: X-Bea-Token header (same pattern as other routes).
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import structlog
 from fastapi import Depends, APIRouter, File, Query, Request, UploadFile

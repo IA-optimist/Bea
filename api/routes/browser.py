@@ -8,7 +8,6 @@ POST /api/v2/browser/screenshot — navigate to URL, return base64 screenshot
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import structlog
 from fastapi import Depends, APIRouter, HTTPException

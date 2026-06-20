@@ -13,8 +13,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api._deps import require_auth
-from typing import Optional as _Opt
-from fastapi import Header
 
 logger = logging.getLogger("bea.api.objectives")
 

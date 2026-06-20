@@ -14,8 +14,6 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from api._deps import require_auth
-from typing import Optional as _Opt
-from fastapi import Header
 
 router = APIRouter(tags=["dashboard"], dependencies=[Depends(require_auth)])
 

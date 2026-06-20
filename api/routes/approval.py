@@ -3,8 +3,6 @@ from fastapi import APIRouter, Depends
 import logging
 
 from api._deps import require_auth
-from typing import Optional as _Opt
-from fastapi import Header
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/approval", tags=["approval"], dependencies=[Depends(require_auth)])

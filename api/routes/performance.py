@@ -28,7 +28,6 @@ except ImportError:
     APIRouter = None
 
 from api._deps import require_auth
-from typing import Optional as _Opt
 
 logger = structlog.get_logger("bea.api.performance")
 log = logger  # alias for the M3 swallowed_exception emitter convention
