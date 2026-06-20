@@ -22,4 +22,5 @@ paths = [
 commits = [
   "9a54d39842e98c8f8d17fdf02bb02e4b8cfe4fa6",  # patch_signature.py:164 — variable `private_key`, pas un secret
   "48fabb67ec26e5c0436344d21f48003695f9068b",  # openclaw/agents/*/SOUL.md — OPENCLAW_TOKEN = nom de var config
+  "548568bc213ef353d8a7884afb5c3e623245fa9f",  # squash-merge PR #69 — patch_signature.py:164 même FP Ed25519 var
 ]
