@@ -478,7 +478,7 @@ def create_checkout_session(price_id: str, success_url: str, cancel_url: str):
         env_example = f"""# {spec.name} Environment Variables
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname  # pragma: allowlist secret
 
 # Stripe
 STRIPE_SECRET_KEY=sk_test_xxx

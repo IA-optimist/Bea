@@ -41,7 +41,7 @@ LANGFUSE_SECRET_KEY=sk-lf-CHANGE_ME
 LANGFUSE_HOST=https://cloud.langfuse.com
 
 # Database (déjà configuré via Docker Compose)
-# DATABASE_URL=postgresql://bea:bea@postgres:5432/beamax
+# DATABASE_URL=postgresql://bea:bea@postgres:5432/beamax  # pragma: allowlist secret
 
 # Security
 JWT_SECRET_KEY=$(openssl rand -hex 32)

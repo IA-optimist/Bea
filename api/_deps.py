@@ -149,7 +149,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             _jwt_secret = (get_settings().bea_secret_key or "").strip()
             _jwt_configured = bool(
                 _jwt_secret
-                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential
+                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential  # pragma: allowlist secret
                 and not _jwt_secret.startswith("ephemeral-")
             )
         except Exception:
@@ -297,7 +297,7 @@ def _init_db():
         if not database_url:
             raise RuntimeError(
                 "DATABASE_URL environment variable is required. "
-                "Set it to postgresql://user:pass@host:port/db in your .env."
+                "Set it to postgresql://user:pass@host:port/db in your .env."  # pragma: allowlist secret
             )
         _db_engine = create_engine(database_url, pool_pre_ping=True)
         _SessionLocal = sessionmaker(bind=_db_engine, autocommit=False, autoflush=False)

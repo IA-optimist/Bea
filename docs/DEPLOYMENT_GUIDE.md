@@ -56,7 +56,7 @@ ssh root@77.42.40.146 "cd /root/Beamax-master && cat .env"
 ```bash
 BEA_API_TOKEN=<your-token>
 BEA_REQUIRE_AUTH=true
-DATABASE_URL=postgresql://bea:bea123@postgres:5432/beamax
+DATABASE_URL=postgresql://bea:bea123@postgres:5432/beamax  # pragma: allowlist secret
 REDIS_URL=redis://redis:6379
 QDRANT_URL=http://qdrant:6333
 OPENAI_API_KEY=<optional-for-embeddings>
@@ -412,7 +412,7 @@ docker logs beamax-postgres
 ```bash
 docker exec beamax-api python3 -c "
 import psycopg2
-conn = psycopg2.connect('postgresql://bea:bea123@postgres:5432/beamax')
+conn = psycopg2.connect('postgresql://bea:bea123@postgres:5432/beamax')  # pragma: allowlist secret
 print('Connected:', conn.status)
 "
 ```

@@ -394,7 +394,7 @@ STATUS_LABELS = {
     "testing": "Testing...",
     "connected": "Connected",
     "missing_permissions": "Missing permissions",
-    "no_secret": "Secret not configured",  # nosec B105 — error message dict value
+    "no_secret": "Secret not configured",  # nosec B105  # pragma: allowlist secret
     "rate_limited": "Rate limit reached",
     "unreachable": "Service unreachable",
     "invalid_token": "Token is invalid",  # nosec B105 — error message dict value
