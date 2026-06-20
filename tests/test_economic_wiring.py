@@ -26,7 +26,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -51,7 +51,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -67,7 +67,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -84,7 +84,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -263,7 +263,7 @@ class TestObjectiveKPIWiring:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -325,7 +325,7 @@ class TestRecordProtection:
         import core.economic.strategic_memory as _mod
         old = _mod._store
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         return old
 

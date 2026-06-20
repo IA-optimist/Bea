@@ -124,7 +124,7 @@ async def get_recent_metrics(_user: dict = _auth):
         store = get_observability_store()
         return {"stats": store.get_stats(), "recent": store.get_recent(20)}
     except Exception as e:
-        return {"stats": {}, "recent": [], "error": str(e)}
+        return {"stats": {}, "recent": [], "error": type(e).__name__}
 
 
 # ── Knowledge ────────────────────────────────────────────────

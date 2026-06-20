@@ -278,7 +278,7 @@ class TestPlaywrightIntegration:
 
         # Verify browser interactions
         mock_page.goto.assert_called_once()
-        assert "producthunt.com" in mock_page.goto.call_args[0][0]
+        assert "producthunt.com" in mock_page.goto.call_args[0][0]  # lgtm[py/incomplete-url-substring-sanitization]
         mock_page.content.assert_called_once()
         mock_page.close.assert_called_once()
 
@@ -352,7 +352,7 @@ class TestPlaywrightIntegration:
         opportunities = await scanner.scan_hackernews(mock_browser, days_back=30)
 
         mock_page.goto.assert_called_once()
-        assert "news.ycombinator.com" in mock_page.goto.call_args[0][0]
+        assert "news.ycombinator.com" in mock_page.goto.call_args[0][0]  # lgtm[py/incomplete-url-substring-sanitization]
         assert isinstance(opportunities, list)
 
     @pytest.mark.asyncio

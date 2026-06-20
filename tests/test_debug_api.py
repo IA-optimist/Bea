@@ -21,7 +21,7 @@ def _pinned_empty_selector():
     from core.model_intelligence.selector import ModelSelector
     prev = sel_mod._selector
     sel_mod._selector = ModelSelector(
-        catalog=ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json"))))
+        catalog=ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)))
     try:
         yield
     finally:

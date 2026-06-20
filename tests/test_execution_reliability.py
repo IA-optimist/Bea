@@ -333,7 +333,7 @@ class TestModelFallback:
         from core.model_intelligence.selector import ModelSelector
         # Catalogue VIDE => sélection déterministe via la fallback chain hardcodée
         # (sinon le cache OpenRouter de l'environnement fait dériver les noms de modèles).
-        sel = ModelSelector(catalog=ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json"))))
+        sel = ModelSelector(catalog=ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)))
         budget = sel.select("business_reasoning", "budget")
         normal = sel.select("business_reasoning", "normal")
         assert budget.model_id == "openai/gpt-4o-mini"

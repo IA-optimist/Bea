@@ -92,7 +92,7 @@ class TestBudgetModeSelection:
         from core.model_intelligence.catalog import ModelCatalog, ModelEntry
         import tempfile
         from pathlib import Path
-        cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         cat._models = {
             "cheap/model": ModelEntry(
                 model_id="cheap/model", name="Cheap Fast",
