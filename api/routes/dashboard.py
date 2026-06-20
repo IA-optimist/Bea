@@ -13,15 +13,9 @@ import subprocess  # nosec B404
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from api._deps import _check_auth
-from typing import Optional as _Opt
-from fastapi import Header
+from api._deps import require_auth
 
-def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-router = APIRouter(tags=["dashboard"], dependencies=[Depends(_auth)])
+router = APIRouter(tags=["dashboard"], dependencies=[Depends(require_auth)])
 
 _START_TIME = datetime.datetime.now(datetime.timezone.utc)
 

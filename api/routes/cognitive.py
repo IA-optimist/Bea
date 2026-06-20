@@ -21,15 +21,17 @@ GET  /api/v3/cognitive/confidence    — Calibration report
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
 
-from api._deps import _check_auth
+from api._deps import require_auth
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v3/cognitive", tags=["cognitive"])
+router = APIRouter(prefix="/api/v3/cognitive", tags=["cognitive"],
+    dependencies=[Depends(require_auth)]
+)
 
 
 # ── Request models ──
@@ -69,20 +71,14 @@ def _get_bridge():
 
 @router.get("/stats")
 async def cognitive_stats(
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
 ):
-    _check_auth(x_bea_token, authorization)
     return _get_bridge().stats()
 
 
 @router.post("/analyze")
 async def analyze_task(
-    req: AnalyzeRequest,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    req: AnalyzeRequest
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     result = bridge.pre_mission(
         goal=req.goal, agent_id=req.agent_id, context=req.context or None
@@ -92,11 +88,8 @@ async def analyze_task(
 
 @router.post("/score")
 async def score_decision(
-    req: ScoreRequest,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    req: ScoreRequest
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     return bridge.score_decision(
         decision_type=req.decision_type,
@@ -113,10 +106,7 @@ async def score_decision(
 
 @router.get("/reputation")
 async def reputation_leaderboard(
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     rep = bridge.reputation
     if not rep:
@@ -126,11 +116,8 @@ async def reputation_leaderboard(
 
 @router.get("/reputation/{agent_id}")
 async def agent_reputation(
-    agent_id: str,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    agent_id: str
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     rep = bridge.reputation
     if not rep:
@@ -145,10 +132,7 @@ async def agent_reputation(
 
 @router.get("/graph/stats")
 async def graph_stats(
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     g = bridge.memory_graph
     if not g:
@@ -159,11 +143,8 @@ async def graph_stats(
 @router.get("/graph/subgraph/{node_id}")
 async def graph_subgraph(
     node_id: str,
-    depth: int = 2,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    depth: int = 2
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     g = bridge.memory_graph
     if not g:
@@ -176,11 +157,8 @@ async def graph_subgraph(
 
 @router.get("/traces")
 async def learning_traces(
-    limit: int = 50,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    limit: int = 50
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     lt = bridge.learning_traces
     if not lt:
@@ -193,10 +171,7 @@ async def learning_traces(
 
 @router.get("/capabilities")
 async def list_capabilities(
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     cg = bridge.capability_graph
     if not cg:
@@ -206,11 +181,8 @@ async def list_capabilities(
 
 @router.post("/capabilities/find")
 async def find_agents_for_task(
-    req: FindAgentsRequest,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    req: FindAgentsRequest
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     cg = bridge.capability_graph
     if not cg:
@@ -223,11 +195,8 @@ async def find_agents_for_task(
 @router.get("/playbooks")
 async def list_playbooks(
     category: str = "",
-    query: str = "",
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    query: str = ""
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     results = bridge.find_playbook(category=category, query=query)
     return {"playbooks": results}
@@ -235,11 +204,8 @@ async def list_playbooks(
 
 @router.post("/playbooks/start")
 async def start_playbook(
-    req: StartPlaybookRequest,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    req: StartPlaybookRequest
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     result = bridge.start_playbook(req.playbook_id, req.mission_id, req.params)
     if not result:
@@ -252,11 +218,8 @@ async def start_playbook(
 @router.get("/marketplace")
 async def marketplace_search(
     query: str = "",
-    type: str = "",
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    type: str = ""
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     results = bridge.marketplace_search(query=query, type=type)
     return {"items": results}
@@ -266,10 +229,7 @@ async def marketplace_search(
 
 @router.get("/confidence")
 async def confidence_report(
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     conf = bridge.confidence
     if not conf:
@@ -279,11 +239,8 @@ async def confidence_report(
 
 @router.get("/confidence/history")
 async def confidence_history(
-    limit: int = 50,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None)
+    limit: int = 50
 ):
-    _check_auth(x_bea_token, authorization)
     bridge = _get_bridge()
     conf = bridge.confidence
     if not conf:

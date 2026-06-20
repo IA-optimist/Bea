@@ -8,23 +8,16 @@ POST /api/v2/browser/screenshot — navigate to URL, return base64 screenshot
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import structlog
-from fastapi import Depends, APIRouter, Header, HTTPException
+from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/browser", tags=["browser"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/browser", tags=["browser"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
@@ -49,8 +42,7 @@ class ScreenshotRequest(BaseModel):
 
 @router.post("/navigate")
 async def browser_navigate(
-    req: NavigateRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: NavigateRequest
 ):
     """Navigate to a URL and optionally extract visible page text."""
     from tools.browser_tool import BrowserTool
@@ -68,8 +60,7 @@ async def browser_navigate(
 
 @router.post("/search")
 async def browser_search(
-    req: SearchRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: SearchRequest
 ):
     """Search the web and return top 10 results {title, url, snippet}."""
     from tools.browser_tool import BrowserTool
@@ -83,8 +74,7 @@ async def browser_search(
 
 @router.post("/screenshot")
 async def browser_screenshot(
-    req: ScreenshotRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: ScreenshotRequest
 ):
     """Navigate to URL and return a base64-encoded PNG screenshot."""
     from tools.browser_tool import BrowserTool

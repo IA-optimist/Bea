@@ -29,10 +29,10 @@ log = structlog.get_logger(__name__)
 import os
 import time
 from typing import Optional
-from api._deps import _check_auth
+from api._deps import require_auth
 
 try:
-    from fastapi import BackgroundTasks, Depends, APIRouter, Body, Header, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
+    from fastapi import BackgroundTasks, Depends, APIRouter, Body, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
     from fastapi.responses import JSONResponse
 except ImportError:
     # Stub for syntax validation without fastapi
@@ -61,12 +61,7 @@ except ImportError:
 
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-router = APIRouter(prefix="/api/v3", tags=["convergence"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v3", tags=["convergence"], dependencies=[Depends(require_auth)])
 
 
 def _use_canonical() -> bool:
@@ -184,7 +179,7 @@ async def submit_mission(body: dict = Body(...), background_tasks: BackgroundTas
 @router.get("/missions")
 async def list_missions(
     status: Optional[str] = None,
-    limit: int = 20,
+    limit: int = 20
 ):
     """List missions with canonical status mapping."""
     try:
@@ -216,7 +211,7 @@ async def mission_history(
     limit: int = 50,
     offset: int = 0,
     status: Optional[str] = None,
-    domain: Optional[str] = None,
+    domain: Optional[str] = None
 ):
     """
     GET /api/v3/missions/history — Paginated mission history with filters.

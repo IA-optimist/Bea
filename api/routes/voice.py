@@ -13,24 +13,17 @@ Auth: X-Bea-Token header (same pattern as other routes).
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import structlog
-from fastapi import Depends, APIRouter, File, Header, Query, Request, UploadFile
+from fastapi import Depends, APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/voice", tags=["voice"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/voice", tags=["voice"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
@@ -61,8 +54,7 @@ class SMSRequest(BaseModel):
 async def process_audio(
     file:           UploadFile       = File(...),
     session_id:     str              = Query("", description="Conversation session ID"),
-    language:       str              = Query("fr"),
-    x_bea_token: Optional[str]    = Header(None),
+    language:       str              = Query("fr")
 ):
     """
     Upload an audio file and run it through the full STT → LLM → TTS pipeline.
@@ -87,8 +79,7 @@ async def process_audio(
 
 @router.post("/call")
 async def initiate_call(
-    req:            CallRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req:            CallRequest
 ):
     """
     Initiate an outbound call using Twilio TTS.
@@ -105,8 +96,7 @@ async def initiate_call(
 
 @router.post("/sms")
 async def send_sms(
-    req:            SMSRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req:            SMSRequest
 ):
     """Send an SMS message via Twilio."""
     from modules.voice.call_manager import get_call_manager
@@ -142,8 +132,7 @@ async def twilio_webhook(request: Request):
 
 @router.get("/call/{call_sid}")
 async def get_call_status(
-    call_sid:       str,
-    x_bea_token: Optional[str] = Header(None),
+    call_sid:       str
 ):
     """Poll the status of an outbound call by call_sid."""
     from modules.voice.call_manager import get_call_manager

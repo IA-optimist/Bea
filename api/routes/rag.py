@@ -14,18 +14,12 @@ from typing import Any, Optional
 import structlog
 from fastapi import Depends, APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/rag", tags=["rag"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/rag", tags=["rag"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
@@ -55,8 +49,7 @@ class AskRequest(BaseModel):
 
 @router.post("/index")
 async def rag_index(
-    req: IndexRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: IndexRequest
 ):
     """Index a file (by path) or inline text into the vector store."""
     from core.rag.pipeline import get_rag_pipeline
@@ -79,8 +72,7 @@ async def rag_index(
 
 @router.post("/query")
 async def rag_query(
-    req: QueryRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: QueryRequest
 ):
     """Semantic search over indexed documents."""
     from core.rag.pipeline import get_rag_pipeline
@@ -97,8 +89,7 @@ async def rag_query(
 
 @router.post("/ask")
 async def rag_ask(
-    req: AskRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: AskRequest
 ):
     """Full grounded QA: retrieve context + LLM answer."""
     from core.rag.grounded_llm import ask_codebase

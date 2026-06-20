@@ -284,6 +284,6 @@ def test_models_routes_do_not_return_200_error_payloads():
 def test_voice_webhook_is_not_documented_as_public_without_signature_verification():
     content = Path("api/routes/voice.py").read_text(encoding="utf-8")
 
-    assert "dependencies=[Depends(_auth)]" in content
+    assert "dependencies=[Depends(require_auth)]" in content
     assert "no auth" not in content.lower()
     assert "unauthenticated" not in content.lower()
