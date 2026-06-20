@@ -307,9 +307,7 @@ async def trigger_evaluations(
 
 
 @router.get("/evaluations", response_model=APIResponse)
-async def get_evaluations(
-    user: dict = Depends(require_auth),
-) -> APIResponse:
+async def get_evaluations() -> APIResponse:
     """Return the latest published evaluation scores."""
     try:
         scores = load_eval_scores()
@@ -319,9 +317,7 @@ async def get_evaluations(
 
 
 @router.get("/migration", response_model=APIResponse)
-async def get_v1_migration_guide(
-    user: dict = Depends(require_auth),
-) -> APIResponse:
+async def get_v1_migration_guide() -> APIResponse:
     """Return the V1 → V2/V3 migration matrix for deprecated routes."""
     try:
         routes_list = [

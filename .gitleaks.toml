@@ -12,6 +12,7 @@ paths = [
   '''tests/''',                  # fake secrets pour tests
   '''\.env\.example$''',         # placeholders CHANGE_ME
   '''beamax_app/''',             # Flutter source — secrets injectés via --dart-define, jamais hardcodés
+  '''jarvismax_app/''',          # ancien nom (renommé en beamax_app) — même config Flutter
   '''plugins/.*README''',        # Docs exemples de config (sk_live_xxx placeholders)
 ]
 
