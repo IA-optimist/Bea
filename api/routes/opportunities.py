@@ -8,7 +8,7 @@ import logging
 import time
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Header, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
@@ -79,7 +79,7 @@ async def list_opportunities(
     source: Optional[str] = Query(None, description="Filter by source"),
     min_score: Optional[float] = Query(None, ge=0.0, le=100.0, description="Min total score"),
     analyzed: Optional[bool] = Query(None, description="Filter by analyzed status"),
-    sort_by: str = Query("total_score", description="Sort field: total_score, discovered_at, demand_score"),
+    sort_by: str = Query("total_score", description="Sort field: total_score, discovered_at, demand_score")
 ):
     """
     List opportunities with filtering and pagination
@@ -137,7 +137,7 @@ async def list_opportunities(
 @router.get("/{opportunity_id}", response_model=dict)
 async def get_opportunity(
     opportunity_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """Get single opportunity by ID"""
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
@@ -152,7 +152,7 @@ async def get_opportunity(
 async def trigger_scan(
     request: ScanRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """
     Trigger manual opportunity scan (async background task)
@@ -232,7 +232,7 @@ async def trigger_scan(
 @router.delete("/{opportunity_id}", response_model=dict)
 async def delete_opportunity(
     opportunity_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """Delete opportunity by ID"""
     opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
@@ -319,7 +319,7 @@ async def analyze_feasibility(
     opportunity_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    project_id: int = Query(1, description="BeaMax project ID"),
+    project_id: int = Query(1, description="BeaMax project ID")
 ):
     """
     Analyze technical feasibility of an opportunity (cognition-powered)
@@ -445,7 +445,7 @@ async def analyze_feasibility(
 @router.get("/{opportunity_id}/analysis", response_model=dict)
 async def get_analysis(
     opportunity_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """
     Get feasibility analysis result for an opportunity
@@ -483,7 +483,7 @@ async def get_analysis(
 @router.delete("/{opportunity_id}/analysis", response_model=dict)
 async def delete_analysis(
     opportunity_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     """Delete feasibility analysis (allows re-analysis)"""
     analysis = db.query(OpportunityAnalysis).filter(
@@ -511,13 +511,9 @@ async def delete_analysis(
 @router.post("/{opportunity_id}/analysis/approve")
 async def approve_analysis(
     opportunity_id: int,
-    db: Session = Depends(get_db),
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None),
+    db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Approve the feasibility analysis so MVP generation can proceed."""
-    from api._deps import _check_auth
-    _check_auth(x_bea_token, authorization)
     from models.opportunity_analysis import OpportunityAnalysis
     analysis = db.query(OpportunityAnalysis).filter(
         OpportunityAnalysis.opportunity_id == opportunity_id
@@ -534,9 +530,7 @@ async def generate_mvp(
     opportunity_id: int,
     background_tasks: BackgroundTasks,
     project_id: int = 1,
-    db: Session = Depends(get_db),
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None),
+    db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Generate MVP codebase from feasibility analysis (P3.3).
@@ -563,8 +557,6 @@ async def generate_mvp(
         - 404: Opportunity not found
         - 400: Analysis not found or not approved
     """
-    from api._deps import _check_auth
-    _check_auth(x_bea_token, authorization)
     from core.business.mvp_generator import MVPGenerator
     from models.opportunity_analysis import OpportunityAnalysis
 
@@ -652,7 +644,7 @@ async def generate_mvp(
 @router.get("/{opportunity_id}/mvp")
 async def get_mvp_status(
     opportunity_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Get MVP generation status (P3.3).
@@ -724,7 +716,7 @@ async def deploy_mvp(
     background_tasks: BackgroundTasks,
     project_id: int = Query(1, description="BeaMax project ID"),
     db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user)
 ):
     """
     Deploy generated MVP to VPS with GitHub + Docker + Caddy.
@@ -872,7 +864,7 @@ async def deploy_mvp(
 async def get_deployment_status(
     opportunity_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user)
 ):
     """
     Get deployment status for an opportunity.
@@ -924,7 +916,7 @@ async def get_deployment_status(
 async def undeploy_mvp(
     opportunity_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user)
 ):
     """
     Remove deployment from VPS.

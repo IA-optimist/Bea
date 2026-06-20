@@ -14,18 +14,12 @@ from typing import Optional
 
 import structlog
 from fastapi import Depends, APIRouter, Header, Query
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/learning", tags=["learning"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/learning", tags=["learning"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = __import__("os").getenv("BEA_API_TOKEN", "")
 
@@ -51,8 +45,7 @@ async def weekly_report(x_bea_token: Optional[str] = Header(None)):
 
 @router.get("/agents/{agent_name}/stats")
 async def agent_stats(
-    agent_name:     str,
-    x_bea_token: Optional[str] = Header(None),
+    agent_name:     str
 ):
     """
     Improvement statistics for a single agent:
@@ -79,8 +72,7 @@ async def agent_stats(
 @router.get("/agents/{agent_name}/feedback")
 async def agent_feedback(
     agent_name:     str,
-    limit:          int            = Query(5, ge=1, le=20),
-    x_bea_token: Optional[str]  = Header(None),
+    limit:          int            = Query(5, ge=1, le=20)
 ):
     """
     Top improvement feedback entries for an agent, sorted by score delta desc.
@@ -108,8 +100,7 @@ async def agent_feedback(
 
 @router.get("/global_lessons")
 async def global_lessons(
-    limit:          int           = Query(10, ge=1, le=50),
-    x_bea_token: Optional[str] = Header(None),
+    limit:          int           = Query(10, ge=1, le=50)
 ):
     """
     Cross-agent failure patterns: most common recurring issue keywords

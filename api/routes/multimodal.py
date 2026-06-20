@@ -17,18 +17,12 @@ import structlog
 from fastapi import Depends, APIRouter, Header, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/multimodal", tags=["multimodal"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/multimodal", tags=["multimodal"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
@@ -59,8 +53,7 @@ class TTSRequest(BaseModel):
 
 @router.post("/image/generate")
 async def image_generate(
-    req: ImageGenerateRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: ImageGenerateRequest
 ):
     """Generate an image from a text prompt (DALL-E 3 / HuggingFace / stub)."""
     from modules.multimodal.image import generate_image
@@ -83,8 +76,7 @@ async def image_generate(
 @router.post("/image/describe")
 async def image_describe(
     req: Optional[ImageDescribeRequest] = None,
-    file: Optional[UploadFile]          = File(None),
-    x_bea_token: Optional[str]       = Header(None),
+    file: Optional[UploadFile]          = File(None)
 ):
     """Describe/analyze an image using GPT-4o Vision."""
     from modules.multimodal.image import describe_image
@@ -112,8 +104,7 @@ async def image_describe(
 @router.post("/voice/stt")
 async def voice_stt(
     file:           UploadFile            = File(...),
-    language:       str                   = Query("fr"),
-    x_bea_token: Optional[str]         = Header(None),
+    language:       str                   = Query("fr")
 ):
     """Speech-to-text transcription (Whisper API / local / stub)."""
     from modules.multimodal.voice import speech_to_text
@@ -132,8 +123,7 @@ async def voice_stt(
 
 @router.post("/voice/tts")
 async def voice_tts(
-    req:            TTSRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req:            TTSRequest
 ):
     """Text-to-speech synthesis. Returns MP3 audio bytes on success."""
     from modules.multimodal.voice import text_to_speech

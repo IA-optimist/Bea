@@ -30,13 +30,12 @@ from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from api.schemas import ok, error as err_resp
-from api._deps import _check_auth
+from api._deps import require_auth
 from typing import Optional as _Opt
 
 
 def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
     """Auth dependency for mission control routes."""
-    _check_auth(x_bea_token, authorization)
 
 
 # ── v1 deprecation contract ───────────────────────────────────────────────
@@ -66,7 +65,7 @@ def _canonical_risk(legacy_risk: str, source: str = "state") -> str:
         return str(legacy_risk)
 
 
-router = APIRouter(prefix="/api/v1", tags=["mission-control"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v1", tags=["mission-control"], dependencies=[Depends(require_auth)])
 
 _start_time = time.time()
 _WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", "workspace"))
@@ -112,7 +111,7 @@ def _log_user_action(mission_id: str, action: str) -> None:
 @router.get("/missions")
 async def list_missions_v1(
     status: str | None = Query(None),
-    limit: int = Query(20, ge=1, le=200),
+    limit: int = Query(20, ge=1, le=200)
 ):
     try:
         ms = _mission_system()
@@ -179,7 +178,7 @@ def _estimate_progress(mission) -> float:
 @router.get("/missions/{mission_id}/log")
 async def get_mission_log(
     mission_id: str,
-    limit: int = Query(50, ge=1, le=500),
+    limit: int = Query(50, ge=1, le=500)
 ):
     ms = _mission_system()
     mission = ms.get(mission_id)

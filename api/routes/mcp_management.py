@@ -15,13 +15,15 @@ GET  /api/v3/mcp/stats             — Registry stats
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import Depends, APIRouter, HTTPException, Header
 
-from api._deps import _check_auth
+from api._deps import require_auth
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v3/mcp", tags=["mcp"])
+router = APIRouter(prefix="/api/v3/mcp", tags=["mcp"],
+    dependencies=[Depends(require_auth)]
+)
 
 
 def _get_registry():
@@ -34,12 +36,9 @@ def _get_registry():
 
 @router.get("/servers")
 async def list_servers(
-    category: str = "", trust: str = "",
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None),
+    category: str = "", trust: str = ""
 ):
     """List all registered MCP servers."""
-    _check_auth(x_bea_token, authorization)
     reg = _get_registry()
     servers = reg.list_all(category=category, trust=trust)
     return {"servers": [s.to_safe_dict() for s in servers],
@@ -49,7 +48,6 @@ async def list_servers(
 @router.get("/servers/{mcp_id}")
 async def get_server(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Get MCP server details."""
-    _check_auth(x_bea_token, authorization)
     entry = _get_registry().get(mcp_id)
     if not entry:
         raise HTTPException(status_code=404, detail="MCP server not found")
@@ -59,7 +57,6 @@ async def get_server(mcp_id: str, x_bea_token: str | None = Header(None), author
 @router.post("/servers/{mcp_id}/enable")
 async def enable_server(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Enable an MCP server (checks dependencies first)."""
-    _check_auth(x_bea_token, authorization)
     result = _get_registry().enable(mcp_id)
     if result is None:
         raise HTTPException(status_code=404, detail="MCP server not found")
@@ -71,7 +68,6 @@ async def enable_server(mcp_id: str, x_bea_token: str | None = Header(None), aut
 @router.post("/servers/{mcp_id}/disable")
 async def disable_server(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Disable an MCP server."""
-    _check_auth(x_bea_token, authorization)
     result = _get_registry().disable(mcp_id)
     if result is None:
         raise HTTPException(status_code=404, detail="MCP server not found")
@@ -81,7 +77,6 @@ async def disable_server(mcp_id: str, x_bea_token: str | None = Header(None), au
 @router.get("/servers/{mcp_id}/health")
 async def server_health(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Check health of a specific MCP server."""
-    _check_auth(x_bea_token, authorization)
     result = _get_registry().check_health(mcp_id)
     if result.get("health") == "not_found":
         raise HTTPException(status_code=404, detail="MCP server not found")
@@ -91,7 +86,6 @@ async def server_health(mcp_id: str, x_bea_token: str | None = Header(None), aut
 @router.get("/servers/{mcp_id}/tools")
 async def discover_tools(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Discover tools from an MCP server."""
-    _check_auth(x_bea_token, authorization)
     entry = _get_registry().get(mcp_id)
     if not entry:
         raise HTTPException(status_code=404, detail="MCP server not found")
@@ -102,28 +96,24 @@ async def discover_tools(mcp_id: str, x_bea_token: str | None = Header(None), au
 @router.get("/health")
 async def all_health(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Health check for all MCP servers."""
-    _check_auth(x_bea_token, authorization)
     return {"health": _get_registry().check_all_health()}
 
 
 @router.get("/stats")
 async def registry_stats(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """MCP registry statistics."""
-    _check_auth(x_bea_token, authorization)
     return _get_registry().stats()
 
 
 @router.get("/servers/{mcp_id}/probe")
 async def probe_spawn(mcp_id: str, x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Probe whether an MCP server binary can actually start."""
-    _check_auth(x_bea_token, authorization)
     return _get_registry().probe_spawn(mcp_id)
 
 
 @router.get("/probe-all")
 async def probe_all(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
     """Probe all MCP servers for spawn capability."""
-    _check_auth(x_bea_token, authorization)
     return {"probes": _get_registry().probe_all_spawnable()}
 
 
@@ -147,12 +137,9 @@ class AddMcpServerRequest(BaseModel):
 
 @router.post("/servers")
 async def add_server(
-    req: AddMcpServerRequest,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None),
+    req: AddMcpServerRequest
 ):
     """Register a new MCP server."""
-    _check_auth(x_bea_token, authorization)
     from core.mcp.mcp_registry import MCPServerEntry
     reg = _get_registry()
     if reg.get(req.id):
@@ -179,12 +166,9 @@ async def add_server(
 
 @router.delete("/servers/{mcp_id}")
 async def delete_server(
-    mcp_id: str,
-    x_bea_token: str | None = Header(None),
-    authorization: str | None = Header(None),
+    mcp_id: str
 ):
     """Unregister an MCP server."""
-    _check_auth(x_bea_token, authorization)
     removed = _get_registry().unregister(mcp_id)
     if not removed:
         raise HTTPException(status_code=404, detail="MCP server not found")

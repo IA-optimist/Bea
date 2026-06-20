@@ -21,18 +21,22 @@ from __future__ import annotations
 
 import time
 
+from api._deps import require_auth
+
 try:
-    from fastapi import APIRouter, Header, Query
+    from fastapi import Depends, APIRouter, Query
     from fastapi.responses import JSONResponse, PlainTextResponse
 except ImportError:
     APIRouter = None
 
 if APIRouter:
-    router = APIRouter(prefix="/api/v3/observability", tags=["observability"])
+    router = APIRouter(
+        prefix="/api/v3/observability",
+        tags=["observability"],
+        dependencies=[Depends(require_auth)],
+    )
 
     _start_time = time.time()
-
-    from api._deps import _check_auth
 
     # ── Health (no auth) ──────────────────────────────────────
 
@@ -44,9 +48,8 @@ if APIRouter:
     # ── Full Metrics ──────────────────────────────────────────
 
     @router.get("/metrics")
-    async def metrics(x_bea_token: str | None = Header(None)):
+    async def metrics():
         """Full metrics snapshot — counters, histograms, gauges, failures, costs."""
-        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             return JSONResponse(content={"ok": True, "data": get_metrics().snapshot()})
@@ -57,9 +60,8 @@ if APIRouter:
     # ── Human Status ──────────────────────────────────────────
 
     @router.get("/status")
-    async def status(x_bea_token: str | None = Header(None)):
+    async def status():
         """Human-readable system status overview."""
-        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             text = get_metrics().human_summary()
@@ -71,12 +73,10 @@ if APIRouter:
 
     @router.get("/failures")
     async def failures(
-        x_bea_token: str | None = Header(None),
         window_hours: float = Query(1.0, ge=0.1, le=24),
-        limit: int = Query(20, ge=1, le=100),
+        limit: int = Query(20, ge=1, le=100)
     ):
         """Failure pattern aggregation."""
-        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -95,9 +95,8 @@ if APIRouter:
     # ── Cost Visibility ───────────────────────────────────────
 
     @router.get("/costs")
-    async def costs(x_bea_token: str | None = Header(None)):
+    async def costs():
         """Estimated cost breakdown by model and mission."""
-        _check_auth(x_bea_token)
         try:
             from core.metrics_store import get_metrics
             return JSONResponse(content={
@@ -111,9 +110,8 @@ if APIRouter:
     # ── Trace Intelligence ────────────────────────────────────
 
     @router.get("/trace/{mission_id}")
-    async def trace(mission_id: str, x_bea_token: str | None = Header(None)):
+    async def trace(mission_id: str):
         """Structured trace analysis for a mission."""
-        _check_auth(x_bea_token)
         try:
             from core.trace_intelligence import TraceSummarizer
             summary = TraceSummarizer.summarize(mission_id)

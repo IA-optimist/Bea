@@ -13,18 +13,12 @@ from typing import Any, Optional
 import structlog
 from fastapi import Depends, APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
-from api._deps import _check_auth
+from api._deps import require_auth
 
 log = structlog.get_logger(__name__)
 
 
-def _auth(x_bea_token: str | None = Header(None),
-          authorization: str | None = Header(None)):
-    _check_auth(x_bea_token, authorization)
-
-
-
-router = APIRouter(prefix="/api/v2/agents", tags=["agents"], dependencies=[Depends(_auth)])
+router = APIRouter(prefix="/api/v2/agents", tags=["agents"], dependencies=[Depends(require_auth)])
 
 _API_TOKEN = os.getenv("BEA_API_TOKEN", "")
 
@@ -47,8 +41,7 @@ class CreateAgentRequest(BaseModel):
 
 @router.post("/create", status_code=201)
 async def create_agent(
-    req: CreateAgentRequest,
-    x_bea_token: Optional[str] = Header(None),
+    req: CreateAgentRequest
 ):
     """
     Create a dynamic agent.
@@ -212,8 +205,7 @@ async def agent_metadata():
 
 @router.delete("/{agent_name}")
 async def destroy_agent(
-    agent_name:     str,
-    x_bea_token: Optional[str] = Header(None),
+    agent_name:     str
 ):
     """Destroy a dynamic agent by name."""
     from core.agent_factory import get_agent_factory

@@ -22,16 +22,13 @@ from typing import Optional
 import structlog
 
 try:
-    from fastapi import APIRouter, Body, Depends, Header, Query
+    from fastapi import APIRouter, Body, Depends, Query
     from fastapi.responses import JSONResponse
 except ImportError:
     APIRouter = None
 
-from api._deps import _check_auth
+from api._deps import require_auth
 from typing import Optional as _Opt
-
-def _auth(x_bea_token: _Opt[str] = Header(None), authorization: _Opt[str] = Header(None)):
-    _check_auth(x_bea_token, authorization)
 
 logger = structlog.get_logger("bea.api.performance")
 log = logger  # alias for the M3 swallowed_exception emitter convention
@@ -46,7 +43,7 @@ def _err(msg: str, status: int = 500):
 
 
 if APIRouter:
-    router = APIRouter(prefix="/api/v3/performance", tags=["performance"], dependencies=[Depends(_auth)])
+    router = APIRouter(prefix="/api/v3/performance", tags=["performance"], dependencies=[Depends(require_auth)])
 else:
     router = None
 
@@ -279,7 +276,7 @@ if router:
     @router.get("/improvements")
     def list_improvement_proposals(
         status: Optional[str] = Query(None),
-        limit: int = Query(20, ge=1, le=100),
+        limit: int = Query(20, ge=1, le=100)
     ):
         """List improvement proposals, optionally filtered by status."""
         try:

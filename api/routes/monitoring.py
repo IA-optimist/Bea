@@ -71,7 +71,6 @@ def _last_mission_at() -> str | None:
     return None
 
 
-from api._deps import _check_auth
 
 
 # ══════════════════════════════════════════════════════════════
@@ -81,7 +80,6 @@ from api._deps import _check_auth
 @router.get("/api/v2/system/health")
 async def system_health(x_bea_token: Optional[str] = Header(None), authorization: Optional[str] = Header(None)):
     """Santé système complète — uptime, containers, mémoire, dernière mission."""
-    _check_auth(x_bea_token, authorization)
 
     # Container status (docker socket ou simple fichier de présence)
     containers: dict[str, str] = {}
@@ -123,7 +121,6 @@ async def system_health(x_bea_token: Optional[str] = Header(None), authorization
 @router.get("/api/v2/system/metrics")
 async def system_metrics(x_bea_token: Optional[str] = Header(None), authorization: Optional[str] = Header(None)):
     """Métriques calculées depuis MissionStateStore et traces d'exécution."""
-    _check_auth(x_bea_token, authorization)
 
     ms           = _mission_system()
     all_missions = ms.list_missions(limit=500)
@@ -182,7 +179,6 @@ async def system_metrics(x_bea_token: Optional[str] = Header(None), authorizatio
 @router.get("/api/v2/debug/report")
 async def debug_report(x_bea_token: Optional[str] = Header(None), authorization: Optional[str] = Header(None)):
     """Rapport de debug global (fenêtre 1h)."""
-    _check_auth(x_bea_token, authorization)
     try:
         from agents.debug_agent import DebugMonitor
         monitor = DebugMonitor()
@@ -193,11 +189,9 @@ async def debug_report(x_bea_token: Optional[str] = Header(None), authorization:
 
 @router.get("/api/v2/debug/mission/{mission_id}")
 async def debug_mission(
-    mission_id: str,
-    x_bea_token: Optional[str] = Header(None), authorization: Optional[str] = Header(None),
+    mission_id: str
 ):
     """Analyse de debug pour une mission spécifique."""
-    _check_auth(x_bea_token, authorization)
     try:
         from agents.debug_agent import DebugMonitor
         monitor = DebugMonitor()
@@ -218,7 +212,6 @@ async def get_capabilities(x_bea_token: Optional[str] = Header(None), authorizat
     Règle : 'active' = réellement câblé et fonctionnel.
     'planned' = prévu avec ETA version. Jamais de silence.
     """
-    _check_auth(x_bea_token, authorization)
     try:
         from agents.multimodal_router import get_multimodal_router
         caps = get_multimodal_router().get_capabilities()
@@ -269,11 +262,8 @@ async def get_capabilities(x_bea_token: Optional[str] = Header(None), authorizat
 
 @router.get("/diagnostic")
 async def system_diagnostic(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """Run internal diagnostic: LLM, tools, memory, queue, errors."""
-    _check_auth(x_bea_token, authorization)
     report = {"timestamp": time.time(), "checks": {}}
 
     # 1. LLM connectivity
@@ -345,11 +335,8 @@ async def system_diagnostic(
 
 @router.get("/aios/trace-analysis")
 async def aios_trace_analysis(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS trace intelligence — error patterns and capability reliability."""
-    _check_auth(x_bea_token, authorization)
     from core.observability.trace_intelligence import error_patterns, capability_reliability
     return {"ok": True, "data": {
         "error_patterns": error_patterns(limit=50),
@@ -358,11 +345,8 @@ async def aios_trace_analysis(
 
 @router.get("/aios/capabilities")
 async def aios_capabilities(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS capability inventory."""
-    _check_auth(x_bea_token, authorization)
     from core.capabilities.ai_os_capabilities import AIOS_CAPABILITIES
     return {"ok": True, "data": {
         "capabilities": [c.to_dict() for c in AIOS_CAPABILITIES.values()],
@@ -371,11 +355,8 @@ async def aios_capabilities(
 
 @router.get("/aios/tools")
 async def aios_tools(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS tool inventory."""
-    _check_auth(x_bea_token, authorization)
     from core.tools.tool_os_layer import TOOL_OS_REGISTRY
     return {"ok": True, "data": {
         "tools": [t.to_dict() for t in TOOL_OS_REGISTRY.values()],
@@ -384,22 +365,16 @@ async def aios_tools(
 
 @router.get("/aios/memory")
 async def aios_memory(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS memory layer stats."""
-    _check_auth(x_bea_token, authorization)
     from core.memory.memory_layers import get_memory_layer
     ml = get_memory_layer()
     return {"ok": True, "data": ml.stats()}
 
 @router.get("/aios/agents")
 async def aios_agents(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS agent role map."""
-    _check_auth(x_bea_token, authorization)
     from core.agents.role_definitions import list_roles, agent_role_map
     return {"ok": True, "data": {
         "roles": list_roles(),
@@ -408,11 +383,8 @@ async def aios_agents(
 
 @router.get("/aios/policy")
 async def aios_policy(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS policy profile status."""
-    _check_auth(x_bea_token, authorization)
     from core.policy.control_profiles import get_active_profile, list_profiles
     active = get_active_profile()
     return {"ok": True, "data": {
@@ -422,92 +394,65 @@ async def aios_policy(
 
 @router.get("/aios/semantic-router")
 async def aios_semantic_router(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS semantic router stats."""
-    _check_auth(x_bea_token, authorization)
     from core.capabilities.semantic_router import router_stats
     return {"ok": True, "data": router_stats()}
 
 @router.get("/aios/vector-memory")
 async def aios_vector_memory(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS vector memory stats."""
-    _check_auth(x_bea_token, authorization)
     from core.memory.vector_memory import get_vector_memory
     return {"ok": True, "data": get_vector_memory().stats()}
 
 @router.get("/aios/recovery")
 async def aios_recovery(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS recovery engine stats."""
-    _check_auth(x_bea_token, authorization)
     from core.resilience.recovery_engine import get_recovery_engine
     return {"ok": True, "data": get_recovery_engine().stats()}
 
 @router.get("/aios/agents/registry")
 async def aios_agent_registry(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS agent registry with performance tracking."""
-    _check_auth(x_bea_token, authorization)
     from core.agents.agent_registry import get_agent_registry
     return {"ok": True, "data": get_agent_registry().stats()}
 
 @router.get("/aios/connectors")
 async def aios_connectors(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS connector framework status."""
-    _check_auth(x_bea_token, authorization)
     from core.connectors.connector_framework import get_connector_framework
     return {"ok": True, "data": get_connector_framework().stats()}
 
 @router.get("/aios/knowledge")
 async def aios_knowledge(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS knowledge ingestion stats."""
-    _check_auth(x_bea_token, authorization)
     from core.knowledge.ingest_pipeline import get_ingest_pipeline
     return {"ok": True, "data": get_ingest_pipeline().stats()}
 
 @router.get("/aios/research-loop")
 async def aios_research_loop(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS research loop stats."""
-    _check_auth(x_bea_token, authorization)
     from core.self_improvement.research_loop import get_research_loop
     return {"ok": True, "data": get_research_loop().stats()}
 
 @router.get("/aios/skills")
 async def aios_skills(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS skill registry with performance tracking."""
-    _check_auth(x_bea_token, authorization)
     from core.skills.skill_discovery import get_skill_discovery
     sd = get_skill_discovery()
     return {"ok": True, "data": sd.dashboard_stats()}
 
 @router.get("/aios/status")
 async def aios_status(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS consolidated dashboard — full system introspection."""
-    _check_auth(x_bea_token, authorization)
     import time as _time
 
     status: dict = {"ok": True, "timestamp": _time.time(), "data": {}}
@@ -636,20 +581,14 @@ async def aios_status(
 
 @router.get("/aios/manifest")
 async def aios_manifest(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """Full AI OS manifest — capabilities, tools, memory, agents, policies."""
-    _check_auth(x_bea_token, authorization)
     from core.aios_manifest import get_manifest
     return {"ok": True, "data": get_manifest()}
 
 @router.get("/aios/consistency")
 async def aios_consistency(
-    x_bea_token: str = Header(None, alias="X-Bea-Token"),
-    authorization: str = Header(None),
 ):
     """AI OS consistency check."""
-    _check_auth(x_bea_token, authorization)
     from core.aios_manifest import consistency_check
     return {"ok": True, "data": consistency_check()}
