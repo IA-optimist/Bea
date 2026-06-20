@@ -5,6 +5,7 @@ Tests for OpportunityScanner with Playwright mocking.
 import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
+from urllib.parse import urlparse
 import json
 
 from business.automation.opportunity_scanner import (
@@ -278,7 +279,8 @@ class TestPlaywrightIntegration:
 
         # Verify browser interactions
         mock_page.goto.assert_called_once()
-        assert "producthunt.com" in mock_page.goto.call_args[0][0]  # lgtm[py/incomplete-url-substring-sanitization]
+        goto_url = mock_page.goto.call_args[0][0]
+        assert urlparse(goto_url).hostname in ("www.producthunt.com", "producthunt.com")
         mock_page.content.assert_called_once()
         mock_page.close.assert_called_once()
 
@@ -352,7 +354,8 @@ class TestPlaywrightIntegration:
         opportunities = await scanner.scan_hackernews(mock_browser, days_back=30)
 
         mock_page.goto.assert_called_once()
-        assert "news.ycombinator.com" in mock_page.goto.call_args[0][0]  # lgtm[py/incomplete-url-substring-sanitization]
+        goto_url = mock_page.goto.call_args[0][0]
+        assert urlparse(goto_url).hostname in ("news.ycombinator.com", "ycombinator.com")
         assert isinstance(opportunities, list)
 
     @pytest.mark.asyncio
