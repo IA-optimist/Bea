@@ -609,7 +609,7 @@ MESSAGING_SPEC = ConnectorSpec(
 
 _MAX_MESSAGE_LEN = 10_000
 _PLATFORM_LIMITS = {
-    
+
     "slack": 4000,
     "webhook": 50_000,
     "generic": 10_000,

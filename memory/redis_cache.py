@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -47,7 +47,7 @@ class RedisMemoryCache:
     - Knowledge graph: 4 hours
     - Improvement lessons: 24 hours
     """
-    
+
     def __init__(self, redis_url: str | None = None, default_ttl: int = 3600):
         """
         Initialize Redis cache.
@@ -59,12 +59,12 @@ class RedisMemoryCache:
         """
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.default_ttl = default_ttl
-        self._client = None
-        
+        self._client: Any | None = None
+
         if not _REDIS_AVAILABLE:
             log.warning("redis_cache.init_skipped", reason="redis not installed")
             return
-        
+
         try:
             self._client = redis.from_url(
                 self.redis_url,
@@ -78,7 +78,7 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.connection_failed", error=str(e))
             self._client = None
-    
+
     def _get_host(self) -> str:
         """Extract hostname from redis_url for logging."""
         if not self.redis_url:
@@ -92,11 +92,11 @@ class RedisMemoryCache:
             return host_part
         except Exception:
             return "unknown"
-    
+
     def is_available(self) -> bool:
         """Check if cache is available."""
         return _REDIS_AVAILABLE and self._client is not None
-    
+
     def get(self, key: str) -> dict[str, Any] | None:
         """
         Get cached entry.
@@ -109,18 +109,20 @@ class RedisMemoryCache:
         """
         if not self.is_available():
             return None
-        
+        client = self._client
+        if client is None:
+            return None
         try:
-            value = self._client.get(key)
+            value = client.get(key)
             if value:
                 log.debug("redis_cache.hit", key=key)
-                return json.loads(value)
+                return cast(dict[str, Any], json.loads(value))
             log.debug("redis_cache.miss", key=key)
             return None
         except Exception as e:
             log.error("redis_cache.get_failed", key=key, error=str(e))
             return None
-    
+
     def set(self, key: str, value: dict[str, Any], ttl: int | None = None) -> bool:
         """
         Set cached entry with TTL.
@@ -135,10 +137,12 @@ class RedisMemoryCache:
         """
         if not self.is_available():
             return False
-        
+        client = self._client
+        if client is None:
+            return False
         try:
             ttl_seconds = ttl if ttl is not None else self.default_ttl
-            self._client.setex(
+            client.setex(
                 key,
                 ttl_seconds,
                 json.dumps(value),
@@ -148,20 +152,22 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.set_failed", key=key, error=str(e))
             return False
-    
+
     def delete(self, key: str) -> bool:
         """Invalidate cache entry."""
         if not self.is_available():
             return False
-        
+        client = self._client
+        if client is None:
+            return False
         try:
-            self._client.delete(key)
+            client.delete(key)
             log.debug("redis_cache.deleted", key=key)
             return True
         except Exception as e:
             log.error("redis_cache.delete_failed", key=key, error=str(e))
             return False
-    
+
     def delete_pattern(self, pattern: str) -> int:
         """
         Invalidate all keys matching pattern.
@@ -174,18 +180,20 @@ class RedisMemoryCache:
         """
         if not self.is_available():
             return 0
-        
+        client = self._client
+        if client is None:
+            return 0
         try:
-            keys = self._client.keys(pattern)
+            keys = client.keys(pattern)
             if keys:
-                count = self._client.delete(*keys)
+                count = cast(int, client.delete(*keys))
                 log.info("redis_cache.pattern_deleted", pattern=pattern, count=count)
                 return count
             return 0
         except Exception as e:
             log.error("redis_cache.pattern_delete_failed", pattern=pattern, error=str(e))
             return 0
-    
+
     def flush_all(self) -> bool:
         """
         Clear entire cache (USE WITH CAUTION).
@@ -195,15 +203,17 @@ class RedisMemoryCache:
         """
         if not self.is_available():
             return False
-        
+        client = self._client
+        if client is None:
+            return False
         try:
-            self._client.flushdb()
+            client.flushdb()
             log.warning("redis_cache.flushed")
             return True
         except Exception as e:
             log.error("redis_cache.flush_failed", error=str(e))
             return False
-    
+
     def stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
@@ -213,9 +223,11 @@ class RedisMemoryCache:
         """
         if not self.is_available():
             return {"available": False}
-        
+        client = self._client
+        if client is None:
+            return {"available": False}
         try:
-            info = self._client.info("stats")
+            info = client.info("stats")
             return {
                 "available": True,
                 "keyspace_hits": info.get("keyspace_hits", 0),
@@ -230,12 +242,13 @@ class RedisMemoryCache:
         except Exception as e:
             log.error("redis_cache.stats_failed", error=str(e))
             return {"available": False, "error": str(e)}
-    
-    def close(self):
+
+    def close(self) -> None:
         """Close Redis connection."""
-        if self._client:
+        client = self._client
+        if client:
             try:
-                self._client.close()
+                client.close()
             except Exception as _exc:
                 log.warning("swallowed_exception", action="redis_cache_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
             self._client = None
@@ -254,7 +267,7 @@ def get_redis_cache() -> RedisMemoryCache:
     return _cache
 
 
-def reset_redis_cache():
+def reset_redis_cache() -> None:
     """Reset cache (for testing)."""
     global _cache
     if _cache:

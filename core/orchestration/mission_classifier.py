@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class TaskType(str, Enum):
@@ -55,7 +56,7 @@ class MissionClassification:
     value_score: float = 0.5          # 0-1, higher = more valuable to execute
     planning_depth: int = 1           # 0=direct, 1=single, 2=multi, 3=decompose
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "task_type": self.task_type.value,
             "urgency": self.urgency.value,
@@ -86,13 +87,13 @@ _TYPE_PATTERNS: dict[TaskType, list[str]] = {
     TaskType.WORKFLOW: ["pipeline", "workflow", "sequence", "batch", "orchestrate"],
 }
 
-_RISK_KEYWORDS = {
+_RISK_KEYWORDS: dict[str, list[str]] = {
     "critical": ["production", "database", "credentials", "secret", "delete all", "rm -rf", "drop table"],
     "high": ["deploy", "server", "docker", "nginx", "firewall", "ssl", "migration", "revert"],
     "medium": ["write", "modify", "update", "change", "edit", "create file", "install"],
 }
 
-_URGENCY_KEYWORDS = {
+_URGENCY_KEYWORDS: dict[str, list[str]] = {
     "critical": ["urgent", "emergency", "down", "outage", "p0", "critical"],
     "high": ["asap", "important", "priority", "soon", "quickly"],
 }
@@ -211,7 +212,7 @@ def _detect_type(g: str) -> TaskType:
     if biz_score >= 2:
         return TaskType.BUSINESS
 
-    return max(scores, key=scores.get)
+    return max(scores, key=lambda task: scores[task])
 
 
 def _estimate_complexity(g: str, task_type: TaskType) -> Complexity:

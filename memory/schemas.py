@@ -19,6 +19,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, cast
 
 
 class MemoryLayer(str, Enum):
@@ -80,15 +81,15 @@ class MemoryEntry:
     mission_id:   str   = ""
     agent_id:     str   = ""
     confidence:   float = 1.0
-    tags:         list  = field(default_factory=list)
+    tags:         list[str] = field(default_factory=list)
     source:       str   = ""
-    metadata:     dict  = field(default_factory=dict)
+    metadata:     dict[str, object] = field(default_factory=dict)
 
     # Auto
     id:           str   = field(default_factory=lambda: str(uuid.uuid4())[:12])
     timestamp:    float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "id":          self.id,
             "text":        self.text,
@@ -104,19 +105,19 @@ class MemoryEntry:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "MemoryEntry":
+    def from_dict(cls, d: dict[str, object]) -> "MemoryEntry":
         return cls(
-            id          = d.get("id", str(uuid.uuid4())[:12]),
-            text        = d.get("text", ""),
-            memory_type = MemoryType(d.get("memory_type", MemoryType.KNOWLEDGE.value)),
-            layer       = MemoryLayer(d.get("layer", MemoryLayer.SEMANTIC.value)),
-            mission_id  = d.get("mission_id", ""),
-            agent_id    = d.get("agent_id", ""),
-            confidence  = float(d.get("confidence", 1.0)),
-            tags        = d.get("tags", []),
-            source      = d.get("source", ""),
-            metadata    = d.get("metadata", {}),
-            timestamp   = float(d.get("timestamp", time.time())),
+            id          = cast(str, d.get("id", str(uuid.uuid4())[:12])),
+            text        = cast(str, d.get("text", "")),
+            memory_type = MemoryType(cast(str, d.get("memory_type", MemoryType.KNOWLEDGE.value))),
+            layer       = MemoryLayer(cast(str, d.get("layer", MemoryLayer.SEMANTIC.value))),
+            mission_id  = cast(str, d.get("mission_id", "")),
+            agent_id    = cast(str, d.get("agent_id", "")),
+            confidence  = float(cast(Any, d.get("confidence", 1.0))),
+            tags        = cast(list[str], d.get("tags", [])),
+            source      = cast(str, d.get("source", "")),
+            metadata    = cast(dict[str, object], d.get("metadata", {})),
+            timestamp   = float(cast(Any, d.get("timestamp", time.time()))),
         )
 
 
@@ -144,7 +145,7 @@ LAYER_FOR_TYPE: dict[MemoryType, MemoryLayer] = {
 }
 
 
-def normalize_metadata(raw: dict | None, entry: MemoryEntry) -> dict:
+def normalize_metadata(raw: dict[str, object] | None, entry: MemoryEntry) -> dict[str, object]:
     """
     Normalise un dict de métadonnées arbitraire en injectant
     les champs standards de MemoryEntry.

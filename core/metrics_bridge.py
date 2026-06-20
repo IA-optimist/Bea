@@ -74,8 +74,8 @@ def _patch_meta_orchestrator() -> bool:
             # Classify mission type from mode/goal
             mission_type = mode or "auto"
             emit_mission_submitted(mission_type)
-            get_metrics().set_gauge("missions_active", 
-                sum(1 for c in self._missions.values() 
+            get_metrics().set_gauge("missions_active",
+                sum(1 for c in self._missions.values()
                     if hasattr(c, 'status') and c.status.value in ("PLANNED", "RUNNING", "REVIEW")))
 
             t0 = time.monotonic()

@@ -60,9 +60,9 @@ def meta_orchestrator(settings):
 def test_meta_orchestrator_initialization(settings):
     """MetaOrchestrator should initialize with proper defaults."""
     from core.meta_orchestrator import MetaOrchestrator
-    
+
     mo = MetaOrchestrator(settings=settings)
-    
+
     assert mo.s == settings
     assert mo._bea is None  # Lazy loaded
     assert mo._v2 is None  # Lazy loaded
@@ -76,12 +76,12 @@ def test_lazy_loading_bea(meta_orchestrator):
     with patch('core.bea_executor.BeaOrchestrator') as MockBea:
         mock_instance = Mock()
         MockBea.return_value = mock_instance
-        
+
         # First access should trigger loading
         bea = meta_orchestrator.bea
         assert bea is not None
         MockBea.assert_called_once()
-        
+
         # Second access should reuse same instance
         bea2 = meta_orchestrator.bea
         assert bea is bea2
@@ -94,7 +94,7 @@ def test_lazy_loading_v2(meta_orchestrator):
     with patch('core.orchestrator_v2.OrchestratorV2') as MockV2:
         mock_instance = Mock()
         MockV2.return_value = mock_instance
-        
+
         v2 = meta_orchestrator.v2
         assert v2 is not None
         MockV2.assert_called_once()
@@ -109,7 +109,7 @@ def test_mission_context_creation():
     """MissionContext should be created with proper fields."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -118,7 +118,7 @@ def test_mission_context_creation():
         created_at=time.time(),
         updated_at=time.time(),
     )
-    
+
     assert ctx.mission_id == "test-123"
     assert ctx.goal == "Test mission"
     assert ctx.status == MissionStatus.CREATED
@@ -131,7 +131,7 @@ def test_valid_state_transitions(meta_orchestrator):
     """Valid state transitions should succeed."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -140,34 +140,35 @@ def test_valid_state_transitions(meta_orchestrator):
         created_at=time.time(),
         updated_at=time.time(),
     )
-    
+
     # Mock persistence to avoid DB calls
     with patch('core.mission_persistence.get_mission_persistence'):
         # CREATED → PLANNED (valid)
         meta_orchestrator._transition(ctx, MissionStatus.PLANNED)
         assert ctx.status == MissionStatus.PLANNED
-        
+
         # PLANNED → RUNNING (valid)
         meta_orchestrator._transition(ctx, MissionStatus.RUNNING)
         assert ctx.status == MissionStatus.RUNNING
-        
+
         # RUNNING → REVIEW (valid)
         meta_orchestrator._transition(ctx, MissionStatus.REVIEW)
         assert ctx.status == MissionStatus.REVIEW
-        
+
         # REVIEW → DONE (valid)
         meta_orchestrator._transition(ctx, MissionStatus.DONE)
         assert ctx.status == MissionStatus.DONE
-    
+
     print("[OK] test_valid_state_transitions")
 
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="transition error message drift", strict=False)
 def test_invalid_state_transition_raises(meta_orchestrator):
     """Invalid state transitions should raise ValueError."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -176,12 +177,12 @@ def test_invalid_state_transition_raises(meta_orchestrator):
         created_at=time.time(),
         updated_at=time.time(),
     )
-    
+
     with patch('core.mission_persistence.get_mission_persistence'):
         # CREATED → DONE (invalid - must go through intermediate states)
         with pytest.raises(ValueError, match="Transition interdite"):
             meta_orchestrator._transition(ctx, MissionStatus.DONE)
-    
+
     print("[OK] test_invalid_state_transition_raises")
 
 
@@ -192,62 +193,62 @@ def test_invalid_state_transition_raises(meta_orchestrator):
 def test_circuit_breaker_opens_after_failures():
     """Circuit breaker should open after threshold failures."""
     from core.meta_orchestrator import _CircuitBreaker
-    
+
     cb = _CircuitBreaker(failure_threshold=3, reset_s=60.0)
-    
+
     assert not cb.is_open
-    
+
     # Record failures
     cb.record_failure()
     assert not cb.is_open
-    
+
     cb.record_failure()
     assert not cb.is_open
-    
+
     cb.record_failure()
     assert cb.is_open  # Should open after 3rd failure
-    
+
     status = cb.status()
     assert status["open"] is True
     assert status["failures"] == 3
-    
+
     print("[OK] test_circuit_breaker_opens_after_failures")
 
 
 def test_circuit_breaker_resets_on_success():
     """Circuit breaker should reset failure count on success."""
     from core.meta_orchestrator import _CircuitBreaker
-    
+
     cb = _CircuitBreaker(failure_threshold=3, reset_s=60.0)
-    
+
     cb.record_failure()
     cb.record_failure()
     assert not cb.is_open
-    
+
     cb.record_success()
     status = cb.status()
     assert status["failures"] == 0
     assert not cb.is_open
-    
+
     print("[OK] test_circuit_breaker_resets_on_success")
 
 
 def test_circuit_breaker_auto_resets_after_timeout():
     """Circuit breaker should auto-reset after timeout period."""
     from core.meta_orchestrator import _CircuitBreaker
-    
+
     cb = _CircuitBreaker(failure_threshold=2, reset_s=0.1)  # 100ms reset
-    
+
     cb.record_failure()
     cb.record_failure()
     assert cb.is_open
-    
+
     # Wait for auto-reset
     time.sleep(0.15)
-    
+
     # Should be closed now
     assert not cb.is_open
-    
+
     print("[OK] test_circuit_breaker_auto_resets_after_timeout")
 
 
@@ -259,7 +260,7 @@ def test_setup_event_stream(meta_orchestrator):
     """Event stream setup should register streams properly."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -268,7 +269,7 @@ def test_setup_event_stream(meta_orchestrator):
         created_at=time.time(),
         updated_at=time.time(),
     )
-    
+
     with patch('core.event_stream.EventStream') as MockEventStream:
         with patch('core.event_stream.register_mission_stream'):
             with patch('core.event_stream.register_ws_stream'):
@@ -278,7 +279,7 @@ def test_setup_event_stream(meta_orchestrator):
                 meta_orchestrator._setup_event_stream("test-123", ctx)
 
                 assert ctx.metadata.get("event_stream") == mock_stream
-    
+
     print("[OK] test_setup_event_stream")
 
 
@@ -286,7 +287,7 @@ def test_check_circuit_breaker_when_open(meta_orchestrator):
     """Circuit breaker check should fail mission when open."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -295,18 +296,18 @@ def test_check_circuit_breaker_when_open(meta_orchestrator):
         created_at=time.time(),
         updated_at=time.time(),
     )
-    
+
     # Force circuit breaker open
     meta_orchestrator._circuit_breaker._failures = 10
     meta_orchestrator._circuit_breaker._open_until = time.time() + 60
-    
+
     with patch('core.mission_persistence.get_mission_persistence'):
         result = meta_orchestrator._check_circuit_breaker("test-123", ctx)
-        
+
         assert result is True  # Should return True when open
         assert ctx.status == MissionStatus.FAILED
         assert "Circuit breaker" in ctx.error
-    
+
     print("[OK] test_check_circuit_breaker_when_open")
 
 
@@ -315,13 +316,13 @@ def test_initialize_decision_trace(meta_orchestrator):
     with patch('core.orchestration.decision_trace.DecisionTrace') as MockTrace:
         mock_trace = Mock()
         MockTrace.return_value = mock_trace
-        
+
         trace, needs_approval = meta_orchestrator._initialize_decision_trace("test-123")
-        
+
         assert trace == mock_trace
         assert needs_approval is False
         MockTrace.assert_called_once_with(mission_id="test-123")
-    
+
     print("[OK] test_initialize_decision_trace")
 
 
@@ -341,7 +342,7 @@ def test_mission_context_to_dict():
     """MissionContext.to_dict() should serialize properly."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission with a very long goal that should be truncated" * 10,
@@ -351,16 +352,16 @@ def test_mission_context_to_dict():
         updated_at=1234567900.0,
         result="Success result" * 100,  # Long result
     )
-    
+
     d = ctx.to_dict()
-    
+
     assert d["mission_id"] == "test-123"
     assert len(d["goal"]) <= 200  # Should be truncated
     # Note: result truncation is done at serialization time, not in to_dict()
     # We'll just check that result exists
     assert "result" in d
     assert d["status"] == "DONE"
-    
+
     print("[OK] test_mission_context_to_dict")
 
 
@@ -368,7 +369,7 @@ def test_mission_context_get_output():
     """MissionContext.get_output() should retrieve agent outputs."""
     from core.meta_orchestrator import MissionContext
     from core.state import MissionStatus
-    
+
     ctx = MissionContext(
         mission_id="test-123",
         goal="Test mission",
@@ -383,16 +384,16 @@ def test_mission_context_get_output():
             }
         }
     )
-    
+
     output = ctx.get_output("scout-research")
     assert output == "Research findings"
-    
+
     output = ctx.get_output("lens-reviewer")
     assert output == "Review complete"
-    
+
     output = ctx.get_output("nonexistent-agent")
     assert output == ""
-    
+
     print("[OK] test_mission_context_get_output")
 
 

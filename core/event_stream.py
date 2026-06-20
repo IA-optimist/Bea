@@ -37,7 +37,7 @@ class EventStream:
         """Ajoute un événement et notifie tous les abonnés."""
         self._events.append(event)
         log.debug("event_stream_append", mission_id=self.mission_id, type=type(event).__name__)
-        
+
         for sub in self._subscribers:
             try:
                 await sub(event)
@@ -139,7 +139,7 @@ def deregister_ws_stream(mission_id: str) -> None:
             try:
                 data = json.loads(line)
                 # Il faudrait instancier la sous-classe exacte.
-                # Pour simplifier, on stocke un Event mais en vrai il faudrait 
+                # Pour simplifier, on stocke un Event mais en vrai il faudrait
                 # matcher les union types via Action/Observation adapters.
                 # (Une factorisation fine du parseur sera nécessaire pour re-hydrater correctement)
                 # Fallback natif Pydantic :

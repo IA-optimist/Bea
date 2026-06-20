@@ -92,7 +92,7 @@ class BeaExecutionError(Exception):
     Standalone class (not inheriting BeaError dataclass) to avoid
     dataclass __init__ conflicts.
     """
-    
+
     def __init__(self, message: str = "", *, tool: str = "", stage: str = "execution",
                  cause: str = "", severity: str = "MEDIUM", retryable: bool = False,
                  error_type: str = "TOOL_ERROR"):
@@ -103,7 +103,7 @@ class BeaExecutionError(Exception):
         self.severity = severity
         self.retryable = retryable
         self.error_type = error_type
-    
+
     def to_dict(self) -> dict:
         return {
             "type": self.error_type,
@@ -119,7 +119,7 @@ class BeaExecutionError(Exception):
     def from_exception(cls, exc: Exception, tool: str = "", stage: str = "execution"):
         """Classify any exception into a structured BeaExecutionError."""
         exc_name = type(exc).__name__
-        
+
         # Classification map — order matters (specific before general)
         if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
             return cls(str(exc), tool=tool, stage=stage, cause=exc_name,

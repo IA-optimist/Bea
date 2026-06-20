@@ -61,7 +61,7 @@ class TaxScenario:
     tax_regime: TaxRegime
     annual_revenue: float
     expenses: float
-    
+
     # Calculated
     taxable_income: float = 0.0
     corporate_tax: float = 0.0
@@ -70,62 +70,62 @@ class TaxScenario:
     total_tax: float = 0.0
     net_income: float = 0.0
     effective_rate: float = 0.0
-    
+
     # Breakdown
     breakdown: Dict[str, float] = field(default_factory=dict)
-    
+
     def calculate(self):
         """Calculate all taxes"""
         # Simplified calculations (real formulas are complex!)
-        
+
         profit = self.annual_revenue - self.expenses
-        
+
         if self.company_type == CompanyType.MICRO_ENTREPRENEUR:
             # Micro-entrepreneur: abattement forfaitaire
             if self.tax_regime == TaxRegime.MICRO_BNC:
                 abattement = 0.34  # 34% pour BNC
             else:
                 abattement = 0.71  # 71% pour BIC vente, 50% pour services
-            
+
             self.taxable_income = profit * (1 - abattement)
-            
+
             # Social charges (cotisations sociales)
             if self.tax_regime == TaxRegime.MICRO_BNC:
                 self.social_charges = self.annual_revenue * 0.22  # 22% BNC
             else:
                 self.social_charges = self.annual_revenue * 0.128  # 12.8% BIC vente
-            
+
             # Income tax (progressive scale - simplified)
             self.income_tax = self._calculate_income_tax(self.taxable_income)
-            
+
             self.corporate_tax = 0.0
-        
+
         elif self.company_type in [CompanyType.SARL, CompanyType.SAS, CompanyType.SASU]:
             # Company: Corporate tax (IS)
             self.taxable_income = profit
-            
+
             # IS rates (France 2026)
             if self.taxable_income <= 42500:
                 self.corporate_tax = self.taxable_income * 0.15  # 15% reduced rate
             else:
                 self.corporate_tax = (42500 * 0.15) + ((self.taxable_income - 42500) * 0.25)  # 25% standard
-            
+
             # Dividends
             net_profit_after_tax = self.taxable_income - self.corporate_tax
             dividends = net_profit_after_tax * 0.70  # 70% distributed, 30% retained
-            
+
             # Flat tax on dividends (PFU)
             dividend_tax = dividends * 0.30  # 30% flat tax (12.8% IR + 17.2% social)
-            
+
             # Social charges on salary (if applicable)
             # Assuming 50k€ salary for founder
             salary = min(50000, self.taxable_income * 0.30)
             self.social_charges = salary * 0.82  # ~82% total charges (employer + employee)
-            
+
             self.income_tax = dividend_tax + self._calculate_income_tax(salary)
-            
+
             self.net_income = net_profit_after_tax - dividends * 0.30
-        
+
         else:
             # Other company types (simplified)
             self.taxable_income = profit
@@ -133,14 +133,14 @@ class TaxScenario:
             self.social_charges = self.taxable_income * 0.45
             self.income_tax = 0.0
             self.net_income = self.taxable_income - self.corporate_tax - self.social_charges
-        
+
         # Total
         self.total_tax = self.corporate_tax + self.social_charges + self.income_tax
         self.net_income = self.annual_revenue - self.expenses - self.total_tax
-        
+
         if self.annual_revenue > 0:
             self.effective_rate = (self.total_tax / self.annual_revenue) * 100
-        
+
         # Breakdown
         self.breakdown = {
             'revenue': self.annual_revenue,
@@ -154,7 +154,7 @@ class TaxScenario:
             'net_income': self.net_income,
             'effective_rate': self.effective_rate,
         }
-    
+
     def _calculate_income_tax(self, income: float) -> float:
         """
         Simplified French income tax (barème progressif 2026)
@@ -176,7 +176,7 @@ class TaxScenario:
             return (28797 - 11294) * 0.11 + (82341 - 28797) * 0.30 + (income - 82341) * 0.41
         else:
             return (28797 - 11294) * 0.11 + (82341 - 28797) * 0.30 + (177106 - 82341) * 0.41 + (income - 177106) * 0.45
-    
+
     def to_dict(self) -> Dict:
         return {
             'company_type': self.company_type.value,
@@ -196,7 +196,7 @@ class TaxRecommendation:
     implementation_cost: float  # One-time cost
     complexity: str  # low, medium, high
     legality: str  # fully_legal, gray_area, aggressive
-    
+
     def to_dict(self) -> Dict:
         return {
             'title': self.title,
@@ -227,11 +227,11 @@ class TaxOptimizer:
             revenue=100000
         )
     """
-    
+
     def __init__(self, data_dir: Optional[Path] = None):
         self.data_dir = data_dir or Path.home() / ".beamax" / "fiscal"
         self.data_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def compare_scenarios(
         self,
         revenue: float,
@@ -252,7 +252,7 @@ class TaxOptimizer:
         logger.info("💶 Comparing tax scenarios...")
         logger.info(f"   Revenue: €{revenue:,.2f}")
         logger.info(f"   Expenses: €{expenses:,.2f}")
-        
+
         if not scenarios:
             # Default scenarios to compare
             scenarios = [
@@ -262,9 +262,9 @@ class TaxOptimizer:
                 (CompanyType.SAS, TaxRegime.IS),
                 (CompanyType.SARL, TaxRegime.IS),
             ]
-        
+
         results = []
-        
+
         for company_type, tax_regime in scenarios:
             scenario = TaxScenario(
                 company_type=company_type,
@@ -274,14 +274,14 @@ class TaxOptimizer:
             )
             scenario.calculate()
             results.append(scenario)
-        
+
         # Sort by net income (descending)
         results.sort(key=lambda s: s.net_income, reverse=True)
-        
+
         logger.info(f"✅ Comparison complete: {len(results)} scenarios")
-        
+
         return results
-    
+
     def get_recommendations(
         self,
         current_type: CompanyType,
@@ -300,7 +300,7 @@ class TaxOptimizer:
             List of recommendations
         """
         recommendations = []
-        
+
         # 1. Company structure optimization
         if current_type == CompanyType.MICRO_ENTREPRENEUR and revenue > 77700:
             recommendations.append(TaxRecommendation(
@@ -311,7 +311,7 @@ class TaxOptimizer:
                 complexity="medium",
                 legality="fully_legal",
             ))
-        
+
         # 2. Holding structure
         if revenue > 200000 and current_type in [CompanyType.SAS, CompanyType.SARL]:
             recommendations.append(TaxRecommendation(
@@ -322,7 +322,7 @@ class TaxOptimizer:
                 complexity="high",
                 legality="fully_legal",
             ))
-        
+
         # 3. R&D tax credit (CIR)
         if revenue > 50000:
             recommendations.append(TaxRecommendation(
@@ -333,7 +333,7 @@ class TaxOptimizer:
                 complexity="high",
                 legality="fully_legal",
             ))
-        
+
         # 4. International structure (Estonia e-Residency)
         if revenue > 100000:
             recommendations.append(TaxRecommendation(
@@ -344,7 +344,7 @@ class TaxOptimizer:
                 complexity="high",
                 legality="gray_area",  # Légal mais substance économique requise
             ))
-        
+
         # 5. VAT optimization
         if revenue > 85000:
             recommendations.append(TaxRecommendation(
@@ -355,7 +355,7 @@ class TaxOptimizer:
                 complexity="low",
                 legality="fully_legal",
             ))
-        
+
         # 6. Expense optimization
         recommendations.append(TaxRecommendation(
             title="Maximiser les charges déductibles",
@@ -365,7 +365,7 @@ class TaxOptimizer:
             complexity="low",
             legality="fully_legal",
         ))
-        
+
         # 7. Dividend timing
         if current_type in [CompanyType.SAS, CompanyType.SARL, CompanyType.SASU]:
             recommendations.append(TaxRecommendation(
@@ -376,12 +376,12 @@ class TaxOptimizer:
                 complexity="low",
                 legality="fully_legal",
             ))
-        
+
         # Sort by savings / implementation cost ratio
         recommendations.sort(key=lambda r: r.savings / max(r.implementation_cost, 1), reverse=True)
-        
+
         return recommendations
-    
+
     def generate_report(
         self,
         scenarios: List[TaxScenario],
@@ -390,9 +390,9 @@ class TaxOptimizer:
         expenses: float,
     ) -> str:
         """Generate markdown tax optimization report"""
-        
+
         best_scenario = scenarios[0] if scenarios else None
-        
+
         report = f"""# 💶 TAX OPTIMIZATION REPORT
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
@@ -404,7 +404,7 @@ class TaxOptimizer:
 ## 🎯 Best Scenario
 
 """
-        
+
         if best_scenario:
             report += f"""**Company Type:** {best_scenario.company_type.value}  
 **Tax Regime:** {best_scenario.tax_regime.value}  
@@ -428,30 +428,30 @@ class TaxOptimizer:
 | Company Type | Tax Regime | Net Income | Total Tax | Effective Rate |
 |--------------|------------|------------|-----------|----------------|
 """
-            
+
             for s in scenarios[:5]:
                 report += f"| {s.company_type.value} | {s.tax_regime.value} | €{s.net_income:,.0f} | €{s.total_tax:,.0f} | {s.effective_rate:.1f}% |\n"
-        
+
         report += f"""
 ---
 
 ## 💡 Recommendations ({len(recommendations)})
 
 """
-        
+
         for i, rec in enumerate(recommendations, 1):
             legality_emoji = {
                 'fully_legal': '✅',
                 'gray_area': '⚠️',
                 'aggressive': '❌'
             }.get(rec.legality, '❓')
-            
+
             complexity_emoji = {
                 'low': '🟢',
                 'medium': '🟡',
                 'high': '🔴'
             }.get(rec.complexity, '⚪')
-            
+
             report += f"""### {i}. {rec.title}
 
 {rec.description}
@@ -465,7 +465,7 @@ class TaxOptimizer:
 ---
 
 """
-        
+
         report += """
 ## ⚠️ DISCLAIMER
 
@@ -487,45 +487,45 @@ Tax laws are complex and change frequently. Always consult:
 **Generated by BeaMax Fiscal Optimizer**  
 **Version:** 1.0.0
 """
-        
+
         return report
-    
+
     def save_report(self, report: str, filename: str = "tax_optimization_report.md") -> Path:
         """Save report to file"""
         report_path = self.data_dir / filename
         report_path.write_text(report)
-        
+
         logger.info(f"💾 Report saved: {report_path}")
-        
+
         return report_path
 
 
 def main():
     """CLI entry point"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Tax optimization analyzer")
     parser.add_argument('--revenue', type=float, required=True, help='Annual revenue (€)')
     parser.add_argument('--expenses', type=float, default=0, help='Annual expenses (€)')
-    parser.add_argument('--current', help='Current company type', 
+    parser.add_argument('--current', help='Current company type',
                        choices=[t.value for t in CompanyType],
                        default=CompanyType.MICRO_ENTREPRENEUR.value)
     args = parser.parse_args()
-    
+
     optimizer = TaxOptimizer()
-    
+
     # Compare scenarios
     scenarios = optimizer.compare_scenarios(args.revenue, args.expenses)
-    
+
     # Get recommendations
     current_type = CompanyType(args.current)
     recommendations = optimizer.get_recommendations(current_type, args.revenue, args.expenses)
-    
+
     # Generate report
     report = optimizer.generate_report(scenarios, recommendations, args.revenue, args.expenses)
-    
+
     print(report)
-    
+
     # Save
     optimizer.save_report(report)
 

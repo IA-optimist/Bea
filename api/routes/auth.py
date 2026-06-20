@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
@@ -29,15 +30,15 @@ from api.token_utils import strip_bearer
 logger = logging.getLogger(__name__)
 
 
-# ── HttpOnly cookie config (XSS-safe token storage, CVSS 9.1 mitigation) ──
-# Secure flag activé uniquement hors dev pour permettre le test en HTTP local.
+# â”€â”€ HttpOnly cookie config (XSS-safe token storage, CVSS 9.1 mitigation) â”€â”€
+# Secure flag activÃ© uniquement hors dev pour permettre le test en HTTP local.
 COOKIE_NAME = "bea_token"
 COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days
 COOKIE_SECURE = os.environ.get("BEA_COOKIE_SECURE", "1") != "0"
 
 
 def set_auth_cookie(response: Response, token: str) -> None:
-    """Set HttpOnly token cookie (XSS-safe). Additive — token reste aussi en body."""
+    """Set HttpOnly token cookie (XSS-safe). Additive â€” token reste aussi en body."""
     response.set_cookie(
         key=COOKIE_NAME,
         value=token,
@@ -52,10 +53,10 @@ def set_auth_cookie(response: Response, token: str) -> None:
 router = APIRouter(tags=["auth"])
 
 
-# ── JSON login / logout (frontend React dashboard) ────────────────
+# â”€â”€ JSON login / logout (frontend React dashboard) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@router.post("/api/v2/auth/login")
-async def json_login(request: Request, response: Response):
+@router.post("/api/v2/auth/login")  # type: ignore[untyped-decorator]
+async def json_login(request: Request, response: Response) -> dict[str, Any]:
     """
     JSON-compatible login endpoint for the React dashboard.
 
@@ -63,7 +64,7 @@ async def json_login(request: Request, response: Response):
              ``{"username": "...", "password": "..."}``.
     Returns: ``{"ok": true, "data": {"token": "...", "user": {...}}}``.
 
-    Sets the HttpOnly cookie ``bea_token`` — prioritized over headers
+    Sets the HttpOnly cookie ``bea_token`` â€” prioritized over headers
     server-side. Legacy frontends using the body token still work.
     """
     try:
@@ -88,8 +89,8 @@ async def json_login(request: Request, response: Response):
     }
 
 
-@router.post("/api/v2/auth/logout")
-async def json_logout(request: Request, response: Response):
+@router.post("/api/v2/auth/logout")  # type: ignore[untyped-decorator]
+async def json_logout(request: Request, response: Response) -> dict[str, Any]:
     """Clear the HttpOnly cookie. Header-borne Bearer/X-Bea-Token tokens
     are the client's responsibility to drop.
 
@@ -142,9 +143,9 @@ async def json_logout(request: Request, response: Response):
     return {"ok": True, "data": {"message": "logged_out"}}
 
 
-# ── OAuth2 form login + legacy aliases ────────────────────────────
+# â”€â”€ OAuth2 form login + legacy aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-def _maybe_issue_v2_pair(username: str, role: str) -> dict | None:
+def _maybe_issue_v2_pair(username: str, role: str) -> dict[str, Any] | None:
     """If BEA_JWT_HARDENING_V2 is on, return a v2 (access, refresh) pair
     payload. Returns ``None`` when the flag is off so the legacy code path
     runs unchanged.
@@ -160,17 +161,17 @@ def _maybe_issue_v2_pair(username: str, role: str) -> dict | None:
     return {
         "access_token": pair.access_token,
         "refresh_token": pair.refresh_token,
-        "token_type": "bearer",  # nosec B105 — OAuth2 standard string
+        "token_type": "bearer",  # nosec B105 â€” OAuth2 standard string
         "expires_in": pair.access_expires_in,
         "refresh_expires_in": pair.refresh_expires_in,
     }
 
 
-@router.post("/auth/token")
+@router.post("/auth/token")  # type: ignore[untyped-decorator]
 async def login_for_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    response: Response = None,
-):
+) -> dict[str, Any]:
     from api.auth import authenticate_user, create_access_token
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -179,28 +180,26 @@ async def login_for_access_token(
     v2 = _maybe_issue_v2_pair(user["username"], user.get("role", "user"))
     if v2 is not None:
         # v2 cookie stores the access JWT (short-lived).
-        if response is not None:
-            set_auth_cookie(response, v2["access_token"])
+        set_auth_cookie(response, v2["access_token"])
         return v2
 
     # Legacy path: 30-day JWT, no refresh.
     token = create_access_token({"sub": user["username"], "role": user.get("role", "user")})
-    if response is not None:
-        set_auth_cookie(response, token)
+    set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer"}  # nosec B105 — OAuth2 standard string
 
 
-@router.post("/auth/login")
+@router.post("/auth/login")  # type: ignore[untyped-decorator]
 async def login_alias(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    response: Response = None,
-):
+) -> dict[str, Any]:
     """Returns: token, role, expires_in, authenticated, permissions."""
-    return await login_for_access_token(form_data, response)
+    return cast(dict[str, Any], await login_for_access_token(response=response, form_data=form_data))
 
 
-@router.get("/auth/me")
-async def auth_me(user: dict = Depends(require_auth)):
+@router.get("/auth/me")  # type: ignore[untyped-decorator]
+async def auth_me(user: dict[str, Any] = Depends(require_auth)) -> dict[str, Any]:
     """Return the authenticated user's identity (from cookie or header).
 
     The HttpOnly cookie ``bea_token`` is read first by ``require_auth``,
@@ -220,8 +219,8 @@ async def auth_me(user: dict = Depends(require_auth)):
     }
 
 
-@router.post("/auth/refresh")
-async def refresh_token(request: Request, response: Response):
+@router.post("/auth/refresh")  # type: ignore[untyped-decorator]
+async def refresh_token(request: Request, response: Response) -> dict[str, Any]:
     """Refresh a JWT token.
 
     Two paths depending on ``BEA_JWT_HARDENING_V2``:
@@ -254,7 +253,7 @@ async def refresh_token(request: Request, response: Response):
         try:
             pair = jwt_v2.rotate_refresh_token(refresh, _secret())
         except ValueError as exc:
-            # Includes replay detection — the family is already revoked
+            # Includes replay detection â€” the family is already revoked
             # inside rotate_refresh_token. Surface as 401 so the client
             # must re-login.
             raise HTTPException(status_code=401, detail=str(exc)) from exc
@@ -262,7 +261,7 @@ async def refresh_token(request: Request, response: Response):
         return {
             "access_token": pair.access_token,
             "refresh_token": pair.refresh_token,
-            "token_type": "bearer",  # nosec B105 — OAuth2 standard string
+            "token_type": "bearer",  # nosec B105 â€” OAuth2 standard string
             "expires_in": pair.access_expires_in,
             "refresh_expires_in": pair.refresh_expires_in,
         }
@@ -284,4 +283,4 @@ async def refresh_token(request: Request, response: Response):
         "role": user.get("role", "user"),
     })
     set_auth_cookie(response, new_token)
-    return {"access_token": new_token, "token_type": "bearer"}  # nosec B105 — OAuth2 standard string
+    return {"access_token": new_token, "token_type": "bearer"}  # nosec B105 â€” OAuth2 standard string

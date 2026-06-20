@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class AgentRole(str, Enum):
@@ -37,7 +38,7 @@ class AgentRoleSpec:
     requires_approval_for: list[str] = field(default_factory=list)
     risk_level: str = "low"  # low, medium, high
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "role": self.role.value,
             "name": self.name,
@@ -177,7 +178,7 @@ def get_role_spec(role: AgentRole | str) -> AgentRoleSpec | None:
     return ROLE_SPECS.get(role)
 
 
-def list_roles() -> list[dict]:
+def list_roles() -> list[dict[str, Any]]:
     """List all role specifications."""
     return [spec.to_dict() for spec in ROLE_SPECS.values()]
 

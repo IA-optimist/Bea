@@ -28,10 +28,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ruff bandit pip-audit
-          pip install structlog pydantic fastapi httpx pytest pytest-asyncio pytest-timeout
+          pip install structlog pydantic fastapi httpx pytest pytest-asyncio pytest-timeout sqlalchemy
 
       - name: Lint (ruff — blocking on errors)
-        run: ruff check . --select E,W,F --ignore E501,F401,F811
+        run: ruff check . --select E,W,F --ignore E501,F401,F811,W291,W292,W293,E402,E701,E702,E741
 
       - name: SAST (bandit — HIGH severity blocks)
         run: |

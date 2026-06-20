@@ -70,7 +70,7 @@ class QueuedTask:
         end = self.completed_at or time.time()
         return int((end - self.started_at) * 1000)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
     @classmethod
@@ -121,7 +121,7 @@ class TaskQueue:
         timeout_s: int = 120,
         max_retries: int = 3,
         correlation_id: str = "",
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
         task_id: str | None = None,
     ) -> QueuedTask:
         """Ajoute une tâche en file."""
@@ -283,7 +283,7 @@ class TaskQueue:
         return sum(1 for t in self._tasks.values()
                    if t.status == TaskState.RUNNING)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, object]:
         tasks = list(self._tasks.values())
         by_status: dict[str, int] = {}
         by_agent:  dict[str, int] = {}

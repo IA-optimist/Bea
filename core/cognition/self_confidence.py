@@ -16,10 +16,10 @@ class ConfidenceScorer:
     Enables self-correction and uncertainty quantification.
     Inspired by Constitutional AI and self-critique methods.
     """
-    
+
     def __init__(self, llm_client):
         self.llm = llm_client
-    
+
     def score_output(
         self,
         task: str,
@@ -35,9 +35,9 @@ class ConfidenceScorer:
             - issues: list of detected problems
             - should_retry: bool recommendation
         """
-        
+
         prompt = self._build_scoring_prompt(task, output, context)
-        
+
         try:
             # Compat: use LangChain invoke (sync) if available; fallback to heuristic
             content = None
@@ -57,16 +57,16 @@ class ConfidenceScorer:
                 "confidence": 0.6, "reasoning": "heuristic",
                 "issues": [], "should_retry": False
             }
-            
+
             log.info(
                 "confidence_scored",
                 task=task[:50],
                 confidence=result["confidence"],
                 should_retry=result["should_retry"]
             )
-            
+
             return result
-            
+
         except Exception as e:
             log.error("confidence_scoring_failed", err=str(e))
             return {
@@ -75,7 +75,7 @@ class ConfidenceScorer:
                 "issues": ["Unable to evaluate"],
                 "should_retry": False
             }
-    
+
     async def _llm_call(self, prompt: str, max_tokens: int = 300, temperature: float = 0.3) -> str:
         """Compat helper: works with both LangChain ChatOpenAI and raw OpenAI client."""
         try:
@@ -97,9 +97,9 @@ class ConfidenceScorer:
 
     def _build_scoring_prompt(self, task: str, output: str, context: Optional[str]) -> str:
         """Build prompt for self-evaluation."""
-        
+
         ctx_section = f"\n\nContext:\n{context}" if context else ""
-        
+
         return f"""You are evaluating the quality and correctness of an AI agent's output.
 
 Task: {task}
@@ -124,10 +124,10 @@ CONFIDENCE: 0.85
 REASONING: Output is accurate and complete, minor formatting issues
 ISSUES: Verbose formatting, missing example
 SHOULD_RETRY: NO"""
-    
+
     def _parse_score_response(self, response: str) -> Dict[str, Any]:
         """Parse structured scoring response."""
-        
+
         lines = [l.strip() for l in response.split("\n") if l.strip()]
         result = {
             "confidence": 0.5,
@@ -135,7 +135,7 @@ SHOULD_RETRY: NO"""
             "issues": [],
             "should_retry": False
         }
-        
+
         for line in lines:
             if line.startswith("CONFIDENCE:"):
                 try:
@@ -143,21 +143,21 @@ SHOULD_RETRY: NO"""
                     result["confidence"] = max(0.0, min(1.0, score))
                 except Exception as _exc:
                     log.warning("swallowed_exception", action="self_confidence_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-            
+
             elif line.startswith("REASONING:"):
                 result["reasoning"] = line.split(":", 1)[1].strip()
-            
+
             elif line.startswith("ISSUES:"):
                 issues_str = line.split(":", 1)[1].strip()
                 if issues_str.lower() != "none":
                     result["issues"] = [i.strip() for i in issues_str.split(",")]
-            
+
             elif line.startswith("SHOULD_RETRY:"):
                 retry = line.split(":", 1)[1].strip().upper()
                 result["should_retry"] = (retry == "YES")
-        
+
         return result
-    
+
     def detect_errors(self, output: str) -> list[str]:
         """
         Quick error detection without full LLM call.
@@ -165,27 +165,27 @@ SHOULD_RETRY: NO"""
         Checks for common failure patterns.
         """
         errors = []
-        
+
         # Check for error keywords
         error_keywords = ["error", "exception", "failed", "invalid", "undefined"]
         output_lower = output.lower()
-        
+
         for keyword in error_keywords:
             if keyword in output_lower:
                 errors.append(f"Contains error keyword: {keyword}")
-        
+
         # Check for empty output
         if len(output.strip()) < 10:
             errors.append("Output too short (< 10 chars)")
-        
+
         # Check for stack traces
         if "traceback" in output_lower or "at line" in output_lower:
             errors.append("Contains stack trace")
-        
+
         # Check for incomplete JSON
         if output.strip().startswith("{") and not output.strip().endswith("}"):
             errors.append("Incomplete JSON output")
-        
+
         return errors
 
 
@@ -195,11 +195,11 @@ class SelfCorrector:
     
     Uses self-critique to improve quality.
     """
-    
+
     def __init__(self, llm_client):
         self.llm = llm_client
         self.scorer = ConfidenceScorer(llm_client)
-    
+
     async def correct_output(
         self,
         task: str,
@@ -212,15 +212,15 @@ class SelfCorrector:
         
         Returns corrected output with new confidence score.
         """
-        
+
         if not score_result["should_retry"]:
             return {"output": output, "corrected": False, "score": score_result}
-        
+
         log.info("self_correction_attempt", task=task[:50], issues=score_result["issues"])
-        
+
         # Build correction prompt
         issues_list = "\n".join([f"- {issue}" for issue in score_result["issues"]])
-        
+
         prompt = f"""The following output has quality issues. Please improve it.
 
 Original Task: {task}
@@ -232,7 +232,7 @@ Identified Issues:
 {issues_list}
 
 Generate an improved version that addresses these issues while maintaining accuracy."""
-        
+
         try:
             response = self.llm.chat.completions.create(
                 model="anthropic/claude-3.7-sonnet",
@@ -240,26 +240,26 @@ Generate an improved version that addresses these issues while maintaining accur
                 max_tokens=1000,
                 temperature=0.5
             )
-            
+
             corrected = response.choices[0].message.content
-            
+
             # Re-score corrected output
             new_score = self.scorer.score_output(task, corrected)
-            
+
             log.info(
                 "self_correction_complete",
                 original_confidence=score_result["confidence"],
                 new_confidence=new_score["confidence"],
                 improved=new_score["confidence"] > score_result["confidence"]
             )
-            
+
             return {
                 "output": corrected,
                 "corrected": True,
                 "original_score": score_result,
                 "new_score": new_score
             }
-            
+
         except Exception as e:
             log.error("self_correction_failed", err=str(e))
             return {"output": output, "corrected": False, "score": score_result}

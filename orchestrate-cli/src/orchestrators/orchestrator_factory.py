@@ -40,14 +40,14 @@ from src.agents.cursor_cli import CursorCLI
 
 class OrchestratorFactory:
     """Factory for creating framework-specific orchestrators"""
-    
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
         self.orchestrators = {}
         self.cli_agents = {}
         self._initialize_orchestrators()
         self._initialize_cli_agents()
-    
+
     def _initialize_orchestrators(self):
         """Initialize all framework orchestrators"""
         self.orchestrators = {
@@ -57,9 +57,9 @@ class OrchestratorFactory:
             'llamaindex': LlamaIndexOrchestrator(self.config),
             'haystack': HaystackOrchestrator(self.config)
         }
-        
+
         logger.info(f"Initialized {len(self.orchestrators)} orchestrators")
-    
+
     def _initialize_cli_agents(self):
         """Initialize all CLI agents"""
         self.cli_agents = {
@@ -72,17 +72,17 @@ class OrchestratorFactory:
             'openhands': OpenHandsCLI(self.config.get('agents', {}).get('openhands', {})),
             'cursor': CursorCLI(self.config.get('agents', {}).get('cursor', {}))
         }
-        
+
         logger.info(f"Initialized {len(self.cli_agents)} CLI agents")
-    
+
     def create(self, framework: str, config: Dict[str, Any] = None) -> Optional[Any]:
         """Create an orchestrator for the specified framework"""
         framework_config = config or {}
-        
+
         if framework not in self.orchestrators:
             logger.error(f"Framework '{framework}' not supported")
             return None
-        
+
         try:
             orchestrator = self.orchestrators[framework]
             orchestrator.load_config(framework_config)
@@ -91,26 +91,26 @@ class OrchestratorFactory:
         except Exception as e:
             logger.error(f"Failed to create orchestrator for {framework}: {e}")
             return None
-    
+
     def get_cli_agent(self, agent_name: str) -> Optional[Any]:
         """Get a CLI agent by name"""
         if agent_name not in self.cli_agents:
             logger.error(f"CLI agent '{agent_name}' not found")
             return None
-        
+
         return self.cli_agents[agent_name]
-    
+
     def list_available_frameworks(self) -> List[str]:
         """List all available frameworks"""
         return list(self.orchestrators.keys())
-    
+
     def list_available_cli_agents(self) -> List[str]:
         """List all available CLI agents"""
         return list(self.cli_agents.keys())
-    
+
     def get_available_agents(self, framework: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
         """Get all available agents for a framework"""
-        
+
         if framework == 'langchain':
             return {
                 'general_agent': {
@@ -129,7 +129,7 @@ class OrchestratorFactory:
                     'description': 'Code generation and analysis agent'
                 }
             }
-        
+
         elif framework == 'autogen':
             return {
                 'assistant': {
@@ -143,7 +143,7 @@ class OrchestratorFactory:
                     'description': 'User proxy agent'
                 }
             }
-        
+
         elif framework == 'crewai':
             return {
                 'research_agent': {
@@ -162,7 +162,7 @@ class OrchestratorFactory:
                     'description': 'Planning and coordination agent'
                 }
             }
-        
+
         elif framework == 'llamaindex':
             return {
                 'document_analyzer': {
@@ -176,7 +176,7 @@ class OrchestratorFactory:
                     'description': 'Query processing agent'
                 }
             }
-        
+
         elif framework == 'haystack':
             return {
                 'search_agent': {
@@ -190,20 +190,20 @@ class OrchestratorFactory:
                     'description': 'Document processing agent'
                 }
             }
-        
+
         else:
             return {}
-    
+
     async def run_cli_command(self, agent_name: str, command: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Run a command using a specific CLI agent"""
         agent = self.get_cli_agent(agent_name)
-        
+
         if not agent:
             return {'error': f'CLI agent {agent_name} not available'}
-        
+
         if not hasattr(agent, command):
             return {'error': f'Command {command} not available for agent {agent_name}'}
-        
+
         try:
             method = getattr(agent, command)
             if asyncio.iscoroutinefunction(method):
@@ -216,36 +216,36 @@ class OrchestratorFactory:
                     result = method(**params)
                 else:
                     result = method()
-            
+
             return {
                 'agent': agent_name,
                 'command': command,
                 'result': result,
                 'timestamp': asyncio.get_event_loop().time()
             }
-            
+
         except Exception as e:
             logger.error(f"CLI command failed: {agent_name}.{command} - {e}")
             return {'error': str(e)}
-    
+
     async def run_multi_agent_task(self, framework: str, task: str, agents: List[str], config: Dict[str, Any] = None) -> Dict[str, Any]:
         """Run a task using multiple agents from the same framework"""
         orchestrator = self.create(framework, config)
-        
+
         if not orchestrator:
             return {'error': f'Framework {framework} not available'}
-        
+
         try:
             result = await orchestrator.execute(task, agents)
             return result
         except Exception as e:
             logger.error(f"Multi-agent task failed: {e}")
             return {'error': str(e)}
-    
+
     async def run_cross_framework_task(self, task: str, framework_mapping: Dict[str, str], config: Dict[str, Any] = None) -> Dict[str, Any]:
         """Run a task using multiple frameworks"""
         results = {}
-        
+
         for agent_name, framework in framework_mapping.items():
             if framework in self.orchestrators:
                 try:
@@ -256,17 +256,17 @@ class OrchestratorFactory:
                 except Exception as e:
                     logger.error(f"Cross-framework task failed for {agent_name}: {e}")
                     results[agent_name] = {'error': str(e)}
-        
+
         return {
             'task': task,
             'results': results,
             'timestamp': asyncio.get_event_loop().time()
         }
-    
+
     async def test_all_agents(self, framework: str = None) -> Dict[str, Any]:
         """Test all agents or agents from a specific framework"""
         test_results = {}
-        
+
         if framework:
             agents = self.get_available_agents(framework, self.config)
             for agent_name, agent_info in agents.items():
@@ -276,16 +276,16 @@ class OrchestratorFactory:
             # Test all CLI agents
             for agent_name in self.cli_agents.keys():
                 test_results[agent_name] = await self._test_cli_agent(agent_name)
-            
+
             # Test framework agents
             for framework_name in self.orchestrators.keys():
                 agents = self.get_available_agents(framework_name, self.config)
                 for agent_name, agent_info in agents.items():
                     if agent_info.get('enabled', True):
                         test_results[f"{framework_name}_{agent_name}"] = await self._test_agent(agent_name, framework_name)
-        
+
         return test_results
-    
+
     async def _test_agent(self, agent_name: str, framework: str) -> Dict[str, Any]:
         """Test a specific agent"""
         try:
@@ -315,11 +315,11 @@ class OrchestratorFactory:
                 'error': str(e),
                 'timestamp': asyncio.get_event_loop().time()
             }
-    
+
     async def _test_cli_agent(self, agent_name: str) -> Dict[str, Any]:
         """Test a specific CLI agent"""
         agent = self.get_cli_agent(agent_name)
-        
+
         if not agent:
             return {
                 'agent': agent_name,
@@ -327,7 +327,7 @@ class OrchestratorFactory:
                 'error': 'Agent not available',
                 'timestamp': asyncio.get_event_loop().time()
             }
-        
+
         try:
             # Check availability
             if hasattr(agent, 'check_availability'):
@@ -339,7 +339,7 @@ class OrchestratorFactory:
                         'error': 'Agent not available',
                         'timestamp': asyncio.get_event_loop().time()
                     }
-            
+
             # Test version if available
             if hasattr(agent, 'get_version'):
                 version_result = agent.get_version()
@@ -355,7 +355,7 @@ class OrchestratorFactory:
                     'success': True,
                     'timestamp': asyncio.get_event_loop().time()
                 }
-                
+
         except Exception as e:
             return {
                 'agent': agent_name,
@@ -363,11 +363,11 @@ class OrchestratorFactory:
                 'error': str(e),
                 'timestamp': asyncio.get_event_loop().time()
             }
-    
+
     def get_framework_status(self) -> Dict[str, Any]:
         """Get status of all frameworks"""
         status = {}
-        
+
         for framework_name, orchestrator in self.orchestrators.items():
             try:
                 status[framework_name] = {
@@ -381,13 +381,13 @@ class OrchestratorFactory:
                     'loaded': False,
                     'error': str(e)
                 }
-        
+
         return status
-    
+
     def get_cli_agents_status(self) -> Dict[str, Any]:
         """Get status of all CLI agents"""
         status = {}
-        
+
         for agent_name, agent in self.cli_agents.items():
             try:
                 available = agent.check_availability() if hasattr(agent, 'check_availability') else False
@@ -395,16 +395,16 @@ class OrchestratorFactory:
                     'available': available,
                     'loaded': True
                 }
-                
+
                 if available and hasattr(agent, 'get_version'):
                     version = agent.get_version()
                     status[agent_name]['version'] = version
-                
+
             except Exception as e:
                 status[agent_name] = {
                     'available': False,
                     'loaded': False,
                     'error': str(e)
                 }
-        
+
         return status

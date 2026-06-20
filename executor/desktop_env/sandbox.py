@@ -34,7 +34,7 @@ class DesktopEnvironment:
 
 class DockerSandbox(DesktopEnvironment):
     """Exécution isolée dans un conteneur Docker avec montage du workspace."""
-    
+
     def __init__(self, workspace_path: str, image: str = "python:3.11-slim-bookworm"):
         self.workspace_path = Path(workspace_path).absolute()
         self.image = image
@@ -128,27 +128,56 @@ class DockerSandbox(DesktopEnvironment):
             log.info("sandbox_syncing_to_host", source=str(self.tmp_workspace), target=str(self.workspace_path))
             shutil.copytree(str(self.tmp_workspace), str(self.workspace_path), dirs_exist_ok=True)
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int = 30) -> tuple[int, str]:
         """
         Exécute une commande de façon isolée (stateless).
+
+        Args:
+            cmd: Command string (no shell metacharacters).
+            timeout: Seconds before the killswitch fires (default 30s).
+                     On timeout, the container is SIGKILL-ed and (-1, reason)
+                     is returned. Set 0 to disable.
+
         NB : Pour un shell stateful (avec cd et variables d'env qui persistent),
         il faut utiliser terminal.py qui gère un flux stdin/stdout continu.
         """
         if not self.container:
             return -1, "Conteneur non démarré"
-        
-        log.debug("sandbox_exec", cmd=cmd[:50])
-        try:
-            args, parse_error = _parse_command(cmd)
-            if parse_error:
-                return -1, parse_error
-            exit_code, output = self.container.exec_run(
-                cmd=args,
-                workdir="/workspace"
+
+        log.debug("sandbox_exec", cmd=cmd[:50], timeout=timeout)
+        args, parse_error = _parse_command(cmd)
+        if parse_error:
+            return -1, parse_error
+
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(
+                self.container.exec_run, args, workdir="/workspace"
             )
-            return exit_code, output.decode("utf-8", errors="replace")
-        except Exception as e:
-            return -1, f"Erreur d'exécution Sandbox: {str(e)}"
+            try:
+                exit_code, output = future.result(timeout=timeout or None)
+                return exit_code, output.decode("utf-8", errors="replace")
+            except concurrent.futures.TimeoutError:
+                log.warning(
+                    "sandbox_exec_timeout",
+                    cmd=cmd[:50],
+                    timeout=timeout,
+                )
+                self.kill()
+                return -1, f"sandbox_killed: command exceeded {timeout}s timeout"
+            except Exception as exc:
+                return -1, f"Erreur d'exécution Sandbox: {str(exc)}"
+
+    def kill(self) -> None:
+        """Killswitch: SIGKILL the container immediately (runaway task guard)."""
+        if self.container:
+            log.warning("sandbox_killswitch_activated", container=self.container_id)
+            try:
+                self.container.kill()
+            except Exception as exc:
+                log.error("sandbox_kill_failed", err=str(exc)[:80])
+            finally:
+                self.container = None
 
     def stop(self) -> None:
         if self.container:
@@ -159,7 +188,7 @@ class DockerSandbox(DesktopEnvironment):
                 log.warning("sandbox_stop_error", err=str(e)[:80])
             finally:
                 self.container = None
-                
+
         # Nettoyage de l'espace temporaire (Copy-On-Write)
         if self.tmp_workspace and self.tmp_workspace.exists():
             shutil.rmtree(str(self.tmp_workspace), ignore_errors=True)
@@ -201,6 +230,6 @@ class LocalFallbackSandbox(DesktopEnvironment):
             return result.returncode, out.strip()
         except Exception as e:
             return -1, str(e)
-            
+
     def stop(self) -> None:
         pass

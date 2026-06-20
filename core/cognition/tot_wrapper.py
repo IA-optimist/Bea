@@ -21,7 +21,7 @@ async def plan_with_tot(
     
     Returns best plan with confidence score.
     """
-    
+
     # Wrapper for LLM calls (convert to async)
     async def llm_call(prompt: str) -> str:
         try:
@@ -50,10 +50,10 @@ async def plan_with_tot(
         pruning_threshold=0.4,
         mode=mode
     )
-    
+
     # Solve
     result = await tot.solve(goal)
-    
+
     log.info(
         "tot_planning_complete",
         goal=goal[:100],
@@ -61,7 +61,7 @@ async def plan_with_tot(
         nodes_explored=result["nodes_explored"],
         depth=result["max_depth_reached"]
     )
-    
+
     return result
 
 

@@ -71,7 +71,7 @@ class TestModelCatalog:
 
     def test_MI04_catalog_cache_roundtrip(self):
         """Catalog persists and reloads from disk."""
-        path = Path(tempfile.mktemp(suffix=".json"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         cat1 = ModelCatalog(catalog_path=path)
         cat1._models["test/m1"] = self._make_entry(model_id="test/m1")
         cat1._save_cache()
@@ -81,7 +81,7 @@ class TestModelCatalog:
         assert cat2.get("test/m1") is not None
 
     def test_MI05_catalog_search(self):
-        cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         cat._models["anthropic/claude"] = self._make_entry(model_id="anthropic/claude", name="Claude")
         cat._models["openai/gpt-4"] = self._make_entry(model_id="openai/gpt-4", name="GPT-4")
         results = cat.search("claude")
@@ -96,7 +96,7 @@ class TestModelCatalog:
         # (returning a populated count instead of the -1 sentinel). Force the
         # genuine "no key" precondition this test asserts.
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-        cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         result = cat.refresh(api_key="")
         assert result == -1
         # Catalog should still work (empty or cached)
@@ -166,7 +166,7 @@ class TestModelProfiles:
 class TestPerformanceMemory:
 
     def test_MI11_record_and_query(self):
-        perf = ModelPerformanceMemory(path=Path(tempfile.mktemp(suffix=".json")))
+        perf = ModelPerformanceMemory(path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         perf.record("anthropic/claude-sonnet-4.5", "business_reasoning",
                     success=True, duration_ms=5000, quality=0.9)
         stats = perf.get_stats("anthropic/claude-sonnet-4.5", "business_reasoning")
@@ -175,7 +175,7 @@ class TestPerformanceMemory:
         assert stats[0]["avg_quality"] == 0.9
 
     def test_MI12_multiple_records(self):
-        perf = ModelPerformanceMemory(path=Path(tempfile.mktemp(suffix=".json")))
+        perf = ModelPerformanceMemory(path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         perf.record("m1", "coding", success=True, quality=0.8)
         perf.record("m1", "coding", success=True, quality=0.6)
         perf.record("m1", "coding", success=False, quality=0.0)
@@ -184,7 +184,7 @@ class TestPerformanceMemory:
         assert abs(stats[0]["success_rate"] - 0.667) < 0.01
 
     def test_MI13_best_for_task(self):
-        perf = ModelPerformanceMemory(path=Path(tempfile.mktemp(suffix=".json")))
+        perf = ModelPerformanceMemory(path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         perf.record("good-model", "coding", success=True, quality=0.9)
         perf.record("good-model", "coding", success=True, quality=0.85)
         perf.record("bad-model", "coding", success=True, quality=0.3)
@@ -194,7 +194,7 @@ class TestPerformanceMemory:
         assert best[0]["model_id"] == "good-model"
 
     def test_MI14_persistence(self):
-        path = Path(tempfile.mktemp(suffix=".json"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         perf1 = ModelPerformanceMemory(path=path)
         perf1.record("m1", "coding", success=True, quality=0.9)
 
@@ -210,7 +210,7 @@ class TestPerformanceMemory:
 class TestModelSelection:
 
     def _mock_catalog(self):
-        cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         cat._models = {
             "cheap/model": ModelEntry(
                 model_id="cheap/model", name="Cheap", provider="cheap",
@@ -244,7 +244,7 @@ class TestModelSelection:
 
     def test_MI17_fallback_without_catalog(self):
         """Selection falls back gracefully with empty catalog."""
-        empty_cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        empty_cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         selector = ModelSelector(catalog=empty_cat)
         result = selector.select("business_reasoning")
         assert result.is_fallback is True
@@ -282,6 +282,7 @@ class TestModelSelection:
 
 class TestRuntimeIntegration:
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="skill-task map drift", strict=False)
     def test_MI22_skill_task_map_complete(self):
         """All 16 domain skills have task mappings."""
@@ -332,7 +333,7 @@ class TestCostAwareness:
 
     def test_MI27_budget_mode_affects_selection(self):
         """Different budget modes produce different selections."""
-        cat = ModelCatalog(catalog_path=Path(tempfile.mktemp(suffix=".json")))
+        cat = ModelCatalog(catalog_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
         cat._models = {
             "cheap/m": ModelEntry(
                 model_id="cheap/m", name="Cheap", provider="cheap",

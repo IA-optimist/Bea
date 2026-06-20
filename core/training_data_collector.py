@@ -63,14 +63,14 @@ def classify_domain(goal: str) -> str:
         Domain string: security, code, business, research, ops, or general
     """
     goal_lower = goal.lower()
-    
+
     # Count keyword matches per domain
     domain_scores = {}
     for domain, keywords in DOMAIN_KEYWORDS.items():
         score = sum(1 for kw in keywords if kw in goal_lower)
         if score > 0:
             domain_scores[domain] = score
-    
+
     # Return domain with highest score, or 'general' if no matches
     if domain_scores:
         return max(domain_scores.items(), key=lambda x: x[1])[0]
@@ -142,13 +142,13 @@ async def collect_training_example(
                 threshold=0.6
             )
             return False
-        
+
         # Classify domain
         domain = classify_domain(goal)
-        
+
         # Compute dopamine signal (reward prediction error)
         delta_score = compute_dopamine_signal(score, score_predicted)
-        
+
         # Prepare training example in instruction-tuning format
         example = {
             "mission_id": mission_id,
@@ -164,17 +164,17 @@ async def collect_training_example(
             "metadata": metadata or {},
             "collected_at": time.time(),
         }
-        
+
         # Ensure workspace/training_data directory exists
         workspace_dir = Path("workspace/training_data")
         workspace_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Append to domain-specific JSONL file
         output_file = workspace_dir / f"{domain}.jsonl"
         with output_file.open("a", encoding="utf-8") as f:
             json.dump(example, f, ensure_ascii=False)
             f.write("\n")
-        
+
         log.info(
             "training_data.collected",
             mission_id=mission_id,
@@ -184,7 +184,7 @@ async def collect_training_example(
             file=str(output_file)
         )
         return True
-    
+
     except Exception as e:
         log.error(
             "training_data.collection_failed",
@@ -215,25 +215,25 @@ def get_training_stats() -> Dict[str, Any]:
                 "progress": 0.0,
                 "next_milestone": 100,
             }
-        
+
         # Count examples per domain
         by_domain = {}
         total = 0
-        
+
         for domain_file in workspace_dir.glob("*.jsonl"):
             domain = domain_file.stem
             count = sum(1 for _ in domain_file.open("r", encoding="utf-8"))
             by_domain[domain] = count
             total += count
-        
+
         # Calculate progress
         goal = 1000
         progress = min(100.0, (total / goal) * 100)
-        
+
         # Determine next milestone
         milestones = [100, 250, 500, 750, 1000]
         next_milestone = next((m for m in milestones if m > total), 1000)
-        
+
         return {
             "total": total,
             "by_domain": by_domain,
@@ -241,7 +241,7 @@ def get_training_stats() -> Dict[str, Any]:
             "next_milestone": next_milestone,
             "goal": goal,
         }
-    
+
     except Exception as e:
         log.error("training_stats.failed", err=str(e)[:200])
         return {
@@ -257,10 +257,10 @@ def get_training_stats() -> Dict[str, Any]:
 def _test_collector():
     """Test the training data collector."""
     import asyncio
-    
+
     async def run_test():
         print("Testing training data collector...")
-        
+
         # Test classification
         test_cases = [
             ("Fix SQL injection vulnerability in auth endpoint", "security"),
@@ -270,12 +270,12 @@ def _test_collector():
             ("Deploy microservices to Kubernetes cluster", "ops"),
             ("Schedule a meeting for next week", "general"),
         ]
-        
+
         for goal, expected_domain in test_cases:
             domain = classify_domain(goal)
             status = "✓" if domain == expected_domain else "✗"
             print(f"{status} '{goal[:50]}...' → {domain} (expected: {expected_domain})")
-        
+
         # Test collection
         success = await collect_training_example(
             mission_id="test_001",
@@ -288,11 +288,11 @@ def _test_collector():
             lessons={"learned": "Always validate JWT expiry"},
         )
         print(f"{'✓' if success else '✗'} Collection test: {success}")
-        
+
         # Test stats
         stats = get_training_stats()
         print(f"Stats: {json.dumps(stats, indent=2)}")
-    
+
     asyncio.run(run_test())
 
 

@@ -42,7 +42,7 @@ class ProductSpec:
     pricing_model: str  # free, freemium, subscription, one-time
     pricing_tiers: List[Dict]
     tech_stack: Dict[str, str]
-    
+
     def to_dict(self) -> Dict:
         return {
             'name': self.name,
@@ -72,11 +72,11 @@ class ProductBuilder:
         # Deploy
         builder.deploy(project_dir)
     """
-    
+
     def __init__(self, output_dir: Optional[Path] = None):
         self.output_dir = output_dir or Path.home() / ".beamax" / "products"
         self.output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def generate_spec(self, opportunity_data: Dict) -> ProductSpec:
         """
         Generate product specification from opportunity.
@@ -88,28 +88,28 @@ class ProductBuilder:
             ProductSpec
         """
         logger.info("📝 Generating product spec...")
-        
+
         # Extract info
         title = opportunity_data.get('title', 'Untitled')
         description = opportunity_data.get('description', '')
         tags = opportunity_data.get('tags', [])
         pain_points = opportunity_data.get('pain_points', [])
-        
+
         # Generate product name (clean title)
         name = self._sanitize_name(title)
-        
+
         # Generate tagline
         tagline = self._generate_tagline(title, description, pain_points)
-        
+
         # Generate features (from pain points)
         features = self._generate_features(pain_points, tags)
-        
+
         # Determine pricing model
         pricing_model, pricing_tiers = self._generate_pricing(tags)
-        
+
         # Target audience
         target_audience = self._identify_audience(tags, description)
-        
+
         # Tech stack
         tech_stack = {
             'frontend': 'React + TailwindCSS + Vite',
@@ -120,7 +120,7 @@ class ProductBuilder:
             'hosting_backend': 'Railway',
             'ci_cd': 'GitHub Actions',
         }
-        
+
         spec = ProductSpec(
             name=name,
             tagline=tagline,
@@ -131,14 +131,14 @@ class ProductBuilder:
             pricing_tiers=pricing_tiers,
             tech_stack=tech_stack,
         )
-        
+
         logger.info(f"✅ Product spec generated: {spec.name}")
         logger.info(f"   Tagline: {spec.tagline}")
         logger.info(f"   Features: {len(spec.features)}")
         logger.info(f"   Pricing: {spec.pricing_model}")
-        
+
         return spec
-    
+
     def build_product(self, spec: ProductSpec) -> Path:
         """
         Build complete product structure.
@@ -147,13 +147,13 @@ class ProductBuilder:
             Path to project directory
         """
         logger.info(f"🏗️  Building product: {spec.name}...")
-        
+
         project_dir = self.output_dir / self._sanitize_name(spec.name)
         project_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Create structure
         self._create_project_structure(project_dir)
-        
+
         # Generate files
         self._generate_landing_page(project_dir, spec)
         self._generate_backend(project_dir, spec)
@@ -161,15 +161,15 @@ class ProductBuilder:
         self._generate_stripe_integration(project_dir, spec)
         self._generate_deployment_config(project_dir, spec)
         self._generate_readme(project_dir, spec)
-        
+
         # Save spec
         spec_path = project_dir / "product_spec.json"
         spec_path.write_text(json.dumps(spec.to_dict(), indent=2))
-        
+
         logger.info(f"✅ Product built: {project_dir}")
-        
+
         return project_dir
-    
+
     def _create_project_structure(self, project_dir: Path):
         """Create project directory structure"""
         dirs = [
@@ -181,14 +181,14 @@ class ProductBuilder:
             'deploy',
             'docs',
         ]
-        
+
         for dir_path in dirs:
             (project_dir / dir_path).mkdir(parents=True, exist_ok=True)
-    
+
     def _generate_landing_page(self, project_dir: Path, spec: ProductSpec):
         """Generate landing page (React + TailwindCSS)"""
         logger.info("  📄 Generating landing page...")
-        
+
         # Simple HTML landing page (can be enhanced with React later)
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -269,16 +269,16 @@ class ProductBuilder:
 </body>
 </html>
 """
-        
+
         landing_path = project_dir / "frontend" / "index.html"
         landing_path.write_text(html)
-        
+
         logger.info(f"    ✅ Landing page: {landing_path}")
-    
+
     def _generate_backend(self, project_dir: Path, spec: ProductSpec):
         """Generate FastAPI backend"""
         logger.info("  ⚙️  Generating backend...")
-        
+
         # Main FastAPI app
         backend_code = f'''"""
 {spec.name} Backend API
@@ -339,10 +339,10 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 '''
-        
+
         backend_path = project_dir / "backend" / "app" / "main.py"
         backend_path.write_text(backend_code)
-        
+
         # Requirements
         requirements = """fastapi==0.115.0
 uvicorn[standard]==0.32.1
@@ -353,16 +353,16 @@ psycopg2-binary==2.9.10
 sqlalchemy==2.0.36
 alembic==1.14.0
 """
-        
+
         req_path = project_dir / "backend" / "requirements.txt"
         req_path.write_text(requirements)
-        
+
         logger.info(f"    ✅ Backend: {backend_path}")
-    
+
     def _generate_database_schema(self, project_dir: Path, spec: ProductSpec):
         """Generate database schema (SQLAlchemy)"""
         logger.info("  🗄️  Generating database schema...")
-        
+
         schema_code = f'''"""
 Database models for {spec.name}
 """
@@ -396,16 +396,16 @@ class Subscription(Base):
     
     user = relationship("User", back_populates="subscriptions")
 '''
-        
+
         models_path = project_dir / "backend" / "app" / "models.py"
         models_path.write_text(schema_code)
-        
+
         logger.info(f"    ✅ Schema: {models_path}")
-    
+
     def _generate_stripe_integration(self, project_dir: Path, spec: ProductSpec):
         """Generate Stripe integration code"""
         logger.info("  💳 Generating Stripe integration...")
-        
+
         stripe_code = '''"""
 Stripe payment integration
 """
@@ -439,26 +439,26 @@ def create_checkout_session(price_id: str, success_url: str, cancel_url: str):
         cancel_url=cancel_url,
     )
 '''
-        
+
         stripe_path = project_dir / "backend" / "app" / "stripe_integration.py"
         stripe_path.write_text(stripe_code)
-        
+
         logger.info(f"    ✅ Stripe: {stripe_path}")
-    
+
     def _generate_deployment_config(self, project_dir: Path, spec: ProductSpec):
         """Generate deployment configs"""
         logger.info("  🚀 Generating deployment config...")
-        
+
         # Vercel config (frontend)
         vercel_config = {
             "version": 2,
             "builds": [{"src": "frontend/index.html", "use": "@vercel/static"}],
             "routes": [{"src": "/(.*)", "dest": "/frontend/$1"}]
         }
-        
+
         vercel_path = project_dir / "vercel.json"
         vercel_path.write_text(json.dumps(vercel_config, indent=2))
-        
+
         # Railway config (backend)
         railway_config = {
             "build": {
@@ -470,15 +470,15 @@ def create_checkout_session(price_id: str, success_url: str, cancel_url: str):
                 "restartPolicyType": "ON_FAILURE"
             }
         }
-        
+
         railway_path = project_dir / "railway.json"
         railway_path.write_text(json.dumps(railway_config, indent=2))
-        
+
         # .env.example
         env_example = f"""# {spec.name} Environment Variables
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname  # pragma: allowlist secret
 
 # Stripe
 STRIPE_SECRET_KEY=sk_test_xxx
@@ -491,12 +491,12 @@ FRONTEND_URL=https://yourapp.vercel.app
 # Backend URL
 BACKEND_URL=https://yourapp.railway.app
 """
-        
+
         env_path = project_dir / ".env.example"
         env_path.write_text(env_example)
-        
+
         logger.info("    ✅ Deployment configs: vercel.json, railway.json")
-    
+
     def _generate_readme(self, project_dir: Path, spec: ProductSpec):
         """Generate README"""
         readme = f"""# {spec.name}
@@ -579,12 +579,12 @@ MIT
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
 **By:** BeaMax AGI Business Engine
 """
-        
+
         readme_path = project_dir / "README.md"
         readme_path.write_text(readme)
-        
+
         logger.info(f"    ✅ README: {readme_path}")
-    
+
     def _sanitize_name(self, title: str) -> str:
         """Convert title to valid product name"""
         # Remove special chars, convert to lowercase, replace spaces with hyphens
@@ -592,7 +592,7 @@ MIT
         name = re.sub(r'\s+', '-', name.strip())
         name = name.lower()[:50]
         return name or "untitled-saas"
-    
+
     def _generate_tagline(self, title: str, description: str, pain_points: List[str]) -> str:
         """Generate catchy tagline"""
         # Simple heuristic for now (can be enhanced with LLM)
@@ -602,17 +602,17 @@ MIT
             return description[:80] + "..."
         else:
             return f"{title} - Simplified"
-    
+
     def _generate_features(self, pain_points: List[str], tags: List[str]) -> List[str]:
         """Generate features from pain points"""
         features = []
-        
+
         # From pain points
         for pp in pain_points[:3]:
             feature = pp.strip()
             if len(feature) > 10:
                 features.append(feature[:80])
-        
+
         # From tags
         tag_features = {
             'automation': 'Automated workflow',
@@ -622,11 +622,11 @@ MIT
             'developer_tools': 'Developer-friendly API',
             'payment': 'Integrated payment processing',
         }
-        
+
         for tag in tags:
             if tag in tag_features:
                 features.append(tag_features[tag])
-        
+
         # Defaults if empty
         if not features:
             features = [
@@ -635,9 +635,9 @@ MIT
                 'Secure and compliant',
                 'Excellent support',
             ]
-        
+
         return features[:6]
-    
+
     def _generate_pricing(self, tags: List[str]) -> tuple[str, List[Dict]]:
         """Generate pricing model and tiers"""
         # Freemium for most B2C, subscription for B2B
@@ -645,7 +645,7 @@ MIT
             model = 'freemium'
         else:
             model = 'subscription'
-        
+
         if model == 'freemium':
             tiers = [
                 {
@@ -677,9 +677,9 @@ MIT
                     'features': ['All features', 'Priority support', '5 users', 'API access']
                 }
             ]
-        
+
         return model, tiers
-    
+
     def _identify_audience(self, tags: List[str], description: str) -> str:
         """Identify target audience"""
         audiences = {
@@ -690,40 +690,40 @@ MIT
             'productivity': 'Remote teams and freelancers',
             'ai': 'Tech-savvy professionals',
         }
-        
+
         for tag in tags:
             if tag in audiences:
                 return audiences[tag]
-        
+
         return 'Small businesses and entrepreneurs'
 
 
 def main():
     """CLI entry point"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Build micro-SaaS from opportunity")
     parser.add_argument('opportunity_json', help='Path to opportunity JSON file')
     parser.add_argument('--output', help='Output directory', default=None)
     args = parser.parse_args()
-    
+
     # Load opportunity
     with open(args.opportunity_json) as f:
         data = json.load(f)
-    
+
     # Get first opportunity
     opportunities = data.get('opportunities', [])
     if not opportunities:
         print("❌ No opportunities found in JSON")
         return
-    
+
     opportunity = opportunities[0]
-    
+
     # Build
     builder = ProductBuilder(output_dir=Path(args.output) if args.output else None)
     spec = builder.generate_spec(opportunity)
     project_dir = builder.build_product(spec)
-    
+
     print("\n✅ Product built successfully!")
     print(f"📁 Location: {project_dir}")
     print("\n📝 Next steps:")

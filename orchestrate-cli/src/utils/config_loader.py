@@ -18,20 +18,20 @@ from loguru import logger
 
 class ConfigLoader:
     """Configuration loader for the orchestrate CLI"""
-    
+
     def __init__(self, config_path: str = 'config/orchestrate.yaml'):
         self.config_path = Path(config_path)
         self.config: Dict[str, Any] = {}
         self.templates = {}
-        
+
     def load(self) -> Dict[str, Any]:
         """Load configuration from file"""
         logger.info(f"Loading configuration from: {self.config_path}")
-        
+
         if not self.config_path.exists():
             logger.warning(f"Configuration file not found: {self.config_path}")
             return self._get_default_config()
-        
+
         try:
             with open(self.config_path, 'r') as f:
                 if self.config_path.suffix.lower() == '.yaml' or self.config_path.suffix.lower() == '.yml':
@@ -41,22 +41,22 @@ class ConfigLoader:
                 else:
                     logger.error(f"Unsupported configuration file format: {self.config_path.suffix}")
                     return self._get_default_config()
-            
+
             # Interpolate environment variables
             self.config = self._interpolate_env_vars(self.config)
-            
+
             # Validate configuration
             if not self._validate_config():
                 logger.error("Configuration validation failed")
                 return self._get_default_config()
-            
+
             logger.info("Configuration loaded successfully")
             return self.config
-            
+
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             return self._get_default_config()
-    
+
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration"""
         return {
@@ -170,7 +170,7 @@ class ConfigLoader:
                 'debug': False
             }
         }
-    
+
     def _interpolate_env_vars(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Interpolate environment variables in configuration"""
         if isinstance(config, dict):
@@ -182,26 +182,26 @@ class ConfigLoader:
             return os.getenv(env_var, config)
         else:
             return config
-    
+
     def _validate_config(self) -> bool:
         """Validate configuration"""
         required_sections = ['frameworks', 'llm', 'logging']
-        
+
         for section in required_sections:
             if section not in self.config:
                 logger.error(f"Missing required configuration section: {section}")
                 return False
-        
+
         # Validate frameworks
         frameworks = self.config.get('frameworks', {})
         for framework_name, framework_config in frameworks.items():
             if not isinstance(framework_config, dict):
                 logger.error(f"Invalid framework configuration: {framework_name}")
                 return False
-            
+
             if 'enabled' not in framework_config:
                 logger.warning(f"Missing 'enabled' field for framework: {framework_name}")
-        
+
         # Validate logging
         logging_config = self.config.get('logging', {})
         if 'level' in logging_config:
@@ -209,13 +209,13 @@ class ConfigLoader:
             if logging_config['level'] not in valid_levels:
                 logger.error(f"Invalid logging level: {logging_config['level']}")
                 return False
-        
+
         return True
-    
+
     def save(self, config: Dict[str, Any], path: Optional[str] = None) -> bool:
         """Save configuration to file"""
         save_path = Path(path) if path else self.config_path
-        
+
         try:
             with open(save_path, 'w') as f:
                 if save_path.suffix.lower() == '.yaml' or save_path.suffix.lower() == '.yml':
@@ -225,14 +225,14 @@ class ConfigLoader:
                 else:
                     logger.error(f"Unsupported configuration file format: {save_path.suffix}")
                     return False
-            
+
             logger.info(f"Configuration saved to: {save_path}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to save configuration: {e}")
             return False
-    
+
     def get_template(self, template_name: str) -> Dict[str, Any]:
         """Get configuration template"""
         templates = {
@@ -282,25 +282,25 @@ class ConfigLoader:
                 'api': {'host': '0.0.0.0', 'port': 8000, 'debug': False}
             }
         }
-        
+
         return templates.get(template_name, self._get_default_config())
-    
+
     def merge_configs(self, base_config: Dict[str, Any], override_config: Dict[str, Any]) -> Dict[str, Any]:
         """Merge two configurations"""
         merged = base_config.copy()
-        
+
         for key, value in override_config.items():
             if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
                 merged[key] = self.merge_configs(merged[key], value)
             else:
                 merged[key] = value
-        
+
         return merged
-    
+
     def get_framework_config(self, framework: str) -> Dict[str, Any]:
         """Get configuration for a specific framework"""
         return self.config.get('frameworks', {}).get(framework, {})
-    
+
     def get_agent_config(self, agent_name: str) -> Dict[str, Any]:
         """Get configuration for a specific agent"""
         for _, team_config in self.config.get('agents', {}).items():
@@ -308,16 +308,16 @@ class ConfigLoader:
                 if agent_name in team_config['agents']:
                     return team_config
         return {}
-    
+
     def update_config(self, key: str, value: Any) -> bool:
         """Update configuration value"""
         keys = key.split('.')
         current = self.config
-        
+
         for k in keys[:-1]:
             if k not in current:
                 current[k] = {}
             current = current[k]
-        
+
         current[keys[-1]] = value
         return True

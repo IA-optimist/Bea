@@ -75,6 +75,7 @@ def test_plan_roadmap():
 
 # ── Explicit mode override ────────────────────────────────────
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="task_router mode override drift", strict=False)
 def test_explicit_mode_overrides():
     r = _route("hello world", explicit_mode="auto")

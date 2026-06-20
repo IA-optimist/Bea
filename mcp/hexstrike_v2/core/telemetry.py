@@ -42,17 +42,17 @@ class Telemetry:
         # Get stats
         stats = telemetry.get_stats()
     """
-    
+
     def __init__(self):
         self._executions: List[ToolExecution] = []
         self._active_executions: Dict[int, ToolExecution] = {}
         self._next_id = 0
-        
+
         # Counters
         self._tool_counts = defaultdict(int)
         self._tool_errors = defaultdict(int)
         self._tool_durations = defaultdict(list)
-    
+
     def start_execution(self, tool_name: str) -> int:
         """
         Start tracking a tool execution.
@@ -62,19 +62,19 @@ class Telemetry:
         """
         exec_id = self._next_id
         self._next_id += 1
-        
+
         execution = ToolExecution(
             tool_name=tool_name,
             started_at=datetime.now()
         )
-        
+
         self._active_executions[exec_id] = execution
         self._tool_counts[tool_name] += 1
-        
+
         logger.debug(f"Started tracking execution {exec_id}: {tool_name}")
-        
+
         return exec_id
-    
+
     def end_execution(
         self,
         exec_id: int,
@@ -85,24 +85,24 @@ class Telemetry:
         if exec_id not in self._active_executions:
             logger.warning(f"Unknown execution ID: {exec_id}")
             return
-        
+
         execution = self._active_executions.pop(exec_id)
         execution.ended_at = datetime.now()
         execution.success = success
         execution.error = error
         execution.duration_seconds = (execution.ended_at - execution.started_at).total_seconds()
-        
+
         self._executions.append(execution)
         self._tool_durations[execution.tool_name].append(execution.duration_seconds)
-        
+
         if not success:
             self._tool_errors[execution.tool_name] += 1
-        
+
         logger.debug(
             f"Ended execution {exec_id}: {execution.tool_name} "
             f"({'success' if success else 'failed'}, {execution.duration_seconds:.2f}s)"
         )
-    
+
     def get_stats(self, tool_name: Optional[str] = None) -> Dict:
         """
         Get telemetry statistics.
@@ -115,14 +115,14 @@ class Telemetry:
         """
         if tool_name:
             return self._get_tool_stats(tool_name)
-        
+
         # Global stats
         total_executions = len(self._executions)
         total_errors = sum(self._tool_errors.values())
-        
+
         all_durations = [e.duration_seconds for e in self._executions]
         avg_duration = sum(all_durations) / len(all_durations) if all_durations else 0
-        
+
         return {
             "total_executions": total_executions,
             "total_errors": total_errors,
@@ -132,20 +132,20 @@ class Telemetry:
             "tools_used": len(self._tool_counts),
             "top_tools": self._get_top_tools(5),
         }
-    
+
     def _get_tool_stats(self, tool_name: str) -> Dict:
         """Get stats for a specific tool"""
         executions = [e for e in self._executions if e.tool_name == tool_name]
-        
+
         if not executions:
             return {
                 "tool_name": tool_name,
                 "executions": 0,
             }
-        
+
         durations = [e.duration_seconds for e in executions]
         errors = sum(1 for e in executions if not e.success)
-        
+
         return {
             "tool_name": tool_name,
             "executions": len(executions),
@@ -155,7 +155,7 @@ class Telemetry:
             "min_duration": f"{min(durations):.2f}s",
             "max_duration": f"{max(durations):.2f}s",
         }
-    
+
     def _get_top_tools(self, limit: int = 5) -> List[Dict]:
         """Get most-used tools"""
         sorted_tools = sorted(
@@ -163,7 +163,7 @@ class Telemetry:
             key=lambda x: x[1],
             reverse=True
         )
-        
+
         return [
             {
                 "tool_name": tool,
@@ -172,7 +172,7 @@ class Telemetry:
             }
             for tool, count in sorted_tools[:limit]
         ]
-    
+
     def clear(self) -> None:
         """Clear all telemetry data"""
         count = len(self._executions)
@@ -181,7 +181,7 @@ class Telemetry:
         self._tool_counts.clear()
         self._tool_errors.clear()
         self._tool_durations.clear()
-        
+
         logger.info(f"Telemetry cleared ({count} executions removed)")
 
 

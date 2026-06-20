@@ -67,6 +67,10 @@ class MissionResult:
     agents_selected:  list[str]       = field(default_factory=list)
     domain:           str             = "general"
 
+    # Phase checkpointing (ADR-003): last completed phase, empty if not started.
+    # Written at each phase boundary by MetaOrchestrator for crash recovery.
+    phase_cursor: str                 = ""
+
     # Méta
     requires_validation: bool         = True
     created_at:   float               = field(default_factory=time.time)

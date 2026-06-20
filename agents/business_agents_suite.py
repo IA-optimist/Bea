@@ -41,7 +41,7 @@ class ApprovalRequest:
     """Request for human approval."""
     category: str
     description: str
-    context: dict = field(default_factory=dict)
+    context: dict[str, object] = field(default_factory=dict)
     amount: float = 0.0
     currency: str = "EUR"
     approved: bool | None = None   # None = pending
@@ -51,7 +51,7 @@ class ApprovalRequest:
     def pending(self) -> bool:
         return self.approved is None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "category": self.category, "description": self.description[:200],
             "amount": self.amount, "currency": self.currency,
@@ -92,7 +92,7 @@ class MVPSpec:
     estimated_hours: float = 0
     status: str = "planned"      # planned, building, deployed, live
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name, "stack": self.tech_stack,
             "pages": self.pages, "features": self.features[:10],
@@ -104,7 +104,7 @@ class MVPSpec:
 class TechBuilderAgent:
     """Creates and deploys MVPs."""
 
-    def plan_mvp(self, business_name: str, model: dict | None = None) -> MVPSpec:
+    def plan_mvp(self, business_name: str, model: dict[str, object] | None = None) -> MVPSpec:
         """Plan an MVP based on business model."""
         return MVPSpec(
             name=business_name,
@@ -116,11 +116,11 @@ class TechBuilderAgent:
             status="planned",
         )
 
-    def build_landing(self, spec: MVPSpec) -> dict:
+    def build_landing(self, spec: MVPSpec) -> dict[str, object]:
         """Generate landing page. Stub — will use code generation."""
         return {"status": "ready_for_llm", "spec": spec.to_dict()}
 
-    def deploy(self, spec: MVPSpec) -> dict:
+    def deploy(self, spec: MVPSpec) -> dict[str, object]:
         """Deploy MVP. Stub — will use Vercel/Railway API."""
         return {
             "status": "requires_approval",
@@ -134,13 +134,13 @@ class TechBuilderAgent:
 @dataclass
 class ContentAssets:
     """Marketing content package."""
-    landing_copy: dict = field(default_factory=dict)
-    email_sequences: list[dict] = field(default_factory=list)
-    social_posts: list[dict] = field(default_factory=list)
-    blog_outlines: list[dict] = field(default_factory=list)
+    landing_copy: dict[str, object] = field(default_factory=dict)
+    email_sequences: list[dict[str, object]] = field(default_factory=list)
+    social_posts: list[dict[str, object]] = field(default_factory=list)
+    blog_outlines: list[dict[str, object]] = field(default_factory=list)
     seo_keywords: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "landing": bool(self.landing_copy),
             "emails": len(self.email_sequences),
@@ -162,7 +162,7 @@ class ContentMarketingAgent:
             seo_keywords=["requires_research"],
         )
 
-    def launch_campaign(self, assets: ContentAssets, budget: float = 0) -> dict:
+    def launch_campaign(self, assets: ContentAssets, budget: float = 0) -> dict[str, object]:
         """Launch marketing campaign."""
         if budget > 0 and requires_approval(ApprovalCategory.CAMPAIGN, budget):
             return {"status": "requires_approval", "budget": budget}
@@ -174,11 +174,11 @@ class LegalDocSet:
     """Legal document set."""
     terms_of_service: str = ""
     privacy_policy: str = ""
-    contracts: list[dict] = field(default_factory=list)
+    contracts: list[dict[str, object]] = field(default_factory=list)
     structure: str = ""     # SAS, SARL, auto-entrepreneur, LLC
     rgpd_compliant: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "has_tos": bool(self.terms_of_service),
             "has_privacy": bool(self.privacy_policy),
@@ -200,7 +200,7 @@ class LegalAgent:
             rgpd_compliant=country in ("FR", "DE", "ES", "IT", "NL"),
         )
 
-    def review_contract(self) -> dict:
+    def review_contract(self) -> dict[str, object]:
         """Review a contract. Always requires human approval."""
         return {
             "status": "requires_approval",
@@ -226,7 +226,7 @@ class FinancialDashboard:
     customers: int = 0
     invoices_pending: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "mrr": round(self.mrr, 2), "arr": round(self.arr, 2),
             "revenue": round(self.total_revenue, 2),
@@ -240,7 +240,7 @@ class FinancialDashboard:
 class FinanceAgent:
     """Manages business finances."""
 
-    def setup_stripe(self, business_name: str) -> dict:
+    def setup_stripe(self, business_name: str) -> dict[str, object]:
         """Configure Stripe. Stub — will use Stripe API."""
         return {"status": "requires_integration", "provider": "stripe"}
 
@@ -248,11 +248,11 @@ class FinanceAgent:
         """Get current financial metrics."""
         return FinancialDashboard()
 
-    def create_invoice(self, customer: str, amount: float, description: str) -> dict:
+    def create_invoice(self, customer: str, amount: float, description: str) -> dict[str, object]:
         """Create an invoice. Stub — will use Stripe Invoicing."""
         return {"status": "ready_for_integration", "customer": customer, "amount": amount}
 
-    def approve_expense(self, amount: float, description: str) -> dict:
+    def approve_expense(self, amount: float, description: str) -> dict[str, object]:
         """Approve an expense. High amounts require human gate."""
         cat = ApprovalCategory.SPEND_HIGH if amount > 500 else ApprovalCategory.SPEND_LOW
         if requires_approval(cat, amount):
@@ -275,7 +275,7 @@ class GrowthMetrics:
     ab_tests_running: int = 0
     top_channel: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "signups_week": self.new_signups_week,
             "conversion": f"{self.conversion_rate:.1%}",
@@ -292,7 +292,7 @@ class GrowthAgent:
     def get_metrics(self) -> GrowthMetrics:
         return GrowthMetrics()
 
-    def launch_campaign(self, channel: str, budget: float, target: str) -> dict:
+    def launch_campaign(self, channel: str, budget: float, target: str) -> dict[str, object]:
         """Launch paid campaign. Always requires approval."""
         if requires_approval(ApprovalCategory.CAMPAIGN, budget):
             return {
@@ -305,7 +305,7 @@ class GrowthAgent:
             }
         return {"status": "launched", "channel": channel}
 
-    def run_ab_test(self, variant_a: str, variant_b: str) -> dict:
+    def run_ab_test(self, variant_a: str, variant_b: str) -> dict[str, object]:
         """Start A/B test. No approval needed."""
         return {"status": "running", "variants": [variant_a, variant_b]}
 
@@ -319,7 +319,7 @@ class SupportMetrics:
     churn_risk_customers: int = 0
     satisfaction_rate: float = 0.0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "open_tickets": self.open_tickets,
             "avg_response_h": round(self.avg_response_hours, 1),
@@ -335,11 +335,11 @@ class CustomerSuccessAgent:
     def get_metrics(self) -> SupportMetrics:
         return SupportMetrics()
 
-    def respond_ticket(self, ticket_id: str, message: str) -> dict:
+    def respond_ticket(self, ticket_id: str, message: str) -> dict[str, object]:
         """Respond to support ticket. Stub — will be LLM + email."""
         return {"status": "ready_for_llm", "ticket": ticket_id}
 
-    def process_refund(self, customer: str, amount: float, reason: str) -> dict:
+    def process_refund(self, customer: str, amount: float, reason: str) -> dict[str, object]:
         """Process refund. Over €50 requires approval."""
         if requires_approval(ApprovalCategory.REFUND, amount):
             return {

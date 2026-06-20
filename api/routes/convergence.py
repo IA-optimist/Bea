@@ -232,24 +232,24 @@ async def mission_history(
     try:
         from core.mission_system import get_mission_system
         ms = get_mission_system()
-        
+
         # Get all missions then filter + paginate
         all_missions = ms.list_missions(limit=1000)  # practical upper bound
-        
+
         # Filter
         filtered = all_missions
         if status:
             filtered = [m for m in filtered if (m.status.value if hasattr(m.status, "value") else str(m.status)).upper() == status.upper()]
         if domain:
             filtered = [m for m in filtered if getattr(m, "domain", "") == domain]
-        
+
         # Sort DESC by created_at
         filtered.sort(key=lambda m: getattr(m, "created_at", 0) or 0, reverse=True)
-        
+
         # Paginate
         total = len(filtered)
         page = filtered[offset:offset + limit]
-        
+
         return _ok({
             "missions": [m.to_dict() for m in page],
             "total":    total,

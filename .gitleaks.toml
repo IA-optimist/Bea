@@ -11,4 +11,15 @@ paths = [
   '''docs/archive/''',
   '''tests/''',                  # fake secrets pour tests
   '''\.env\.example$''',         # placeholders CHANGE_ME
+  '''beamax_app/''',             # Flutter source — secrets injectés via --dart-define, jamais hardcodés
+  '''jarvismax_app/''',          # ancien nom (renommé en beamax_app) — même config Flutter
+  '''openclaw/''',               # config OpenClaw agents — OPENCLAW_TOKEN est un nom de var, pas un secret
+  '''plugins/.*README''',        # Docs exemples de config (sk_live_xxx placeholders)
+]
+
+# Faux-positifs connus — commits qui déclenchent des FP (nom de variable, pas un vrai secret).
+# Format gitleaks v8: commits = liste de strings directement dans [allowlist].
+commits = [
+  "9a54d39842e98c8f8d17fdf02bb02e4b8cfe4fa6",  # patch_signature.py:164 — variable `private_key`, pas un secret
+  "48fabb67ec26e5c0436344d21f48003695f9068b",  # openclaw/agents/*/SOUL.md — OPENCLAW_TOKEN = nom de var config
 ]

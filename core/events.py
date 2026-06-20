@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 # BASE EVENTS
 # ═══════════════════════════════════════════════════════════════
 
-class Event(BaseModel):
+class Event(BaseModel):  # type: ignore[misc]
     """Objet de base immuable pour tout événement du système."""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: float = Field(default_factory=time.time)

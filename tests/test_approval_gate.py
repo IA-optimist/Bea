@@ -144,6 +144,7 @@ class TestSupervisorApprovalGate(unittest.TestCase):
         gate_entries = [d for d in outcome.decision_trace if d.get("step") == "approval_gate"]
         self.assertEqual(len(gate_entries), 0)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="medium risk pause drift", strict=False)
     def test_medium_risk_pauses_for_approval(self):
         from core.orchestration.execution_supervisor import supervise
@@ -176,6 +177,7 @@ class TestSupervisorApprovalGate(unittest.TestCase):
         self.assertFalse(outcome.success)
         self.assertIn(outcome.error_class, ("awaiting_approval", "approval_denied"))
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="explicit approval requirement drift", strict=False)
     def test_explicit_requires_approval(self):
         from core.orchestration.execution_supervisor import supervise
@@ -230,11 +232,11 @@ class TestMetaOrchestratorApproval(unittest.TestCase):
     def test_orchestrator_passes_approval_flag(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        
+
         # Check run_mission manages needs_approval flag
         run_mission_src = inspect.getsource(MetaOrchestrator.run_mission)
         self.assertIn("needs_approval", run_mission_src)
-        
+
         # Check _execute_supervised receives requires_approval parameter
         exec_supervised_src = inspect.getsource(MetaOrchestrator._execute_supervised)
         self.assertIn("requires_approval", exec_supervised_src)
@@ -242,11 +244,11 @@ class TestMetaOrchestratorApproval(unittest.TestCase):
     def test_orchestrator_handles_awaiting(self):
         import inspect
         from core.meta_orchestrator import MetaOrchestrator
-        
+
         # Check run_mission references awaiting_approval flow
         run_mission_src = inspect.getsource(MetaOrchestrator.run_mission)
         self.assertIn("awaiting_approval", run_mission_src)
-        
+
         # Check approval_item_id exists in _handle_awaiting_approval method
         # (it was extracted from run_mission during Phase 28 refactoring)
         awaiting_handler_src = inspect.getsource(MetaOrchestrator._handle_awaiting_approval)

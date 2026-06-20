@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 import asyncio
 import threading
-from typing import Callable, Optional
+from typing import Any, Awaitable, Protocol, cast
 import structlog
 
 from executor.capability_contracts import (
@@ -32,6 +32,18 @@ _PLUGIN_TIMEOUT_S = 60
 _MCP_TIMEOUT_S = 30
 
 
+class _NativeHandler(Protocol):
+    def __call__(self, **kwargs: Any) -> Any: ...
+
+
+class _PluginLike(Protocol):
+    def invoke(self, action: str, params: dict[str, Any], context: dict[str, Any]) -> Any: ...
+
+
+class _McpAdapterLike(Protocol):
+    def invoke_tool(self, tool_id: str, params: dict[str, Any], context: dict[str, Any]) -> Awaitable[dict[str, Any]]: ...
+
+
 class CapabilityDispatcher:
     """
     Single dispatch point for all capability types.
@@ -45,24 +57,24 @@ class CapabilityDispatcher:
         result = await dispatcher.dispatch(request)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._native: dict[str, Callable] = {}
-        self._mcp_adapter = None
+        self._native: dict[str, _NativeHandler] = {}
+        self._mcp_adapter: _McpAdapterLike | None = None
 
     # ── Registration ──────────────────────────────────────────
 
-    def register_native_tool(self, tool_id: str, handler: Callable) -> None:
+    def register_native_tool(self, tool_id: str, handler: _NativeHandler) -> None:
         with self._lock:
             self._native[tool_id] = handler
         log.debug("native_tool_registered", tool_id=tool_id)
 
-    def register_plugin(self, plugin_id: str, plugin) -> None:
+    def register_plugin(self, plugin_id: str, plugin: _PluginLike) -> None:
         from plugins.plugin_registry import get_plugin_registry
         get_plugin_registry().register(plugin)
         log.debug("plugin_registered_via_dispatcher", plugin_id=plugin_id)
 
-    def set_mcp_adapter(self, adapter) -> None:
+    def set_mcp_adapter(self, adapter: _McpAdapterLike) -> None:
         self._mcp_adapter = adapter
         log.info("mcp_adapter_attached")
 
@@ -138,7 +150,7 @@ class CapabilityDispatcher:
                 ms=_ms(t0),
             )
 
-        plugin = registry.get(req.capability_id)
+        plugin = cast(_PluginLike, registry.get(req.capability_id))
         try:
             if asyncio.iscoroutinefunction(plugin.invoke):
                 result = await asyncio.wait_for(
@@ -205,7 +217,7 @@ class CapabilityDispatcher:
 
     # ── Introspection ─────────────────────────────────────────
 
-    def list_capabilities(self) -> dict:
+    def list_capabilities(self) -> dict[str, list[str]]:
         from plugins.plugin_registry import get_plugin_registry
         from integrations.mcp.mcp_registry import get_mcp_registry
         return {
@@ -220,7 +232,7 @@ def _ms(t0: float) -> int:
 
 
 # ── Singleton ─────────────────────────────────────────────────
-_dispatcher: Optional[CapabilityDispatcher] = None
+_dispatcher: CapabilityDispatcher | None = None
 _dispatcher_lock = threading.Lock()
 
 
@@ -229,4 +241,6 @@ def get_capability_dispatcher() -> CapabilityDispatcher:
     with _dispatcher_lock:
         if _dispatcher is None:
             _dispatcher = CapabilityDispatcher()
-    return _dispatcher
+        dispatcher = _dispatcher
+    assert dispatcher is not None
+    return dispatcher

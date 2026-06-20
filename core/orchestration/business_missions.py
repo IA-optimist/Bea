@@ -14,7 +14,7 @@ Mission types:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 import structlog
 
@@ -26,9 +26,9 @@ log = structlog.get_logger("business_missions")
 # ══════════════════════════════════════════════════════════════
 
 async def handle_scan_opportunities(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Scan business opportunities from multiple sources.
     
@@ -50,28 +50,28 @@ async def handle_scan_opportunities(
         }
     """
     from business.automation.opportunity_scanner import OpportunityScanner
-    
+
     params = mission.get("params", {})
-    days_back = params.get("days_back", 30)
-    min_score = params.get("min_score", 60.0)
-    
+    days_back = int(params.get("days_back", 30))
+    min_score = float(params.get("min_score", 60.0))
+
     log.info("business_scan_start", days_back=days_back)
-    
+
     scanner = OpportunityScanner()
-    
+
     # Scan all sources
     opportunities = scanner.scan_all(days_back=days_back)
-    
+
     # Filter by score
     filtered = [opp for opp in opportunities if opp.total_score >= min_score]
-    
+
     # Sort by score
     filtered.sort(key=lambda x: x.total_score, reverse=True)
-    
-    log.info("business_scan_complete", 
-             total=len(opportunities), 
+
+    log.info("business_scan_complete",
+             total=len(opportunities),
              filtered=len(filtered))
-    
+
     return {
         "status": "success",
         "opportunities": [
@@ -102,9 +102,9 @@ async def handle_scan_opportunities(
 
 
 async def handle_build_product(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Build a complete SaaS product from an opportunity.
     
@@ -127,18 +127,18 @@ async def handle_build_product(
         }
     """
     from business.automation.product_builder import ProductBuilder, ProductSpec
-    
+
     params = mission.get("params", {})
     opportunity = params.get("opportunity", {})
     stack = params.get("stack", "react_fastapi")
-    features = params.get("features", ["auth", "payments", "dashboard"])
-    
-    log.info("business_build_start", 
+    features = list(params.get("features", ["auth", "payments", "dashboard"]))
+
+    log.info("business_build_start",
              title=opportunity.get("title"),
              stack=stack)
-    
+
     builder = ProductBuilder()
-    
+
     # Create product spec
     _pain = opportunity.get("pain_points", []) or []
     _desc = opportunity.get("description", "")
@@ -154,14 +154,14 @@ async def handle_build_product(
         pricing_tiers=[],
         tech_stack=stack if isinstance(stack, dict) else {"stack": str(stack)},
     )
-    
+
     # Build product
     product = builder.build_from_spec(spec)
-    
-    log.info("business_build_complete", 
+
+    log.info("business_build_complete",
              product_name=product.name,
              output_dir=str(product.output_dir))
-    
+
     return {
         "status": "success",
         "product": {
@@ -181,9 +181,9 @@ async def handle_build_product(
 
 
 async def handle_deploy_product(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Deploy a product to production.
     
@@ -207,11 +207,11 @@ async def handle_deploy_product(
     product_dir = Path(params.get("product_dir", ""))
     platform = params.get("platform", "vercel")
     domain = params.get("domain")
-    
-    log.info("business_deploy_start", 
+
+    log.info("business_deploy_start",
              product_dir=str(product_dir),
              platform=platform)
-    
+
     # Deployment: log to DB + return deployment record
     import time
     deployment_url = (f"https://{domain}" if domain
@@ -243,9 +243,9 @@ async def handle_deploy_product(
 
 
 async def handle_check_compliance(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Check legal compliance for a product.
     
@@ -266,20 +266,20 @@ async def handle_check_compliance(
         }
     """
     from business.legal.compliance_checker import ComplianceChecker
-    
+
     params = mission.get("params", {})
-    
-    log.info("business_compliance_check", 
+
+    log.info("business_compliance_check",
              product=params.get("product_name"))
-    
+
     checker = ComplianceChecker()
-    
+
     report = checker.check(
         product_name=params.get("product_name", ""),
         description=params.get("description", ""),
         target_markets=params.get("target_market", ["France"]),
     )
-    
+
     return {
         "status": "success",
         "compliance": {
@@ -293,9 +293,9 @@ async def handle_check_compliance(
 
 
 async def handle_optimize_taxes(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Calculate optimal fiscal structure.
     
@@ -316,21 +316,21 @@ async def handle_optimize_taxes(
         }
     """
     from business.fiscal.tax_optimizer import TaxOptimizer
-    
+
     params = mission.get("params", {})
-    
-    log.info("business_tax_optimization", 
+
+    log.info("business_tax_optimization",
              revenue=params.get("revenue"),
              structure=params.get("structure"))
-    
+
     optimizer = TaxOptimizer()
-    
+
     result = optimizer.optimize(
         revenue=params.get("revenue", 0),
         expenses=params.get("expenses", 0),
         current_structure=params.get("structure", "auto_entrepreneur"),
     )
-    
+
     return {
         "status": "success",
         "optimization": result
@@ -338,9 +338,9 @@ async def handle_optimize_taxes(
 
 
 async def handle_track_revenue(
-    mission: dict,
-    context: dict | None = None
-) -> dict:
+    mission: dict[str, Any],
+    context: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Track revenue across product portfolio.
     
@@ -357,13 +357,13 @@ async def handle_track_revenue(
         }
     """
     from business.revenue.revenue_engine import RevenueEngine
-    
+
     log.info("business_revenue_tracking")
-    
+
     engine = RevenueEngine()
-    
+
     metrics = engine.get_portfolio_metrics()
-    
+
     return {
         "status": "success",
         "metrics": {
@@ -381,9 +381,9 @@ async def handle_track_revenue(
 # HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════
 
-def _count_sources(opportunities: List) -> Dict[str, int]:
+def _count_sources(opportunities: list[Any]) -> dict[str, int]:
     """Count opportunities by source."""
-    counts = {}
+    counts: dict[str, int] = {}
     for opp in opportunities:
         source = opp.source
         counts[source] = counts.get(source, 0) + 1
@@ -404,7 +404,7 @@ BUSINESS_MISSION_HANDLERS = {
 }
 
 
-def register_business_handlers(orchestrator):
+def register_business_handlers(orchestrator: Any) -> None:
     """
     Register business mission handlers with MetaOrchestrator.
     
@@ -417,5 +417,5 @@ def register_business_handlers(orchestrator):
     """
     for mission_type, handler in BUSINESS_MISSION_HANDLERS.items():
         orchestrator.register_mission_handler(mission_type, handler)
-    
+
     log.info("business_handlers_registered", count=len(BUSINESS_MISSION_HANDLERS))

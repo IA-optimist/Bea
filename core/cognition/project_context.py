@@ -23,31 +23,31 @@ log = structlog.get_logger(__name__)
 @dataclass
 class ProjectContext:
     """Context for a single project."""
-    
+
     project_id: int
     name: str
     description: str = ""
-    
+
     # Memory
     recent_messages: List[Dict[str, str]] = field(default_factory=list)
     long_term_memory_ids: List[str] = field(default_factory=list)  # Qdrant IDs
-    
+
     # Skills
     learned_skills: List[str] = field(default_factory=list)
-    
+
     # State
     active_missions: List[str] = field(default_factory=list)
     current_goal: Optional[str] = None
-    
+
     # Performance
     success_count: int = 0
     failure_count: int = 0
     avg_confidence: float = 0.0
-    
+
     # Metadata
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_active: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
+
     def add_message(self, role: str, content: str):
         """Add message to recent history (keep last 20)."""
         self.recent_messages.append({
@@ -58,14 +58,14 @@ class ProjectContext:
         if len(self.recent_messages) > 20:
             self.recent_messages = self.recent_messages[-20:]
         self.last_active = datetime.now(timezone.utc)
-    
+
     def record_mission_result(self, success: bool, confidence: float):
         """Update performance metrics."""
         if success:
             self.success_count += 1
         else:
             self.failure_count += 1
-        
+
         # Rolling average confidence
         total = self.success_count + self.failure_count
         self.avg_confidence = (
@@ -83,13 +83,13 @@ class ProjectContextManager:
     - Skill inheritance between projects
     - Performance tracking per project
     """
-    
+
     def __init__(self, db_engine=None, qdrant_client=None):
         self.db = db_engine
         self.qdrant = qdrant_client
         self.contexts: Dict[int, ProjectContext] = {}
         self.current_project_id: Optional[int] = None
-        
+
     async def initialize(self):
         """Load all projects from database."""
         if not self.db:
@@ -102,7 +102,7 @@ class ProjectContextManager:
             )
             self.current_project_id = 1
             return
-        
+
         try:
             from core.mission_system import get_mission_system
             ms = get_mission_system()
@@ -119,36 +119,36 @@ class ProjectContextManager:
         except Exception as _e:
             log.warning("project_load_failed", err=str(_e)[:80])
         log.info("project_contexts_initialized", count=len(self.contexts))
-    
+
     def get_current_context(self) -> Optional[ProjectContext]:
         """Get currently active project context."""
         if self.current_project_id is None:
             return None
         return self.contexts.get(self.current_project_id)
-    
+
     def switch_project(self, project_id: int) -> ProjectContext:
         """Switch to different project."""
         if project_id not in self.contexts:
             raise ValueError(f"Project {project_id} not found")
-        
+
         old_id = self.current_project_id
         self.current_project_id = project_id
-        
+
         log.info(
             "project_switched",
             from_project=old_id,
             to_project=project_id,
             name=self.contexts[project_id].name
         )
-        
+
         return self.contexts[project_id]
-    
+
     def get_project_memory(self, project_id: int, limit: int = 5) -> List[Dict]:
         """Retrieve recent messages for a project."""
         if project_id not in self.contexts:
             return []
         return self.contexts[project_id].recent_messages[-limit:]
-    
+
     async def store_in_long_term_memory(
         self,
         project_id: int,
@@ -163,7 +163,7 @@ class ProjectContextManager:
         if not self.qdrant:
             log.warning("no_qdrant_client", msg="Cannot store long-term memory")
             return ""
-        
+
         try:
             from core.memory.qdrant_client import get_qdrant
             from core.memory.embedding_provider import EmbeddingProvider
@@ -185,7 +185,7 @@ class ProjectContextManager:
         except Exception as _e:
             log.warning("long_term_memory_failed", err=str(_e)[:80])
             return f"error-{project_id}"
-    
+
     async def retrieve_relevant_memory(
         self,
         project_id: int,
@@ -199,7 +199,7 @@ class ProjectContextManager:
         """
         if not self.qdrant:
             return []
-        
+
         try:
             from core.memory.qdrant_client import get_qdrant
             from core.memory.embedding_provider import EmbeddingProvider
@@ -212,7 +212,7 @@ class ProjectContextManager:
         except Exception as _e:
             log.warning("long_term_search_failed", err=str(_e)[:80])
             return []
-    
+
     def add_learned_skill(self, project_id: int, skill_name: str):
         """Record that project learned a new skill."""
         if project_id in self.contexts:
@@ -225,7 +225,7 @@ class ProjectContextManager:
                     skill=skill_name,
                     total_skills=len(ctx.learned_skills)
                 )
-    
+
     def get_all_skills(self, include_global: bool = True) -> List[str]:
         """
         Get all skills across projects.
@@ -236,20 +236,20 @@ class ProjectContextManager:
         if not include_global and self.current_project_id:
             ctx = self.contexts.get(self.current_project_id)
             return ctx.learned_skills if ctx else []
-        
+
         # Collect from all projects (deduplicated)
         all_skills = set()
         for ctx in self.contexts.values():
             all_skills.update(ctx.learned_skills)
-        
+
         return list(all_skills)
-    
+
     def get_performance_summary(self) -> Dict[str, Any]:
         """Get performance metrics across all projects."""
         total_success = sum(ctx.success_count for ctx in self.contexts.values())
         total_failure = sum(ctx.failure_count for ctx in self.contexts.values())
         total = total_success + total_failure
-        
+
         return {
             "total_projects": len(self.contexts),
             "total_missions": total,

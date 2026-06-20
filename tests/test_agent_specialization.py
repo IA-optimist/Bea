@@ -67,6 +67,7 @@ def test_classify_planning_task():
     assert "planning" in cluster_names
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: keyword matching weak")
 def test_classify_deploy_task():
     from core.agent_specialization import classify_task

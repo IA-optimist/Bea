@@ -53,7 +53,7 @@ class ImprovementProposal:
     risk_level: Literal["LOW", "MEDIUM", "HIGH"] = "MEDIUM"
     estimated_impact: float = 0.5
     requires_approval: bool = True
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -110,15 +110,15 @@ def validate_proposal(proposal: ImprovementProposal) -> tuple[bool, str]:
     # Check allowed scope
     if proposal.target_file and not is_path_allowed(proposal.target_file):
         return False, f"REJECTED: {proposal.target_file} is outside allowed improvement scope"
-    
+
     # HIGH risk always requires approval
     if proposal.risk_level == "HIGH":
         proposal.requires_approval = True
-    
+
     # LOW risk in workspace can auto-apply
     if proposal.risk_level == "LOW" and proposal.target_file.startswith("workspace/"):
         proposal.requires_approval = False
-    
+
     log.info("improvement_validated", type=proposal.improvement_type,
              target=proposal.target_file[:60], approved=not proposal.requires_approval)
     return True, "APPROVED" if not proposal.requires_approval else "PENDING_APPROVAL"

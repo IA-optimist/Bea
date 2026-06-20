@@ -144,6 +144,7 @@ class TestDeadCodeRemoval:
     def test_CV23_improve_bridge_deleted(self):
         assert not Path("core/improve_bridge.py").exists()
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="model_router still exists (drift)", strict=False)
     def test_CV24_model_router_deleted(self):
         assert not Path("core/model_router.py").exists()
@@ -151,6 +152,7 @@ class TestDeadCodeRemoval:
     def test_CV25_cockpit_route_deleted(self):
         assert not Path("api/routes/cockpit.py").exists()
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="cockpit mount check drift", strict=False)
     def test_CV26_cockpit_not_mounted(self):
         content = Path("api/main.py").read_text(encoding="utf-8")

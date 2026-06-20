@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import time
 import structlog
+from typing import Any
 
 from core.self_model.model import (
     SelfModel, CapabilityEntry, CapabilityStatus,
@@ -27,7 +28,7 @@ log = structlog.get_logger()
 
 # ── Capability mapping ────────────────────────────────────────────────────────
 
-def _map_capability_status(raw: dict) -> CapabilityStatus:
+def _map_capability_status(raw: dict[str, Any]) -> CapabilityStatus:
     """Map raw capability graph entry to a CapabilityStatus."""
     constraints = raw.get("constraints", [])
     if isinstance(constraints, list):
@@ -74,7 +75,7 @@ def _build_capabilities() -> dict[str, CapabilityEntry]:
     return capabilities
 
 
-def _extract_risk(constraints: list) -> str:
+def _extract_risk(constraints: list[Any]) -> str:
     """Extract risk level from constraints list."""
     if not isinstance(constraints, list):
         return "low"

@@ -9,6 +9,7 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass
+from typing import ClassVar
 
 import structlog
 
@@ -43,7 +44,7 @@ class CapabilityStats:
             return True  # not enough data
         return self.success_rate >= min_rate
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "capability_id": self.capability_id,
             "total_calls": self.total_calls,
@@ -60,15 +61,17 @@ class CapabilityHealthTracker:
     Thread-safe. Used by MetaOrchestrator for capability-aware planning.
     """
 
-    _instance = None
-    _lock = threading.Lock()
+    _instance: ClassVar[CapabilityHealthTracker | None] = None
+    _lock: ClassVar[threading.Lock] = threading.Lock()
+    _stats: dict[str, CapabilityStats]
+    _slock: threading.Lock
 
-    def __new__(cls):
+    def __new__(cls) -> CapabilityHealthTracker:
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
-                    cls._instance._stats: dict[str, CapabilityStats] = {}
+                    cls._instance._stats = {}
                     cls._instance._slock = threading.Lock()
         return cls._instance
 
@@ -101,7 +104,7 @@ class CapabilityHealthTracker:
     def unhealthy_capabilities(self) -> list[str]:
         return [cid for cid, s in self._stats.items() if not s.is_healthy()]
 
-    def all_stats(self) -> list[dict]:
+    def all_stats(self) -> list[dict[str, object]]:
         return [s.to_dict() for s in self._stats.values()]
 
     def reset(self) -> None:

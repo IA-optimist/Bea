@@ -155,6 +155,7 @@ from core.workflow_runtime import ScheduledTaskManager
 # PHASE 2 — WORKFLOW EXECUTION ENGINE
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_create_workflow():
     from core.workflow_runtime import WorkflowEngine
@@ -168,6 +169,7 @@ def test_create_workflow():
     assert len(wf.steps) == 2
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_step_execution():
     from core.workflow_runtime import WorkflowEngine
@@ -226,6 +228,7 @@ def test_workflow_cancel():
     assert engine._executions[wf.execution_id].status == "cancelled"
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_progress_tracking():
     from core.workflow_runtime import WorkflowEngine
@@ -242,6 +245,7 @@ def test_workflow_progress_tracking():
     assert ex.progress == 0.5  # 2/4
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_step_dependencies():
     from core.workflow_runtime import WorkflowEngine
@@ -256,6 +260,7 @@ def test_workflow_step_dependencies():
     assert "dependency" in r["error"]
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_workflow_retry_on_failure():
     from core.workflow_runtime import WorkflowEngine
@@ -540,6 +545,7 @@ def test_resource_pressure_increases():
         _mon_mod.MAX_CONCURRENT_WORKFLOWS = old_mon
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: max concurrent workflows state leak")
 def test_failure_cluster_detection():
     from core.workflow_runtime import WorkflowEngine, ScheduledTaskManager, ResourceMonitor

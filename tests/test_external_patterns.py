@@ -220,6 +220,7 @@ class TestSkillRefinement(unittest.TestCase):
 class TestEnhancedMissionLoop(unittest.TestCase):
     """Test MetaOrchestrator has reflection and skill refinement."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="orchestrator reflection drift", strict=False)
     def test_orchestrator_has_reflection(self):
         import inspect
@@ -229,6 +230,7 @@ class TestEnhancedMissionLoop(unittest.TestCase):
         self.assertIn("reflect", src)
         self.assertIn("result_confidence", src)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="orchestrator skill refinement drift", strict=False)
     def test_orchestrator_has_skill_refinement(self):
         import inspect

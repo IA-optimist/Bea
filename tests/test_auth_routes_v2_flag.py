@@ -163,10 +163,10 @@ def test_logout_flag_on_revokes_jti(monkeypatch: pytest.MonkeyPatch,
     assert pre is not None
 
     # Logout: must mark JTI revoked.
+    client.cookies.set("bea_token", login["access_token"])
     r = client.post(
         "/api/v2/auth/logout",
         json={"refresh_token": login["refresh_token"]},
-        cookies={"bea_token": login["access_token"]},
     )
     assert r.status_code == 200
 
@@ -194,9 +194,9 @@ def test_legacy_refresh_path_still_works_when_flag_off(
     legacy_token = login["access_token"]
 
     # Legacy refresh expects the old token from cookie / Authorization.
+    client.cookies.set("bea_token", legacy_token)
     r = client.post(
         "/auth/refresh",
-        cookies={"bea_token": legacy_token},
     )
     assert r.status_code == 200, r.text
     body = r.json()

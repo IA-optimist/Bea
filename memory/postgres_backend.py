@@ -88,7 +88,7 @@ class PostgresBackend:
             # Connect to PostgreSQL
             self.conn = psycopg2.connect(self.connection_string)
             self._create_table()
-            
+
             # Connect to Redis if available and configured
             if REDIS_AVAILABLE and self.redis_url:
                 try:
@@ -98,11 +98,11 @@ class PostgresBackend:
                 except Exception as e:
                     logger.warning(f"Redis connection failed, continuing without cache: {e}")
                     self.redis_client = None
-            
+
             self._initialized = True
             logger.info(f"PostgreSQL backend initialized (table: {self.table_name})")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize PostgreSQL backend: {e}")
             self.conn = None
@@ -120,7 +120,7 @@ class PostgresBackend:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Create indexes for performance
             cur.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_tags 
@@ -130,7 +130,7 @@ class PostgresBackend:
                 CREATE INDEX IF NOT EXISTS idx_{self.table_name}_created 
                 ON {self.table_name}(created_at DESC)
             """)
-            
+
             self.conn.commit()
 
     def store(self, key: str, value: Dict[str, Any], tags: Optional[List[str]] = None) -> bool:
@@ -150,7 +150,7 @@ class PostgresBackend:
         try:
             tags = tags or []
             value_json = json.dumps(value)
-            
+
             with self.conn.cursor() as cur:
                 cur.execute(f"""
                     INSERT INTO {self.table_name} (key, value, tags, updated_at)
@@ -161,9 +161,9 @@ class PostgresBackend:
                         tags = EXCLUDED.tags,
                         updated_at = EXCLUDED.updated_at
                 """, (key, value_json, tags, datetime.now()))
-                
+
             self.conn.commit()
-            
+
             # Update Redis cache
             if self.redis_client:
                 try:
@@ -175,15 +175,15 @@ class PostgresBackend:
                         'created_at': datetime.now().isoformat()
                     }
                     self.redis_client.setex(
-                        cache_key, 
+                        cache_key,
                         3600,  # 1 hour TTL
                         json.dumps(cache_value)
                     )
                 except Exception as e:
                     logger.warning(f"Redis cache update failed: {e}")
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to store entry {key}: {e}")
             if self.conn:
@@ -221,7 +221,7 @@ class PostgresBackend:
                     FROM {self.table_name}
                     WHERE key = %s
                 """, (key,))
-                
+
                 row = cur.fetchone()
                 if row:
                     result = {
@@ -230,7 +230,7 @@ class PostgresBackend:
                         'tags': row['tags'],
                         'created_at': row['created_at'].isoformat()
                     }
-                    
+
                     # Warm Redis cache
                     if self.redis_client:
                         try:
@@ -238,12 +238,12 @@ class PostgresBackend:
                             self.redis_client.setex(cache_key, 3600, json.dumps(result))
                         except Exception as e:
                             logger.warning(f"Redis cache write failed: {e}")
-                    
+
                     return result
-                
+
         except Exception as e:
             logger.error(f"Failed to retrieve entry {key}: {e}")
-        
+
         return None
 
     def search_by_tags(self, tags: List[str], limit: int = 100) -> List[Dict[str, Any]]:
@@ -269,7 +269,7 @@ class PostgresBackend:
                     ORDER BY created_at DESC
                     LIMIT %s
                 """, (tags, limit))
-                
+
                 results = []
                 for row in cur.fetchall():
                     results.append({
@@ -278,9 +278,9 @@ class PostgresBackend:
                         'tags': row['tags'],
                         'created_at': row['created_at'].isoformat()
                     })
-                
+
                 return results
-                
+
         except Exception as e:
             logger.error(f"Failed to search by tags {tags}: {e}")
             return []
@@ -303,9 +303,9 @@ class PostgresBackend:
                     DELETE FROM {self.table_name}
                     WHERE key = %s
                 """, (key,))
-                
+
             self.conn.commit()
-            
+
             # Invalidate Redis cache
             if self.redis_client:
                 try:
@@ -313,9 +313,9 @@ class PostgresBackend:
                     self.redis_client.delete(cache_key)
                 except Exception as e:
                     logger.warning(f"Redis cache invalidation failed: {e}")
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to delete entry {key}: {e}")
             if self.conn:

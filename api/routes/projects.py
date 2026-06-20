@@ -129,7 +129,7 @@ async def create_project_endpoint(
             config=request.config,
             metadata=request.metadata
         )
-        
+
         return ProjectResponse(
             id=str(project.id),
             name=project.name,
@@ -159,7 +159,7 @@ async def list_projects_endpoint(
     """
     try:
         projects = list_projects(active_only=active_only)
-        
+
         return ProjectListResponse(
             projects=[
                 ProjectResponse(
@@ -199,10 +199,10 @@ async def get_project_endpoint(
         except ValueError:
             # Not a UUID, try as name
             project = get_project_by_name(project_id)
-        
+
         if not project:
             raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
-        
+
         return ProjectResponse(
             id=str(project.id),
             name=project.name,
@@ -240,10 +240,10 @@ async def update_project_endpoint(
             metadata=request.metadata,
             is_active=request.is_active
         )
-        
+
         if not project:
             raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
-        
+
         return ProjectResponse(
             id=str(project.id),
             name=project.name,
@@ -288,10 +288,10 @@ async def delete_project_endpoint(
     """
     try:
         success = delete_project(project_id, hard_delete=hard_delete)
-        
+
         if not success:
             raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
-        
+
         return None
     except HTTPException:
         raise
@@ -315,15 +315,15 @@ async def switch_project(
     """Switch current project context."""
     from core.project_context import set_project
     # get_project imported from models.project at top
-    
+
     # Validate project exists
     project = get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     # Set context
     set_project(project_id)
-    
+
     return {
         "ok": True,
         "project": {

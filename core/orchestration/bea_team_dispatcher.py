@@ -44,7 +44,7 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
             response = await llm_client.ainvoke(messages)
             result = response.content if hasattr(response, "content") else str(response)
             chain_results.append({"agent": agent_name, "output": result[:500], "success": True})
-            
+
             # Global Workspace Theory: Publish agent output to shared consciousness
             await get_workspace().publish(
                 agent=agent_name,
@@ -52,7 +52,7 @@ async def dispatch_improve(goal: str, llm_client, mission_id: str = "") -> dict:
                 confidence=0.8,
                 metadata={'mission_id': mission_id, 'goal': goal[:100]}
             )
-            
+
             # Pass result to next agent as context
             context = f"Previous {agent_name} output:\n{result}\n\nOriginal goal: {goal}"
             log.info("bea_team.agent_complete", agent=agent_name, mission_id=mission_id)

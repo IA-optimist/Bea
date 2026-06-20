@@ -41,6 +41,7 @@ def test_single_active_orchestrator():
     assert len(lines_with_meta) == 0, f"MetaOrchestrator directly instantiated in api/main.py: {lines_with_meta}"
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: layout changed")
 def test_legacy_orchestrators_deprecated():
     """Legacy orchestrators have deprecation markers."""
@@ -152,6 +153,7 @@ def test_auto_detection_wired_to_lifecycle():
 # LAYER 7: COCKPIT COMPLETENESS
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="static/cockpit.html removed", strict=False)
 def test_cockpit_all_12_panels():
     """Cockpit covers all target system views."""

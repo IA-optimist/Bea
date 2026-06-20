@@ -1,0 +1,49 @@
+{
+  "manifest_version": "1.0",
+  "tool_id": "network:http",
+  "name": "HTTP Request",
+  "description": "Make HTTP requests to explicitly allowed external services",
+  "version": "1.0.0",
+  "author": "Bea Team",
+  "permissions": [
+    {
+      "resource_type": "network",
+      "scope": "network",
+      "allowed_patterns": [
+        "https://*.bea-project.dev/**"
+      ],
+      "denied_patterns": [
+        "http://127.",
+        "http://localhost",
+        "http://10.",
+        "http://192.168.",
+        "http://172.16.",
+        "http://172.17.",
+        "http://172.18.",
+        "http://172.19.",
+        "http://172.20.",
+        "http://172.21.",
+        "http://172.22.",
+        "http://172.23.",
+        "http://172.24.",
+        "http://172.25.",
+        "http://172.26.",
+        "http://172.27.",
+        "http://172.28.",
+        "http://172.29.",
+        "http://172.30.",
+        "http://172.31.",
+        "http://169.254.",
+        "http://metadata"
+      ],
+      "requires_approval": false
+    }
+  ],
+  "risk_level": "medium",
+  "requires_secrets": [],
+  "requires_network": true,
+  "requires_approval": true,
+  "dangerous_actions": [],
+  "signature": "hmac-sha256:096d3c656d18801e8ad4d1bdfa51f7bd331e31ac52c643355c3f8a77ace41f04",
+  "created_at": "2026-06-19T13:01:12.017789"
+}

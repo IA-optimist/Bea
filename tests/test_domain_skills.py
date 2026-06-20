@@ -272,27 +272,27 @@ class TestSkillAPI:
 
     def test_DS28_skills_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills" in paths
 
     def test_DS29_skills_stats_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills/stats" in paths
 
     def test_DS30_skills_chains_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills/chains" in paths
 
     def test_DS31_skill_detail_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills/{skill_id}" in paths
 
     def test_DS32_skill_feedback_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/skills/{skill_id}/feedback" in paths
 
 
@@ -328,6 +328,7 @@ class TestAgentSkillMapping:
         assert "skills-used.json" in src
         assert "skills_used" in src
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="skill files drift", strict=False)
     def test_DS38_all_skill_files_present(self):
         """Every skill has all 4 required files."""

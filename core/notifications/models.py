@@ -41,7 +41,7 @@ class NotificationSubscription:
     mission_statuses: list[str] = field(default_factory=lambda: ["DONE", "FAILED"])
     priority_filter: Optional[NotificationPriority] = None
     created_at: float = field(default_factory=time.time)
-    
+
     def to_dict(self) -> dict:
         return {
             "user_id": self.user_id,
@@ -66,7 +66,7 @@ class NotificationPayload:
     priority: NotificationPriority = NotificationPriority.NORMAL
     metadata: dict = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
-    
+
     def to_message(self) -> str:
         """Convert payload to human-readable message"""
         emoji = {
@@ -75,17 +75,17 @@ class NotificationPayload:
             "CANCELLED": "⛔",
             "COMPLETED": "✅",
         }.get(self.status, "ℹ️")
-        
+
         msg = f"{emoji} **Mission {self.status}**\n\n"
         msg += f"**ID:** `{self.mission_id}`\n"
         msg += f"**Title:** {self.title}\n\n"
-        
+
         if self.status == "DONE" and self.result:
             msg += f"**Result:**\n{self.result[:500]}\n"
         elif self.status == "FAILED" and self.error:
             msg += f"**Error:**\n{self.error[:500]}\n"
-        
+
         if self.metadata:
             msg += f"\n**Details:** {str(self.metadata)[:200]}\n"
-        
+
         return msg.strip()

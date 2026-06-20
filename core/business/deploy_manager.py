@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class DeployManager:
     """Automate VPS deployment for MVPs"""
-    
+
     def __init__(
         self,
         vps_host: Optional[str] = None,
@@ -39,14 +39,14 @@ class DeployManager:
         self.vps_ssh_key = vps_ssh_key or os.getenv("VPS_SSH_KEY", "/root/.ssh/id_rsa")
         self.deploy_base_dir = deploy_base_dir
         self.domain = domain
-        
+
         logger.info(
             f"deploy_manager_initialized "
             f"host={self.vps_host} "
             f"user={self.vps_user} "
             f"domain={self.domain}"
         )
-    
+
     def deploy(
         self,
         opportunity: Opportunity,
@@ -73,13 +73,13 @@ class DeployManager:
         """
         subdomain = f"{project_slug}.{self.domain}"
         deploy_path = f"{self.deploy_base_dir}/{project_slug}"
-        
+
         logger.info(
             f"deployment_started "
             f"opportunity_id={opportunity.id} "
             f"subdomain={subdomain}"
         )
-        
+
         try:
             # 0. Quick reachability check — fall back to Railway if VPS not up
             ssh_cmd = self._build_ssh_cmd()
@@ -114,7 +114,7 @@ class DeployManager:
                     "message": f"Failed to create deploy directory: {result.stderr}",
                     "error": "mkdir_failed",
                 }
-            
+
             # Clone or pull repo
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
@@ -128,7 +128,7 @@ class DeployManager:
                 text=True,
                 timeout=60,
             )
-            
+
             if result.returncode != 0:
                 logger.error(f"git_clone_failed: {result.stderr}")
                 return {
@@ -136,12 +136,12 @@ class DeployManager:
                     "message": f"Failed to clone repo: {result.stderr}",
                     "error": "git_clone_failed",
                 }
-            
+
             logger.info(f"repo_cloned path={deploy_path}")
-            
+
             # 2. Build and start Docker containers
             logger.debug("starting_docker_containers")
-            
+
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"cd {deploy_path} && "
@@ -152,7 +152,7 @@ class DeployManager:
                 text=True,
                 timeout=300,  # 5 min for build
             )
-            
+
             if result.returncode != 0:
                 logger.error(f"docker_up_failed: {result.stderr}")
                 return {
@@ -160,14 +160,14 @@ class DeployManager:
                     "message": f"Failed to start containers: {result.stderr}",
                     "error": "docker_up_failed",
                 }
-            
+
             logger.info(f"docker_containers_started path={deploy_path}")
-            
+
             # 3. Configure Caddy reverse proxy
             logger.debug(f"configuring_caddy subdomain={subdomain}")
-            
+
             caddy_config = self._generate_caddy_config(subdomain, project_slug)
-            
+
             # Write Caddyfile snippet
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
@@ -177,10 +177,10 @@ class DeployManager:
                 text=True,
                 timeout=10,
             )
-            
+
             if result.returncode != 0:
                 logger.warning(f"caddy_config_write_failed: {result.stderr}")
-            
+
             # Reload Caddy
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + ["systemctl reload caddy"],
@@ -188,18 +188,18 @@ class DeployManager:
                 text=True,
                 timeout=10,
             )
-            
+
             if result.returncode != 0:
                 logger.warning(f"caddy_reload_failed: {result.stderr}")
             else:
                 logger.info(f"caddy_reloaded subdomain={subdomain}")
-            
+
             # 4. Health check
             logger.debug("running_health_check")
-            
+
             import time
             time.sleep(5)  # Wait for services to start
-            
+
             result = subprocess.run(  # nosec B603 B607
                 ssh_cmd + [
                     f"cd {deploy_path} && "
@@ -209,18 +209,18 @@ class DeployManager:
                 text=True,
                 timeout=10,
             )
-            
+
             if "running" not in result.stdout.lower():
                 logger.warning(f"containers_not_running: {result.stdout}")
-            
+
             url = f"https://{subdomain}"
-            
+
             logger.info(
                 f"deployment_completed "
                 f"opportunity_id={opportunity.id} "
                 f"url={url}"
             )
-            
+
             return {
                 "success": True,
                 "subdomain": subdomain,
@@ -228,7 +228,7 @@ class DeployManager:
                 "deploy_path": deploy_path,
                 "message": f"MVP deployed successfully: {url}",
             }
-        
+
         except subprocess.TimeoutExpired as e:
             logger.error(f"deployment_timeout opportunity_id={opportunity.id}: {e}")
             return {
@@ -236,7 +236,7 @@ class DeployManager:
                 "message": f"Deployment timeout: {str(e)}",
                 "error": "timeout",
             }
-        
+
         except Exception as e:
             logger.error(f"deployment_exception opportunity_id={opportunity.id}: {e}", exc_info=True)
             return {
@@ -244,7 +244,7 @@ class DeployManager:
                 "message": f"Deployment exception: {str(e)}",
                 "error": str(e),
             }
-    
+
     def _deploy_railway(self, opportunity: "Opportunity", project_slug: str) -> Dict[str, Any]:
         """Deploy MVP to Railway when VPS is not available."""
         import shutil as _shutil
@@ -352,7 +352,7 @@ class DeployManager:
             "-o", "UserKnownHostsFile=/dev/null",
             f"{self.vps_user}@{self.vps_host}",
         ]
-    
+
     def _generate_caddy_config(self, subdomain: str, project_slug: str) -> str:
         """Generate Caddyfile snippet for reverse proxy"""
         return f"""
@@ -364,7 +364,7 @@ class DeployManager:
     }}
 }}
 """
-    
+
     def undeploy(self, project_slug: str) -> bool:
         """
         Remove deployment from VPS.
@@ -376,43 +376,43 @@ class DeployManager:
             bool: True if successful
         """
         deploy_path = f"{self.deploy_base_dir}/{project_slug}"
-        
+
         logger.info(f"undeployment_started slug={project_slug}")
-        
+
         try:
             ssh_cmd = self._build_ssh_cmd()
-            
+
             # Stop containers
             subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"cd {deploy_path} && docker-compose down || true"],
                 capture_output=True,
                 timeout=30,
             )
-            
+
             # Remove directory
             subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"rm -rf {deploy_path}"],
                 capture_output=True,
                 timeout=10,
             )
-            
+
             # Remove Caddy config
             subprocess.run(  # nosec B603 B607
                 ssh_cmd + [f"rm -f /etc/caddy/sites/{project_slug}.caddy"],
                 capture_output=True,
                 timeout=10,
             )
-            
+
             # Reload Caddy
             subprocess.run(  # nosec B603 B607
                 ssh_cmd + ["systemctl reload caddy"],
                 capture_output=True,
                 timeout=10,
             )
-            
+
             logger.info(f"undeployment_completed slug={project_slug}")
             return True
-        
+
         except Exception as e:
             logger.error(f"undeploy_exception slug={project_slug}: {e}", exc_info=True)
             return False

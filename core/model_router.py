@@ -20,7 +20,7 @@ class RoutingDecision:
     model: str = ""
     fallback_tier: Optional[str] = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "tier": self.tier,
             "reason": self.reason,
@@ -48,7 +48,7 @@ class ModelRouter:
     _COST_MAP = {"FAST": 0.0001, "STANDARD": 0.001, "STRONG": 0.01}
 
     def __init__(self) -> None:
-        self._usage: dict[str, dict] = {}
+        self._usage: dict[str, dict[str, int]] = {}
 
     def route(
         self,
@@ -96,10 +96,10 @@ class ModelRouter:
         self._usage[tier]["calls"] += 1
         self._usage[tier]["total_tokens"] += tokens
 
-    def get_usage(self) -> dict:
+    def get_usage(self) -> dict[str, dict[str, int]]:
         return dict(self._usage)
 
-    def estimated_savings(self) -> dict:
+    def estimated_savings(self) -> dict[str, float]:
         """Estimate savings vs always using STRONG model."""
         strong_cost = self._COST_MAP["STRONG"]
         actual = 0.0

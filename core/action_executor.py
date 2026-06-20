@@ -251,7 +251,7 @@ class ActionExecutor:
         """
         if not self._llm_helper:
             return None
-        
+
         try:
             # Appel synchrone (action_executor est synchrone)
             return self._llm_helper.call_agent(
@@ -278,7 +278,7 @@ class ActionExecutor:
         if llm_result:
             log.info("research_agent_llm_used", action_id=action.id)
             return llm_result
-        
+
         # === FALLBACK SUR TEMPLATE SI LLM ÉCHOUE ===
         log.info("research_agent_fallback_template", action_id=action.id)
         ts     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

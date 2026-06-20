@@ -408,6 +408,7 @@ class TestSafetyGuards:
         assert _is_protected("config/settings.py")
         assert _is_protected("core/self_improvement_loop.py")
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="_is_protected export drift", strict=False)
     def test_protected_patterns(self):
         """S28: Protected patterns blocked."""

@@ -13,8 +13,8 @@ contributors (or for yourself six months from now).
 ## 2. One-time setup
 
 ```bash
-git clone https://github.com/UniTy01/Beamax-master.git
-cd Beamax-master
+git clone git@github.com:IA-optimist/Bea.git
+cd Bea
 python3.11 -m venv venv && . venv/bin/activate
 pip install -r requirements.txt
 pip install pytest pytest-cov pytest-asyncio pytest-xdist ruff mypy pre-commit
@@ -200,7 +200,23 @@ Tracked in the codebase (see `ruff.toml` header + `docs/archive/`) :
 - **v1 API** : 3 routers still alive for legacy clients — sunset plan in
   `docs/API_VERSIONING.md`
 
-## 10. Getting help
+## 10. Packaging
+
+The project uses `pyproject.toml` as the single source of build metadata.
+
+- **Versioning**: SemVer `0.x` — the public API is not yet frozen; breaking
+  changes may occur on minor bumps until `1.0`.
+- **Build**: use the standard Python build front-end:
+
+  ```bash
+  pip install build
+  python -m build        # produces dist/*.whl and dist/*.tar.gz
+  ```
+
+- **License**: MIT — see `LICENSE` at the repo root. Copyright (c) 2026
+  UniTy (Maxence). All contributions must be compatible with the MIT license.
+
+## 11. Getting help
 
 - Open an issue on GitHub
 - Check `docs/INDEX.md` for the doc map

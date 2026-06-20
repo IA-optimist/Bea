@@ -17,6 +17,7 @@ import hashlib
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from collections import Counter
+from typing import Any
 import structlog
 
 log = structlog.get_logger()
@@ -69,7 +70,7 @@ class PatchMemory:
             old_str → except Exception: → except Exception as e:
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings: Any) -> None:
         self.s       = settings
         self._path   = self._resolve_path()
         self._entries: list[SuccessEntry] = []
@@ -85,7 +86,7 @@ class PatchMemory:
 
     # ── Chargement / sauvegarde ───────────────────────────────
 
-    def _load(self):
+    def _load(self) -> None:
         if self._loaded:
             return
         self._loaded = True
@@ -98,7 +99,7 @@ class PatchMemory:
             log.warning("patch_memory_load_error", err=str(e))
             self._entries = []
 
-    def _save(self):
+    def _save(self) -> None:
         try:
             if len(self._entries) > _MAX_ENTRIES:
                 self._entries = self._entries[-_MAX_ENTRIES:]
@@ -111,7 +112,7 @@ class PatchMemory:
 
     # ── API publique ──────────────────────────────────────────
 
-    def record_success(self, patch, model: str = "", source: str = "llm") -> None:
+    def record_success(self, patch: Any, model: str = "", source: str = "llm") -> None:
         """
         Enregistre un patch réussi (appliqué après review positive).
         `patch` peut être un PatchSpec ou un dict.
@@ -204,7 +205,7 @@ class PatchMemory:
         model_counts = Counter(e.model for e in filtered if e.model)
         return model_counts.most_common(1)[0][0] if model_counts else None
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, object]:
         self._load()
         by_file     = Counter(e.file for e in self._entries)
         by_category = Counter(e.category for e in self._entries)
@@ -218,7 +219,7 @@ class PatchMemory:
             "by_model":    dict(by_model.most_common(5)),
         }
 
-    def clear(self):
+    def clear(self) -> None:
         """Vide la mémoire (utile pour les tests)."""
         self._entries = []
         self._loaded  = True

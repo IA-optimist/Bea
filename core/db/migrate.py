@@ -30,7 +30,7 @@ def _get_db_connection():
     """Get PostgreSQL connection."""
     try:
         import psycopg2
-        
+
         conn = psycopg2.connect(
             host=os.getenv("POSTGRES_HOST", "postgres"),
             database=os.getenv("POSTGRES_DB", "bea"),
@@ -87,7 +87,7 @@ def discover_migrations() -> list[tuple[str, Path]]:
     if not MIGRATIONS_DIR.exists():
         log.warning("migrations_directory_not_found", path=str(MIGRATIONS_DIR))
         return []
-    
+
     migrations = []
     for file in MIGRATIONS_DIR.glob("*.sql"):
         match = MIGRATION_PATTERN.match(file.name)
@@ -97,7 +97,7 @@ def discover_migrations() -> list[tuple[str, Path]]:
             migrations.append((migration_name, file))
         else:
             log.warning("invalid_migration_filename", filename=file.name)
-    
+
     # Sort by migration number
     migrations.sort(key=lambda x: x[0])
     return migrations
@@ -107,14 +107,14 @@ def get_pending_migrations(conn) -> list[tuple[str, Path]]:
     """Get migrations that haven't been applied yet."""
     applied = get_applied_migrations(conn)
     all_migrations = discover_migrations()
-    
+
     pending = [(name, path) for name, path in all_migrations if name not in applied]
-    
-    log.info("migrations_discovered", 
-             total=len(all_migrations), 
-             applied=len(applied), 
+
+    log.info("migrations_discovered",
+             total=len(all_migrations),
+             applied=len(applied),
              pending=len(pending))
-    
+
     return pending
 
 
@@ -132,22 +132,22 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
         (success: bool, error_message: Optional[str])
     """
     start_time = time.time()
-    
+
     try:
         # Read migration SQL
         with open(migration_path, "r") as f:
             sql = f.read()
-        
+
         log.info("applying_migration", name=migration_name, dry_run=dry_run)
-        
+
         cur = conn.cursor()
-        
+
         # Execute migration SQL
         cur.execute(sql)
-        
+
         # Record in migration history (unless it's already there from the migration itself)
         execution_time_ms = int((time.time() - start_time) * 1000)
-        
+
         if dry_run:
             conn.rollback()
             log.info("migration_dry_run_success", name=migration_name, time_ms=execution_time_ms)
@@ -159,16 +159,16 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
                 SET execution_time_ms = %s 
                 WHERE migration_name = %s
             """, (execution_time_ms, migration_name))
-            
+
             conn.commit()
             log.info("migration_applied", name=migration_name, time_ms=execution_time_ms)
             return True, None
-        
+
     except Exception as e:
         conn.rollback()
         error_msg = str(e)
         log.error("migration_failed", name=migration_name, err=error_msg)
-        
+
         # Record failure in history
         try:
             cur = conn.cursor()
@@ -181,7 +181,7 @@ def apply_migration(conn, migration_name: str, migration_path: Path, dry_run: bo
             conn.commit()
         except Exception as _exc:
             log.warning("swallowed_exception", action="migrate_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        
+
         return False, error_msg
 
 
@@ -204,27 +204,27 @@ def run_migrations(dry_run: bool = False, target_migration: Optional[str] = None
         "skipped": 0,
         "errors": []
     }
-    
+
     try:
         conn = _get_db_connection()
         _ensure_migration_table(conn)
-        
+
         pending = get_pending_migrations(conn)
         results["total"] = len(pending)
-        
+
         if not pending:
             log.info("no_pending_migrations")
             return results
-        
+
         for migration_name, migration_path in pending:
             # Stop if we've reached the target migration
             if target_migration and migration_name > target_migration:
                 results["skipped"] += 1
                 log.info("migration_skipped", name=migration_name, reason="after_target")
                 continue
-            
+
             success, error = apply_migration(conn, migration_name, migration_path, dry_run)
-            
+
             if success:
                 results["applied"] += 1
             else:
@@ -233,18 +233,18 @@ def run_migrations(dry_run: bool = False, target_migration: Optional[str] = None
                     "migration": migration_name,
                     "error": error
                 })
-                
+
                 # Stop on first failure
                 log.error("migration_sequence_halted", failed_migration=migration_name)
                 break
-            
+
             # If we just applied the target migration, stop
             if target_migration and migration_name == target_migration:
                 break
-        
+
         log.info("migrations_completed", **results)
         return results
-        
+
     except Exception as e:
         log.error("migration_run_failed", err=str(e))
         results["errors"].append({"migration": "system", "error": str(e)})
@@ -282,11 +282,11 @@ def get_migration_status() -> dict:
     try:
         conn = _get_db_connection()
         _ensure_migration_table(conn)
-        
+
         all_migrations = discover_migrations()
         applied = get_applied_migrations(conn)
         pending = [name for name, _ in all_migrations if name not in applied]
-        
+
         return {
             "total_migrations": len(all_migrations),
             "applied": len(applied),
@@ -294,7 +294,7 @@ def get_migration_status() -> dict:
             "applied_migrations": sorted(list(applied)),
             "pending_migrations": pending
         }
-        
+
     except Exception as e:
         log.error("get_migration_status_failed", err=str(e))
         return {
@@ -310,7 +310,7 @@ def get_migration_status() -> dict:
 
 if __name__ == "__main__":
     import sys
-    
+
     # CLI interface for testing
     if len(sys.argv) > 1 and sys.argv[1] == "status":
         status = get_migration_status()

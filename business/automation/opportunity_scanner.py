@@ -48,25 +48,25 @@ class Opportunity:
     source: str  # product_hunt, reddit, hackernews
     url: str
     discovered_at: datetime
-    
+
     # Metrics
     upvotes: int = 0
     comments: int = 0
     mentions: int = 1
-    
+
     # Scores (0-100)
     demand_score: float = 0.0
     competition_score: float = 0.0
     feasibility_score: float = 0.0
     monetization_score: float = 0.0
-    
+
     # Overall
     total_score: float = 0.0
-    
+
     # Tags
     tags: List[str] = field(default_factory=list)
     pain_points: List[str] = field(default_factory=list)
-    
+
     def calculate_total_score(self):
         """Calculate weighted total score"""
         weights = {
@@ -75,14 +75,14 @@ class Opportunity:
             'feasibility': 0.25,
             'monetization': 0.20,
         }
-        
+
         self.total_score = (
             self.demand_score * weights['demand'] +
             self.competition_score * weights['competition'] +
             self.feasibility_score * weights['feasibility'] +
             self.monetization_score * weights['monetization']
         )
-    
+
     def to_dict(self) -> Dict:
         """Serialize to dict"""
         return {
@@ -122,16 +122,16 @@ class OpportunityScanner:
         # Save results
         scanner.save_opportunities(opportunities, "opportunities.json")
     """
-    
+
     def __init__(self, cache_dir: Optional[Path] = None, headless: bool = True):
         self.cache_dir = cache_dir or Path.home() / ".beamax" / "opportunities"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.headless = headless
-        
+
         # Screenshot directory for errors
         self.screenshot_dir = self.cache_dir / "screenshots"
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
-    
+
     async def _setup_browser(self, browser: Browser) -> Page:
         """
         Setup browser page with stealth mode configurations.
@@ -157,9 +157,9 @@ class OpportunityScanner:
                 'Upgrade-Insecure-Requests': '1',
             }
         )
-        
+
         page = await context.new_page()
-        
+
         # Additional JavaScript stealth
         await page.add_init_script("""
             // Override the navigator.webdriver property
@@ -177,9 +177,9 @@ class OpportunityScanner:
                 get: () => ['en-US', 'en']
             });
         """)
-        
+
         return page
-    
+
     async def _capture_error_screenshot(self, page: Page, error_name: str):
         """Capture screenshot on error for debugging"""
         try:
@@ -189,7 +189,7 @@ class OpportunityScanner:
             logger.info(f"📸 Error screenshot saved: {screenshot_path}")
         except Exception as e:
             logger.error(f"Failed to capture screenshot: {e}")
-    
+
     async def scan_all(self, days_back: int = 30) -> List[Opportunity]:
         """
         Scan all sources for opportunities.
@@ -201,12 +201,12 @@ class OpportunityScanner:
             List of opportunities
         """
         logger.info(f"🔍 Scanning opportunities (last {days_back} days)...")
-        
+
         opportunities = []
-        
+
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
-            
+
             try:
                 # Product Hunt
                 logger.info("📱 Scanning Product Hunt...")
@@ -216,7 +216,7 @@ class OpportunityScanner:
                     logger.info(f"  Found {len(ph_opps)} opportunities")
                 except Exception as e:
                     logger.error(f"  Failed: {e}")
-                
+
                 # Reddit
                 logger.info("🔴 Scanning Reddit...")
                 try:
@@ -225,7 +225,7 @@ class OpportunityScanner:
                     logger.info(f"  Found {len(reddit_opps)} opportunities")
                 except Exception as e:
                     logger.error(f"  Failed: {e}")
-                
+
                 # Hacker News
                 logger.info("🟠 Scanning Hacker News...")
                 try:
@@ -234,19 +234,19 @@ class OpportunityScanner:
                     logger.info(f"  Found {len(hn_opps)} opportunities")
                 except Exception as e:
                     logger.error(f"  Failed: {e}")
-                
+
             finally:
                 await browser.close()
-        
+
         # Calculate scores
         logger.info("📊 Calculating scores...")
         for opp in opportunities:
             self._score_opportunity(opp)
-        
+
         logger.info(f"✅ Total opportunities found: {len(opportunities)}")
-        
+
         return opportunities
-    
+
     async def scan_product_hunt(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
         """
         Scan Product Hunt for trending products and pain points.
@@ -255,57 +255,57 @@ class OpportunityScanner:
         """
         opportunities = []
         page = await self._setup_browser(browser)
-        
+
         try:
             # Navigate to Product Hunt
             url = "https://www.producthunt.com/"
             await page.goto(url, wait_until='networkidle', timeout=30000)
-            
+
             # Wait for posts to load
             try:
                 await page.wait_for_selector('[data-test="post-item"]', timeout=10000)
             except PlaywrightTimeoutError:
                 logger.warning("Product Hunt posts not found with expected selector, trying alternative...")
                 await page.wait_for_selector('article, [class*="post"]', timeout=10000)
-            
+
             # Get page content
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
-            
+
             datetime.now() - timedelta(days=days_back)
-            
+
             # Parse posts - Product Hunt structure (adapt selectors as needed)
             posts = soup.find_all(['article', 'div'], class_=lambda x: x and ('post' in str(x).lower() or 'item' in str(x).lower()))
-            
+
             for post in posts[:50]:  # Top 50
                 try:
                     # Extract title
                     title_elem = post.find(['h2', 'h3', 'a'], class_=lambda x: x and 'title' in str(x).lower())
                     if not title_elem:
                         title_elem = post.find(['h2', 'h3'])
-                    
+
                     title = title_elem.get_text(strip=True) if title_elem else "Unknown"
-                    
+
                     # Extract description
                     desc_elem = post.find(['p', 'div'], class_=lambda x: x and ('description' in str(x).lower() or 'tagline' in str(x).lower()))
                     description = desc_elem.get_text(strip=True) if desc_elem else ""
-                    
+
                     # Extract link
                     link_elem = post.find('a', href=True)
                     link = link_elem['href'] if link_elem else ""
                     if link and not link.startswith('http'):
                         link = f"https://www.producthunt.com{link}"
-                    
+
                     # Extract metrics
                     upvotes = 0
                     upvote_elem = post.find(['span', 'div'], class_=lambda x: x and 'vote' in str(x).lower())
                     if upvote_elem:
                         upvote_text = upvote_elem.get_text(strip=True)
                         upvotes = int(re.search(r'\d+', upvote_text).group()) if re.search(r'\d+', upvote_text) else 0
-                    
+
                     # Extract pain points
                     pain_points = self._extract_pain_points(description)
-                    
+
                     opp = Opportunity(
                         title=title,
                         description=description[:500],
@@ -316,22 +316,22 @@ class OpportunityScanner:
                         pain_points=pain_points,
                         tags=self._extract_tags(title + " " + description),
                     )
-                    
+
                     opportunities.append(opp)
-                
+
                 except Exception as e:
                     logger.debug(f"Failed to parse Product Hunt item: {e}")
                     continue
-        
+
         except Exception as e:
             logger.error(f"Product Hunt scan failed: {e}")
             await self._capture_error_screenshot(page, "product_hunt")
-        
+
         finally:
             await page.close()
-        
+
         return opportunities
-    
+
     async def scan_reddit(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
         """
         Scan Reddit for pain points and business ideas.
@@ -345,40 +345,40 @@ class OpportunityScanner:
         Uses Playwright for JS-rendered content.
         """
         opportunities = []
-        
+
         subreddits = ['SaaS', 'Entrepreneur', 'startups', 'SideProject']
-        
+
         for subreddit in subreddits:
             page = await self._setup_browser(browser)
-            
+
             try:
                 # Navigate to subreddit
                 url = f"https://old.reddit.com/r/{subreddit}/hot"
                 await page.goto(url, wait_until='domcontentloaded', timeout=30000)
-                
+
                 # Wait for content to load
                 await page.wait_for_selector('.thing', timeout=10000)
-                
+
                 # Get page content
                 content = await page.content()
                 soup = BeautifulSoup(content, 'html.parser')
-                
+
                 (datetime.now() - timedelta(days=days_back)).timestamp()
-                
+
                 # Parse posts
                 posts = soup.find_all('div', class_='thing')
-                
+
                 for post in posts[:25]:
                     try:
                         # Extract data
                         title_elem = post.find('a', class_='title')
                         title = title_elem.get_text(strip=True) if title_elem else ""
-                        
+
                         # Get post URL
                         post_url = title_elem['href'] if title_elem and title_elem.has_attr('href') else ""
                         if post_url and not post_url.startswith('http'):
                             post_url = f"https://old.reddit.com{post_url}"
-                        
+
                         # Extract upvotes
                         upvotes = 0
                         score_elem = post.find('div', class_='score unvoted')
@@ -391,7 +391,7 @@ class OpportunityScanner:
                                     upvotes = int(score_text)
                                 except ValueError as _exc:
                                     log.warning("swallowed_exception", action="opportunity_scanner_swallow", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-                        
+
                         # Extract comments
                         comments = 0
                         comments_elem = post.find('a', class_='comments')
@@ -400,17 +400,17 @@ class OpportunityScanner:
                             match = re.search(r'(\d+)', comments_text)
                             if match:
                                 comments = int(match.group(1))
-                        
+
                         # Get selftext if available
                         expando = post.find('div', class_='expando')
                         selftext = expando.get_text(strip=True) if expando else ""
-                        
+
                         # Filter for problem posts
                         if not self._is_problem_post(title, selftext):
                             continue
-                        
+
                         pain_points = self._extract_pain_points(title + " " + selftext)
-                        
+
                         opp = Opportunity(
                             title=title,
                             description=selftext[:500],
@@ -422,24 +422,24 @@ class OpportunityScanner:
                             pain_points=pain_points,
                             tags=self._extract_tags(title + " " + selftext),
                         )
-                        
+
                         opportunities.append(opp)
-                    
+
                     except Exception as e:
                         logger.debug(f"Failed to parse Reddit post: {e}")
                         continue
-                
+
                 await asyncio.sleep(2)  # Rate limiting
-            
+
             except Exception as e:
                 logger.error(f"Reddit r/{subreddit} scan failed: {e}")
                 await self._capture_error_screenshot(page, f"reddit_{subreddit}")
-            
+
             finally:
                 await page.close()
-        
+
         return opportunities
-    
+
     async def scan_hackernews(self, browser: Browser, days_back: int = 30) -> List[Opportunity]:
         """
         Scan Hacker News for Show HN and Ask HN posts.
@@ -448,47 +448,47 @@ class OpportunityScanner:
         """
         opportunities = []
         page = await self._setup_browser(browser)
-        
+
         try:
             # Navigate to HN
             url = "https://news.ycombinator.com/show"
             await page.goto(url, wait_until='domcontentloaded', timeout=30000)
-            
+
             # Wait for content
             await page.wait_for_selector('.athing', timeout=10000)
-            
+
             # Get page content
             content = await page.content()
             soup = BeautifulSoup(content, 'html.parser')
-            
+
             datetime.now() - timedelta(days=days_back)
-            
+
             # Parse items
             items = soup.find_all('tr', class_='athing')
-            
+
             for item in items[:50]:
                 try:
                     # Get item ID
                     item_id = item.get('id', '')
-                    
+
                     # Extract title
                     titleline = item.find('span', class_='titleline')
                     if not titleline:
                         continue
-                    
+
                     title_link = titleline.find('a')
                     title = title_link.get_text(strip=True) if title_link else ""
                     item_url = f"https://news.ycombinator.com/item?id={item_id}"
-                    
+
                     # Get the next row for metadata
                     subtext = item.find_next_sibling('tr')
                     if not subtext:
                         continue
-                    
+
                     subtext_td = subtext.find('td', class_='subtext')
                     if not subtext_td:
                         continue
-                    
+
                     # Extract points
                     points = 0
                     score_span = subtext_td.find('span', class_='score')
@@ -497,7 +497,7 @@ class OpportunityScanner:
                         match = re.search(r'(\d+)', score_text)
                         if match:
                             points = int(match.group(1))
-                    
+
                     # Extract comments
                     comments = 0
                     comments_link = subtext_td.find_all('a')[-1] if subtext_td.find_all('a') else None
@@ -506,13 +506,13 @@ class OpportunityScanner:
                         match = re.search(r'(\d+)', comments_text)
                         if match:
                             comments = int(match.group(1))
-                    
+
                     # Extract time (for filtering)
                     subtext_td.find('span', class_='age')
                     # Basic time filtering (HN shows relative times)
-                    
+
                     pain_points = self._extract_pain_points(title)
-                    
+
                     opp = Opportunity(
                         title=title,
                         description="",  # Would need to visit item page for full description
@@ -524,38 +524,38 @@ class OpportunityScanner:
                         pain_points=pain_points,
                         tags=self._extract_tags(title),
                     )
-                    
+
                     opportunities.append(opp)
-                
+
                 except Exception as e:
                     logger.debug(f"Failed to parse HN item: {e}")
                     continue
-        
+
         except Exception as e:
             logger.error(f"Hacker News scan failed: {e}")
             await self._capture_error_screenshot(page, "hackernews")
-        
+
         finally:
             await page.close()
-        
+
         return opportunities
-    
+
     def _is_problem_post(self, title: str, text: str) -> bool:
         """Check if post describes a problem/pain point"""
         content = (title + " " + text).lower()
-        
+
         problem_keywords = [
             'problem', 'issue', 'struggle', 'difficult', 'pain', 'frustrating',
             'annoying', 'hate', 'need', 'wish', 'looking for', 'help with',
             'solution', 'better way', 'improve', 'automate', 'tedious',
         ]
-        
+
         return any(keyword in content for keyword in problem_keywords)
-    
+
     def _extract_pain_points(self, text: str) -> List[str]:
         """Extract pain points from text using pattern matching"""
         pain_points = []
-        
+
         # Patterns
         patterns = [
             r"(?:problem|issue|pain point)[\s:]+([^.!?\n]{10,100})",
@@ -563,17 +563,17 @@ class OpportunityScanner:
             r"(?:wish|need|want)[\s]+(?:to|a)[\s]+([^.!?\n]{10,100})",
             r"(?:hate|annoying|frustrating)[\s]+(?:when|that|how)[\s]+([^.!?\n]{10,100})",
         ]
-        
+
         for pattern in patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             pain_points.extend([m.strip() for m in matches if len(m.strip()) > 15])
-        
+
         return pain_points[:5]  # Top 5
-    
+
     def _extract_tags(self, text: str) -> List[str]:
         """Extract relevant tags from text"""
         text_lower = text.lower()
-        
+
         tag_keywords = {
             'saas': ['saas', 'software as a service', 'subscription'],
             'automation': ['automate', 'automation', 'automatic'],
@@ -586,67 +586,67 @@ class OpportunityScanner:
             'e-commerce': ['ecommerce', 'e-commerce', 'shopify', 'store'],
             'payment': ['payment', 'stripe', 'billing', 'invoice'],
         }
-        
+
         tags = []
         for tag, keywords in tag_keywords.items():
             if any(kw in text_lower for kw in keywords):
                 tags.append(tag)
-        
+
         return tags
-    
+
     def _score_opportunity(self, opp: Opportunity):
         """Calculate all scores for an opportunity"""
-        
+
         # Demand score (based on engagement)
         demand = min(100, (opp.upvotes * 2 + opp.comments * 5 + len(opp.pain_points) * 10))
         opp.demand_score = demand
-        
+
         # Competition score (inverse — less competition = higher score)
         # TODO: Implement Google search / domain check for existing solutions
         # For now, use heuristic: popular tags = more competition
         competition_penalty = len(opp.tags) * 5
         opp.competition_score = max(0, 100 - competition_penalty)
-        
+
         # Feasibility score (based on complexity indicators)
         # Simple heuristics for now
         complexity_keywords = ['ml', 'ai', 'blockchain', 'crypto', 'hardware']
         complexity_penalty = sum(20 for kw in complexity_keywords if kw in opp.description.lower())
         opp.feasibility_score = max(20, 100 - complexity_penalty)
-        
+
         # Monetization score (willingness to pay indicators)
         monetization_keywords = ['paid', 'pricing', 'subscription', 'premium', 'upgrade', 'business']
         monetization_boost = sum(15 for kw in monetization_keywords if kw in opp.description.lower())
         opp.monetization_score = min(100, 50 + monetization_boost)
-        
+
         # Calculate total
         opp.calculate_total_score()
-    
+
     def get_top_opportunities(self, opportunities: List[Opportunity], limit: int = 10) -> List[Opportunity]:
         """Get top N opportunities by total score"""
         sorted_opps = sorted(opportunities, key=lambda x: x.total_score, reverse=True)
         return sorted_opps[:limit]
-    
+
     def save_opportunities(self, opportunities: List[Opportunity], filename: str = "opportunities.json"):
         """Save opportunities to JSON file"""
         filepath = self.cache_dir / filename
-        
+
         data = {
             'generated_at': datetime.now().isoformat(),
             'total_opportunities': len(opportunities),
             'opportunities': [opp.to_dict() for opp in opportunities]
         }
-        
+
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         logger.info(f"💾 Saved {len(opportunities)} opportunities to {filepath}")
-        
+
         return filepath
-    
+
     def generate_report(self, opportunities: List[Opportunity], top_n: int = 10) -> str:
         """Generate a markdown report of top opportunities"""
         top_opps = self.get_top_opportunities(opportunities, top_n)
-        
+
         report = f"""# 🚀 BUSINESS OPPORTUNITIES REPORT
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
@@ -656,7 +656,7 @@ class OpportunityScanner:
 ---
 
 """
-        
+
         for i, opp in enumerate(top_opps, 1):
             report += f"""## {i}. {opp.title}
 
@@ -687,35 +687,35 @@ class OpportunityScanner:
 ---
 
 """
-        
+
         return report
 
 
 def main():
     """CLI entry point"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Scan for business opportunities")
     parser.add_argument('--days', type=int, default=30, help='Days back to scan (default: 30)')
     parser.add_argument('--top', type=int, default=10, help='Top N opportunities (default: 10)')
     parser.add_argument('--output', default='opportunities.json', help='Output filename')
     parser.add_argument('--no-headless', action='store_true', help='Run browser in visible mode')
     args = parser.parse_args()
-    
+
     scanner = OpportunityScanner(headless=not args.no_headless)
-    
+
     # Run async scan
     opportunities = asyncio.run(scanner.scan_all(days_back=args.days))
-    
+
     # Save to JSON
     scanner.save_opportunities(opportunities, args.output)
-    
+
     # Generate report
     report = scanner.generate_report(opportunities, args.top)
-    
+
     report_path = scanner.cache_dir / "report.md"
     report_path.write_text(report)
-    
+
     print(report)
     print(f"\n📄 Full report saved to: {report_path}")
     print(f"💾 Raw data saved to: {scanner.cache_dir / args.output}")

@@ -19,7 +19,7 @@ class UserModel:
     def __init__(self, path: str) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._traits: dict[str, dict] = {}
+        self._traits: dict[str, dict[str, Any]] = {}
         self._load()
 
     def _load(self) -> None:

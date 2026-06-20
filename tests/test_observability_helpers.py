@@ -72,6 +72,7 @@ def test_categorize_network():
     assert categorize_error(ConnectionError()) == "network"
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_categorize_not_found():
     from core.observability_helpers import categorize_error
@@ -85,6 +86,7 @@ def test_categorize_type_error():
     assert categorize_error(ValueError()) == "type_error"
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: API changed")
 def test_categorize_by_keyword():
     from core.observability_helpers import categorize_error

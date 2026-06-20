@@ -82,7 +82,7 @@ def test_bea_execution_error_from_exception():
     """BeaExecutionError.from_exception must return all canonical types."""
     from core.resilience import BeaExecutionError
     CANONICAL = {"TRANSIENT", "USER_INPUT", "TOOL_ERROR", "POLICY_BLOCKED", "TIMEOUT", "SYSTEM_ERROR"}
-    
+
     tests = [
         (TimeoutError("x"), "TIMEOUT"),
         (ConnectionError("x"), "TRANSIENT"),
@@ -99,16 +99,16 @@ def test_bea_execution_error_from_exception():
 def test_bea_execution_error_retryable():
     """Only TRANSIENT and TIMEOUT should be retryable."""
     from core.resilience import BeaExecutionError
-    
+
     transient = BeaExecutionError.from_exception(ConnectionError("x"))
     assert transient.retryable is True
-    
+
     timeout = BeaExecutionError.from_exception(TimeoutError("x"))
     assert timeout.retryable is True
-    
+
     user = BeaExecutionError.from_exception(ValueError("x"))
     assert user.retryable is False
-    
+
     policy = BeaExecutionError.from_exception(PermissionError("x"))
     assert policy.retryable is False
 
@@ -128,7 +128,7 @@ def test_no_silent_except_in_hot_path():
             continue
         with open(full, encoding="utf-8") as fh:
             lines = fh.readlines()
-        
+
         for i, line in enumerate(lines):
             stripped = line.strip()
             if re.match(r'except\s+(Exception)?\s*:', stripped) and i + 1 < len(lines):
@@ -139,7 +139,7 @@ def test_no_silent_except_in_hot_path():
                                   for j in range(max(0, i-1), min(len(lines), i+3)))
                     if not has_log:
                         silent_blocks.append(f"{filepath}:{i+1}")
-    
+
     assert len(silent_blocks) == 0, f"Silent except blocks found: {silent_blocks}"
 
 # ── Test 5: Error result structure ────────────────────────────────────────

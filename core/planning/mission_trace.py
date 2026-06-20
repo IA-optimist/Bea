@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -22,9 +23,9 @@ class TraceEntry:
     timestamp: float
     phase: str       # planning, execution, retry, review, delivery
     event: str       # step_start, step_complete, retry_triggered, review_complete, etc.
-    data: dict = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "phase": self.phase,
@@ -46,7 +47,7 @@ class MissionTrace:
         self._entries: list[TraceEntry] = []
         self._start_time = time.time()
 
-    def record(self, phase: str, event: str, **data) -> None:
+    def record(self, phase: str, event: str, **data: Any) -> None:
         """Add a trace entry."""
         self._entries.append(TraceEntry(
             timestamp=time.time(),
@@ -62,7 +63,7 @@ class MissionTrace:
     def record_step_start(self, step_id: str, skill_id: str) -> None:
         self.record("execution", "step_start", step_id=step_id, skill_id=skill_id)
 
-    def record_step_complete(self, step_id: str, ok: bool, duration_ms: float, **extra) -> None:
+    def record_step_complete(self, step_id: str, ok: bool, duration_ms: float, **extra: Any) -> None:
         self.record("execution", "step_complete",
                     step_id=step_id, ok=ok, duration_ms=duration_ms, **extra)
 
@@ -83,7 +84,7 @@ class MissionTrace:
                     ok=ok, quality=quality,
                     total_duration_ms=(time.time() - self._start_time) * 1000)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "mission_id": self.mission_id,
             "goal": self.goal[:200],
@@ -92,9 +93,9 @@ class MissionTrace:
             "duration_ms": (time.time() - self._start_time) * 1000,
         }
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         """Compact summary for API responses."""
-        phases = {}
+        phases: dict[str, int] = {}
         for e in self._entries:
             phases.setdefault(e.phase, 0)
             phases[e.phase] += 1

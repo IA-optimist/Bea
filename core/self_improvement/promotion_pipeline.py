@@ -401,6 +401,36 @@ class PromotionPipeline:
                             duration_ms=elapsed,
                         )
 
+                    # T4.3 — Canary gate: compile-check changed files before promoting
+                    try:
+                        from core.self_improvement.canary_gate import get_canary_gate
+                        canary = get_canary_gate().run(
+                            sandbox_path=snap.sandbox_path,
+                            changed_files=files,
+                        )
+                        if not canary.passed:
+                            elapsed = (time.monotonic() - start) * 1000
+                            rollback = _build_rollback_instructions(files, "")
+                            return PromotionDecision(
+                                decision="REJECT",
+                                reason=f"canary_gate: {canary.reason}",
+                                patch_id=patch_id,
+                                files_changed=files,
+                                duration_ms=elapsed,
+                                rollback_instructions=rollback,
+                            )
+                    except Exception as _ce:
+                        log.warning("promotion_pipeline.canary_swallowed",
+                                    err=str(_ce)[:80])
+
+                    # T4.5 — Build digest: fingerprint build inputs for reproducibility
+                    _build_digest: dict = {}
+                    try:
+                        from core.self_improvement.build_digest import compute_build_digest
+                        _build_digest = compute_build_digest(self.repo_root)
+                    except Exception:
+                        pass
+
                     # Determine decision based on risk
                     rl = risk_level.lower() if isinstance(risk_level, str) else "low"
                     if rl == "medium":
@@ -424,6 +454,7 @@ class PromotionPipeline:
                         risk_level=risk_level,
                         score=1.0,
                         rollback_instructions=rollback,
+                        build_digest=_build_digest,
                     )
                 finally:
                     agent.cleanup_sandbox(snap)
@@ -467,6 +498,23 @@ class PromotionPipeline:
         Returns:
             PromotionDecision (for intents) or PromotionResult (legacy) — never raises.
         """
+        # Validate patch signature before any processing (fail-closed).
+        # sig_data is optional: missing/None = dev mode (gate logs warning but passes).
+        sig_data = getattr(candidate, "sig_data", None)
+        if sig_data is not None:
+            try:
+                from kernel.improvement.gate import get_gate, PatchSignatureViolation
+                patch_content = candidate.to_dict() if hasattr(candidate, "to_dict") else {}
+                get_gate().validate_patch_signature(patch_content, sig_data)
+            except PatchSignatureViolation as exc:
+                patch_id = getattr(candidate, "patch_id", "") or getattr(candidate, "run_id", "")
+                log.warning("promotion_pipeline.signature_rejected", patch_id=patch_id, err=str(exc)[:120])
+                return PromotionDecision(
+                    decision="REJECT",
+                    reason=f"signature_violation: {exc}",
+                    patch_id=patch_id,
+                )
+
         # Dispatch: if candidate has .intents, use the new pipeline
         intents = getattr(candidate, "intents", None)
         if intents is not None and len(intents) > 0:
@@ -903,9 +951,10 @@ class PromotionDecision:
     run_id: str = ""
     human_notified: bool = False
     explanation: str = ""
+    build_digest: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "decision": self.decision,
             "reason": self.reason,
             "patch_id": self.patch_id,
@@ -915,6 +964,9 @@ class PromotionDecision:
             "duration_ms": round(self.duration_ms, 1),
             "risk_level": self.risk_level,
         }
+        if self.build_digest:
+            d["build_digest"] = self.build_digest
+        return d
 
     def to_experiment_report(self) -> "ExperimentReport":
         """Convert to ExperimentReport for observability."""

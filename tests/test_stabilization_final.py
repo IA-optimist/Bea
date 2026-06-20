@@ -44,6 +44,7 @@ class TestEntrypoints(unittest.TestCase):
 class TestNoDeadDirectories(unittest.TestCase):
     """Verify dead dirs are removed."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="scheduler/ dir missing (drift)", strict=False)
     def test_scheduler_dir_has_code(self):
         """scheduler/ was revived with ScheduledTask + NightScheduler."""
@@ -119,12 +120,14 @@ class TestFlutterPortConfig(unittest.TestCase):
 class TestDocumentation(unittest.TestCase):
     """Verify docs reflect reality."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="README missing PRIMARY INTERFACE text (drift)", strict=False)
     def test_readme_says_app_first(self):
         with open("README.md", encoding="utf-8") as f:
             content = f.read()
         self.assertIn("PRIMARY INTERFACE", content.upper() if "primary" not in content else content)
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="ARCHITECTURE.md at root missing (moved to docs/)", strict=False)
     def test_architecture_says_app_primary(self):
         with open("ARCHITECTURE.md", encoding="utf-8") as f:
@@ -236,12 +239,14 @@ class TestTelegramRemoved(unittest.TestCase):
             content = f.read()
         self.assertNotIn("webhook", content.lower())
 
+    @pytest.mark.stale
     @pytest.mark.skip(reason="stale: Telegram bot is a documented Béa feature (2026-06-16)")
     def test_no_telegram_in_readme(self):
         with open("README.md", encoding="utf-8") as f:
             content = f.read()
         self.assertNotIn("Telegram", content)
 
+    @pytest.mark.stale
     @pytest.mark.skip(reason="stale: dir now exists by design")
     def test_no_self_improve_dir(self):
         self.assertFalse(os.path.isdir("self_improve"),

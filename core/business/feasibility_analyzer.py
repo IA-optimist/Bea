@@ -30,8 +30,8 @@ class FeasibilityAnalyzer:
     
     Cognition confidence threshold: 0.8 (high confidence required)
     """
-    
-    
+
+
     def __init__(self):
         from core.llm_factory import LLMFactory
         from config.settings import get_settings
@@ -71,10 +71,10 @@ class FeasibilityAnalyzer:
             }
         """
         start_time = time.time()
-        
+
         # Build analysis prompt
         prompt = self._build_analysis_prompt(opportunity)
-        
+
         # Create mission dict (cognition expects Dict, not MissionState)
         mission_id = f"feasibility-{opportunity.id}-{uuid.uuid4().hex[:8]}"
         mission = {
@@ -89,9 +89,9 @@ class FeasibilityAnalyzer:
             },
             "user_input": prompt,
         }
-        
+
         logger.info(f"feasibility_analysis_started opportunity_id={opportunity.id} mission={mission_id}")
-        
+
         try:
             # Execute cognition analysis
             result = await self.cognition.execute_mission_with_cognition(
@@ -100,12 +100,12 @@ class FeasibilityAnalyzer:
                 enable_confidence=True,
                 enable_learning=True,
             )
-            
+
             duration = int(time.time() - start_time)
-            
+
             # Parse result
             analysis = self._parse_analysis_result(result, opportunity, mission_id, duration)
-            
+
             logger.info(
                 f"feasibility_analysis_completed "
                 f"opportunity_id={opportunity.id} "
@@ -114,13 +114,13 @@ class FeasibilityAnalyzer:
                 f"confidence={analysis.get('confidence_score', 0):.3f} "
                 f"duration={duration}s"
             )
-            
+
             return analysis
-        
+
         except Exception as e:
             logger.error(f"feasibility_analysis_failed opportunity_id={opportunity.id}: {e}", exc_info=True)
             duration = int(time.time() - start_time)
-            
+
             # Return safe fallback
             return {
                 "recommendation": "NEEDS_MORE_RESEARCH",
@@ -130,7 +130,7 @@ class FeasibilityAnalyzer:
                 "duration_seconds": duration,
                 "error": str(e),
             }
-    
+
     def _build_analysis_prompt(self, opportunity: Opportunity) -> str:
         """Build cognition analysis prompt"""
         return f"""You are a senior technical architect analyzing the feasibility of building a SaaS MVP.
@@ -253,7 +253,7 @@ MARKET_FIT_SCORE: [0-100]
 ```
 
 **IMPORTANT:** Use JSON array format for all lists. Be specific and actionable."""
-    
+
     def _parse_analysis_result(
         self,
         result: Dict[str, Any],
@@ -269,33 +269,33 @@ MARKET_FIT_SCORE: [0-100]
         """
         response_text = result.get("result", "")
         confidence = result.get("confidence", {})
-        
+
         # Extract structured data from response text
         parsed = self._extract_structured_data(response_text)
-        
+
         return {
             # Recommendation
             "recommendation": parsed.get("recommendation", "NEEDS_MORE_RESEARCH"),
             "reasoning": parsed.get("reasoning", "Analysis incomplete"),
-            
+
             # Technical
             "tech_stack": parsed.get("tech_stack", []),
             "dependencies": parsed.get("dependencies", []),
             "complexity_score": parsed.get("complexity_score", 5),
             "estimated_hours": parsed.get("estimated_hours", 40),
-            
+
             # MVP scope
             "mvp_features": parsed.get("mvp_features", []),
             "nice_to_have_features": parsed.get("nice_to_have", []),
             "out_of_scope": parsed.get("out_of_scope", []),
-            
+
             # Risks
             "technical_risks": parsed.get("technical_risks", []),
             "mitigation_strategies": parsed.get("mitigation", []),
-            
+
             # Scores
             "market_fit_score": parsed.get("market_fit_score", opportunity.total_score),
-            
+
             # Cognition metadata
             "confidence_score": confidence.get("score", 0.0),
             "cognition_reasoning": confidence.get("reasoning", ""),
@@ -303,7 +303,7 @@ MARKET_FIT_SCORE: [0-100]
             "mission_id": mission_id,
             "duration_seconds": duration_seconds,
         }
-    
+
     def _extract_structured_data(self, text: str) -> Dict[str, Any]:
         """
         Extract structured data from analysis text
@@ -315,9 +315,9 @@ MARKET_FIT_SCORE: [0-100]
         """
         import re
         import json
-        
+
         result = {}
-        
+
         # Extract single-line fields
         patterns = {
             "recommendation": r"RECOMMENDATION:\s*(\w+)",
@@ -325,7 +325,7 @@ MARKET_FIT_SCORE: [0-100]
             "estimated_hours": r"ESTIMATED_HOURS:\s*(\d+)",
             "market_fit_score": r"MARKET_FIT_SCORE:\s*(\d+)",
         }
-        
+
         for key, pattern in patterns.items():
             match = re.search(pattern, text)
             if match:
@@ -334,18 +334,18 @@ MARKET_FIT_SCORE: [0-100]
                     result[key] = int(value)
                 else:
                     result[key] = value.upper()
-        
+
         # Extract multi-line text (REASONING)
         reasoning_match = re.search(r"REASONING:\s*\n(.*?)(?=\n[A-Z_]+:|$)", text, re.DOTALL)
         if reasoning_match:
             result["reasoning"] = reasoning_match.group(1).strip()
-        
+
         # Extract JSON arrays
         array_fields = [
             "tech_stack", "dependencies", "mvp_features",
             "nice_to_have", "out_of_scope", "technical_risks", "mitigation"
         ]
-        
+
         for field in array_fields:
             pattern = rf"{field.upper().replace('_', '_')}:\s*\n(\[.*?\])"
             match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
@@ -356,5 +356,5 @@ MARKET_FIT_SCORE: [0-100]
                     # Try simple comma-split fallback
                     raw = match.group(1).strip('[]')
                     result[field] = [item.strip(' "\'') for item in raw.split(',') if item.strip()]
-        
+
         return result

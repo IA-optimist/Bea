@@ -94,7 +94,7 @@ class TestStrategicMemory:
         import tempfile
         from pathlib import Path
         from core.economic.strategic_memory import StrategicMemoryStore
-        return StrategicMemoryStore(store_path=Path(tempfile.mktemp(suffix=".json")))
+        return StrategicMemoryStore(store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name))
 
     def test_EI09_record_and_query(self):
         from core.economic.strategic_memory import StrategicRecord
@@ -144,7 +144,7 @@ class TestStrategicMemory:
         from pathlib import Path
         from core.economic.strategic_memory import StrategicMemoryStore, StrategicRecord
 
-        path = Path(tempfile.mktemp(suffix=".json"))
+        path = Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         store1 = StrategicMemoryStore(store_path=path)
         store1.record(StrategicRecord(
             strategy_type="test", outcome_score=0.7, goal="persist me",

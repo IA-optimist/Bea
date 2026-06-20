@@ -447,16 +447,16 @@ class BeaMaxCausalIntegration:
                 collection_name=self.qdrant_collection,
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE),
             )
-        
+
         # Initialize sentence-transformers model for real embeddings
         embedder = self._get_sentence_embedder()
-        
+
         points = []
         for cause, effect in edges:
             text = f"{cause} causes {effect}"
             uid = int(hashlib.md5(text.encode(), usedforsecurity=False).hexdigest(), 16) % (2**63)
             edge_data = self.graph.graph.get_edge_data(cause, effect) or {}
-            
+
             # Generate real embeddings (768-dim) using nomic-embed-text via Ollama
             try:
                 import httpx
@@ -480,7 +480,7 @@ class BeaMaxCausalIntegration:
                         vector = [0.0] * 768
                 except Exception:
                     vector = [0.0] * 768
-            
+
             points.append(PointStruct(
                 id=uid,
                 vector=vector,
@@ -491,7 +491,7 @@ class BeaMaxCausalIntegration:
         if points:
             client.upsert(collection_name=self.qdrant_collection, points=points)
             logger.info("Indexed %d causal edges to Qdrant", len(points))
-    
+
     def _get_sentence_embedder(self):
         """
         Initialize and cache sentence-transformers model.

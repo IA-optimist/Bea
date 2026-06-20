@@ -61,6 +61,7 @@ def test_should_create_tool_unknown_task():
     print(f"PASS test_should_create_tool_unknown_task: {result}")
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: tool count changed")
 def test_list_all_tools():
     """list_all_tools() retourne au moins 20 tools."""

@@ -46,7 +46,7 @@ class PhaseResult:
     output: dict = field(default_factory=dict)
     duration_ms: int = 0
     error: str = ""
-    
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -61,7 +61,7 @@ class PipelineState:
     started_at: float = field(default_factory=time.time)
     completed_at: float = 0.0
     status: str = "running"
-    
+
     def record_phase(self, phase: PipelinePhase, output: dict,
                      status: str = "completed", error: str = "", duration_ms: int = 0):
         self.phases.append(PhaseResult(
@@ -69,11 +69,11 @@ class PipelineState:
             duration_ms=duration_ms, error=error,
         ))
         self.current_phase = phase
-    
+
     def complete(self, status: str = "done"):
         self.completed_at = time.time()
         self.status = status
-    
+
     def to_dict(self) -> dict:
         return {
             "mission_id": self.mission_id,
@@ -82,7 +82,7 @@ class PipelineState:
             "phases": [p.to_dict() for p in self.phases],
             "duration_ms": int((self.completed_at or time.time()) - self.started_at) * 1000,
         }
-    
+
     def summary(self) -> str:
         completed = sum(1 for p in self.phases if p.status == "completed")
         failed = sum(1 for p in self.phases if p.status == "failed")

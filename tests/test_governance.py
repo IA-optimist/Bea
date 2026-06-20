@@ -399,6 +399,7 @@ def test_governance_no_orchestration():
     ast.parse(src)
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_connectors_rate_limit_wired():
     with open("core/connectors.py", encoding="utf-8") as f:
@@ -423,6 +424,7 @@ def test_api_has_governance_endpoints():
     assert "/domains/portfolio" in src
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_all_files_parse():
     for f in ["core/governance.py", "core/connectors.py",

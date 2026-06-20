@@ -1,0 +1,13 @@
+[importlinter]
+root_package = kernel
+
+[contract:kernel_purity]
+name = kernel must not import upward into core/api/agents/tools
+type = forbidden
+source_modules =
+    kernel
+forbidden_modules =
+    core
+    api
+    agents
+    tools

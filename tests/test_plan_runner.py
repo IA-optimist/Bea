@@ -412,62 +412,62 @@ class TestPlanRunnerAPI:
 
     def test_PR26_plan_run_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/run" in paths
 
     def test_PR27_plan_resume_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/resume" in paths
 
     def test_PR28_plan_pause_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/pause" in paths
 
     def test_PR29_plan_cancel_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/cancel" in paths
 
     def test_PR30_plan_runs_list_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/{plan_id}/runs" in paths
 
     def test_PR31_run_detail_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/runs/{run_id}" in paths
 
     def test_PR32_run_context_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/runs/{run_id}/context" in paths
 
     def test_PR33_run_artifacts_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/plans/runs/{run_id}/artifacts" in paths
 
     def test_PR34_runs_start_alias(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/runs/start/{plan_id}" in paths
 
     def test_PR35_runs_list_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/runs" in paths
 
     def test_PR36_runs_active_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/runs/filter/active" in paths
 
     def test_PR37_approve_step_route(self):
         from api.main import app
-        paths = [r.path for r in app.routes]
+        paths = [r.path for r in app.routes if hasattr(r, "path")]
         assert "/api/v3/runs/approve-step/{run_id}" in paths
 
 
@@ -502,6 +502,7 @@ class TestPlanRunnerSafety:
             finally:
                 ps._store, rs._store = old_ps, old_rs
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="runs dashboard static HTML drift", strict=False)
     def test_PR40_runs_dashboard_exists(self):
         path = os.path.join(os.path.dirname(__file__), "..", "static", "runs.html")

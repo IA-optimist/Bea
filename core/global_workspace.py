@@ -45,10 +45,10 @@ class WorkspaceEntry:
     confidence: float
     timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
-    
+
     def is_expired(self, max_age_seconds: int = 3600) -> bool:
         """Check if entry is older than max_age_seconds."""
         return (datetime.now().timestamp() - self.timestamp) > max_age_seconds
@@ -63,7 +63,7 @@ class GlobalWorkspace:
     - Context propagation across the agent network
     - Collective intelligence through shared attention
     """
-    
+
     def __init__(self, max_entries: int = 100):
         self.max_entries = max_entries
         self.broadcasts: deque[WorkspaceEntry] = deque(maxlen=max_entries)
@@ -71,7 +71,7 @@ class GlobalWorkspace:
         self.total_published = 0
         self.agents_seen = set()
         log.info("global_workspace.initialized", max_entries=max_entries)
-    
+
     async def publish(
         self,
         agent: str,
@@ -91,18 +91,18 @@ class GlobalWorkspace:
         async with self._lock:
             # Truncate content for memory efficiency
             truncated_content = content[:500] if len(content) > 500 else content
-            
+
             entry = WorkspaceEntry(
                 agent=agent,
                 content=truncated_content,
                 confidence=max(0.0, min(1.0, confidence)),  # Clamp 0-1
                 metadata=metadata or {}
             )
-            
+
             self.broadcasts.append(entry)
             self.total_published += 1
             self.agents_seen.add(agent)
-            
+
             log.debug(
                 "global_workspace.published",
                 agent=agent,
@@ -110,7 +110,7 @@ class GlobalWorkspace:
                 content_len=len(content),
                 total_entries=len(self.broadcasts)
             )
-    
+
     async def get_recent(
         self,
         limit: int = 10,
@@ -138,25 +138,25 @@ class GlobalWorkspace:
                     and (agent_filter is None or entry.agent == agent_filter)
                     and not entry.is_expired(max_age_seconds))
             ]
-            
+
             # Sort by timestamp desc (newest first), then by confidence
             sorted_entries = sorted(
                 filtered,
                 key=lambda e: (e.timestamp, e.confidence),
                 reverse=True
             )
-            
+
             # Return top N as dicts
             return [entry.to_dict() for entry in sorted_entries[:limit]]
-    
+
     async def get_by_agent(self, agent: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Get recent broadcasts from a specific agent."""
         return await self.get_recent(limit=limit, agent_filter=agent)
-    
+
     async def get_high_confidence(self, threshold: float = 0.8, limit: int = 10) -> List[Dict[str, Any]]:
         """Get high-confidence broadcasts (attention mechanism)."""
         return await self.get_recent(limit=limit, min_confidence=threshold)
-    
+
     async def get_stats(self) -> Dict[str, Any]:
         """Get workspace statistics."""
         async with self._lock:
@@ -167,9 +167,9 @@ class GlobalWorkspace:
                     'unique_agents': 0,
                     'avg_confidence': 0.0
                 }
-            
+
             confidences = [entry.confidence for entry in self.broadcasts]
-            
+
             return {
                 'total_entries': len(self.broadcasts),
                 'total_published': self.total_published,
@@ -183,7 +183,7 @@ class GlobalWorkspace:
                     1
                 )
             }
-    
+
     async def clear(self) -> None:
         """Clear all broadcasts (for testing/reset)."""
         async with self._lock:

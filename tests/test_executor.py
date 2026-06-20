@@ -76,6 +76,7 @@ def test_risk_engine_classification():
 # Test 2 : executor/risk_engine.py re-export
 # ══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.xfail(reason="executor.risk_engine module absent", strict=False)
 def test_risk_engine_reexport():
     from executor.risk_engine import RiskEngine, RiskLevel

@@ -19,23 +19,23 @@ webhook_router = APIRouter(prefix="/api/v2/webhooks", tags=["webhooks"])
 
 class TelegramNotifier:
     """Envoyer des notifications Telegram depuis les alertes Alertmanager"""
-    
+
     def __init__(self):
         self.bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
         self.chat_id = os.getenv('TELEGRAM_CHAT_ID')
         self.enabled = bool(self.bot_token and self.chat_id)
-        
+
         if self.enabled:
             logger.info("Telegram notifications enabled")
         else:
             logger.warning("Telegram notifications disabled - TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID not set")
-    
+
     def format_alert_message(self, alert: Dict[str, Any]) -> str:
         """Formatter une alerte en message Telegram"""
         status = alert.get('status', 'unknown').upper()
         labels = alert.get('labels', {})
         annotations = alert.get('annotations', {})
-        
+
         # Emoji selon la sévérité
         severity = labels.get('severity', 'info')
         emoji_map = {
@@ -44,7 +44,7 @@ class TelegramNotifier:
             'info': 'ℹ️'
         }
         emoji = emoji_map.get(severity, '📊')
-        
+
         # Construire le message
         lines = [
             f"{emoji} <b>ALERT: {status}</b>",
@@ -54,37 +54,37 @@ class TelegramNotifier:
             f"🔧 <b>Component:</b> {labels.get('component', 'Unknown')}",
             "",
         ]
-        
+
         # Ajouter summary et description
         if summary := annotations.get('summary'):
             lines.append(f"📌 {summary}")
-        
+
         if description := annotations.get('description'):
             lines.append(f"📝 {description}")
-        
+
         # Ajouter instance
         if instance := labels.get('instance'):
             lines.append(f"🖥️ <b>Instance:</b> {instance}")
-        
+
         # Ajouter timestamps
         if starts_at := alert.get('startsAt'):
             lines.append(f"⏰ <b>Started:</b> {starts_at}")
-        
+
         if status == 'RESOLVED' and (ends_at := alert.get('endsAt')):
             lines.append(f"✅ <b>Resolved:</b> {ends_at}")
-        
+
         return "\n".join(lines)
-    
+
     async def send_alert(self, alert: Dict[str, Any]) -> bool:
         """Envoyer une alerte à Telegram"""
         if not self.enabled:
             logger.debug("Telegram not configured, skipping alert")
             return False
-        
+
         try:
             message = self.format_alert_message(alert)
             api_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
-            
+
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     api_url,
@@ -96,14 +96,14 @@ class TelegramNotifier:
                     },
                     timeout=10.0
                 )
-                
+
                 if response.status_code == 200:
                     logger.info(f"Alert sent to Telegram: {alert.get('labels', {}).get('alertname')}")
                     return True
                 else:
                     logger.error(f"Failed to send to Telegram: {response.status_code} - {response.text}")
                     return False
-                    
+
         except Exception as e:
             logger.error(f"Error sending Telegram alert: {e}")
             return False
@@ -147,19 +147,19 @@ async def alertmanager_webhook(
     try:
         payload = await request.json()
         alerts = payload.get('alerts', [])
-        
+
         logger.info(f"Received {len(alerts)} alerts from Alertmanager (priority: {priority})")
-        
+
         # Log des alertes pour debug
         for alert in alerts:
             logger.debug(f"Alert: {alert.get('labels', {}).get('alertname')} - {alert.get('status')}")
-        
+
         # Envoyer à Telegram
         results = []
         for alert in alerts:
             success = await telegram_notifier.send_alert(alert)
             results.append(success)
-        
+
         return {
             "status": "success",
             "priority": priority,
@@ -167,7 +167,7 @@ async def alertmanager_webhook(
             "alerts_sent": sum(results),
             "telegram_enabled": telegram_notifier.enabled
         }
-        
+
     except Exception as e:
         logger.error(f"Error processing alertmanager webhook: {e}")
         return {
@@ -188,7 +188,7 @@ async def test_telegram():
             "status": "error",
             "message": "Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env"
         }
-    
+
     # Créer une alerte de test
     test_alert = {
         "status": "firing",
@@ -204,9 +204,9 @@ async def test_telegram():
         },
         "startsAt": "2026-04-09T21:00:00Z"
     }
-    
+
     success = await telegram_notifier.send_alert(test_alert)
-    
+
     return {
         "status": "success" if success else "error",
         "message": "Test alert sent to Telegram" if success else "Failed to send test alert",

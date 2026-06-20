@@ -187,7 +187,7 @@ class BeaSession:
             agent=agent, content=content,
             success=success, error=error, duration_ms=ms,
         )
-        
+
         # Emission de l'événement vers la v3
         try:
             from core.events import Observation

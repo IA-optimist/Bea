@@ -3,7 +3,7 @@ Re-exports from _base for backward compatibility.
 """
 from core.resilience._base import (  # noqa: F401
     BeaError,
-    BeaExecutionError, 
+    BeaExecutionError,
     CircuitBreaker,
     guard_context,
     estimate_tokens,

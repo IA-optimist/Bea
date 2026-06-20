@@ -157,6 +157,7 @@ class TestPreExecutionAssessment(unittest.TestCase):
 class TestOrchIntegration(unittest.TestCase):
     """Verify wiring in MetaOrchestrator."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="pre_assessment wiring drift in run_mission", strict=False)
     def test_pre_assessment_wired(self):
         import inspect

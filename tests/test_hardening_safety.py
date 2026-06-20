@@ -41,6 +41,7 @@ if _ROOT not in sys.path:
 # CONNECTOR INPUT SANITIZATION
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: sanitize_params")
 class TestConnectorSanitization(unittest.TestCase):
     """Input sanitization catches dangerous patterns."""
@@ -546,6 +547,7 @@ class TestPersistenceValidation(unittest.TestCase):
 # DOMAIN MANAGER
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: DomainManager")
 class TestDomainManager(unittest.TestCase):
     """Business domain management."""
@@ -576,6 +578,7 @@ class TestDomainManager(unittest.TestCase):
 # STRESS: SAFETY UNDER LOAD
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: sanitize_params")
 class TestSafetyStress(unittest.TestCase):
     """Safety checks remain fast under load."""

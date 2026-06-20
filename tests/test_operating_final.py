@@ -94,6 +94,7 @@ def test_web_scrape_requires_url():
     assert "url required" in r.error
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: module removed")
 def test_file_export_json():
     from core.connectors import file_export_connector
@@ -112,6 +113,7 @@ def test_file_export_json():
         conn._EXPORT_DIR = old
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: module removed")
 def test_file_export_csv():
     from core.connectors import file_export_connector
@@ -131,6 +133,7 @@ def test_file_export_csv():
         conn._EXPORT_DIR = old
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="phantom: module removed")
 def test_file_export_markdown():
     from core.connectors import file_export_connector
@@ -258,6 +261,7 @@ def test_mission_slicing_bounded():
 # ARCHITECTURE
 # ═══════════════════════════════════════════════════════════════
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: removed files")
 def test_all_files_parse():
     for f in ["core/connectors.py", "core/operating_primitives.py",

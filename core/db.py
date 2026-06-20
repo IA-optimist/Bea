@@ -114,7 +114,8 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         decision_trace TEXT DEFAULT '{}',
         risk_score INTEGER DEFAULT 0,
         complexity TEXT DEFAULT 'medium',
-        error TEXT DEFAULT ''
+        error TEXT DEFAULT '',
+        phase_cursor TEXT DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS goals (
@@ -131,6 +132,12 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     );
     """)
     conn.commit()
+    # Migrate existing DBs: add phase_cursor if missing (SQLite has no ADD COLUMN IF NOT EXISTS)
+    try:
+        conn.execute("ALTER TABLE missions ADD COLUMN phase_cursor TEXT DEFAULT ''")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
 
 
 def get_db() -> sqlite3.Connection | None:

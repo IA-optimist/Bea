@@ -13,27 +13,27 @@ import pytest
 async def test_websocket_connection():
     """Test WebSocket connection and receive metrics."""
     uri = "ws://localhost:8000/ws/metrics?interval=2"
-    
+
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Connecting to {uri}...")
-    
+
     try:
         async with websockets.connect(uri) as websocket:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Connected!")
             print("\nReceiving real-time metrics (Ctrl+C to stop):\n")
-            
+
             message_count = 0
             while True:
                 try:
                     message = await websocket.recv()
                     data = json.loads(message)
                     message_count += 1
-                    
+
                     # Pretty print received data
                     timestamp = data.get('timestamp', 'N/A')
                     system = data.get('system', {})
                     missions = data.get('missions', {})
                     revenue = data.get('revenue', {})
-                    
+
                     print(f"[Message #{message_count}] {timestamp}")
                     print(f"  System: CPU={system.get('cpu')}% | Memory={system.get('memory')}% | "
                           f"Used={system.get('memory_used_gb'):.2f}GB/{system.get('memory_total_gb'):.2f}GB")
@@ -45,11 +45,11 @@ async def test_websocket_connection():
                           f"ARR=${revenue.get('arr'):.2f} | "
                           f"Daily=${revenue.get('daily_revenue'):.2f}")
                     print("-" * 80)
-                    
+
                 except websockets.exceptions.ConnectionClosed:
                     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ❌ Connection closed by server")
                     break
-                    
+
     except ConnectionRefusedError:
         print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Connection refused. Is the server running?")
         print("Start the server with: uvicorn api.main:app --host 0.0.0.0 --port 8000")
@@ -62,11 +62,11 @@ async def test_websocket_connection():
 async def test_http_endpoints():
     """Test HTTP endpoints for WebSocket status and snapshot."""
     import aiohttp
-    
+
     base_url = "http://localhost:8000"
-    
+
     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Testing HTTP endpoints...")
-    
+
     async with aiohttp.ClientSession() as session:
         # Test status endpoint
         try:
@@ -81,7 +81,7 @@ async def test_http_endpoints():
                     print(f"❌ Status endpoint returned {resp.status}")
         except Exception as e:
             print(f"❌ Status endpoint error: {e}")
-        
+
         # Test snapshot endpoint
         try:
             async with session.get(f"{base_url}/metrics/snapshot") as resp:
@@ -104,17 +104,17 @@ async def main():
     print("=" * 80)
     print("BeaMax Real-Time WebSocket Test")
     print("=" * 80)
-    
+
     # Test HTTP endpoints first
     await test_http_endpoints()
-    
+
     print("\n" + "=" * 80)
     print("Testing WebSocket Connection")
     print("=" * 80)
-    
+
     # Test WebSocket connection
     await test_websocket_connection()
-    
+
     print("\n" + "=" * 80)
     print("Test completed")
     print("=" * 80)

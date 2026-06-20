@@ -66,6 +66,7 @@ class TestCanonicalAgentDefinitions:
 
 class TestSpecialistPacks:
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="expected 5 packs, drift", strict=False)
     def test_CA10_five_specialist_packs(self):
         from core.agents.canonical_agents import SPECIALIST_PACKS
@@ -203,6 +204,7 @@ class TestCanonicalRuntime:
         assert "code_generation" in caps
         assert "policy_enforcement" in caps
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="canonical runtime status drift", strict=False)
     def test_CA32_status(self):
         from core.agents.canonical_agents import get_canonical_runtime

@@ -32,7 +32,7 @@ class LeanCanvas:
     cost_structure: list[str] = field(default_factory=list)
     key_metrics: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "problem": self.problem[:3], "solution": self.solution[:3],
             "unique_value": self.unique_value, "unfair_advantage": self.unfair_advantage,
@@ -56,7 +56,7 @@ class UnitEconomics:
     def healthy(self) -> bool:
         return self.ltv_cac_ratio >= 3.0 and self.payback_months <= 12
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "cac": round(self.cac, 2), "ltv": round(self.ltv, 2),
             "ltv_cac_ratio": round(self.ltv_cac_ratio, 2),
@@ -78,7 +78,7 @@ class Projection:
     profit: float = 0.0
     note: str = "estimate"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "month": self.month, "revenue": round(self.revenue),
             "costs": round(self.costs), "customers": self.customers,
@@ -96,7 +96,7 @@ class ViabilityScore:
     risk_score: float = 0.0
     verdict: str = ""          # go, review, no-go
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "score": round(self.score, 1),
             "market": round(self.market_score, 1),
@@ -119,7 +119,7 @@ class BusinessModel:
     pricing_suggestion: str = ""
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
             "canvas": self.canvas.to_dict(),
@@ -151,7 +151,7 @@ class BusinessModelAgent:
     Generates business models from market research.
     """
 
-    def generate(self, opportunity: str, market_report: dict | None = None) -> BusinessModel:
+    def generate(self, opportunity: str, market_report: dict[str, object] | None = None) -> BusinessModel:
         """Generate a business model for an opportunity."""
         model = BusinessModel(name=opportunity)
 
@@ -176,7 +176,7 @@ class BusinessModelAgent:
         """Re-score viability on an existing model."""
         return self._score_viability(model)
 
-    def _build_canvas(self, opp: str, market: dict | None) -> LeanCanvas:
+    def _build_canvas(self, opp: str, market: dict[str, object] | None) -> LeanCanvas:
         """Build Lean Canvas. Stub — will be LLM generated."""
         return LeanCanvas(
             problem=["Requires LLM analysis"],

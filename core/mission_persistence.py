@@ -453,8 +453,9 @@ def sqlite_upsert_mission(result: Any, logger) -> bool:
                 advisory_score, advisory_decision, advisory_issues, advisory_risks,
                 action_ids, requires_validation, auto_approved, created_at,
                 updated_at, completed_at, note, final_output, summary, agents_selected,
-                domain, execution_trace, decision_trace, risk_score, complexity, error)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                domain, execution_trace, decision_trace, risk_score, complexity, error,
+                phase_cursor)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 result.mission_id,
                 result.user_input,
@@ -482,6 +483,7 @@ def sqlite_upsert_mission(result: Any, logger) -> bool:
                 result.risk_score,
                 result.complexity,
                 result.error,
+                getattr(result, "phase_cursor", ""),
             ),
         )
         return True

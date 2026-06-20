@@ -14,6 +14,7 @@ import shlex
 import shutil
 import time
 from dataclasses import dataclass
+from typing import Any
 from datetime import datetime, timezone as _tz
 UTC = _tz.utc  # Python 3.10 compat: datetime.UTC added in 3.11
 from pathlib import Path
@@ -83,7 +84,7 @@ def _parse_allowed_command(cmd: str) -> tuple[list[str] | None, str | None]:
     return args, None
 
 
-async def run_with_timeout(coro, timeout=AGENT_TIMEOUT_SECONDS, agent_name=""):
+async def run_with_timeout(coro: Any, timeout: float = AGENT_TIMEOUT_SECONDS, agent_name: str = "") -> Any:
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
     except asyncio.TimeoutError:
@@ -150,7 +151,7 @@ class ActionResult:  # canonical name for shell/file action results
     backup_path: str | None = None
     duration_ms: int        = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "success": self.success,
             "action_type": self.action_type,
@@ -186,7 +187,7 @@ ExecutionResult = ActionResult
 
 class ActionExecutor:
 
-    def __init__(self, settings=None):
+    def __init__(self, settings: Any | None = None) -> None:
         self.s = settings
         WORKSPACE.mkdir(parents=True, exist_ok=True)
         BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -249,6 +250,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target, must_exist=True)
         if path_error:
             return ExecutionResult(False, "read_file", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "read_file", a.target, "",
                                    f"Fichier introuvable : {a.target}")
@@ -266,6 +268,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target)
         if path_error:
             return ExecutionResult(False, "write_file", a.target, "", path_error)
+        assert p is not None
         backup = None
         if p.exists():
             backup = await self._backup(p)
@@ -298,6 +301,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target, must_exist=True)
         if path_error:
             return ExecutionResult(False, "backup_file", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "backup_file", a.target, "",
                                    "Fichier introuvable")
@@ -309,6 +313,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target, must_exist=True)
         if path_error:
             return ExecutionResult(False, "replace_in_file", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "replace_in_file", a.target, "",
                                    "Fichier introuvable")
@@ -366,6 +371,7 @@ class ActionExecutor:
         args, parse_error = _parse_allowed_command(cmd)
         if parse_error:
             return ExecutionResult(False, "run_command", cmd, "", parse_error)
+        assert args is not None
 
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -401,6 +407,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target) if a.target else (WORKSPACE, None)
         if path_error:
             return ExecutionResult(False, "list_dir", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "list_dir", str(p), "",
                                    f"Dossier introuvable : {p}")
@@ -419,6 +426,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target) if a.target else (WORKSPACE, None)
         if path_error:
             return ExecutionResult(False, "analyze_dir", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "analyze_dir", str(p), "",
                                    f"Dossier introuvable : {p}")
@@ -440,6 +448,7 @@ class ActionExecutor:
         p, path_error = _workspace_path(a.target, must_exist=True)
         if path_error:
             return ExecutionResult(False, "delete_file", a.target, "", path_error)
+        assert p is not None
         if not p.exists():
             return ExecutionResult(False, "delete_file", a.target, "", "Fichier introuvable")
         # Backup systematique avant suppression
@@ -459,11 +468,13 @@ class ActionExecutor:
         dst, dst_error = _workspace_path(a.content) if a.content else (None, None)
         if dst_error:
             return ExecutionResult(False, "move_file", a.target, "", dst_error)
+        assert src is not None
         if not src.exists():
             return ExecutionResult(False, "move_file", a.target, "", "Source introuvable")
         if not dst:
             return ExecutionResult(False, "move_file", a.target, "",
                                    "Destination manquante (champ 'content')")
+        assert dst is not None
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
         return ExecutionResult(True, "move_file", a.target, f"Deplace vers {dst}")
@@ -475,11 +486,13 @@ class ActionExecutor:
         dst, dst_error = _workspace_path(a.content) if a.content else (None, None)
         if dst_error:
             return ExecutionResult(False, "copy_file", a.target, "", dst_error)
+        assert src is not None
         if not src.exists():
             return ExecutionResult(False, "copy_file", a.target, "", "Source introuvable")
         if not dst:
             return ExecutionResult(False, "copy_file", a.target, "",
                                    "Destination manquante (champ 'content')")
+        assert dst is not None
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(str(src), str(dst))
         return ExecutionResult(True, "copy_file", a.target, f"Copie vers {dst}")
@@ -496,8 +509,8 @@ class ActionExecutor:
         log.debug("backup_created", src=str(path), dst=str(dest))
         return str(dest)
 
-    async def _log(self, r: ExecutionResult, session_id: str, agent: str, risk: str = "?"):
-        entry = {
+    async def _log(self, r: ExecutionResult, session_id: str, agent: str, risk: str = "?") -> None:
+        entry: dict[str, object] = {
             "ts":          datetime.now(UTC).isoformat(),
             "session_id":  session_id,
             "agent":       agent,
@@ -515,7 +528,7 @@ class ActionExecutor:
         except Exception as e:
             log.error("exec_log_write_failed", err=str(e))
 
-    async def tail_logs(self, n: int = 15) -> list[dict]:
+    async def tail_logs(self, n: int = 15) -> list[dict[str, object]]:
         if not EXEC_LOG.exists():
             return []
         try:

@@ -23,7 +23,7 @@ from pathlib import Path
 # (finance, venture, playbooks, browser, voice). Default: false.
 # When false, these endpoints return 404 instead of fake 200 with empty data.
 _ENABLE_STUB_ROUTES = os.getenv("ENABLE_STUB_ROUTES", "false").lower() == "true"
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from fastapi import Depends, FastAPI, Request, WebSocket
@@ -63,20 +63,20 @@ app = FastAPI(
 
 # Auth-protected OpenAPI schema endpoint (when docs enabled)
 if _enable_docs:
-    @app.get("/openapi.json", include_in_schema=False)
-    async def get_openapi_schema(user: dict = Depends(require_auth)):
+    @app.get("/openapi.json", include_in_schema=False)  # type: ignore[untyped-decorator]
+    async def get_openapi_schema(user: dict[str, Any] = Depends(require_auth)) -> dict[str, Any]:
         """OpenAPI schema endpoint — requires authentication.
 
         Protects API documentation from unauthorized access.
         /docs and /redoc will fetch this endpoint automatically.
         """
         from fastapi.openapi.utils import get_openapi
-        return get_openapi(
+        return cast(dict[str, Any], get_openapi(
             title=app.title,
             version=app.version,
             description=app.description,
             routes=app.routes,
-        )
+        ))
 
 # Rate limiting (Phase 4 Security)
 app.state.limiter = limiter
@@ -159,13 +159,15 @@ except Exception as _tc_err:
 
 # ── Router mounting — see api/router_mount.py ─────────────────
 from api.router_mount import mount_all_routers
+from api.routes import v1 as _v1_router
 
 mount_all_routers(app, _ENABLE_STUB_ROUTES)
+app.include_router(_v1_router.router)
 
 
 # ── Session info endpoint (used by mobile app for role detection) ──
-@app.get("/api/v2/session", include_in_schema=False)
-async def session_info(request: Request, user: dict = Depends(require_auth)):
+@app.get("/api/v2/session", include_in_schema=False)  # type: ignore[untyped-decorator]
+async def session_info(request: Request, user: dict[str, Any] = Depends(require_auth)) -> dict[str, Any]:
     """Returns current user session info: role, username.
 
     Auth enforced via Depends(require_auth) — no silent admin fallback.
@@ -186,8 +188,8 @@ async def session_info(request: Request, user: dict = Depends(require_auth)):
 
 
 # ── Root: serve the login page ─────────────────────────────────
-@app.get("/", include_in_schema=False)
-async def root_redirect():
+@app.get("/", include_in_schema=False)  # type: ignore[untyped-decorator]
+async def root_redirect() -> RedirectResponse:
     # Entry point → login page (redirects to /app.html after auth)
     return RedirectResponse(url="/app.html")
 
@@ -205,8 +207,8 @@ _set_auth_cookie = _auth_routes.set_auth_cookie
 
 # ── WebSocket stream alias ────────────────────────────────────
 
-@app.websocket("/ws/stream")
-async def ws_stream_alias(websocket: WebSocket):
+@app.websocket("/ws/stream")  # type: ignore[untyped-decorator]
+async def ws_stream_alias(websocket: WebSocket) -> None:
     try:
         from api.ws import ws_handler
         await ws_handler(websocket)
@@ -227,23 +229,23 @@ _start_time = get_start_time()
 
 # ── Modèles Pydantic ──────────────────────────────────────────
 
-class TaskRequest(BaseModel):
+class TaskRequest(BaseModel):  # type: ignore[misc]
     input:    str               = Field(..., min_length=1, max_length=10000)
     mode:     str               = "auto"
     priority: int               = Field(default=2, ge=1, le=4)
 
-class ModeRequest(BaseModel):
+class ModeRequest(BaseModel):  # type: ignore[misc]
     mode:       str
     changed_by: str = "api"
 
-class TriggerRequest(BaseModel):
+class TriggerRequest(BaseModel):  # type: ignore[misc]
     mission: str
     context: dict[str, Any] = Field(default_factory=dict)
 
-class AbortRequest(BaseModel):
+class AbortRequest(BaseModel):  # type: ignore[misc]
     reason: str = "Annulé par l'utilisateur"
 
-class MissionSubmitRequest(BaseModel):
+class MissionSubmitRequest(BaseModel):  # type: ignore[misc]
     goal:  str = Field(..., min_length=1, max_length=10000)
     mode:  str = "AUTO"
 
@@ -251,7 +253,7 @@ class MissionSubmitRequest(BaseModel):
 # ── Anti-duplicate mission guard ─────────────────────────────
 # Set of currently-executing mission IDs. Prevents duplicate background tasks
 # when the same mission_id is submitted concurrently.
-_running_missions: set = set()
+_running_missions: set[str] = set()
 
 
 async def _run_mission(mission_id: str, goal: str, mode: str = "auto") -> None:
@@ -268,7 +270,7 @@ async def _run_mission(mission_id: str, goal: str, mode: str = "auto") -> None:
 
 # ── Lazy component getters ────────────────────────────────────
 
-def _get_orchestrator():
+def _get_orchestrator() -> Any:
     """Get the mission orchestrator.
 
     MetaOrchestrator is the CANONICAL entry point.
@@ -279,30 +281,33 @@ def _get_orchestrator():
     from core.meta_orchestrator import get_meta_orchestrator
     return get_meta_orchestrator()
 
-def _get_mission_system():
+def _get_mission_system() -> Any:
     from core.mission_system import get_mission_system
     return get_mission_system()
 
-def _get_task_queue():
+def _get_task_queue() -> Any:
     from executor.task_queue import get_task_queue
     return get_task_queue()
 
-def _get_metrics():
+def _get_metrics() -> Any | None:
     try:
         from config.settings import get_settings
         from core.observability.metrics import MetricsCollector
-        return MetricsCollector(get_settings())
+        metrics_factory: Any = MetricsCollector
+        return metrics_factory(get_settings())
     except Exception:
         return None
 
-def _get_monitoring_agent():
+def _get_monitoring_agent() -> Any:
     try:
         from config.settings import get_settings
         from agents.monitoring_agent import MonitoringAgent
-        return MonitoringAgent(get_settings())
+        agent_factory: Any = MonitoringAgent
+        return agent_factory(get_settings())
     except Exception:
         from agents.monitoring_agent import MonitoringAgent
-        return MonitoringAgent()
+        fallback_factory: Any = MonitoringAgent
+        return fallback_factory()
 
 
 # ── Multimodal endpoints ──────────────────────────────────────
@@ -331,8 +336,8 @@ def _get_monitoring_agent():
 # _WsSafeStaticFiles silently closes unknown WebSocket connections instead.
 _static_dir = Path(__file__).parent.parent / "static"
 if _static_dir.exists():
-    class _WsSafeStaticFiles(StaticFiles):
-        async def __call__(self, scope, receive, send):
+    class _WsSafeStaticFiles(StaticFiles):  # type: ignore[misc]
+        async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
             if scope.get("type") != "http":
                 # WebSocket to an unknown path — close gracefully, no crash
                 await send({"type": "websocket.close", "code": 4004})

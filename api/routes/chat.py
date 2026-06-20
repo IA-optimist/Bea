@@ -53,7 +53,7 @@ class ChatResponse(BaseModel):
 def detect_query_complexity(message: str) -> str:
     """Detect if query is simple or complex."""
     message_lower = message.lower()
-    
+
     complex_keywords = [
         "compare", "versus", "vs", "difference between",
         "plan", "strategy", "approach", "how should i",
@@ -61,17 +61,17 @@ def detect_query_complexity(message: str) -> str:
         "step by step", "guide me", "help me decide",
         "pros and cons", "trade-offs"
     ]
-    
+
     for keyword in complex_keywords:
         if keyword in message_lower:
             return "complex"
-    
+
     if message.count("?") >= 2:
         return "complex"
-    
+
     if len(message.split()) > 50:
         return "complex"
-    
+
     return "simple"
 
 
@@ -104,13 +104,13 @@ async def chat(
 ):
     """Conversational chat with AGI cognition."""
     _check_auth(x_bea_token, authorization)
-    
+
     orchestrator = _get_orchestrator()
-    
+
     # Detect complexity
     complexity = detect_query_complexity(req.message)
     use_tot = req.enable_tot and complexity == "complex"
-    
+
     # Build mission dict
     mission = {
         "mission_id": f"chat-{datetime.now(timezone.utc).timestamp()}",
@@ -123,7 +123,7 @@ async def chat(
             "complexity": complexity,
         }
     }
-    
+
     try:
         # Execute with project context
         result = await orchestrator.execute_with_project_context(
@@ -133,16 +133,16 @@ async def chat(
             enable_confidence=True,
             enable_learning=True
         )
-        
+
         response_text = result.get("result", "")
         confidence = result.get("confidence_score", 0.5)
         reasoning = "tree-of-thought" if use_tot else "direct"
-        
+
         # Self-correction if confidence too low
         if req.enable_self_correction and confidence < 0.6:
             mission["context"]["previous_attempt"] = response_text
             mission["context"]["previous_confidence"] = confidence
-            
+
             corrected_result = await orchestrator.execute_with_project_context(
                 mission,
                 project_id=req.project_id,
@@ -150,14 +150,14 @@ async def chat(
                 enable_confidence=True,
                 enable_learning=True
             )
-            
+
             corrected_confidence = corrected_result.get("confidence_score", 0.5)
-            
+
             if corrected_confidence > confidence:
                 response_text = corrected_result.get("result", response_text)
                 confidence = corrected_confidence
                 reasoning = "corrected"
-        
+
         return ChatResponse(
             response=response_text,
             confidence_score=confidence,
@@ -170,7 +170,7 @@ async def chat(
                 "self_corrected": reasoning == "corrected",
             }
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
 
@@ -183,18 +183,18 @@ async def get_project_performance(
 ):
     """Get cognitive performance metrics for a project."""
     _check_auth(x_bea_token, authorization)
-    
+
     orchestrator = _get_orchestrator()
     perf_summary = orchestrator.get_project_performance()
-    
+
     project_data = next(
         (p for p in perf_summary["projects"] if p["id"] == project_id),
         None
     )
-    
+
     if not project_data:
         raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
-    
+
     return {
         "project_id": project_id,
         "project_name": project_data["name"],

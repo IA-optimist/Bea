@@ -11,7 +11,7 @@ log = structlog.get_logger()
 
 class MemoryBank:
     """Base de données locale (JSON) des leçons apprises (RAG basique contextuel)."""
-    
+
     def __init__(self, db_path: str = "workspace/.bea_memory.json"):
         self.db_path = Path(db_path).absolute()
         try:
@@ -53,22 +53,22 @@ class MemoryBank:
         """
         if not self.memories:
             return ""
-            
+
         words = set(current_problem.lower().replace('.', ' ').replace('_', ' ').split())
         words = {w for w in words if len(w) > 3} # Pseudo stop-words removal
-        
+
         scored = []
         for mem in self.memories:
             mem_words = set(mem["context"].lower().replace('.', ' ').replace('_', ' ').split())
             score = len(words.intersection(mem_words))
             scored.append((score, mem))
-            
+
         scored.sort(key=lambda x: x[0], reverse=True)
-        best = [m[1] for m in scored if m[0] > 0][:limit] 
-        
+        best = [m[1] for m in scored if m[0] > 0][:limit]
+
         if not best:
             return ""
-            
+
         out = "\\n\\n[MÉMOIRE] Il semble que j'ai déjà rencontré un problème similaire :\\n"
         for b in best:
             out += f"- Scénario : {b['context']}\\n  Solution trouvée : {b['solution']}\\n"

@@ -26,7 +26,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -51,7 +51,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -67,7 +67,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -84,7 +84,7 @@ class TestAutomaticStrategicRecord:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -166,6 +166,7 @@ class TestAPIEndpoints:
 
 class TestWebVisibility:
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="static/economic.html missing", strict=False)
     def test_EW12_economic_page_exists(self):
         """Economic intelligence HTML page exists."""
@@ -262,7 +263,7 @@ class TestObjectiveKPIWiring:
         import tempfile
         from pathlib import Path
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         try:
             from core.planning.playbook import execute_playbook
@@ -324,7 +325,7 @@ class TestRecordProtection:
         import core.economic.strategic_memory as _mod
         old = _mod._store
         _mod._store = _mod.StrategicMemoryStore(
-            store_path=Path(tempfile.mktemp(suffix=".json"))
+            store_path=Path(tempfile.NamedTemporaryFile(suffix=".json", delete=False).name)
         )
         return old
 
@@ -419,6 +420,7 @@ class TestNoSecretLeakage:
         assert "sk-" not in combined
         assert "ghp_" not in combined
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="web page secrets check drift", strict=False)
     def test_EW31_web_page_no_secrets(self):
         """Economic HTML page has no embedded secret values."""

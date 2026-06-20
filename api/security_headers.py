@@ -12,8 +12,11 @@ Headers:
 """
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
 
 
 # Paths qui doivent bypasser la CSP stricte (Swagger/redoc ont besoin d'inline).
@@ -25,19 +28,23 @@ def _is_csp_exempt(path: str) -> bool:
     return any(path.startswith(p) for p in _CSP_EXEMPT_PREFIXES)
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
     """
     Adds security headers to all responses.
     
     Production-ready defaults following OWASP recommendations.
     """
-    
-    async def dispatch(self, request: Request, call_next):
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         response = await call_next(request)
-        
+
         # HSTS: Force HTTPS for 1 year (31536000 seconds)
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        
+
         # CSP: Content Security Policy.
         # - Strict policy everywhere except Swagger/ReDoc/OpenAPI (which need
         #   inline scripts AND styles to render their UI).
@@ -63,22 +70,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "connect-src 'self' https:; "
                 "frame-ancestors 'none'"
             )
-        
+
         # X-Frame-Options: Prevent clickjacking
         response.headers["X-Frame-Options"] = "DENY"
-        
+
         # X-Content-Type-Options: Prevent MIME sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
-        
+
         # Referrer-Policy: Limit referrer information
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        
+
         # X-XSS-Protection: Legacy but still useful
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        
+
         # Permissions-Policy: Restrict browser features
         response.headers["Permissions-Policy"] = (
             "geolocation=(), microphone=(), camera=()"
         )
-        
+
         return response

@@ -77,7 +77,7 @@ def require_admin(user: dict = Depends(require_auth)) -> dict:
     """
     if user.get("role") != "admin":
         raise HTTPException(
-            status_code=403, 
+            status_code=403,
             detail="Admin access required for this endpoint"
         )
     return user
@@ -117,7 +117,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
                 return  # Valid access token
         except Exception as e:
             log.warning(f"access_token_verification_failed token={candidate[:10]}... err={e}")
-    
+
     # 2. Check static API token (X-Bea-Token or Bearer) if configured
     if _API_TOKEN:
         _api_bytes = _API_TOKEN.encode()
@@ -131,7 +131,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
     if candidate and not candidate.startswith('jv-'):  # Skip if already checked as access token
         if _verify_jwt(candidate):
             return
-    
+
     # 5. Final fallback: if _REQUIRE_AUTH=false, allow unauthenticated (dev only)
     if not _REQUIRE_AUTH:
         log.warning("auth_disabled", reason="BEA_REQUIRE_AUTH=false — dev mode active")
@@ -149,7 +149,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             _jwt_secret = (get_settings().bea_secret_key or "").strip()
             _jwt_configured = bool(
                 _jwt_secret
-                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential
+                and _jwt_secret != "change-me-in-production"  # nosec B105 — placeholder check, not a credential  # pragma: allowlist secret
                 and not _jwt_secret.startswith("ephemeral-")
             )
         except Exception:
@@ -297,7 +297,7 @@ def _init_db():
         if not database_url:
             raise RuntimeError(
                 "DATABASE_URL environment variable is required. "
-                "Set it to postgresql://user:pass@host:port/db in your .env."
+                "Set it to postgresql://user:pass@host:port/db in your .env."  # pragma: allowlist secret
             )
         _db_engine = create_engine(database_url, pool_pre_ping=True)
         _SessionLocal = sessionmaker(bind=_db_engine, autocommit=False, autoflush=False)

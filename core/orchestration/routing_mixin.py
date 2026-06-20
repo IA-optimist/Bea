@@ -44,7 +44,7 @@ class RoutingMixin:
             except Exception as _exc:
                 log.warning("phase_failed", phase="classify", err=str(_exc)[:100])
                 classification = None
-        
+
         return classification
 
     def _match_ai_os_capabilities(
@@ -97,7 +97,7 @@ class RoutingMixin:
                                  names=",".join(c.name for c in matched_capabilities[:3]))
             except Exception as _exc:
                 log.debug("phase_failed", phase="capability_match", err=str(_exc)[:100])
-        
+
         return matched_capabilities
 
     def _route_mission(
@@ -376,5 +376,5 @@ class RoutingMixin:
                     log.info("skill_store_retrieved", mission_id=mid, count=len(_similar_skills))
             except Exception as _sk_err:
                 log.debug("skill_retrieve_skip", err=str(_sk_err)[:80])
-        
+
         return _kernel_plan, _skill_context

@@ -19,7 +19,7 @@ MAX_EVENT_LOG = 500
 MAX_VERSION_HISTORY = 50
 
 
-def get_autonomy_limits() -> dict:
+def get_autonomy_limits() -> dict[str, int]:
     """Return all workflow autonomy boundaries."""
     return {
         "max_concurrent_workflows": MAX_CONCURRENT_WORKFLOWS,

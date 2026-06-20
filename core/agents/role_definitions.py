@@ -6,7 +6,7 @@ Maps existing 19 agents to these roles without creating new agents.
 """
 from __future__ import annotations
 from dataclasses import dataclass, asdict
-from typing import Literal
+from typing import Any, Literal
 
 CoreRole = Literal["planner", "researcher", "critic", "reviewer", "operator", "memory_curator"]
 
@@ -20,8 +20,8 @@ class RoleDefinition:
     output_type: str
     success_criteria: str
     assigned_agents: tuple[str, ...] = ()
-    
-    def to_dict(self) -> dict:
+
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["assigned_agents"] = list(self.assigned_agents)
         return d
@@ -90,12 +90,12 @@ def role_for_agent(agent_name: str) -> str:
             return role_def.role
     return "operator"  # Default fallback
 
-def list_roles() -> list[dict]:
+def list_roles() -> list[dict[str, Any]]:
     return [r.to_dict() for r in ROLE_DEFINITIONS.values()]
 
 def agent_role_map() -> dict[str, str]:
     """Map all agents to their roles."""
-    mapping = {}
+    mapping: dict[str, str] = {}
     for role_def in ROLE_DEFINITIONS.values():
         for agent in role_def.assigned_agents:
             mapping[agent] = role_def.role

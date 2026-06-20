@@ -56,7 +56,7 @@ _EXCLUDE_FILES = {
 
 def _iter_python_files():
     for path in _REPO_ROOT.rglob("*.py"):
-        if any(part in _EXCLUDE_DIRS for part in path.parts):
+        if any(part in _EXCLUDE_DIRS or part.startswith("beamax-") for part in path.parts):
             continue
         yield path
 

@@ -14,7 +14,7 @@ log = structlog.get_logger(__name__)
 _pool: Optional[asyncpg.Pool] = None
 
 
-async def init_pool(dsn: str):
+async def init_pool(dsn: str) -> None:
     """Initialize connection pool.
 
     Configuration robuste (aligné sur FIX 3 de la branche master) :
@@ -42,16 +42,16 @@ async def get_project(project_id: str) -> Optional[Dict[str, Any]]:
     if not _pool:
         log.error("pool_not_initialized")
         return None
-    
+
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM projects WHERE id = $1 AND deleted_at IS NULL",
             UUID(project_id)
         )
-        
+
         if not row:
             return None
-        
+
         return {
             "id": str(row["id"]),
             "name": row["name"],
@@ -70,7 +70,7 @@ async def list_projects(
     if not _pool:
         log.error("pool_not_initialized")
         return []
-    
+
     async with _pool.acquire() as conn:
         if active_only:
             rows = await conn.fetch(
@@ -82,7 +82,7 @@ async def list_projects(
                 "SELECT * FROM projects ORDER BY created_at DESC LIMIT $1",
                 limit
             )
-        
+
         projects = []
         for row in rows:
             projects.append({
@@ -94,7 +94,7 @@ async def list_projects(
                 "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
                 "deleted_at": row["deleted_at"].isoformat() if row["deleted_at"] else None
             })
-        
+
         return projects
 
 
@@ -107,7 +107,7 @@ async def create_project(
     if not _pool:
         log.error("pool_not_initialized")
         raise RuntimeError("Database pool not initialized")
-    
+
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -117,7 +117,7 @@ async def create_project(
             """,
             name, description, config
         )
-        
+
         return {
             "id": str(row["id"]),
             "name": row["name"],
@@ -136,44 +136,44 @@ async def update_project(
     """Update project."""
     if not _pool:
         return None
-    
+
     # Build dynamic UPDATE
-    updates = []
-    params = []
+    updates: list[str] = []
+    params: list[Any] = []
     param_idx = 1
-    
+
     if name is not None:
         updates.append(f"name = ${param_idx}")
         params.append(name)
         param_idx += 1
-    
+
     if description is not None:
         updates.append(f"description = ${param_idx}")
         params.append(description)
         param_idx += 1
-    
+
     if config is not None:
         updates.append(f"config = ${param_idx}")
         params.append(config)
         param_idx += 1
-    
+
     if not updates:
         return await get_project(project_id)
-    
+
     updates.append("updated_at = NOW()")
     params.append(UUID(project_id))
-    
+
     # `updates` only contains literal column-name fragments built by this
     # function (`"name = $1"`, etc.); values flow via `params` through
     # asyncpg's $N placeholders. No user input reaches the f-string.
     query = f"""UPDATE projects SET {', '.join(updates)} WHERE id = ${param_idx} AND deleted_at IS NULL RETURNING *"""  # nosec B608  # noqa: S608
-    
+
     async with _pool.acquire() as conn:
         row = await conn.fetchrow(query, *params)
-        
+
         if not row:
             return None
-        
+
         return {
             "id": str(row["id"]),
             "name": row["name"],
@@ -187,8 +187,9 @@ async def delete_project(project_id: str, soft: bool = True) -> bool:
     """Delete project (soft delete by default)."""
     if not _pool:
         return False
-    
+
     async with _pool.acquire() as conn:
+        result: str
         if soft:
             result = await conn.execute(
                 "UPDATE projects SET deleted_at = NOW() WHERE id = $1",
@@ -199,5 +200,5 @@ async def delete_project(project_id: str, soft: bool = True) -> bool:
                 "DELETE FROM projects WHERE id = $1",
                 UUID(project_id)
             )
-        
+
         return result != "UPDATE 0" and result != "DELETE 0"

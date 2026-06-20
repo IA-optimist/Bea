@@ -192,6 +192,7 @@ class TestCanonicalContext(unittest.TestCase):
         with self.assertRaises(TransitionError):
             ctx.transition(S.RUNNING)  # terminal → anything
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="to_dict bounds drift", strict=False)
     def test_to_dict_bounded(self):
         from core.canonical_types import CanonicalMissionContext

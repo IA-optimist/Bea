@@ -32,6 +32,7 @@ class TestExecutorResults(unittest.TestCase):
         self.assertIn("ts", r)
         self.assertIsInstance(r["ts"], float)
 
+    @pytest.mark.stale
     @pytest.mark.skip(reason="stale: taxonomy changed")
     def test_err_has_classification(self):
         from core.tool_executor import _err
@@ -45,6 +46,7 @@ class TestExecutorResults(unittest.TestCase):
         r = _err("network error", retryable=True)
         self.assertTrue(r["retryable"])
 
+    @pytest.mark.stale
     @pytest.mark.skip(reason="stale: taxonomy changed")
     def test_classify_error(self):
         from core.tool_executor import _classify_error

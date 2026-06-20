@@ -38,11 +38,11 @@ class OnboardingContent:
     @staticmethod
     def get_plans() -> List[PlanDescription]:
         return []
-    
+
     @staticmethod
     def get_welcome_message() -> str:
         return ""
-    
+
     @staticmethod
     def get_examples() -> List[Dict[str, Any]]:
         return []

@@ -6,15 +6,15 @@ Implementation planned for future release.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 
 @dataclass
 class SubsystemMetrics:
-    orchestrator: Dict[str, float]
-    executor: Dict[str, float]
-    memory: Dict[str, float]
-    routing: Dict[str, float]
+    orchestrator: dict[str, float]
+    executor: dict[str, float]
+    memory: dict[str, float]
+    routing: dict[str, float]
 
 
 @dataclass
@@ -27,9 +27,9 @@ class SnapshotPersistence:
     @staticmethod
     def save(snapshot: MetricsSnapshot, path: str) -> bool:
         return True
-    
+
     @staticmethod
-    def load(path: str) -> Optional[MetricsSnapshot]:
+    def load(path: str) -> MetricsSnapshot | None:
         return None
 
 
@@ -47,42 +47,42 @@ class Alert:
 
 
 class AlertEngine:
-    def __init__(self):
-        self.alerts: List[Alert] = []
-    
-    def evaluate(self, metrics: MetricsSnapshot) -> List[Alert]:
+    def __init__(self) -> None:
+        self.alerts: list[Alert] = []
+
+    def evaluate(self, metrics: MetricsSnapshot) -> list[Alert]:
         """Evaluate metrics and generate alerts"""
         return []
 
 
 @dataclass
 class RichTraceSummary:
-    events: List[Dict[str, Any]]
+    events: list[dict[str, Any]]
     narrative: str
     causal_analysis: str
 
 
 class TraceSummaryBuilder:
     @staticmethod
-    def build(events: List[Dict[str, Any]]) -> RichTraceSummary:
+    def build(events: list[dict[str, Any]]) -> RichTraceSummary:
         return RichTraceSummary(events=events, narrative="", causal_analysis="")
 
 
 @dataclass
 class DiagnosticsReport:
     health_score: float
-    sections: Dict[str, Any]
+    sections: dict[str, Any]
 
 
 class OperatorDiagnostics:
     @staticmethod
     def generate_report(metrics: MetricsSnapshot) -> DiagnosticsReport:
         return DiagnosticsReport(health_score=1.0, sections={})
-    
+
     @staticmethod
     def operator_summary(report: DiagnosticsReport) -> str:
         return ""
-    
+
     @staticmethod
     def admin_summary(report: DiagnosticsReport) -> str:
         return ""

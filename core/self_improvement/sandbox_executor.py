@@ -572,7 +572,7 @@ class SandboxExecutor:
     def run_linter(self, sandbox_path: str, files: list[str]) -> SandboxResult:
         """Run ruff linter on files. Returns blocked/skipped result if ruff unavailable."""
         try:
-            cmd = ["python", "-m", "ruff", "check"] + files
+            cmd = [sys.executable, "-m", "ruff", "check"] + files
             result = subprocess.run(  # nosec B603 B607
                 cmd, cwd=sandbox_path, capture_output=True, text=True, timeout=30,
             )
@@ -614,7 +614,7 @@ class SandboxExecutor:
     def run_tests(self, sandbox_path: str, test_targets: list[str] | None = None,
                   timeout: int = 120) -> SandboxResult:
         """Run pytest in sandbox. Returns SandboxResult."""
-        cmd = ["python", "-m", "pytest"]
+        cmd = [sys.executable, "-m", "pytest"]
         if test_targets:
             cmd.extend(test_targets)
         else:

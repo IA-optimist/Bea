@@ -102,7 +102,7 @@ def create_api(settings) -> FastAPI:
                 log.info("bea_kernel_ready",
                          status=_jk.status().to_dict()["booted"],
                          orchestrator=True)
-                
+
                 # Register business mission handlers
                 try:
                     from core.orchestration.business_missions import register_business_handlers
@@ -289,8 +289,8 @@ def create_api(settings) -> FastAPI:
             from kernel.runtime.boot import get_runtime as _get_kernel
             rt = _get_kernel()
             return rt.status()
-        except Exception as e:
-            return {"error": str(e), "booted": False}
+        except Exception:
+            return {"error": "internal_error", "booted": False}
 
     @app.get("/workspace", tags=["system"])
     async def workspace_info():
@@ -298,8 +298,8 @@ def create_api(settings) -> FastAPI:
             from core.observability.watcher import SystemObserver
             snap = await SystemObserver(s).snapshot_workspace()
             return {"snapshot": snap}
-        except Exception as e:
-            return {"snapshot": None, "error": str(e)}
+        except Exception:
+            return {"snapshot": None, "error": "internal_error"}
 
     @app.post("/run", tags=["system"])
     async def run_mission(body: dict):

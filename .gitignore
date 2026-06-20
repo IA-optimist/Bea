@@ -7,6 +7,7 @@ sqlite_mcp_server.db
 .env
 .env.local
 .env.*.local
+.env.bak*
 *.key
 *.pem
 secrets/
@@ -44,6 +45,7 @@ venv/
 env/
 dist/
 build/
+beamax-*/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
@@ -183,6 +185,9 @@ workspace/improvement_proposals.json
 .env.agents
 workspace/access_tokens.json
 workspace/SI_V3_APPLICATION_REPORT_*.md
+
+bandit.json
+scripts/.watchdog_state.json
 
 # Playwright E2E Tests
 test-results/

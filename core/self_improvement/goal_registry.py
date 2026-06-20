@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import structlog
 from dataclasses import dataclass, field, asdict
-from typing import Literal, Optional
+from typing import Any, Literal
 
 log = structlog.get_logger("bea.improvement.goals")
 
@@ -38,7 +38,7 @@ class ImprovementGoal:
             return self.baseline_value - new_value
         return new_value - self.baseline_value
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["allowed_change_scope"] = list(self.allowed_change_scope)
         return d
@@ -133,7 +133,7 @@ _DEFAULT_GOALS: list[ImprovementGoal] = [
 class ImprovementGoalRegistry:
     """Registry of measurable improvement goals."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._goals: dict[str, ImprovementGoal] = {}
         for g in _DEFAULT_GOALS:
             self._goals[g.goal_id] = g
@@ -147,19 +147,19 @@ class ImprovementGoalRegistry:
         self._goals[goal.goal_id] = goal
         log.info("goal_registered", goal_id=goal.goal_id)
 
-    def get(self, goal_id: str) -> Optional[ImprovementGoal]:
+    def get(self, goal_id: str) -> ImprovementGoal | None:
         return self._goals.get(goal_id)
 
     def list_goals(self) -> list[ImprovementGoal]:
         return list(self._goals.values())
 
-    def list_by_importance(self, importance: str = None) -> list[ImprovementGoal]:
+    def list_by_importance(self, importance: str | None = None) -> list[ImprovementGoal]:
         if importance:
             return [g for g in self._goals.values() if g.importance == importance]
         order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
         return sorted(self._goals.values(), key=lambda g: order.get(g.importance, 9))
 
-    def evaluate(self, goal_id: str, new_value: float) -> dict:
+    def evaluate(self, goal_id: str, new_value: float) -> dict[str, Any]:
         """Evaluate a measurement against a goal."""
         goal = self._goals.get(goal_id)
         if not goal:
@@ -175,7 +175,7 @@ class ImprovementGoalRegistry:
             "target_direction": goal.target_direction,
         }
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {gid: g.to_dict() for gid, g in self._goals.items()}
 
 

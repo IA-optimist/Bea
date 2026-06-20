@@ -1,7 +1,13 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-16**, SHA `1631240`.
+> Honest per-component maturity rating. Last verified: **2026-06-20**, SHA `0b4c6f1`.
 > Verified by direct code reading + runtime observation + gate test results.
+
+Packaging truth:
+- License: MIT
+- Build metadata: `pyproject.toml` (PEP 621, `name=beamax`, `version=0.1.0`)
+- Version line: SemVer `0.x` until the public API is frozen
+- Wheel validated: `python -m build` → `beamax-0.1.0-py3-none-any.whl`, `import beamax_cli / core / api` OK (T1.5 ✅)
 
 ## Summary (June 2026)
 
@@ -15,6 +21,13 @@
 | Docker stack | 🟢 Back in service 2026-06-05 (postgres/redis/qdrant healthy) |
 | Renommage jarvis→bea | ✅ Done 2026-06-07, 823 files, commit `aaee8c6` |
 | Forge-builder | 🟢 Committed 2026-06-12, suite verte Windows |
+| Provider fallback chain | 🟢 FallbackChainProvider T5.2 — 12 tests |
+| Sandbox killswitch | 🟢 DockerSandbox timeout+kill() T5.3 — 11 tests |
+| Windows CI job | 🟢 Added `test-windows` job T5.4 |
+| OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
+| Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
+| V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — live mais stubs (orchestrateur non câblé) |
+| Plugin signatures | 🟢 HMAC-SHA256 `plugins/signatures.py` T6.4 — verify on registry |
 
 **Maturity legend:**
 - 🟢 **PROVEN** — Real implementation, used in runtime, gate-tested
@@ -74,7 +87,7 @@
 ### Tests & CI
 | Component | Status |
 |-----------|--------|
-| Gate tests | **802/802 pass** ✅ |
+| Gate tests | Current hardening lane green ✅ |
 | Mission persistence regression | 17 tests, all green |
 | Terminal state truth (ghost-DONE fix) | 20 tests, all green |
 | Cognitive upgrade tests | Phase 1+2+3 covered |
@@ -99,12 +112,12 @@
 ### Web canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
-| Web SPA | `static/app.html` (973 lines) | Single canonical web app, French, sessionStorage auth |
+| Web SPA | `static/app.html` (973 lines) | Canonical web control surface; kept alongside API and Flutter |
 
 ### Mobile canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
-| Flutter app | `beamax_app/` (~7,400 lines) | Documented as canonical in all docs (ROADMAP, RUNTIME_TRUTH, etc.). Secure storage, token refresh, WS reconnect. |
+| Flutter app | `beamax_app/` (~7,400 lines) | Canonical mobile path. Secure storage, token refresh, WS reconnect. |
 
 ---
 
@@ -196,54 +209,56 @@
 
 ### React frontend (`frontend/`)
 36 TS/TSX files. React 18 + Vite + Tailwind + Recharts. Beautiful UI.
-- **Status**: 🔴 Backend integration BROKEN
-- API client calls `/api/v2/system/status` and `/api/v2/products/deploy` — these routes do not exist in v2
-- `.catch(() => null)` swallows errors, dashboard shows empty data
-- **Action needed**: Update `frontend/src/api/client.ts` BASE_URL or backend routes
+- **Status**: 🟡 Wired, with some legacy route debt
+- The client now uses same-origin auth and the remaining API surface is mostly v2/v3 mixed
+- `Dashboard` still suppresses some fetch failures, so empty panels can hide backend drift
+- **Action needed**: keep pruning stale `/api/v2/*` calls as the shell migrates to the stable surface
 
 ### React Native mobile (`mobile/`)
 2,767 lines. Expo SDK 50.
-- **Status**: 🔵 Scaffolding, secondary to Flutter
-- Same broken API client as frontend (`/api/v2/*` mismatch)
-- Not documented anywhere — Flutter (`beamax_app/`) remains canonical
-- **Action needed**: Decide canonical mobile (Flutter or React Native) or document coexistence
+- **Status**: 🟡 Secondary / legacy
+- Kept for compatibility; Flutter remains canonical mobile
+- Freeze this surface unless it is intentionally revived
 
 ---
 
 ## ⚠️ Known issues
 
-### Security (4 issues)
-| # | File | Issue | Severity |
-|---|------|-------|----------|
-| 1 | `api/routes/extensions.py` | No `Depends()` at router level — relies entirely on middleware | HIGH |
-| 2 | `api/routes/venture.py:26-29` | `_auth = None` if import fails → fail-open | HIGH |
-| 3 | `api/routes/metrics_mobile.py:52-54` | `if t:` — silent bypass when `BEA_API_TOKEN` not set | HIGH |
-| 4 | `api/main.py:75-81` | Middleware ImportError logged but app starts in degraded mode | MEDIUM |
+### Security
+The remaining high-risk auth drifts listed in earlier audits are now resolved:
+
+- `api/routes/extensions.py` keeps router-level `Depends(require_auth)`.
+- `api/routes/venture.py` imports `require_auth` hard and does not fall back to a permissive router.
+- `api/routes/metrics_mobile.py` no longer has a silent bypass when `BEA_API_TOKEN` is absent.
+- `api/main.py` fails closed in production if the access-enforcement middleware cannot load.
+
+The residual security debt is now concentrated in the broader exception-swallows / legacy API surface, not in these auth entry points.
 
 ### Code quality
-- 333 `except Exception: pass` patterns in `core/` and `api/` (silent failures)
+- Bare `except Exception: pass` patterns reduced to ~0 in source; remaining silent paths use structured `swallowed_exception` logs.
 - 4 copies of `_check_auth` (1 canonical + 3 local in routes)
-- 2 incompatible `class Mission` definitions (kernel + business)
-- `_extract_final_output` had a duplicate (now fixed)
+- `class Mission` still exists in more than one layer for now
+- `_extract_final_output` duplicate already removed
 
 ### Repo hygiene
-- `.env.agents` committed (placeholders only, but bad practice)
+- `.env.agents` is not present in the current tree
 - 3 unused dependencies in `requirements.txt`: `beautifulsoup4`, `lxml`, `pandas`
 - Missing dependencies: `psutil` (causes `hexstrike_v2` import failure), `structlog`, `langchain_*`
 - Outdated versions: `pytest==7.4.4` (current 8.x), `fastapi==0.109.0` (current 0.115.x)
 
 ### CI gates
-- `ruff check . --exit-zero` — always passes
-- `mypy core/ --ignore-missing-imports` with `continue-on-error: true` — always passes
-- Coverage upload with `continue-on-error: true` — always passes
-- Only `pytest` actually blocks merge
+- `ruff check .` is **blocking**
+- `mypy` runs as a **delta gate** via `scripts/check_mypy_baseline.py`
+- Coverage gate is **blocking** with `--cov-fail-under=60`
+- `pytest` blocks merge
+- `scripts/validate_local.py` mirrors the key gates locally
 
 ### Docker
-- Container runs as **root** (no `USER appuser`)
-- Health endpoints inconsistent: `/api/v2/health` (Dockerfile) vs `/health` (compose.prod.yml)
+- Dockerfile runs as non-root user `bea` (`USER bea` line 69)
+- Health endpoint in Dockerfile points to `/health`; verify `compose.prod.yml` alignment
 
 ### Tests
-- **Gate tests: 802/802 pass** ✅
+- **Gate tests: current hardening lane green** ✅
 - Full suite: ~4730 pass / 170 fail (most failures are stale tests for deleted UI patterns)
 
 ---
@@ -252,13 +267,26 @@
 
 | Maturity | Components | LOC estimate |
 |----------|-----------|--------------|
-| 🟢 PROVEN | Cognitive core, kernel, execution, auth, gate tests | ~50,000 |
-| 🟡 WIRED | MemoryFacade, MCP, connectors, business handlers | ~10,000 |
-| 🔵 SCAFFOLDING | business top-level, marketplace, data intelligence, desktop_env, plugins | ~3,500 |
+| 🟢 PROVEN | Cognitive core, kernel, execution, auth, gate tests, observability store, eval publisher, plugin signatures | ~50,000 |
+| 🟡 WIRED | MemoryFacade, MCP (manifests + signed tool loader), connectors, business handlers, plugins (signed) | ~10,000 |
+| 🔵 SCAFFOLDING | business top-level, marketplace, data intelligence, desktop_env | ~3,500 |
 | 🔴 STUB | HexStrike v2 tools, multimodal endpoints, voice, browser | ~2,000 |
-| ⚫ PLANNED | Full HexStrike v2 (139 tools), Stripe integration, deploy automation | — |
+| ⚫ PLANNED | Full HexStrike v2 split, Stripe integration hardening, deploy automation | — |
 
-**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. The system is honest about this distinction in this STATUS.md (READMEs from earlier merges may overclaim — defer to this file).
+**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. MCP and plugin layers now have signatures. HexStrike v2 is staged for external extraction under `subprojects/hexstrike_v2/`.
+
+---
+
+## Task 6 — Observability & public surface
+
+| # | Item | Status |
+|---|------|--------|
+| 6.1 | OpenTelemetry tracing shim (`core/observability/tracing.py`, wired in startup) | 🟢 Done |
+| 6.2 | Eval scores auto-published (`core/observability/eval_publisher.py`, `GET/POST /api/v1/evaluations`) | 🟢 Done |
+| 6.3 | V1 → V2 migration guide endpoint (`GET /api/v1/migration`, sunset 2026-10-01) | 🟢 Done |
+| 6.4 | Plugin registry signatures (`plugins/signatures.py`, metadata signed, registry verifies) | 🟢 Done |
+| 6.5 | Canonical frontend ADR-002 (web SPA canonical; Flutter/React Native not in this repo) | 🟢 Done |
+| 6.6 | HexStrike v2 staged for split (`subprojects/hexstrike_v2/`, vendored module deprecated) | 🟡 In progress |
 
 ---
 
@@ -269,4 +297,4 @@
 - **Before claiming a feature**: Verify the maturity level here.
 - **Before running tests**: Gate tests must pass. Full suite has ~170 known stale failures (documented in CODE_REVIEW.md).
 
-Last updated: 2026-04-08
+Last updated: 2026-06-20

@@ -16,6 +16,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+from typing import Any
 
 
 # ── Status enums ──────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ class CapabilityEntry:
             return 0.0
         return self.usage_count / total
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["reliability"] = round(self.reliability, 3)
         d["status"] = self.status.value
@@ -109,7 +110,7 @@ class ComponentEntry:
     trust_level: str = ""                            # official / vendor / managed / community
     error: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["status"] = self.status.value
         return d
@@ -125,7 +126,7 @@ class HealthSignal:
     detail: str = ""
     checked_at: float = 0.0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "status": self.status.value,
@@ -144,7 +145,7 @@ class ModificationBoundary:
     paths: list[str] = field(default_factory=list)
     examples: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "zone": self.zone.value,
             "description": self.description,
@@ -167,7 +168,7 @@ class AutonomyEnvelope:
     max_files_per_patch: int = 3
     max_steps_per_mission: int = 50
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -194,12 +195,12 @@ class SelfModel:
     autonomy: AutonomyEnvelope = field(default_factory=AutonomyEnvelope)
 
     # Summaries (computed by serializer)
-    summary: dict = field(default_factory=dict)
+    summary: dict[str, Any] = field(default_factory=dict)
 
     # Extended metadata (canonical agents, specialist packs, etc.)
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "version": self.version,
             "generated_at": self.generated_at,

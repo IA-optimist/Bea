@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import structlog
 
@@ -28,9 +29,9 @@ class ReflectionResult:
     verdict: ReflectionVerdict
     confidence: float      # 0.0-1.0
     reasoning: str
-    quality_signals: dict
+    quality_signals: dict[str, Any]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "verdict": self.verdict.value,
             "confidence": self.confidence,
@@ -54,7 +55,7 @@ def reflect(
     - Result doesn't look like an error message
     - Result has some relevance to the goal
     """
-    signals = {}
+    signals: dict[str, Any] = {}
 
     # 1. Empty check
     if not result or not result.strip():

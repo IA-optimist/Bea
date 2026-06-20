@@ -78,7 +78,7 @@ class AdvisoryDecision(str, Enum):
 # TASK CONTRACT — Définition d'une tâche agent
 # ═══════════════════════════════════════════════════════════════
 
-class RetryConfig(BaseModel):
+class RetryConfig(BaseModel):  # type: ignore[misc]
     """Configuration du retry pour une tâche agent."""
     max_attempts:   int   = Field(default=3, ge=1, le=10)
     base_delay_s:   float = Field(default=2.0, ge=0.1)
@@ -90,7 +90,7 @@ class RetryConfig(BaseModel):
     )
 
 
-class TaskContract(BaseModel):
+class TaskContract(BaseModel):  # type: ignore[misc]
     """Contrat de tâche inter-agents — définition standardisée d'une tâche."""
     task_id:      str = Field(default_factory=lambda: str(uuid.uuid4())[:12])
     mission_id:   str = ""
@@ -111,7 +111,7 @@ class TaskContract(BaseModel):
 # AGENT RESULT — Sortie typée d'un agent
 # ═══════════════════════════════════════════════════════════════
 
-class AgentResult(BaseModel):
+class AgentResult(BaseModel):  # type: ignore[misc]
     """Résultat structuré d'un agent — remplace les strings brutes."""
     task_id:      str = ""
     agent:        str
@@ -139,7 +139,7 @@ class AgentResult(BaseModel):
 # AGENT MESSAGE — Échange direct entre agents
 # ═══════════════════════════════════════════════════════════════
 
-class AgentMessage(BaseModel):
+class AgentMessage(BaseModel):  # type: ignore[misc]
     """Message tracé entre deux agents."""
     message_id:     str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     sender:         str
@@ -155,7 +155,7 @@ class AgentMessage(BaseModel):
 # ERROR REPORT — Rapport d'erreur structuré
 # ═══════════════════════════════════════════════════════════════
 
-class ErrorReport(BaseModel):
+class ErrorReport(BaseModel):  # type: ignore[misc]
     """Rapport d'erreur structuré pour DebugAgent."""
     error_id:       str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     agent:          str
@@ -214,7 +214,7 @@ class ErrorReport(BaseModel):
 # HEALTH REPORT — Rapport de santé d'un composant
 # ═══════════════════════════════════════════════════════════════
 
-class ComponentHealth(BaseModel):
+class ComponentHealth(BaseModel):  # type: ignore[misc]
     """Santé d'un composant individuel."""
     name:       str
     status:     HealthStatus = HealthStatus.UNKNOWN
@@ -225,7 +225,7 @@ class ComponentHealth(BaseModel):
     model_config = {"use_enum_values": True}
 
 
-class HealthReport(BaseModel):
+class HealthReport(BaseModel):  # type: ignore[misc]
     """Rapport de santé global du système."""
     status:     HealthStatus = HealthStatus.UNKNOWN
     components: dict[str, ComponentHealth] = Field(default_factory=dict)
@@ -247,7 +247,7 @@ class HealthReport(BaseModel):
 # EXECUTION RESULT — Résultat d'une action concrète
 # ═══════════════════════════════════════════════════════════════
 
-class ExecutionResultSchema(BaseModel):
+class ExecutionResultSchema(BaseModel):  # type: ignore[misc]
     """Schéma Pydantic pour les résultats d'exécution d'actions."""
     success:     bool
     action_type: str
@@ -283,7 +283,7 @@ class ExecutionResultSchema(BaseModel):
 # MISSION LIFECYCLE — État d'une mission avec historique
 # ═══════════════════════════════════════════════════════════════
 
-class MissionTransition(BaseModel):
+class MissionTransition(BaseModel):  # type: ignore[misc]
     """Une transition d'état dans le cycle de vie d'une mission."""
     from_state: str
     to_state:   str
@@ -292,7 +292,7 @@ class MissionTransition(BaseModel):
     agent:      str = ""
 
 
-class MissionLifecycle(BaseModel):
+class MissionLifecycle(BaseModel):  # type: ignore[misc]
     """Cycle de vie complet d'une mission avec historique des transitions."""
     mission_id:   str
     current_state: str = "intake"
@@ -325,14 +325,14 @@ class MissionLifecycle(BaseModel):
 # ADVISORY REPORT — Rapport ShadowAdvisor standardisé
 # ═══════════════════════════════════════════════════════════════
 
-class BlockingIssue(BaseModel):
+class BlockingIssue(BaseModel):  # type: ignore[misc]
     type:        str
     description: str
     severity:    str = "medium"
     evidence:    str = ""
 
 
-class RiskItem(BaseModel):
+class RiskItem(BaseModel):  # type: ignore[misc]
     type:        str
     description: str
     severity:    str = "medium"
@@ -340,7 +340,7 @@ class RiskItem(BaseModel):
     impact:      str = "medium"
 
 
-class AdvisoryReport(BaseModel):
+class AdvisoryReport(BaseModel):  # type: ignore[misc]
     """Rapport structuré du ShadowAdvisor."""
     decision:        AdvisoryDecision = AdvisoryDecision.IMPROVE
     confidence:      float = Field(default=0.5, ge=0.0, le=1.0)

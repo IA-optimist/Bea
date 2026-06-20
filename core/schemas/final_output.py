@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, cast
 
 
 @dataclass
@@ -18,7 +18,7 @@ class AgentError:
     message: str = ""
     recoverable: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -28,10 +28,10 @@ class AgentOutput:
     agent_name: str
     status: Literal["SUCCESS", "ERROR", "SKIPPED"] = "SUCCESS"
     output_text: Optional[str] = None
-    structured_data: Optional[dict] = None
+    structured_data: Optional[dict[str, Any]] = None
     error: Optional[AgentError] = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = {
             "agent_name": self.agent_name,
             "status": self.status,
@@ -51,7 +51,7 @@ class DecisionStep:
     result: str = ""
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -62,7 +62,7 @@ class OutputMetrics:
     token_usage: Optional[int] = None
     cost_estimate: Optional[float] = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
 
@@ -82,7 +82,7 @@ class FinalOutput:
     decision_trace: list[DecisionStep] = field(default_factory=list)
     metrics: OutputMetrics = field(default_factory=OutputMetrics)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "mission_id": self.mission_id,
             "trace_id": self.trace_id,
@@ -95,7 +95,7 @@ class FinalOutput:
 
     @staticmethod
     def from_mission(mission_id: str, mission_status: str, summary: str,
-                     agent_outputs_raw: dict, decision_trace_raw: dict,
+                     agent_outputs_raw: dict[str, Any] | list[Any], decision_trace_raw: dict[str, Any],
                      start_time: float = 0.0) -> "FinalOutput":
         """Build FinalOutput from existing mission data. Backward compatible."""
         # Map legacy status to canonical
@@ -103,7 +103,10 @@ class FinalOutput:
             "DONE": "COMPLETED", "REJECTED": "CANCELLED", "BLOCKED": "FAILED",
             "COMPLETED": "COMPLETED", "FAILED": "FAILED", "CANCELLED": "CANCELLED",
         }
-        canonical_status = status_map.get(str(mission_status).upper(), "COMPLETED")
+        canonical_status = cast(
+            Literal["COMPLETED", "FAILED", "CANCELLED"],
+            status_map.get(str(mission_status).upper(), "COMPLETED"),
+        )
 
         # Build agent outputs
         agent_list = []

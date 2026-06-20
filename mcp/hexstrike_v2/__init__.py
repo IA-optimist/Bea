@@ -21,13 +21,29 @@ Usage:
     
     # Get stats
     stats = registry.get_stats()
+
+DEPRECATION NOTICE: HexStrike V2 is being extracted into its own repository.
+For new integrations refer to subprojects/hexstrike_v2/.
 """
 from __future__ import annotations
 
 import logging
+from typing import Any
+
+logging.warning(
+    "mcp.hexstrike_v2 is vendored and planned for extraction; see subprojects/hexstrike_v2/"
+)
 
 # Core imports
-from .registry import registry, ToolRegistry
+try:
+    from .registry import registry as _registry, ToolRegistry
+except ImportError as exc:
+    logging.warning("Failed to import registry: %s", exc)
+    _registry = None
+    class ToolRegistry:  # type: ignore[no-redef]
+        pass
+
+registry: Any | None = _registry
 
 # Auto-import all tool modules to register them
 try:
@@ -65,16 +81,16 @@ __all__ = [
     # Registry
     "registry",
     "ToolRegistry",
-    
+
     # Executor
     "CommandExecutor",
     "ExecutionResult",
     "execute_command",
-    
+
     # Cache
     "CommandCache",
     "cache",
-    
+
     # Process Manager
     "ProcessManager",
     "ProcessStatus",
@@ -93,7 +109,8 @@ logger = logging.getLogger(__name__)
 logger.info(f"HexStrike V2 {__version__} initialized")
 
 # Log registered tools
-stats = registry.get_stats()
-logger.info(f"Loaded {stats['total_tools']} tools across {len(stats['categories'])} categories")
-for category, count in stats['categories'].items():
-    logger.info(f"  {category}: {count} tools")
+if registry is not None:
+    stats = registry.get_stats()
+    logger.info(f"Loaded {stats['total_tools']} tools across {len(stats['categories'])} categories")
+    for category, count in stats['categories'].items():
+        logger.info(f"  {category}: {count} tools")

@@ -98,6 +98,7 @@ def my_tool(param: str) -> dict:
         print(f"SKIP test_tool_structure_validation: {e}")
 
 
+@pytest.mark.stale
 @pytest.mark.skip(reason="stale: taxonomy changed")
 def test_error_classification():
     """_classify_error doit catégoriser les exceptions."""

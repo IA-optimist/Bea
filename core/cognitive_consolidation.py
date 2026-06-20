@@ -32,10 +32,10 @@ def _read_jsonl(path: Path, max_age_hours: int = 24) -> List[Dict[str, Any]]:
     """Read JSONL file, filtering by timestamp if available."""
     if not path.exists():
         return []
-    
+
     cutoff_time = datetime.now().timestamp() - (max_age_hours * 3600)
     entries = []
-    
+
     try:
         with open(path, 'r') as f:
             for line in f:
@@ -51,7 +51,7 @@ def _read_jsonl(path: Path, max_age_hours: int = 24) -> List[Dict[str, Any]]:
                         continue
     except Exception as e:
         log.warning("cognitive_consolidation.read_error", path=str(path), err=str(e))
-    
+
     return entries
 
 
@@ -73,56 +73,56 @@ def _extract_domain_patterns(traces: List[Dict]) -> Dict[str, Any]:
         'lessons': [],
         'errors': []
     })
-    
+
     for trace in traces:
         agent = trace.get('agent', 'unknown')
         domain = agent.split('-')[0] if '-' in agent else agent
-        
+
         stats = domain_stats[domain]
         stats['count'] += 1
-        
+
         # Track success/failure
         status = trace.get('status', '').upper()
         if status == 'SUCCESS':
             stats['success'] += 1
         elif status in ('FAILED', 'ERROR'):
             stats['failed'] += 1
-        
+
         # Collect scores
         if 'score' in trace:
             stats['scores'].append(trace['score'])
-        
+
         # Dopamine signal: reward prediction error (delta from expected)
         if 'delta_score' in trace:
             stats['delta_scores'].append(trace['delta_score'])
         elif 'score' in trace and 'expected_score' in trace:
             delta = trace['score'] - trace['expected_score']
             stats['delta_scores'].append(delta)
-        
+
         # Extract lessons
         if 'lesson' in trace or 'feedback' in trace:
             lesson = trace.get('lesson') or trace.get('feedback', '')
             if lesson and len(lesson) > 10:
                 stats['lessons'].append(lesson[:200])
-        
+
         # Track errors
         if trace.get('error'):
             error_msg = str(trace['error'])[:100]
             stats['errors'].append(error_msg)
-    
+
     # Compute aggregates
     consolidated = {}
     for domain, stats in domain_stats.items():
         avg_score = sum(stats['scores']) / len(stats['scores']) if stats['scores'] else 0.0
         avg_delta = sum(stats['delta_scores']) / len(stats['delta_scores']) if stats['delta_scores'] else 0.0
         success_rate = stats['success'] / stats['count'] if stats['count'] > 0 else 0.0
-        
+
         # Top 3 most common errors
         error_counts = defaultdict(int)
         for err in stats['errors']:
             error_counts[err] += 1
         top_errors = sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:3]
-        
+
         consolidated[domain] = {
             'total_missions': stats['count'],
             'success_count': stats['success'],
@@ -134,7 +134,7 @@ def _extract_domain_patterns(traces: List[Dict]) -> Dict[str, Any]:
             'top_lessons': stats['lessons'][:5],  # Top 5 lessons
             'top_errors': [{'error': err, 'count': cnt} for err, cnt in top_errors]
         }
-    
+
     return consolidated
 
 
@@ -159,22 +159,22 @@ async def run_nightly_consolidation() -> Dict[str, Any]:
     Returns summary dict with stats.
     """
     log.info("cognitive_consolidation.starting", mode="hippocampal_replay")
-    
+
     # Ensure directories exist
     TRAINING_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     # Read recent traces from multiple sources
     execution_traces = _read_jsonl(EXECUTION_TRACE, max_age_hours=24)
     failure_traces = _read_jsonl(FAILURE_LOG, max_age_hours=24)
-    
+
     # Also scan training_data/*.jsonl
     training_files = []
     if TRAINING_DATA_DIR.exists():
         for jsonl_file in TRAINING_DATA_DIR.glob("*.jsonl"):
             training_files.extend(_read_jsonl(jsonl_file, max_age_hours=24))
-    
+
     all_traces = execution_traces + failure_traces + training_files
-    
+
     if not all_traces:
         log.warning("cognitive_consolidation.no_data", message="No recent traces found")
         return {
@@ -183,10 +183,10 @@ async def run_nightly_consolidation() -> Dict[str, Any]:
             'domains_processed': 0,
             'timestamp': datetime.now().isoformat()
         }
-    
+
     # Extract domain patterns
     patterns = _extract_domain_patterns(all_traces)
-    
+
     # Create consolidation summary
     summary = {
         'timestamp': datetime.now().isoformat(),
@@ -204,7 +204,7 @@ async def run_nightly_consolidation() -> Dict[str, Any]:
             ) if patterns else 0.0
         }
     }
-    
+
     # Append to consolidation log
     try:
         with open(CONSOLIDATION_LOG, 'a') as f:
@@ -216,7 +216,7 @@ async def run_nightly_consolidation() -> Dict[str, Any]:
     except Exception as e:
         log.error("cognitive_consolidation.save_failed", err=str(e))
         raise
-    
+
     return {
         'status': 'success',
         'total_traces': len(all_traces),

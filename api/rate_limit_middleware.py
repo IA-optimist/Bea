@@ -27,13 +27,13 @@ def get_rate_limit_key(request: Request) -> str:
     """
     # Get IP address
     ip = get_remote_address(request)
-    
+
     # If authenticated, use user ID instead
     if hasattr(request.state, "user") and request.state.user:
         user_id = request.state.user.get("username", "")
         if user_id:
             return f"user:{user_id}"
-    
+
     return f"ip:{ip}"
 
 

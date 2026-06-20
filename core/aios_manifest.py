@@ -19,14 +19,14 @@ def get_manifest() -> dict:
         "version": AIOS_VERSION,
         "modules": {},
     }
-    
+
     # Capabilities
     try:
         from core.capabilities.ai_os_capabilities import capability_summary
         manifest["modules"]["capabilities"] = capability_summary()
     except Exception as e:
         manifest["modules"]["capabilities"] = {"error": str(e)[:100]}
-    
+
     # Memory layers
     try:
         from core.memory.memory_layers import MEMORY_TYPE_CONFIG
@@ -36,14 +36,14 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["memory"] = {"error": str(e)[:100]}
-    
+
     # Tool OS
     try:
         from core.tools.tool_os_layer import tool_summary
         manifest["modules"]["tools"] = tool_summary()
     except Exception as e:
         manifest["modules"]["tools"] = {"error": str(e)[:100]}
-    
+
     # Decision pipeline
     try:
         from core.orchestration.decision_pipeline import PHASE_ORDER
@@ -53,7 +53,7 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["pipeline"] = {"error": str(e)[:100]}
-    
+
     # Control profiles
     try:
         from core.policy.control_profiles import list_profiles, get_active_profile
@@ -65,7 +65,7 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["control"] = {"error": str(e)[:100]}
-    
+
     # Trace intelligence
     try:
         from core.observability.trace_intelligence import TRACE_DIR
@@ -76,7 +76,7 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["traces"] = {"error": str(e)[:100]}
-    
+
     # Agent roles
     try:
         from core.agents.role_definitions import ROLE_DEFINITIONS, agent_role_map
@@ -86,7 +86,7 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["agents"] = {"error": str(e)[:100]}
-    
+
     # Self-improvement safety
     try:
         from core.self_improvement.safety_boundary import PROTECTED_RUNTIME, ALLOWED_SCOPE
@@ -96,7 +96,7 @@ def get_manifest() -> dict:
         }
     except Exception as e:
         manifest["modules"]["self_improvement"] = {"error": str(e)[:100]}
-    
+
     # AI OS v2 modules
     try:
         from core.capabilities.semantic_router import router_stats
@@ -150,7 +150,7 @@ def get_manifest() -> dict:
 def consistency_check() -> dict:
     """Check AI OS consistency across modules."""
     issues = []
-    
+
     # Check: all tool-level capabilities have OS-level descriptors
     try:
         from core.capabilities.registry import get_registry
@@ -161,7 +161,7 @@ def consistency_check() -> dict:
                 issues.append(f"Tool '{tool_name}' in registry but not in Tool OS layer")
     except Exception as _exc:
         log.warning("swallowed_exception", action="aios_manifest_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-    
+
     # Check: all agents map to a role
     try:
         from core.agents.role_definitions import agent_role_map
@@ -178,7 +178,7 @@ def consistency_check() -> dict:
                 issues.append(f"Agent '{agent}' has no role assignment")
     except Exception as _exc:
         log.warning("swallowed_exception", action="aios_manifest_2", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-    
+
     # Check: all memory types have valid tier mappings
     try:
         from core.memory.memory_layers import MEMORY_TYPE_CONFIG
@@ -188,7 +188,7 @@ def consistency_check() -> dict:
                 issues.append(f"Memory type '{mt}' has invalid tier '{cfg['tier']}'")
     except Exception as _exc:
         log.warning("swallowed_exception", action="aios_manifest_3", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-    
+
     return {
         "consistent": len(issues) == 0,
         "issues": issues,

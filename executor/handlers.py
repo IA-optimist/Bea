@@ -24,7 +24,7 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, cast
 
 if TYPE_CHECKING:
     from executor.task_model import ExecutionTask
@@ -32,18 +32,18 @@ if TYPE_CHECKING:
 
 # ── Registry ──────────────────────────────────────────────────────────────────
 
-HANDLER_REGISTRY: dict[str, callable] = {}
+HANDLER_REGISTRY: dict[str, Callable[["ExecutionTask"], str]] = {}
 
 
-def register_handler(name: str):
+def register_handler(name: str) -> Callable[[Callable[["ExecutionTask"], str]], Callable[["ExecutionTask"], str]]:
     """Décorateur pour enregistrer un handler."""
-    def decorator(fn):
+    def decorator(fn: Callable[["ExecutionTask"], str]) -> Callable[["ExecutionTask"], str]:
         HANDLER_REGISTRY[name] = fn
         return fn
     return decorator
 
 
-def get_handler(name: str):
+def get_handler(name: str) -> Callable[["ExecutionTask"], str]:
     """Retourne le handler par son nom, ou handle_generic si inconnu."""
     return HANDLER_REGISTRY.get(name, handle_generic)
 
@@ -55,7 +55,7 @@ def handle_research(task: "ExecutionTask") -> str:
     """Agent: WebScout / Research — lit vault + workspace."""
     ts     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     desc   = task.description
-    target = task.payload.get("target", "")
+    target = cast(str, task.payload.get("target", ""))
     lines  = [f"[RESEARCH — {ts}]", f"Mission : {desc}", f"Cible   : {target}", ""]
 
     # Vault memory

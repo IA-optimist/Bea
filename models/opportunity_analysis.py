@@ -16,58 +16,58 @@ from models.base import Base
 
 class OpportunityAnalysis(Base):
     __tablename__ = "opportunity_analyses"
-    
+
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
-    
+
     # Foreign key
     opportunity_id = Column(Integer, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False)
-    
+
     # Relationship (back-reference to Opportunity)
     # opportunity = relationship("Opportunity", back_populates="analyses")
-    
+
     # Analysis metadata
     analyzed_at = Column(TIMESTAMP, nullable=False, default=_utc_now)
     analysis_duration_seconds = Column(Integer)
-    
+
     # Cognition metadata
     mission_id = Column(String(50))
     confidence_score = Column(Float)
     cognition_reasoning = Column(Text)
-    
+
     # Technical feasibility
     tech_stack = Column(JSONB)  # ["python", "fastapi", "react"]
     dependencies = Column(JSONB)  # ["stripe", "sendgrid"]
     complexity_score = Column(Integer)  # 1-10
     estimated_hours = Column(Integer)
-    
+
     # MVP scope
     mvp_features = Column(JSONB)  # ["user_auth", "dashboard", "api"]
     nice_to_have_features = Column(JSONB)
     out_of_scope = Column(JSONB)
-    
+
     # Risk assessment
     technical_risks = Column(JSONB)
     mitigation_strategies = Column(JSONB)
-    
+
     # Recommendations
     recommendation = Column(Text)  # BUILD, SKIP, NEEDS_MORE_RESEARCH
     reasoning = Column(Text)
     market_fit_score = Column(Float)  # 0-100
-    
+
     # Full analysis
     full_analysis = Column(Text)
     raw_output = Column(JSONB)
-    
+
     # Status
     approved = Column(Boolean, default=False)
     approved_by = Column(String(100))
     approved_at = Column(TIMESTAMP)
-    
+
     # Timestamps
     created_at = Column(TIMESTAMP, default=_utc_now)
     updated_at = Column(TIMESTAMP, default=_utc_now, onupdate=_utc_now)
-    
+
     def to_dict(self) -> dict:
         """Serialize to JSON-compatible dict"""
         return {

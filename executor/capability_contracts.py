@@ -36,12 +36,12 @@ class CapabilityRequest:
     capability_type: CapabilityType
     capability_id: str
     action: str = "invoke"
-    params: dict = field(default_factory=dict)
-    context: dict = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     risk_level: str = "low"
     requires_approval: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["capability_type"] = self.capability_type.value
         return d
@@ -61,8 +61,8 @@ class CapabilityResult:
     result: Any = None
     error: Optional[str] = None
     execution_ms: int = 0
-    used_skill_ids: list = field(default_factory=list)
-    metadata: dict = field(default_factory=dict)
+    used_skill_ids: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def success(
@@ -96,7 +96,7 @@ class CapabilityResult:
             execution_ms=ms,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["capability_type"] = self.capability_type.value
         return d

@@ -138,7 +138,16 @@ if ($pathHasNonAscii) {
     if ($LASTEXITCODE -eq 0) {
         Run-Check "pip-audit-delta-gate" {
             $report = Join-Path $env:TEMP "audit.json"
-            & $Python -m pip_audit -r requirements.txt --format json --output $report --strict 2>$null
+            # PS5.1: native command stderr creates ErrorRecords that become terminating errors
+            # with $ErrorActionPreference="Stop". Temporarily suppress to let pip-audit run cleanly.
+            $prev = $ErrorActionPreference
+            $ErrorActionPreference = "SilentlyContinue"
+            & $Python -m pip_audit -r requirements.txt --format json --output $report --strict
+            $auditExit = $LASTEXITCODE
+            $ErrorActionPreference = $prev
+            if ($auditExit -ne 0 -and -not (Test-Path $report)) {
+                throw "pip-audit failed (exit $auditExit)"
+            }
             & $Python scripts/check_pip_audit_baseline.py $report quality/pip-audit-baseline.json
         }
     } else {

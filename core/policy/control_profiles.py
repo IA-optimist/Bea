@@ -25,16 +25,16 @@ class ControlProfile:
     auto_execution_max_steps: int = 5
     memory_write_allowed: bool = True
     system_modification_allowed: bool = False
-    
+
     def allows_risk(self, risk_level: str) -> bool:
         risk_order = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
         return risk_order.get(risk_level, 3) <= risk_order.get(self.max_risk_level, 1)
-    
+
     def requires_approval(self, tool_name: str) -> bool:
         if self.name == "safe":
             return True  # Everything needs approval in safe mode
         return tool_name in self.tools_requiring_approval
-    
+
     def to_dict(self) -> dict:
         d = asdict(self)
         d["tools_requiring_approval"] = list(self.tools_requiring_approval)

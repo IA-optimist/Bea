@@ -31,7 +31,7 @@ class OpenHandsLocalClient:
             (Success, Log Résumé)
         """
         log.info("openhands_mission_delegated", prompt_preview=prompt[:50])
-        
+
         target_path = Path(target_workspace).absolute()
         args = [
             sys.executable,
@@ -44,7 +44,7 @@ class OpenHandsLocalClient:
             "-i",
             str(int(max_iterations)),
         ]
-        
+
         try:
             process = await asyncio.create_subprocess_exec(
                 *args,
@@ -52,15 +52,15 @@ class OpenHandsLocalClient:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT # Redirige stderr vers stdout pour un seul flux
             )
-            
+
             # Lecture du flux de sortie en temps réel
             stream_history = []
-            
+
             while True:
                 line = await process.stdout.readline()
                 if not line:
                     break
-                
+
                 decoded_line = line.decode('utf-8', errors='replace').strip()
                 if decoded_line:
                     stream_history.append(decoded_line)
@@ -70,20 +70,20 @@ class OpenHandsLocalClient:
                     else:
                         # Log de niveau DEBUG pour ne pas inonder la console BeaMax
                         log.debug("openhands_stream", msg=decoded_line[:200])
-            
+
             # Attend la finition absolue du processus (bien qu'il dût être terminé avec eof)
             exit_code = await process.wait()
             success = exit_code == 0
-            
+
             raw_output = "\n".join(stream_history)
-            
+
             if success:
                 log.info("openhands_mission_completed", exit_code=exit_code)
                 return True, raw_output[-1500:] # Retourne la fin du log pour le Planner
             else:
                 log.error("openhands_mission_failed", exit_code=exit_code)
                 return False, f"Erreur critique OpenHands:\n{raw_output[-1000:]}"
-                
+
         except Exception as e:
             log.exception("openhands_mission_crashed")
             return False, str(e)

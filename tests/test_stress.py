@@ -244,6 +244,7 @@ class TestScenarioF_VentureLoop:
 class TestScenarioG_UI:
     """Web + mobile UI coherence."""
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="app.html required views drift", strict=False)
     def test_ST24_app_html_has_required_views(self):
         html = Path("static/app.html").read_text(encoding="utf-8")
@@ -256,6 +257,7 @@ class TestScenarioG_UI:
         for dead in ["cockpit.html", "cognitive.html", "console.html"]:
             assert dead not in html
 
+    @pytest.mark.stale
     @pytest.mark.xfail(reason="mode system in app.html drift", strict=False)
     def test_ST26_mode_system_present(self):
         html = Path("static/app.html").read_text(encoding="utf-8")
