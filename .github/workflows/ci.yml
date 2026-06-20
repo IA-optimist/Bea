@@ -261,6 +261,10 @@ jobs:
           cat mypy-report.txt
           python scripts/check_mypy_baseline.py mypy-report.txt quality/mypy-baseline.json
 
+      - name: Except-pass gate (bare-except and silent swallows)
+        run: |
+          python scripts/check_except_pass.py quality/except-pass-baseline.json
+
   # T5.4 — Windows portability check.
   # Runs the critical-path gates that must work cross-platform:
   # ruff, kernel import boundaries, and the self-improvement test suite

@@ -1,0 +1,16 @@
+{
+  "scope": ["api", "core", "kernel"],
+  "max_count": 19,
+  "created": "2026-06-21",
+  "updated": "2026-06-21",
+  "history": [
+    {"date": "2026-06-21", "max_count": 19, "reason": "Initial gate — AST scan found 19 bare-except/except-pass in api/core/kernel. Mix of intentional (QueueFull drop, tracer shutdown, psutil best-effort) and lazy swallows. Gate prevents new additions; fix existing ones incrementally."}
+  ],
+  "known_legitimate": [
+    "api/ws_hub.py:235 — asyncio.QueueFull: drop event for slow SSE consumers, intentional",
+    "core/cookbook/model_advisor.py:51,61,76 — psutil/torch/CUDA detection, nosec B110",
+    "core/observability/tracing.py:78 — best-effort tracer shutdown",
+    "core/llm_factory.py:766,777 — cost tracking is best-effort, noqa BLE001"
+  ],
+  "policy": "Ratchet this number downward as lazy swallows are fixed. Never increase. To suppress a specific legitimate pattern, add '# pragma: no-except-gate' on the except line and decrement max_count."
+}
