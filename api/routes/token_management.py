@@ -15,7 +15,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
 from api._deps import require_auth, require_admin
 from api.access_tokens import get_token_manager
