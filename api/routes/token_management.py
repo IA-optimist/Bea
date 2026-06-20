@@ -13,11 +13,10 @@ POST   /api/v3/tokens/validate     — Validate a token (any role)
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
-from api.auth import verify_token, has_permission
+from api._deps import require_auth, require_admin
 from api.access_tokens import get_token_manager
 
 router = APIRouter(prefix="/api/v3/tokens", tags=["tokens"])
@@ -37,53 +36,11 @@ class ValidateTokenRequest(BaseModel):
     token: str
 
 
-# ── Auth helper ──
-# NOTE (2026-04-04): helpers now accept either X-Bea-Token or the
-# standard Authorization: Bearer header so clients using JWT (admin login)
-# can also call these endpoints without a separate jv- access token.
-
-def _resolve_token(x_bea_token: Optional[str], authorization: Optional[str] = None) -> Optional[str]:
-    """Return the best available raw token string from the two possible headers."""
-    from api.token_utils import strip_bearer
-    if x_bea_token:
-        return strip_bearer(x_bea_token)
-    if authorization:
-        return strip_bearer(authorization)
-    return None
-
-
-def _require_admin(x_bea_token: Optional[str], authorization: Optional[str] = None) -> dict:
-    """Require admin role for token management."""
-    raw = _resolve_token(x_bea_token, authorization)
-    if not raw:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    user = verify_token(raw)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    if not has_permission(user.get("role", ""), "manage_tokens"):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
-
-
-def _require_auth(x_bea_token: Optional[str], authorization: Optional[str] = None) -> dict:
-    """Require any valid auth."""
-    raw = _resolve_token(x_bea_token, authorization)
-    if not raw:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    user = verify_token(raw)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user
-
-
 # ── Routes ──
 
 @router.post("")
-async def create_token(req: CreateTokenRequest,
-                       x_bea_token: Optional[str] = Header(None),
-                       authorization: Optional[str] = Header(None)):
+async def create_token(req: CreateTokenRequest, _: dict = Depends(require_admin)):
     """Create a new access token (admin only). Returns raw token ONCE."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     try:
         raw_token, token = manager.create_token(
@@ -108,30 +65,22 @@ async def create_token(req: CreateTokenRequest,
 
 
 @router.get("")
-async def list_tokens(include_expired: bool = False,
-                      x_bea_token: Optional[str] = Header(None),
-                      authorization: Optional[str] = Header(None)):
+async def list_tokens(include_expired: bool = False, _: dict = Depends(require_admin)):
     """List all tokens (admin only). Never returns raw tokens."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     return {"tokens": manager.list_tokens(include_expired=include_expired)}
 
 
 @router.get("/stats")
-async def token_stats(x_bea_token: Optional[str] = Header(None),
-                      authorization: Optional[str] = Header(None)):
+async def token_stats(_: dict = Depends(require_admin)):
     """Token system statistics (admin only)."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     return manager.get_stats()
 
 
 @router.delete("/{token_id}")
-async def delete_token(token_id: str,
-                       x_bea_token: Optional[str] = Header(None),
-                       authorization: Optional[str] = Header(None)):
+async def delete_token(token_id: str, _: dict = Depends(require_admin)):
     """Permanently delete a token (admin only)."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     if manager.delete_token(token_id):
         return {"status": "deleted", "token_id": token_id}
@@ -139,11 +88,8 @@ async def delete_token(token_id: str,
 
 
 @router.post("/{token_id}/revoke")
-async def revoke_token(token_id: str,
-                       x_bea_token: Optional[str] = Header(None),
-                       authorization: Optional[str] = Header(None)):
+async def revoke_token(token_id: str, _: dict = Depends(require_admin)):
     """Revoke (disable) a token (admin only)."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     if manager.revoke_token(token_id):
         return {"status": "revoked", "token_id": token_id}
@@ -151,11 +97,8 @@ async def revoke_token(token_id: str,
 
 
 @router.post("/{token_id}/enable")
-async def enable_token(token_id: str,
-                       x_bea_token: Optional[str] = Header(None),
-                       authorization: Optional[str] = Header(None)):
+async def enable_token(token_id: str, _: dict = Depends(require_admin)):
     """Re-enable a revoked token (admin only)."""
-    _require_admin(x_bea_token, authorization)
     manager = get_token_manager()
     if manager.enable_token(token_id):
         return {"status": "enabled", "token_id": token_id}
@@ -163,11 +106,8 @@ async def enable_token(token_id: str,
 
 
 @router.post("/validate")
-async def validate_token_endpoint(req: ValidateTokenRequest,
-                                  x_bea_token: Optional[str] = Header(None),
-                                  authorization: Optional[str] = Header(None)):
+async def validate_token_endpoint(req: ValidateTokenRequest, _: dict = Depends(require_auth)):
     """Validate a token (any authenticated user)."""
-    _require_auth(x_bea_token, authorization)
     manager = get_token_manager()
     token = manager.validate_token(req.token)
     if token:

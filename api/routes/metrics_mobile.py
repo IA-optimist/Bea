@@ -18,52 +18,25 @@ from __future__ import annotations
 import structlog
 log = structlog.get_logger(__name__)
 
-import os
-
 try:
-    from fastapi import APIRouter, Header, HTTPException
+    from fastapi import APIRouter, Depends
     from fastapi.responses import JSONResponse
+    from api._deps import require_auth
 except ImportError:
     APIRouter = None
 
 if APIRouter:
-    router = APIRouter(prefix="/api/v3/metrics", tags=["metrics-mobile"])
-
-    def _auth(token: str | None = None, authorization: str | None = None) -> None:
-        """Accept X-Bea-Token (static) OR Authorization: Bearer (JWT).
-
-        Fail-closed: always raises 401 if no valid auth provided.
-        Previously had a silent bypass when BEA_API_TOKEN was unset.
-        """
-        # Try static token first
-        t = os.getenv("BEA_API_TOKEN", "")
-        if token and t and token == t:
-            return
-        # Try JWT from Authorization header
-        jwt_token = token or ""
-        auth_str = str(authorization) if authorization and not isinstance(authorization, str) else (authorization or "")
-        if auth_str and auth_str.startswith("Bearer "):
-            authorization = auth_str
-            jwt_token = authorization[7:]  # type: ignore
-        if jwt_token:
-            # Also accept static API token sent as Bearer token
-            if t and jwt_token == t:
-                return
-            try:
-                from api._deps import _verify_jwt
-                if _verify_jwt(jwt_token):
-                    return
-            except Exception as _exc:
-                log.warning("swallowed_exception", action="metrics_mobile_1", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-        # Always require valid auth — no silent bypass
-        raise HTTPException(401, "Unauthorized")
+    router = APIRouter(
+        prefix="/api/v3/metrics",
+        tags=["metrics-mobile"],
+        dependencies=[Depends(require_auth)],
+    )
 
     # ── Summary ───────────────────────────────────────────────
 
     @router.get("/summary")
-    async def metrics_summary(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_summary():
         """System health overview for mobile dashboard."""
-        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -115,9 +88,8 @@ if APIRouter:
     # ── Routing ───────────────────────────────────────────────
 
     @router.get("/routing")
-    async def metrics_routing(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_routing():
         """Model routing performance for mobile dashboard."""
-        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -171,9 +143,8 @@ if APIRouter:
     # ── Tools ─────────────────────────────────────────────────
 
     @router.get("/tools")
-    async def metrics_tools(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_tools():
         """Tool reliability and latency for mobile dashboard."""
-        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -217,9 +188,8 @@ if APIRouter:
     # ── Improvement ───────────────────────────────────────────
 
     @router.get("/improvement")
-    async def metrics_improvement(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_improvement():
         """Self-improvement experiment stats for mobile dashboard."""
-        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
@@ -258,9 +228,8 @@ if APIRouter:
     # ── Failures ──────────────────────────────────────────────
 
     @router.get("/failures")
-    async def metrics_failures(x_bea_token: str | None = Header(None), authorization: str | None = Header(None)):
+    async def metrics_failures():
         """Recent failure patterns for mobile dashboard."""
-        _auth(x_bea_token, authorization)
         try:
             from core.metrics_store import get_metrics
             m = get_metrics()
