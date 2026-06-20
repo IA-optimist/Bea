@@ -57,7 +57,7 @@ class TestSummaryEndpoint:
         # Call the endpoint logic directly
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -78,7 +78,7 @@ class TestSummaryEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -105,7 +105,7 @@ class TestRoutingEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_routing
-        resp = asyncio.get_event_loop().run_until_complete(metrics_routing("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_routing())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -132,7 +132,7 @@ class TestToolsEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_tools
-        resp = asyncio.get_event_loop().run_until_complete(metrics_tools("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_tools())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -155,7 +155,7 @@ class TestImprovementEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_improvement
-        resp = asyncio.get_event_loop().run_until_complete(metrics_improvement("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_improvement())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -179,7 +179,7 @@ class TestFailuresEndpoint:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_failures
-        resp = asyncio.get_event_loop().run_until_complete(metrics_failures("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_failures())
         data = json.loads(resp.body)
 
         assert data["ok"] is True
@@ -200,7 +200,7 @@ class TestNoSecrets:
 
         import asyncio
         from api.routes.metrics_mobile import metrics_summary
-        resp = asyncio.get_event_loop().run_until_complete(metrics_summary("test"))
+        resp = asyncio.get_event_loop().run_until_complete(metrics_summary())
         text = resp.body.decode() if isinstance(resp.body, bytes) else str(resp.body)
 
         for keyword in ["api_key", "token", "secret", "password", "bearer"]:
