@@ -289,7 +289,7 @@ def create_api(settings) -> FastAPI:
             from kernel.runtime.boot import get_runtime as _get_kernel
             rt = _get_kernel()
             return rt.status()
-        except Exception as e:
+        except Exception:
             return {"error": "internal_error", "booted": False}
 
     @app.get("/workspace", tags=["system"])
@@ -298,7 +298,7 @@ def create_api(settings) -> FastAPI:
             from core.observability.watcher import SystemObserver
             snap = await SystemObserver(s).snapshot_workspace()
             return {"snapshot": snap}
-        except Exception as e:
+        except Exception:
             return {"snapshot": None, "error": "internal_error"}
 
     @app.post("/run", tags=["system"])

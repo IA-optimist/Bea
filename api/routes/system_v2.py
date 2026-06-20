@@ -49,7 +49,7 @@ async def get_uncensored_mode(_user: dict = _auth):
             "uncensored": ms.is_uncensored(),
             "mode": ms.get_mode().value,
         }
-    except Exception as e:
+    except Exception:
         return {"uncensored": False, "error": "internal_error"}
 
 
@@ -65,7 +65,7 @@ async def set_uncensored_mode(request: Request, _user: dict = _auth):
         else:
             ms.disable_uncensored()
         return {"ok": True, "uncensored": ms.is_uncensored(), "mode": ms.get_mode().value}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -77,7 +77,7 @@ async def decision_memory_stats(_user: dict = _auth):
         from memory.decision_memory import get_decision_memory
         dm = get_decision_memory()
         return {"ok": True, "data": dm.get_stats()}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -87,7 +87,7 @@ async def decision_memory_registry(_user: dict = _auth):
         from memory.decision_memory import get_decision_memory
         dm = get_decision_memory()
         return {"ok": True, "data": dm.get_registry()}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -99,7 +99,7 @@ async def get_policy_mode(_user: dict = _auth):
         from core.policy_mode import get_policy_mode_store
         _store = get_policy_mode_store()
         return {"ok": True, "data": _store.to_dict(), "uncensored_stats": _store.get_uncensored_stats()}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -111,7 +111,7 @@ async def set_policy_mode(request: Request, _user: dict = _auth):
         mode = body.get("policy_mode", "BALANCED")
         ok = get_policy_mode_store().set(mode)
         return {"ok": ok, "data": get_policy_mode_store().to_dict()}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -123,7 +123,7 @@ async def get_recent_metrics(_user: dict = _auth):
         from core.observability.store import get_observability_store
         store = get_observability_store()
         return {"stats": store.get_stats(), "recent": store.get_recent(20)}
-    except Exception as e:
+    except Exception:
         return {"stats": {}, "recent": [], "error": "internal_error"}
 
 
@@ -135,7 +135,7 @@ async def get_knowledge_recent(_user: dict = _auth):
         from core.knowledge_memory import get_knowledge_memory
         km = get_knowledge_memory()
         return {"stats": km.get_stats(), "solutions": km.get_recent_solutions(20)}
-    except Exception as e:
+    except Exception:
         return {"stats": {}, "solutions": [], "error": "internal_error"}
 
 
@@ -150,7 +150,7 @@ async def get_last_plan(_user: dict = _auth):
             return {"plan": None, "message": "No plan executed yet"}
         planner = get_mission_planner()
         return {"plan": planner.plan_to_dict(plan)}
-    except Exception as e:
+    except Exception:
         return {"plan": None, "error": "internal_error"}
 
 
@@ -162,7 +162,7 @@ async def get_tools_registry(_user: dict = _auth):
         from core.tool_registry import get_tool_registry
         reg = get_tool_registry()
         return {"tools": reg.summary(), "count": len(reg.list_tools())}
-    except Exception as e:
+    except Exception:
         return {"tools": [], "count": 0, "error": "internal_error"}
 
 
@@ -177,7 +177,7 @@ async def test_tool_live(payload: dict, _user: dict = _auth):
         from core.tool_executor import get_tool_executor
         result = get_tool_executor().execute(tool_name, params, approval_mode="SUPERVISED")
         return {"ok": True, "tool": tool_name, "result": result}
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -200,7 +200,7 @@ async def rollback_file(payload: dict, _user: dict = _auth):
             "available_backups": backups,
             "status": "rollback_success" if ok else "rollback_failed",
         }
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
 
@@ -257,7 +257,7 @@ async def llm_health_check():
                     "ms": ms,
                     "response_preview": content[:40],
                 }
-            except Exception as e:
+            except Exception:
                 ms = int((_time.monotonic() - t0) * 1000)
                 results[name] = {
                     "status": "error",
@@ -265,7 +265,7 @@ async def llm_health_check():
                     "error": "internal_error",
                 }
 
-    except Exception as e:
+    except Exception:
         return {"ok": False, "error": "internal_error"}
 
     any_ok = any(v.get("status") == "ok" for v in results.values())
