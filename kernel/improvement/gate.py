@@ -166,7 +166,7 @@ class ImprovementGate:
         # Explicitly UNSIGNED marker — always reject, regardless of key config.
         if raw_sig == "UNSIGNED":
             raise PatchSignatureViolation(
-                f"Patch is explicitly marked UNSIGNED — cannot promote unsigned patches. Rejected."
+                "Patch is explicitly marked UNSIGNED — cannot promote unsigned patches. Rejected."
             )
 
         # No signature present at all: dev mode vs. production decision.
