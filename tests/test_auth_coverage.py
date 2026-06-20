@@ -63,6 +63,7 @@ def test_mobile_metrics_auth_requires_real_credentials():
     metrics_path = pathlib.Path(__file__).resolve().parents[1] / "api" / "routes" / "metrics_mobile.py"
     text = metrics_path.read_text(encoding="utf-8")
 
-    assert "Always require valid auth" in text
-    assert "silent bypass" in text.lower()
-    assert "raise HTTPException(401, \"Unauthorized\")" in text
+    # Phase-1 migration: auth moved to router level via Depends(require_auth).
+    # require_auth in api/_deps.py is fail-closed, supports static token + JWT.
+    assert "dependencies=[Depends(require_auth)]" in text
+    assert "_auth" not in text or "require_auth" in text
