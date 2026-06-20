@@ -50,7 +50,7 @@ async def get_uncensored_mode(_user: dict = _auth):
             "mode": ms.get_mode().value,
         }
     except Exception as e:
-        return {"uncensored": False, "error": type(e).__name__}
+        return {"uncensored": False, "error": "internal_error"}
 
 
 @router.post("/api/system/mode/uncensored")
@@ -66,7 +66,7 @@ async def set_uncensored_mode(request: Request, _user: dict = _auth):
             ms.disable_uncensored()
         return {"ok": True, "uncensored": ms.is_uncensored(), "mode": ms.get_mode().value}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 # ── Decision Memory ──────────────────────────────────────────
@@ -78,7 +78,7 @@ async def decision_memory_stats(_user: dict = _auth):
         dm = get_decision_memory()
         return {"ok": True, "data": dm.get_stats()}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 @router.get("/api/v2/decision-memory/registry")
@@ -88,7 +88,7 @@ async def decision_memory_registry(_user: dict = _auth):
         dm = get_decision_memory()
         return {"ok": True, "data": dm.get_registry()}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 # ── Policy Mode ──────────────────────────────────────────────
@@ -100,7 +100,7 @@ async def get_policy_mode(_user: dict = _auth):
         _store = get_policy_mode_store()
         return {"ok": True, "data": _store.to_dict(), "uncensored_stats": _store.get_uncensored_stats()}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 @router.post("/api/v2/system/policy-mode")
@@ -112,7 +112,7 @@ async def set_policy_mode(request: Request, _user: dict = _auth):
         ok = get_policy_mode_store().set(mode)
         return {"ok": ok, "data": get_policy_mode_store().to_dict()}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 # ── Metrics ──────────────────────────────────────────────────
@@ -124,7 +124,7 @@ async def get_recent_metrics(_user: dict = _auth):
         store = get_observability_store()
         return {"stats": store.get_stats(), "recent": store.get_recent(20)}
     except Exception as e:
-        return {"stats": {}, "recent": [], "error": type(e).__name__}
+        return {"stats": {}, "recent": [], "error": "internal_error"}
 
 
 # ── Knowledge ────────────────────────────────────────────────
@@ -136,7 +136,7 @@ async def get_knowledge_recent(_user: dict = _auth):
         km = get_knowledge_memory()
         return {"stats": km.get_stats(), "solutions": km.get_recent_solutions(20)}
     except Exception as e:
-        return {"stats": {}, "solutions": [], "error": type(e).__name__}
+        return {"stats": {}, "solutions": [], "error": "internal_error"}
 
 
 # ── Plan ─────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ async def get_last_plan(_user: dict = _auth):
         planner = get_mission_planner()
         return {"plan": planner.plan_to_dict(plan)}
     except Exception as e:
-        return {"plan": None, "error": type(e).__name__}
+        return {"plan": None, "error": "internal_error"}
 
 
 # ── Tools ────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ async def get_tools_registry(_user: dict = _auth):
         reg = get_tool_registry()
         return {"tools": reg.summary(), "count": len(reg.list_tools())}
     except Exception as e:
-        return {"tools": [], "count": 0, "error": type(e).__name__}
+        return {"tools": [], "count": 0, "error": "internal_error"}
 
 
 @router.post("/api/v2/tools/test")
@@ -178,7 +178,7 @@ async def test_tool_live(payload: dict, _user: dict = _auth):
         result = get_tool_executor().execute(tool_name, params, approval_mode="SUPERVISED")
         return {"ok": True, "tool": tool_name, "result": result}
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 @router.post("/api/v2/tools/rollback")
@@ -201,7 +201,7 @@ async def rollback_file(payload: dict, _user: dict = _auth):
             "status": "rollback_success" if ok else "rollback_failed",
         }
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
 
 # ── Health ───────────────────────────────────────────────────
@@ -262,11 +262,11 @@ async def llm_health_check():
                 results[name] = {
                     "status": "error",
                     "ms": ms,
-                    "error": type(e).__name__,
+                    "error": "internal_error",
                 }
 
     except Exception as e:
-        return {"ok": False, "error": type(e).__name__}
+        return {"ok": False, "error": "internal_error"}
 
     any_ok = any(v.get("status") == "ok" for v in results.values())
     return {

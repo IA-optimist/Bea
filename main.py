@@ -290,7 +290,7 @@ def create_api(settings) -> FastAPI:
             rt = _get_kernel()
             return rt.status()
         except Exception as e:
-            return {"error": type(e).__name__, "booted": False}
+            return {"error": "internal_error", "booted": False}
 
     @app.get("/workspace", tags=["system"])
     async def workspace_info():
@@ -299,7 +299,7 @@ def create_api(settings) -> FastAPI:
             snap = await SystemObserver(s).snapshot_workspace()
             return {"snapshot": snap}
         except Exception as e:
-            return {"snapshot": None, "error": type(e).__name__}
+            return {"snapshot": None, "error": "internal_error"}
 
     @app.post("/run", tags=["system"])
     async def run_mission(body: dict):

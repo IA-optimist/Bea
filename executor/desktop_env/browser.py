@@ -43,8 +43,8 @@ class WebSurfer:
                 text = soup.get_text(separator="\n", strip=True)
             except ImportError:
                 log.warning("websurfer_bs4_missing_using_regex")
-                text = re.sub(r"<style[^>]*>.*?</style\s*>", "", html, flags=re.DOTALL | re.IGNORECASE)
-                text = re.sub(r"<script[^>]*>.*?</script\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)
+                text = re.sub(r"<style[^>]*>.*?</style[^>]*>", "", html, flags=re.DOTALL | re.IGNORECASE)
+                text = re.sub(r"<script[^>]*>.*?</script[^>]*>", "", text, flags=re.DOTALL | re.IGNORECASE)
                 text = re.sub(r"<[^<]+>", "\n", text)
                 text = re.sub(r"\n+", "\n", text).strip()
 
