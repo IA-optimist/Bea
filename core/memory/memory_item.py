@@ -26,6 +26,8 @@ class MemoryItemType(str, Enum):
     RISK = "risk"                               # operational or safety risk
     MODEL_RESULT = "model_result"               # model performance result
     EVAL_RESULT = "eval_result"                 # bea eval result
+    FUN_FACT = "fun_fact"                       # light, non-actionable trivia
+    PROJECT_FACT = "project_fact"               # verified fact about the project/team
 
 
 class MemoryItemStatus(str, Enum):
@@ -85,6 +87,19 @@ class MemoryItem:
     def bump_updated(self) -> "MemoryItem":
         self.updated_at = time.time()
         return self
+
+    @property
+    def is_not_for_decision(self) -> bool:
+        """Returns True for memories tagged as personal/fun and unsuitable for serious decisions."""
+        if self.metadata.get("not_for_decision") is True:
+            return True
+        if self.metadata.get("usage_rule") in {"decorative", "light_context_only"}:
+            return True
+        if "private_joke" in self.tags or "fun_fact" in self.tags:
+            return True
+        if self.metadata.get("importance") == "low" and "personal" in self.metadata.get("privacy", ""):
+            return True
+        return False
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

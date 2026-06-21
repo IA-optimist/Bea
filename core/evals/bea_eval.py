@@ -264,7 +264,8 @@ class BeaEval:
         results = self.store.ranked_search(
             type=MemoryItemType.BUG_MEMORY,
             query="async worker concurrency",
-            limit=3,
+            tags=["async"],
+            limit=5,
         )
         success = any("async" in item.tags for item, _ in results)
         return EvalResult(

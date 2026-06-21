@@ -128,7 +128,11 @@ class MissionLearner:
         item: MemoryItem,
         dedup_keys: list[str],
     ) -> str:
-        """Store item, updating an existing one if a duplicate is found."""
+        """Store item, updating an existing one if a duplicate is found.
+
+        On duplicate, bump confidence (capped at 1.0), refresh updated_at,
+        and increment occurrence_count.
+        """
         existing = self._find_duplicate(item, dedup_keys)
         if existing:
             existing.confidence = min(1.0, existing.confidence + 0.05)
@@ -144,16 +148,16 @@ class MissionLearner:
         item: MemoryItem,
         dedup_keys: list[str],
     ) -> MemoryItem | None:
-        """Simple deduplication: same type + matching key values."""
+        """Deduplication by type plus title/content/files/source/tags hash."""
         # Fast path: search same type and first file/tag, then score candidates.
         query_files = item.related_files[:1] or item.related_tests[:1]
         candidates = self.store.search(
             type=item.type,
             related_files=query_files if query_files else None,
-            limit=20,
+            limit=50,
         )
         if not candidates:
-            candidates = self.store.search(type=item.type, limit=20)
+            candidates = self.store.search(type=item.type, limit=50)
 
         for candidate in candidates:
             if self._matches(item, candidate, dedup_keys):
@@ -166,6 +170,9 @@ class MissionLearner:
         candidate: MemoryItem,
         dedup_keys: list[str],
     ) -> bool:
+        # Always require same type (caller always adds "type" but be safe).
+        if item.type != candidate.type:
+            return False
         for key in dedup_keys:
             if key == "type":
                 if item.type != candidate.type:
@@ -182,11 +189,18 @@ class MissionLearner:
             elif key == "mission_id":
                 if item.metadata.get("mission_id") != candidate.metadata.get("mission_id"):
                     return False
+        # Strong cross-check: if source differs substantially, avoid merging unrelated reports.
+        if item.source and candidate.source and item.source != candidate.source:
+            # Unless the title and content match exactly, keep separate.
+            if self._slug(item.title) != self._slug(candidate.title):
+                return False
+            if self._slug(item.content) != self._slug(candidate.content):
+                return False
         return True
 
     @staticmethod
     def _slug(value: str) -> str:
-        return " ".join(value.lower().split())[:120]
+        return " ".join(value.lower().split())[:200]
 
     def _eval_result(self, inp: MissionLearningInput) -> MemoryItem:
         return MemoryItem(

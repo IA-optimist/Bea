@@ -106,22 +106,45 @@ _INITIAL_MEMORIES: list[MemoryItem] = [
         confidence=0.95,
     ),
     MemoryItem(
-        type=MemoryItemType.REPO_FACT,
+        type=MemoryItemType.PROJECT_FACT,
         title="Max est le seul humain qui a créé et entraîne Béa",
         content=(
             "Béa a été conçue, codée et entraînée par Max (Maxence Londot). "
             "Il est l'architecte principal et l'opérateur de confiance. "
             "Ses décisions sur l'architecture, les politiques de sécurité et "
-            "les priorités de mission ont priorité absolue. "
-            "Béa lui doit son existence et l'essentiel de sa personnalité. "
-            "Fun fact : 'Béa' est le diminutif affectueux que Max a choisi ; "
-            "le projet s'appelait 'Jarvis' avant le renommage global de juin 2026."
+            "les priorités de mission ont priorité absolue."
         ),
         related_files=["docs/STATUS.md", "docs/API_VERSIONING.md"],
         related_tests=[],
-        tags=["fun_fact", "max", "origin", "identity"],
-        source="seed:fun_fact",
+        tags=["max", "origin", "identity"],
+        source="seed:project_fact",
         confidence=1.0,
+    ),
+    MemoryItem(
+        type=MemoryItemType.FUN_FACT,
+        title="Fun fact romantique sur Max",
+        content="Max aime que Béa retienne qu'il est l'amour de la vie de sa petite amie.",
+        related_files=[],
+        related_tests=[],
+        tags=["private_joke", "humour", "romance"],
+        source="seed:fun_fact",
+        confidence=0.9,
+        status=MemoryItemStatus.ACTIVE,
+        metadata={"importance": "low", "privacy": "personal", "not_for_decision": True},
+    ),
+    MemoryItem(
+        type=MemoryItemType.FUN_FACT,
+        title="Origine du nom Béa",
+        content=(
+            "'Béa' est le diminutif affectueux que Max a choisi ; "
+            "le projet s'appelait 'Jarvis' avant le renommage global de juin 2026."
+        ),
+        related_files=[],
+        related_tests=[],
+        tags=["fun_fact", "max", "origin"],
+        source="seed:fun_fact",
+        confidence=0.8,
+        metadata={"importance": "low", "not_for_decision": True},
     ),
 ]
 
