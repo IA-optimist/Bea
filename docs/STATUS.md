@@ -26,8 +26,9 @@ Packaging truth:
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
 | Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
-| V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — live mais stubs (orchestrateur non câblé) |
+| V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |
 | Plugin signatures | 🟢 HMAC-SHA256 `plugins/signatures.py` T6.4 — verify on registry |
+| Client surfaces | 🟡 Inventoriées PR #85 — 2 canoniques, 1 supported (Flutter), 1 expérimental (React) |
 
 **Maturity legend:**
 - 🟢 **PROVEN** — Real implementation, used in runtime, gate-tested
@@ -113,11 +114,29 @@ Packaging truth:
 | Component | File | Evidence |
 |-----------|------|----------|
 | Web SPA | `static/app.html` (973 lines) | Canonical web control surface; kept alongside API and Flutter |
+| Admin cockpit | `static/cockpit.html` | Secondary admin view — missions, agents, security, business metrics |
 
 ### Mobile canonical interface
 | Component | File | Evidence |
 |-----------|------|----------|
 | Flutter app | `beamax_app/` (~7,400 lines) | Canonical mobile path. Secure storage, token refresh, WS reconnect. |
+
+### Client surfaces — API version usage (PR #85, 2026-06-21)
+
+| Surface | Status | v1 calls | v3 calls | Notes |
+|---------|--------|----------|----------|-------|
+| `static/app.html` | CANONICAL | 0 | ✅ all | auth via v2 only |
+| `static/cockpit.html` | CANONICAL | 0 | ✅ all | v2 for agents |
+| `beamax_app/` (Flutter) | SUPPORTED | **3** (allowlisted) | ✅ majority | pause/resume/stream blocked on v3 endpoints |
+| `frontend/` (React) | EXPERIMENTAL | 0 | ✅ most | v2 for self-improvement endpoints |
+| `orchestrate-cli/` | SUPPORTED | 0 | ✅ all | Python CLI, no browser |
+
+**3 v1 calls remain in Flutter** — all in `beamax_app/lib/services/api_service.dart`:
+- `POST /api/v1/missions/{id}/pause` (line 550) → needs `/api/v3/missions/{id}/pause`
+- `POST /api/v1/missions/{id}/resume` (line 559) → needs `/api/v3/missions/{id}/resume`
+- `GET /api/v1/missions/{id}/stream` (line 753) → needs `/api/v3/missions/{id}/stream`
+
+See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
 
 ---
 
