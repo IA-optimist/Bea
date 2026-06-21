@@ -54,6 +54,7 @@ These files cross the 800-line threshold but are not the headline monoliths to s
 | `core/llm_factory.py` | ~831 | Extract provider config from instantiation logic. |
 | `core/evaluation_engine.py` | ~801 | Crossed the 800-line threshold after the M3 silent-swallow migration expanded the per-call `log.warning(...)` payload. Trim by extracting the per-metric helpers (approval_rate, timeout_rate, cost, error_count, patch_success_rate) into a small `core/evaluation_metrics.py`. |
 | `core/business_actions.py` | ~814 | Grew past 800 lines after the revenue-launch sprint (2026-06-13) added autonomous business execution helpers and revenue routing. Extract `BusinessRevenueActions` into `core/business_revenue.py` and `BusinessMonitorActions` into `core/business_monitor.py` to bring the main file back under threshold. |
+| `core/evals/bea_eval.py` | ~845 | Kilo eval harness (PR #89): scoring/latency/cost benchmark for any OpenAI-compat model. Monolithic by design for standalone usage. Refactor candidate: split `BenchmarkRunner` from `ReportFormatter` once the eval format stabilizes. |
 
 ## Ratchet Rules
 
