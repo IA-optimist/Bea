@@ -2,7 +2,8 @@
 
 Extracted from ExecutionMixin._execute_supervised — memory-injection phase.
 Handles: ContinualMemory replay, AlignmentLayer check, CausalModule context,
-ComprehensionChecker, UnifiedMemory recall, client profile, and context cap.
+ComprehensionChecker, UnifiedMemory recall, Qdrant knowledge recall,
+client profile, and context cap.
 
 Returns enriched_goal (str), or None if AlignmentLayer blocks execution.
 The caller is responsible for performing the MissionStatus.DONE transition on None.
@@ -17,6 +18,16 @@ from typing import Callable
 from core.state import MissionStatus
 
 log = structlog.get_logger(__name__)
+
+_knowledge_encoder = None
+
+
+def _get_knowledge_encoder():
+    global _knowledge_encoder
+    if _knowledge_encoder is None:
+        from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+        _knowledge_encoder = SentenceTransformer("all-MiniLM-L6-v2")
+    return _knowledge_encoder
 
 
 async def inject_memory_context(
@@ -118,6 +129,29 @@ async def inject_memory_context(
                          n=len(_memories))
     except Exception as _um_err:
         log.debug("unified_memory.skipped", err=str(_um_err)[:80])
+
+    # ── Qdrant knowledge recall (beamax_memory_384) ────────────────────────────
+    try:
+        from core.memory.qdrant_client import get_qdrant as _get_qdrant
+        _embedding: list[float] = _get_knowledge_encoder().encode(goal[:512]).tolist()
+        _hits = _get_qdrant().search(
+            "beamax_memory_384", _embedding, limit=3, score_threshold=0.4
+        )
+        if _hits:
+            _klines = [
+                _h["payload"]["text"][:200]
+                for _h in _hits
+                if _h.get("payload", {}).get("text")
+            ]
+            if _klines:
+                enriched_goal = (
+                    enriched_goal
+                    + "\n\n[KNOWLEDGE]\n"
+                    + "\n".join(f"- {t}" for t in _klines)
+                )
+                log.info("qdrant_knowledge.injected", mission_id=mid, n=len(_klines))
+    except Exception as _qk_err:
+        log.debug("qdrant_knowledge.skipped", err=str(_qk_err)[:80])
 
     # ── Client profile context ─────────────────────────────────────────────────
     try:
