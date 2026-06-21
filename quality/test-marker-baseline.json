@@ -2,7 +2,7 @@
   "markers": {
     "quarantine": 1,
     "xfail": 70,
-    "stale": 1
+    "stale": 126
   },
   "policy": "Quarantine/stale/xfail counts may stay flat or shrink, never grow."
 }

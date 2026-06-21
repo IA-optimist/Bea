@@ -75,6 +75,31 @@ def _is_allowlisted(rel_path: str, line: str) -> bool:
 
 
 class TestClientV1Allowlist:
+    def test_v1_allowlist_is_empty_after_flutter_v3_migration(self):
+        """Flutter v3 migration is complete; no client v1 exceptions remain."""
+        assert _V1_ALLOWLIST == [], (
+            "Client /api/v1 allowlist must stay empty after Flutter v3 migration. "
+            "A v1 return requires an explicit allowlist entry plus documented justification."
+        )
+
+    def test_flutter_api_service_has_no_v1_runtime_calls(self):
+        """api_service.dart must not reintroduce runtime /api/v1 calls."""
+        api_service = _ROOT / "beamax_app" / "lib" / "services" / "api_service.dart"
+        content = api_service.read_text(encoding="utf-8")
+        violations = []
+        for lineno, line in enumerate(content.splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("//") or stripped.startswith("///"):
+                continue
+            if re.search(r"['\"`/]/api/v1/", stripped):
+                violations.append(f"beamax_app/lib/services/api_service.dart:{lineno}  {stripped}")
+
+        assert not violations, (
+            "Flutter api_service.dart reintroduced /api/v1 runtime call(s). "
+            "Use /api/v3, or add an explicit allowlist entry with justification:\n"
+            + "\n".join(violations)
+        )
+
     def test_no_new_v1_calls_in_client_surfaces(self):
         """Fail if any client surface calls /api/v1/* outside the allowlist.
 
