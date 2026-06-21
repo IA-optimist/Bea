@@ -74,6 +74,8 @@ ignore = [
 "scripts/run_api_local.py" = ["T201"]      # CLI : launcher API local
 "scripts/add_stale_marker.py" = ["T201"]   # CLI : stdout = résumé des fichiers modifiés
 "gateway/codex_provider.py" = ["T201"]    # smoke-test CLI (__main__) : print = sortie
+"scripts/seed_bea_self_knowledge.py" = ["T201"]   # CLI : stdout = résumé des insertions mémoire
+"scripts/seed_bea_knowledge_claude.py" = ["T201"] # CLI : transfert de connaissances Claude→Béa
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic
