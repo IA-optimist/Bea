@@ -870,10 +870,11 @@ class TestKernelPlanner:
         from kernel.planning.planner import register_core_planner
         import kernel.planning.planner as planner_mod
         original = planner_mod._core_planner_fn
+        def _fake_planner(desc):
+            return {"steps": []}
         try:
-            fn = lambda desc: {"steps": []}
-            register_core_planner(fn)
-            assert planner_mod._core_planner_fn is fn
+            register_core_planner(_fake_planner)
+            assert planner_mod._core_planner_fn is _fake_planner
         finally:
             planner_mod._core_planner_fn = original
 
@@ -1095,10 +1096,11 @@ class TestKernelLearner:
         from kernel.learning.learner import register_lesson_store
         import kernel.learning.learner as learner_mod
         original = learner_mod._lesson_store_fn
+        def _fake_store(l):
+            return True
         try:
-            fn = lambda l: True
-            register_lesson_store(fn)
-            assert learner_mod._lesson_store_fn is fn
+            register_lesson_store(_fake_store)
+            assert learner_mod._lesson_store_fn is _fake_store
         finally:
             learner_mod._lesson_store_fn = original
 
