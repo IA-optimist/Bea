@@ -1116,58 +1116,85 @@ class TestKernelLearner:
 class TestQdrantKnowledgeInjection:
     """Tests for the Qdrant knowledge recall block in inject_memory_context.
 
-    All external deps (sentence_transformers, Qdrant, optional core modules)
-    are mocked so tests run without network or GPU.
+    Uses sys.modules surgery with save/restore to avoid leaking mocks into
+    other test files that share the same worker process (pytest-xdist issue).
     """
 
-    def _make_transition(self):
-        calls: list = []
-        def _fn(*a, **kw):
-            calls.append((a, kw))
-        return _fn, calls
+    # Each entry: module path → class name whose instantiation should raise ImportError.
+    # This prevents MagicMock method return values from polluting enriched_goal (a str).
+    _OPTIONAL_STUBS: dict[str, str] = {
+        "core.orchestration.continual_memory": "ContinualMemory",
+        "core.orchestration.causal_module": "BeaMaxCausalIntegration",
+        "core.orchestration.comprehension_checker": "ComprehensionChecker",
+        "core.orchestration.memory_system": "UnifiedMemory",
+    }
 
-    async def _call_injector(self, goal: str, enriched_goal: str, *, patch_extras=True):
-        """Run inject_memory_context with all optional modules mocked away."""
+    def _isolate_optional_modules(self):
+        """Replace optional modules in sys.modules with stubs whose key class raises ImportError.
+
+        Returns saved dict for _restore_modules().  Properly saves+restores to avoid
+        polluting other test files sharing the same xdist worker process.
+        """
         import sys
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
-        transition_fn, _ = self._make_transition()
+        saved = {mod: sys.modules.get(mod) for mod in self._OPTIONAL_STUBS}
+        for mod_name, cls_name in self._OPTIONAL_STUBS.items():
+            stub = MagicMock()
+            getattr(stub, cls_name).side_effect = ImportError(f"stubbed:{mod_name}")
+            sys.modules[mod_name] = stub
+        return saved, {}
+
+    @staticmethod
+    def _restore_modules(saved: dict) -> None:
+        import sys
+        for mod, orig in saved.items():
+            if orig is None:
+                sys.modules.pop(mod, None)
+            else:
+                sys.modules[mod] = orig
+
+    async def _run_injector(self, goal: str, enriched_goal: str, fake_qdrant, fake_encoder):
+        """Run inject_memory_context with optional modules stubbed out."""
+        from unittest.mock import MagicMock, patch
+        import core.orchestration.execution_memory_injector as mod
 
         ctx = MagicMock()
         ctx.metadata = {}
         ctx.result = ""
 
-        # Patch optional modules so they all skip cleanly
-        mocks = {}
-        if patch_extras:
-            for mod in [
-                "core.orchestration.continual_memory",
-                "core.orchestration.alignment_layer",
-                "core.orchestration.causal_module",
-                "core.orchestration.comprehension_checker",
-                "core.orchestration.memory_system",
-                "core.client_profile",
-            ]:
-                mocks[mod] = MagicMock()
-                sys.modules.setdefault(mod, mocks[mod])
-
-        with patch("core.orchestration.continual_memory.ContinualMemory", side_effect=ImportError), \
-             patch("core.orchestration.alignment_layer.AlignmentLayer", side_effect=ImportError), \
-             patch("core.orchestration.causal_module.BeaMaxCausalIntegration", side_effect=ImportError), \
-             patch("core.orchestration.comprehension_checker.ComprehensionChecker", side_effect=ImportError), \
-             patch("core.orchestration.memory_system.UnifiedMemory", side_effect=ImportError), \
-             patch("core.client_profile.ClientProfile", side_effect=ImportError):
-            from core.orchestration.execution_memory_injector import inject_memory_context
-            result = await inject_memory_context(
-                goal=goal,
-                mid="test-mid",
-                mode="supervised",
-                ctx=ctx,
-                trace=None,
-                enriched_goal=enriched_goal,
-                transition_fn=transition_fn,
-            )
+        saved, _ = self._isolate_optional_modules()
+        original_enc = mod._knowledge_encoder
+        mod._knowledge_encoder = fake_encoder
+        try:
+            with patch("core.memory.qdrant_client.get_qdrant", return_value=fake_qdrant):
+                from core.orchestration.execution_memory_injector import inject_memory_context
+                result = await inject_memory_context(
+                    goal=goal,
+                    mid="test-mid",
+                    mode="supervised",
+                    ctx=ctx,
+                    trace=None,
+                    enriched_goal=enriched_goal,
+                    transition_fn=lambda *a, **kw: None,
+                )
+        finally:
+            mod._knowledge_encoder = original_enc
+            self._restore_modules(saved)
         return result
+
+    def _fake_encoder(self, vector=None):
+        from unittest.mock import MagicMock
+        enc = MagicMock()
+        vec = vector or ([0.1] * 384)
+        enc.encode.return_value = MagicMock(tolist=lambda: vec)
+        return enc
+
+    def _fake_qdrant(self, hits=None):
+        from unittest.mock import MagicMock
+        q = MagicMock()
+        q.search.return_value = hits if hits is not None else []
+        return q
 
     def test_knowledge_encoder_singleton(self):
         import core.orchestration.execution_memory_injector as mod
@@ -1185,117 +1212,74 @@ class TestQdrantKnowledgeInjection:
             mod._knowledge_encoder = original
 
     async def test_knowledge_injected_when_hits(self):
-        import core.orchestration.execution_memory_injector as mod
-        from unittest.mock import MagicMock, patch
-
-        fake_encoder = MagicMock()
-        fake_encoder.encode.return_value = MagicMock(tolist=lambda: [0.1] * 384)
-
-        fake_qdrant = MagicMock()
-        fake_qdrant.search.return_value = [
+        hits = [
             {"score": 0.85, "payload": {"text": "Python async best practices"}},
             {"score": 0.72, "payload": {"text": "FastAPI dependency injection"}},
         ]
-
-        original_enc = mod._knowledge_encoder
-        mod._knowledge_encoder = fake_encoder
-        try:
-            with patch("core.memory.qdrant_client.get_qdrant", return_value=fake_qdrant):
-                result = await self._call_injector("how to use async in python", "Goal: async python")
-        finally:
-            mod._knowledge_encoder = original_enc
-
+        result = await self._run_injector(
+            "how to use async in python", "Goal: async python",
+            self._fake_qdrant(hits), self._fake_encoder(),
+        )
         assert result is not None
         assert "[KNOWLEDGE]" in result
         assert "Python async best practices" in result
         assert "FastAPI dependency injection" in result
 
     async def test_no_knowledge_when_empty_hits(self):
-        import core.orchestration.execution_memory_injector as mod
-        from unittest.mock import MagicMock, patch
-
-        fake_encoder = MagicMock()
-        fake_encoder.encode.return_value = MagicMock(tolist=lambda: [0.0] * 384)
-
-        fake_qdrant = MagicMock()
-        fake_qdrant.search.return_value = []
-
-        original_enc = mod._knowledge_encoder
-        mod._knowledge_encoder = fake_encoder
-        try:
-            with patch("core.memory.qdrant_client.get_qdrant", return_value=fake_qdrant):
-                result = await self._call_injector("obscure topic", "Goal: obscure")
-        finally:
-            mod._knowledge_encoder = original_enc
-
+        result = await self._run_injector(
+            "obscure topic", "Goal: obscure",
+            self._fake_qdrant([]), self._fake_encoder([0.0] * 384),
+        )
         assert result is not None
         assert "[KNOWLEDGE]" not in result
 
     async def test_knowledge_fail_open_on_exception(self):
+        from unittest.mock import MagicMock
+        crashing_enc = MagicMock()
+        crashing_enc.encode.side_effect = RuntimeError("model crash")
+
+        from unittest.mock import patch
         import core.orchestration.execution_memory_injector as mod
-        from unittest.mock import MagicMock, patch
+        ctx = MagicMock(); ctx.metadata = {}; ctx.result = ""
 
-        fake_encoder = MagicMock()
-        fake_encoder.encode.side_effect = RuntimeError("model crash")
-
+        saved, _ = self._isolate_optional_modules()
         original_enc = mod._knowledge_encoder
-        mod._knowledge_encoder = fake_encoder
+        mod._knowledge_encoder = crashing_enc
         try:
             with patch("core.memory.qdrant_client.get_qdrant", side_effect=Exception("qdrant down")):
-                result = await self._call_injector("any goal", "Goal: any")
+                from core.orchestration.execution_memory_injector import inject_memory_context
+                result = await inject_memory_context(
+                    goal="any", mid="t", mode="supervised",
+                    ctx=ctx, trace=None, enriched_goal="Goal: any",
+                    transition_fn=lambda *a, **kw: None,
+                )
         finally:
             mod._knowledge_encoder = original_enc
+            self._restore_modules(saved)
 
         assert result is not None
         assert "[KNOWLEDGE]" not in result
 
     async def test_knowledge_text_truncated_at_200(self):
-        import core.orchestration.execution_memory_injector as mod
-        from unittest.mock import MagicMock, patch
-
-        fake_encoder = MagicMock()
-        fake_encoder.encode.return_value = MagicMock(tolist=lambda: [0.5] * 384)
-
-        long_text = "X" * 500
-        fake_qdrant = MagicMock()
-        fake_qdrant.search.return_value = [
-            {"score": 0.9, "payload": {"text": long_text}},
-        ]
-
-        original_enc = mod._knowledge_encoder
-        mod._knowledge_encoder = fake_encoder
-        try:
-            with patch("core.memory.qdrant_client.get_qdrant", return_value=fake_qdrant):
-                result = await self._call_injector("goal", "base")
-        finally:
-            mod._knowledge_encoder = original_enc
-
+        hits = [{"score": 0.9, "payload": {"text": "X" * 500}}]
+        result = await self._run_injector(
+            "goal", "base",
+            self._fake_qdrant(hits), self._fake_encoder([0.5] * 384),
+        )
         assert result is not None
         assert "[KNOWLEDGE]" in result
         injected_text = result.split("[KNOWLEDGE]\n- ")[1]
         assert len(injected_text) <= 200
 
     async def test_context_cap_still_applied(self):
-        import core.orchestration.execution_memory_injector as mod
-        from unittest.mock import MagicMock, patch
-
-        fake_encoder = MagicMock()
-        fake_encoder.encode.return_value = MagicMock(tolist=lambda: [0.1] * 384)
-
-        fake_qdrant = MagicMock()
-        fake_qdrant.search.return_value = [
+        hits = [
             {"score": 0.9, "payload": {"text": "K" * 200}},
             {"score": 0.8, "payload": {"text": "K" * 200}},
             {"score": 0.7, "payload": {"text": "K" * 200}},
         ]
-
-        original_enc = mod._knowledge_encoder
-        mod._knowledge_encoder = fake_encoder
-        try:
-            with patch("core.memory.qdrant_client.get_qdrant", return_value=fake_qdrant):
-                result = await self._call_injector("goal", "A" * 1800)
-        finally:
-            mod._knowledge_encoder = original_enc
-
+        result = await self._run_injector(
+            "goal", "A" * 1800,
+            self._fake_qdrant(hits), self._fake_encoder(),
+        )
         assert result is not None
         assert len(result) <= 2000 + len("\n[...context truncated for performance...]")
