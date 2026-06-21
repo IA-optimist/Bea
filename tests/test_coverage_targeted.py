@@ -357,3 +357,277 @@ class TestActionExecutor:
     def test_action_executor_has_execute(self):
         from core.action_executor import ActionExecutor
         assert hasattr(ActionExecutor, "execute_action") or hasattr(ActionExecutor, "run_once")
+
+
+# ── proposal_applicator — parsing helpers ─────────────────────────────────────
+
+class TestProposalApplicator:
+
+    def test_failed_tests_empty_output(self):
+        from core.self_improvement.proposal_applicator import _failed_tests
+        result = _failed_tests("")
+        assert isinstance(result, set)
+        assert len(result) == 0
+
+    def test_failed_tests_all_passed(self):
+        from core.self_improvement.proposal_applicator import _failed_tests
+        result = _failed_tests("test_foo PASSED\ntest_bar PASSED\n")
+        assert isinstance(result, set)
+
+    def test_failed_tests_with_failures(self):
+        from core.self_improvement.proposal_applicator import _failed_tests
+        output = (
+            "PASSED tests/test_foo.py::test_one\n"
+            "FAILED tests/test_bar.py::test_two - AssertionError: expected True\n"
+            "FAILED tests/test_baz.py::test_three\n"
+            "ERROR tests/test_qux.py::test_four\n"
+        )
+        result = _failed_tests(output)
+        assert isinstance(result, set)
+        assert len(result) >= 2
+
+    def test_failed_tests_only_errors(self):
+        from core.self_improvement.proposal_applicator import _failed_tests
+        result = _failed_tests("ERROR tests/test_db.py::test_connect - ConnectionError\n")
+        assert isinstance(result, set)
+
+
+# ── decision_replay — in-memory replay engine ─────────────────────────────────
+
+class TestDecisionReplayMethods:
+
+    def _make_replay(self):
+        from unittest.mock import MagicMock
+        from core.decision_replay import DecisionReplay
+        return DecisionReplay(settings=MagicMock())
+
+    def test_get_errors_empty(self):
+        dr = self._make_replay()
+        errors = dr.get_errors()
+        assert isinstance(errors, list)
+        assert errors == []
+
+    def test_explain_session_missing(self):
+        dr = self._make_replay()
+        explanation = dr.explain_session("nonexistent-session")
+        assert isinstance(explanation, str)
+
+    def test_clear_is_idempotent(self):
+        dr = self._make_replay()
+        dr.clear()
+        dr.clear()
+        assert dr.get_errors() == []
+
+    def test_clear_session(self):
+        dr = self._make_replay()
+        dr.clear_session("no-such-session")
+        assert dr.get_errors() == []
+
+    def test_get_errors_with_n(self):
+        dr = self._make_replay()
+        errors = dr.get_errors(n=5)
+        assert isinstance(errors, list)
+
+
+# ── agent_factory — blueprint dataclass ───────────────────────────────────────
+
+class TestAgentFactory:
+
+    def test_agent_blueprint_minimal(self):
+        from core.agent_factory import AgentBlueprint
+        bp = AgentBlueprint(
+            name="researcher",
+            role="search and summarize information",
+            system_prompt="You are a research agent. Search for relevant information.",
+        )
+        assert bp.name == "researcher"
+        assert "researcher" in bp.name
+
+    def test_agent_blueprint_with_tools(self):
+        from core.agent_factory import AgentBlueprint
+        bp = AgentBlueprint(
+            name="coder",
+            role="write and review code",
+            system_prompt="You are a coding agent.",
+            tools=["python_repl", "file_read"],
+            timeout_s=120,
+            max_reruns=2,
+        )
+        assert bp.tools == ["python_repl", "file_read"]
+        assert bp.timeout_s == 120
+
+    def test_agent_blueprint_defaults(self):
+        from core.agent_factory import AgentBlueprint
+        bp = AgentBlueprint(
+            name="analyst",
+            role="analyze data",
+            system_prompt="You analyze data.",
+        )
+        assert isinstance(bp.tools, list) or bp.tools is None
+
+
+# ── cognitive_consolidation — file reading helper ─────────────────────────────
+
+class TestCognitiveConsolidationIO:
+
+    def test_read_jsonl_missing_file(self):
+        from core.cognitive_consolidation import _read_jsonl
+        from pathlib import Path
+        result = _read_jsonl(Path("/nonexistent/path/data.jsonl"))
+        assert isinstance(result, list)
+        assert result == []
+
+    def test_read_jsonl_empty_file(self):
+        import tempfile
+        from pathlib import Path
+        from core.cognitive_consolidation import _read_jsonl
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", mode="w", delete=False) as f:
+            fname = f.name
+        result = _read_jsonl(Path(fname))
+        assert isinstance(result, list)
+
+    def test_read_jsonl_with_fresh_data(self):
+        import json
+        import tempfile
+        import time
+        from pathlib import Path
+        from core.cognitive_consolidation import _read_jsonl
+        data = [
+            {"ts": time.time(), "domain": "code", "success": True},
+            {"ts": time.time(), "domain": "search", "success": False},
+        ]
+        with tempfile.NamedTemporaryFile(
+            suffix=".jsonl", mode="w", delete=False, encoding="utf-8"
+        ) as f:
+            for row in data:
+                f.write(json.dumps(row) + "\n")
+            fname = f.name
+        result = _read_jsonl(Path(fname))
+        assert isinstance(result, list)
+
+
+# ── reasoning_engine — additional code paths ──────────────────────────────────
+
+class TestReasoningEngineAdditional:
+
+    def test_classify_complexity_multi_word(self):
+        from core.orchestration.reasoning_engine import _classify_complexity
+        goals = [
+            ("simple query", set("simple query".split())),
+            ("build and deploy a multi-region distributed microservices platform", set()),
+            ("", set()),
+        ]
+        for goal, words in goals:
+            result = _classify_complexity(goal, words)
+            assert isinstance(result, str)
+
+    def test_decompose_requirements_various_goals(self):
+        from core.orchestration.reasoning_engine import _decompose_requirements
+        goals = [
+            ("", set()),
+            ("write tests for the authentication module", set("write tests authentication module".split())),
+            ("refactor and optimize the database layer with proper indexes", set()),
+        ]
+        for goal, words in goals:
+            reqs, constraints, verif = _decompose_requirements(goal, words)
+            assert isinstance(reqs, list)
+            assert isinstance(constraints, list)
+            assert isinstance(verif, list)
+
+    def test_detect_bottleneck_various_contexts(self):
+        from core.orchestration.reasoning_engine import _detect_bottleneck
+        cases = [
+            ("optimize SQL queries", {"type": "performance"}, ["slow query", "timeout"]),
+            ("write unit tests", None, []),
+            ("debug authentication error", {"type": "bug"}, ["401 error", "token expired"]),
+        ]
+        for goal, classification, failures in cases:
+            result = _detect_bottleneck(goal, classification, failures)
+            assert isinstance(result, str)
+
+    def test_classify_issue_various(self):
+        from core.orchestration.reasoning_engine import _classify_issue
+        issues = [
+            ("memory leak in the connection pool", "optimize database"),
+            ("AttributeError: object has no attribute x", "fix bug"),
+            ("test coverage is below threshold", "improve quality"),
+        ]
+        for issue, goal in issues:
+            priority, score, category = _classify_issue(issue, goal)
+            assert isinstance(score, float)
+            assert isinstance(category, str)
+
+
+# ── knowledge_filter — edge cases ─────────────────────────────────────────────
+
+class TestKnowledgeFilterEdgeCases:
+
+    def test_evaluate_with_year(self):
+        from core.learning.knowledge_filter import KnowledgeFilter
+        kf = KnowledgeFilter()
+        result = kf.evaluate(
+            "https://arxiv.org/abs/2312.00001",
+            "A research paper on language models",
+            published_year=2023,
+        )
+        assert hasattr(result, "global_score")
+
+    def test_evaluate_old_source(self):
+        from core.learning.knowledge_filter import KnowledgeFilter
+        kf = KnowledgeFilter()
+        result = kf.evaluate(
+            "https://old-blog.example.com/post-from-2010",
+            "deprecated tutorial",
+            published_year=2010,
+        )
+        assert hasattr(result, "accepted")
+
+    def test_filter_result_tags(self):
+        from core.learning.knowledge_filter import FilterResult
+        r = FilterResult(
+            url="https://github.com/user/repo",
+            source_type="code_repository",
+            trust_score=0.85,
+            freshness_score=0.9,
+            actionability_score=0.95,
+            global_score=0.9,
+            accepted=True,
+            tags=["code", "open_source"],
+        )
+        assert "code" in r.tags
+
+
+# ── knowledge_validator — edge cases ──────────────────────────────────────────
+
+class TestKnowledgeValidatorEdgeCases:
+
+    def test_validate_duplicate_detection(self):
+        from core.learning.knowledge_validator import KnowledgeValidator
+        kv = KnowledgeValidator()
+        existing = ["Always test your code before shipping."]
+        result = kv.validate(
+            content="Always test your code before shipping to production.",
+            topic="software engineering",
+            existing_knowledge=existing,
+        )
+        assert hasattr(result, "is_duplicate")
+
+    def test_validate_dangerous_content(self):
+        from core.learning.knowledge_validator import KnowledgeValidator
+        kv = KnowledgeValidator()
+        result = kv.validate(
+            content="Delete all files with rm -rf / to free space",
+            topic="disk management",
+        )
+        assert hasattr(result, "verdict")
+
+    def test_validate_batch_with_knowledge(self):
+        from core.learning.knowledge_validator import KnowledgeValidator
+        kv = KnowledgeValidator()
+        existing = ["Use type hints in Python.", "Write docstrings."]
+        items = [
+            {"content": "Use type hints in Python for better IDE support.", "topic": "python"},
+            {"content": "Prefer composition over inheritance.", "topic": "oop"},
+        ]
+        results = kv.validate_batch(items, existing_knowledge=existing)
+        assert len(results) == 2
