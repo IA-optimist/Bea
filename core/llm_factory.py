@@ -148,6 +148,78 @@ class OllamaCircuitBreaker:
 # Singleton partagé entre toutes les instances de LLMFactory
 _OLLAMA_CIRCUIT = OllamaCircuitBreaker(threshold=3, window_s=60.0, recover_s=30.0)
 
+# ── Ollama host auto-discovery cache ──────────────────────────
+# Resolved once per process; None means not yet probed.
+_OLLAMA_RESOLVED_HOST: str | None = None
+_DOCKER_OLLAMA_HOST = "http://ollama:11434"
+_OLLAMA_LOCAL_CANDIDATES = ("http://127.0.0.1:11434", "http://localhost:11434")
+
+
+def _probe_ollama_host_tcp(host: str, timeout: float = 1.5) -> bool:
+    """Return True if the Ollama TCP port at *host* is reachable."""
+    import socket
+    try:
+        url = host.replace("http://", "").replace("https://", "")
+        parts = url.split(":")
+        hostname = parts[0]
+        port = int(parts[1]) if len(parts) > 1 else 11434
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((hostname, port))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
+
+
+def _resolve_ollama_host(configured_host: str) -> str:
+    """Return a reachable Ollama host, caching the result process-wide.
+
+    If the configured host is the Docker-compose default and unreachable,
+    try localhost alternatives (127.0.0.1, localhost). Falls back to the
+    configured host when nothing is reachable so the error surfaces at
+    invoke time rather than silently swallowing it.
+    """
+    global _OLLAMA_RESOLVED_HOST
+    if _OLLAMA_RESOLVED_HOST is not None:
+        return _OLLAMA_RESOLVED_HOST
+
+    candidates = [configured_host]
+    if configured_host == _DOCKER_OLLAMA_HOST:
+        for alt in _OLLAMA_LOCAL_CANDIDATES:
+            if alt not in candidates:
+                candidates.append(alt)
+
+    for host in candidates:
+        if _probe_ollama_host_tcp(host):
+            _OLLAMA_RESOLVED_HOST = host
+            if host != configured_host:
+                log.info(
+                    "ollama_host_autodiscovered",
+                    configured=configured_host,
+                    resolved=host,
+                    hint="Définir OLLAMA_HOST pour éviter cette détection au démarrage",
+                )
+            return host
+
+    # Nothing reachable — cache configured host and let invoke fail cleanly
+    _OLLAMA_RESOLVED_HOST = configured_host
+    log.warning(
+        "ollama_host_unreachable",
+        candidates=candidates,
+        hint=(
+            "Ollama n'est pas joignable. Démarrer avec: ollama serve "
+            "Ou configurer OLLAMA_HOST=http://127.0.0.1:11434 en mode local."
+        ),
+    )
+    return configured_host
+
+
+def reset_ollama_host_cache() -> None:
+    """Reset the host discovery cache (testing / hot-reload)."""
+    global _OLLAMA_RESOLVED_HOST
+    _OLLAMA_RESOLVED_HOST = None
+
 # ── Patterns de clés placeholder (invalides) ───────────────────
 _PLACEHOLDER_FRAGMENTS: frozenset[str] = frozenset({
     "change_me", "changeme", "your_key", "your-key",
@@ -288,10 +360,17 @@ class LLMFactory:
                 )
                 return llm
 
+        or_key_hint = (
+            "OPENROUTER_API_KEY configurée"
+            if _is_valid_key(getattr(self.s, "openrouter_api_key", ""))
+            else "OPENROUTER_API_KEY absente (exporter la var ou utiliser bea_api_service.cmd)"
+        )
         raise RuntimeError(
             f"Aucun LLM disponible pour le rôle '{role}'. "
             f"Providers tentés : {providers}. "
-            "Vérifier Ollama (ollama serve) ou configurer une clé API cloud."
+            f"{or_key_hint}. "
+            f"Ollama host : {getattr(self.s, 'ollama_host', 'non configuré')} — "
+            "vérifier avec: python scripts/provider_healthcheck.py"
         )
 
     def _build_chain(self, role: str, preferred: str) -> list[str]:
@@ -571,6 +650,8 @@ class LLMFactory:
             return None
 
         from langchain_ollama import ChatOllama
+        # Auto-discover a reachable Ollama host (cached after first probe)
+        resolved_host = _resolve_ollama_host(self.s.ollama_host)
         # Mapping rôle → modèle Ollama
         # Pour builder/improve en mode local : deepseek-coder-v2:16b recommandé,
         # mais on utilise ollama_model_code (configurable via OLLAMA_MODEL_CODE).
@@ -596,7 +677,7 @@ class LLMFactory:
         # "builder" EXCLU : forge-builder produit des blocs ### Fichier: (texte libre),
         # forcer format="json" casse l'extraction regex et empêche la création de fichiers.
         json_roles = frozenset({"reviewer", "improve"})
-        kwargs: dict = {"model": m, "base_url": self.s.ollama_host, "temperature": 0.1}
+        kwargs: dict = {"model": m, "base_url": resolved_host, "temperature": 0.1}
         if role in json_roles:
             kwargs["format"] = "json"
 

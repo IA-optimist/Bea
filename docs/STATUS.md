@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-20**, SHA `0b4c6f1`.
+> Honest per-component maturity rating. Last verified: **2026-06-21**, SHA pending PR #92.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
@@ -22,6 +22,7 @@ Packaging truth:
 | Renommage jarvis→bea | ✅ Done 2026-06-07, 823 files, commit `aaee8c6` |
 | Forge-builder | 🟢 Committed 2026-06-12, suite verte Windows |
 | Provider fallback chain | 🟢 FallbackChainProvider T5.2 — 12 tests |
+| Provider runtime health | 🟢 PR #92 — `check_provider_health()`, Ollama autodiscovery, `scripts/provider_healthcheck.py` |
 | Sandbox killswitch | 🟢 DockerSandbox timeout+kill() T5.3 — 11 tests |
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
