@@ -55,7 +55,8 @@ BACKEND_PATCHES  = "patches"
 BACKEND_FAILURE  = "failures"
 BACKEND_PGVECTOR = "pgvector"
 BACKEND_FTS      = "fts"  # opt-in (BEA_FTS_DB), hors BACKEND_ALL
-BACKEND_ALL      = (BACKEND_STORE, BACKEND_VECTOR)
+BACKEND_QDRANT_BEAMAX = "qdrant_beamax"
+BACKEND_ALL      = (BACKEND_STORE, BACKEND_VECTOR, BACKEND_QDRANT_BEAMAX)
 
 
 class MemoryBus:
@@ -80,6 +81,7 @@ class MemoryBus:
         self._patches  = None
         self._failures = None
         self._pgvector = None
+        self._qdrant_beamax = None
         self._agent_memory = None  # Phase 2
         self._knowledge    = None  # Phase 2
 
@@ -142,6 +144,18 @@ class MemoryBus:
 
     # ── Recall (unified retrieval) ────────────────────────────
 
+    @property
+    def qdrant_beamax(self):
+        """Canonical Qdrant recall over beamax_memory_384."""
+        if self._qdrant_beamax is None:
+            try:
+                from memory.qdrant_recall import QdrantMemoryRecall, config_from_settings
+
+                self._qdrant_beamax = QdrantMemoryRecall(config_from_settings(self.s))
+            except Exception as e:
+                log.warning("memory_bus_qdrant_beamax_init_failed", err=str(e)[:80])
+        return self._qdrant_beamax
+
     async def recall(
         self,
         query:     str,
@@ -165,22 +179,36 @@ class MemoryBus:
         # 1. Exact key in MemoryStore
         if self.store:
             try:
-                val = await self.store.retrieve(query)
-                if val:
-                    results.append({
-                        "id":       query,
-                        "text":     str(val),
-                        "score":    1.0,
-                        "metadata": {},
-                        "backend":  BACKEND_STORE,
-                    })
+                retrieve = getattr(self.store, "retrieve", None)
+                if callable(retrieve):
+                    val = await retrieve(query)
+                    if val:
+                        results.append({
+                            "id":       query,
+                            "text":     str(val),
+                            "score":    1.0,
+                            "metadata": {},
+                            "backend":  BACKEND_STORE,
+                        })
             except Exception as _exc:
                 log.warning("swallowed_exception", action="track_memory_failure", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
 
         if not semantic:
             return results[:top_k]
 
-        # 2. Local VectorMemory
+        # 2. Canonical Qdrant memory seeded for Bea self-knowledge
+        if self.qdrant_beamax:
+            try:
+                qdrant_hits = self.qdrant_beamax.search(
+                    query,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+                results.extend(qdrant_hits)
+            except Exception as e:
+                log.warning("recall_qdrant_beamax_failed", err=str(e)[:80])
+
+        # 3. Local VectorMemory
         if self.vector:
             try:
                 loop = asyncio.get_running_loop()
@@ -195,7 +223,7 @@ class MemoryBus:
             except Exception as e:
                 log.warning("recall_vector_failed", err=str(e)[:80])
 
-        # 3. pgvector augmentation
+        # 4. pgvector augmentation
         if self.pgvector and self.pgvector.is_available():
             try:
                 from memory.embeddings import EmbeddingProvider
@@ -408,6 +436,9 @@ class MemoryBus:
         if BACKEND_STORE in active and self.store:
             tasks.append((BACKEND_STORE, self._search_store(query, top_k)))
 
+        if BACKEND_QDRANT_BEAMAX in active and self.qdrant_beamax:
+            tasks.append((BACKEND_QDRANT_BEAMAX, self._search_qdrant_beamax(query, top_k)))
+
         # pgvector augmentation — always attempted when available, even if not in BACKEND_ALL.
         # Provides semantic PostgreSQL results alongside local vector results.
         if self.pgvector and self.pgvector.is_available():
@@ -480,6 +511,16 @@ class MemoryBus:
         except Exception as exc:
             log.debug("memory_bus_pgvector_search_skip", err=str(exc)[:80])
             return []
+
+    async def _search_qdrant_beamax(self, query: str, top_k: int) -> list[dict]:
+        """Semantic search over canonical beamax_memory_384."""
+        if not self.qdrant_beamax:
+            return []
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self.qdrant_beamax.search(query, top_k=top_k, min_score=0.2),
+        )
 
     async def _search_store(self, query: str, top_k: int) -> list[dict]:
         """Recherche MemoryStore."""
