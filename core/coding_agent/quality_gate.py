@@ -11,7 +11,7 @@ from typing import Any
 
 
 PYTHON_DIRS = ("api/", "agents/", "core/", "executor/", "memory/", "tools/")
-FRONTEND_DIRS = ("frontend/", "mobile/")
+FRONTEND_DIRS = ("frontend/",)
 FRONTEND_EXTENSIONS = {".css", ".html", ".js", ".jsx", ".mjs", ".ts", ".tsx"}
 DOCKER_FILES = {"docker-compose.yml", "docker-compose.override.yml", "Dockerfile", "Caddyfile"}
 SECURITY_FILES = {

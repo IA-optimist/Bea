@@ -29,7 +29,9 @@ This file tracks the MAJOR audit items M1 and M5 so refactors can happen increme
 
 ## Hyphenated Sub-Projects
 
-`orchestrate-cli/` and `orchestrate-mobile/` are standalone sub-projects, non-importable as Python packages. Keep them excluded from repo-wide Python lint/type assumptions unless they are migrated into normal package names. Any shared code must move through a properly named package before being imported by `api/`, `core/`, or `agents/`.
+`orchestrate-cli/` is a standalone sub-project (non-importable as a Python package). Keep it excluded from repo-wide Python lint/type assumptions unless migrated into a normal package name. Any shared code must move through a properly named package before being imported by `api/`, `core/`, or `agents/`.
+
+`mobile/` (React Native/Expo) and `orchestrate-mobile/` (Flutter sub-projects doublon) were deleted 2026-06-21 — the active Flutter app is `beamax_app/`.
 
 ## M1 Secondary Large Files (acknowledged, ratchet downward)
 
