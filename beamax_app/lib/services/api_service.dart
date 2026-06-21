@@ -547,9 +547,7 @@ class ApiService extends ChangeNotifier {
 
   Future<ApiResult<void>> pauseMission(String id) async {
     try {
-      // TODO(v3-migration): migrate to POST /api/v3/missions/$id/pause once the
-      // v3 endpoint ships (backend: api/routes/mission_control.py).
-      await _post('/api/v1/missions/$id/pause');
+      await _post('/api/v3/missions/$id/pause');
       return const ApiResult.success(null);
     } catch (e) {
       return ApiResult.failure(_friendly(e));
@@ -558,9 +556,7 @@ class ApiService extends ChangeNotifier {
 
   Future<ApiResult<void>> resumeMission(String id) async {
     try {
-      // TODO(v3-migration): migrate to POST /api/v3/missions/$id/resume once the
-      // v3 endpoint ships (backend: api/routes/mission_control.py).
-      await _post('/api/v1/missions/$id/resume');
+      await _post('/api/v3/missions/$id/resume');
       return const ApiResult.success(null);
     } catch (e) {
       return ApiResult.failure(_friendly(e));
@@ -745,9 +741,6 @@ class ApiService extends ChangeNotifier {
   /// Stream real-time SSE events for a mission.
   ///
   /// Currently uses the v1 endpoint (GET /api/v1/missions/{id}/stream).
-  /// TODO(v3-migration): switch to GET /api/v3/missions/{id}/stream once that
-  /// endpoint is added to api/routes/convergence.py. The server-side SSE
-  /// format is identical so this will be a one-line URL change.
   Stream<Map<String, dynamic>> streamMissionLogs(
     String missionId, {
     int maxRetries = 5,
@@ -759,7 +752,7 @@ class ApiService extends ChangeNotifier {
       try {
         final req = http.Request(
           'GET',
-          Uri.parse('$_base/api/v1/missions/$missionId/stream'),
+          Uri.parse('$_base/api/v3/missions/$missionId/stream'),
         );
         req.headers['Accept'] = 'text/event-stream';
         req.headers['Cache-Control'] = 'no-cache';

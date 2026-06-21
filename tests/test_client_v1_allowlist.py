@@ -37,10 +37,11 @@ _EXTENSIONS = {".dart", ".ts", ".tsx", ".js", ".html", ".py"}
 #
 # EVERY entry here must have a TODO(v3-migration) comment in the source and
 # a documented migration target in docs/FRONTEND_SURFACES.md.
-_V1_ALLOWLIST: list[tuple[str, str]] = [
-    # Flutter — pause/resume/stream: blocked on v3 endpoints not yet shipped
-    ("beamax_app/lib/services/api_service.dart", "/api/v1/missions/"),
-]
+#
+# Flutter migration complete (PR #90 + PR #91, 2026-06-21): all 3 Flutter v1
+# calls (pause/resume/stream) migrated to v3. Allowlist is now empty — any
+# new v1 call in a client surface will fail CI immediately.
+_V1_ALLOWLIST: list[tuple[str, str]] = []
 
 
 def _collect_v1_hits() -> list[tuple[str, int, str]]:
