@@ -39,11 +39,16 @@ Auto-merge is **forbidden** for any patch that touches:
 - `config/settings.py`
 - `.github/workflows/`
 - `deploy/`
+- `core/self_improvement/promotion_pipeline.py`
+- `core/self_improvement/protected_paths.py`
+- `core/self_improvement/patch_signature.py`
+- `core/self_improvement/git_agent.py`
+- `core/self_improvement/sandbox_executor.py`
 - `core/finance/` and `business/revenue/`
 - `kernel/improvement/gate.py`
 - `scripts/validate_local.py`
 
-These paths are enforced in `core/self_improvement/protected_paths.py`. A patch touching a protected path is downgraded to `propose` mode regardless of mode setting.
+These paths are enforced in `core/self_improvement/protected_paths.py`. A patch touching a protected path is rejected by the promotion guard or downgraded to human review, and must never be promoted automatically.
 
 ## Gate rules (invariants)
 
@@ -88,9 +93,11 @@ if all gates green and not protected → open auto-PR
 
 ## Signing requirement
 
-Every auto-applied patch carries a cryptographic signature. The promotion
-pipeline rejects unsigned patches or patches whose signature does not verify
-against the configured agent key.
+Every auto-applied patch carries a cryptographic signature. In merge, promotion,
+staging, or production modes, `BEA_PATCH_VERIFY_KEY` is mandatory. The promotion
+pipeline rejects unsigned patches, patches whose signature does not verify
+against the configured verify key, and patches for which the verify key is
+missing.
 
 ## Monitoring and audit
 

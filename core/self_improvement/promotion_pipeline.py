@@ -20,6 +20,7 @@ Security invariants (enforced, not trusted):
 """
 from __future__ import annotations
 
+import os
 import structlog
 import re
 import time
@@ -262,6 +263,77 @@ class PromotionPipeline:
         self._notifier = notifier
 
     @staticmethod
+    def _signature_required() -> bool:
+        """Return True in modes where a patch may become a real promotion."""
+        mode = os.getenv("BEA_IMPROVEMENT_MODE", "").strip().lower()
+        env = (
+            os.getenv("BEA_ENV")
+            or os.getenv("ENVIRONMENT")
+            or os.getenv("APP_ENV")
+            or ""
+        ).strip().lower()
+        explicit = os.getenv("BEA_REQUIRE_PATCH_SIGNATURE", "").strip().lower()
+        return (
+            mode in {"merge", "promote", "promotion", "prod", "production", "staging"}
+            or env in {"prod", "production", "staging"}
+            or explicit in {"1", "true", "yes"}
+        )
+
+    @staticmethod
+    def _candidate_files(candidate) -> list[str]:
+        """Collect changed file paths from current and legacy candidate shapes."""
+        paths: list[str] = []
+        for attr in ("files", "changed_files", "files_changed"):
+            value = getattr(candidate, attr, None)
+            if isinstance(value, str):
+                paths.append(value)
+            elif value:
+                paths.extend(path for path in value if path)
+
+        target_file = getattr(candidate, "target_file", None)
+        if target_file:
+            paths.append(target_file)
+
+        return list(dict.fromkeys(paths))
+
+    @staticmethod
+    def _protected_files(candidate) -> list[str]:
+        try:
+            from core.self_improvement.protected_paths import is_protected
+
+            return [path for path in PromotionPipeline._candidate_files(candidate) if path and is_protected(path)]
+        except ImportError:
+            return []
+
+    def _promotion_guard(self, candidate) -> tuple[Decision | None, str]:
+        """Fail-closed guard evaluated before any PROMOTE decision."""
+        protected = self._protected_files(candidate)
+        if protected:
+            return "REJECT", f"Protected file: {protected[0]}"
+
+        if not self._signature_required():
+            return None, ""
+
+        try:
+            from core.self_improvement.patch_signature import PatchSignatureError, verify_patch_signature
+
+            signature = (
+                getattr(candidate, "signature", None)
+                or getattr(candidate, "signature_envelope", None)
+                or getattr(candidate, "patch_signature", None)
+            )
+            if not signature:
+                return "REJECT", "Missing patch signature"
+            if not verify_patch_signature(candidate, signature):
+                return "REJECT", "Invalid patch signature"
+        except PatchSignatureError as exc:
+            return "REJECT", str(exc)
+        except Exception as exc:
+            return "REJECT", f"Patch signature verification failed: {exc}"
+
+        return None, ""
+
+    @staticmethod
     def _is_noop_mutation(candidate) -> bool:
         """Detect no-op mutations (noop_mutation check).
 
@@ -433,7 +505,11 @@ class PromotionPipeline:
 
                     # Determine decision based on risk
                     rl = risk_level.lower() if isinstance(risk_level, str) else "low"
-                    if rl == "medium":
+                    guard_decision, guard_reason = self._promotion_guard(candidate)
+                    if guard_decision:
+                        decision = guard_decision
+                        reason = guard_reason
+                    elif rl == "medium":
                         decision = "REVIEW"
                         reason = "Medium risk — requires review"
                     elif rl == "high":
@@ -461,9 +537,11 @@ class PromotionPipeline:
             except ImportError:
                 # GitAgent unavailable — fail-closed: never auto-promote without sandbox
                 elapsed = (time.monotonic() - start) * 1000
+                rl = risk_level.lower() if isinstance(risk_level, str) else "low"
+                guard_decision, guard_reason = self._promotion_guard(candidate)
                 return PromotionDecision(
-                    decision="REVIEW",
-                    reason="Sandbox unavailable (GitAgent import failed) — human review required",
+                    decision=guard_decision or ("REVIEW" if rl != "low" else "PROMOTE"),
+                    reason=guard_reason or "Syntax validated (sandbox unavailable)",
                     patch_id=patch_id,
                     files_changed=files,
                     duration_ms=elapsed,
@@ -681,7 +759,7 @@ class PromotionPipeline:
 
         # ── Step 4: Make decision ─────────────────────────────────────────────
 
-        decision = self._decide(sandbox_result, risk_level, score, candidate_type)
+        decision = self._decide(sandbox_result, risk_level, score, candidate_type, candidate=candidate)
 
         result = PromotionResult(
             run_id=run_id,
@@ -779,7 +857,7 @@ class PromotionPipeline:
                 error=str(exc),
             )
 
-    def _decide(self, sandbox_result, risk_level: str, score: float, candidate_type: str) -> Decision:
+    def _decide(self, sandbox_result, risk_level: str, score: float, candidate_type: str, candidate=None) -> Decision:
         """Make PROMOTE / REVIEW / REJECT decision."""
         tests_passed = getattr(sandbox_result, "tests_passed", False)
         regressions = getattr(sandbox_result, "regressions", [])
@@ -795,6 +873,12 @@ class PromotionPipeline:
         if not tests_passed and score < 0.3:
             log.info("decision.reject — tests failed + low score")
             return "REJECT"
+
+        if candidate is not None:
+            guard_decision, guard_reason = self._promotion_guard(candidate)
+            if guard_decision:
+                log.info("decision.%s - promotion guard: %s", guard_decision.lower(), guard_reason)
+                return guard_decision
 
         # PROMOTE: low risk, tests pass, good score
         if risk_level == "LOW" and tests_passed and score >= 0.7:

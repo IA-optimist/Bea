@@ -49,6 +49,8 @@ class SignatureError(Exception):
 
 # Backward-compat alias used by existing code
 PatchSignatureError = SignatureError
+DEFAULT_SIGNATURE_ENV = "BEA_PATCH_SIGNING_KEY"
+VERIFY_SIGNATURE_ENV = "BEA_PATCH_VERIFY_KEY"
 
 
 # ── Key generation ────────────────────────────────────────────────────────────
@@ -246,3 +248,27 @@ def verify_patch_signature(
         raise SignatureError(f"Signature verification failed: {exc}") from exc
 
     return True
+
+
+# ── Env-based key helpers (Codex hardening) ───────────────────────────────────
+
+def _seed(value: str | None = None) -> bytes:
+    key = (value or os.getenv(DEFAULT_SIGNATURE_ENV, "")).strip()
+    if not key:
+        raise PatchSignatureError(f"missing signing key: set {DEFAULT_SIGNATURE_ENV}")
+    return hashlib.sha256(key.encode("utf-8")).digest()
+
+
+def _verify_seed(value: str | None = None) -> bytes:
+    key = (value or os.getenv(VERIFY_SIGNATURE_ENV, "")).strip()
+    if not key:
+        raise PatchSignatureError(f"missing verify key: set {VERIFY_SIGNATURE_ENV}")
+    return hashlib.sha256(key.encode("utf-8")).digest()
+
+
+def _private_key_from_env(value: str | None = None) -> Ed25519PrivateKey:
+    return Ed25519PrivateKey.from_private_bytes(_seed(value))
+
+
+def _public_key_from_env(value: str | None = None) -> Ed25519PublicKey:
+    return Ed25519PrivateKey.from_private_bytes(_verify_seed(value)).public_key()
