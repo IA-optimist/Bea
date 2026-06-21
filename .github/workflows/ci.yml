@@ -1,10 +1,7 @@
 name: CI/CD Pipeline
 
-# Auto-triggers disabled 2026-05-30 to stop GitHub Actions billing. The
-# project is validated locally before every push; this workflow stays
-# defined so it can be run manually from the GitHub Actions UI when
-# needed (e.g. before tagging a release). To re-enable auto-triggers,
-# uncomment the `push` / `pull_request` blocks below.
+# Active on main/develop pushes, main pull requests, and manual dispatch.
+# Local validation is mirrored by scripts/validate_local.py.
 on:
   workflow_dispatch:
   push:
@@ -86,6 +83,13 @@ jobs:
           set -euo pipefail
           pip install ruff==0.15.8
           ruff check .
+
+      - name: Run quality ratchets
+        run: |
+          set -euo pipefail
+          python scripts/check_coverage_threshold.py
+          python scripts/check_silent_except_baseline.py
+          python scripts/check_test_marker_baseline.py
 
       - name: Enforce kernel import boundaries
         run: python scripts/check_kernel_import_boundaries.py
