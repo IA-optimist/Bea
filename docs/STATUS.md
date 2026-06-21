@@ -242,6 +242,8 @@ The residual security debt is now concentrated in the broader exception-swallows
 - `ruff check .` is **blocking**
 - `mypy` runs as a **delta gate** via `scripts/check_mypy_baseline.py`
 - Coverage gate is **blocking** with `--cov-fail-under=60`
+- `except/pass`, test marker, Bandit, and pip-audit debt are protected by ratchet baselines
+- Wheel build is checked in CI and in full local validation when `build` is installed
 - `pytest` blocks merge
 - `scripts/validate_local.py` mirrors the key gates locally
 

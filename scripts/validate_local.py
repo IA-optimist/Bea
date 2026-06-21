@@ -7,6 +7,7 @@ agent-facing gate uses this wrapper so the command is portable.
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import os
 import subprocess
@@ -39,38 +40,87 @@ def _has_module(module: str) -> bool:
     return importlib.util.find_spec(module) is not None
 
 
-def main() -> int:
+def _record(results: list[tuple[str, str]], failures: list[str], name: str, rc: int, *, blocking: bool = True) -> None:
+    status = "PASS" if rc == 0 else "FAIL"
+    results.append((name, status))
+    if blocking and rc != 0:
+        failures.append(name)
+
+
+def _record_skip(results: list[tuple[str, str]], skips: list[str], name: str, reason: str) -> None:
+    _skip(name, reason)
+    results.append((name, "SKIP"))
+    skips.append(name)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--quick", action="store_true", help="Run lint, critical tests, and static ratchets.")
+    mode.add_argument("--full", action="store_true", help="Run the full local validation lane.")
+    args = parser.parse_args(argv)
+    quick = args.quick
+
     failures: list[str] = []
     skips: list[str] = []
+    results: list[tuple[str, str]] = []
 
-    if _run("ruff", [sys.executable, "-m", "ruff", "check", "."]) != 0:
-        failures.append("ruff")
+    _record(results, failures, "ruff", _run("ruff", [sys.executable, "-m", "ruff", "check", "."]))
 
-    if _run(
-        "kernel-import-boundaries",
-        [sys.executable, "scripts/check_kernel_import_boundaries.py"],
-    ) != 0:
-        failures.append("kernel-import-boundaries")
+    _record(
+        results,
+        failures,
+        "kernel boundaries",
+        _run(
+            "kernel-import-boundaries",
+            [sys.executable, "scripts/check_kernel_import_boundaries.py"],
+        ),
+    )
+
+    _record(
+        results,
+        failures,
+        "coverage threshold",
+        _run("coverage-threshold", [sys.executable, "scripts/check_coverage_threshold.py"]),
+    )
+
+    _record(
+        results,
+        failures,
+        "except/pass ratchet",
+        _run("except-pass-ratchet", [sys.executable, "scripts/check_silent_except_baseline.py"]),
+    )
+
+    _record(
+        results,
+        failures,
+        "test marker ratchet",
+        _run("test-marker-ratchet", [sys.executable, "scripts/check_test_marker_baseline.py"]),
+    )
 
     security_type_files = [
         "api/auth.py",
         "api/routes/auth.py",
         "kernel/convergence/event_bridge.py",
     ]
-    if _run(
-        "security-strict-mypy",
-        [
-            sys.executable,
-            "-m",
-            "mypy",
-            *security_type_files,
-            "--strict",
-            "--follow-imports=skip",
-            "--ignore-missing-imports",
-            "--show-error-codes",
-        ],
-    ) != 0:
-        failures.append("security-strict-mypy")
+    _record(
+        results,
+        failures,
+        "security strict mypy",
+        _run(
+            "security-strict-mypy",
+            [
+                sys.executable,
+                "-m",
+                "mypy",
+                *security_type_files,
+                "--strict",
+                "--follow-imports=skip",
+                "--ignore-missing-imports",
+                "--show-error-codes",
+            ],
+        ),
+    )
 
     hardening_tests = [
         "tests/test_jwt_v2.py",
@@ -89,14 +139,26 @@ def main() -> int:
         "tests/self_improvement/test_patch_signing.py",
         "tests/test_major_quality_gates.py",
         "tests/test_minor_quality_gates.py",
+        "tests/quality/test_quality_gate_scripts.py",
     ]
-    if _run("pytest-hardening", [sys.executable, "-m", "pytest", "-m", "not quarantine", *hardening_tests, "--no-header", "-q"]) != 0:
-        failures.append("pytest-hardening")
-
-    _run(
-        "pytest-quarantine",
-        [sys.executable, "-m", "pytest", "-m", "quarantine", "--no-header", "-q"],
+    _record(
+        results,
+        failures,
+        "pytest critical",
+        _run("pytest-hardening", [sys.executable, "-m", "pytest", "-m", "not quarantine", *hardening_tests, "--no-header", "-q"]),
     )
+
+    if not quick:
+        _record(
+            results,
+            failures,
+            "pytest quarantine",
+            _run(
+                "pytest-quarantine",
+                [sys.executable, "-m", "pytest", "-m", "quarantine", "--no-header", "-q"],
+            ),
+            blocking=False,
+        )
 
     if _has_module("mypy"):
         report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "mypy-report.txt"
@@ -109,14 +171,18 @@ def main() -> int:
                 stderr=subprocess.STDOUT,
             )
         if proc.returncode not in (0, 1):
-            failures.append("mypy")
-        elif _run("mypy-delta-gate", [sys.executable, "scripts/check_mypy_baseline.py", str(report), "quality/mypy-baseline.json"]) != 0:
-            failures.append("mypy-delta-gate")
+            _record(results, failures, "mypy ratchet", proc.returncode)
+        else:
+            _record(
+                results,
+                failures,
+                "mypy ratchet",
+                _run("mypy-delta-gate", [sys.executable, "scripts/check_mypy_baseline.py", str(report), "quality/mypy-baseline.json"]),
+            )
     else:
-        _skip("mypy", "not installed")
-        skips.append("mypy")
+        _record_skip(results, skips, "mypy ratchet", "not installed")
 
-    if _has_module("bandit"):
+    if not quick and _has_module("bandit"):
         report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "bandit-report.json"
         report.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
@@ -124,13 +190,16 @@ def main() -> int:
             cwd=str(PROJECT_ROOT),
             check=False,
         )
-        if _run("bandit-delta-gate", [sys.executable, "scripts/check_bandit_baseline.py", str(report), "quality/bandit-baseline.json"]) != 0:
-            failures.append("bandit-delta-gate")
-    else:
-        _skip("bandit", "not installed")
-        skips.append("bandit")
+        _record(
+            results,
+            failures,
+            "bandit ratchet",
+            _run("bandit-delta-gate", [sys.executable, "scripts/check_bandit_baseline.py", str(report), "quality/bandit-baseline.json"]),
+        )
+    elif not quick:
+        _record_skip(results, skips, "bandit ratchet", "not installed")
 
-    if _has_module("pip_audit"):
+    if not quick and _has_module("pip_audit"):
         report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "audit.json"
         report.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
@@ -138,32 +207,27 @@ def main() -> int:
             cwd=str(PROJECT_ROOT),
             check=False,
         )
-        if _run("pip-audit-delta-gate", [sys.executable, "scripts/check_pip_audit_baseline.py", str(report), "quality/pip-audit-baseline.json"]) != 0:
-            failures.append("pip-audit-delta-gate")
-    else:
-        _skip("pip-audit", "not installed")
-        skips.append("pip-audit")
-
-    if _run("silent-swallow-baseline", [sys.executable, "scripts/generate_silent_swallow_baseline.py"]) == 0:
-        diff = subprocess.run(
-            ["git", "diff", "--quiet", "quality/legacy_silent_swallows.json"],
-            cwd=str(PROJECT_ROOT),
-            check=False,
+        _record(
+            results,
+            failures,
+            "pip-audit ratchet",
+            _run("pip-audit-delta-gate", [sys.executable, "scripts/check_pip_audit_baseline.py", str(report), "quality/pip-audit-baseline.json"]),
         )
-        if diff.returncode != 0:
-            print("[WARN] silent-swallow baseline drifted - review and commit quality/legacy_silent_swallows.json")
-    else:
-        failures.append("silent-swallow-baseline")
+    elif not quick:
+        _record_skip(results, skips, "pip-audit ratchet", "not installed")
+
+    if not quick and _has_module("build"):
+        _record(results, failures, "build wheel", _run("build wheel", [sys.executable, "-m", "build", "--wheel"]))
+    elif not quick:
+        _record_skip(results, skips, "build wheel", "build module not installed")
 
     print()
     print("=" * 60)
     print("VALIDATION SUMMARY")
     print("=" * 60)
 
-    if skips:
-        print("Skipped:")
-        for name in skips:
-            print(f"  - {name}")
+    for name, status in results:
+        print(f"{name}: {status}")
 
     if failures:
         print()
