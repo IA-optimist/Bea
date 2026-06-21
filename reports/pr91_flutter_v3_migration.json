@@ -1,0 +1,25 @@
+{
+  "mission_id": "pr-91-flutter-v3-migration",
+  "title": "Claude: migration Flutter v1→v3 (3 URLs) + vidange allowlist",
+  "status": "COMPLETED",
+  "task_type": "api_migration",
+  "success": true,
+  "model_used": "claude-sonnet-4-6",
+  "model_class": "claude_code",
+  "files_changed": [
+    "beamax_app/lib/services/api_service.dart",
+    "tests/test_client_v1_allowlist.py",
+    "docs/FRONTEND_SURFACES.md"
+  ],
+  "tests_run": [
+    "tests/test_client_v1_allowlist.py",
+    "tests/test_v3_mission_control.py"
+  ],
+  "duration_ms": 0,
+  "lessons_learned": "Le format SSE v3 est identique à v1 — zéro changement de parsing côté Flutter. L'allowlist v1 dans test_client_v1_allowlist.py est maintenant vide : tout appel v1 dans n'importe quelle surface client bloquera CI immédiatement. L'APK Flutter doit être rebuildé depuis C:\\bea_app (chemin sans accent) avec les --dart-define appropriés avant que les endpoints v1 puissent être supprimés de mission_control.py. test_allowlisted_calls_still_exist() est un test gardien utile : il détecte les entrées allowlist devenues obsolètes après migration.",
+  "risks_detected": [
+    "APK non encore distribué — les endpoints v1 doivent rester actifs jusqu'à distribution",
+    "Le rebuild Flutter nécessite un chemin ASCII sans accent (copie dans C:\\bea_app)",
+    "Gotcha pubspec: shared_preferences >=2.5.4 exige Dart ^3.9, borner <2.5.0"
+  ]
+}

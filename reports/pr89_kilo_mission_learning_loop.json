@@ -1,0 +1,39 @@
+{
+  "mission_id": "pr-89-kilo-mission-learning-loop",
+  "title": "Kilo: mission-learning-loop — eval harness, memory & ingestion infra",
+  "status": "COMPLETED",
+  "task_type": "infrastructure",
+  "success": true,
+  "model_used": "kilo-kimi",
+  "model_class": "coding_agent",
+  "files_changed": [
+    "core/evals/bea_eval.py",
+    "core/evals/models.py",
+    "core/evals/report.py",
+    "core/evaluation/ingestion.py",
+    "core/evaluation/mission_learning.py",
+    "core/evaluation/mission_report_parser.py",
+    "core/evaluation/model_router.py",
+    "core/memory/memory_item.py",
+    "core/memory/mission_context.py",
+    "core/memory/mission_result.py",
+    "core/memory/operational_memory.py",
+    "core/repo_map/repo_map_service.py",
+    "scripts/bea_eval.py",
+    "scripts/ingest_mission_report.py",
+    "scripts/seed_bea_memory.py",
+    "docs/architecture/MAJOR_DEBT_MAP.md"
+  ],
+  "tests_run": [
+    "tests/core/evals/",
+    "tests/core/evaluation/",
+    "tests/core/memory/",
+    "tests/core/repo_map/"
+  ],
+  "duration_ms": 0,
+  "lessons_learned": "bea_eval.py (845 lignes) est monolithique par design pour usage standalone — acceptable. OperationalMemoryStore = couche de normalisation, pas un remplacement de memory.schemas.MemoryEntry. Le parser MissionReportParser supporte JSON et Markdown avec dégradation gracieuse (tous les champs ont des valeurs par défaut sûres). L'architecture en micro-modules (memory_item, mission_context, mission_result) rend le système extensible. La gate architecture_size (800 lignes) nécessite une entrée dans MAJOR_DEBT_MAP.md pour tout nouveau fichier dépassant le seuil.",
+  "risks_detected": [
+    "bea_eval.py dépasse le seuil de 800 lignes (845) — ajouté à MAJOR_DEBT_MAP.md",
+    "La séquence d'ingestion requiert que OperationalMemoryStore soit accessible (Qdrant ou fallback local)"
+  ]
+}

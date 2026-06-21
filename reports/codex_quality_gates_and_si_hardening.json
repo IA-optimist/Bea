@@ -1,0 +1,37 @@
+{
+  "mission_id": "codex-cherry-picks-quality-gates-si-hardening",
+  "title": "Codex: quality ratchets + self-improvement hardening (cherry-picks 5bd57fb + ddaf4db)",
+  "status": "COMPLETED",
+  "task_type": "security_hardening",
+  "success": true,
+  "model_used": "gpt-5.5-codex",
+  "model_class": "coding_agent",
+  "files_changed": [
+    "core/self_improvement/patch_signature.py",
+    "core/self_improvement/promotion_pipeline.py",
+    "tests/self_improvement/test_patch_signing.py",
+    "tests/self_improvement/test_pr_only_policy.py",
+    "scripts/check_coverage_threshold.py",
+    "scripts/check_silent_except_baseline.py",
+    "scripts/check_test_marker_baseline.py",
+    "quality/coverage-baseline.json",
+    "quality/silent-except-baseline.json",
+    "quality/test-marker-baseline.json",
+    "docs/QUALITY_GATES.md",
+    ".github/workflows/ci.yml",
+    "scripts/validate_local.py",
+    "tests/quality/test_quality_gate_scripts.py"
+  ],
+  "tests_run": [
+    "tests/self_improvement/test_patch_signing.py",
+    "tests/self_improvement/test_pr_only_policy.py",
+    "tests/quality/test_quality_gate_scripts.py"
+  ],
+  "duration_ms": 0,
+  "lessons_learned": "La stratégie rebase directe sur des branches Codex divergées de 26 commits (sprint3/4) produit 30+ conflits en cascade — cherry-pick des 2 commits uniques est la bonne approche. Les tests de signature de patch Codex utilisaient des clés string brutes incompatibles avec l'API Ed25519 base64 PEM de main — conserver les tests main, supprimer les tests Codex. La CI dupliquait le step kernel-import-boundaries (2 fois) depuis les cherry-picks — normal, les deux stanzas préservent leur logique respective. Les ratchets qualité (coverage/except/test-marker) sont des gates delta (baseline JSON) : ils bloquent uniquement si la métrique AUGMENTE, jamais si elle baisse.",
+  "risks_detected": [
+    "merge direct branches Codex divergées → conflits massifs, utiliser cherry-pick à la place",
+    "mobile/ et orchestrate-mobile/ n'existent pas sur main — les delete/modify conflicts Dependabot doivent être git rm",
+    "promotion_pipeline._promotion_guard() doit être conservé depuis Codex — c'est le mécanisme de gate kernel"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "mission_id": "pr-90-v3-mission-control-endpoints",
+  "title": "Claude: ajout endpoints v3 pause/resume/stream + memory fun_fact",
+  "status": "COMPLETED",
+  "task_type": "api_migration",
+  "success": true,
+  "model_used": "claude-sonnet-4-6",
+  "model_class": "claude_code",
+  "files_changed": [
+    "api/routes/convergence.py",
+    "tests/test_v3_mission_control.py",
+    "docs/API_VERSIONING.md",
+    "docs/FRONTEND_SURFACES.md",
+    "scripts/seed_bea_memory.py"
+  ],
+  "tests_run": [
+    "tests/test_v3_mission_control.py",
+    "tests/test_convergence.py"
+  ],
+  "duration_ms": 0,
+  "lessons_learned": "POST /api/v3/missions/{id}/pause et /resume sont acknowledgement-only (pas de changement d'état réel dans le backend — miroir exact de v1). GET /api/v3/missions/{id}/stream délègue à _sse_generator de mission_control.py — garantit le format SSE identique pour la migration Flutter sans duplication de logique. L'import d'une fonction privée (_sse_generator) entre modules est acceptable quand la fonction est volontairement réutilisée et documentée. asyncio/json/AsyncGenerator importés mais non utilisés dans convergence.py → ruff F401, retirer avant commit. La validation live (401 vs 404) permet de confirmer qu'une route est enregistrée même sans token valide : 401 = route existe + auth fonctionne.",
+  "risks_detected": [
+    "v1 endpoints doivent rester jusqu'à distribution d'un APK Flutter migré vers v3",
+    "La pause/resume est acknowledgement-only — l'implémentation d'une vraie pause sémantique backend est un travail futur"
+  ]
+}
