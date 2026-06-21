@@ -29,6 +29,8 @@ Béa mémorise ce qui aide à agir :
 | `risk` | Risque opérationnel ou sécurité | GitAgent indisponible = jamais PROMOTE. |
 | `model_result` | Performance d’un modèle sur une tâche | tel modèle réussit mieux les tâches de refactor léger. |
 | `eval_result` | Résultat d’une évaluation `bea eval` | `bea eval code-simple` score 0.82. |
+| `fun_fact` | Fait léger / anecdote personnelle, non utilisable pour décider | Max aime que Béa retienne qu'il est l'amour de la vie de sa petite amie. |
+| `project_fact` | Fait vérifié sur le projet ou l’équipe, pas sur le code seul | Béa a été créée et entraînée par Max. |
 
 ## Schéma `MemoryItem`
 
@@ -50,6 +52,7 @@ class MemoryItem:
     supersedes: list[str]   # ids des entrées remplacées
     superseded_by: str | None
     tags: list[str]
+    metadata: dict  # peut contenir importance, privacy, not_for_decision, occurrence_count
 ```
 
 ### Statuts possibles
@@ -68,6 +71,7 @@ class MemoryItem:
 - `related_files` et `related_tests` stockent des chemins relatifs au repo.
 - `tags` permettent le filtrage rapide (`api`, `v1`, `fastapi`, `deprecated`, etc.).
 - Une entrée peut être liée à une mission via `source` (`mission:{id}`) ou via `metadata["mission_id"]`.
+- `metadata` accepte `importance` (`low`/`medium`/`high`), `privacy` (`personal`), `not_for_decision` (`true`) et `occurrence_count`.
 
 ## Stockage
 

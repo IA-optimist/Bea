@@ -339,9 +339,13 @@ class OperationalMemoryStore:
         "confidence": 0.6,
         "trusted_source": 0.2,
         "recency": 0.3,
-        "obsolete": -1.0,
-        "replaced": -1.0,
-        "unverified": -0.3,
+        "type_relevance": 0.3,
+        "obsolete": -2.0,
+        "replaced": -2.0,
+        "unverified": -0.5,
+        "low_importance": -0.7,
+        "no_source": -0.4,
+        "private_joke": -1.5,
         "old": -0.2,
     }
 
@@ -350,14 +354,21 @@ class OperationalMemoryStore:
         "test", "ci", "repo_map", "bea_eval",
     })
 
+    LIGHT_CONTEXT_KEYWORDS: frozenset[str] = frozenset({
+        "fun", "joke", "joke", "humour", "humor", "private", "personal",
+        "anecdote", "trivia", "light", "max", "béa", "romance",
+    })
+
     def _score_item(
         self,
         item: MemoryItem,
         query_tokens: set[str],
         related_files: list[str],
+        related_tests: list[str],
         tags: list[str],
         weights: dict[str, float] | None,
         now: float,
+        context_type: str = "",
     ) -> float:
         """Compute a simple relevance score for a memory item."""
         w = weights or self.DEFAULT_WEIGHTS
@@ -384,6 +395,10 @@ class OperationalMemoryStore:
             matches = sum(1 for rf in related_files if rf in item.related_files)
             if matches:
                 score += min(1.0, matches / len(related_files)) * w["related_file_match"]
+        if related_tests:
+            test_matches = sum(1 for rt in related_tests if rt in item.related_tests)
+            if test_matches:
+                score += min(1.0, test_matches / len(related_tests)) * w["related_test_match"]
         if tags:
             tag_matches = sum(1 for t in tags if t in item.tags)
             if tag_matches:
@@ -396,8 +411,10 @@ class OperationalMemoryStore:
             score += min(1.0, overlap / max(len(query_tokens), 1)) * w.get("text_match", 0.3)
 
         # Trusted source
-        if any(s in item.source.lower() for s in self.TRUSTED_SOURCES):
+        if item.source and any(s in item.source.lower() for s in self.TRUSTED_SOURCES):
             score += w["trusted_source"]
+        elif not item.source:
+            score += w["no_source"]
 
         # Recency (30 days half-life)
         age_days = max(0.0, (now - item.updated_at) / 86400)
@@ -406,7 +423,29 @@ class OperationalMemoryStore:
         if age_days > 365:
             score += w["old"]
 
+        # Low importance penalty (unless explicitly light context)
+        if item.metadata.get("importance") == "low":
+            if not self._is_light_context(query_tokens, context_type=context_type):
+                score += w["low_importance"]
+
+        # Private joke / fun fact suppression for serious missions
+        is_private = item.is_not_for_decision
+        is_light = self._is_light_context(query_tokens, context_type=context_type)
+        if is_private and not is_light:
+            score += w["private_joke"]
+        elif is_private and is_light:
+            # Keep slightly negative so they are not artificially promoted
+            score += w.get("private_joke_light", -0.1)
+
         return round(score, 3)
+
+    @classmethod
+    def _is_light_context(cls, query_tokens: set[str], *, context_type: str = "") -> bool:
+        """Detect light/humorous/personal missions that may surface fun facts."""
+        all_tokens = set(query_tokens)
+        if context_type:
+            all_tokens.update(context_type.lower().split())
+        return any(t in cls.LIGHT_CONTEXT_KEYWORDS for t in all_tokens)
 
     def ranked_search(
         self,
@@ -418,6 +457,7 @@ class OperationalMemoryStore:
         related_tests: list[str] | None = None,
         min_confidence: float = 0.0,
         include_obsolete: bool = False,
+        include_private_joke: bool = False,
         weights: dict[str, float] | None = None,
         limit: int = 20,
         pool_multiplier: int = 4,
@@ -427,6 +467,8 @@ class OperationalMemoryStore:
 
         Always favors active, high-confidence, recently updated memories with
         matching files/tags. Obsolete/replaced/unverified are deprioritized.
+        Private jokes and fun facts are only surfaced for light/humorous/personal
+        contexts unless include_private_joke=True.
         """
         tags = tags or []
         related_files = related_files or []
@@ -478,10 +520,14 @@ class OperationalMemoryStore:
                 pool.append(item)
 
         scored: list[tuple[float, MemoryItem]] = []
+        context_type = str(type.value if isinstance(type, MemoryItemType) else type)
         for item in pool:
             if not include_obsolete and item.status in (MemoryItemStatus.OBSOLETE, MemoryItemStatus.REPLACED):
                 continue
-            s = self._score_item(item, query_tokens, related_files, tags, weights, now)
+            s = self._score_item(item, query_tokens, related_files, related_tests, tags, weights, now, context_type=context_type)
+            # Hard filter: private jokes and fun facts dropped for serious contexts
+            if not include_private_joke and item.is_not_for_decision and not self._is_light_context(query_tokens, context_type=context_type):
+                continue
             scored.append((s, item))
 
         scored.sort(key=lambda x: x[0], reverse=True)
