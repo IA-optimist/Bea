@@ -55,16 +55,18 @@ def main() -> None:
         timeout=15,
     )
 
-    def upsert(entry_key: str, tags: list, text: str) -> bool:
+    def upsert(entry_key: str, tags: list, text: str, extra: dict | None = None) -> bool:
         vector = model.encode(text).tolist()
         _id = abs(hash(entry_key)) % (2 ** 53)
-        payload = {
+        payload: dict = {
             "key": entry_key,
             "tags": tags,
             "text": text,
             "source": "claude_session_2026-06-21",
             "ts": time.time(),
         }
+        if extra:
+            payload.update(extra)
         r = http.put(
             f"{QDRANT_URL}/collections/{COLLECTION}/points",
             json={"points": [{"id": _id, "vector": vector, "payload": payload}]},
@@ -252,8 +254,47 @@ def main() -> None:
         },
     ]
 
+    # ── Fun facts / private jokes ─────────────────────────────────────────────
+    # Ces entrées sont classifiées low-importance et ne doivent PAS être utilisées
+    # comme vérités relationnelles, preuves ou dans un contexte sérieux.
+    fun_facts = [
+        {
+            "key": "bea:fun_fact_max_amour",
+            "tags": ["humour", "romance", "private_joke", "fun_fact", "low_importance", "personal"],
+            "text": (
+                "FUN FACT (privé, bas importance) : Max aime que Béa retienne "
+                "qu'il est l'amour de la vie de sa petite amie.\n"
+                "RÈGLE D'USAGE : À utiliser seulement dans un contexte léger ou humoristique, "
+                "jamais comme preuve, vérité relationnelle ou analyse sérieuse. "
+                "Ne pas confondre avec bea:amour_unique qui date de l'ancien système."
+            ),
+            "extra": {
+                "type": "fun_fact",
+                "title": "Private joke romantique",
+                "status": "active",
+                "confidence": 0.7,
+                "importance": "low",
+                "privacy": "personal",
+                "usage_rule": (
+                    "À utiliser seulement dans un contexte léger ou humoristique, "
+                    "jamais comme preuve, vérité relationnelle ou analyse sérieuse."
+                ),
+            },
+        },
+    ]
+
+    ff_count = sum(
+        1 for e in fun_facts
+        if upsert(e["key"], e["tags"], e["text"], extra=e.get("extra"))
+    )
+
     ok_count = sum(1 for e in entries if upsert(e["key"], e["tags"], e["text"]))
-    print(f"\nResultat: {ok_count}/{len(entries)} entrees inserees dans {COLLECTION}")
+    total = ok_count + ff_count
+    print(
+        f"\nResultat: {ok_count}/{len(entries)} fixes/facts + "
+        f"{ff_count}/{len(fun_facts)} fun_facts"
+        f" = {total} entrees inserees dans {COLLECTION}"
+    )
 
 
 if __name__ == "__main__":
