@@ -11,7 +11,7 @@
 |---------|------|--------|---------------------|----------|
 | `static/app.html` | `static/app.html` | **CANONICAL** | v3 (some v2) | none |
 | `static/cockpit.html` | `static/cockpit.html` | **CANONICAL** | v2/v3 | none |
-| Flutter mobile | `beamax_app/` | **SUPPORTED** | v3 (3 v1 pending) | 3 — see below |
+| Flutter mobile | `beamax_app/` | **SUPPORTED** | v3 ✅ (migration done PR #91) | 0 — APK rebuild pending |
 | React frontend | `frontend/` | **EXPERIMENTAL** | v2/v3 | none |
 | `orchestrate-cli/` | `orchestrate-cli/` | **SUPPORTED** | Python CLI (no HTTP) | N/A |
 | `mobile/` | — | **ABSENT** | — | — |
@@ -62,16 +62,19 @@ Flutter app targeting Android. Current APK at `C:\Users\Desktop\Bea_app.apk`, re
 - **Build**: `flutter build apk --release --no-tree-shake-icons` (from `C:\bea_app` — accent-free path)
 - **Modification rule**: Changes to API calls require rebuilding and redistributing the APK.
 
-#### Active v1 calls (allowlisted, do not add more)
+#### Active v1 calls — NONE ✅ (migration complete, PR #91, 2026-06-21)
 
-| Method | Path | Source file:line | v3 target | Status |
-|--------|------|------------------|-----------|--------|
-| `POST` | `/api/v1/missions/{id}/pause` | `api_service.dart:550` | `/api/v3/missions/{id}/pause` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
-| `POST` | `/api/v1/missions/{id}/resume` | `api_service.dart:559` | `/api/v3/missions/{id}/resume` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
-| `GET` | `/api/v1/missions/{id}/stream` | `api_service.dart:753` | `/api/v3/missions/{id}/stream` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
+All three former v1 calls have been migrated to v3 in `api_service.dart`.
+The v1 allowlist in `tests/test_client_v1_allowlist.py` is now empty.
+APK rebuild required to ship the migration to the device.
 
-**These three calls are the only authorized v1 calls across all client surfaces.**
-Each has a `TODO(v3-migration)` comment in the source pointing to this document.
+| Method | Path | Old v1 URL | Migrated to v3 |
+|--------|------|------------|----------------|
+| `POST` | pause | `/api/v1/missions/{id}/pause` | ✅ `/api/v3/missions/{id}/pause` |
+| `POST` | resume | `/api/v1/missions/{id}/resume` | ✅ `/api/v3/missions/{id}/resume` |
+| `GET` | stream | `/api/v1/missions/{id}/stream` | ✅ `/api/v3/missions/{id}/stream` |
+
+**Next step**: rebuild APK (`flutter build apk --release --no-tree-shake-icons` from `C:\bea_app`) and distribute. Once the APK ships, the v1 endpoints in `mission_control.py` can be removed.
 
 ### `frontend/` — EXPERIMENTAL (React business dashboard)
 
