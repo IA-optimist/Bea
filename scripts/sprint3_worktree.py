@@ -103,9 +103,14 @@ def _main(argv: Iterable[str] | None = None) -> int:
     create.add_argument("task_id")
     create.add_argument("--base", default=BASE_BRANCH)
 
-    sub.add_parser("run-gates")
-    sub.add_parser("diff")
-    sub.add_parser("rollback")
+    run_gates_parser = sub.add_parser("run-gates")
+    run_gates_parser.add_argument("task_id")
+
+    diff_parser = sub.add_parser("diff")
+    diff_parser.add_argument("task_id")
+
+    rollback_parser = sub.add_parser("rollback")
+    rollback_parser.add_argument("task_id")
 
     args = parser.parse_args(list(argv) if argv is not None else None)
     root = _repo_root()
