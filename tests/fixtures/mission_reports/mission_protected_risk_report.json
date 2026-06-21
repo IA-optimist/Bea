@@ -1,0 +1,23 @@
+{
+  "mission_id": "mis-004-risk",
+  "title": "Patch kernel policy gate",
+  "status": "SUCCESS",
+  "task_type": "security_patch",
+  "files_changed": [
+    "kernel/policy/gate.py"
+  ],
+  "tests_run": [
+    "tests/kernel/test_gate.py"
+  ],
+  "success": true,
+  "failure_reason": "",
+  "model_used": "claude-3-5-sonnet",
+  "model_class": "STRONG_CODE_REVIEW",
+  "duration_ms": 8900,
+  "cost_estimate": 0.08,
+  "lessons_learned": "Kernel policy changes need explicit human sign-off even after automated tests pass.",
+  "risks_detected": [
+    "Self-improvement safety: kernel policy gate patched."
+  ],
+  "created_at": 1700000200
+}

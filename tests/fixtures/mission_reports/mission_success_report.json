@@ -1,0 +1,22 @@
+{
+  "mission_id": "mis-001-success",
+  "title": "Add JSON report generation to bea eval",
+  "status": "SUCCESS",
+  "task_type": "feature",
+  "files_changed": [
+    "core/evals/report.py",
+    "scripts/bea_eval.py"
+  ],
+  "tests_run": [
+    "tests/core/evals/test_report.py"
+  ],
+  "success": true,
+  "failure_reason": "",
+  "model_used": "claude-3-5-sonnet",
+  "model_class": "MEDIUM_TOOL_USE",
+  "duration_ms": 3200,
+  "cost_estimate": 0.012,
+  "lessons_learned": "Always add a Markdown fallback when creating JSON reports for human reviewers.",
+  "risks_detected": [],
+  "created_at": 1700000000
+}
