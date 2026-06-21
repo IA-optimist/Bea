@@ -6,11 +6,11 @@ Reports hygiene metrics and flags noisy / duplicated / weak memories.
 By default the audit is read-only. Destructive cleanup requires --apply.
 
 Usage:
-    python scripts/audit_memory_store.py
+    python scripts/audit_memory_store.py               # read-only (default)
+    python scripts/audit_memory_store.py --dry-run     # same as default; explicit
     python scripts/audit_memory_store.py --json
     python scripts/audit_memory_store.py --json --output audit.json
-    python scripts/audit_memory_store.py --dry-run
-    python scripts/audit_memory_store.py --apply
+    python scripts/audit_memory_store.py --apply       # DESTRUCTIVE: prune confirmed obsolete
 """
 from __future__ import annotations
 
@@ -238,7 +238,10 @@ def _stdout(text: str) -> None:
 
 
 def _print_report(report: AuditReport) -> None:
+    mode_label = "dry-run (read-only, no changes)" if report.dry_run else f"apply ({report.removed_count} pruned)"
     _stdout("Memory hygiene audit")
+    _stdout("=" * 50)
+    _stdout(f"Mode                  : {mode_label}")
     _stdout("=" * 50)
     _stdout(f"Total memories        : {report.total}")
     _stdout(f"By status             : {report.by_status}")
@@ -258,21 +261,34 @@ def _print_report(report: AuditReport) -> None:
     _stdout(f"Noise risks           : {len(report.noise_risks)}")
     _stdout(f"Top risks             : {report.top_risks}")
     if report.dry_run:
-        _stdout("Mode                  : dry-run (no destructive changes)")
+        _stdout("(no destructive changes were applied)")
     else:
-        _stdout(f"Mode                  : apply ({report.removed_count} pruned)")
+        _stdout(f"({report.removed_count} memories pruned)")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit Béa's operational memory store")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     parser.add_argument("--output", type=str, default="", help="Write JSON output to file")
-    parser.add_argument("--apply", action="store_true", help="Apply safe cleanup (requires explicit flag)")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Read-only audit (default behaviour; use this flag for explicitness).",
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply safe cleanup — prune confirmed obsolete memories older than 90 days. DESTRUCTIVE.",
+    )
     parser.add_argument("--no-duplicates", action="store_true", help="Skip duplicate scan")
     args = parser.parse_args(argv)
 
+    # --dry-run and --apply are mutually exclusive; --apply takes precedence.
+    apply = args.apply and not args.dry_run
+
     store = get_operational_memory_store()
-    report = audit(store, apply=args.apply, scan_duplicates=not args.no_duplicates)
+    report = audit(store, apply=apply, scan_duplicates=not args.no_duplicates)
 
     if args.json or args.output:
         payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
@@ -285,6 +301,7 @@ def main(argv: list[str] | None = None) -> int:
             _stdout(payload)
     else:
         _print_report(report)
+
 
     return 0
 

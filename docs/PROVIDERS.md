@@ -38,15 +38,30 @@ ORCHESTRATOR_MODEL=openai/gpt-oss-120b:free
 ## Configurer Ollama
 
 1. Installer Ollama : <https://ollama.com/download>
-2. Démarrer le service :
-   ```
+2. Démarrer le service (Windows — se relance automatiquement au boot) :
+   ```cmd
    ollama serve
    ```
-3. Télécharger le modèle recommandé :
+   Sur Windows, Ollama tourne généralement en arrière-plan après installation.
+   Vérifier qu'il écoute bien :
+   ```cmd
+   curl http://127.0.0.1:11434/api/version
    ```
+   Réponse attendue : `{"version":"..."}`
+3. Lister les modèles disponibles :
+   ```cmd
+   ollama list
+   ```
+4. Télécharger le modèle recommandé (RTX 5070 Blackwell, 12 B) :
+   ```cmd
    ollama pull gemma4:12b
    ```
-4. Configurer dans `.env` :
+5. Vérifier l'installation :
+   ```cmd
+   ollama list
+   # gemma4:12b   ...   xxxx MB
+   ```
+6. Configurer dans `.env` :
    ```
    OLLAMA_HOST=http://127.0.0.1:11434
    OLLAMA_MODEL_MAIN=gemma4:12b
@@ -85,6 +100,18 @@ python scripts\provider_healthcheck.py
 - Résultat : `RuntimeError: Aucun LLM disponible pour le rôle '...'`
 
 **Solution** : exporter les variables manuellement **ou** utiliser `bea_api_service.cmd`.
+
+### Crash Unicode Windows (`UnicodeEncodeError`)
+
+Sur les consoles Windows avec un code page non-UTF-8 (cp1252, cp850…), les anciens
+symboles `✓` / `✗` pouvaient crasher le script. Depuis **PR #96**, `provider_healthcheck.py`
+détecte automatiquement l'encodage de la console et affiche `OK`/`FAIL` à la place.
+Si malgré tout un crash se produit :
+
+```cmd
+set PYTHONIOENCODING=utf-8
+python scripts\provider_healthcheck.py
+```
 
 ---
 
@@ -134,6 +161,18 @@ python scripts/provider_healthcheck.py --json
   Hints:
     Aucun provider LLM disponible. Configurer OPENROUTER_API_KEY
     ou démarrer Ollama (ollama serve).
+```
+
+> **UNAVAILABLE n'est pas un échec CI.** Les gates projet (ruff, pytest, coverage)
+> passent indépendamment des providers. UNAVAILABLE signifie que les **missions LLM**
+> ne peuvent pas s'exécuter à ce moment — il faut configurer au moins un provider.
+
+### Fallback attendu
+
+```
+Aucun provider → UNAVAILABLE (RuntimeError à l'exécution de mission)
+Ollama seul    → DEGRADED (missions locales OK, rôles cloud bridgés sur Ollama)
+OpenRouter     → READY   (rôles cloud + fallback Ollama si configuré)
 ```
 
 ---

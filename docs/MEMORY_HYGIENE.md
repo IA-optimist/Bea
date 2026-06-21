@@ -15,8 +15,11 @@ Un store trop dense crée plusieurs problèmes :
 ## Auditer le store
 
 ```bash
-# Console lisible
+# Console lisible (read-only par défaut)
 python scripts/audit_memory_store.py
+
+# Mode dry-run explicite (identique au défaut ; utile en checklist)
+python scripts/audit_memory_store.py --dry-run
 
 # JSON
 python scripts/audit_memory_store.py --json
@@ -25,7 +28,15 @@ python scripts/audit_memory_store.py --json
 python scripts/audit_memory_store.py --json --output workspace/memory_audit.json
 ```
 
-L'audit est **read-only** par défaut. Il fournit :
+L'audit est **read-only** par défaut — aucune mémoire n'est modifiée. Le flag
+`--dry-run` est équivalent et peut être utilisé pour rendre l'intention explicite
+dans des scripts ou une checklist. La sortie affiche toujours le mode en tête :
+
+```
+Mode : dry-run (read-only, no changes)
+```
+
+L'audit fournit :
 
 * nombre total de mémoires
 * répartition par type et status
@@ -36,13 +47,23 @@ L'audit est **read-only** par défaut. Il fournit :
 * contenus trop courts ou trop longs
 * top risques de bruit
 
-Pour appliquer un nettoyage léger (mark-as-pruned sur les `obsolete` sans successeur de +90 jours) :
+### Appliquer un nettoyage (DESTRUCTIF)
 
 ```bash
+# Vérifier d'abord en dry-run
+python scripts/audit_memory_store.py --dry-run
+
+# Backup recommandé avant --apply
+python scripts/backup_db.sh
+
+# Appliquer : mark-as-pruned sur les obsolete sans successeur de +90 jours
 python scripts/audit_memory_store.py --apply
 ```
 
-Aucune suppression destructive n'est possible sans le flag explicite.
+> ⚠️ `--apply` est l'unique mode destructif. `--dry-run` l'annule même s'il est
+> passé en même temps (`--dry-run --apply` reste read-only).
+
+Aucune suppression physique n'est possible sans le flag `--apply` explicite.
 
 ## Cycle de maintenance après ingestion
 
