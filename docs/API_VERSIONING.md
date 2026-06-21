@@ -36,9 +36,14 @@ deprecation roadmap.
   `POST /api/v3/missions/{id}/resume`, `GET /api/v3/missions/{id}/stream` are now in
   `api/routes/convergence.py`. Stream delegates to the same `_sse_generator` as v1 —
   identical wire format, zero Flutter-side JSON change needed.
-  **Next step**: update `beamax_app/lib/services/api_service.dart` (three
-  `TODO(v3-migration)` comments mark the exact lines), rebuild APK, then remove the
-  last v1 endpoints.
+- **DONE (PR #91, 2026-06-21)** — `beamax_app/lib/services/api_service.dart` migrated:
+  all 3 v1 calls (`pauseMission`, `resumeMission`, `streamMissionLogs`) now use v3.
+  `_V1_ALLOWLIST` is empty. `scripts/check_client_v1_usage.py` confirms 0 v1 runtime
+  calls in any client surface.
+- **DONE (PR #94, 2026-06-21)** — APK rebuilt (`app-release.apk`, 23.0 MB) from
+  `C:\bea_app` with v3 code. Stale v1 doc comment in `api_service.dart` removed.
+  **Next step**: install APK on device, validate pause/resume/stream via v3 manually,
+  then remove the 3 load-bearing v1 server-side endpoints from `mission_control.py`.
 
 ## v1 endpoints (DEPRECATED — do not add new ones)
 
@@ -49,14 +54,17 @@ Remaining endpoints in `api/routes/mission_control.py` (sunset 2026-10-01) :
 | `GET /api/v1/health` | none known | `GET /api/health` | remove after telemetry confirms 0 traffic |
 | `GET /api/v1/missions/{id}/log` | none known | `/api/v3/missions/{id}/log` needed | ship v3 then remove |
 | `GET /api/v1/system/status` | none known | `GET /api/v3/system/readiness` | remove after telemetry |
-| `POST /api/v1/missions/{id}/pause` | **Flutter** `api_service.dart:550` | `/api/v3/missions/{id}/pause` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
-| `POST /api/v1/missions/{id}/resume` | **Flutter** `api_service.dart:559` | `/api/v3/missions/{id}/resume` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
-| `GET /api/v1/missions/{id}/stream` | **Flutter** `api_service.dart:753` | `/api/v3/missions/{id}/stream` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
+| `POST /api/v1/missions/{id}/pause` | none — Flutter migrated to v3 (PR #91) | `/api/v3/missions/{id}/pause` ✅ | safe to remove after device validation |
+| `POST /api/v1/missions/{id}/resume` | none — Flutter migrated to v3 (PR #91) | `/api/v3/missions/{id}/resume` ✅ | safe to remove after device validation |
+| `GET /api/v1/missions/{id}/stream` | none — Flutter migrated to v3 (PR #91) | `/api/v3/missions/{id}/stream` ✅ | safe to remove after device validation |
 
 **Sunset plan** : every response carries `Deprecation: true` + `Sunset: 2026-10-01`
-headers. Concrete removal target : when Grafana shows
-`sum(rate(api_requests_total{version="v1"}[7d])) == 0` AND the Flutter app has
-shipped a release using `/api/v3/missions/{id}/stream` (server endpoint now available — Flutter APK rebuild pending).
+headers. Concrete removal target:
+
+- Flutter code migrated to v3 ✅ (PR #91)
+- APK rebuilt with v3 code ✅ (PR #94, `app-release.apk` 23.0 MB)
+- **Pending**: install rebuilt APK on device and validate manually (checklist below)
+- **After device validation**: remove `pause`, `resume`, `stream` from `mission_control.py`
 
 ## v2 endpoints (STABLE)
 

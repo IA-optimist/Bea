@@ -738,9 +738,10 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  /// Stream real-time SSE events for a mission.
+  /// Stream real-time SSE events for a mission via SSE (GET /api/v3/missions/{id}/stream).
   ///
-  /// Currently uses the v1 endpoint (GET /api/v1/missions/{id}/stream).
+  /// Migrated to v3 in PR #91 (2026-06-21). Wire format is identical to the
+  /// former v1 endpoint — same _sse_generator, same JSON shape.
   Stream<Map<String, dynamic>> streamMissionLogs(
     String missionId, {
     int maxRetries = 5,

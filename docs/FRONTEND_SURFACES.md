@@ -112,28 +112,53 @@ Python CLI for orchestrating Béa missions from the command line.
 
 ## v1 Sunset Plan
 
-**Server-side v3 endpoints are now all shipped (PR #90, 2026-06-21).**
-The remaining work is purely client-side (APK rebuild). **Migration sequence** (in order):
+**Migration sequence** (all server-side work complete):
 
-1. **✅ Ship v3 streaming endpoint** — `GET /api/v3/missions/{id}/stream` now in
-   `api/routes/convergence.py`. SSE format identical to v1 — delegates to the same
-   `_sse_generator`. Flutter change: one-line URL update in `api_service.dart:753`.
+1. **✅ Ship v3 streaming endpoint** — `GET /api/v3/missions/{id}/stream` shipped in PR #90.
 
-2. **✅ Ship v3 pause/resume** — `POST /api/v3/missions/{id}/pause` +
-   `/resume` now in `api/routes/convergence.py`. Flutter change: two-line URL update
-   in `api_service.dart:550,559`.
+2. **✅ Ship v3 pause/resume** — `POST /api/v3/missions/{id}/pause` + `/resume` shipped in PR #90.
 
-3. **TODO — Flutter APK rebuild** (unblocked):
-   - Update 3 URLs in `beamax_app/lib/services/api_service.dart` (`TODO(v3-migration)` markers)
-   - `flutter build apk --release --no-tree-shake-icons` from a copy in `C:\bea_app`
-   - Distribute APK
+3. **✅ Flutter code migrated** (PR #91, 2026-06-21):
+   - 3 URLs updated in `api_service.dart` — `pauseMission`, `resumeMission`, `streamMissionLogs`
+   - `_V1_ALLOWLIST` emptied — CI fails on any new v1 client call
+   - `scripts/check_client_v1_usage.py` confirms 0 v1 runtime calls
 
-3. **Remove v1 endpoints** (after APK adoption):
-   - Remove `POST /missions/{id}/pause`, `/resume`, `GET /missions/{id}/stream` from `mission_control.py`
-   - Remove `GET /api/v1/health`, `/missions/{id}/log`, `/system/status` (no active callers)
+4. **✅ APK rebuilt** (PR #94, 2026-06-21):
+   - `C:\bea_app\lib\services\api_service.dart` synced to v3
+   - `flutter build apk --release --no-tree-shake-icons` → `app-release.apk` 23.0 MB
+   - Stale v1 doc comment in `streamMissionLogs` removed
+
+5. **TODO — Install and validate on device**:
+   - Transfer APK to Android device (sideload or `adb install`)
+   - Login, submit a mission, use pause/resume/stream
+   - Check server logs: confirm all calls go to `/api/v3/`, zero to `/api/v1/`
+   - Checklist: see below
+
+6. **TODO — Remove v1 server-side endpoints** (after step 5):
+   - Remove `POST /missions/{id}/pause`, `/resume`, `GET /missions/{id}/stream` from `api/routes/mission_control.py`
+   - Remove `GET /api/v1/health`, `/missions/{id}/log`, `/system/status` (no known callers)
    - If `mission_control.py` becomes empty, remove the file entirely
 
 **Sunset deadline: 2026-10-01** (hard date — `Sunset` header already set in V1DeprecationMiddleware).
+
+### Device validation checklist (manual — after APK install)
+
+```
+[ ] APK installed without errors (sideload or adb install)
+[ ] App starts, login/auto-login works
+[ ] Submit a mission — appears in mission list
+[ ] Pause a running mission:
+    - Tap Pause in the app
+    - Server log shows: POST /api/v3/missions/{id}/pause (NOT /api/v1/)
+[ ] Resume the mission:
+    - Tap Resume in the app
+    - Server log shows: POST /api/v3/missions/{id}/resume (NOT /api/v1/)
+[ ] View mission stream:
+    - Open mission detail with live stream
+    - Server log shows: GET /api/v3/missions/{id}/stream (NOT /api/v1/)
+[ ] Verify zero /api/v1/ calls in server access log during the session
+[ ] DONE — v1 endpoints can now be removed
+```
 
 ---
 
@@ -143,7 +168,7 @@ The remaining work is purely client-side (APK rebuild). **Migration sequence** (
 |---------|-----------|-----------|-----------|
 | `static/app.html` | no | auth only | yes |
 | `static/cockpit.html` | no | yes | yes |
-| `beamax_app/` | **allowlist only** (3 endpoints) | yes | yes |
+| `beamax_app/` | **none** (migration complete PR #91) | yes | yes |
 | `frontend/` | no | yes | yes |
 | `orchestrate-cli/` | no | no | yes |
 | New surfaces | **never** | no | yes |
