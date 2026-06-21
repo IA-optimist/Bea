@@ -64,11 +64,11 @@ Flutter app targeting Android. Current APK at `C:\Users\Desktop\Bea_app.apk`, re
 
 #### Active v1 calls (allowlisted, do not add more)
 
-| Method | Path | Source file:line | v3 target | Blocker |
-|--------|------|------------------|-----------|---------|
-| `POST` | `/api/v1/missions/{id}/pause` | `api_service.dart:550` | `/api/v3/missions/{id}/pause` | v3 endpoint not yet shipped |
-| `POST` | `/api/v1/missions/{id}/resume` | `api_service.dart:559` | `/api/v3/missions/{id}/resume` | v3 endpoint not yet shipped |
-| `GET` | `/api/v1/missions/{id}/stream` | `api_service.dart:753` | `/api/v3/missions/{id}/stream` | v3 endpoint not yet shipped |
+| Method | Path | Source file:line | v3 target | Status |
+|--------|------|------------------|-----------|--------|
+| `POST` | `/api/v1/missions/{id}/pause` | `api_service.dart:550` | `/api/v3/missions/{id}/pause` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
+| `POST` | `/api/v1/missions/{id}/resume` | `api_service.dart:559` | `/api/v3/missions/{id}/resume` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
+| `GET` | `/api/v1/missions/{id}/stream` | `api_service.dart:753` | `/api/v3/missions/{id}/stream` | ✅ v3 endpoint shipped (PR #90) — APK rebuild pending |
 
 **These three calls are the only authorized v1 calls across all client surfaces.**
 Each has a `TODO(v3-migration)` comment in the source pointing to this document.
@@ -109,19 +109,21 @@ Python CLI for orchestrating Béa missions from the command line.
 
 ## v1 Sunset Plan
 
-The three remaining v1 calls in Flutter are blocked on server-side v3 endpoints.
-**Migration sequence** (in order):
+**Server-side v3 endpoints are now all shipped (PR #90, 2026-06-21).**
+The remaining work is purely client-side (APK rebuild). **Migration sequence** (in order):
 
-1. **Ship v3 streaming endpoint** (highest priority — blocking Flutter stream):
-   - Add `GET /api/v3/missions/{id}/stream` to `api/routes/convergence.py`
-   - SSE format is identical to v1 — no client-side format change needed
-   - Flutter change: one-line URL update in `api_service.dart:753`
-   - Rebuild + distribute APK
+1. **✅ Ship v3 streaming endpoint** — `GET /api/v3/missions/{id}/stream` now in
+   `api/routes/convergence.py`. SSE format identical to v1 — delegates to the same
+   `_sse_generator`. Flutter change: one-line URL update in `api_service.dart:753`.
 
-2. **Ship v3 pause/resume** (lower urgency, no UI visible):
-   - Add `POST /api/v3/missions/{id}/pause` + `/resume` to `api/routes/convergence.py`
-   - Flutter change: two-line URL update in `api_service.dart:550,559`
-   - Rebuild + distribute APK
+2. **✅ Ship v3 pause/resume** — `POST /api/v3/missions/{id}/pause` +
+   `/resume` now in `api/routes/convergence.py`. Flutter change: two-line URL update
+   in `api_service.dart:550,559`.
+
+3. **TODO — Flutter APK rebuild** (unblocked):
+   - Update 3 URLs in `beamax_app/lib/services/api_service.dart` (`TODO(v3-migration)` markers)
+   - `flutter build apk --release --no-tree-shake-icons` from a copy in `C:\bea_app`
+   - Distribute APK
 
 3. **Remove v1 endpoints** (after APK adoption):
    - Remove `POST /missions/{id}/pause`, `/resume`, `GET /missions/{id}/stream` from `mission_control.py`

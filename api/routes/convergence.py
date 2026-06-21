@@ -33,7 +33,7 @@ from api._deps import require_auth
 
 try:
     from fastapi import BackgroundTasks, Depends, APIRouter, Body, HTTPException, WebSocket, WebSocketDisconnect  # noqa: F401
-    from fastapi.responses import JSONResponse
+    from fastapi.responses import JSONResponse, StreamingResponse
 except ImportError:
     # Stub for syntax validation without fastapi
     class _Stub:
@@ -579,3 +579,77 @@ async def get_agent_status():
 
     except Exception as e:
         return _err(str(e)[:200], status=500)
+
+
+# ═══════════════════════════════════════════════════════════════
+# MISSION CONTROL — v3 equivalents (Flutter migration targets)
+# ═══════════════════════════════════════════════════════════════
+# These mirror POST/GET /api/v1/missions/{id}/pause|resume|stream.
+# v1 endpoints remain until beamax_app ships an APK using these URLs.
+# Migration tracker: docs/FRONTEND_SURFACES.md § Active v1 calls.
+
+
+def _ms_canonical_status(legacy_status: str) -> str:
+    """Map legacy mission status to canonical string. Fail-open."""
+    try:
+        from core.canonical_types import map_legacy_mission_status
+        return map_legacy_mission_status(legacy_status, "mission_system").value
+    except Exception:
+        return str(legacy_status)
+
+
+@router.post("/missions/{mission_id}/pause")
+async def pause_mission_v3(mission_id: str):
+    """Pause a mission.
+
+    v3 equivalent of POST /api/v1/missions/{id}/pause.
+    Acknowledgement-only — full pause semantics pending backend queue support.
+    """
+    try:
+        from core.mission_system import get_mission_system
+        ms = get_mission_system()
+        mission = ms.get(mission_id)
+        if not mission:
+            return _err(f"Mission '{mission_id}' not found.", status=404)
+        status = _ms_canonical_status(str(mission.status))
+        return _ok({"mission_id": mission_id, "action": "pause", "status": status})
+    except Exception as e:
+        log.warning("swallowed_exception", action="v3_pause_mission", exc_type=type(e).__name__, exc_msg=str(e)[:200])
+        return _err(str(e)[:200], status=500)
+
+
+@router.post("/missions/{mission_id}/resume")
+async def resume_mission_v3(mission_id: str):
+    """Resume a mission.
+
+    v3 equivalent of POST /api/v1/missions/{id}/resume.
+    Acknowledgement-only — full resume semantics pending backend queue support.
+    """
+    try:
+        from core.mission_system import get_mission_system
+        ms = get_mission_system()
+        mission = ms.get(mission_id)
+        if not mission:
+            return _err(f"Mission '{mission_id}' not found.", status=404)
+        status = _ms_canonical_status(str(mission.status))
+        return _ok({"mission_id": mission_id, "action": "resume", "status": status})
+    except Exception as e:
+        log.warning("swallowed_exception", action="v3_resume_mission", exc_type=type(e).__name__, exc_msg=str(e)[:200])
+        return _err(str(e)[:200], status=500)
+
+
+@router.get("/missions/{mission_id}/stream")
+async def stream_mission_v3(mission_id: str):
+    """Real-time SSE stream for a mission.
+
+    v3 equivalent of GET /api/v1/missions/{id}/stream.
+    Identical wire format — same JSON event objects, same text/event-stream
+    content type. One-line URL change in beamax_app/lib/services/api_service.dart
+    once the APK is rebuilt.
+    """
+    from api.routes.mission_control import _sse_generator
+    return StreamingResponse(
+        _sse_generator(mission_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
