@@ -54,7 +54,14 @@ PROTECTED_FILES: frozenset[str] = frozenset({
 
     # Self-improvement core controller (prevent self-modification loops)
     "core/self_improvement_loop.py",
+    "core/self_improvement/promotion_pipeline.py",
     "core/self_improvement/protected_paths.py",
+    "core/self_improvement/patch_signature.py",
+    "core/self_improvement/git_agent.py",
+    "core/self_improvement/sandbox_executor.py",
+
+    # Local validation harness
+    "scripts/validate_local.py",
 
     # Test infrastructure
     "conftest.py",
@@ -107,6 +114,9 @@ PROTECTED_FILES_SECURITY: frozenset[str] = frozenset({
 # ── Directory prefixes (all files within blocked) ──
 PROTECTED_DIRS: frozenset[str] = frozenset({
     "core/security/",
+    ".github/workflows/",
+    "deploy/",
+    "kernel/",
     "api/routes/token_management.py",
 })
 
@@ -128,8 +138,8 @@ def is_protected(filepath: str) -> bool:
     while normalized.startswith("./"):
         normalized = normalized[2:]
 
-    # Exact match
-    if normalized in PROTECTED_FILES:
+    # Exact match across all protected file tiers.
+    if normalized in PROTECTED_FILES | PROTECTED_FILES_ARCH | PROTECTED_FILES_SECURITY:
         return True
 
     # Directory prefix

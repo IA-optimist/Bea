@@ -28,6 +28,7 @@ class PatchSignatureError(Exception):
 
 PATCH_SIGNATURE_ALGORITHM = "ed25519-canonical-json"
 DEFAULT_SIGNATURE_ENV = "BEA_PATCH_SIGNING_KEY"
+VERIFY_SIGNATURE_ENV = "BEA_PATCH_VERIFY_KEY"
 
 
 def _payload(candidate: "CandidatePatch") -> dict[str, Any]:
@@ -61,12 +62,19 @@ def _seed(value: str | None = None) -> bytes:
     return hashlib.sha256(key.encode("utf-8")).digest()
 
 
+def _verify_seed(value: str | None = None) -> bytes:
+    key = (value or os.getenv(VERIFY_SIGNATURE_ENV, "")).strip()
+    if not key:
+        raise PatchSignatureError(f"missing verify key: set {VERIFY_SIGNATURE_ENV}")
+    return hashlib.sha256(key.encode("utf-8")).digest()
+
+
 def _private_key(value: str | None = None) -> Ed25519PrivateKey:
     return Ed25519PrivateKey.from_private_bytes(_seed(value))
 
 
 def _public_key(value: str | None = None) -> Ed25519PublicKey:
-    return _private_key(value).public_key()
+    return Ed25519PrivateKey.from_private_bytes(_verify_seed(value)).public_key()
 
 
 def sign_patch(candidate: "CandidatePatch", private_key: str = "") -> dict[str, Any]:

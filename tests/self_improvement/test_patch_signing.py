@@ -30,6 +30,7 @@ def test_sign_patch_returns_deterministic_envelope(monkeypatch: MonkeyPatch) -> 
 
 def test_verify_patch_signature_accepts_matching_key(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("BEA_PATCH_SIGNING_KEY", "test-signing-key-32-bytes-long")
+    monkeypatch.setenv("BEA_PATCH_VERIFY_KEY", "test-signing-key-32-bytes-long")
     candidate = CandidatePatch(
         patch_id="test-123",
         intents=[PatchIntent(file_path="core/coding_agent/repo_map.py", old_text="x", new_text="y")],
@@ -44,7 +45,7 @@ def test_verify_patch_signature_rejects_mismatch(monkeypatch: MonkeyPatch) -> No
     candidate = CandidatePatch(patch_id="test-123")
     envelope = sign_patch(candidate)
 
-    monkeypatch.setenv("BEA_PATCH_SIGNING_KEY", "different-signing-key-32-bytes")
+    monkeypatch.setenv("BEA_PATCH_VERIFY_KEY", "different-signing-key-32-bytes")
     assert verify_patch_signature(candidate, envelope) is False
 
 
@@ -52,3 +53,13 @@ def test_sign_patch_requires_key(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.delenv("BEA_PATCH_SIGNING_KEY", raising=False)
     with pytest.raises(PatchSignatureError):
         sign_patch(CandidatePatch(patch_id="test-123"))
+
+
+def test_verify_patch_signature_requires_verify_key(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("BEA_PATCH_SIGNING_KEY", "test-signing-key-32-bytes-long")
+    monkeypatch.delenv("BEA_PATCH_VERIFY_KEY", raising=False)
+    candidate = CandidatePatch(patch_id="test-123")
+    envelope = sign_patch(candidate)
+
+    with pytest.raises(PatchSignatureError):
+        verify_patch_signature(candidate, envelope)
