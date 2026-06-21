@@ -100,9 +100,10 @@ jobs:
           set -euo pipefail
           # Coverage threshold — ratchet: raise only, never lower.
           # History: 45 (2026-05-18) → 55 (2026-05-25) → 60 (2026-06-16) → 55 (2026-06-20 consolidation)
-          #          → 58 (2026-06-21 PR #80: 60 smoke+pure-fn tests, CI measured 57.97%).
-          # Next: reach 60% with targeted tests on rag/pipeline, action_executor, skill_store async.
-          COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-58}"
+          #          → 58 (PR #80, 2026-06-21: smoke tests, measured 57.97%)
+          #          → 60 (PR #81, 2026-06-21: targeted tests on knowledge/rag/agent_comm/client_profile).
+          # Next target: 65 (requires async mocking or live integration tests).
+          COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-60}"
           pytest tests/ -v -n auto --dist=loadfile -m "not stale" \
             --cov=core --cov=api --cov=kernel --cov-report=xml --cov-report=term \
             --cov-fail-under="$COVERAGE_FAIL_UNDER"
