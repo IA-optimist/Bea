@@ -4,7 +4,9 @@ Unlike smoke tests (imports only), these tests call real function bodies to
 cover conditional branches, dataclass methods, and pure logic.  No LLM calls,
 no DB, no external I/O.
 
-Coverage intent: bring total from 58% toward 60%+.
+Coverage intent: bring total from 58% toward 60%+.  Kernel pure modules added
+in round 2 (PR #81) : KernelLearner, KernelPlanner, KernelGoal, KernelPlan,
+KernelLesson, KernelPlanStep — all pure Python, no external deps.
 """
 from __future__ import annotations
 
@@ -631,3 +633,477 @@ class TestKnowledgeValidatorEdgeCases:
         ]
         results = kv.validate_batch(items, existing_knowledge=existing)
         assert len(results) == 2
+
+
+# ── KernelLesson (kernel/learning/lesson.py) — pure dataclass ────────────────
+
+class TestKernelLesson:
+
+    def _make_lesson(self):
+        from kernel.learning.lesson import KernelLesson
+        return KernelLesson(
+            mission_id="m123",
+            goal_summary="Write a hello world",
+            what_happened="Low confidence result (confidence=0.70)",
+            what_to_do_differently="Consider more specific goal formulation",
+            confidence=0.7,
+            verdict="low_confidence",
+            weaknesses=["shallow analysis"],
+            improvement_suggestion="break into steps",
+        )
+
+    def test_to_dict_has_mission_id(self):
+        d = self._make_lesson().to_dict()
+        assert d["mission_id"] == "m123"
+
+    def test_to_dict_has_verdict(self):
+        d = self._make_lesson().to_dict()
+        assert d["verdict"] == "low_confidence"
+
+    def test_to_dict_has_weaknesses(self):
+        d = self._make_lesson().to_dict()
+        assert d["weaknesses"] == ["shallow analysis"]
+
+    def test_to_core_lesson_dict(self):
+        d = self._make_lesson().to_core_lesson_dict()
+        assert "mission_id" in d
+        assert "what_to_do_differently" in d
+        assert "confidence" in d
+
+    def test_lesson_id_generated(self):
+        from kernel.learning.lesson import KernelLesson
+        l1 = KernelLesson(
+            mission_id="x", goal_summary="g", what_happened="h",
+            what_to_do_differently="w", confidence=0.5,
+        )
+        l2 = KernelLesson(
+            mission_id="x", goal_summary="g", what_happened="h",
+            what_to_do_differently="w", confidence=0.5,
+        )
+        assert l1.lesson_id != l2.lesson_id
+
+
+# ── KernelGoal / KernelPlan / KernelPlanStep (kernel/planning/goal.py) ───────
+
+class TestKernelGoalPlan:
+
+    def test_kernel_goal_from_text(self):
+        from kernel.planning.goal import KernelGoal
+        g = KernelGoal.from_text("Build a REST API")
+        assert g.description == "Build a REST API"
+        assert g.goal_type == "general"
+
+    def test_kernel_goal_from_text_strips(self):
+        from kernel.planning.goal import KernelGoal
+        g = KernelGoal.from_text("  trim me  ")
+        assert g.description == "trim me"
+
+    def test_kernel_goal_to_dict(self):
+        from kernel.planning.goal import KernelGoal
+        g = KernelGoal(description="test goal", goal_type="code", priority=3)
+        d = g.to_dict()
+        assert d["description"] == "test goal"
+        assert d["goal_type"] == "code"
+        assert d["priority"] == 3
+
+    def test_kernel_goal_id_generated(self):
+        from kernel.planning.goal import KernelGoal
+        g1 = KernelGoal(description="a")
+        g2 = KernelGoal(description="a")
+        assert g1.goal_id != g2.goal_id
+
+    def test_plan_step_to_dict(self):
+        from kernel.planning.goal import KernelPlanStep, PlanComplexity, StepStatus
+        s = KernelPlanStep(step_id=0, action="Analyze the problem", complexity=PlanComplexity.LOW)
+        d = s.to_dict()
+        assert d["step_id"] == 0
+        assert d["action"] == "Analyze the problem"
+        assert d["complexity"] == "low"
+        assert d["status"] == "pending"
+
+    def test_plan_step_retryable_default(self):
+        from kernel.planning.goal import KernelPlanStep
+        s = KernelPlanStep(step_id=1, action="Do thing")
+        assert s.retryable is True
+
+    def test_kernel_plan_is_empty_true(self):
+        from kernel.planning.goal import KernelGoal, KernelPlan
+        g = KernelGoal(description="goal")
+        p = KernelPlan(plan_id="p1", goal=g)
+        assert p.is_empty is True
+        assert p.step_count == 0
+        assert p.success_rate == 0.0
+
+    def test_kernel_plan_step_count(self):
+        from kernel.planning.goal import KernelGoal, KernelPlan, KernelPlanStep
+        g = KernelGoal(description="goal")
+        steps = [KernelPlanStep(step_id=i, action=f"step {i}") for i in range(3)]
+        p = KernelPlan(plan_id="p1", goal=g, steps=steps)
+        assert p.step_count == 3
+        assert p.is_empty is False
+
+    def test_kernel_plan_pending_and_done(self):
+        from kernel.planning.goal import KernelGoal, KernelPlan, KernelPlanStep, StepStatus
+        g = KernelGoal(description="goal")
+        s0 = KernelPlanStep(step_id=0, action="a", status=StepStatus.DONE)
+        s1 = KernelPlanStep(step_id=1, action="b", status=StepStatus.PENDING)
+        s2 = KernelPlanStep(step_id=2, action="c", status=StepStatus.DONE)
+        p = KernelPlan(plan_id="p1", goal=g, steps=[s0, s1, s2])
+        assert len(p.done_steps) == 2
+        assert len(p.pending_steps) == 1
+        assert abs(p.success_rate - 2/3) < 1e-9
+
+    def test_kernel_plan_to_dict(self):
+        from kernel.planning.goal import KernelGoal, KernelPlan, KernelPlanStep
+        g = KernelGoal(description="test")
+        p = KernelPlan(plan_id="p99", goal=g, steps=[KernelPlanStep(step_id=0, action="do")])
+        d = p.to_dict()
+        assert d["plan_id"] == "p99"
+        assert len(d["steps"]) == 1
+        assert d["step_count"] == 1
+
+
+# ── KernelPlanner (kernel/planning/planner.py) — heuristic planning ──────────
+
+class TestKernelPlanner:
+
+    def _planner(self):
+        from kernel.planning.planner import KernelPlanner
+        return KernelPlanner()
+
+    def _goal(self, text: str):
+        from kernel.planning.goal import KernelGoal
+        return KernelGoal(description=text)
+
+    def test_complexity_low(self):
+        from kernel.planning.goal import PlanComplexity
+        p = self._planner()
+        g = self._goal("Fix bug")
+        assert p._complexity(g) == PlanComplexity.LOW
+
+    def test_complexity_medium(self):
+        from kernel.planning.goal import PlanComplexity
+        p = self._planner()
+        g = self._goal("Implement a user authentication system with JWT tokens and refresh logic")
+        assert p._complexity(g) == PlanComplexity.MEDIUM
+
+    def test_complexity_high(self):
+        from kernel.planning.goal import PlanComplexity
+        p = self._planner()
+        # 31+ words
+        words = " ".join(["word"] * 35)
+        g = self._goal(words)
+        assert p._complexity(g) == PlanComplexity.HIGH
+
+    def test_heuristic_plan_creates_3_steps(self):
+        p = self._planner()
+        g = self._goal("Build a microservice for data processing and analysis")
+        plan = p._heuristic_plan("kplan-test", g)
+        assert len(plan.steps) == 3
+        assert plan.source == "kernel_heuristic"
+
+    def test_heuristic_plan_step_depends_on(self):
+        p = self._planner()
+        g = self._goal("simple goal")
+        plan = p._heuristic_plan("kplan-test", g)
+        assert plan.steps[1].depends_on == [0]
+        assert plan.steps[2].depends_on == [1]
+
+    def test_build_no_core_planner(self):
+        import kernel.planning.planner as planner_mod
+        original = planner_mod._core_planner_fn
+        planner_mod._core_planner_fn = None
+        try:
+            p = self._planner()
+            g = self._goal("Analyze the dataset")
+            plan = p.build(g)
+            assert plan.source == "kernel_heuristic"
+            assert plan.step_count == 3
+        finally:
+            planner_mod._core_planner_fn = original
+
+    def test_build_with_core_planner_dict_steps(self):
+        import kernel.planning.planner as planner_mod
+        original = planner_mod._core_planner_fn
+        fake_plan = {"steps": [
+            {"action": "Step 1: gather data", "agent_hint": "researcher"},
+            {"action": "Step 2: analyze", "agent_hint": "analyst"},
+        ]}
+        planner_mod._core_planner_fn = lambda desc: fake_plan
+        try:
+            p = self._planner()
+            g = self._goal("Analyze the dataset")
+            plan = p.build(g)
+            assert plan.source == "core_planner"
+            assert plan.step_count == 2
+            assert plan.steps[0].action == "Step 1: gather data"
+        finally:
+            planner_mod._core_planner_fn = original
+
+    def test_build_core_planner_exception_falls_back(self):
+        import kernel.planning.planner as planner_mod
+        original = planner_mod._core_planner_fn
+        def _boom(desc):
+            raise RuntimeError("boom")
+        planner_mod._core_planner_fn = _boom
+        try:
+            p = self._planner()
+            g = self._goal("Analyze")
+            plan = p.build(g)
+            assert plan.source == "kernel_heuristic"
+        finally:
+            planner_mod._core_planner_fn = original
+
+    def test_build_core_planner_empty_steps_falls_back(self):
+        import kernel.planning.planner as planner_mod
+        original = planner_mod._core_planner_fn
+        planner_mod._core_planner_fn = lambda desc: {"steps": []}
+        try:
+            p = self._planner()
+            g = self._goal("Do something")
+            plan = p.build(g)
+            assert plan.source == "kernel_heuristic"
+        finally:
+            planner_mod._core_planner_fn = original
+
+    def test_register_core_planner(self):
+        from kernel.planning.planner import register_core_planner
+        import kernel.planning.planner as planner_mod
+        original = planner_mod._core_planner_fn
+        try:
+            fn = lambda desc: {"steps": []}
+            register_core_planner(fn)
+            assert planner_mod._core_planner_fn is fn
+        finally:
+            planner_mod._core_planner_fn = original
+
+    def test_get_planner_singleton(self):
+        from kernel.planning.planner import get_planner
+        p1 = get_planner()
+        p2 = get_planner()
+        assert p1 is p2
+
+
+# ── KernelLearner (kernel/learning/learner.py) — learning decisions ──────────
+
+class TestKernelLearner:
+
+    def _learner(self):
+        from kernel.learning.learner import KernelLearner
+        return KernelLearner()
+
+    def test_should_learn_clean_accept_high_conf(self):
+        l = self._learner()
+        assert l.should_learn("accept", 0.9) is False
+
+    def test_should_learn_accept_exactly_threshold(self):
+        l = self._learner()
+        assert l.should_learn("accept", 0.8) is False
+
+    def test_should_learn_accept_below_threshold(self):
+        l = self._learner()
+        assert l.should_learn("accept", 0.79) is True
+
+    def test_should_learn_non_accept_verdict(self):
+        l = self._learner()
+        assert l.should_learn("retry_suggested", 0.99) is True
+        assert l.should_learn("low_confidence", 0.95) is True
+        assert l.should_learn("empty", 0.5) is True
+
+    def test_extract_clean_accept_returns_none(self):
+        l = self._learner()
+        result = l.extract(
+            goal="Build API", result="Done", mission_id="m1",
+            verdict="accept", confidence=0.9,
+        )
+        assert result is None
+
+    def test_extract_empty_verdict(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Generate report", result="", mission_id="m2",
+            verdict="empty", confidence=0.1,
+        )
+        assert lesson is not None
+        assert "no output" in lesson.what_happened.lower()
+        assert lesson.verdict == "empty"
+
+    def test_extract_retry_suggested(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Analyze data", result="partial", mission_id="m3",
+            verdict="retry_suggested", confidence=0.5,
+        )
+        assert lesson is not None
+        assert "weak" in lesson.what_happened.lower() or "confidence" in lesson.what_happened.lower()
+
+    def test_extract_with_error_class_timeout(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Long task", result="", mission_id="m4",
+            verdict="low_confidence", confidence=0.3,
+            error_class="timeout",
+        )
+        assert lesson is not None
+        assert "timeout" in lesson.what_happened.lower() or "timeout" in lesson.what_to_do_differently.lower()
+
+    def test_extract_with_tool_not_available(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Use tool X", result="", mission_id="m5",
+            verdict="low_confidence", confidence=0.2,
+            error_class="tool_not_available",
+        )
+        assert lesson is not None
+        assert "tool" in lesson.what_to_do_differently.lower()
+
+    def test_extract_with_retries(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Flaky task", result="ok", mission_id="m6",
+            verdict="low_confidence", confidence=0.6,
+            retries=3,
+        )
+        assert lesson is not None
+        assert "retries" in lesson.what_happened.lower() or "3" in lesson.what_happened
+
+    def test_extract_with_weaknesses_appended(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Complex task", result="partial", mission_id="m7",
+            verdict="low_confidence", confidence=0.4,
+            weaknesses=["shallow analysis", "missing context"],
+        )
+        assert lesson is not None
+        assert "shallow analysis" in lesson.what_happened
+
+    def test_extract_with_improvement_suggestion(self):
+        l = self._learner()
+        lesson = l.extract(
+            goal="Task", result="result", mission_id="m8",
+            verdict="low_confidence", confidence=0.5,
+            improvement_suggestion="Break into smaller subtasks",
+        )
+        assert lesson is not None
+        assert lesson.what_to_do_differently == "Break into smaller subtasks"
+
+    def test_extract_truncates_long_goal(self):
+        l = self._learner()
+        long_goal = "a" * 200
+        lesson = l.extract(
+            goal=long_goal, result="r", mission_id="m9",
+            verdict="low_confidence", confidence=0.5,
+        )
+        assert lesson is not None
+        assert len(lesson.goal_summary) <= 103  # 100 chars + "..."
+
+    def test_store_no_fn_returns_false(self):
+        import kernel.learning.learner as learner_mod
+        from kernel.learning.lesson import KernelLesson
+        original = learner_mod._lesson_store_fn
+        learner_mod._lesson_store_fn = None
+        try:
+            lesson = KernelLesson(
+                mission_id="x", goal_summary="g", what_happened="h",
+                what_to_do_differently="w", confidence=0.5,
+            )
+            result = self._learner().store(lesson)
+            assert result is False
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_store_with_fn_called(self):
+        import kernel.learning.learner as learner_mod
+        from kernel.learning.lesson import KernelLesson
+        original = learner_mod._lesson_store_fn
+        calls = []
+        learner_mod._lesson_store_fn = lambda l: calls.append(l) or True
+        try:
+            lesson = KernelLesson(
+                mission_id="x", goal_summary="g", what_happened="h",
+                what_to_do_differently="w", confidence=0.5,
+            )
+            result = self._learner().store(lesson)
+            assert result is True
+            assert len(calls) == 1
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_store_fn_exception_falls_back(self):
+        import kernel.learning.learner as learner_mod
+        from kernel.learning.lesson import KernelLesson
+        original = learner_mod._lesson_store_fn
+        def _crash(l):
+            raise RuntimeError("db down")
+        learner_mod._lesson_store_fn = _crash
+        try:
+            lesson = KernelLesson(
+                mission_id="x", goal_summary="g", what_happened="h",
+                what_to_do_differently="w", confidence=0.5,
+            )
+            result = self._learner().store(lesson)
+            assert result is False
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_learn_clean_returns_none(self):
+        l = self._learner()
+        result = l.learn(
+            goal="Task", result="Done", mission_id="m_clean",
+            verdict="accept", confidence=0.95,
+        )
+        assert result is None
+
+    def test_learn_creates_and_stores_lesson(self):
+        import kernel.learning.learner as learner_mod
+        original = learner_mod._lesson_store_fn
+        stored = []
+        learner_mod._lesson_store_fn = lambda les: stored.append(les) or True
+        try:
+            l = self._learner()
+            lesson = l.learn(
+                goal="Do analysis", result="partial", mission_id="m_learn",
+                verdict="low_confidence", confidence=0.4,
+            )
+            assert lesson is not None
+            assert lesson.mission_id == "m_learn"
+            assert len(stored) == 1
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_learn_never_raises(self):
+        # store() catches its own exception and logs; learn() still returns the lesson
+        import kernel.learning.learner as learner_mod
+        original = learner_mod._lesson_store_fn
+        def _crash(l):
+            raise RuntimeError("crash")
+        learner_mod._lesson_store_fn = _crash
+        try:
+            l = self._learner()
+            # Does not raise — learn() is fail-open
+            result = l.learn(
+                goal="g", result="r", mission_id="m_crash",
+                verdict="empty", confidence=0.1,
+            )
+            # lesson is returned even if store failed (store catches internally)
+            assert result is not None
+            assert result.mission_id == "m_crash"
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_register_lesson_store(self):
+        from kernel.learning.learner import register_lesson_store
+        import kernel.learning.learner as learner_mod
+        original = learner_mod._lesson_store_fn
+        try:
+            fn = lambda l: True
+            register_lesson_store(fn)
+            assert learner_mod._lesson_store_fn is fn
+        finally:
+            learner_mod._lesson_store_fn = original
+
+    def test_get_learner_singleton(self):
+        from kernel.learning.learner import get_learner
+        l1 = get_learner()
+        l2 = get_learner()
+        assert l1 is l2
