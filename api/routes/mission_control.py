@@ -2,17 +2,15 @@
 BEA MAX — Phase 9 Mission Control Router
 Real-time mission visibility and control endpoints.
 
-Routes:
-  GET  /api/v1/missions                        — list missions
+Routes (unique endpoints not in api/routes/v1.py):
   GET  /api/v1/missions/{id}/log               — mission log events
   GET  /api/v1/system/status                   — system status
-  POST /api/v1/missions/{id}/approve           — approve mission
-  POST /api/v1/missions/{id}/reject            — reject mission
   POST /api/v1/missions/{id}/pause             — pause mission
   POST /api/v1/missions/{id}/resume            — resume mission
-  POST /api/v1/missions/{id}/cancel            — cancel mission
-  GET  /api/v1/missions/{id}/stream            — SSE stream
-  GET  /api/v1/missions/{id}/summary           — mission summary
+  GET  /api/v1/missions/{id}/stream            — SSE stream (Flutter client)
+  GET  /api/v1/health                          — health check
+
+Note: GET /api/v1/missions (list) is the canonical facade in api/routes/v1.py.
 """
 from __future__ import annotations
 
@@ -106,74 +104,7 @@ def _log_user_action(mission_id: str, action: str) -> None:
     _store().append_log(event)
 
 
-# ── 3a — Mission list ─────────────────────────────────────────────────────────
-
-@router.get("/missions")
-async def list_missions_v1(
-    status: str | None = Query(None),
-    limit: int = Query(20, ge=1, le=200)
-):
-    try:
-        ms = _mission_system()
-        missions_raw = ms.list_missions(status=status, limit=limit)
-        store = _store()
-        missions = []
-        for m in missions_raw:
-            logs = store.get_log(m.mission_id)
-            tool_names = list({e.tool_name for e in logs if e.tool_name})
-            agent_ids  = list({e.agent_id for e in logs if e.agent_id})
-            raw_risk = m.plan_risk.lower() if hasattr(m, "plan_risk") else "low"
-            canonical_st = _canonical_status(str(m.status))
-            requires_approval = canonical_st in {"WAITING_APPROVAL", "READY"}
-            missions.append({
-                "mission_id":         m.mission_id,
-                "status":             canonical_st,
-                "legacy_status":      str(m.status),
-                "progress":           _estimate_progress(m),
-                "agents_involved":    agent_ids,
-                "tools_used":         tool_names,
-                "risk_level":         _canonical_risk(raw_risk),
-                "requires_approval":  requires_approval,
-                "start_time":         m.created_at,
-                "estimated_completion": m.created_at + 60,
-            })
-        return JSONResponse(ok({"missions": missions, "total": len(missions)}))
-    except Exception as e:
-        return JSONResponse(err_resp(str(e)), status_code=500)
-
-
-def _estimate_progress(mission) -> float:
-    """Estimate mission progress from canonical status."""
-    # Canonical progress map (canonical_types.CanonicalMissionStatus)
-    canonical_progress = {
-        "CREATED":          0.0,
-        "QUEUED":           0.05,
-        "PLANNING":         0.1,
-        "WAITING_APPROVAL": 0.2,
-        "READY":            0.3,
-        "RUNNING":          0.6,
-        "REVIEW":           0.8,
-        "COMPLETED":        1.0,
-        "FAILED":           0.0,
-        "CANCELLED":        0.0,
-    }
-    # Legacy fallback map
-    legacy_progress = {
-        "ANALYZING":          0.1,
-        "PENDING_VALIDATION": 0.2,
-        "APPROVED":           0.3,
-        "EXECUTING":          0.6,
-        "DONE":               1.0,
-        "REJECTED":           0.0,
-        "BLOCKED":            0.0,
-        "PLAN_ONLY":          1.0,
-    }
-    raw = str(mission.status)
-    canonical = _canonical_status(raw)
-    return canonical_progress.get(canonical, legacy_progress.get(raw, 0.0))
-
-
-# ── 3b — Mission log ──────────────────────────────────────────────────────────
+# ── 3b — Mission log — (GET /api/v1/missions list lives in api/routes/v1.py) ─
 
 @router.get("/missions/{mission_id}/log")
 async def get_mission_log(
