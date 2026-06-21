@@ -32,11 +32,13 @@ deprecation roadmap.
 - **2026-06-21 (PR #84)** — `GET /api/v1/missions` (list) removed from
   `mission_control.py` — it was silently shadowed by `v1.py`'s version.
   `api/routes/v1.py` is now the exclusive v1 facade.
-- **TODO** — ship `POST /api/v3/missions/{id}/pause`, `POST /api/v3/missions/{id}/resume`,
-  `GET /api/v3/missions/{id}/stream` in `api/routes/convergence.py`, then update
-  `beamax_app/lib/services/api_service.dart` (three `TODO(v3-migration)` comments mark
-  the exact lines). Once all three Flutter calls are migrated and an APK ships,
-  remove the last v1 endpoints.
+- **DONE (PR #90, 2026-06-21)** — `POST /api/v3/missions/{id}/pause`,
+  `POST /api/v3/missions/{id}/resume`, `GET /api/v3/missions/{id}/stream` are now in
+  `api/routes/convergence.py`. Stream delegates to the same `_sse_generator` as v1 —
+  identical wire format, zero Flutter-side JSON change needed.
+  **Next step**: update `beamax_app/lib/services/api_service.dart` (three
+  `TODO(v3-migration)` comments mark the exact lines), rebuild APK, then remove the
+  last v1 endpoints.
 
 ## v1 endpoints (DEPRECATED — do not add new ones)
 
@@ -47,14 +49,14 @@ Remaining endpoints in `api/routes/mission_control.py` (sunset 2026-10-01) :
 | `GET /api/v1/health` | none known | `GET /api/health` | remove after telemetry confirms 0 traffic |
 | `GET /api/v1/missions/{id}/log` | none known | `/api/v3/missions/{id}/log` needed | ship v3 then remove |
 | `GET /api/v1/system/status` | none known | `GET /api/v3/system/readiness` | remove after telemetry |
-| `POST /api/v1/missions/{id}/pause` | **Flutter** `api_service.dart:550` | `/api/v3/missions/{id}/pause` needed | **load-bearing — do not remove** |
-| `POST /api/v1/missions/{id}/resume` | **Flutter** `api_service.dart:559` | `/api/v3/missions/{id}/resume` needed | **load-bearing — do not remove** |
-| `GET /api/v1/missions/{id}/stream` | **Flutter** `api_service.dart:753` | `/api/v3/missions/{id}/stream` needed | **load-bearing — do not remove** |
+| `POST /api/v1/missions/{id}/pause` | **Flutter** `api_service.dart:550` | `/api/v3/missions/{id}/pause` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
+| `POST /api/v1/missions/{id}/resume` | **Flutter** `api_service.dart:559` | `/api/v3/missions/{id}/resume` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
+| `GET /api/v1/missions/{id}/stream` | **Flutter** `api_service.dart:753` | `/api/v3/missions/{id}/stream` ✅ shipped PR #90 | **load-bearing — do not remove until APK migrates** |
 
 **Sunset plan** : every response carries `Deprecation: true` + `Sunset: 2026-10-01`
 headers. Concrete removal target : when Grafana shows
 `sum(rate(api_requests_total{version="v1"}[7d])) == 0` AND the Flutter app has
-shipped a release using `/api/v3/missions/{id}/stream` (TODO).
+shipped a release using `/api/v3/missions/{id}/stream` (server endpoint now available — Flutter APK rebuild pending).
 
 ## v2 endpoints (STABLE)
 
@@ -122,8 +124,8 @@ Issues to address in follow-up PRs :
 
 - [x] Add `Deprecation: true` + `Sunset: 2026-10-01` headers to all v1 routes (V1DeprecationMiddleware, 2026-04-25)
 - [x] Remove duplicate `GET /api/v1/missions` from `mission_control.py` (PR #84, 2026-06-21)
-- [ ] Ship `POST /api/v3/missions/{id}/pause` + `/resume` + `GET /api/v3/missions/{id}/stream` in `convergence.py`
-- [ ] Update Flutter `api_service.dart` (3 `TODO(v3-migration)` comments) after v3 endpoints ship
+- [x] Ship `POST /api/v3/missions/{id}/pause` + `/resume` + `GET /api/v3/missions/{id}/stream` in `convergence.py` (PR #90, 2026-06-21)
+- [ ] Update Flutter `api_service.dart` (3 `TODO(v3-migration)` comments at lines 550, 559, 753) + rebuild APK
 - [ ] Remove shadowing between `modules_v3.py` and resource-specific v3 routers
 - [ ] Count v1 callers in Grafana : `sum(rate(api_requests_total{version="v1"}[7d]))` — when near zero, schedule removal
 - [ ] Add `version` label to all `api.request` structlog events
