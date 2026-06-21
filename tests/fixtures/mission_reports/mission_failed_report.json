@@ -1,0 +1,24 @@
+{
+  "mission_id": "mis-002-failed",
+  "title": "Refactor auth middleware",
+  "status": "NEEDS_FIX",
+  "task_type": "refactor",
+  "files_changed": [
+    "core/auth.py",
+    "api/middleware.py"
+  ],
+  "tests_run": [
+    "tests/test_auth.py"
+  ],
+  "success": false,
+  "failure_reason": "Test regression: requireAuth bypass no longer rejects tokens with empty payload.",
+  "model_used": "gpt-4",
+  "model_class": "STRONG_CODE_REVIEW",
+  "duration_ms": 5400,
+  "cost_estimate": 0.045,
+  "lessons_learned": "",
+  "risks_detected": [
+    "Auth bypass regression must be fixed before merge."
+  ],
+  "created_at": 1700000100
+}

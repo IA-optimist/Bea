@@ -70,6 +70,9 @@ ignore = [
 [lint.per-file-ignores]
 "orchestrate-cli/**" = ["T201"]    # CLI tool: stdout IS its interface
 "orchestrate-mobile/**" = ["T201"] # mobile backend dev-server prints
+"scripts/bea_eval.py" = ["T201"]              # CLI : stdout = interface
+"scripts/seed_bea_memory.py" = ["T201"]       # CLI : seeding reporter
+"scripts/ingest_mission_report.py" = ["T201"] # CLI : ingestion reporter
 "scripts/ingest_knowledge.py" = ["T201"]  # CLI : ingestion RAG, stdout = interface
 "scripts/run_api_local.py" = ["T201"]     # CLI : launcher API local
 "gateway/codex_provider.py" = ["T201"]    # smoke-test CLI (__main__) : print = sortie
