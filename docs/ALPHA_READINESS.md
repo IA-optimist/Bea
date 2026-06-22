@@ -214,3 +214,19 @@ comparing dogfood mission outcomes against the current advisory recommendations.
 - Router automatic modification: **NOT done**.
 
 See `docs/DOGFOODING_REPORT.md` for the full evidence pack details.
+
+## Public Beta Memory Hygiene
+
+**Status: public seed is public-safe**
+
+- `scripts/seed_bea_memory.py` supports `--profile public` (default) and `--profile dev-private`.
+- The **public** profile contains only neutral project facts, architecture decisions, and risk rules.
+- The **dev-private** profile additionally includes personal fun facts and private jokes (dev-only, never for release).
+- `python scripts/seed_bea_memory.py --report --profile public` returns `public_safe: true`.
+- `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` detects privacy risks non-destructively.
+- `--apply` always aborts (exit 2) — no hidden bypass.
+
+**Limits:**
+- `bea_eval` may timeout on very large local stores (100k+ items). For CI and public testing, use a fresh store or the public seed fixture.
+- Destructive memory cleanup (`--apply`) is deferred to a future PR with explicit backup support.
+- The `.venv-c4-prep/` directory (site-packages) triggers false positives in the except/pass ratchet; this is pre-existing and unrelated to source code.
