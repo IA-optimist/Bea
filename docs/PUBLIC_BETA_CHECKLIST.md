@@ -13,6 +13,14 @@
 - `python scripts/bea_eval.py --json`
 - `python scripts/validate_local.py --quick`
 
+## Observability
+
+- [x] Redactor (`core/observability/redactor.py`) — secrets never in logs
+- [x] MissionEvent (`core/observability/mission_event.py`) — lightweight structured event
+- [x] Mission status report (`scripts/mission_status_report.py --json`)
+- [x] 26 observability tests (redactor + MissionEvent + report logic)
+- [x] No external telemetry (no Sentry, OTEL, Datadog, Prometheus)
+
 ## Still pending
 
 - APK CI hardening

@@ -267,3 +267,23 @@ See `docs/DOGFOODING_REPORT.md` for the full evidence pack details.
 - `bea_eval` may timeout on very large local stores (100k+ items). For CI and public testing, use a fresh store or the public seed fixture.
 - Destructive memory cleanup (`--apply`) is deferred to a future PR with explicit backup support.
 - The `.venv-c4-prep/` directory (site-packages) triggers false positives in the except/pass ratchet; this is pre-existing and unrelated to source code.
+
+## Runtime Observability (PR beta-runtime-observability-lite)
+
+**Status: available**
+
+- `core/observability/redactor.py` — privacy-safe redaction for structured logs.
+  - Redacts: API keys (`sk-*`), Bearer tokens, bea-tokens, emails, long opaque strings (40+ chars).
+  - Preserves: `mission_id`, `provider_used`, `model_used`, `error_category`, `score`, etc.
+  - Callable without importing executor (no circular imports).
+- `core/observability/mission_event.py` — `MissionEvent` dataclass.
+  - Fields: `mission_id`, `mission_type`, `status`, `provider_used`, `model_used`, `agent_used`,
+    `duration_ms`, `error_category`, `artifact_status`, `validation_status`, `rate_limited`, `fallback_used`.
+  - `.complete(status=, error_category=)` sets duration automatically.
+  - `.to_log_dict()` returns redacted dict safe for structured logging.
+- `scripts/mission_status_report.py` — local observability report from `workspace/learning_runs.json`.
+  - `python scripts/mission_status_report.py --json` outputs JSON summary.
+  - Prompts and LLM responses never appear in output.
+- 26 tests: `tests/core/observability/` — redactor, MissionEvent, report logic.
+
+**No external services.** No Sentry, OTEL, Datadog, or Prometheus.
