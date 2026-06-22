@@ -78,6 +78,41 @@ artifacts with the provider/model pair that produced them, which matters for
 future routing and regressions. When that information is not available, the
 report should keep the field explicit as `null` instead of inventing a value.
 
+## Provider / Model Propagation Path
+
+`provider_used` and `model_used` flow through the pipeline in two stages:
+
+**Stage 1 — Planned routing (before any LLM call):**
+`execution_supervised_runner.run_execution()` reads `ctx.metadata["routed_provider"]`
+and `ctx.metadata["classification"]["task_type"]` immediately before starting the
+mission.  It calls `session_meta_bus.set_initial_meta()` with the routing intent
+(provider_id, mission_type, fallback_used from capability decisions).
+
+**Stage 2 — Actual runtime (during LLM calls):**
+`llm_factory.safe_invoke()` calls `session_meta_bus.record_llm_used()` after each
+successful LLM call (`llm_call_ok` or `llm_fallback_ok`).  Fallback calls set
+`fallback=True` so `is_fallback_used()` returns True even when the primary failed.
+
+**Stage 3 — Session metadata injection (after pipeline):**
+`bea_executor.run()` calls `session_meta_bus.build_session_metadata_patch()` at
+the end of each session.  Actual runtime values take precedence over planned
+routing; planned values are used when no LLM call happened (e.g. immediate
+failure or chat fast-path).  Existing `session.metadata` keys are never
+overwritten.
+
+**Stage 4 — Learning record writer:**
+`pipeline_auto.build_learning_run_payload()` reads `session.metadata` and writes
+the full metadata dict to `learning_runs.json`.  Fields preserved:
+`provider_used`, `model_used`, `fallback_used`, `provider_status`, `mission_type`,
+`agent_used`, `agents_used`.
+
+**Why this matters for the model router:**
+`fallback_used=True` in a learning run means the primary provider failed and
+Ollama answered.  The router can use this signal to temporarily lower reliability
+for a given provider.  `model_used` lets the router correlate quality outcomes
+with specific model versions — critical when free-tier models (e.g.
+`openai/gpt-oss-20b:free`) are swapped out by the provider.
+
 The smoke also runs `python scripts/bea_eval.py --json` by default. A non-zero
 exit code or a JSON summary with failures fails the smoke.
 

@@ -15,6 +15,7 @@ import asyncio
 import contextlib
 import contextvars
 import os
+import threading
 import time
 import structlog
 try:
@@ -34,6 +35,40 @@ _provider_override: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 _safer_model_active: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "_safer_model_active", default=False
 )
+
+# ── Per-session provider tracking ─────────────────────────────────────────────
+# safe_invoke() writes the actual provider/model used on every successful LLM
+# call.  The pipeline reads and clears this after agents finish so that
+# learning_runs.json records what really happened (not just what was planned).
+# First-write-wins: the primary provider is always preserved; a fallback only
+# overwrites if the primary call failed entirely.
+_session_provider_meta: dict[str, dict] = {}
+_session_provider_lock = threading.Lock()
+
+
+def _record_session_provider(
+    session_id: str, provider: str, model: str, *, fallback: bool
+) -> None:
+    if not session_id:
+        return
+    with _session_provider_lock:
+        existing = _session_provider_meta.get(session_id)
+        if existing is None or (fallback and not existing.get("fallback_used")):
+            _session_provider_meta[session_id] = {
+                "provider_used": provider,
+                "model_used":    model,
+                "fallback_used": fallback,
+            }
+
+
+def get_and_clear_session_provider_meta(session_id: str) -> dict:
+    """Return and remove the provider/model snapshot for *session_id*.
+
+    Returns an empty dict when session_id was never tracked (all agents
+    failed before any successful LLM call).
+    """
+    with _session_provider_lock:
+        return _session_provider_meta.pop(session_id, {})
 
 
 @contextlib.contextmanager
@@ -811,6 +846,16 @@ class LLMFactory:
                 )
                 if provider == "ollama":
                     _OLLAMA_CIRCUIT.record_success()
+                # ── Session metadata bus (provider/model tracking) ────────────
+                try:
+                    from core.executor.session_meta_bus import record_llm_used
+                    record_llm_used(
+                        provider=provider,
+                        model=str(model_name),
+                        fallback=False,
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
                 # ── Métriques observabilité ───────────────────
                 try:
                     m = _get_metrics(self.s)
@@ -846,6 +891,10 @@ class LLMFactory:
                             cost_usd=estimate_cost(str(model_name), _pt, _ct))
                     except Exception:  # noqa: BLE001
                         pass
+                # ── Propagate provider/model upstream ────────────
+                _record_session_provider(
+                    session_id, provider, str(model_name), fallback=False
+                )
                 return resp
 
             except Exception as first_err:
@@ -910,6 +959,18 @@ class LLMFactory:
                         "llm_fallback_ok",
                         role=role, fallback=fb_provider, latency_ms=ms2,
                     )
+                    # ── Session metadata bus (fallback provider tracking) ─────
+                    try:
+                        from core.executor.session_meta_bus import record_llm_used
+                        fb_model_name = getattr(fb_llm, "model_name",
+                                                getattr(fb_llm, "model", fb_provider))
+                        record_llm_used(
+                            provider=fb_provider,
+                            model=str(fb_model_name),
+                            fallback=True,
+                        )
+                    except Exception:  # noqa: BLE001
+                        pass
                     try:
                         m = _get_metrics(self.s)
                         if m:
@@ -920,6 +981,13 @@ class LLMFactory:
                             )
                     except Exception as _exc:
                         log.warning("swallowed_exception", action="gen_ctx_late_finish", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
+                    # ── Propagate fallback provider/model upstream ─
+                    _fb_model = str(getattr(
+                        fb_llm, "model_name", getattr(fb_llm, "model", fb_provider)
+                    ))
+                    _record_session_provider(
+                        session_id, fb_provider, _fb_model, fallback=True
+                    )
                     return resp2
 
                 except Exception as fb_err:

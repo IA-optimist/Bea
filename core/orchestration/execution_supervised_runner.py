@@ -168,6 +168,39 @@ async def run_execution(
             log.warning("chat_fast_path_fail", err=str(_fe)[:120])
             # Fall through to full crew
 
+    # ── Phase 3b: Inject planned routing metadata for session_meta_bus ──────────
+    # Propagate provider_id, mission_type, and fallback_used from ctx.metadata so
+    # bea_executor can inject them into session.metadata even when no LLM call fires.
+    try:
+        from core.executor.session_meta_bus import reset as _bus_reset, set_initial_meta
+        _bus_reset()
+        _routed = ctx.metadata.get("routed_provider") or {}
+        _caps = ctx.metadata.get("capability_routing") or []
+        _fallback_planned = any(
+            r.get("fallback_used") for r in _caps if isinstance(r, dict)
+        )
+        _task_type = str(
+            (ctx.metadata.get("classification") or {}).get("task_type", "") or ""
+        )
+        _agents_hint = [
+            a.get("agent") for a in (ctx.metadata.get("agents_plan") or [])
+            if isinstance(a, dict) and a.get("agent")
+        ]
+        set_initial_meta({
+            "provider_used":  _routed.get("provider_id") if isinstance(_routed, dict) else None,
+            "mission_type":   _task_type or mode,
+            "fallback_used":  _fallback_planned,
+            "agents_used":    _agents_hint or None,
+        })
+        log.debug(
+            "session_meta_bus_initialized",
+            provider=_routed.get("provider_id") if isinstance(_routed, dict) else None,
+            mission_type=_task_type or mode,
+            fallback_planned=_fallback_planned,
+        )
+    except Exception as _bus_err:
+        log.debug("session_meta_bus_init_failed", err=str(_bus_err)[:80])
+
     # ── Phase 4: AGI Cognition wrapper + supervise() ──────────────────────────
     _base_timeout = mission_timeout_s
     _LONG_MODE_TIMEOUT = 600

@@ -11,6 +11,7 @@ import uuid
 import structlog
 
 from core.state import BeaSession, ActionSpec, TaskMode
+from core.llm_factory import get_and_clear_session_provider_meta
 from .constants import CB
 
 log = structlog.get_logger()
@@ -79,6 +80,8 @@ def build_learning_run_payload(
         "duration_s": duration_s,
         "provider_used": provider_used,
         "model_used": model_used,
+        "fallback_used": metadata.get("fallback_used"),
+        "provider_status": metadata.get("provider_status"),
         "agent_used": agent_used,
         "agents_used": agents_used,
         "agents_ok": session_status.get("ok"),
@@ -322,6 +325,17 @@ class PipelineAutoMixin:
 
         # 4. Agents paralleles par priorite
         await self._run_parallel(session, emit)
+
+        # 4a. Harvest actual provider/model from the LLM factory, write to session.metadata
+        # so that build_learning_run_payload() can read them later.
+        try:
+            _llm_meta = get_and_clear_session_provider_meta(session.session_id)
+            if _llm_meta:
+                session.metadata["provider_used"] = _llm_meta.get("provider_used")
+                session.metadata["model_used"]    = _llm_meta.get("model_used")
+                session.metadata["fallback_used"] = _llm_meta.get("fallback_used", False)
+        except Exception as _lmeta_err:
+            log.debug("provider_meta_harvest_failed", err=str(_lmeta_err)[:60])
 
         # 4b. Mémoriser les sorties réussies dans AgentMemory (per-agent)
         try:
