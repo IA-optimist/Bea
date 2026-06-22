@@ -9,9 +9,15 @@ Usage:
     python scripts/benchmark_model_roles.py --mock --json
 
     # Real mode — forge-builder against specific providers:
-    python scripts/benchmark_model_roles.py --role forge-builder --real \
-        --providers openrouter,ollama --json \
+    python scripts/benchmark_model_roles.py --role forge-builder --real \\
+        --providers openrouter,ollama --json \\
         --output workspace/model_role_benchmark_forge_builder.json
+
+    # Real mode — multi-role benchmark:
+    python scripts/benchmark_model_roles.py --real \\
+        --roles forge-builder,scout-research,shadow-advisor \\
+        --providers openrouter,ollama --json \\
+        --output workspace/model_role_benchmark_multi_role.json
 """
 from __future__ import annotations
 
@@ -25,7 +31,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-# Load .env from Béa root if present (supports running from worktree)
+
 def _load_env(path: Path) -> None:
     if not path.exists():
         return
@@ -45,7 +51,6 @@ def _load_env(path: Path) -> None:
 
 
 _BEA_ROOT = _ROOT
-# Try to find Béa root if we're in a worktree
 for _candidate in [
     _ROOT,
     Path("C:/Users/maxen/Documents/Béa"),
@@ -65,17 +70,25 @@ from core.evaluation.model_role_benchmark import (  # noqa: E402
     run_benchmark,
 )
 
+_SUPPORTED_ROLES = ["forge-builder", "scout-research", "shadow-advisor"]
+
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Real-limited model-role benchmark for Béa (forge-builder).",
+        description="Real-limited model-role benchmark for Béa.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    p.add_argument(
+    role_group = p.add_mutually_exclusive_group()
+    role_group.add_argument(
         "--role",
-        default="forge-builder",
-        help="Role to benchmark (default: forge-builder)",
+        default=None,
+        help="Single role to benchmark (default: forge-builder)",
+    )
+    role_group.add_argument(
+        "--roles",
+        default=None,
+        help=f"Comma-separated roles (supported: {', '.join(_SUPPORTED_ROLES)})",
     )
     mode = p.add_mutually_exclusive_group()
     mode.add_argument(
@@ -135,7 +148,6 @@ def _resolve_ollama_base() -> str:
         host = s.ollama_host or "127.0.0.1:11434"
         if not host.startswith("http"):
             host = f"http://{host}"
-        # If the host binds on 0.0.0.0 (server-side wildcard), connect to localhost
         host = host.replace("http://0.0.0.0:", "http://127.0.0.1:")
         return host
     except Exception:  # noqa: BLE001
@@ -147,26 +159,39 @@ def main() -> None:
     args = parser.parse_args()
 
     if not args.mock and not args.real:
-        # Default to mock for safety
         args.mock = True
 
     providers = [p.strip() for p in args.providers.split(",") if p.strip()]
 
-    # Resolve settings — never print the key
     api_key = os.environ.get("OPENROUTER_API_KEY", "")
     ollama_model = _resolve_ollama_model(args.ollama_model)
     ollama_base = _resolve_ollama_base()
 
-    report = run_benchmark(
-        role=args.role,
-        providers=providers,
-        mock=args.mock,
-        openrouter_api_key=api_key,
-        openrouter_base_url=_OPENROUTER_BASE,
-        openrouter_model=args.openrouter_model,
-        ollama_base_url=ollama_base,
-        ollama_model=ollama_model,
-    )
+    # Resolve role(s)
+    if args.roles:
+        role_list = [r.strip() for r in args.roles.split(",") if r.strip()]
+        report = run_benchmark(
+            roles=role_list,
+            providers=providers,
+            mock=args.mock,
+            openrouter_api_key=api_key,
+            openrouter_base_url=_OPENROUTER_BASE,
+            openrouter_model=args.openrouter_model,
+            ollama_base_url=ollama_base,
+            ollama_model=ollama_model,
+        )
+    else:
+        single_role = args.role or "forge-builder"
+        report = run_benchmark(
+            role=single_role,
+            providers=providers,
+            mock=args.mock,
+            openrouter_api_key=api_key,
+            openrouter_base_url=_OPENROUTER_BASE,
+            openrouter_model=args.openrouter_model,
+            ollama_base_url=ollama_base,
+            ollama_model=ollama_model,
+        )
 
     # Sanity check: ensure no API key leaked into report
     report_str = json.dumps(report)
@@ -194,22 +219,30 @@ def main() -> None:
 
 def _print_human(report: dict) -> None:
     mode = report.get("mode", "?")
-    role = report.get("role", "?")
-    print(f"Benchmark [{mode}] role={role}")
-    print("-" * 50)
+    if "roles" in report:
+        print(f"Benchmark [{mode}] roles={','.join(report['roles'])}")
+    else:
+        print(f"Benchmark [{mode}] role={report.get('role', '?')}")
+    print("-" * 60)
     for r in report.get("results", []):
         if r.get("skipped"):
-            print(f"  {r['provider_used']:12s}  SKIPPED  ({r.get('skip_reason', '')})")
+            print(f"  {r['role']:18s}  {r['provider_used']:12s}  SKIPPED  ({r.get('skip_reason', '')})")
         else:
             status = "PASS" if r["passed"] else "FAIL"
             print(
-                f"  {r['provider_used']:12s}  {status}  "
-                f"score={r['score']:.2f}  "
-                f"model={r['model_used']}  "
-                f"dur={r['duration_s']:.1f}s"
+                f"  {r['role']:18s}  {r['provider_used']:12s}  {status}  "
+                f"score={r['score']:.2f}  dur={r['duration_s']:.1f}s"
             )
             if r.get("error_category"):
-                print(f"               error_category={r['error_category']}")
+                print(f"    error_category={r['error_category']}")
+    summary = report.get("summary")
+    if summary:
+        print("\nBest by role:")
+        for role, best in summary.get("best_by_role", {}).items():
+            print(
+                f"  {role:18s}  {best['provider_used']:12s}  "
+                f"score={best['score']:.2f}  passed={best['passed']}"
+            )
 
 
 if __name__ == "__main__":

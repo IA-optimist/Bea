@@ -86,6 +86,55 @@ Each provider result includes: `artifact_ok`, `syntax_valid`, `test_proof`,
 (`gpt-oss-120b:free`) for code missions requiring test evidence.  Use Ollama
 as a latency fallback for simple artifact generation (no test requirement).
 
+## Controlled Multi-Role Benchmark
+
+`scripts/benchmark_model_roles.py --roles` extends the benchmark to three roles:
+`forge-builder`, `scout-research`, and `shadow-advisor`.  Each role has its own
+prompt and scoring criteria.  **This benchmark does not update the router
+automatically.**  Results are informational only — no routing policy is applied.
+
+```bash
+# Multi-role real benchmark:
+python scripts/benchmark_model_roles.py --real \
+    --roles forge-builder,scout-research,shadow-advisor \
+    --providers openrouter,ollama --json \
+    --output workspace/model_role_benchmark_multi_role.json
+```
+
+### Scoring criteria per role
+
+| Role | Criteria (each 1/3) | passed threshold |
+|------|---------------------|-----------------|
+| `forge-builder` | artifact_ok · syntax_valid · test_proof | score ≥ 0.7 |
+| `scout-research` | no_timeout · structured_output · useful_answer | score ≥ 0.7 |
+| `shadow-advisor` | json_valid · schema_valid · no_markdown | score ≥ 0.7 |
+
+### success vs passed vs skipped
+
+- **skipped** — provider was unavailable or unknown; not a quality signal.
+  Never used to infer that the model is bad.
+- **success** — a response was obtained (no crash, no timeout for scout-research).
+- **passed** — response met the quality bar (score ≥ 0.7).
+
+A provider being skipped does not lower its score in `best_by_role` — skipped
+entries are excluded from the summary entirely.
+
+### Known results (2026-06-22)
+
+| Role | Provider | Model | Score | Passed |
+|------|----------|-------|-------|--------|
+| forge-builder | openrouter | gpt-oss-120b:free | 1.0 | ✅ |
+| forge-builder | ollama | gemma4:12b | 0.0 | ❌ (artifact_invalid — no section markers) |
+| scout-research | openrouter | gpt-oss-120b:free | 1.0 | ✅ |
+| scout-research | ollama | gemma4:12b | 1.0 | ✅ |
+| shadow-advisor | openrouter | gpt-oss-120b:free | 1.0 | ✅ |
+| shadow-advisor | ollama | gemma4:12b | 0.33 | ❌ (json_invalid — markdown wrapper) |
+
+**Experimental recommendations** (not wired into router):
+- `forge-builder`: prefer OpenRouter — Ollama misses the `=== file.py ===` format.
+- `scout-research`: both providers acceptable — gemma4 produces structured output.
+- `shadow-advisor`: prefer OpenRouter — gemma4 wraps JSON in markdown, breaking parse.
+
 ## Adding a new rule
 
 Edit `core/evaluation/model_router.py`:
