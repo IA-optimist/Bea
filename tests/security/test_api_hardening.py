@@ -1,14 +1,14 @@
 """
 Tests for CORS + rate-limiting hardening (public beta readiness).
 
-All tests are unit-level — no real HTTP server, no real Redis, no real LLM calls.
+All tests are unit-level - no real HTTP server, no real Redis, no real LLM calls.
 """
 from __future__ import annotations
 
 import pytest
 
 
-# ── CORS settings tests ────────────────────────────────────────────────────────
+# -- CORS settings tests -------------------------------------------------------
 
 class TestCorsSettings:
     def test_wildcard_replaced_by_localhost_defaults(self):
@@ -65,7 +65,7 @@ class TestCorsSettings:
         assert "https://old.example.com" not in origins
 
 
-# ── Rate-limit settings tests ──────────────────────────────────────────────────
+# -- Rate-limit settings tests -------------------------------------------------
 
 class TestRateLimitSettings:
     def test_default_per_minute_is_60(self):
@@ -108,7 +108,7 @@ class TestRateLimitSettings:
         importlib.reload(cs)
 
 
-# ── Rate-limit middleware unit tests ──────────────────────────────────────────
+# -- Rate-limit middleware unit tests ------------------------------------------
 
 class TestRateLimitMiddlewareUnit:
     """Unit-test the in-memory logic of RateLimitMiddleware without HTTP."""
@@ -142,7 +142,7 @@ class TestRateLimitMiddlewareUnit:
         assert "/health" in exempt or "/api/v3/system/health" in exempt
 
 
-# ── Structural assertions on api/main.py ──────────────────────────────────────
+# -- Structural assertions on api/main.py -------------------------------------
 
 class TestMainPyStructure:
     def _content(self):
@@ -174,20 +174,20 @@ class TestMainPyStructure:
         assert "app.add_exception_handler(RateLimitExceeded" in content
 
     def test_no_rate_limit_middleware_import(self):
-        """slowapi is the single rate limiter — no legacy RateLimitMiddleware."""
+        """slowapi is the single rate limiter - no legacy RateLimitMiddleware."""
         content = self._content()
         assert "from api.rate_limiter import RateLimitMiddleware" not in content
         assert "app.add_middleware(RateLimitMiddleware)" not in content
 
 
-# ── rate_limit_middleware.py structural test ───────────────────────────────────
+# -- rate_limit_middleware.py structural test ----------------------------------
 
 class TestRateLimitMiddlewareFile:
     def test_default_limit_uses_env_variable(self):
         from pathlib import Path
         content = Path("api/rate_limit_middleware.py").read_text(encoding="utf-8")
         assert "BEA_RATE_LIMIT_PER_MINUTE" in content
-        # No hardcoded 100/minute — it's now configurable
+        # No hardcoded 100/minute - it is now configurable
         assert "100/minute" not in content
 
     def test_configurable_limit_present(self):
