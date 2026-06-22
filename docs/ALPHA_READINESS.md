@@ -55,16 +55,45 @@ The current PR raises the bar:
 
 ## Metadata Persistence
 
-`provider_used` and `model_used` are now preserved on the runtime write path
-that feeds `learning_runs.json`. `LearningEngine.record_run()` still only
-persists what it receives, so the executor remains the source of truth for
-these fields.
+**Writer (PR `codex/preserve-provider-model-in-learning-runs`):**
+`pipeline_auto.build_learning_run_payload()` now reads `session.metadata` and
+preserves `provider_used`, `model_used`, `fallback_used`, `provider_status`,
+`mission_type`, `agents_used` when available.  `LearningEngine.record_run()`
+passes through whatever it receives.
+
+**Upstream propagation (this PR `codex/propagate-provider-model-metadata-upstream`):**
+Three new injection points feed `session.metadata` before the writer runs:
+
+1. `execution_supervised_runner` — planned routing: `provider_used` from
+   `ctx.metadata["routed_provider"]["provider_id"]`, `mission_type` from
+   classification, `fallback_used` from capability_routing decisions.
+2. `llm_factory.safe_invoke()` — actual runtime: `record_llm_used()` is called
+   after every `llm_call_ok` (primary) and `llm_fallback_ok` (fallback).
+3. `bea_executor.run()` — post-pipeline: `build_session_metadata_patch()` merges
+   actual > planned values into `session.metadata`.  Existing keys are preserved.
+
+The ContextVar bus (`core/executor/session_meta_bus.py`) scopes tracking to the
+current async task — no session_id required, no cross-mission bleed.
+
+**Status: COMPLETE** — future runs will have `provider_used` / `model_used`
+populated from the first successful LLM call.  Planned routing values appear
+even when all LLM calls failed.
 
 Historical runs can still be incomplete:
 
 - older rows may not have `provider_used` / `model_used`
 - missing provider/model values are stored as `null` rather than invented
 - the reader stays backwards-compatible with the previous minimal run format
+
+**Remaining limits:**
+- `model_used` is resolved at llm_factory call time; the specific free-tier
+  model returned by OpenRouter may differ from the `model_id` we sent.  We
+  record what we sent (no response-level model extraction).
+- Sessions that exit via chat fast-path (no crew) only get planned routing
+  metadata; actual model is not tracked for that path.
+- `agents_used` from the bus reflects the routing plan, not which agents
+  actually executed.  The writer overrides this with actual `session.outputs`
+  keys when available.
 
 ## Remaining Risks
 
