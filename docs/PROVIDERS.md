@@ -182,6 +182,41 @@ OLLAMA_MODEL_CODE=gemma4:12b
 
 ---
 
+---
+
+## Propagation provider/model → learning_runs.json
+
+Les champs `provider_used` et `model_used` sont propagés vers `learning_runs.json`
+via la chaîne suivante :
+
+```
+LLMFactory.safe_invoke()
+  → _record_session_provider(session_id, provider, model, fallback)   # core/llm_factory.py
+  → PipelineAutoMixin._run_auto() step 4a                              # core/executor/pipeline_auto.py
+      session.metadata["provider_used"] = ...
+      session.metadata["model_used"]    = ...
+  → build_learning_run_payload(session, ...)                           # même fichier
+  → LearningEngine.record_run(payload)                                 # core/learning/learning_engine.py
+  → workspace/learning_runs.json
+```
+
+**Règles** :
+- Premier succès primaire gagne (`first-write-wins`).
+- Si le provider principal a échoué et qu'un fallback a répondu,
+  `fallback_used=True` est enregistré.
+- Si `session_id` est vide (appel hors session), rien n'est enregistré.
+- Si tous les agents ont échoué avant d'obtenir un succès LLM,
+  `provider_used` et `model_used` restent `null` dans `learning_runs.json`.
+
+**API publique** (module `core.llm_factory`) :
+```python
+get_and_clear_session_provider_meta(session_id: str) -> dict
+# → {"provider_used": "openrouter", "model_used": "...", "fallback_used": False}
+# → {}  si aucun succès LLM pour ce session_id
+```
+
+---
+
 ## Sécurité
 
 - **Ne jamais commiter** `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`

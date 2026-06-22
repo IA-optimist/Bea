@@ -23,16 +23,15 @@ log = structlog.get_logger()
 def extract_file_actions(output: str) -> list[dict]:
     """Convert ForgeBuilder ``### Fichier:`` blocks into executable actions."""
     import re
+    from core.coding_agent.code_artifacts import extract_python_source
 
     parts = re.split(r"(?m)^### Fichier:\s*(.+)$", output or "")
     actions: list[dict] = []
     for idx in range(1, len(parts), 2):
         path = parts[idx].strip()
         content = parts[idx + 1].strip() if idx + 1 < len(parts) else ""
-        if content.startswith("```"):
-            content = "\n".join(content.split("\n")[1:])
-            if content.endswith("```"):
-                content = content[:-3].strip()
+        if path.endswith(".py"):
+            content = extract_python_source(content)
         if path and content:
             actions.append({
                 "action_type": "create_file",

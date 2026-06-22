@@ -53,6 +53,31 @@ def test_smoke_cycle_failure_fixture_creates_bug_memory(tmp_path):
     assert result["memory_types"]["test_map"] >= 1
 
 
+def test_smoke_cycle_sha256_fixture_requires_code_artifact(tmp_path):
+    result = smoke_e2e_cycle.run_smoke_cycle(
+        fixture="sha256",
+        run_bea_eval=False,
+        work_dir=tmp_path,
+    )
+
+    assert result["reports_read"] == 1
+    assert result["artifact_validation"][0]["ok"] is True
+    report = json.loads(Path(result["reports"][0]).read_text(encoding="utf-8"))
+    assert report["provider_used"] == "fixture-local"
+    assert report["model_used"] == "fixture-forge-builder"
+    assert report["artifacts"]
+    assert report["files_created"]
+    assert report["tests_run"]
+    assert report["test_result"]["pytest"]["passed"] is True
+    assert report["test_result"]["syntax_check"]["passed"] is True
+    assert result["memory_types"]["eval_result"] >= 1
+    assert result["memory_types"]["model_result"] >= 1
+    assert result["memory_types"]["skill"] >= 1
+    assert result["memory_types"]["test_map"] >= 1
+    assert result["ingestion"]["errors"] == []
+    assert result["bea_eval"]["skipped"] is True
+
+
 def test_smoke_cycle_calls_bea_eval_json_with_mocked_runner(tmp_path):
     calls: list[list[str]] = []
 

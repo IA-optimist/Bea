@@ -9,10 +9,12 @@ The smoke cycle is:
 
 1. Generate or read a coding-agent `report.json`.
 2. Validate the report contract required by the coding-agent handoff.
-3. Run `scripts/ingest_mission_report.py --json` against the report.
-4. Store mission-learning memories in an isolated operational memory DB.
-5. Verify expected memory types were created.
-6. Run `scripts/bea_eval.py --json` and require a green result.
+3. For code missions, materialize code from the agent response, run a syntax
+   check, and run a targeted test command.
+4. Run `scripts/ingest_mission_report.py --json` against the report.
+5. Store mission-learning memories in an isolated operational memory DB.
+6. Verify expected memory types were created.
+7. Run `scripts/bea_eval.py --json` and require a green result.
 
 The default command runs both a successful fixture and a failing fixture:
 
@@ -31,6 +33,7 @@ To run a single built-in fixture:
 ```bash
 python scripts/smoke_e2e_cycle.py --fixture success
 python scripts/smoke_e2e_cycle.py --fixture failure
+python scripts/smoke_e2e_cycle.py --fixture sha256
 ```
 
 To run against an existing coding-agent report:
@@ -53,6 +56,12 @@ The report must contain these fields:
 - `complexity`
 - `error_category`
 - `duration_s`
+- `provider_used` for code missions
+- `model_used` for code missions
+- `artifacts` for code missions
+- `files_created` for code missions
+- `tests_run` for code missions
+- `test_result` for code missions
 - `report_path`
 
 After ingestion, the smoke requires:
@@ -63,8 +72,82 @@ After ingestion, the smoke requires:
 - `bug_memory` for failing reports
 - `test_map` when tests are present
 
+Mission reports and learning runs should keep `provider_used` and `model_used`
+whenever they are known. Those fields let the learner correlate successful
+artifacts with the provider/model pair that produced them, which matters for
+future routing and regressions. When that information is not available, the
+report should keep the field explicit as `null` instead of inventing a value.
+
+## Provider / Model Propagation Path
+
+`provider_used` and `model_used` flow through the pipeline in two stages:
+
+**Stage 1 — Planned routing (before any LLM call):**
+`execution_supervised_runner.run_execution()` reads `ctx.metadata["routed_provider"]`
+and `ctx.metadata["classification"]["task_type"]` immediately before starting the
+mission.  It calls `session_meta_bus.set_initial_meta()` with the routing intent
+(provider_id, mission_type, fallback_used from capability decisions).
+
+**Stage 2 — Actual runtime (during LLM calls):**
+`llm_factory.safe_invoke()` calls `session_meta_bus.record_llm_used()` after each
+successful LLM call (`llm_call_ok` or `llm_fallback_ok`).  Fallback calls set
+`fallback=True` so `is_fallback_used()` returns True even when the primary failed.
+
+**Stage 3 — Session metadata injection (after pipeline):**
+`bea_executor.run()` calls `session_meta_bus.build_session_metadata_patch()` at
+the end of each session.  Actual runtime values take precedence over planned
+routing; planned values are used when no LLM call happened (e.g. immediate
+failure or chat fast-path).  Existing `session.metadata` keys are never
+overwritten.
+
+**Stage 4 — Learning record writer:**
+`pipeline_auto.build_learning_run_payload()` reads `session.metadata` and writes
+the full metadata dict to `learning_runs.json`.  Fields preserved:
+`provider_used`, `model_used`, `fallback_used`, `provider_status`, `mission_type`,
+`agent_used`, `agents_used`.
+
+**Why this matters for the model router:**
+`fallback_used=True` in a learning run means the primary provider failed and
+Ollama answered.  The router can use this signal to temporarily lower reliability
+for a given provider.  `model_used` lets the router correlate quality outcomes
+with specific model versions — critical when free-tier models (e.g.
+`openai/gpt-oss-20b:free`) are swapped out by the provider.
+
 The smoke also runs `python scripts/bea_eval.py --json` by default. A non-zero
 exit code or a JSON summary with failures fails the smoke.
+
+## Code Mission Artifacts
+
+A code mission is not complete just because an agent returned useful text. The
+cycle now separates:
+
+- text response: prose or a code block in an agent answer
+- action: a file, command, or patch action selected by the execution pipeline
+- verifiable artifact: existing file path, non-empty diff, successful tool
+  action, or structured action report
+- completed code mission: verifiable artifact plus syntax validation plus test
+  evidence
+
+For any mission with `needs_actions=True`, `COMPLETED` is only valid when at
+least one artifact is present. If the report or session only contains text, the
+status must remain `NEEDS_ACTION_OUTPUT` or `NEEDS_REVIEW`.
+
+For `mission_type=coding_agent` or another explicit code mission, a completed
+report also needs test evidence through `tests_run`, `tests`,
+`test_command`, or `test_commands`, and the Python source must compile. Declared
+file paths in `files_created`, `files_changed`, or `expected_artifact` must
+exist under `artifact_root` or the report directory, unless the mission proves
+itself through a non-empty diff.
+
+The SHA256 fixture exercises this rule:
+
+```bash
+python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json
+```
+
+It creates `src/sha256_file.py`, `tests/test_sha256_file.py`, a compatible
+mission report, validates the artifact metadata, runs `py_compile`, runs
+`pytest`, ingests the report, and requires a `test_map` memory.
 
 ## Flutter v1 Regression Gate
 
@@ -95,7 +178,7 @@ Success prints:
 
 The summary includes reports read, memory counts, memory types, and the
 `bea_eval` summary. A failure message identifies the failing gate: report
-contract, ingestion, missing memory type, or `bea_eval`.
+contract, artifact validation, ingestion, missing memory type, or `bea_eval`.
 
 ## Adding A Fixture
 
@@ -111,6 +194,12 @@ For a new fixture to exercise the learning loop, include `task_type`,
 `files_changed`, `tests_run`, and either `lessons_learned` for success or
 `failure_reason` for failure. Keep fixture reports deterministic and free of
 external service dependencies.
+
+For a new code fixture with `needs_actions=True`, also include `artifact_root`
+when file paths are relative to a temporary artifact directory, plus
+`files_created` or `expected_artifact` for the source file, `tests_run` for the
+validation command, and `provider_used` / `model_used` / `test_result` in the
+final report.
 
 ## Local Validation Note
 

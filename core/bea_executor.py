@@ -135,6 +135,24 @@ class BeaOrchestrator(
             session.error  = str(e)
             await emit(f"Erreur interne : {str(e)[:200]}")
 
+        # ── Inject provider/model metadata into session.metadata ──────────────
+        # Reads from session_meta_bus: actual LLM calls (llm_factory) take precedence
+        # over planned routing (execution_supervised_runner).  Never overwrites an
+        # existing value — older code paths that populate metadata directly are
+        # respected.  No API keys are read or stored here.
+        try:
+            from core.executor.session_meta_bus import build_session_metadata_patch
+            patch = build_session_metadata_patch(session.metadata)
+            if patch:
+                session.metadata.update(patch)
+                log.debug(
+                    "session_metadata_injected",
+                    sid=session.session_id,
+                    keys=list(patch.keys()),
+                )
+        except Exception as _bus_exc:
+            log.debug("session_metadata_inject_failed", err=str(_bus_exc)[:80])
+
         return session
 
     # ── Mode dispatcher ───────────────────────────────────────────────────

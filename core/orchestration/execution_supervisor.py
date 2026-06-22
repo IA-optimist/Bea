@@ -502,11 +502,14 @@ def _check_session_outcome(session: Any) -> tuple[bool, str, str]:
     # executed or explicitly queued for approval. Agent prose alone is not a
     # deliverable and must not create a ghost-DONE mission.
     if getattr(session, "needs_actions", False):
+        from core.coding_agent.artifact_validator import validate_code_artifacts
+
+        artifact_result = validate_code_artifacts(session)
+        if artifact_result.ok:
+            return True, "", ""
+
         executed = getattr(session, "actions_executed", []) or []
         pending = getattr(session, "actions_pending", []) or []
-        raw_actions = getattr(session, "_raw_actions", []) or []
-        if executed and (not raw_actions or len(executed) + len(pending) >= len(raw_actions)):
-            return True, "", ""
         # No file actions materialized — but if agents produced meaningful text output
         # (rate ≥ 20%) the mission is still valuable (research / analysis tasks).
         if not executed and not pending:
@@ -515,6 +518,7 @@ def _check_session_outcome(session: Any) -> tuple[bool, str, str]:
                 "no file action was materialized despite needs_actions=True",
                 "actions_not_materialized",
             )
+        return False, artifact_result.message, artifact_result.status.lower()
 
     if rate >= 0.20:
         return True, "", ""
