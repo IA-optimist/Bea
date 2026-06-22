@@ -137,6 +137,7 @@ ignore = [
 "scripts/safety_check.py" = ["T201"]
 "scripts/suggest_coverage_ratchet.py" = ["T201"]  # CLI reporter, prints are the output.
 "scripts/benchmark_model_roles.py" = ["T201"]     # CLI : stdout = benchmark report
+"scripts/model_routing_advice.py" = ["T201"]      # CLI : stdout = advisory report
 "beamax" = ["T201"]  # CLI entrypoint script (no .py extension).
 "security/blue_team/soc_service.py" = ["T201"]
 

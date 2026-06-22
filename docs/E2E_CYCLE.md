@@ -186,6 +186,29 @@ role's quality bar in one shot (score ≥ 0.7).  Results are logged to
 No routing policy is applied automatically — the benchmark is read-only
 relative to the router.
 
+## Advisory Mode
+
+After running the multi-role benchmark, generate non-prescriptive routing
+recommendations with:
+
+```bash
+python scripts/model_routing_advice.py \
+    --input workspace/model_role_benchmark_multi_role.json --json
+```
+
+The advisory step extends the cycle:
+
+```
+benchmark results → advisory report → human review → (optional) future routing policy
+```
+
+The advisory output sets `runtime_enforced=false` and `confidence="low"` for
+every recommendation.  It distinguishes between:
+- providers that **failed** (response below quality bar)
+- providers that were **skipped** (unavailable — not a model quality signal)
+
+No routing change is applied automatically at any step.
+
 ## Flutter v1 Regression Gate
 
 `tests/test_client_v1_allowlist.py` keeps the client `/api/v1` allowlist empty

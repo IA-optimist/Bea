@@ -125,6 +125,28 @@ is not updated automatically.  See `docs/MODEL_ROUTING.md` for full details.
 - Ollama results depend on the local model installed and its context window.
 - Results may vary across runs for non-deterministic free-tier models.
 
+## Advisory Routing Mode
+
+Béa can now read benchmark results and produce non-prescriptive provider/model
+recommendations per role:
+
+```bash
+python scripts/model_routing_advice.py \
+    --input workspace/model_role_benchmark_multi_role.json --json
+```
+
+**The router is not updated automatically.** Advisory output is informational only
+and requires human review before any routing change is applied.
+
+Providers actually tested (2026-06-22):
+- OpenRouter `openai/gpt-oss-120b:free` — passed all 3 roles (forge-builder, scout-research, shadow-advisor)
+- Ollama `gemma4:12b` — passed scout-research only; failed artifact/JSON for the other two
+
+Remaining limits:
+- No automatic CI enforcement for the real benchmark
+- Confidence stays `"low"` until multiple independent runs confirm results
+- Advisory does not change runtime provider selection
+
 ## Remaining Risks
 
 - The validator checks artifact presence and test evidence, not semantic code
