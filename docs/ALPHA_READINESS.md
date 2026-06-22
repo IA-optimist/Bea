@@ -130,6 +130,17 @@ Historical runs can still be incomplete:
   actually executed.  The writer overrides this with actual `session.outputs`
   keys when available.
 
+## CI Status
+
+- PR smoke workflow: enforced via `.github/workflows/pr-smoke.yml`
+- Enforced commands:
+  - `ruff check .`
+  - `python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json`
+  - `python scripts/bea_eval.py --json`
+  - `python scripts/validate_local.py --quick`
+- Provider-backed checks remain outside this PR smoke lane.
+- No OpenRouter key or Ollama daemon is required for the enforced PR smoke.
+
 ## Model-Role Benchmark
 
 **Multi-role available (2026-06-22).** `scripts/benchmark_model_roles.py`
