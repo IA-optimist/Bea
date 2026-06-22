@@ -53,13 +53,18 @@ The current PR raises the bar:
   provider dependency.
 - `provider_used` / `model_used` are now present in the SHA256 report fixture.
 
-## Metadata Gap
+## Metadata Persistence
 
-`provider_used` and `model_used` are still lost on the historical runtime write
-path in `core/executor/pipeline_auto.py` when `learning_runs.json` is written.
-`LearningEngine.record_run()` persists what it receives; the missing metadata is
-not created there. Fixing that requires a follow-up in the executor path, which
-is outside this PR's scope.
+`provider_used` and `model_used` are now preserved on the runtime write path
+that feeds `learning_runs.json`. `LearningEngine.record_run()` still only
+persists what it receives, so the executor remains the source of truth for
+these fields.
+
+Historical runs can still be incomplete:
+
+- older rows may not have `provider_used` / `model_used`
+- missing provider/model values are stored as `null` rather than invented
+- the reader stays backwards-compatible with the previous minimal run format
 
 ## Remaining Risks
 
@@ -71,5 +76,5 @@ is outside this PR's scope.
   not by this PR.
 - Existing historical mission records may still show optimistic statuses until
   re-run through the stricter gate.
-- `learning_runs.json` still lacks provider/model on older runs until the
-  executor write path is updated.
+- older `learning_runs.json` entries may still lack provider/model until they
+  are regenerated through the current executor path.

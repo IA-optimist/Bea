@@ -72,6 +72,12 @@ After ingestion, the smoke requires:
 - `bug_memory` for failing reports
 - `test_map` when tests are present
 
+Mission reports and learning runs should keep `provider_used` and `model_used`
+whenever they are known. Those fields let the learner correlate successful
+artifacts with the provider/model pair that produced them, which matters for
+future routing and regressions. When that information is not available, the
+report should keep the field explicit as `null` instead of inventing a value.
+
 The smoke also runs `python scripts/bea_eval.py --json` by default. A non-zero
 exit code or a JSON summary with failures fails the smoke.
 

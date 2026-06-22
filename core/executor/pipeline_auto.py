@@ -16,6 +16,86 @@ from .constants import CB
 log = structlog.get_logger()
 
 
+def _first_non_empty(*values):
+    for value in values:
+        if value is None:
+            continue
+        if isinstance(value, str):
+            value = value.strip()
+            if value:
+                return value
+            continue
+        if value:
+            return value
+    return None
+
+
+def build_learning_run_payload(
+    session: BeaSession,
+    mode_str: str,
+    session_status: dict,
+    *,
+    session_ok: bool,
+) -> dict:
+    """Build the payload written to learning_runs.json.
+
+    Keep all available provider/model metadata, but never invent values.
+    """
+    metadata = getattr(session, "metadata", {}) or {}
+    outputs = getattr(session, "outputs", {}) or {}
+    agents_used = list(outputs.keys()) or list(metadata.get("agents_used") or [])
+    agent_used = agents_used[0] if len(agents_used) == 1 else metadata.get("agent_used")
+    provider_used = _first_non_empty(
+        metadata.get("provider_used"),
+        metadata.get("routed_provider"),
+        metadata.get("provider"),
+    )
+    model_used = _first_non_empty(
+        metadata.get("model_used"),
+        metadata.get("routed_model"),
+        metadata.get("model"),
+    )
+    duration_s = _first_non_empty(
+        metadata.get("duration_s"),
+        metadata.get("duration_seconds"),
+        metadata.get("elapsed_s"),
+    )
+    if duration_s is None and getattr(session, "created_at", None):
+        updated_at = metadata.get("updated_at") or metadata.get("ended_at")
+        if updated_at is not None:
+            try:
+                duration_s = (updated_at - session.created_at).total_seconds()
+            except Exception:
+                duration_s = None
+
+    return {
+        "session_id": session.session_id,
+        "mission_id": metadata.get("mission_id") or session.session_id,
+        "mission_type": metadata.get("mission_type") or mode_str,
+        "mode": mode_str,
+        "status": session_status.get("label", ""),
+        "success": session_ok,
+        "error_category": metadata.get("error_category"),
+        "duration_s": duration_s,
+        "provider_used": provider_used,
+        "model_used": model_used,
+        "agent_used": agent_used,
+        "agents_used": agents_used,
+        "agents_ok": session_status.get("ok"),
+        "agents_total": session_status.get("total"),
+        "success_rate": round(float(session_status.get("rate", 0.0)), 3),
+        "patches_generated": len(getattr(session, "improve_pending", [])),
+        "patches_approved": getattr(session, "auto_count", 0),
+        "patches_applied": len(getattr(session, "actions_executed", [])),
+        "mission": (getattr(session, "mission_summary", "") or "")[:100],
+        "agents_results": {
+            name: (1 if getattr(out, "success", False) else 0)
+            for name, out in outputs.items()
+        },
+        "report_path": metadata.get("report_path"),
+    }
+
+
 class PipelineAutoMixin:
     """Mixin providing the AUTO pipeline and shared utilities."""
 
@@ -296,26 +376,12 @@ class PipelineAutoMixin:
         # 8bis. LearningEngine — enregistrement réel (n'était jamais appelé)
         try:
             if self.learning:
-                agents_ok:    dict[str, int] = {}
-                agents_total: dict[str, int] = {}
-                for name, out in session.outputs.items():
-                    agents_total[name] = 1
-                    agents_ok[name]    = 1 if out.success else 0
-
-                self.learning.record_run({
-                    "session_id":       session.session_id,
-                    "mode":             mode_str,
-                    "status":           session_status["label"],
-                    "agents_ok":        session_status["ok"],
-                    "agents_total":     session_status["total"],
-                    "success_rate":     round(session_status["rate"], 3),
-                    "patches_generated": len(getattr(session, "improve_pending", [])),
-                    "patches_approved":  session.auto_count,
-                    "patches_applied":   len(session.actions_executed),
-                    "mission":          (session.mission_summary or "")[:100],
-                    "agents_results":   {n: agents_ok.get(n, 0)
-                                        for n in agents_total},
-                })
+                self.learning.record_run(build_learning_run_payload(
+                    session,
+                    mode_str,
+                    session_status,
+                    session_ok=session_ok,
+                ))
         except Exception as e:
             log.debug("learning_record_failed", err=str(e)[:80])
 
