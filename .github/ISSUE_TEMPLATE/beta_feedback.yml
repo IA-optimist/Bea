@@ -1,0 +1,75 @@
+name: Beta Feedback
+description: Share feedback, suggestions, or observations about the Béa Developer Preview
+title: "[FEEDBACK]: "
+labels: ["feedback", "beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for general feedback, suggestions, or observations
+        that are not bug reports. For bugs, use the Bug Report template instead.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Area
+      description: What area does your feedback relate to?
+      options:
+        - API
+        - Flutter
+        - Memory
+        - Provider
+        - Mission artifact
+        - Docs
+        - Onboarding / Setup
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feedback-type
+    attributes:
+      label: Feedback type
+      options:
+        - Suggestion
+        - Positive observation
+        - Confusion / unclear documentation
+        - Missing feature
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit Hash
+      description: Run `git rev-parse --short HEAD` in the repo
+      placeholder: "e.g., a1b2c3d"
+    validations:
+      required: true
+
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      description: What would you like to share? Be specific.
+      placeholder: |
+        e.g., "The installation guide step 3 was unclear because..."
+        or "It would help if Béa showed the provider name in mission output..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (optional)
+      description: What were you trying to do when you noticed this?
+      placeholder: "e.g., I was testing scenario 2 (scout-research) and noticed..."
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I have removed all API keys, tokens, emails, and personal data from this report
+          required: true
