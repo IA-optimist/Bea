@@ -57,7 +57,7 @@ Flutter app targeting Android. Current APK at `C:\Users\Desktop\Bea_app.apk`, re
 
 - **Purpose**: Mobile control panel for Béa — missions, agents, business, security, autonomy decisions
 - **Auth**: Bearer JWT (`HardcodedConfig.apiToken` or acquired via login)
-- **API usage**: Primarily v3, v2 for agents/abort, **v1 for 3 endpoints (see below)**
+- **API usage**: v3 for all mission control (pause/resume/stream migrated PR #91), v2 for agents/abort
 - **Key files**: `beamax_app/lib/services/api_service.dart`, `beamax_app/lib/screens/`
 - **Build**: `flutter build apk --release --no-tree-shake-icons` (from `C:\bea_app` — accent-free path)
 - **Modification rule**: Changes to API calls require rebuilding and redistributing the APK.
@@ -123,10 +123,10 @@ The remaining work is purely client-side (APK rebuild). **Migration sequence** (
    `/resume` now in `api/routes/convergence.py`. Flutter change: two-line URL update
    in `api_service.dart:550,559`.
 
-3. **TODO — Flutter APK rebuild** (unblocked):
-   - Update 3 URLs in `beamax_app/lib/services/api_service.dart` (`TODO(v3-migration)` markers)
-   - `flutter build apk --release --no-tree-shake-icons` from a copy in `C:\bea_app`
-   - Distribute APK
+3. **TODO — Flutter APK rebuild** (code migration done, APK not yet rebuilt):
+   - `api_service.dart` already uses v3 at lines 550 (`/pause`), 559 (`/resume`), 755 (`/stream`) — verified 2026-06-23
+   - `flutter build apk --release --no-tree-shake-icons` from `C:\bea_app` (accent-free path)
+   - Distribute APK to Pixel 7 (User 11) via `adb install`
 
 3. **Remove v1 endpoints** (after APK adoption):
    - Remove `POST /missions/{id}/pause`, `/resume`, `GET /missions/{id}/stream` from `mission_control.py`

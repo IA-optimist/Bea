@@ -87,7 +87,7 @@
 2. ~~**CORS**~~ ✅ Résolu — BEA_CORS_ORIGINS, pas de wildcard, fail-hard prod
 3. **CI GitHub Actions** — smoke + pytest sur chaque PR
 4. **APK build CI** — valider APK v3 automatiquement
-5. **Audit endpoints v1 serveur** — lister et dater la dépréciation planifiée
+5. ~~**Audit endpoints v1 serveur**~~ ✅ Plan en 4 phases documenté dans `docs/API_VERSIONING.md` — Flutter code migré (v3), APK rebuild pending, sunset 2026-10-01
 
 ## Recommandation
 
