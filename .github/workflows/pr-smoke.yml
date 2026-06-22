@@ -1,0 +1,43 @@
+name: PR Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pr-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff==0.15.8 mypy
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Smoke SHA256 fixture
+        run: python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json
+
+      - name: bea_eval
+        run: python scripts/bea_eval.py --json
+
+      - name: Local validation quick gate
+        run: python scripts/validate_local.py --quick

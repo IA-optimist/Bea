@@ -5,6 +5,14 @@
 
 ---
 
+## Observability
+
+- [x] Redactor (`core/observability/redactor.py`) — secrets never in logs
+- [x] MissionEvent (`core/observability/mission_event.py`) — lightweight structured event
+- [x] Mission status report (`scripts/mission_status_report.py --json`)
+- [x] 26 observability tests (redactor + MissionEvent + report logic)
+- [x] No external telemetry (no Sentry, OTEL, Datadog, Prometheus)
+
 ## Memory hygiene
 
 - [ ] `python scripts/seed_bea_memory.py --report --profile public` returns `public_safe: True`
@@ -44,24 +52,31 @@
 
 ## Validation gates
 
-- [ ] `ruff check .` passes
-- [ ] `pytest` passes (all critical tests)
-- [ ] `python scripts/validate_local.py --quick` passes all 8 gates
+- [x] `ruff check .` passes
+- [x] `pytest` passes (all critical tests)
+- [x] `python scripts/validate_local.py --quick` passes all gates
+- [x] CI smoke enforced on PR (fixture-backed, no provider key required)
 - [ ] `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` runs clean on public seed
 
 ## Provider readiness
 
-- [ ] OpenRouter free tier works for all 3 roles (forge-builder, scout-research, shadow-advisor)
-- [ ] Ollama fallback documented (with known limitations)
+- [x] OpenRouter free tier works for all 3 roles (forge-builder, scout-research, shadow-advisor)
+- [x] Ollama fallback documented (with known limitations)
 - [ ] No hardcoded provider keys anywhere in the codebase
+
+## APK / Flutter
+
+- [x] Flutter client uses `/api/v3` only (grep confirmed: 0 active `/api/v1` calls)
+- [x] APK build CI workflow (`flutter_apk.yml`) — gate + `workflow_dispatch`
+- [ ] APK v3 validated on physical device
 
 ## Known limitations documented
 
-- [ ] Router is advisory only (`runtime_enforced=false`)
-- [ ] No rate-limiting
-- [ ] APK v3 not validated in CI
+- [x] Router is advisory only (`runtime_enforced=false`)
+- [x] Rate-limiting configurable (`BEA_RATE_LIMIT_PER_MINUTE`)
+- [x] v1 endpoints maintained for Flutter rollback — timeline in `docs/API_VERSIONING.md`
 - [ ] `bea_eval` may timeout on large local stores
-- [ ] v1 endpoints maintained for Flutter rollback
+- [ ] MissionEvent not yet wired into pipeline_auto (building block only)
 
 ## Grep checks
 
