@@ -56,6 +56,36 @@ Any `protected_files` argument or task type containing `security`, `self-improve
 - **Safety**: critical paths must be routed explicitly, not left to a generic prompt.
 - **Observability**: class-level routing is easy to log, evaluate, and improve.
 
+## Real Limited Benchmark
+
+`scripts/benchmark_model_roles.py` runs a deterministic SHA256 fixture against a
+specific role and one or more providers.  It calls the LLM directly — bypassing
+the meta-orchestrator and crew — to get a clean provider/model signal.
+
+```bash
+# Mock mode (no real LLM calls, always green):
+python scripts/benchmark_model_roles.py --mock --json
+
+# Real mode — forge-builder against OpenRouter and Ollama:
+python scripts/benchmark_model_roles.py \
+    --role forge-builder --real \
+    --providers openrouter,ollama --json \
+    --output workspace/model_role_benchmark_forge_builder.json
+```
+
+Each provider result includes: `artifact_ok`, `syntax_valid`, `test_proof`,
+`score` (0.0–1.0), `passed` (score ≥ 0.7 and success), `duration_s`,
+`error_category`, and `skipped` (with `skip_reason` when unavailable).
+
+**Known results (2026-06-22):**
+- `openai/gpt-oss-120b:free` via OpenRouter: score 1.0 — PASS (~14 s)
+- `gemma4:12b` via Ollama: score 0.67 — near-pass; artifact + syntax OK,
+  no `def test_` in output (model fills the SHA256 file but omits test file)
+
+**Routing recommendation:** `forge-builder` should prefer OpenRouter
+(`gpt-oss-120b:free`) for code missions requiring test evidence.  Use Ollama
+as a latency fallback for simple artifact generation (no test requirement).
+
 ## Adding a new rule
 
 Edit `core/evaluation/model_router.py`:
