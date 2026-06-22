@@ -67,7 +67,7 @@ def validate_report_contract(report_path: str | Path) -> dict[str, Any]:
     return data
 
 
-def _fixture_payload(kind: str, report_path: Path) -> dict[str, Any]:
+def _fixture_payload(kind: str, report_path: Path, artifact_root: Path | None = None) -> dict[str, Any]:
     success = kind == "success"
     mission_id = f"smoke-e2e-{kind}"
     goal = (
@@ -120,9 +120,177 @@ def _fixture_payload(kind: str, report_path: Path) -> dict[str, Any]:
 
 def _write_fixture(kind: str, directory: Path) -> Path:
     path = directory / f"{kind}_report.json"
+    if kind == "sha256":
+        payload = _build_sha256_fixture(path, directory)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return path
     payload = _fixture_payload(kind, path)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return path
+
+
+def _write_sha256_artifacts(artifact_root: Path) -> None:
+    source = artifact_root / "src" / "sha256_file.py"
+    test_file = artifact_root / "tests" / "test_sha256_file.py"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    test_file.parent.mkdir(parents=True, exist_ok=True)
+    (artifact_root / "src" / "__init__.py").write_text("", encoding="utf-8")
+    source.write_text(
+        "\n".join(
+            [
+                "from __future__ import annotations",
+                "",
+                "import hashlib",
+                "from pathlib import Path",
+                "",
+                "",
+                "def sha256_file(path: str) -> str:",
+                "    digest = hashlib.sha256()",
+                "    with Path(path).open('rb') as handle:",
+                "        for chunk in iter(lambda: handle.read(8192), b''):",
+                "            digest.update(chunk)",
+                "    return digest.hexdigest()",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    test_file.write_text(
+        "\n".join(
+            [
+                "import hashlib",
+                "",
+                "from src.sha256_file import sha256_file",
+                "",
+                "",
+                "def test_sha256_file(tmp_path):",
+                "    target = tmp_path / 'payload.bin'",
+                "    target.write_bytes(b'bea-smoke')",
+                "    assert sha256_file(str(target)) == hashlib.sha256(b'bea-smoke').hexdigest()",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _run_sha256_pytest(artifact_root: Path) -> dict[str, Any]:
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(artifact_root)
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests/test_sha256_file.py", "-q"],
+        cwd=str(artifact_root),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "command": "python -m pytest tests/test_sha256_file.py -q",
+        "returncode": proc.returncode,
+        "passed": proc.returncode == 0,
+        "stdout": proc.stdout[-1200:],
+        "stderr": proc.stderr[-1200:],
+    }
+
+
+def _build_sha256_fixture(report_path: Path, directory: Path) -> dict[str, Any]:
+    artifact_root = directory / "sha256_artifacts"
+    source_response = """Voici l'implémentation demandée.
+
+```python
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+
+def sha256_file(path: str) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+```
+
+Le reste est de la documentation et ne doit pas finir dans le fichier .py.
+"""
+    from core.coding_agent.code_artifacts import materialize_python_artifact, validate_python_file
+
+    source_result = materialize_python_artifact(source_response, artifact_root / "src" / "sha256_file.py")
+    if not source_result.ok:
+        raise SmokeE2EError(f"sha256 source materialization failed: {source_result.message}")
+
+    _write_sha256_artifacts(artifact_root)
+    syntax_ok, syntax_error = validate_python_file(artifact_root / "src" / "sha256_file.py")
+    if not syntax_ok:
+        raise SmokeE2EError(f"sha256 syntax validation failed: {syntax_error}")
+
+    test_result = _run_sha256_pytest(artifact_root)
+    if not test_result["passed"]:
+        raise SmokeE2EError(
+            "sha256 pytest failed "
+            f"(exit {test_result['returncode']}). stdout={test_result['stdout']} stderr={test_result['stderr']}"
+        )
+
+    files_created = [
+        "src/__init__.py",
+        "src/sha256_file.py",
+        "tests/test_sha256_file.py",
+    ]
+    report = {
+        "mission_id": "smoke-e2e-sha256",
+        "goal": "Create sha256_file(path: str) -> str with a unit test.",
+        "title": "Create sha256_file(path: str) -> str with a unit test.",
+        "mission_type": "coding_agent",
+        "task_type": "coding_agent",
+        "status": "SUCCESS",
+        "success": True,
+        "needs_actions": True,
+        "agents_used": ["forge-builder"],
+        "tools_used": ["materialize_python_artifact", "py_compile", "pytest", "ingest_mission_report"],
+        "plan_steps": [
+            "extract code from forge-builder response",
+            "write python source",
+            "run py_compile",
+            "run pytest",
+            "ingest mission report",
+            "run bea_eval",
+        ],
+        "complexity": "low",
+        "error_category": "",
+        "duration_s": 4.2,
+        "duration_ms": 4200,
+        "report_path": str(report_path),
+        "artifact_root": str(artifact_root),
+        "provider_used": "fixture-local",
+        "model_used": "fixture-forge-builder",
+        "model_class": "SMALL_FAST",
+        "artifacts": [
+            str(artifact_root / "src" / "sha256_file.py"),
+            str(artifact_root / "tests" / "test_sha256_file.py"),
+            str(report_path),
+        ],
+        "files_created": files_created,
+        "files_changed": ["src/sha256_file.py", "tests/test_sha256_file.py"],
+        "expected_artifact": "src/sha256_file.py",
+        "tests_run": [test_result["command"]],
+        "test_result": {
+            "syntax_check": {
+                "command": f"py_compile {artifact_root / 'src' / 'sha256_file.py'}",
+                "passed": syntax_ok,
+                "error": syntax_error,
+            },
+            "pytest": test_result,
+        },
+        "tests": ["tests/test_sha256_file.py"],
+        "lessons_learned": (
+            "A code mission is only completed when source extraction, syntax validation "
+            "and test proof all succeed."
+        ),
+        "failure_reason": "",
+        "risks_detected": [],
+    }
+    return report
 
 
 def _prepare_reports(
@@ -193,6 +361,25 @@ def _assert_memory_types(reports: list[dict[str, Any]], memory_types: dict[str, 
         )
 
 
+def _validate_action_artifacts(report: dict[str, Any], report_path: Path) -> dict[str, Any]:
+    if not report.get("needs_actions"):
+        return {"ok": True, "status": "SKIPPED", "message": "needs_actions is false"}
+
+    from core.coding_agent.artifact_validator import validate_mission_report_artifacts
+
+    artifact_root = Path(str(report.get("artifact_root") or report_path.parent))
+    result = validate_mission_report_artifacts(report, repo_root=artifact_root)
+    if not result.ok:
+        raise SmokeE2EError(f"{report_path}: {result.message}")
+    return {
+        "ok": result.ok,
+        "status": result.status,
+        "message": result.message,
+        "artifacts": result.artifacts,
+        "warnings": result.warnings,
+    }
+
+
 def _run_bea_eval(
     *,
     env: dict[str, str],
@@ -222,6 +409,10 @@ def _run_smoke_cycle_in_dir(
 ) -> dict[str, Any]:
     reports = _prepare_reports(report_path=report_path, fixture=fixture, work_dir=work_dir)
     report_payloads = [validate_report_contract(path) for path in reports]
+    artifact_validation = [
+        _validate_action_artifacts(report, path)
+        for report, path in zip(report_payloads, reports, strict=True)
+    ]
 
     db_path = work_dir / "operational_memory.db"
     env = os.environ.copy()
@@ -267,6 +458,7 @@ def _run_smoke_cycle_in_dir(
         "memories_created": ingestion.get("memories_created", 0),
         "memories_updated": ingestion.get("memories_updated", 0),
         "memory_types": memory_types,
+        "artifact_validation": artifact_validation,
         "ingestion": ingestion,
         "bea_eval": bea_eval,
         "operational_memory_db": str(db_path),
@@ -282,7 +474,7 @@ def run_smoke_cycle(
     command_runner: CommandRunner | None = None,
 ) -> dict[str, Any]:
     """Run the local E2E cycle smoke and return a structured summary."""
-    if fixture not in {"success", "failure", "both"}:
+    if fixture not in {"success", "failure", "both", "sha256"}:
         raise SmokeE2EError(f"unknown fixture: {fixture}")
 
     runner = command_runner or subprocess.run
@@ -312,7 +504,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", help="Path to a coding-agent report.json")
     parser.add_argument(
         "--fixture",
-        choices=("success", "failure", "both"),
+        choices=("success", "failure", "both", "sha256"),
         default="both",
         help="Fixture to generate when --report is not provided",
     )
