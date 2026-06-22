@@ -158,15 +158,33 @@ changes.
 
 ```bash
 # After the smoke cycle passes, optionally run:
+# Single role:
 python scripts/benchmark_model_roles.py --role forge-builder --real \
     --providers openrouter,ollama --json \
     --output workspace/model_role_benchmark_forge_builder.json
+
+# Multi-role (forge-builder, scout-research, shadow-advisor):
+python scripts/benchmark_model_roles.py --real \
+    --roles forge-builder,scout-research,shadow-advisor \
+    --providers openrouter,ollama --json \
+    --output workspace/model_role_benchmark_multi_role.json
 ```
 
-The benchmark uses the same SHA256 fixture as `scripts/smoke_e2e_cycle.py
---fixture sha256` but evaluates raw LLM output rather than ingestion/memory
-behavior.  A `passed=true` result means the model produced a syntactically
-valid artifact with test evidence in one shot (score ≥ 0.7).
+The benchmark sits between the smoke cycle (fixture-only, no real LLM) and a
+full mission (meta-orchestrator + crew + memory).  It evaluates raw LLM output
+for role-specific quality criteria:
+
+```
+mission → provider/model decision → LLM output → role scorer → score/passed
+                                                              → report.json
+                                                              → future routing policy (manual)
+```
+
+A `passed=true` result for a role/provider pair means the model met the
+role's quality bar in one shot (score ≥ 0.7).  Results are logged to
+`workspace/model_role_benchmark_*.json` and summarised in `best_by_role`.
+No routing policy is applied automatically — the benchmark is read-only
+relative to the router.
 
 ## Flutter v1 Regression Gate
 
