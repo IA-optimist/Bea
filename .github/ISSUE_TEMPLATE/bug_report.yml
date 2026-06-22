@@ -1,0 +1,124 @@
+name: Bug Report
+description: Report a bug in the Béa Developer Preview
+title: "[BUG]: "
+labels: ["bug", "beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please fill out all fields below.
+        **Never paste API keys, tokens, or personal data in this issue.**
+        See [docs/PRIVACY_FOR_TESTERS.md](../docs/PRIVACY_FOR_TESTERS.md) for guidance.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What area of Béa is affected?
+      options:
+        - API
+        - Flutter
+        - Memory
+        - Provider
+        - Mission artifact
+        - Docs
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this issue?
+      options:
+        - Critical (data loss, security, crash on startup)
+        - High (core feature broken)
+        - Medium (partial failure, workaround exists)
+        - Low (cosmetic, minor annoyance)
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "e.g., Ubuntu 22.04, macOS 14, Windows 11 WSL2"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      placeholder: "e.g., 3.11.9"
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit Hash
+      description: Run `git rev-parse --short HEAD` in the repo
+      placeholder: "e.g., a1b2c3d"
+    validations:
+      required: true
+
+  - type: input
+    id: provider
+    attributes:
+      label: Provider / Model (if visible)
+      placeholder: "e.g., openrouter / gpt-oss-120b:free"
+
+  - type: input
+    id: mission-id
+    attributes:
+      label: Mission ID (if applicable)
+      placeholder: "e.g., 6ae60964-bae"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or actions to trigger the issue
+      placeholder: |
+        1. Start the API with `python scripts/run_api_local.py`
+        2. Submit a mission with goal "..."
+        3. Wait for completion
+        4. Observe error in logs
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      placeholder: "What should have happened?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      placeholder: "What actually happened?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: Paste relevant log output. REMOVE all API keys, tokens, emails, and personal data before pasting.
+      placeholder: |
+        2026-06-23 01:23:45 INFO  [api] Provider: openrouter
+        2026-06-23 01:23:46 ERROR [forge-builder] SyntaxError in artifact
+        (redact any secrets — see docs/PRIVACY_FOR_TESTERS.md)
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I have removed all API keys, tokens, emails, and personal data from this report
+          required: true
