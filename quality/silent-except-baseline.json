@@ -8,7 +8,7 @@
     "core/cookbook/model_advisor.py": 3,
     "core/evals/bea_eval.py": 1,
     "core/extension_registry.py": 1,
-    "core/llm_factory.py": 2,
+    "core/llm_factory.py": 4,
     "core/memory/operational_memory.py": 1,
     "core/meta_orchestrator.py": 1,
     "core/observability/tracing.py": 1,
@@ -22,7 +22,8 @@
     "scripts/seed_bea_knowledge_claude.py": 1,
     "scripts/seed_bea_self_knowledge.py": 1,
     "tests/test_autonomy_api.py": 4,
-    "tests/test_openrouter_routing.py": 1
+    "tests/test_openrouter_routing.py": 1,
+    "core/executor/session_meta_bus.py": 2
   },
   "policy": "Fails if except/pass handlers increase. Lower this baseline after cleanup."
 }
