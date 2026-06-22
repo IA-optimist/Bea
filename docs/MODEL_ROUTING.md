@@ -191,3 +191,21 @@ From `workspace/model_role_benchmark_multi_role.json`:
 | shadow-advisor | openrouter `gpt-oss-120b:free` | 1.0 | 1/2 | Ollama produced invalid JSON |
 
 These results are **informational observations from one benchmark run**, not routing policies.
+
+## From Advisory to Evidence
+
+The advisory mode (`scripts/model_routing_advice.py`) produces recommendations
+from benchmark results. These recommendations are observations, not rules.
+
+Before any routing policy becomes active, multiple independent runs are needed:
+
+1. **Run the benchmark** (real or mock) across providers and roles.
+2. **Generate the advisory** with `model_routing_advice.py --input ... --json`.
+3. **Run the dogfood evidence pack** with `dogfood_routing_advice.py --json`.
+4. **Review** `summary.matched_advice` and `summary.advice_match_rate`.
+5. **Human decision**: only after reproducible evidence across sessions should a
+   routing preference be promoted to an active policy.
+
+Current status: evidence pack in **fixture mode**. See `docs/DOGFOODING_REPORT.md`.
+
+`runtime_enforced=false` until a human explicitly promotes a recommendation.

@@ -159,3 +159,23 @@ Remaining limits:
   re-run through the stricter gate.
 - older `learning_runs.json` entries may still lack provider/model until they
   are regenerated through the current executor path.
+
+## Dogfooding — Routing Advice Evidence Pack
+
+**Status: fixture mode available**
+
+`scripts/dogfood_routing_advice.py` generates a structured evidence report
+comparing dogfood mission outcomes against the current advisory recommendations.
+
+- Mode: `fixture` — pre-defined results, not live LLM calls.
+- 5 missions across forge-builder, scout-research, shadow-advisor.
+- 4/5 passed, 5/5 matched_advice (advice_match_rate=100%).
+- `runtime_enforced=false` — the router is NOT updated automatically.
+
+**Limits**:
+- Fixture mode only — not a live benchmark.
+- No CI enforcement of the benchmark.
+- Results depend on the advisory which depends on one benchmark run.
+- Router automatic modification: **NOT done**.
+
+See `docs/DOGFOODING_REPORT.md` for the full evidence pack details.
