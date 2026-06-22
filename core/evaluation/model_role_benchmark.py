@@ -20,6 +20,7 @@ import json
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -277,6 +278,21 @@ def _strip_json_fences(text: str) -> str:
     return text
 
 
+def _validate_remote_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("Only http/https URLs are allowed")
+    if not parsed.netloc:
+        raise ValueError("URL must include a host")
+    return url
+
+
+def _urlopen_checked(url_or_request: str | urllib.request.Request, timeout: int):
+    raw_url = getattr(url_or_request, "full_url", None) or str(url_or_request)
+    _validate_remote_url(raw_url)
+    return urllib.request.urlopen(url_or_request, timeout=timeout)  # nosec B310 - URL is validated by _validate_remote_url()
+
+
 def score_shadow_advisor(response_text: str) -> dict[str, Any]:
     """
     Evaluate a shadow-advisor LLM response expecting raw JSON.
@@ -329,7 +345,8 @@ def _check_openrouter(api_key: str, base_url: str = _OPENROUTER_BASE) -> bool:
             f"{base_url.rstrip('/')}/models",
             headers={"Authorization": f"Bearer {api_key}"},
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        _validate_remote_url(base_url)
+        with _urlopen_checked(req, timeout=10) as resp:
             return resp.status == 200
     except Exception:  # noqa: BLE001
         return False
@@ -337,7 +354,8 @@ def _check_openrouter(api_key: str, base_url: str = _OPENROUTER_BASE) -> bool:
 
 def _check_ollama(base_url: str = _OLLAMA_BASE) -> bool:
     try:
-        with urllib.request.urlopen(f"{base_url.rstrip('/')}/api/tags", timeout=5) as resp:
+        tags_url = _validate_remote_url(f"{base_url.rstrip('/')}/api/tags")
+        with _urlopen_checked(tags_url, timeout=5) as resp:
             return resp.status == 200
     except Exception:  # noqa: BLE001
         return False
@@ -370,7 +388,8 @@ def _call_openrouter(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    _validate_remote_url(base_url)
+    with _urlopen_checked(req, timeout=timeout) as resp:
         body = json.loads(resp.read().decode())
     return body["choices"][0]["message"]["content"]
 
@@ -394,7 +413,8 @@ def _call_ollama(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    _validate_remote_url(base_url)
+    with _urlopen_checked(req, timeout=timeout) as resp:
         body = json.loads(resp.read().decode())
     return body["message"]["content"]
 

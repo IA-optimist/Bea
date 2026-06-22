@@ -13,6 +13,8 @@ from core.evaluation.model_role_benchmark import (
     _check_ollama,
     _check_openrouter,
     _parse_sections,
+    _validate_remote_url,
+    _urlopen_checked,
     _skipped,
     run_benchmark,
     score_response,
@@ -291,6 +293,43 @@ class TestProviderHealthChecks:
     def test_ollama_unreachable(self):
         with patch("urllib.request.urlopen", side_effect=ConnectionRefusedError("no ollama")):
             assert _check_ollama() is False
+
+
+class TestRemoteUrlValidation:
+    def test_http_url_allowed(self):
+        assert _validate_remote_url("http://example.com/api") == "http://example.com/api"
+
+    def test_https_url_allowed(self):
+        assert _validate_remote_url("https://example.com/api") == "https://example.com/api"
+
+    @pytest.mark.parametrize(
+        "url, expected",
+        [
+            ("file:///tmp/secret", "Only http/https URLs are allowed"),
+            ("custom://example.com", "Only http/https URLs are allowed"),
+            ("/relative/path", "Only http/https URLs are allowed"),
+            ("http:///no-host", "URL must include a host"),
+        ],
+    )
+    def test_invalid_urls_are_rejected(self, url: str, expected: str):
+        with pytest.raises(ValueError, match=expected):
+            _validate_remote_url(url)
+
+    def test_checked_urlopen_validates_before_opening(self):
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_urlopen:
+            with _urlopen_checked("http://example.com/api", timeout=3) as resp:
+                assert resp.status == 200
+        assert mock_urlopen.called is True
+
+    def test_checked_urlopen_rejects_bad_scheme_before_network(self):
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            with pytest.raises(ValueError, match="Only http/https URLs are allowed"):
+                _urlopen_checked("file:///tmp/secret", timeout=3)
+        mock_urlopen.assert_not_called()
 
 
 # ── Real mode — provider skipping ────────────────────────────────────────────
