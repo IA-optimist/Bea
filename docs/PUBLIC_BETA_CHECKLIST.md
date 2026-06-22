@@ -15,6 +15,14 @@ This file mirrors the root [PUBLIC_BETA_CHECKLIST.md](../PUBLIC_BETA_CHECKLIST.m
 - [ ] Full validation and docs truth gate pass.
 - [ ] No current docs claim more than the evidence proves.
 
+## Observability
+
+- [x] Redactor (`core/observability/redactor.py`) — secrets never in logs
+- [x] MissionEvent (`core/observability/mission_event.py`) — lightweight structured event
+- [x] Mission status report (`scripts/mission_status_report.py --json`)
+- [x] 26 observability tests (redactor + MissionEvent + report logic)
+- [x] No external telemetry (no Sentry, OTEL, Datadog, Prometheus)
+
 ## Current Private Beta Position
 
 Private Beta 0.1 can be considered only for 5-10 technical testers under
