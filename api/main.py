@@ -37,6 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from config.settings import get_settings
 
 # ── Lifespan (startup / shutdown) — extracted to api/lifespan.py ──────────────
 from api.lifespan import lifespan
@@ -82,33 +83,22 @@ if _enable_docs:
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
-# CORS: restrict to known origins (override via CORS_ORIGINS env var).
-# Mounted after auth/security middlewares so it executes first and can answer
-# preflight requests before auth/rate checks.
+# CORS: restrict to known origins.
+# Override via BEA_CORS_ORIGINS or legacy CORS_ORIGINS env var (comma-separated).
+# Settings.cors_origins_list never returns ["*"] — wildcard + credentials is forbidden.
 #
-# Audit Sprint 2 §4.1 P2 : in production, CORS_ORIGINS MUST be set explicitly.
-# Falling through to the localhost defaults in prod is a config smell that
-# would silently allow misconfigured browser clients to be reachable.
-_cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
-_is_production = os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
-if _is_production and not _cors_origins:
+# Audit Sprint 2 §4.1 P2 : in production, BEA_CORS_ORIGINS/CORS_ORIGINS MUST be
+# set explicitly. Falling through to localhost defaults in prod is a config smell.
+_settings_for_cors = get_settings()
+_is_production = _settings_for_cors.production_mode
+if _is_production and not _settings_for_cors.bea_cors_origins:
     raise RuntimeError(
-        "PRODUCTION STARTUP BLOCKED — CORS_ORIGINS is not set. "
-        "Set CORS_ORIGINS to a comma-separated allowlist of trusted origins "
-        "(e.g. CORS_ORIGINS=https://app.example.com,https://admin.example.com) "
+        "PRODUCTION STARTUP BLOCKED — BEA_CORS_ORIGINS (or CORS_ORIGINS) is not set. "
+        "Set it to a comma-separated allowlist of trusted origins "
+        "(e.g. BEA_CORS_ORIGINS=https://app.example.com,https://admin.example.com) "
         "or unset BEA_PRODUCTION to run in dev mode."
     )
-_allowed_origins = (
-    [o.strip() for o in _cors_origins.split(",") if o.strip()]
-    if _cors_origins
-    else [
-        "http://localhost:8000",       # local dev
-        "http://localhost:3000",       # local frontend
-        "http://localhost:3001",       # beamax-frontend docker
-        "http://10.0.2.2:8000",       # Android emulator
-        "http://127.0.0.1:8000",      # loopback
-    ]
-)
+_allowed_origins = _settings_for_cors.cors_origins_list
 
 # ── Global access enforcement middleware (fail-closed) ────────
 # CRITICAL: This middleware enforces auth on every request.

@@ -13,9 +13,10 @@ from __future__ import annotations
 
 _REQUIRED_MISSION_FIELDS = {
     "mission_id", "role", "goal",
-    "advised_provider", "provider_used", "model_used",
-    "matched_advice", "success", "passed", "score",
+    "mode", "advised_provider", "provider_used", "model_used",
+    "provider_status", "matched_advice", "success", "passed", "score",
     "duration_s", "fallback_used", "error_category", "skipped",
+    "runtime_enforced",
 }
 
 
@@ -40,6 +41,29 @@ def check_matched_advice(mission: dict, advice: dict) -> bool:
     return mission.get("provider_used") == advised
 
 
+def _bucket_breakdown(missions: list[dict], key: str) -> dict[str, dict]:
+    breakdown: dict[str, dict] = {}
+    for mission in missions:
+        bucket = mission.get(key) or "unknown"
+        entry = breakdown.setdefault(bucket, {
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "matched_advice": 0,
+        })
+        entry["total"] += 1
+        if mission.get("skipped"):
+            entry["skipped"] += 1
+        elif mission.get("passed"):
+            entry["passed"] += 1
+        else:
+            entry["failed"] += 1
+        if mission.get("matched_advice"):
+            entry["matched_advice"] += 1
+    return breakdown
+
+
 def compute_dogfood_summary(missions: list[dict]) -> dict:
     """Compute the summary block from a list of mission result dicts."""
     total = len(missions)
@@ -55,6 +79,9 @@ def compute_dogfood_summary(missions: list[dict]) -> dict:
         "failed": failed,
         "skipped": skipped,
         "matched_advice": matched,
+        "matched_advice_count": matched,
         "advice_match_rate": round(matched / total, 4) if total else 0.0,
+        "provider_breakdown": _bucket_breakdown(missions, "provider_used"),
+        "role_breakdown": _bucket_breakdown(missions, "role"),
         "runtime_enforced": False,
     }

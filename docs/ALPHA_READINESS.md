@@ -8,6 +8,9 @@
 - Code mission artifact gate: added for `needs_actions=True` missions.
 - Code execution loop: helper added to strip markdown from Python blocks and
   validate syntax before accepting a materialized artifact.
+- Dogfood runtime evidence: `scripts/dogfood_runtime_evidence.py` now ships a
+  10-mission pack with `runtime_enforced=false` and per-mission reports.
+- `bea_eval --json` is green after ingesting a safe runtime report.
 
 ## SHA256 Mission Review
 
@@ -34,6 +37,38 @@ Classification: `D. FAILED` as an exploitable code mission. If the UI or
 mission state presents it as completed, that completion is weak because the
 artifact is not executable and no test or ingestion-compatible report was
 found.
+
+## Dogfood Runtime Evidence
+
+The controlled runtime dogfood pack now proves a real provider/model trail in
+10 missions without modifying the router automatically.
+
+Observed result from the current workspace:
+
+- `mode=real`
+- `total=10`
+- `passed=8`
+- `failed=2`
+- `skipped=0`
+- `matched_advice_count=7`
+- `runtime_enforced=false`
+
+Provider breakdown:
+
+- `openrouter`: 7 total, 7 passed
+- `ollama`: 3 total, 1 passed, 2 failed
+
+Role breakdown:
+
+- `shadow-advisor`: 4 total, 3 passed, 1 failed
+- `forge-builder`: 3 total, 2 passed, 1 failed
+- `scout-research`: 3 total, 3 passed
+
+One safe report was ingested successfully:
+
+`workspace/dogfood_runtime_real_reports/forge-builder-sha256.json`
+
+That ingestion produced 4 memories and kept `bea_eval` green on the next run.
 
 ## Forge-Builder Readiness
 

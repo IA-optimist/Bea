@@ -227,6 +227,39 @@ class Settings:
     # toujours bloqué quoi qu'il arrive.
     auto_approve_medium: bool = field(default_factory=lambda: _b("BEA_AUTO_APPROVE_MEDIUM"))
 
+    # ── CORS ──────────────────────────────────────────────────
+    # BEA_CORS_ORIGINS (preferred) or CORS_ORIGINS (legacy) — comma-separated.
+    # In dev: falls back to localhost defaults when unset.
+    # In production (BEA_PRODUCTION=1): api/main.py fails hard if unset.
+    # Never returns ["*"] — wildcard with allow_credentials=True is forbidden.
+    bea_cors_origins: str = field(default_factory=lambda: (
+        os.environ.get("BEA_CORS_ORIGINS", "")
+        or os.environ.get("CORS_ORIGINS", "")
+    ))
+
+    _DEV_CORS_ORIGINS: list[str] = field(default_factory=lambda: [
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://10.0.2.2:8000",
+        "http://127.0.0.1:8000",
+    ], init=False, repr=False, compare=False)
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse BEA_CORS_ORIGINS/CORS_ORIGINS into a list. Never returns ['*']."""
+        raw = self.bea_cors_origins.strip()
+        if not raw or raw == "*":
+            # Wildcard with credentials is dangerous — use localhost defaults.
+            return list(self._DEV_CORS_ORIGINS)
+        return [o.strip() for o in raw.split(",") if o.strip()]
+
+    # ── Rate limiting ──────────────────────────────────────────
+    # BEA_RATE_LIMIT_ENABLED  : false in test/dev to skip rate checks (default true)
+    # BEA_RATE_LIMIT_PER_MINUTE : requests allowed per IP per minute (default 60)
+    bea_rate_limit_enabled:    bool = field(default_factory=lambda: _b("BEA_RATE_LIMIT_ENABLED", "true"))
+    bea_rate_limit_per_minute: int  = field(default_factory=lambda: _i("BEA_RATE_LIMIT_PER_MINUTE", 60))
+
     # ── Night Worker ──────────────────────────────────────────
     night_worker_max_cycles:    int = field(default_factory=lambda: _i("NIGHT_WORKER_MAX_CYCLES", 5))
     night_worker_cycle_timeout: int = field(default_factory=lambda: _i("NIGHT_WORKER_CYCLE_TIMEOUT", 300))

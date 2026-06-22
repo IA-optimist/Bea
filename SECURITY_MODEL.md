@@ -28,7 +28,41 @@
 - Endpoints admin : `BEA_ADMIN_PASSWORD` (login cockpit)
 - Mobile APK : `JARVIS_API_TOKEN` injecté via `--dart-define` au build
 
-> **Pas de rate-limiting intégré en Developer Preview** — blocker avant exposition publique.
+## CORS
+
+La configuration CORS est gérée via les variables d'environnement suivantes :
+
+| Variable | Rôle | Défaut |
+|----------|------|--------|
+| `BEA_CORS_ORIGINS` | Origins autorisées (comma-separated) | localhost dev defaults |
+| `CORS_ORIGINS` | Alias legacy (toujours supporté) | — |
+
+**Règles :**
+- Wildcard `*` n'est **jamais** autorisé avec `allow_credentials=True`
+- Si `BEA_CORS_ORIGINS=*` est défini, le système remplace par les localhost defaults
+- En production (`BEA_PRODUCTION=1`), `BEA_CORS_ORIGINS` DOIT être défini → fail-hard sinon
+- En dev local : `http://localhost:3000`, `http://localhost:8000`, `http://127.0.0.1:8000` par défaut
+
+**Example production :**
+```bash
+BEA_CORS_ORIGINS=https://app.example.com,https://admin.example.com
+```
+
+## Rate limiting
+
+L'API intègre un rate limiter via `slowapi` (Redis en prod, in-memory en dev) :
+
+| Variable | Rôle | Défaut |
+|----------|------|--------|
+| `BEA_RATE_LIMIT_ENABLED` | Active/désactive le rate limit | `true` |
+| `BEA_RATE_LIMIT_PER_MINUTE` | Requêtes max par IP par minute | `60` |
+| `REDIS_URL` | Backend Redis (recommandé en prod) | in-memory fallback |
+
+**Endpoints exemptés :** `/health`, `/api/v3/system/health`, `/docs`, `/openapi.json`
+
+**En production (`BEA_PRODUCTION=1`) :** Redis est obligatoire — fail-hard si REDIS_URL absent ou Redis injoignable (in-memory ne scale pas horizontalement).
+
+**En test/dev :** `BEA_RATE_LIMIT_ENABLED=false` désactive complètement le rate limit.
 
 ## Self-improvement
 
@@ -65,10 +99,7 @@ L'exécution de code passe par `executor.desktop_env.sandbox.DockerSandbox` :
 - FS isolé (`/mnt/c` inaccessible)
 - Anti-injection métacaractères
 
-## CORS
-
-Non configuré en Developer Preview → ne pas exposer sur Internet sans reverse proxy
-avec origins explicites.
+## CORS (APK mobile)
 
 ## APK mobile
 
