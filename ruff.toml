@@ -80,6 +80,7 @@ ignore = [
 "scripts/seed_bea_self_knowledge.py" = ["T201"]   # CLI : stdout = résumé des insertions mémoire
 "scripts/seed_bea_knowledge_claude.py" = ["T201"] # CLI : transfert de connaissances Claude→Béa
 "scripts/ingest_mistral_toolkit.py" = ["T201"]    # CLI : ingestion mistral-toolkit → Qdrant
+"scripts/dogfood_routing_advice.py" = ["T201"]   # CLI : dogfood evidence pack, stdout = interface
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic
