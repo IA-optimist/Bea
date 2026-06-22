@@ -29,15 +29,20 @@ def _mission(
     fallback_used: bool = False,
     error_category: str | None = None,
     skipped: bool = False,
+    mode: str = "fixture",
+    provider_status: str = "fixture",
+    runtime_enforced: bool = False,
     **extra,
 ) -> dict:
     m = {
         "mission_id": mission_id,
         "role": role,
         "goal": goal,
+        "mode": mode,
         "advised_provider": advised_provider,
         "provider_used": provider_used,
         "model_used": model_used,
+        "provider_status": provider_status,
         "matched_advice": matched_advice,
         "success": success,
         "passed": passed,
@@ -46,6 +51,7 @@ def _mission(
         "fallback_used": fallback_used,
         "error_category": error_category,
         "skipped": skipped,
+        "runtime_enforced": runtime_enforced,
     }
     m.update(extra)
     return m

@@ -192,6 +192,10 @@ From `workspace/model_role_benchmark_multi_role.json`:
 
 These results are **informational observations from one benchmark run**, not routing policies.
 
+The runtime dogfood evidence pack (`scripts/dogfood_runtime_evidence.py`) reads
+the advisory as context only. It records `matched_advice` for analysis, but it
+never changes the router or runtime provider selection.
+
 ## From Advisory to Evidence
 
 The advisory mode (`scripts/model_routing_advice.py`) produces recommendations

@@ -209,6 +209,26 @@ every recommendation.  It distinguishes between:
 
 No routing change is applied automatically at any step.
 
+## Dogfood Runtime Evidence
+
+`scripts/dogfood_runtime_evidence.py` is the controlled runtime evidence pack
+used to prove the dogfood loop without modifying the router.
+
+```bash
+python scripts/dogfood_runtime_evidence.py --mode fixture --json --output workspace/dogfood_runtime_fixture.json
+python scripts/dogfood_runtime_evidence.py --mode real --json --output workspace/dogfood_runtime_real.json
+```
+
+Key points:
+
+- `mode=fixture` never claims to be real.
+- `mode=real` uses benchmark evidence when available and surfaces
+  `provider_unavailable` explicitly when it is not.
+- Every mission report keeps `runtime_enforced=false`.
+- The top-level summary includes `matched_advice_count`, `provider_breakdown`,
+  and `role_breakdown`.
+- The pack is safe to ingest through `scripts/ingest_mission_report.py`.
+
 ## Flutter v1 Regression Gate
 
 `tests/test_client_v1_allowlist.py` keeps the client `/api/v1` allowlist empty
