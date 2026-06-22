@@ -146,3 +146,48 @@ Edit `core/evaluation/model_router.py`:
 ## Relationship to `MissionContext.model_class_hint`
 
 `MissionContextBuilder` also proposes a class hint based on detected risks. The `ModelRouter` is the authoritative caller-owned decision; the context hint is advisory.
+
+## Advisory Mode
+
+The advisory mode reads benchmark results and produces non-prescriptive provider/model
+recommendations per role. **The router is not updated automatically. Advisory output
+requires human review before any routing change.**
+
+### Command
+
+```bash
+python scripts/model_routing_advice.py \
+    --input workspace/model_role_benchmark_multi_role.json --json
+```
+
+### Output fields (per role)
+
+| Field | Meaning |
+|---|---|
+| `preferred_provider` | Provider with the best score (null if all skipped) |
+| `preferred_model` | Model slug that produced the best result |
+| `score` | Score of the best result (0–1) |
+| `passed_count` | Providers that passed the quality threshold (score ≥ 0.7) |
+| `failed_count` | Providers with a real response but below threshold |
+| `skipped_count` | Providers that were unavailable — never counted as failures |
+| `confidence` | Always `"low"` until multiple independent runs exist |
+| `runtime_enforced` | Always `false` — advisory is informational only |
+
+### Understanding success vs passed vs skipped
+
+- `success=true` — the provider returned a response (no crash/timeout).
+- `passed=true` — the response met the quality bar (score ≥ 0.7).
+- `skipped=true` — the provider was unavailable; the model is not implicated.
+- A skipped provider is **never** counted in `failed_count`.
+
+### Current advisory results (2026-06-22)
+
+From `workspace/model_role_benchmark_multi_role.json`:
+
+| Role | Preferred provider | Score | Passed | Reason |
+|---|---|---|---|---|
+| forge-builder | openrouter `gpt-oss-120b:free` | 1.0 | 1/2 | Ollama failed artifact validation |
+| scout-research | openrouter `gpt-oss-120b:free` | 1.0 | 2/2 | Both passed; OpenRouter faster |
+| shadow-advisor | openrouter `gpt-oss-120b:free` | 1.0 | 1/2 | Ollama produced invalid JSON |
+
+These results are **informational observations from one benchmark run**, not routing policies.
