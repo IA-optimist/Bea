@@ -46,10 +46,10 @@ Before any public beta release:
    python scripts/audit_memory_store.py --dry-run --sample-duplicates 20 --json
    ```
 
-3. **Verify the seed script:**
+3. **Verify the seed script (public profile):**
 
    ```bash
-   python scripts/seed_bea_memory.py --report
+   python scripts/seed_bea_memory.py --report --profile public
    ```
 
    This prints a verdict:
@@ -57,9 +57,26 @@ Before any public beta release:
    - `has_private_joke: true/false`
    - `has_personal_data: true/false`
    - `has_secret: true/false`
+   - `items_checked: N`
 
 4. **If `public_safe` is false**, review the flagged items and remove them
    from the seed before release. **Never** use `--apply` on a production store.
+
+## Seed profiles
+
+The seed script supports two profiles:
+
+| Profile | Command | Use case |
+|---------|---------|----------|
+| `public` (default) | `python scripts/seed_bea_memory.py --profile public` | Public release — only neutral project facts |
+| `dev-private` | `python scripts/seed_bea_memory.py --profile dev-private` | Local dev only — includes personal fun facts and private jokes |
+
+**Rules:**
+- `public` is the default. It must always return `public_safe: true`.
+- `dev-private` is explicit opt-in only. It must never be used in a public release.
+- The `dev-private` profile includes items like "Fun fact romantique sur Max" which
+  contain personal data and private jokes. These are excluded from `public`.
+- You can check each profile's verdict with `--report --profile <name>`.
 
 ## Backup procedure (for future destructive PR)
 

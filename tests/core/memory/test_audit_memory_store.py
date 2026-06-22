@@ -237,18 +237,35 @@ def test_privacy_scan_sample_duplicates(store):
 
 
 # --------------------------------------------------------------------------- #
-# Seed verdict tests
+# Seed profile tests
 # --------------------------------------------------------------------------- #
 
-def test_seed_report_detects_private_joke():
-    """The seed_bea_memory.py --report should detect private_joke in the seed."""
+def test_seed_public_profile_is_public_safe():
+    """The public seed profile must be 100% public-safe."""
     from scripts.seed_bea_memory import report_seed_verdict
     import io
 
     old_stdout = sys.stdout
     sys.stdout = io.StringIO()
     try:
-        exit_code = report_seed_verdict()
+        exit_code = report_seed_verdict(profile="public")
+    finally:
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+    assert exit_code == 0
+    assert "public_safe: True" in output
+
+
+def test_seed_dev_private_profile_detects_private_joke():
+    """The dev-private seed profile may contain private_joke and must be flagged."""
+    from scripts.seed_bea_memory import report_seed_verdict
+    import io
+
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        exit_code = report_seed_verdict(profile="dev-private")
     finally:
         output = sys.stdout.getvalue()
         sys.stdout = old_stdout
@@ -256,3 +273,48 @@ def test_seed_report_detects_private_joke():
     assert exit_code == 1
     assert "public_safe: False" in output
     assert "private_joke" in output.lower()
+
+
+def test_fun_fact_romantique_absent_from_public_seed():
+    """The 'Fun fact romantique sur Max' must NOT be in the public seed."""
+    from scripts.seed_bea_memory import _PUBLIC_SEED_MEMORIES
+
+    titles = [item.title for item in _PUBLIC_SEED_MEMORIES]
+    assert "Fun fact romantique sur Max" not in titles
+
+
+def test_fun_fact_romantique_present_in_dev_private_seed():
+    """The 'Fun fact romantique sur Max' IS in the dev-private seed."""
+    from scripts.seed_bea_memory import _DEV_PRIVATE_SEED_MEMORIES
+
+    titles = [item.title for item in _DEV_PRIVATE_SEED_MEMORIES]
+    assert "Fun fact romantique sur Max" in titles
+
+
+def test_public_seed_has_fewer_items_than_dev_private():
+    """Public seed must have strictly fewer items than dev-private."""
+    from scripts.seed_bea_memory import _PUBLIC_SEED_MEMORIES, _DEV_PRIVATE_SEED_MEMORIES
+
+    assert len(_PUBLIC_SEED_MEMORIES) < len(_DEV_PRIVATE_SEED_MEMORIES)
+
+
+def test_seed_public_profile_does_not_seed_private_items(tmp_path):
+    """Seeding with public profile must not add any private_joke items."""
+    from scripts.seed_bea_memory import seed
+    from core.memory.operational_memory import OperationalMemoryStore
+
+    store = OperationalMemoryStore(db_path=str(tmp_path / "public_seed.db"))
+    seed(store=store, profile="public")
+    results = store.search(tags=["private_joke"])
+    assert len(results) == 0
+
+
+def test_seed_dev_private_seeds_private_items(tmp_path):
+    """Seeding with dev-private profile must add private_joke items."""
+    from scripts.seed_bea_memory import seed
+    from core.memory.operational_memory import OperationalMemoryStore
+
+    store = OperationalMemoryStore(db_path=str(tmp_path / "dev_seed.db"))
+    seed(store=store, profile="dev-private")
+    results = store.search(tags=["private_joke"])
+    assert len(results) >= 1

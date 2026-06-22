@@ -31,7 +31,7 @@ EXCLUDE_FILES = {
     "core/_logging_helpers.py",  # docstring "before" example
 }
 
-EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "venv", "node_modules",
+EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", ".venv-c4-prep", "venv", "node_modules",
                 ".claude", "build", "dist", "snapshots",
                 # Tests legitimately mention the pattern as data (gates,
                 # documentation strings). Only runtime code is scanned.

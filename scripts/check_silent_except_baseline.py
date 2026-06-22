@@ -21,6 +21,7 @@ EXCLUDE_DIRS = {
     ".pytest_cache",
     ".ruff_cache",
     ".venv",
+    ".venv-c4-prep",
     "__pycache__",
     "beamax_app",
     "build",
