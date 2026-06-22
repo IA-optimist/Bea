@@ -56,8 +56,8 @@
 | `BEA_CONTINUOUS_IMPROVEMENT` désactivé par défaut | ✅ | opt-in uniquement |
 | `runtime_enforced=false` invariant | ✅ | Tests 117/117 |
 | `BEA_SKIP_IMPROVEMENT_GATE` documenté comme dangereux | ✅ | SECURITY_MODEL.md |
-| Rate-limiting API | ❌ | **Blocker production** |
-| CORS configuré (pas wildcard) | ❌ | **Blocker production** |
+| Rate-limiting API | ✅ | slowapi 60/min (BEA_RATE_LIMIT_PER_MINUTE), Redis en prod |
+| CORS configuré (pas wildcard) | ✅ | BEA_CORS_ORIGINS, jamais wildcard+credentials, fail-hard en prod |
 | Auth 2FA cockpit admin | ❌ | Pas implémenté |
 
 ### Documentation
@@ -83,8 +83,8 @@
 
 ## Blockers restants pour Public Beta
 
-1. **Rate-limiting API** — obligatoire avant exposition publique
-2. **CORS** — configurer origins explicites (pas `*`)
+1. ~~**Rate-limiting API**~~ ✅ Résolu — slowapi + BEA_RATE_LIMIT_PER_MINUTE
+2. ~~**CORS**~~ ✅ Résolu — BEA_CORS_ORIGINS, pas de wildcard, fail-hard prod
 3. **CI GitHub Actions** — smoke + pytest sur chaque PR
 4. **APK build CI** — valider APK v3 automatiquement
 5. **Audit endpoints v1 serveur** — lister et dater la dépréciation planifiée
@@ -93,6 +93,6 @@
 
 **Developer Preview** — prêt pour des testeurs identifiés avec supervision.
 
-Pas encore **Public Beta stable** en raison des blockers sécurité et CI.
+Pas encore **Public Beta stable** en raison des blockers CI.
 
-Prochaine milestone : résoudre rate-limiting + CI smoke → passer en Beta.
+Prochaine milestone : CI GitHub Actions smoke → passer en Beta.

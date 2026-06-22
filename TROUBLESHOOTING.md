@@ -115,3 +115,42 @@ Relancer `pip install -e .` puis réessayer.
 
 **Recommandation** : utiliser OpenRouter pour ces deux rôles.
 Ollama reste acceptable pour scout-research (score 1.0 dans le benchmark).
+
+## Erreur CORS (browser)
+
+**Symptôme** : `Access to fetch at 'http://...' from origin '...' has been blocked by CORS policy`
+
+**Cause** : L'origin du client n'est pas dans la liste autorisée.
+
+**Fix** :
+```bash
+# Dev local — vérifier que l'origin est dans les defaults :
+# http://localhost:3000, http://localhost:8000, http://127.0.0.1:8000
+
+# Pour ajouter une origin :
+export BEA_CORS_ORIGINS="http://localhost:3000,http://localhost:4200"
+
+# Production :
+export BEA_CORS_ORIGINS="https://app.example.com,https://admin.example.com"
+```
+
+**Important** : Ne jamais mettre `BEA_CORS_ORIGINS=*` — le système remplace automatiquement
+par les localhost defaults si `*` est détecté.
+
+## Rate limit 429 Too Many Requests
+
+**Symptôme** : API retourne `{"detail": "Too many requests..."}` avec status 429
+
+**Cause** : Plus de `BEA_RATE_LIMIT_PER_MINUTE` (défaut: 60) requêtes/IP/minute.
+
+**Fix dev/test** :
+```bash
+# Désactiver le rate limit en dev :
+export BEA_RATE_LIMIT_ENABLED=false
+
+# Ou augmenter la limite :
+export BEA_RATE_LIMIT_PER_MINUTE=200
+```
+
+**Note** : Le header `Retry-After: 60` indique combien de secondes attendre.
+Les endpoints `/health` et `/api/v3/system/health` sont exemptés du rate limit.

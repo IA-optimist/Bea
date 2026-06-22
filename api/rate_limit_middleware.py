@@ -98,9 +98,17 @@ if os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes") \
         "BEA_PRODUCTION to run in dev mode."
     )
 
+def _i(key: str, default: int) -> int:
+    try:
+        return int(os.environ.get(key, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
+_per_minute = _i("BEA_RATE_LIMIT_PER_MINUTE", 60)
 limiter = Limiter(
     key_func=get_rate_limit_key,
-    default_limits=["100/minute"],  # Global default
+    default_limits=[f"{_per_minute}/minute"],  # configurable via BEA_RATE_LIMIT_PER_MINUTE
     storage_uri=_STORAGE_URI,
     # Bea loads configuration explicitly. Disable slowapi's implicit .env
     # read, which uses the Windows locale encoding and breaks on UTF-8.
