@@ -23,7 +23,8 @@
     "scripts/seed_bea_self_knowledge.py": 1,
     "tests/test_autonomy_api.py": 4,
     "tests/test_openrouter_routing.py": 1,
-    "core/executor/session_meta_bus.py": 2
+    "core/executor/session_meta_bus.py": 2,
+    "scripts/benchmark_model_roles.py": 1
   },
   "policy": "Fails if except/pass handlers increase. Lower this baseline after cleanup."
 }

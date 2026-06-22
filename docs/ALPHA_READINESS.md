@@ -95,6 +95,26 @@ Historical runs can still be incomplete:
   actually executed.  The writer overrides this with actual `session.outputs`
   keys when available.
 
+## Model-Role Benchmark
+
+**Available (2026-06-22).** `scripts/benchmark_model_roles.py` provides a
+real-limited benchmark for the forge-builder role against live providers.
+
+**Results:**
+- `openai/gpt-oss-120b:free` via OpenRouter: score 1.0 — **PASS** (19 s avg)
+  — artifact_ok, syntax_valid, test_proof all True.
+- `gemma4:12b` via Ollama: score 0.67 — **near-pass** (32 s avg)
+  — artifact_ok, syntax_valid True; test_proof False (model fills sha256_file
+  but omits the test file in one-shot generation).
+
+**Routing recommendation:** prefer OpenRouter (`gpt-oss-120b:free`) for
+forge-builder missions with `needs_actions=True` and explicit test requirements.
+Ollama is acceptable as a latency fallback for simple artifact-only tasks.
+
+**No auto-integration:** benchmark results are informational only.  The router
+is not updated automatically.  See `docs/MODEL_ROUTING.md` for the routing
+guidance derived from these results.
+
 ## Remaining Risks
 
 - The validator checks artifact presence and test evidence, not semantic code

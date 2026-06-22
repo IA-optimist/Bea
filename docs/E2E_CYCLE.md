@@ -149,6 +149,25 @@ It creates `src/sha256_file.py`, `tests/test_sha256_file.py`, a compatible
 mission report, validates the artifact metadata, runs `py_compile`, runs
 `pytest`, ingests the report, and requires a `test_map` memory.
 
+## Model-Role Benchmark
+
+The benchmark sits **outside** the E2E cycle — it does not flow through the
+meta-orchestrator or crew.  Run it when you need to verify that a specific
+provider/model can fulfill a role's quality bar before committing to routing
+changes.
+
+```bash
+# After the smoke cycle passes, optionally run:
+python scripts/benchmark_model_roles.py --role forge-builder --real \
+    --providers openrouter,ollama --json \
+    --output workspace/model_role_benchmark_forge_builder.json
+```
+
+The benchmark uses the same SHA256 fixture as `scripts/smoke_e2e_cycle.py
+--fixture sha256` but evaluates raw LLM output rather than ingestion/memory
+behavior.  A `passed=true` result means the model produced a syntactically
+valid artifact with test evidence in one shot (score ≥ 0.7).
+
 ## Flutter v1 Regression Gate
 
 `tests/test_client_v1_allowlist.py` keeps the client `/api/v1` allowlist empty
