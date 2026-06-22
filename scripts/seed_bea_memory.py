@@ -9,6 +9,8 @@ coder to retrieve useful context when handed an issue or mission.
 """
 from __future__ import annotations
 
+import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -19,6 +21,15 @@ if str(ROOT) not in sys.path:
 
 from core.memory.memory_item import MemoryItem, MemoryItemStatus, MemoryItemType
 from core.memory.operational_memory import get_operational_memory_store
+
+# Privacy detection patterns (shared logic with audit_memory_store.py)
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+_TOKEN_RE = re.compile(
+    r"(?i)(sk-[A-Za-z0-9]{16,}|pk_[A-Za-z0-9]{16,}|"
+    r"api[_-]?key\s*[:=]\s*['\"]?[A-Za-z0-9]{16,}|"
+    r"[A-Fa-f0-9]{32,})"
+)
+_PRIVATE_TAGS = {"private_joke", "personal", "private", "fun_fact_personal"}
 
 
 _INITIAL_MEMORIES: list[MemoryItem] = [
@@ -164,7 +175,65 @@ def seed(store=None) -> dict[str, int]:
     return {"added": added, "skipped": skipped, "total": store.count()}
 
 
+def _check_item_privacy(item: MemoryItem) -> list[str]:
+    """Return privacy risk reasons for a seed memory item."""
+    reasons: list[str] = []
+    text = f"{item.title} {item.content} {item.source}"
+    if _EMAIL_RE.search(text):
+        reasons.append("email")
+    if _TOKEN_RE.search(text):
+        reasons.append("token_or_api_key")
+    tag_lower = {t.lower() for t in item.tags}
+    if "private_joke" in tag_lower:
+        reasons.append("private_joke")
+    if tag_lower & _PRIVATE_TAGS:
+        reasons.append("personal_tag")
+    return reasons
+
+
+def report_seed_verdict() -> int:
+    """Print a public-safe verdict for the seed memories."""
+    flagged = []
+    has_private_joke = False
+    has_personal_data = False
+    has_secret = False
+
+    for item in _INITIAL_MEMORIES:
+        reasons = _check_item_privacy(item)
+        if reasons:
+            flagged.append({"title": item.title, "reasons": reasons})
+            if "private_joke" in reasons:
+                has_private_joke = True
+            if "personal_tag" in reasons or "email" in reasons:
+                has_personal_data = True
+            if "token_or_api_key" in reasons:
+                has_secret = True
+
+    public_safe = not (has_private_joke or has_personal_data or has_secret)
+
+    print("=== Seed public-safe verdict ===")
+    print(f"public_safe: {public_safe}")
+    print(f"has_private_joke: {has_private_joke}")
+    print(f"has_personal_data: {has_personal_data}")
+    print(f"has_secret: {has_secret}")
+
+    if not public_safe:
+        print("\nItems to EXCLUDE from public seed:")
+        for f in flagged:
+            print(f"  - {f['title']} — reasons: {', '.join(f['reasons'])}")
+
+    return 0 if public_safe else 1
+
+
 def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Seed operational memories")
+    parser.add_argument("--report", action="store_true",
+                        help="Print public-safe verdict and exit (no seeding).")
+    args = parser.parse_args(argv)
+
+    if args.report:
+        return report_seed_verdict()
+
     result = seed()
     print(f"Seeded operational memories: {result}")
     return 0
