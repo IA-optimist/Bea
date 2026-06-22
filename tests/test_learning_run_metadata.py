@@ -5,8 +5,16 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from core.executor.pipeline_auto import build_learning_run_payload
 from core.learning.learning_engine import LearningEngine
+from core.llm_factory import (
+    _record_session_provider,
+    get_and_clear_session_provider_meta,
+    _session_provider_meta,
+    _session_provider_lock,
+)
 
 
 @dataclass
@@ -127,3 +135,47 @@ def test_learning_engine_round_trips_provider_model_fields(tmp_path):
     assert data[0]["provider_used"] == "ollama"
     assert data[0]["model_used"] == "gemma4:12b"
     assert engine.get_recent_runs(1)[0]["mission_id"] == "mission-789"
+
+
+# ── Tracker unit tests ────────────────────────────────────────────────────────
+
+def _clean_tracker(*sids: str) -> None:
+    with _session_provider_lock:
+        for sid in sids:
+            _session_provider_meta.pop(sid, None)
+
+
+class TestSessionProviderTracker:
+
+    def setup_method(self):
+        _clean_tracker("t-a", "t-b", "t-c", "t-d")
+
+    def test_primary_recorded(self):
+        _record_session_provider("t-a", "openrouter", "gpt-oss-20b:free", fallback=False)
+        meta = get_and_clear_session_provider_meta("t-a")
+        assert meta["provider_used"] == "openrouter"
+        assert meta["model_used"] == "gpt-oss-20b:free"
+        assert meta["fallback_used"] is False
+
+    def test_first_write_wins(self):
+        _record_session_provider("t-b", "openrouter", "model-A", fallback=False)
+        _record_session_provider("t-b", "ollama", "gemma4:12b", fallback=False)
+        assert get_and_clear_session_provider_meta("t-b")["provider_used"] == "openrouter"
+
+    def test_fallback_recorded_when_no_primary(self):
+        _record_session_provider("t-c", "ollama", "gemma4:12b", fallback=True)
+        meta = get_and_clear_session_provider_meta("t-c")
+        assert meta["provider_used"] == "ollama"
+        assert meta["fallback_used"] is True
+
+    def test_clear_after_read(self):
+        _record_session_provider("t-d", "openrouter", "model-X", fallback=False)
+        get_and_clear_session_provider_meta("t-d")
+        assert get_and_clear_session_provider_meta("t-d") == {}
+
+    def test_missing_session_empty(self):
+        assert get_and_clear_session_provider_meta("never-existed-xyz") == {}
+
+    def test_empty_session_id_ignored(self):
+        _record_session_provider("", "openrouter", "model-X", fallback=False)
+        _clean_tracker("")
