@@ -14,6 +14,7 @@ line-length = 120
 exclude = [
   ".git",
   ".venv",
+  ".venv-c4-prep",
   ".claude",
   "venv",
   "__pycache__",
@@ -72,6 +73,7 @@ ignore = [
 "orchestrate-mobile/**" = ["T201"] # mobile backend dev-server prints
 "scripts/bea_eval.py" = ["T201"]              # CLI : stdout = interface
 "scripts/seed_bea_memory.py" = ["T201"]       # CLI : seeding reporter
+"scripts/audit_memory_store.py" = ["T201"]    # CLI : non-destructive audit reporter
 "scripts/ingest_mission_report.py" = ["T201"] # CLI : ingestion reporter
 "scripts/ingest_knowledge.py" = ["T201"]   # CLI : ingestion RAG, stdout = interface
 "scripts/run_api_local.py" = ["T201"]      # CLI : launcher API local
@@ -82,6 +84,9 @@ ignore = [
 "scripts/ingest_mistral_toolkit.py" = ["T201"]    # CLI : ingestion mistral-toolkit → Qdrant
 "scripts/dogfood_routing_advice.py" = ["T201"]   # CLI : dogfood evidence pack, stdout = interface
 "scripts/dogfood_runtime_evidence.py" = ["T201"] # CLI : runtime evidence pack, stdout = interface
+"scripts/check_client_v1_usage.py" = ["T201"]    # CLI : v1-gate checker, stdout = interface
+"scripts/mission_status_report.py" = ["T201"]   # CLI : observability reporter, stdout = interface
+"scripts/release_check.py" = ["T201"]           # CLI : release check reporter, stdout = interface
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic

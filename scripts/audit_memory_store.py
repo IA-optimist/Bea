@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -34,6 +35,16 @@ _CONTENT_MIN_LEN = 12
 _CONTENT_MAX_LEN = 4000
 _DUPLICATE_TITLE_WINDOW = 120
 _DUPLICATE_CONTENT_WINDOW = 200
+
+# Privacy detection patterns for --privacy-scan
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+_TOKEN_RE = re.compile(
+    r"(?i)(sk-[A-Za-z0-9]{16,}|pk_[A-Za-z0-9]{16,}|"
+    r"api[_-]?key\s*[:=]\s*['\"]?[A-Za-z0-9]{16,}|"
+    r"[A-Fa-f0-9]{32,})"
+)
+_PRIVATE_TAGS = {"private_joke", "personal", "private", "fun_fact_personal"}
+_PRIVATE_SOURCE_KEYWORDS = {"private", "user_private", "personal_note"}
 
 
 @dataclass
@@ -155,6 +166,70 @@ def _noise_risks(items: list[MemoryItem]) -> list[dict[str, Any]]:
     return risks
 
 
+def _check_privacy(item: MemoryItem) -> list[str]:
+    """Return a list of privacy risk reasons for a single memory item."""
+    reasons: list[str] = []
+    text = f"{item.title} {item.content} {item.source}"
+
+    if _EMAIL_RE.search(text):
+        reasons.append("email")
+    if _TOKEN_RE.search(text):
+        reasons.append("token_or_api_key")
+
+    tag_lower = {t.lower() for t in item.tags}
+    if "private_joke" in tag_lower:
+        reasons.append("private_joke")
+    if tag_lower & {"personal", "fun_fact_personal"}:
+        reasons.append("personal_fun_fact")
+
+    source_lower = item.source.lower()
+    if any(kw in source_lower for kw in _PRIVATE_SOURCE_KEYWORDS):
+        reasons.append("private_source")
+
+    return reasons
+
+
+def privacy_scan(
+    store: OperationalMemoryStore,
+    sample_private: int | None = None,
+    sample_duplicates: int | None = None,
+) -> dict[str, Any]:
+    """Run a non-destructive privacy scan and return a report dict."""
+    items = store.search(limit=100000)
+    report: dict[str, Any] = {
+        "mode": "dry-run",
+        "total_items": len(items),
+        "private_items": [],
+        "duplicate_samples": [],
+    }
+
+    flagged = []
+    for item in items:
+        reasons = _check_privacy(item)
+        if reasons:
+            flagged.append({
+                "id": item.id,
+                "title": item.title,
+                "type": item.type.value,
+                "reasons": reasons,
+                "public_safe": False,
+            })
+    if sample_private is not None and sample_private > 0:
+        flagged = flagged[:sample_private]
+    report["private_items"] = flagged
+    report["private_count"] = len(flagged)
+
+    duplicates = []
+    if sample_duplicates is None or sample_duplicates > 0:
+        duplicates = _scan_duplicates(items)
+        if sample_duplicates is not None and sample_duplicates > 0:
+            duplicates = duplicates[:sample_duplicates]
+    report["duplicate_samples"] = duplicates
+    report["duplicate_group_count"] = len(duplicates)
+
+    return report
+
+
 def audit(store: OperationalMemoryStore, *, apply: bool = False, scan_duplicates: bool = True) -> AuditReport:
     """Run a full read-only audit unless apply=True."""
     report = AuditReport(dry_run=not apply)
@@ -267,12 +342,42 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit Béa's operational memory store")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     parser.add_argument("--output", type=str, default="", help="Write JSON output to file")
-    parser.add_argument("--apply", action="store_true", help="Apply safe cleanup (requires explicit flag)")
+    parser.add_argument("--dry-run", action="store_true", default=True,
+                        help="Never modify the store (default, always on).")
+    parser.add_argument("--privacy-scan", action="store_true",
+                        help="Scan for privacy risks (emails, tokens, private jokes, etc.).")
+    parser.add_argument("--sample-private", type=int, default=None,
+                        help="Limit the number of private items reported.")
+    parser.add_argument("--sample-duplicates", type=int, default=None,
+                        help="Limit the number of duplicate groups reported.")
+    parser.add_argument("--apply", action="store_true",
+                        help="DESTRUCTIVE — always refused in this PR.")
     parser.add_argument("--no-duplicates", action="store_true", help="Skip duplicate scan")
     args = parser.parse_args(argv)
 
+    if args.apply:
+        _stdout("ERROR: --apply is disabled in this PR. "
+                "Destructive cleanup requires a separate PR with explicit backup.")
+        return 2
+
     store = get_operational_memory_store()
-    report = audit(store, apply=args.apply, scan_duplicates=not args.no_duplicates)
+
+    if args.privacy_scan:
+        report = privacy_scan(
+            store,
+            sample_private=args.sample_private,
+            sample_duplicates=args.sample_duplicates,
+        )
+        payload = json.dumps(report, indent=2, ensure_ascii=False)
+        if args.output:
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(payload, encoding="utf-8")
+            _stdout(f"Privacy scan written to {out_path}")
+        _stdout(payload)
+        return 0
+
+    report = audit(store, apply=False, scan_duplicates=not args.no_duplicates)
 
     if args.json or args.output:
         payload = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)

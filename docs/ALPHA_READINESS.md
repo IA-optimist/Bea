@@ -130,6 +130,17 @@ Historical runs can still be incomplete:
   actually executed.  The writer overrides this with actual `session.outputs`
   keys when available.
 
+## CI Status
+
+- PR smoke workflow: enforced via `.github/workflows/pr-smoke.yml`
+- Enforced commands:
+  - `ruff check .`
+  - `python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json`
+  - `python scripts/bea_eval.py --json`
+  - `python scripts/validate_local.py --quick`
+- Provider-backed checks remain outside this PR smoke lane.
+- No OpenRouter key or Ollama daemon is required for the enforced PR smoke.
+
 ## Model-Role Benchmark
 
 **Multi-role available (2026-06-22).** `scripts/benchmark_model_roles.py`
@@ -182,6 +193,32 @@ Remaining limits:
 - Confidence stays `"low"` until multiple independent runs confirm results
 - Advisory does not change runtime provider selection
 
+## Flutter v3 Migration Status
+
+**Code migration: COMPLETE** (PR #91, 2026-06-21, verified 2026-06-23)
+
+`grep -rn "api/v1" beamax_app/lib/ --include="*.dart"` returns **0 active hits**.
+
+All three former v1 calls now use v3 in `beamax_app/lib/services/api_service.dart`:
+- `POST /api/v3/missions/{id}/pause` (line 550)
+- `POST /api/v3/missions/{id}/resume` (line 559)
+- `GET /api/v3/missions/{id}/stream` (line 755)
+
+`tests/test_client_v1_allowlist.py` — `_V1_ALLOWLIST` is empty: **7/7 passed**.
+
+**APK rebuild: PENDING** — new APK has not been built since the v3 migration.
+The current APK on Pixel 7 (User 11) may still call v1 endpoints.
+
+**Action required before v1 endpoint removal:**
+1. Build APK: `flutter build apk --release --no-tree-shake-icons` from `C:\bea_app`
+2. Install on Pixel 7: `adb -s <device> install -r Bea_app.apk`
+3. Verify logs: confirm 0 hits on `/api/v1/` in backend logs during a session
+4. Then open PR `claude/remove-v1-endpoints` (separate PR, not this one)
+
+**Sunset deadline: 2026-10-01** (Deprecation + Sunset headers already set via V1DeprecationMiddleware)
+
+See `docs/API_VERSIONING.md` for the full 4-phase deprecation timeline.
+
 ## Remaining Risks
 
 - The validator checks artifact presence and test evidence, not semantic code
@@ -214,3 +251,39 @@ comparing dogfood mission outcomes against the current advisory recommendations.
 - Router automatic modification: **NOT done**.
 
 See `docs/DOGFOODING_REPORT.md` for the full evidence pack details.
+
+## Public Beta Memory Hygiene
+
+**Status: public seed is public-safe**
+
+- `scripts/seed_bea_memory.py` supports `--profile public` (default) and `--profile dev-private`.
+- The **public** profile contains only neutral project facts, architecture decisions, and risk rules.
+- The **dev-private** profile additionally includes personal fun facts and private jokes (dev-only, never for release).
+- `python scripts/seed_bea_memory.py --report --profile public` returns `public_safe: true`.
+- `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` detects privacy risks non-destructively.
+- `--apply` always aborts (exit 2) — no hidden bypass.
+
+**Limits:**
+- `bea_eval` may timeout on very large local stores (100k+ items). For CI and public testing, use a fresh store or the public seed fixture.
+- Destructive memory cleanup (`--apply`) is deferred to a future PR with explicit backup support.
+- The `.venv-c4-prep/` directory (site-packages) triggers false positives in the except/pass ratchet; this is pre-existing and unrelated to source code.
+
+## Runtime Observability (PR beta-runtime-observability-lite)
+
+**Status: available**
+
+- `core/observability/redactor.py` — privacy-safe redaction for structured logs.
+  - Redacts: API keys (`sk-*`), Bearer tokens, bea-tokens, emails, long opaque strings (40+ chars).
+  - Preserves: `mission_id`, `provider_used`, `model_used`, `error_category`, `score`, etc.
+  - Callable without importing executor (no circular imports).
+- `core/observability/mission_event.py` — `MissionEvent` dataclass.
+  - Fields: `mission_id`, `mission_type`, `status`, `provider_used`, `model_used`, `agent_used`,
+    `duration_ms`, `error_category`, `artifact_status`, `validation_status`, `rate_limited`, `fallback_used`.
+  - `.complete(status=, error_category=)` sets duration automatically.
+  - `.to_log_dict()` returns redacted dict safe for structured logging.
+- `scripts/mission_status_report.py` — local observability report from `workspace/learning_runs.json`.
+  - `python scripts/mission_status_report.py --json` outputs JSON summary.
+  - Prompts and LLM responses never appear in output.
+- 26 tests: `tests/core/observability/` — redactor, MissionEvent, report logic.
+
+**No external services.** No Sentry, OTEL, Datadog, or Prometheus.
