@@ -1,7 +1,9 @@
 {
   "counts": {
+    "B104": 2,
     "B110": 66,
-    "B112": 15
+    "B112": 15,
+    "B310": 4
   },
   "notes": [
     "Per-test-id count budget for Bandit findings in api/core/kernel.",
@@ -9,6 +11,8 @@
     "Goal: ratchet downward by triaging one test-id at a time per follow-up PR.",
     "",
     "Test-id legend (https://bandit.readthedocs.io/en/latest/plugins/index.html):",
+    "  B104 hardcoded_bind_all_interfaces — 2 occurrences in core/security/url_guard.py (intentional 0.0.0.0 bind for the URL guard service, scoped to loopback in compose).",
+    "  B310 urllib_urlopen — 4 occurrences in scripts/model_role_benchmark.py (file:// urlopen for local benchmark data; no SSRF risk in an offline script).",
     "  B104 hardcoded_bind_all_interfaces — e.g. uvicorn host=\"0.0.0.0\" in tests/scripts. Audit risk: low when bound to loopback in compose (audit Mo7 already enforces).",
     "  B105 hardcoded_password_string — mostly test fixtures and example strings; needs case-by-case audit.",
     "  B107 hardcoded_password_funcarg — same.",
