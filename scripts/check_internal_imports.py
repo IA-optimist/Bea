@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 """AST-based import audit ratchet for internal namespaces.
 
 Scans all .py files in the repo and reports:
@@ -22,7 +23,6 @@ from __future__ import annotations
 import argparse
 import ast
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -332,7 +332,7 @@ def run_audit(repo_root: Path) -> dict[str, Any]:
     all_broken_unprotected: list[dict[str, Any]] = []
     all_broken_protected: list[dict[str, Any]] = []
     all_ignored_tests: list[dict[str, Any]] = []
-    total_imports = 0
+    broken_or_ignored_count = 0
 
     for pyfile in py_files:
         rel = pyfile.relative_to(repo_root)
@@ -340,7 +340,7 @@ def run_audit(repo_root: Path) -> dict[str, Any]:
         all_broken_unprotected.extend(file_result["broken_unprotected"])
         all_broken_protected.extend(file_result["broken_protected"])
         all_ignored_tests.extend(file_result["ignored_tests"])
-        total_imports += (
+        broken_or_ignored_count += (
             len(file_result["broken_unprotected"])
             + len(file_result["broken_protected"])
             + len(file_result["ignored_tests"])
@@ -352,7 +352,7 @@ def run_audit(repo_root: Path) -> dict[str, Any]:
     report: dict[str, Any] = {
         "summary": {
             "total_files_scanned": len(py_files),
-            "broken_or_ignored_count": total_imports,
+            "broken_or_ignored_count": broken_or_ignored_count,
             "broken_unprotected_count": len(all_broken_unprotected),
             "broken_protected_count": len(all_broken_protected),
             "ignored_test_count": len(all_ignored_tests),
