@@ -68,7 +68,7 @@ EXCLUDED_DIR_PREFIXES: tuple[str, ...] = (
 EXCLUDED_EGG_SUFFIX = ".egg-info"
 
 
-def _is_excluded_dir(dir_path: Path, repo_root: Path) -> bool:
+def _is_excluded_dir(dir_path: Path) -> bool:
     """Return True if this directory should be skipped entirely."""
     name = dir_path.name
     if name in EXCLUDED_DIR_NAMES:
@@ -126,11 +126,6 @@ def _module_exists(module_name: str, repo_root: Path) -> bool:
 # AST helpers — location and protection detection
 # ---------------------------------------------------------------------------
 
-def _is_top_level(node: ast.stmt, tree: ast.Module) -> bool:
-    """Return True if node is a direct child of the Module body."""
-    return node in tree.body  # type: ignore[operator]
-
-
 # Exception types that count as "guarding" an import
 _IMPORT_GUARD_EXCEPTIONS: frozenset[str] = frozenset(
     {"ImportError", "ModuleNotFoundError", "Exception"}
@@ -180,21 +175,14 @@ def _import_str(node: ast.Import | ast.ImportFrom) -> str:
         )
 
 
-def _module_name(node: ast.Import | ast.ImportFrom) -> str | None:
-    """Return the top-level module name for internal checks, or None for relative imports."""
-    if isinstance(node, ast.ImportFrom):
-        if (node.level or 0) > 0:
-            return None  # relative import, skip
-        return node.module or ""
-    else:
-        # For `import a, b`, check each name; we'll return the first internal one.
-        # Caller will call us once per node, so just return the first name.
-        return node.names[0].name if node.names else None
-
-
 def _top_level_name(module: str) -> str:
     return module.split(".")[0] if module else ""
 
+
+# ---------------------------------------------------------------------------
+# Python 3.11+ `except*` syntax support
+# ---------------------------------------------------------------------------
+_TRY_TYPES = (ast.Try, ast.TryStar) if hasattr(ast, "TryStar") else (ast.Try,)
 
 # ---------------------------------------------------------------------------
 # Walk the AST keeping track of which Try blocks each node is inside
@@ -222,7 +210,7 @@ def _collect_imports(
             # No need to recurse into alias children
             return
 
-        if isinstance(node, ast.Try):
+        if isinstance(node, _TRY_TYPES):
             protected = _try_is_protected(node)
             new_flag = inside_protected_try or protected
             # Walk the try body with updated protection flag
@@ -324,7 +312,7 @@ def collect_py_files(repo_root: Path) -> list[Path]:
             if entry.is_symlink():
                 continue
             if entry.is_dir():
-                if not _is_excluded_dir(entry, repo_root):
+                if not _is_excluded_dir(entry):
                     _walk(entry)
             elif entry.is_file() and entry.suffix == ".py":
                 files.append(entry)
@@ -358,14 +346,13 @@ def run_audit(repo_root: Path) -> dict[str, Any]:
             + len(file_result["ignored_tests"])
         )
 
-    # Count total internal imports found (broken ones only, since we don't count clean ones)
-    # Adjust: total_imports here counts only broken/ignored.
-    # The summary says "total_imports_found" which we interpret as all broken+ignored detected.
+    # Count broken/ignored imports only (clean imports are not tracked here).
+    # broken_or_ignored_count = broken_unprotected + broken_protected + ignored_tests.
 
     report: dict[str, Any] = {
         "summary": {
             "total_files_scanned": len(py_files),
-            "total_imports_found": total_imports,
+            "broken_or_ignored_count": total_imports,
             "broken_unprotected_count": len(all_broken_unprotected),
             "broken_protected_count": len(all_broken_protected),
             "ignored_test_count": len(all_ignored_tests),
@@ -428,7 +415,7 @@ def main(argv: list[str] | None = None) -> int:
         s = report["summary"]
         print(f"[check_internal_imports] Repo: {repo_root}")
         print(f"  Files scanned         : {s['total_files_scanned']}")
-        print(f"  Internal imports found: {s['total_imports_found']}")
+        print(f"  Broken or ignored     : {s['broken_or_ignored_count']}")
         print(f"  Broken unprotected    : {s['broken_unprotected_count']}")
         print(f"  Broken protected      : {s['broken_protected_count']}")
         print(f"  Ignored (test files)  : {s['ignored_test_count']}")
