@@ -30,6 +30,17 @@
   is classified `HIGH` and blocked (no dry-run bypass).
 - `core/tool_executor.py`: uses `core.policy_engine.PolicyEngine.evaluate_tool`;
   if the policy engine is unavailable, execute / high-risk tools are blocked.
+  Non-empty `mission_id` is now required by `evaluate_tool()` (fail-closed);
+  session limits cannot be bypassed by omitting `mission_id`.
+- `core/policy_engine.py`:
+  - `evaluate_tool()` uses `SessionPolicy.check_and_record()` for atomic
+    `check_limits()` + `record_action()`.
+  - Mode presets are applied before explicit `limits`, so explicit limits always
+    win.
+  - `_session_key(mission_id, principal_id)` isolates sessions per principal
+    when a `principal_id`, `user_id`, `tenant_id` or `owner_id` is provided.
+  - `_cleanup_expired_sessions()` evicts timed-out sessions and enforces a
+    `_max_sessions` cap; called from `ensure_session()` and `get_report()`.
 - `core/execution_policy.Decision` centralizes `AUTO_APPROVED`, `REQUIRES_APPROVAL`,
   `BLOCKED` and replaces bare string comparisons in `tool_executor`.
 - `scripts/check_internal_imports.py` is now part of `validate_local.py --quick`
@@ -37,18 +48,48 @@
 
 ## Known remaining debt (non-blocking for this PR)
 
-- `core/policy_engine.py`: `evaluate_tool()` overlaps with `check_action()` — minor;
-  session tracker is now wired end-to-end (`fix/policy-engine-session-limits-singleton`):
-  `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`.
+### principal-binding (P3 — tracked)
+
+`feat/principal-auth-binding` wires `principal_id` as an explicit trusted parameter
+to `evaluate_tool()` and `check_action()` (instead of reading it from the
+client-supplied `params` dict, which was falsifiable).
+
+**What is fixed:**
+- `evaluate_tool(principal_id=...)` now uses the explicit arg; `params` is never
+  consulted for principal extraction.
+- `check_action(principal_id=...)` now uses `_session_key()` for the session lookup.
+- `ToolExecutor.execute(principal_id=...)` threads the principal to `evaluate_tool()`.
+- Callers must extract `principal_id` from `request.state.user["username"]` (set by
+  `AccessEnforcementMiddleware`) or `Depends(require_auth)` and pass it explicitly.
+
+**Remaining gap (P3 — not blocking alpha):**
+- The full orchestrator chain (`MetaOrchestrator` → `BeaOrchestrator` →
+  `ToolExecutor`) does not yet receive `principal_id` from the HTTP request context
+  because `MissionResult` has no `submitted_by` field.  When `principal_id=None`
+  the session key falls back to `mission_id` alone — safe for single-tenant but
+  insufficient for multi-tenant beta.
+- Resolution: add `submitted_by` to `MissionResult`, store the authenticated
+  username at submission time, and thread it into `ToolExecutor.execute()` calls.
+  This is the recommended next branch (`fix/mission-submitted-by`).
+- This gap is **not a regression**: before this PR, `principal_id` was extracted
+  from params (worse — falsifiable).  After this PR, `principal_id` is None for
+  internal callers (safe fallback) and can be explicitly set by callers that have
+  access to the request context.
+
+- `core/policy_engine.py`: session tracker is now hardened end-to-end
+  (`fix/policy-engine-session-hardening`):
+  - `evaluate_tool()` calls `ensure_session()` + `check_and_record()` atomically.
+  - Explicit limits override mode presets.
+  - Expired sessions are evicted and a `_max_sessions` cap is enforced.
+  - Empty/`None` `mission_id` is denied (fail-closed); high-risk without
+    `mission_id` stays blocked.
+  - `_session_key(mission_id, principal_id)` separates sessions per principal
+    when a principal identifier is available; raw `mission_id` remains supported
+    for internal/test compatibility.
   `ToolExecutor` uses `get_policy_engine()` singleton; `MetaOrchestrator` and
-  `BeaOrchestrator` call `ensure_session()` at run start. 88 critical policy/tool
-  tests are green and `validate_local.py --quick` and full pass. **Propagation audit
-  complete** (fix/mission-id-propagation-audit): 3 runtime gaps closed (missions route
-  missing `mission_id` kwarg, `tool_pipeline` not forwarding it to child calls, recovery
-  engine using stale `_mission_id` key). Remaining documented debt: `api/routes/system_v2.py`
-  debug endpoint (P2, caller-controlled params) and `core/business/mission_runner.py`
-  `StepExecutor._execute_with_tools` (dead code, `MissionEngine` never instantiated in
-  prod). Ratchet `scripts/check_tool_executor_mission_id.py` guards all 6 known call sites.
+  `BeaOrchestrator` call `ensure_session()` at run start. 25+ critical policy/tool
+  tests are green and `validate_local.py --quick` and full pass. Limits are only
+  effective when `mission_id` is propagated through the call chain.
 - `core/coding_agent/artifact_validator.py`: partial-action accounting is now
   centralized in `_actions_accounted_for()`; `_successful_tool_actions()` uses it.
 - `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent and

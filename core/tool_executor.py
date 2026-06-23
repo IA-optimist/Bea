@@ -674,7 +674,7 @@ class ToolExecutor:
     # Actions that require human approval before execution
     _APPROVAL_REQUIRED_ACTIONS = {"execute", "shell", "delete", "deploy", "infra", "network_write"}
 
-    def execute(self, tool_name: str, params: dict, approval_mode: str = "SUPERVISED") -> dict:
+    def execute(self, tool_name: str, params: dict, approval_mode: str = "SUPERVISED", principal_id: str | None = None) -> dict:
         """Vérifie ExecutionPolicy puis exécute le tool.
 
         Retourne {"ok", "result", "error", "blocked_by_policy"}.
@@ -746,6 +746,7 @@ class ToolExecutor:
                 risk_level=_policy_risk_level,
                 mission_id=_mission_id,
                 params=params,
+                principal_id=principal_id,  # from authenticated request context, not params
             )
             if not _policy_decision.allowed:
                 log.warning(
