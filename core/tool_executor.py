@@ -924,7 +924,7 @@ class ToolExecutor:
                 from core.resilience.recovery_engine import get_recovery_engine
                 _re = get_recovery_engine()
                 _decision = _re.evaluate(e, tool_name=tool_name,
-                                          mission_id=params.get("_mission_id", ""))
+                                          mission_id=params.get("mission_id", "") or params.get("_mission_id", ""))
                 result["_recovery"] = _decision.to_dict()
             except Exception as _re_err:
                 log.debug("recovery_eval_failed", err=str(_re_err)[:60])

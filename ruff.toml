@@ -87,6 +87,7 @@ ignore = [
 "scripts/check_client_v1_usage.py" = ["T201"]    # CLI : v1-gate checker, stdout = interface
 "scripts/mission_status_report.py" = ["T201"]   # CLI : observability reporter, stdout = interface
 "scripts/release_check.py" = ["T201"]           # CLI : release check reporter, stdout = interface
+"scripts/check_tool_executor_mission_id.py" = ["T201"]  # CLI : mission_id ratchet, stdout = interface
 # Tests : allow common patterns
 "tests/**" = [
   "F401",  # fixtures often imported but used via pytest magic

@@ -68,6 +68,7 @@
 - [x] `RiskEngine.analyze()` exception falls back to `HIGH` / blocked
 - [x] Artifact validator rejects code missions without verifiable artifact evidence
 - [x] `PolicyEngine` enforces shared session/economic limits end-to-end — `evaluate_tool()` calls `ensure_session()` + `record_action()` + `check_limits()`; `ToolExecutor` uses the singleton; `MetaOrchestrator`/`BeaOrchestrator` call `ensure_session()` at run start (PR fix/policy-engine-session-limits-singleton)
+- [x] `mission_id` propagation audited end-to-end — 3 runtime gaps fixed (missions route, tool_pipeline, recovery key), ratchet `scripts/check_tool_executor_mission_id.py` guards against regression, 9 tests cover propagation invariants (PR fix/mission-id-propagation-audit)
 
 ## Provider readiness
 

@@ -42,7 +42,13 @@
   `evaluate_tool()` calls `ensure_session()` + `record_action()` + `check_limits()`.
   `ToolExecutor` uses `get_policy_engine()` singleton; `MetaOrchestrator` and
   `BeaOrchestrator` call `ensure_session()` at run start. Limits are only effective
-  when `mission_id` is propagated through the call chain.
+  when `mission_id` is propagated through the call chain. **Propagation audit complete**
+  (PR fix/mission-id-propagation-audit): 3 runtime gaps closed (missions route missing
+  `mission_id` kwarg, `tool_pipeline` not forwarding it to child calls, recovery engine
+  using stale `_mission_id` key). Remaining documented debt: `api/routes/system_v2.py`
+  debug endpoint (P2, caller-controlled params) and `core/business/mission_runner.py`
+  `StepExecutor._execute_with_tools` (dead code, `MissionEngine` never instantiated in
+  prod). Ratchet `scripts/check_tool_executor_mission_id.py` guards all 6 known call sites.
 - `core/coding_agent/artifact_validator.py`: partial-action accounting is now
   centralized in `_actions_accounted_for()`; `_successful_tool_actions()` uses it.
 - `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent and

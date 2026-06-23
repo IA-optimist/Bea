@@ -27,7 +27,7 @@ Packaging truth:
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
 | Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
-| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé — **session tracker branché + limites effectives** (PR fix/policy-engine-session-limits-singleton) |
+| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé — **session tracker branché + limites effectives** (PR fix/policy-engine-session-limits-singleton) — **mission_id propagation audit terminé** (fix/mission-id-propagation-audit) : 3 fixes P0/P1, ratchet `scripts/check_tool_executor_mission_id.py`, 9 tests |
 | OrchestratorV2 | 🟡 `core/orchestrator_v2.py` — compat wrapper; delegates to MetaOrchestrator/BeaOrchestrator path |
 | DevinAgent | 🔵 Blueprint only — originally **BEA MAX v3** prototype, not wired to current orchestrator |
 | V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |

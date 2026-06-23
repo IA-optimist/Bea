@@ -302,6 +302,7 @@ async def submit_task(
                     mission_type=_mission_type_for_tools,
                     approval_mode="SUPERVISED",
                     max_tools=2,
+                    mission_id=str(result.mission_id),
                 )
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
