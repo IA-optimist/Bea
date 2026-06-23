@@ -6,6 +6,50 @@ All notable changes to **Beamax** are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0-dev-preview] — 2026-06-23
+
+> **Developer Preview** — not production-ready. APIs may change without notice.
+
+### Added
+
+- Multi-agent pipeline (forge-builder, scout-research, shadow-advisor)
+- OpenRouter provider integration (gpt-oss-120b:free, gpt-oss-20b:free)
+- Ollama local fallback (gemma4:12b)
+- Provider/model metadata propagation through pipeline (`core/executor/session_meta_bus.py`)
+- Model-role benchmark system (mock + real limited, 3 roles)
+- Advisory routing policy (non-prescriptive, `runtime_enforced=false` always)
+- Dogfood evidence pack (5 missions fixture mode)
+- API hardening: configurable CORS (`BEA_CORS_ORIGINS`) + rate-limiting (slowapi)
+- Lightweight runtime observability: redactor + MissionEvent + mission_status_report
+- Flutter APK CI workflow (gate: no /api/v1 calls, `workflow_dispatch` build)
+- v1 deprecation timeline (4 phases, server endpoints preserved for rollback)
+- Developer Preview documentation pack (README_PUBLIC_BETA, GETTING_STARTED, SECURITY_MODEL, TROUBLESHOOTING)
+- Release packaging: VERSION, CHANGELOG, RELEASE_NOTES, .env.example, RELEASE_PROCESS, release_check.py
+
+### Security
+
+- API keys never logged (`core/observability/redactor.py` — 5 patterns)
+- `runtime_enforced=false` invariant for all routing policies
+- `BEA_CONTINUOUS_IMPROVEMENT` disabled by default (opt-in only)
+- Wildcard CORS blocked when `allow_credentials=True`
+- Rate-limit: 60 req/min default, configurable via `BEA_RATE_LIMIT_PER_MINUTE`, exempt `/health`
+
+### Known Limitations
+
+- Router is advisory only — no automatic provider switching at runtime
+- APK v3 not yet validated on physical device
+- MissionEvent not yet wired into `pipeline_auto` executor
+- `model_used` reflects what we sent, not what the provider returned
+- Sessions via chat fast-path do not track `model_used`
+- Ollama gemma4:12b fails forge-builder (artifact_invalid) and shadow-advisor (json_invalid)
+- No CI enforcement for real provider benchmark
+- Multi-tenant not supported
+
+### Not Production Ready
+
+This release is a **Developer Preview**. It is not suitable for production use.
+APIs may change. Data may be lost on breaking updates.
+
 ## [0.16.0] — 2026-06-16
 
 ### Added
