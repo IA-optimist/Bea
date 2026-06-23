@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from core.execution_policy import Decision
+from core.policy_engine import PolicyEngine, reset_policy_engine
 from core.tool_executor import get_tool_executor
 
 
@@ -30,6 +31,13 @@ def _mk_policy_mock(allowed: bool = True, reason: str = "tool_allowed"):
     d.reason = reason
     m.evaluate_tool.return_value = d
     return m
+
+
+@pytest.fixture(autouse=True)
+def _reset_policy_singleton():
+    reset_policy_engine()
+    yield
+    reset_policy_engine()
 
 
 @pytest.mark.parametrize("tool", ["shell_command", "execute_code"])
@@ -104,3 +112,43 @@ def test_execution_policy_blocked_blocks_tool():
         result = executor.execute("shell_command", {"cmd": "ls", "mission_id": "test-blocked"})
     assert result.get("blocked_by_policy") is True
     assert "blocked_by_policy" in result.get("error", "")
+
+
+def test_tool_executor_respects_session_action_limit():
+    """A shared PolicyEngine session must count tool calls and block at the limit."""
+    executor = get_tool_executor()
+    mocks = _allowing_permission_check()
+    policy = PolicyEngine(None)
+    policy.new_session("limit-test", "auto", limits={"max_actions_per_session": 2})
+
+    with (
+        patch("core.policy_engine.get_policy_engine", return_value=policy),
+        patch("core.capabilities.registry.get_capability_registry", return_value=mocks["core.capabilities.registry.get_capability_registry"]),
+        patch("core.tool_permissions.get_tool_permissions", return_value=mocks["core.tool_permissions.get_tool_permissions"]),
+        patch("core.resilience.get_circuit_breaker", return_value=mocks["core.resilience.get_circuit_breaker"]),
+        patch.object(executor, "_tools", {"list_project_structure": lambda **_: {"ok": True, "result": "ok"}}),
+    ):
+        assert executor.execute("list_project_structure", {"path": ".", "mission_id": "limit-test"}).get("ok") is True
+        assert executor.execute("list_project_structure", {"path": ".", "mission_id": "limit-test"}).get("ok") is True
+        blocked = executor.execute("list_project_structure", {"path": ".", "mission_id": "limit-test"})
+    assert blocked.get("blocked_by_policy") is True
+    assert "Limite actions" in blocked.get("error", "")
+
+
+def test_tool_executor_without_mission_id_skips_session_limits():
+    """Without a mission_id the tool call is allowed even if a session exists."""
+    executor = get_tool_executor()
+    mocks = _allowing_permission_check()
+    policy = PolicyEngine(None)
+    # A session with exhausted limits should not affect calls without mission_id.
+    policy.new_session("other", "auto", limits={"max_actions_per_session": 0})
+
+    with (
+        patch("core.policy_engine.get_policy_engine", return_value=policy),
+        patch("core.capabilities.registry.get_capability_registry", return_value=mocks["core.capabilities.registry.get_capability_registry"]),
+        patch("core.tool_permissions.get_tool_permissions", return_value=mocks["core.tool_permissions.get_tool_permissions"]),
+        patch("core.resilience.get_circuit_breaker", return_value=mocks["core.resilience.get_circuit_breaker"]),
+        patch.object(executor, "_tools", {"list_project_structure": lambda **_: {"ok": True, "result": "ok"}}),
+    ):
+        result = executor.execute("list_project_structure", {"path": "."})
+    assert result.get("ok") is True
