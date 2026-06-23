@@ -4,7 +4,7 @@
 
 ## Summary
 
-The codebase contains **three distinct families of `ExecutionResult`** (executor, kernel/types, kernel/execution) plus several satellite result types (`ActionResult`, `MissionResult`, `AgentResult`, `CapabilityResult`, `ConnectorResult`, `KernelAgentResult`). The clearest duplication concern is the three-way `ExecutionResult` split: `executor/contracts.py` (the package-level canonical claim), `kernel/contracts/types.py` (minimal kernel domain type), and `kernel/execution/contracts.py` (API-facing kernel shell result). There is also a legacy alias (`executor/runner.py: ExecutionResult = ActionResult`) and two independent `MissionResult` definitions with different purposes. In total, **17 execution-outcome contract types** are documented below across 8 source files.
+The codebase contains **three distinct families of `ExecutionResult`** (executor, kernel/types, kernel/execution) plus several satellite result types (`ActionResult`, `MissionResult`, `AgentResult`, `CapabilityResult`, `ConnectorResult`, `KernelAgentResult`). The clearest duplication concern is the three-way `ExecutionResult` split: `executor/contracts.py` (the package-level canonical claim), `kernel/contracts/types.py` (minimal kernel domain type), and `kernel/execution/contracts.py` (API-facing kernel shell result). There is also a legacy alias (`executor/runner.py: ExecutionResult = ActionResult`) and two independent `MissionResult` definitions with different purposes. In total, **18 execution-outcome contract types** are documented below across 9 source files.
 
 ---
 
@@ -245,9 +245,33 @@ The codebase contains **three distinct families of `ExecutionResult`** (executor
 | `correlation_id` | `str` | Trace correlation |
 
 - **Produced by:** Agents via `session.set_typed_output(agent_name, result)` pattern (documented in module docstring)
-- **Consumed by:** `agents/debug_agent.py`, `executor/task_queue.py`, `agents/monitoring_agent.py`
-- **Status:** **Legitimate Pydantic model for agent-to-agent communication.** Distinct from `core/autonomy/daemon.py:ActionResult` (different purpose, different framework).
-- **Recommendation:** **Keep.** This is the correct contract for typed output passing between agents via the session bus.
+- **Consumed by:** No confirmed external consumers import `AgentResult` from `core.contracts`. `agents/debug_agent.py` imports only `ErrorReport`; `executor/task_queue.py` imports only `TaskContract, TaskState`; `agents/monitoring_agent.py` imports only `ComponentHealth, HealthReport, HealthStatus`. The only import of `AgentResult` from `core.contracts` found in the codebase is the self-referential usage inside `core/contracts.py` itself (module docstring example). **This type may be unused externally.**
+- **Status:** **Legitimate Pydantic model for agent-to-agent communication.** Distinct from `core/autonomy/daemon.py:ActionResult` (different purpose, different framework). Note: name collision with `agents/parallel_executor.py:AgentResult` — see section below.
+- **Recommendation:** **Keep, but verify actual usage.** If genuinely unused externally, consider deprecating or consolidating with `agents/parallel_executor.py:AgentResult`. This is the correct contract for typed output passing between agents via the session bus.
+
+---
+
+### `AgentResult` — agents/parallel_executor.py (parallel execution result)
+
+- **Location:** `agents/parallel_executor.py:116`
+- **Type:** Plain class with `__slots__` (not a dataclass, not Pydantic)
+- **Fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `agent` | `str` | Agent name |
+| `task` | `str` | Task description |
+| `output` | `str` | Agent output (default: `""`) |
+| `success` | `bool` | Whether the agent succeeded (default: `True`) |
+| `error` | `str` | Error message (default: `""`) |
+| `duration_ms` | `int` | Execution duration (default: `0`) |
+| `agent_output` | `AgentOutput \| None` | Typed structured output (default: `None`) |
+| `trace` | `AgentTrace \| None` | Execution trace (default: `None`) |
+
+- **Produced by:** `agents/parallel_executor.py:ParallelExecutor._run_single_agent()` — created inline for every individual agent invocation in a parallel run
+- **Consumed by:** `agents/parallel_executor.py:ParallelExecutor.run_parallel()` (aggregates results into `dict[str, AgentResult]`), `agents/agent_output.py` (converts to `AgentOutput` — documented in comment at line 170), internal parallel executor machinery
+- **Status:** **Name collision with `core/contracts.py:AgentResult`** — two entirely different types with the same name, different frameworks (slots class vs Pydantic), different fields (`task`/`agent_output`/`trace` vs `task_id`/`content`/`correlation_id`), and different scopes (parallel executor internal vs session bus contract).
+- **Recommendation:** **Rename to `ParallelAgentResult`** to eliminate the collision with `core/contracts.py:AgentResult`. The two types are used in completely separate contexts and should not share a name.
 
 ---
 
@@ -372,8 +396,8 @@ The codebase contains **three distinct families of `ExecutionResult`** (executor
 
 - **Produced by:** `core/self_improvement/safe_executor.py:SafeSelfImprovementExecutor.execute()`
 - **Consumed by:** `core/self_improvement/engine.py`, `api/routes/self_improvement.py`, `core/self_improvement/research_loop.py`, `scripts/run_telegram_bea.py`
-- **Status:** **Local type within the self-improvement subsystem.** The name `ExecutionResult` is misleading — this is specifically a *self-improvement patch application result*, not a general execution result. Tested in `tests/test_hardening_v3.py` as `PatchResult` alias (`from core.self_improvement.safe_executor import PatchResult as ExecutionResult`).
-- **Recommendation:** **Rename to `PatchApplicationResult`** — the name `ExecutionResult` conflicts with three other types of that name and the actual semantics are patch-specific.
+- **Status:** **Local type within the self-improvement subsystem.** The name `ExecutionResult` is misleading — this is specifically a *self-improvement patch application result*, not a general execution result. The file actually defines **two** types: (a) `ExecutionResult` (line 29) — the legacy type with fields `success`, `output`, `error`, `applied_change`, `changed_file`, `rollback_triggered`, `backup_text`; and (b) `PatchResult` (line 42) — a newer, richer type with fields `success`, `applied_change`, `rollback_triggered`, `error`, `confidence` (0.0–1.0), `risk_level` (low/medium/high), `diff_summary`, `revert_path`. The `SafeSelfImprovementExecutor.execute()` method returns the legacy `ExecutionResult`. `tests/test_hardening_v3.py` imports the newer type for backward compatibility (`from core.self_improvement.safe_executor import PatchResult as ExecutionResult`) — `PatchResult` is the intended forward-looking name, and the test aliases it to `ExecutionResult` for legacy test compat, not the reverse. A comment at line 311 of the file confirms: `# Legacy alias removed — use PatchResult directly or executor.contracts.ExecutionResult`.
+- **Recommendation:** **Migrate `SafeSelfImprovementExecutor.execute()` to return `PatchResult`** and rename `PatchResult` to `PatchApplicationResult`. The legacy `ExecutionResult` class in this file can then be removed. Update `core/self_improvement/engine.py`, `api/routes/self_improvement.py`, `core/self_improvement/research_loop.py`, `scripts/run_telegram_bea.py` accordingly. The test import in `test_hardening_v3.py` can then be simplified.
 
 ---
 
@@ -414,8 +438,8 @@ The codebase contains **three distinct families of `ExecutionResult`** (executor
 
 - **Produced by:** `PatchValidator` in the same file
 - **Consumed by:** `ImprovementOrchestrator` in the same file
-- **Status:** **Local to self-improvement module.** Note: `core/planning/self_review.py:ValidationResult`, `core/learning/knowledge_validator.py:ValidationResult`, `core/planning/output_enforcer.py:ValidationResult`, and `executor/output_validator.py:ValidationResult` also exist with different shapes — the name `ValidationResult` is used at least 5 times in the codebase.
-- **Recommendation:** **Scope with a prefix** — rename to `PatchValidationResult` for the SI module case.
+- **Status:** **Local to self-improvement module.** Grep confirms exactly 4 `class ValidationResult` definitions in the codebase: `core/self_improvement_loop.py:587` (this one), `core/learning/knowledge_validator.py:35`, `core/planning/output_enforcer.py:35`, and `executor/output_validator.py:32`. Note: `core/planning/self_review.py` defines `ReviewResult` (not `ValidationResult`) — it is **not** part of this collision.
+- **Recommendation:** **Scope with a prefix** — rename to `PatchValidationResult` for the SI module case (`core/self_improvement_loop.py`); consider `KnowledgeValidationResult` for `core/learning/knowledge_validator.py`, `OutputValidationResult` for `core/planning/output_enforcer.py`, and `ExecutorValidationResult` for `executor/output_validator.py`.
 
 ---
 
@@ -441,8 +465,9 @@ The codebase contains **three distinct families of `ExecutionResult`** (executor
 |---|---|---|---|
 | `ExecutionResult` | 3 independent definitions | All claim to represent "the result of execution" | `executor/contracts.py` vs `kernel/contracts/types.py` vs `kernel/execution/contracts.py` |
 | `ActionResult` | 3 independent definitions | All have `success: bool` + `error: str` | `executor/runner.py` vs `core/autonomy/daemon.py` vs `core/browser/browser_actions.py` |
+| `AgentResult` | 2 independent definitions | Both have `agent`, `success`, `error`, `duration_ms` | `core/contracts.py` (Pydantic, session-bus) vs `agents/parallel_executor.py` (slots class, parallel executor internal) |
 | `MissionResult` | 2 independent definitions | Both have `mission_id`, `success` | `core/memory/mission_result.py` (memory DTO) vs `core/mission_models.py` (lifecycle state) |
-| `ValidationResult` | 5+ definitions | All have pass/fail semantics | `core/self_improvement_loop.py`, `core/planning/self_review.py`, `core/planning/output_enforcer.py`, `core/learning/knowledge_validator.py`, `executor/output_validator.py` |
+| `ValidationResult` | 4 definitions | All have pass/fail semantics | `core/self_improvement_loop.py`, `core/learning/knowledge_validator.py`, `core/planning/output_enforcer.py`, `executor/output_validator.py` (note: `core/planning/self_review.py` defines `ReviewResult`, not `ValidationResult`) |
 | `SandboxResult` | 2 definitions | Both track test pass/fail counts | `core/self_improvement_loop.py` vs `core/self_improvement/sandbox_executor.py` |
 
 ---
