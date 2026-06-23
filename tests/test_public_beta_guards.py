@@ -210,3 +210,31 @@ def test_orchestrator_v2_has_maturity_label():
         f"OrchestratorV2.MATURITY must be one of 'active'/'stable'/'experimental', "
         f"got {OrchestratorV2.MATURITY!r}"
     )
+
+
+# ── Contract 5: /api/v3/system/readiness does not crash (PolicyEngine non-regression) ──
+
+def test_system_route_policy_report_no_crash():
+    """GET /api/v3/system/readiness must not return 500.
+
+    This is a non-regression guard for PolicyEngine.get_report() — if get_report()
+    raises AttributeError (e.g. missing _cloud_allowed), the endpoint returns 500.
+    We accept 200 / 401 / 403 but NOT 500.
+    """
+    try:
+        from api.main import app
+        from fastapi.testclient import TestClient
+    except Exception:
+        import pytest
+        pytest.skip("api.main not importable in this environment")
+
+    client = TestClient(app, raise_server_exceptions=False)
+    resp = client.get(
+        "/api/v3/system/readiness",
+        headers={"X-Bea-Token": "test"},
+    )
+    assert resp.status_code != 500, (
+        f"GET /api/v3/system/readiness returned HTTP 500. "
+        f"Likely cause: PolicyEngine.get_report() raised an exception. "
+        f"Response body: {resp.text[:400]}"
+    )

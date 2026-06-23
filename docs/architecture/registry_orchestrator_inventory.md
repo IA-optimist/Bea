@@ -488,3 +488,33 @@ Side-paths (not bypassing MetaOrchestrator):
 7. **Do not add new agents to `core/agents/agent_registry.py` thinking it is the agent catalogue.** That file is the runtime coordination/messaging layer. New agent classes go into `agents/registry.py` (`AGENT_CLASSES` dict).
 
 8. **Do not call `CognitionOrchestrator` or `BusinessOrchestrator` from outside their modules** — both are invoked through MetaOrchestrator's execution path. Direct instantiation skips state machine tracking, event emission, and the circuit breaker.
+
+---
+
+## ToolExecutor Advisory Layers — Fail-open notes
+
+`core/tool_executor.py` applies **three advisory layers** before the hard policy gate.
+All three are fail-open: if the advisory module crashes, execution continues.
+The hard blockers that can never be bypassed are listed separately.
+
+### Advisory layers (fail-open)
+
+| Layer | Module | Behaviour on failure |
+|-------|--------|---------------------|
+| Capability registry check | `core/capabilities/registry.py` via `get_capability_registry()` | Logs `capability_check_skipped`, execution continues |
+| Per-tool permission gate | `core/tool_permissions.py` via `get_tool_permissions()` | Logs `tool_permission_check_skipped`, execution continues |
+| ExecutionPolicy advisory | `core/execution_policy.py` via `get_execution_policy()` | Logs `policy_check_failed_open`, execution continues |
+
+**Implication:** these three layers provide defense-in-depth and audit visibility, but they cannot be relied on alone for hard blocking. Any tool that is fail-open through all three layers will still be stopped by the hard gates below.
+
+### Hard blockers (fail-closed)
+
+| Gate | Module | Behaviour |
+|------|--------|-----------|
+| PolicyEngine.evaluate_tool() | `core/policy_engine.py` via `get_policy_engine()` | HIGH-risk tools always blocked; session limits enforced when `mission_id` is propagated; falls back fail-CLOSED for execute/high-risk when unavailable |
+| RiskEngine.analyze() | `executor/supervised_executor.py` | Exception → classified HIGH → blocked (no dry-run bypass) |
+| SupervisedExecutor | `executor/supervised_executor.py` | Enforces approval gate; approval workflow managed by `core/tool_permissions.py` |
+| Kill switch | `BEA_EXECUTION_DISABLED=1` env var | Blocks all tool execution process-wide |
+| Circuit breaker | `core/resilience` via `get_circuit_breaker()` | Blocks tools in open state (fail-CLOSED) |
+
+**Policy singleton discipline:** `ToolExecutor` must always call `get_policy_engine()` (the shared singleton) — never `PolicyEngine(None)` directly. Constructing a fresh instance bypasses session tracking and makes economic limits invisible across orchestrator calls. This is verified by `tests/test_tool_executor_singleton.py`.
