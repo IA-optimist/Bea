@@ -33,3 +33,67 @@ supervision.
 - HUMAN_REQUIRED: Qdrant cleanup proof.
 - HUMAN_REQUIRED: secret rotation proof.
 - HUMAN_REQUIRED: Android physical-device proof.
+- [ ] `README_PUBLIC_BETA.md` is up to date
+- [ ] `docs/BETA_TESTER_GUIDE.md` is accurate
+- [ ] `docs/FEEDBACK_GUIDE.md` is accurate
+- [ ] `docs/KNOWN_LIMITATIONS.md` is current
+- [ ] `docs/PRIVACY_FOR_TESTERS.md` is accurate
+- [ ] `docs/TROUBLESHOOTING.md` covers common issues
+- [ ] No "production ready" or "stable" claims anywhere
+- [ ] All doc links resolve (no 404s)
+
+## Security
+
+- [ ] `.env` is in `.gitignore`
+- [ ] No secrets in any committed file
+- [ ] `BEA_CONTINUOUS_IMPROVEMENT=0` by default
+- [ ] `BEA_SKIP_IMPROVEMENT_GATE` is not set
+- [ ] API authentication is enabled
+- [ ] No endpoints exposed without auth (except `/health`)
+
+## Issue templates
+
+- [ ] `.github/ISSUE_TEMPLATE/bug_report.yml` exists
+- [ ] `.github/ISSUE_TEMPLATE/beta_feedback.yml` exists
+- [ ] `.github/ISSUE_TEMPLATE/security_report.md` exists
+- [ ] Templates ask for: OS, commit, steps, expected, actual, redacted logs
+- [ ] Templates include category dropdown (API, Flutter, Memory, Provider, Mission, Docs, Unknown)
+
+## Validation gates
+
+- [x] `ruff check .` passes
+- [x] `pytest` passes (all critical tests)
+- [x] `python scripts/validate_local.py --quick` passes all gates
+- [x] CI smoke enforced on PR (fixture-backed, no provider key required)
+- [x] `python scripts/bea_eval.py --json --isolated` reproductible (25/25, two runs same score)
+- [x] Completion truth gate enforced (`validate_coding_report` + regression tests)
+- [ ] `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` runs clean on public seed
+
+## Provider readiness
+
+- [x] OpenRouter free tier works for all 3 roles (forge-builder, scout-research, shadow-advisor)
+- [x] Ollama fallback documented (with known limitations)
+- [ ] No hardcoded provider keys anywhere in the codebase
+
+## APK / Flutter
+
+- [x] Flutter client uses `/api/v3` only (grep confirmed: 0 active `/api/v1` calls)
+- [x] APK build CI workflow (`flutter_apk.yml`) — gate + `workflow_dispatch`
+- [x] `scripts/check_client_v1_usage.py` — local v1-gate checker
+- [ ] APK v3 validated on physical device
+
+## Known limitations documented
+
+- [x] Router is advisory only (`runtime_enforced=false`)
+- [x] Rate-limiting configurable (`BEA_RATE_LIMIT_PER_MINUTE`)
+- [x] v1 endpoints maintained for Flutter rollback — timeline in `docs/API_VERSIONING.md`
+- [ ] `bea_eval` may timeout on large local stores
+- [ ] MissionEvent not yet wired into pipeline_auto (building block only)
+
+## Grep checks
+
+```bash
+# Should return nothing:
+rg "sk-|OPENROUTER_API_KEY=|Bearer " docs .github README_PUBLIC_BETA.md
+rg "production ready|stable public beta|guaranteed" docs README_PUBLIC_BETA.md
+```

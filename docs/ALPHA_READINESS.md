@@ -5,6 +5,19 @@ Preview / Private Beta 0.1. Current status is controlled by
 [STATUS.md](STATUS.md).
 
 PUBLIC_BETA_READY: false
+- `smoke_e2e_cycle`: local fixture gate, no LLM required.
+- `bea_eval --isolated`: reproducible CI gate. 25/25 pass. Two consecutive runs
+  produce the same score (no store pollution). Previously flaky when run without
+  `--isolated` against a warm global store. **Now fixed.**
+- Provider runtime: outside this PR; this change does not touch providers.
+- Code mission artifact gate: added for `needs_actions=True` missions.
+- Code execution loop: helper added to strip markdown from Python blocks and
+  validate syntax before accepting a materialized artifact.
+- Completion truth gate: `validate_coding_report()` wrapper available with
+  `.valid` / `.reason` interface alongside existing `.ok` / `.message`.
+- Dogfood runtime evidence: `scripts/dogfood_runtime_evidence.py` now ships a
+  10-mission pack with `runtime_enforced=false` and per-mission reports.
+- `bea_eval --json` is green after ingesting a safe runtime report.
 
 ## Current Alpha-To-Private-Beta Position
 

@@ -21,6 +21,15 @@ class ArtifactValidationResult:
     artifacts: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
+    # Aliases for callers that prefer .valid / .reason
+    @property
+    def valid(self) -> bool:
+        return self.ok
+
+    @property
+    def reason(self) -> str:
+        return self.message
+
 
 _CODE_MARKERS = ("code", "coding", "coding_agent", "forge", "sha256", "python")
 _TEST_MARKERS = ("pytest", "unittest", "ruff", "mypy", "tox", "python -m pytest")
@@ -363,3 +372,20 @@ def _dedupe(values: Iterable[str]) -> list[str]:
             seen.add(cleaned)
             result.append(cleaned)
     return result
+
+
+def validate_coding_report(
+    report: Mapping[str, Any],
+    *,
+    artifact_root: str | Path | None = None,
+) -> ArtifactValidationResult:
+    """Validate a mission report dict for completion truth.
+
+    Convenience wrapper over ``validate_mission_report_artifacts`` with a
+    normalised call signature. Returns an ``ArtifactValidationResult`` with
+    ``.valid`` / ``.reason`` aliases in addition to ``.ok`` / ``.message``.
+
+    ``artifact_root`` defaults to the current working directory when ``None``.
+    """
+    root = Path(artifact_root) if artifact_root is not None else Path(".")
+    return validate_mission_report_artifacts(report, repo_root=root)
