@@ -3,9 +3,10 @@ tests/test_public_beta_guards.py — Public beta guard contracts.
 
 Validates:
   1. Stub routes (voice, browser) are NOT mounted when ENABLE_STUB_ROUTES is absent/false.
-  2. HexStrike V2 is marked not-ready (__ready__ = False).
-  3. DevinAgent has MATURITY = "experimental".
-  4. OrchestratorV2 has a MATURITY label.
+  2. Stub routes that ARE enabled must NOT return a silent 200 OK (Contract 2).
+  3. HexStrike V2 is marked not-ready (__ready__ = False).
+  4. DevinAgent has MATURITY = "experimental".
+  5. OrchestratorV2 has a MATURITY label.
 """
 from __future__ import annotations
 
@@ -95,6 +96,76 @@ def test_router_mount_flag_controls_stub_routes_independently():
     assert stub_only_paths, (
         "enable_stub_routes=True should add at least one extra route that is "
         "absent when enable_stub_routes=False. Got no difference."
+    )
+
+
+# ── Contract 2: Stub routes must not return a silent 200 OK ──────────────────
+
+def test_stub_routes_do_not_return_false_200():
+    """When stub routes ARE enabled, they must NOT silently return 200 OK.
+
+    A stub endpoint that returns 200 with a fake success response is worse than
+    a 404 — it silently lies about capability.  Any 4xx (401, 404, 405, 422, 501)
+    is acceptable; 200 is not.
+
+    Endpoints tested (voice + browser stubs):
+      POST /api/v2/voice/call     — requires auth + JSON body
+      POST /api/v2/voice/sms      — requires auth + JSON body
+      GET  /api/v2/voice/call/x   — requires auth
+      POST /api/v2/browser/navigate  — requires auth + JSON body
+      POST /api/v2/browser/search    — requires auth + JSON body
+      POST /api/v2/browser/screenshot — requires auth + JSON body
+    """
+    import os
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from api.router_mount import mount_all_routers
+
+    # Ensure auth is enforced (default) so no accidental bypass via env var
+    os.environ.pop("BEA_REQUIRE_AUTH", None)
+    # No valid token — any auth-protected stub must reject with 4xx
+    os.environ.pop("BEA_API_TOKEN", None)
+
+    app = FastAPI()
+    mount_all_routers(app, enable_stub_routes=True)
+
+    # Probe each stub endpoint without a valid auth token.
+    # Expected: 4xx (401 no-token, 403 forbidden, 404 not-found, 405 method-not-allowed,
+    #           422 validation-error, 501 not-implemented, 503 auth-not-configured).
+    # Forbidden: 200 (silent lie about capability).
+    stub_probes = [
+        # (method, path, json_body_or_None)
+        ("POST", "/api/v2/voice/call",
+         {"to": "+32470000000", "message": "test"}),
+        ("POST", "/api/v2/voice/sms",
+         {"to": "+32470000000", "message": "test"}),
+        ("GET",  "/api/v2/voice/call/fake-sid", None),
+        ("POST", "/api/v2/browser/navigate",
+         {"url": "https://example.com"}),
+        ("POST", "/api/v2/browser/search",
+         {"query": "test"}),
+        ("POST", "/api/v2/browser/screenshot",
+         {"url": "https://example.com"}),
+    ]
+
+    false_200_routes: list[str] = []
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        for method, path, body in stub_probes:
+            if method == "GET":
+                resp = client.get(path)
+            else:
+                resp = client.post(path, json=body)
+
+            if resp.status_code == 200:
+                false_200_routes.append(
+                    f"{method} {path} → 200 (body: {resp.text[:120]})"
+                )
+
+    assert not false_200_routes, (
+        "The following stub routes returned a false 200 OK — they must return 4xx "
+        "(401/404/405/422/501/503) to avoid silently lying about capability:\n"
+        + "\n".join(false_200_routes)
     )
 
 
