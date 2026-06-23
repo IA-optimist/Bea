@@ -88,6 +88,19 @@ def _validate(data: Mapping[str, Any], *, repo_root: Path) -> ArtifactValidation
     if code_mission and not test_commands:
         missing.append("test command is required for a completed code mission")
 
+    # Partial action gate: planned actions must fit inside executed + pending.
+    raw_actions = list(_iter_items(data.get("_raw_actions")))
+    executed = list(_iter_items(data.get("actions_executed")))
+    pending = list(_iter_items(data.get("actions_pending")))
+    if raw_actions and len(executed) + len(pending) < len(raw_actions):
+        missing.append(
+            f"actions appear partial: {len(raw_actions)} planned > "
+            f"{len(executed)} executed + {len(pending)} pending"
+        )
+
+    if code_mission and _has_python_artifact(data, file_paths) and not _has_syntax_validation(data):
+        missing.append("python artifact requires syntax validation proof")
+
     report_like = bool(
         data.get("report_path")
         or data.get("provider_used")
@@ -285,6 +298,31 @@ def _successful_tool_actions(data: Mapping[str, Any]) -> list[str]:
         else:
             actions.append(str(action))
     return _dedupe(actions)
+
+
+def _has_python_artifact(data: Mapping[str, Any], file_paths: Iterable[str]) -> bool:
+    expected = data.get("expected_artifact")
+    if isinstance(expected, str) and expected.endswith(".py"):
+        return True
+    if isinstance(expected, Mapping):
+        path = expected.get("path")
+        if isinstance(path, str) and path.endswith(".py"):
+            return True
+    return any(str(path).endswith(".py") for path in file_paths)
+
+
+def _has_syntax_validation(data: Mapping[str, Any]) -> bool:
+    """True when the report contains an explicit Python syntax-validation proof."""
+    test_result = data.get("test_result")
+    if isinstance(test_result, Mapping):
+        for key in ("syntax_check", "py_compile"):
+            check = test_result.get(key)
+            if isinstance(check, Mapping) and check.get("passed") is True:
+                return True
+    syntax_check = data.get("syntax_check")
+    if isinstance(syntax_check, Mapping) and syntax_check.get("passed") is True:
+        return True
+    return False
 
 
 def _string_list(value: Any) -> list[str]:

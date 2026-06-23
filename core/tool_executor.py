@@ -729,43 +729,52 @@ class ToolExecutor:
         except Exception as _exc:
             log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
         # Policy Engine check (economic guardrail)
+        _policy_unavailable = False
         try:
-            from core.policy.policy_engine import get_policy_engine
-            _policy = get_policy_engine()
+            from core.policy_engine import PolicyEngine
+
+            _policy = PolicyEngine(None)
             _mission_id = params.get("mission_id", "") if params else ""
-            _policy_decision = _policy.evaluate(
+            _policy_action_type = self._action_types.get(tool_name, "execute")
+            _policy_risk_level = self._TOOL_RISK_LEVELS.get(tool_name, "unknown")
+            _policy_decision = _policy.evaluate_tool(
                 tool_name=tool_name,
+                action_type=_policy_action_type,
+                risk_level=_policy_risk_level,
                 mission_id=_mission_id,
                 params=params,
             )
             if not _policy_decision.allowed:
-                log.warning("tool_blocked_by_policy",
-                             tool=tool_name,
-                             reason=_policy_decision.reason,
-                             score=_policy_decision.score)
+                log.warning(
+                    "tool_blocked_by_policy",
+                    tool=tool_name,
+                    reason=_policy_decision.reason,
+                )
                 return {
-                    "ok": False, "result": "",
+                    "ok": False,
+                    "result": "",
                     "error": f"policy_blocked: {_policy_decision.reason}",
                     "blocked_by_policy": True,
-                    "policy_decision": _policy_decision.to_dict(),
                 }
-            if _policy_decision.requires_approval:
-                log.info("policy_requires_approval",
-                           tool=tool_name, score=_policy_decision.score)
+            if getattr(_policy_decision, "requires_approval", False):
+                log.info("policy_requires_approval", tool=tool_name)
         except Exception as _pol_err:
-            log.warning("policy_check_failed", err=str(_pol_err)[:200])
-            # Fail-CLOSED for HIGH risk tools; fail-open for LOW risk
-            try:
-                _high_risk = {"shell_execute", "code_execute"}
-                if tool_name in _high_risk:
-                    log.warning("policy_fail_closed_high_risk", tool=tool_name)
-                    return {
-                        "ok": False, "result": "",
-                        "error": f"policy_unavailable_high_risk: {tool_name}",
-                        "blocked_by_policy": True,
-                    }
-            except Exception as _exc:
-                log.warning("silent_exception_caught", err=str(_exc)[:200], stage="tool_executor")
+            _policy_unavailable = True
+            log.warning("policy_check_failed", tool=tool_name, err=str(_pol_err)[:200])
+
+        if _policy_unavailable:
+            # Fail-CLOSED for execute / HIGH risk tools when policy engine is unavailable.
+            # LOW risk read-only tools stay available (fail-open) so the agent keeps working.
+            _fallback_action_type = self._action_types.get(tool_name, "execute")
+            _fallback_risk = self._TOOL_RISK_LEVELS.get(tool_name, "unknown")
+            if _fallback_action_type == "execute" or _fallback_risk in ("high", "unknown"):
+                log.warning("policy_fail_closed_high_risk", tool=tool_name)
+                return {
+                    "ok": False,
+                    "result": "",
+                    "error": f"policy_unavailable_high_risk: {tool_name}",
+                    "blocked_by_policy": True,
+                }
         # Emit tool_call event for observability
         try:
             from core.observability.event_envelope import get_event_collector

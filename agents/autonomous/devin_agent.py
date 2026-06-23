@@ -59,9 +59,35 @@ class DevinAgent:
         else:
             self._llm = None
 
-        from core.memory import MemoryBank
+        # Mémoire canonique : core.memory_facade fournit l'interface unifiée.
+        # Fallback en no-op si la façade est indisponible, pour que l'agent
+        # reste instanciable hors LLM / hors mémoire.
+        try:
+            from core.memory_facade import get_memory_facade
+
+            class _MemoryBank:
+                def __init__(self) -> None:
+                    self._facade = get_memory_facade()
+
+                def query(self, current_problem: str, limit: int = 2) -> str:
+                    try:
+                        results = self._facade.search(current_problem, top_k=limit)
+                        if not results:
+                            return ""
+                        out = "\n\n[MÉMOIRE] Il semble que j'ai déjà rencontré un problème similaire :\n"
+                        for entry in results:
+                            content = getattr(entry, "content", str(entry))
+                            out += f"- {content[:300]}\n"
+                        return out
+                    except Exception as _exc:
+                        return ""
+        except Exception as _exc:
+            class _MemoryBank:
+                def query(self, current_problem: str, limit: int = 2) -> str:
+                    return ""
+
         from core.context_manager import ContextCompressor
-        self.memory_bank = MemoryBank()
+        self.memory_bank = _MemoryBank()
         self.compressor = ContextCompressor(max_raw_events=12)
 
     def _format_history(self, stream: EventStream, repo_map: str = "") -> list:

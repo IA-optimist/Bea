@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-21**, SHA pending PR #92.
+> Honest per-component maturity rating. Last verified: **2026-06-23** (cross-audit Opus session, branch `claude/audit-truth-map-and-runtime-triage`). Corrections: Flutter v1 table, dependency versions, hexstrike_v2 import status.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
@@ -128,14 +128,16 @@ Packaging truth:
 |---------|--------|----------|----------|-------|
 | `static/app.html` | CANONICAL | 0 | ✅ all | auth via v2 only |
 | `static/cockpit.html` | CANONICAL | 0 | ✅ all | v2 for agents |
-| `beamax_app/` (Flutter) | SUPPORTED | **3** (allowlisted) | ✅ majority | pause/resume/stream blocked on v3 endpoints |
+| `beamax_app/` (Flutter) | SUPPORTED | **0** ✅ (PR #91 2026-06-21) | ✅ all | APK rebuild pending — v1 endpoints still live server-side |
 | `frontend/` (React) | EXPERIMENTAL | 0 | ✅ most | v2 for self-improvement endpoints |
 | `orchestrate-cli/` | SUPPORTED | 0 | ✅ all | Python CLI, no browser |
 
-**3 v1 calls remain in Flutter** — all in `beamax_app/lib/services/api_service.dart`:
-- `POST /api/v1/missions/{id}/pause` (line 550) → needs `/api/v3/missions/{id}/pause`
-- `POST /api/v1/missions/{id}/resume` (line 559) → needs `/api/v3/missions/{id}/resume`
-- `GET /api/v1/missions/{id}/stream` (line 753) → needs `/api/v3/missions/{id}/stream`
+**Flutter v1 migration: COMPLETE (PR #91, 2026-06-21, verified 2026-06-23)** — `grep -rn "api/v1" beamax_app/lib/` returns 0 active hits.
+- `POST /api/v3/missions/{id}/pause` (line 550) ✅
+- `POST /api/v3/missions/{id}/resume` (line 559) ✅
+- `GET /api/v3/missions/{id}/stream` (line 755) ✅
+
+**APK rebuild required** before removing server-side v1 endpoints. See `docs/FRONTEND_SURFACES.md`.
 
 See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
 
@@ -212,7 +214,7 @@ See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
 | `mcp/hexstrike_v2/web/*` (6 tools) | 85 each | Same template |
 | `mcp/hexstrike_v2/exploitation/*` (2 tools) | 85 each | Same template |
 
-**17 tools extracted as stubs / 156 total in `hexstrike-ai/hexstrike_server.py`** (the legacy 17,289-line monolith). Refactor migration is ~5% complete. **`hexstrike_v2` import currently fails** because `psutil` is missing from `requirements.txt`.
+**17 tools extracted as stubs / 156 total in `hexstrike-ai/hexstrike_server.py`** (the legacy 17,289-line monolith). Refactor migration is ~5% complete. `hexstrike_v2` import: **OK** (psutil==5.9.8 in requirements.txt). Stubs are templates only — no real implementation.
 
 ### Other stubs
 | Item | File | Issue |
@@ -263,8 +265,10 @@ The residual security debt is now concentrated in the broader exception-swallows
 ### Repo hygiene
 - `.env.agents` is not present in the current tree
 - 3 unused dependencies in `requirements.txt`: `beautifulsoup4`, `lxml`, `pandas`
-- Missing dependencies: `psutil` (causes `hexstrike_v2` import failure), `structlog`, `langchain_*`
-- Outdated versions: `pytest==7.4.4` (current 8.x), `fastapi==0.109.0` (current 0.115.x)
+- All critical dependencies present: `psutil==5.9.8`, `structlog==25.5.0`, `langchain==1.3.9` ✅
+- Current versions: `pytest==9.0.3`, `fastapi==0.137.1`, `starlette==1.3.1` ✅
+- `hexstrike_v2` import: **OK** (psutil present) — stubs are 5% implemented, not runtime-active
+- **P1 debt:** `core.policy.policy_engine.get_policy_engine` referenced in `tool_executor.py:733` uses wrong path (`core/policy/policy_engine.py` does not exist; real file is `core/policy_engine.py` and lacks `get_policy_engine`). Policy check fails silently for all tools; high-risk tools (`shell_execute`, `code_execute`) fail-closed as fallback.
 
 ### CI gates
 - `ruff check .` is **blocking**

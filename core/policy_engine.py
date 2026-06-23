@@ -277,7 +277,39 @@ class PolicyEngine:
 
         return d.allow()
 
-    # ── Routage LLM ───────────────────────────────────────
+    def evaluate_tool(
+        self,
+        tool_name: str,
+        action_type: str,
+        risk_level: str,
+        mission_id: str = "",
+        params: Any | None = None,
+    ) -> PolicyDecision:
+        """
+        ToolExecutor-compatible guard.
+
+        Unlike check_action(), this method is not bound to a mode whitelist:
+        it only blocks HIGH risk tools and enforces session/economic limits.
+        This keeps the tool gate fail-closed for dangerous actions while
+        allowing read-only and low-risk tools.
+        """
+        d = PolicyDecision(allowed=True)
+
+        if getattr(self.s, "dry_run", False):
+            return d.allow("dry_run_simulation")
+
+        if risk_level == "high":
+            return d.deny(
+                f"Tool '{tool_name}' is HIGH risk and requires explicit approval",
+                suggestion="Approve manually or reduce the action scope",
+            )
+
+        if mission_id:
+            ok, msg = self.check_session_limits(mission_id)
+            if not ok:
+                return d.deny(msg, "Wait for the next session or raise limits")
+
+        return d.allow("tool_allowed")
 
     def select_llm_provider(
         self,

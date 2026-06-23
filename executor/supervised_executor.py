@@ -97,8 +97,8 @@ class SupervisedExecutor:
                 new_str=action.new_str,
             )
         except Exception as _risk_err:
-            # Fail-safe: treat analysis failure as LOW risk so execution is not
-            # silently blocked, but log a warning so ops can investigate.
+            # Fail-CLOSED: a broken risk engine must never downgrade an action.
+            # Classify as HIGH so the action is blocked rather than executed.
             log.warning(
                 "risk_engine_analyze_failed",
                 action_type=action.action_type,
@@ -106,10 +106,12 @@ class SupervisedExecutor:
             )
             from risk.engine import RiskReport
             report = RiskReport(
-                level=RiskLevel.LOW,
+                level=RiskLevel.HIGH,
                 action_type=action.action_type,
                 target=action.target or "",
-                estimated_impact="unknown (risk analysis failed)",
+                estimated_impact="unknown (risk analysis failed) - action blocked for safety",
+                requires_validation=True,
+                reasons=["RiskEngine analyze() raised an exception"],
             )
 
         # Enrichir l'ActionSpec avec le résultat de l'analyse
