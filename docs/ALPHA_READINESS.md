@@ -38,11 +38,12 @@
 ## Known remaining debt (non-blocking for this PR)
 
 - `core/policy_engine.py`: `evaluate_tool()` overlaps with `check_action()` — minor;
-  session tracker is now wired end-to-end (PR fix/policy-engine-session-limits-singleton):
-  `evaluate_tool()` calls `ensure_session()` + `record_action()` + `check_limits()`.
+  session tracker is now wired end-to-end (`fix/policy-engine-session-limits-singleton`):
+  `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`.
   `ToolExecutor` uses `get_policy_engine()` singleton; `MetaOrchestrator` and
-  `BeaOrchestrator` call `ensure_session()` at run start. Limits are only effective
-  when `mission_id` is propagated through the call chain.
+  `BeaOrchestrator` call `ensure_session()` at run start. 88 critical policy/tool
+  tests are green and `validate_local.py --quick` and full pass. Limits are only
+  effective when `mission_id` is propagated through the call chain.
 - `core/coding_agent/artifact_validator.py`: partial-action accounting is now
   centralized in `_actions_accounted_for()`; `_successful_tool_actions()` uses it.
 - `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent and

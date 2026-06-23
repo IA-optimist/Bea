@@ -67,7 +67,7 @@
 - [x] Policy-unavailable fallback blocks `execute` / high-risk tools
 - [x] `RiskEngine.analyze()` exception falls back to `HIGH` / blocked
 - [x] Artifact validator rejects code missions without verifiable artifact evidence
-- [x] `PolicyEngine` enforces shared session/economic limits end-to-end — `evaluate_tool()` calls `ensure_session()` + `record_action()` + `check_limits()`; `ToolExecutor` uses the singleton; `MetaOrchestrator`/`BeaOrchestrator` call `ensure_session()` at run start (PR fix/policy-engine-session-limits-singleton)
+- [x] `PolicyEngine` enforces shared session/economic limits end-to-end — `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`; `ToolExecutor`/`MetaOrchestrator`/`BeaOrchestrator` use the `get_policy_engine()` singleton and inject `mission_id` (`fix/policy-engine-session-limits-singleton`)
 
 ## Provider readiness
 

@@ -1,6 +1,6 @@
 # Béa — Component Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-21**, SHA pending PR #92.
+> Honest per-component maturity rating. Last verified: **2026-06-23**, SHA pending commit on `fix/policy-engine-session-limits-singleton`.
 > Verified by direct code reading + runtime observation + gate test results.
 
 Packaging truth:
@@ -27,7 +27,7 @@ Packaging truth:
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
 | Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
-| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé — **session tracker branché + limites effectives** (PR fix/policy-engine-session-limits-singleton) |
+| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé, tracker de session partagé branché via `PolicyEngine.ensure_session()` + `record_action()` + `check_limits()`; `ToolExecutor`/`MetaOrchestrator`/`BeaOrchestrator` propagent et utilisent `get_policy_engine()` singleton (`fix/policy-engine-session-limits-singleton`) |
 | OrchestratorV2 | 🟡 `core/orchestrator_v2.py` — compat wrapper; delegates to MetaOrchestrator/BeaOrchestrator path |
 | DevinAgent | 🔵 Blueprint only — originally **BEA MAX v3** prototype, not wired to current orchestrator |
 | V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |
