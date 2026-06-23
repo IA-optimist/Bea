@@ -20,17 +20,18 @@ name: Build BeaMax APK
 #     KEY_PASSWORD             — key password
 # ──────────────────────────────────────────────────────────────
 
-# Auto-triggers disabled 2026-05-30 — see ci.yml header for rationale.
-# Manual dispatch only, for explicit release builds.
+# flutter_apk.yml
+# PR trigger: runs pub-get + /api/v1 gate only (no full build, no secrets needed).
+# Full build: workflow_dispatch only (requires secrets for dart-define).
 on:
-  # push:
-  #   tags:
-  #     - 'v*'
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'beamax_app/**'
-  #     - '.github/workflows/flutter_apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'beamax_app/**'
+      - '.github/workflows/flutter_apk.yml'
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       build_mode:
@@ -76,10 +77,31 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # ── Gate: no active /api/v1 calls allowed in Flutter client ──
+      - name: Check no /api/v1 calls in lib/
+        shell: bash
+        run: |
+          set -euo pipefail
+          hits=$(grep -r "/api/v1" lib/ | grep -v "allowlist\|_V1_ALLOWLIST\|//" | wc -l || echo 0)
+          echo "Active /api/v1 calls: $hits"
+          if [ "$hits" -gt "0" ]; then
+            echo "ERROR: Found active /api/v1 calls in Flutter client (must use /api/v3):"
+            grep -rn "/api/v1" lib/ | grep -v "allowlist\|_V1_ALLOWLIST\|//"
+            exit 1
+          fi
+          echo "OK: Flutter client uses /api/v3 only"
+
+      # ── Skip full build on pull_request (no secrets available) ──
+      - name: Skip full build on PR
+        if: github.event_name == 'pull_request'
+        run: echo "PR check complete — full APK build skipped (requires secrets, use workflow_dispatch)"
+
+      # ── Full build steps: skipped on pull_request (no secrets available) ──
+
       # ── Optional: decode keystore for signing ────────────────
       - name: Decode keystore (if provided)
+        if: github.event_name != 'pull_request' && env.ANDROID_KEYSTORE_BASE64 != ''
         id: keystore
-        if: env.ANDROID_KEYSTORE_BASE64 != ''
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
@@ -95,6 +117,7 @@ jobs:
 
       # ── Determine build mode ─────────────────────────────────
       - name: Determine build mode
+        if: github.event_name != 'pull_request'
         id: mode
         run: |
           set -euo pipefail
@@ -110,6 +133,7 @@ jobs:
 
       # ── Build APK with injected secrets ──────────────────────
       - name: Build APK
+        if: github.event_name != 'pull_request'
         env:
           BEA_API_TOKEN: ${{ secrets.BEA_API_TOKEN }}
           BEA_API_HOST: ${{ secrets.BEA_API_HOST }}
@@ -125,6 +149,7 @@ jobs:
             --dart-define=BEA_AUTO_LOGIN=true
 
       - name: Compute APK metadata
+        if: github.event_name != 'pull_request'
         id: apk
         run: |
           set -euo pipefail
@@ -143,6 +168,7 @@ jobs:
 
       # ── Upload APK as workflow artifact (retained 90 days) ───
       - name: Upload APK artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: beamax-${{ steps.mode.outputs.mode }}-${{ github.sha }}

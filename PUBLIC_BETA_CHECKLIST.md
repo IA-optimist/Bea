@@ -44,7 +44,7 @@
 | Critère | Statut | Notes |
 |---------|:------:|-------|
 | Flutter utilise /api/v3 uniquement | ✅ | grep : 0 appel /api/v1 dans lib/ |
-| Build APK release exécuté en CI | ⚠️ | Non validé en CI — build manuel OK |
+| Build APK release exécuté en CI | ✅ | `flutter_apk.yml` — PR: v1-gate + pub-get; release: workflow_dispatch |
 | APK testée sur device réel | ⚠️ | Pixel 7 (User 11), validée manuellement |
 | `_V1_ALLOWLIST` vide | ✅ | `tests/test_client_v1_allowlist.py` garde |
 
@@ -86,7 +86,7 @@
 1. ~~**Rate-limiting API**~~ ✅ Résolu — slowapi + BEA_RATE_LIMIT_PER_MINUTE
 2. ~~**CORS**~~ ✅ Résolu — BEA_CORS_ORIGINS, pas de wildcard, fail-hard prod
 3. **CI GitHub Actions** — smoke + pytest sur chaque PR
-4. **APK build CI** — valider APK v3 automatiquement
+4. ~~**APK build CI**~~ ✅ `flutter_apk.yml` actif — PR gate + workflow_dispatch release
 5. ~~**Audit endpoints v1 serveur**~~ ✅ Plan en 4 phases documenté dans `docs/API_VERSIONING.md` — Flutter code migré (v3), APK rebuild pending, sunset 2026-10-01
 
 ## Recommandation

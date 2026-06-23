@@ -68,6 +68,7 @@
 
 - [x] Flutter client uses `/api/v3` only (grep confirmed: 0 active `/api/v1` calls)
 - [x] APK build CI workflow (`flutter_apk.yml`) — gate + `workflow_dispatch`
+- [x] `scripts/check_client_v1_usage.py` — local v1-gate checker
 - [ ] APK v3 validated on physical device
 
 ## Known limitations documented

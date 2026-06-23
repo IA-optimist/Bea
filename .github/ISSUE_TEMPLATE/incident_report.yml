@@ -1,0 +1,125 @@
+name: Incident Report
+description: Report an operational incident (secret leak, false success, provider outage, abuse)
+title: "[INCIDENT]: "
+labels: ["incident", "beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for operational incidents only (secret leaks, false success,
+        provider outages, abuse, critical bugs). For regular bugs, use the Bug Report template.
+        **Never paste secrets, tokens, or personal data in this issue.**
+        See [docs/INCIDENT_RESPONSE.md](../docs/INCIDENT_RESPONSE.md) for the full procedure.
+
+  - type: dropdown
+    id: incident-type
+    attributes:
+      label: Incident type
+      options:
+        - Secret leak (API key, token exposed)
+        - Personal data leak
+        - False SUCCESS / invalid artifact
+        - Provider hallucination (massive)
+        - Abuse / rate-limit
+        - Critical API bug (500 on key endpoint)
+        - Critical APK bug
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (stop everything, rollback now)
+        - High (core feature broken, workaround needed)
+        - Medium (partial impact, can wait 24h)
+        - Low (minor, documented)
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / Version
+      description: Run `git rev-parse --short HEAD` in the repo
+      placeholder: "e.g., a1b2c3d"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "e.g., local dev, Docker, WSL2, Ubuntu 22.04"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Exact steps that triggered the incident
+      placeholder: |
+        1. Started API with `python scripts/run_api_local.py`
+        2. Submitted mission with goal "..."
+        3. Mission returned SUCCESS but artifact was invalid
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: Paste relevant log output. REMOVE all secrets, tokens, emails, personal data.
+      placeholder: |
+        2026-06-23 01:23:45 ERROR [api] 500 on /api/v3/missions
+        2026-06-23 01:23:46 DEBUG [forge-builder] artifact_status=invalid
+        (redact any secrets — see docs/PRIVACY_FOR_TESTERS.md)
+
+  - type: dropdown
+    id: private-data
+    attributes:
+      label: Private data involved?
+      options:
+        - "No"
+        - "Yes — personal data may have been exposed"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: secret-involved
+    attributes:
+      label: Secret involved?
+      options:
+        - "No"
+        - "Yes — a secret may have been exposed (key already rotated)"
+        - "Yes — a secret may have been exposed (key NOT yet rotated)"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Immediate mitigation taken
+      description: What have you already done to contain the incident?
+      placeholder: |
+        e.g., "Stopped the API", "Rotated the OpenRouter key",
+        "Asked testers to stop testing", "Rolled back to previous commit"
+
+  - type: input
+    id: owner
+    attributes:
+      label: Owner / Reporter
+      placeholder: "Your GitHub username or name"
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I have removed all API keys, tokens, emails, and personal data from this report
+          required: true
