@@ -99,6 +99,10 @@ __all__ = [
 
 __version__ = "2.0.0"
 
+# Readiness flag: HexStrike V2 is ~5% complete (stub templates only).
+# Tests and callers MUST check this before treating the module as operational.
+__ready__ = False
+
 # Initialize logging
 logging.basicConfig(
     level=logging.INFO,

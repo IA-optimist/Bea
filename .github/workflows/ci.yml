@@ -90,6 +90,7 @@ jobs:
           python scripts/check_coverage_threshold.py
           python scripts/check_silent_except_baseline.py
           python scripts/check_test_marker_baseline.py
+          python scripts/check_internal_imports.py
 
       - name: Enforce kernel import boundaries
         run: python scripts/check_kernel_import_boundaries.py
