@@ -7,8 +7,8 @@
 
 ## Summary
 
-- **Registries found:** 15 distinct registry files (excluding `build/` mirrors and test files)
-- **Orchestrators found:** 9 orchestrator files (3 in `core/`, 1 in `business/`, 1 in `core/cognition/`, 1 in `orchestrate-cli/` factory, 5 in `orchestrate-cli/` adapters)
+- **Registries found:** 23 distinct registry files (excluding `build/` mirrors and test files)
+- **Orchestrators found:** 11 orchestrator files (3 in `core/`, 1 in `business/`, 1 in `core/cognition/`, 1 in `orchestrate-cli/` factory, 5 in `orchestrate-cli/` adapters)
 - **Canonical orchestrator:** `core/meta_orchestrator.py` — MetaOrchestrator is the single entry point for all missions
 - **Key finding — tool registry split:** There are intentionally **two** tool registries (`core/tool_registry.py` = definitions, `tools/tool_registry.py` = executor); they are documented as distinct but have the same class name `ToolRegistry`, creating confusion
 - **Key finding — MCP registry duplication:** `core/mcp/mcp_registry.py` and `integrations/mcp/mcp_registry.py` serve similar purposes at different layers
@@ -22,7 +22,7 @@
 ### `kernel/capabilities/registry.py`
 
 - **Purpose:** Source-of-truth for discrete capabilities the system can perform. Capability-first routing: the orchestrator routes by *what the system can do*, not *which agent does it*.
-- **Registers:** 19 `Capability` objects (`plan_generation`, `plan_validation`, `decision_evaluation`, `skill_execution`, `tool_invocation`, `code_generation`, `quality_review`, `memory_write`, `memory_recall`, `risk_evaluation`, `policy_check`, `artifact_generation`, `market_intelligence`, `product_design`, `financial_reasoning`, `compliance_reasoning`, `risk_assessment`, `strategy_reasoning` + extras). Categories: planning, execution, memory, policy, economic.
+- **Registers:** 19 `Capability` objects (`plan_generation`, `plan_validation`, `decision_evaluation`, `skill_execution`, `tool_invocation`, `code_generation`, `quality_review`, `memory_write`, `memory_recall`, `risk_evaluation`, `policy_check`, `artifact_generation`, `market_intelligence`, `product_design`, `financial_reasoning`, `compliance_reasoning`, `risk_assessment`, `venture_planning`, `strategy_reasoning`). Categories: planning, execution, memory, policy, economic.
 - **Populated by:** Statically at module import time via `KERNEL_CAPABILITIES` dict. `KernelCapabilityRegistry.__init__` copies `KERNEL_CAPABILITIES`. Runtime `register()` can add more; `kernel/runtime/boot.py` calls `get_capability_registry()` on startup.
 - **Read by:** `kernel/adapters/capability_adapter.py`, `kernel/convergence/capability_bridge.py`, `kernel/capabilities/identity.py`, `core/economic/strategy_evaluation.py`, `core/self_model/queries.py`, `MetaOrchestrator` (via `kernel.runtime.kernel.run_cognitive_cycle` → capability routing)
 - **Status:** canonical
@@ -250,6 +250,30 @@
 
 ---
 
+### `core/capabilities/registry.py`
+
+- **Purpose:** Tool execution policy registry — a **different concern** from `kernel/capabilities/registry.py`. Where the kernel registry maps capability IDs to routing metadata, this registry answers the question "is this tool allowed to run, and under what conditions?" All tools must be registered here; unregistered tools are rejected at the executor level. HIGH-risk tools (`shell_execute`, `code_execute`) require operator approval before execution.
+- **Registers:** `Capability` objects (from `core/capabilities/schema.py`) keyed by tool name. 16 built-in tools across two groups — core tools (`web_search`, `web_fetch`, `shell_execute`, `file_write`, `file_read`, `memory_write`, `memory_read`, `api_call`, `code_execute`, `browser_navigate`) and business tools (`email_send`, `http_request`, `http_test`, `markdown_generate`, `html_generate`, `json_schema_generate`). Each entry declares `risk_level` (LOW/MEDIUM/HIGH), `requires_approval`, and `timeout_seconds`.
+- **Class:** `CapabilityRegistry` with `check_permission(tool_name, agent_name)`, `list_by_risk()`, and `stats()`. Singleton via `get_capability_registry()`.
+- **Populated by:** Statically from `_CORE_CAPABILITIES` list at init; runtime `register()` can add more.
+- **Read by:** `ToolExecutor` pre-execution gate (rejects unregistered tools, pauses for approval on HIGH-risk ones). `api/routes/action_console.py` reads the registry for displaying the capability catalogue.
+- **Status:** canonical
+- **Recommendation:** keep — this is the tool execution gatekeeper; do not confuse with `kernel/capabilities/registry.py` which is a routing/routing-metadata registry, or with `core/tool_permissions.py` which handles the approval lifecycle
+
+---
+
+### `core/tool_permissions.py`
+
+- **Purpose:** Declarative per-tool approval gating registry — manages the **lifecycle** of approval requests for high-risk tool executions. Distinct from `core/capabilities/registry.py` which defines whether approval is needed; this module manages the approval workflow itself (create → approve/deny → expire). Includes secret scrubbing for safe display of approval payloads.
+- **Registers:** `ToolPermission` objects (declarative gate declarations) keyed by tool name. 10 default gated tools: shell/code execution (`shell_command`, `execute_code`), destructive file ops (`file_delete_safe`, `replace_in_file`), git with side effects (`git_push`, `git_commit`), Docker lifecycle (`docker_restart`, `docker_compose_down`, `docker_compose_up`, `docker_compose_build`). Also tracks `ApprovalRequest` instances in memory.
+- **Class:** `ToolPermissionRegistry` with `check(tool_name, params, mission_id, agent_id)` (creates `ApprovalRequest` on gate trigger), `approve(request_id)`, `deny(request_id)`, `get_pending()`, `get_history()`. Singleton via `get_tool_permissions()`.
+- **Populated by:** Statically from `_DEFAULT_GATED_TOOLS` dict at init; runtime `register()` for custom gates.
+- **Read by:** `api/routes/action_console.py` (displays pending approvals, handles approve/deny), `ToolExecutor` pre-execution flow, `ApprovalNotifier` (push notification).
+- **Status:** canonical
+- **Recommendation:** keep — this is the approval-lifecycle layer; complements `core/capabilities/registry.py` (policy definition) and `agents/bea_team/tools/_registry.py` (access control matrix)
+
+---
+
 ## Orchestrators
 
 ### `core/meta_orchestrator.py` — MetaOrchestrator
@@ -257,7 +281,7 @@
 - **Role:** Facade and single entry point for the entire mission lifecycle. Owns the state machine (`CREATED → PLANNED → RUNNING → REVIEW → DONE / FAILED`), emits state-change events, persists state to disk, and delegates actual execution to `BeaOrchestrator` (standard missions) or `OrchestratorV2` (budget/DAG missions). Also runs the kernel cognitive cycle (classification, planning, capability routing) before delegating.
 - **Entry point:** `MetaOrchestrator.run_mission(goal, mode, ...)` — the canonical call for all new missions. Also exposes `get_mission()`, `run()` (legacy alias), and custom handler registration via `register_custom_handler()`.
 - **Called by:** `api/main.py`, `api/lifespan.py`, `api/mission_approval.py`, `api/routes/autonomy.py`, `api/routes/convergence.py`, `api/routes/system_readiness.py`, `api/_deps.py`, `beamax_cli.py`. All entry points go through `get_meta_orchestrator()` singleton accessor.
-- **Internal structure:** Composed of four mixins: `RoutingMixin` (agent/provider selection), `ExecutionMixin` (delegate calls + circuit breaker), `OutcomeMixin` (result finalization + reporting), `LearningMixin` (post-mission learning). Circuit breaker (`MissionCircuitBreaker`) opens after 5 consecutive delegate failures (resets after 60s).
+- **Internal structure:** Composed of five mixins: `RoutingMixin` (agent/provider selection), `ExecutionMixin` (delegate calls + circuit breaker), `OutcomeMixin` (result finalization + reporting), `LearningMixin` (post-mission learning), `CustomMissionHandlerMixin` (user-defined mission type handlers, from `core/meta_custom_handlers.py` — provides `register_custom_handler()`). Circuit breaker (`MissionCircuitBreaker`) opens after 5 consecutive delegate failures (resets after 60s).
 - **Status:** canonical
 - **Recommendation:** keep — do not bypass; all new code must enter through `get_meta_orchestrator()`
 
@@ -373,7 +397,8 @@ Files: `langchain_orchestrator.py`, `autogen_orchestrator.py`, `crewai_orchestra
 The registries cover distinct concerns and should **not** be merged into a single monolith. The recommended clean architecture is:
 
 ```
-kernel/capabilities/registry.py     ← static capability definitions (what can be done)
+kernel/capabilities/registry.py     ← static capability definitions / routing metadata (what can be done)
+core/capabilities/registry.py       ← tool execution policy (is this tool allowed to run?)  ← DIFFERENT from above
 core/capability_routing/registry.py ← runtime provider mapping (who does it, right now)
 agents/registry.py                  ← agent class catalogue (instantiation)
 core/agents/agent_registry.py       ← runtime agent coordination (availability, performance)
@@ -382,6 +407,7 @@ memory/capability_registry.py       ← historical scoring (who has done it best
 core/tool_registry.py               ← tool metadata/definitions
 tools/tool_registry.py              ← tool execution (live instances)
 core/tools_operational/tool_registry.py ← operational/external tools (JSON-defined)
+core/tool_permissions.py            ← per-tool approval lifecycle (gating + approve/deny workflow)
 agents/bea_team/tools/_registry.py  ← access control matrix (who can call what)
 
 core/mcp/mcp_registry.py            ← MCP server metadata + trust + health
@@ -398,6 +424,8 @@ core/tool_config_registry.py        ← secret/config dependency declarations
 core/orchestration/goal_registry.py    ← proactive mission goals (rename for clarity)
 core/self_improvement/goal_registry.py ← improvement metric goals (rename for clarity)
 ```
+
+**Note on the two capability registries:** `kernel/capabilities/registry.py` (`KernelCapabilityRegistry`) and `core/capabilities/registry.py` (`CapabilityRegistry`) are intentionally distinct and should **not** be merged. The kernel registry is a routing table — it answers "what abstract capabilities exist and which agent roles provide them?" The core registry is an execution gate — it answers "is this concrete tool name permitted to execute, and at what risk level?" They use different `Capability` schemas (kernel's from `kernel/capabilities/` vs core's from `core/capabilities/schema.py`) and are consumed at different points in the pipeline.
 
 **One concrete consolidation to do:** merge `integrations/mcp/mcp_registry.py` into `core/mcp/mcp_registry.py`. They serve the same purpose at adjacent layers.
 
