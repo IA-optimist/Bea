@@ -1,7 +1,9 @@
-"""Observabilité Béa — traceur LLM partagé (coût / latence / erreurs par modèle).
+"""Observabilite Bea -- traceur LLM partage + redacteur privacy-safe.
 
-`get_tracer()` renvoie un singleton `LLMTracer` persistant (SQLite dans workspace/).
-Best-effort : toute erreur de traçage ne doit JAMAIS casser un appel LLM.
+`get_tracer()` retourne un singleton `LLMTracer` persistant (SQLite workspace/).
+`redact()` / `redact_dict()` : suppression secrets des logs structures.
+`MissionEvent` : evenement leger mission (provider/model/duration/error).
+Best-effort : toute erreur de tracage ne doit JAMAIS casser un appel LLM.
 """
 from __future__ import annotations
 
@@ -10,6 +12,10 @@ from pathlib import Path
 
 from core.observability.llm_tracer import LLMTracer
 from core.observability.llm_tracer import get_tracer as _llm_get_tracer
+from core.observability.redactor import redact, redact_dict
+from core.observability.mission_event import MissionEvent
+
+__all__ = ["get_tracer", "LLMTracer", "redact", "redact_dict", "MissionEvent"]
 
 
 def get_tracer() -> LLMTracer:
