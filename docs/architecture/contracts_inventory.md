@@ -30,8 +30,8 @@ The codebase contains **three distinct families of `ExecutionResult`** (executor
 | `tool_used` | `str` | Name of tool that produced this result |
 | `risk_level` | `str` | low / medium / high |
 | `confidence` | `float` | 0.0–1.0 |
-| `raw_output` | `str` | Truncated to 2000 chars in `to_dict()` |
-| `normalized_output` | `str` | Truncated to 2000 chars |
+| `raw_output` | `str` | Truncated to 500 chars in `to_dict()` |
+| `normalized_output` | `str` | Truncated to 500 chars in `to_dict()` |
 | `validation_status` | `str` | validated / invalid / unvalidated |
 | `attempt` | `int` | Current retry attempt number |
 | `max_retries` | `int` | Max allowed retries |
