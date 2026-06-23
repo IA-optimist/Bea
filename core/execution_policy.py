@@ -9,6 +9,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# ── Constantes de décision partagées ───────────────────────────────────────
+class Decision:
+    AUTO_APPROVED = "AUTO_APPROVED"
+    REQUIRES_APPROVAL = "REQUIRES_APPROVAL"
+    BLOCKED = "BLOCKED"
+
+
 # ── Taxonomie des types d'actions ──────────────────────────────────────────
 ACTION_TYPES = {
     "read", "write", "execute", "network",
@@ -65,12 +72,14 @@ class PolicyDecision:
     Attributes:
         approved: True if the action can proceed automatically.
         decision: One of "AUTO_APPROVED", "REQUIRES_APPROVAL", "BLOCKED".
+    Use Decision constants (Decision.AUTO_APPROVED, Decision.REQUIRES_APPROVAL,
+    Decision.BLOCKED) when building or comparing.
         reason: Human-readable explanation for the decision.
         risk_score: Echoed from input context.
         action_type: Echoed from input context (normalized).
     """
     approved: bool
-    decision: str    # "AUTO_APPROVED" | "REQUIRES_APPROVAL" | "BLOCKED"
+    decision: str    # Decision.AUTO_APPROVED | Decision.REQUIRES_APPROVAL | Decision.BLOCKED
     reason: str
     risk_score: int
     action_type: str
@@ -93,7 +102,7 @@ class ExecutionPolicy:
             logger.warning(f"[ExecutionPolicy] evaluate error (fail-open): {e}")
             return PolicyDecision(
                 approved=False,
-                decision="REQUIRES_APPROVAL",
+                decision=Decision.REQUIRES_APPROVAL,
                 reason=f"internal_error: {e}",
                 risk_score=ctx.risk_score,
                 action_type=ctx.action_type,
@@ -107,7 +116,7 @@ class ExecutionPolicy:
         if mode == "MANUAL":
             return PolicyDecision(
                 approved=False,
-                decision="REQUIRES_APPROVAL",
+                decision=Decision.REQUIRES_APPROVAL,
                 reason="mode_manual_always_requires_approval",
                 risk_score=ctx.risk_score,
                 action_type=action,
@@ -118,14 +127,14 @@ class ExecutionPolicy:
             if action in _SAFE_ACTIONS and ctx.risk_score <= 3:
                 return PolicyDecision(
                     approved=True,
-                    decision="AUTO_APPROVED",
+                    decision=Decision.AUTO_APPROVED,
                     reason=f"supervised_safe_action_low_risk (action={action}, risk={ctx.risk_score})",
                     risk_score=ctx.risk_score,
                     action_type=action,
                 )
             return PolicyDecision(
                 approved=False,
-                decision="REQUIRES_APPROVAL",
+                decision=Decision.REQUIRES_APPROVAL,
                 reason=f"supervised_requires_approval (action={action}, risk={ctx.risk_score})",
                 risk_score=ctx.risk_score,
                 action_type=action,
@@ -137,7 +146,7 @@ class ExecutionPolicy:
             if action in _CRITICAL_ACTIONS:
                 return PolicyDecision(
                     approved=False,
-                    decision="BLOCKED",
+                    decision=Decision.BLOCKED,
                     reason=f"auto_critical_action_blocked (action={action})",
                     risk_score=ctx.risk_score,
                     action_type=action,
@@ -146,7 +155,7 @@ class ExecutionPolicy:
             if ctx.estimated_impact == "high":
                 return PolicyDecision(
                     approved=False,
-                    decision="REQUIRES_APPROVAL",
+                    decision=Decision.REQUIRES_APPROVAL,
                     reason=f"auto_high_impact_requires_approval (impact=high, action={action})",
                     risk_score=ctx.risk_score,
                     action_type=action,
@@ -156,14 +165,14 @@ class ExecutionPolicy:
             if ctx.risk_score > threshold:
                 return PolicyDecision(
                     approved=False,
-                    decision="REQUIRES_APPROVAL",
+                    decision=Decision.REQUIRES_APPROVAL,
                     reason=f"auto_risk_exceeds_threshold (risk={ctx.risk_score} > threshold={threshold})",
                     risk_score=ctx.risk_score,
                     action_type=action,
                 )
             return PolicyDecision(
                 approved=True,
-                decision="AUTO_APPROVED",
+                decision=Decision.AUTO_APPROVED,
                 reason=f"auto_approved (action={action}, risk={ctx.risk_score}, impact={ctx.estimated_impact})",
                 risk_score=ctx.risk_score,
                 action_type=action,
@@ -172,7 +181,7 @@ class ExecutionPolicy:
         # Fallback pour mode inconnu
         return PolicyDecision(
             approved=False,
-            decision="REQUIRES_APPROVAL",
+            decision=Decision.REQUIRES_APPROVAL,
             reason=f"unknown_mode_{mode}",
             risk_score=ctx.risk_score,
             action_type=action,

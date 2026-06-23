@@ -27,6 +27,9 @@ Packaging truth:
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
 | Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
+| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé — **session tracker branché + limites effectives** (PR fix/policy-engine-session-limits-singleton) |
+| OrchestratorV2 | 🟡 `core/orchestrator_v2.py` — compat wrapper; delegates to MetaOrchestrator/BeaOrchestrator path |
+| DevinAgent | 🔵 Blueprint only — originally **BEA MAX v3** prototype, not wired to current orchestrator |
 | V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |
 | Plugin signatures | 🟢 HMAC-SHA256 `plugins/signatures.py` T6.4 — verify on registry |
 | Client surfaces | 🟡 Inventoriées PR #85 — 2 canoniques, 1 supported (Flutter), 1 expérimental (React) |
@@ -243,6 +246,13 @@ See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
 ---
 
 ## ⚠️ Known issues
+
+### Policy / risk guardrails
+- `core/execution_policy.Decision` constants (`AUTO_APPROVED`, `REQUIRES_APPROVAL`, `BLOCKED`) now centralisent les statuts de décision.
+- `core/tool_executor.py` utilise les constantes `Decision`, le dead code `requires_approval` est supprimé, et la double validation `_validate_params` est éliminée.
+- `core/policy_engine.py` expose `get_policy_engine()` / `reset_policy_engine()` pour un tracker partagé.
+- `scripts/check_internal_imports.py` est intégré à `validate_local.py --quick` : 0 import interne cassé non protégé, 21 imports protégés par try/except.
+- **Session tracker branché (branche fix/policy-engine-session-limits-singleton)** : `evaluate_tool()` appelle `ensure_session()` + `tracker.record_action()` + `tracker.check_limits()` — les limites session/économiques sont maintenant effectives pour toute mission dont le `mission_id` est propagé. `ToolExecutor` utilise `get_policy_engine(None)` (singleton partagé). `MetaOrchestrator` et `BeaOrchestrator` appellent `get_policy_engine().ensure_session()` en début de run. 16 tests couvrent l'idempotence, l'isolation des compteurs, le blocage par limite, `get_report()`, `select_llm_provider()`, `_cloud_allowed()`, et le reset via `clear_sessions()`.
 
 ### Security
 The remaining high-risk auth drifts listed in earlier audits are now resolved:

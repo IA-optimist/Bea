@@ -109,6 +109,11 @@ class BeaOrchestrator(
             user_input=user_input,
             mode=mode,
         )
+        # Ensure a shared PolicyEngine session tracker exists for this mission.
+        try:
+            self.policy.ensure_session(session.session_id, mode)
+        except Exception as _pol_err:
+            log.debug("policy_session_ensure_failed", mission_id=session.session_id, err=str(_pol_err)[:80])
 
         async def emit(text: str):
             if callback:

@@ -88,6 +88,17 @@ def _validate(data: Mapping[str, Any], *, repo_root: Path) -> ArtifactValidation
     if code_mission and not test_commands:
         missing.append("test command is required for a completed code mission")
 
+    # Partial action gate: planned actions must fit inside executed + pending.
+    if not _actions_accounted_for(data):
+        raw, executed, pending = _count_action_progress(data)
+        missing.append(
+            f"actions appear partial: {raw} planned > "
+            f"{executed} executed + {pending} pending"
+        )
+
+    if code_mission and _has_python_artifact(data, file_paths) and not _has_syntax_validation(data):
+        missing.append("python artifact requires syntax validation proof")
+
     report_like = bool(
         data.get("report_path")
         or data.get("provider_used")
@@ -196,20 +207,7 @@ def _declared_file_paths(data: Mapping[str, Any]) -> list[str]:
     for key in ("files_created", "created_files", "files_changed", "modified_files"):
         paths.extend(_string_list(data.get(key)))
 
-    expected = data.get("expected_artifact")
-    if isinstance(expected, str) and _looks_like_path(expected):
-        paths.append(expected)
-    elif isinstance(expected, Mapping):
-        path = expected.get("path")
-        if path:
-            paths.append(str(path))
-
-    for item in _iter_items(data.get("expected_artifacts")):
-        if isinstance(item, str):
-            paths.append(item)
-        elif isinstance(item, Mapping) and item.get("path"):
-            paths.append(str(item["path"]))
-
+    paths.extend(_extract_expected_artifact_paths(data))
     return _dedupe(paths)
 
 
@@ -270,11 +268,9 @@ def _test_commands(data: Mapping[str, Any]) -> list[str]:
 def _successful_tool_actions(data: Mapping[str, Any]) -> list[str]:
     actions: list[str] = []
     executed = list(_iter_items(data.get("actions_executed")))
-    raw_actions = list(_iter_items(data.get("_raw_actions")))
-    pending = list(_iter_items(data.get("actions_pending")))
     if not executed:
         return actions
-    if raw_actions and len(executed) + len(pending) < len(raw_actions):
+    if not _actions_accounted_for(data):
         return actions
     for idx, action in enumerate(executed, start=1):
         if isinstance(action, Mapping):
@@ -285,6 +281,59 @@ def _successful_tool_actions(data: Mapping[str, Any]) -> list[str]:
         else:
             actions.append(str(action))
     return _dedupe(actions)
+
+
+def _count_action_progress(data: Mapping[str, Any]) -> tuple[int, int, int]:
+    """Return (raw, executed, pending) counts for action accounting gates."""
+    raw = sum(1 for _ in _iter_items(data.get("_raw_actions")))
+    executed = sum(1 for _ in _iter_items(data.get("actions_executed")))
+    pending = sum(1 for _ in _iter_items(data.get("actions_pending")))
+    return raw, executed, pending
+
+
+def _actions_accounted_for(data: Mapping[str, Any]) -> bool:
+    """Planned actions must fit inside executed + pending."""
+    raw, executed, pending = _count_action_progress(data)
+    if raw and executed + pending < raw:
+        return False
+    return True
+
+
+def _extract_expected_artifact_paths(data: Mapping[str, Any]) -> list[str]:
+    """Return normalized paths from expected_artifact / expected_artifacts."""
+    paths: list[str] = []
+    expected = data.get("expected_artifact")
+    if isinstance(expected, str) and _looks_like_path(expected):
+        paths.append(expected)
+    elif isinstance(expected, Mapping):
+        path = expected.get("path")
+        if path:
+            paths.append(str(path))
+
+    for item in _iter_items(data.get("expected_artifacts")):
+        if isinstance(item, str):
+            paths.append(item)
+        elif isinstance(item, Mapping) and item.get("path"):
+            paths.append(str(item["path"]))
+    return paths
+
+
+def _has_python_artifact(data: Mapping[str, Any], file_paths: Iterable[str]) -> bool:
+    expected_paths = _extract_expected_artifact_paths(data)
+    return any(str(path).endswith(".py") for path in (*expected_paths, *file_paths))
+
+
+def _has_syntax_validation(data: Mapping[str, Any]) -> bool:
+    """True when the report contains an explicit Python syntax-validation proof."""
+    test_result = data.get("test_result")
+    if isinstance(test_result, Mapping):
+        for key in ("syntax_check", "py_compile"):
+            check = test_result.get(key)
+            if isinstance(check, Mapping) and check.get("passed") is True:
+                return True
+            if isinstance(check, dict) and check.get("passed") is True:
+                return True
+    return False
 
 
 def _string_list(value: Any) -> list[str]:

@@ -101,6 +101,16 @@ def main(argv: list[str] | None = None) -> int:
     _record(
         results,
         failures,
+        "internal-import-ratchet",
+        _run(
+            "internal-import-ratchet",
+            [sys.executable, "scripts/check_internal_imports.py", "--summary"],
+        ),
+    )
+
+    _record(
+        results,
+        failures,
         "test marker ratchet",
         _run("test-marker-ratchet", [sys.executable, "scripts/check_test_marker_baseline.py"]),
     )
@@ -168,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if _has_module("mypy"):
-        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "mypy-report.txt"
+        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / f"mypy-report-{os.getpid()}.txt"
         report.parent.mkdir(parents=True, exist_ok=True)
         with report.open("w", encoding="utf-8") as fh:
             proc = subprocess.run(
@@ -190,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
         _record_skip(results, skips, "mypy ratchet", "not installed")
 
     if not quick and _has_module("bandit"):
-        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "bandit-report.json"
+        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / f"bandit-report-{os.getpid()}.json"
         report.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             [sys.executable, "-m", "bandit", "-r", "api", "core", "kernel", "-f", "json", "-o", str(report), "--exit-zero", "--skip", "B101"],
@@ -207,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         _record_skip(results, skips, "bandit ratchet", "not installed")
 
     if not quick and _has_module("pip_audit"):
-        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / "audit.json"
+        report = Path(os.environ.get("TEMP", os.environ.get("TMP", str(PROJECT_ROOT / ".tmp")))) / f"audit-{os.getpid()}.json"
         report.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             [sys.executable, "-m", "pip_audit", "-r", "requirements.txt", "--format", "json", "--output", str(report), "--strict"],
