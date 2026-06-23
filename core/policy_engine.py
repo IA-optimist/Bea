@@ -218,6 +218,13 @@ class PolicyEngine:
         log.debug("policy_session_created", mission_id=session_id, mode=mode)
         return tracker
 
+    def ensure_session(self, session_id: str, mode: str = "auto") -> SessionPolicy:
+        """Return an existing session tracker or create one. Idempotent."""
+        tracker = self._sessions.get(session_id)
+        if tracker is None:
+            tracker = self.new_session(session_id, mode)
+        return tracker
+
     def get_session(self, session_id: str) -> SessionPolicy | None:
         return self._sessions.get(session_id)
 
@@ -285,17 +292,13 @@ class PolicyEngine:
         mission_id: str = "",
         params: Any | None = None,
     ) -> PolicyDecision:
-        """
-        ToolExecutor-compatible guard.
+        """ToolExecutor-compatible guard.
 
         Unlike check_action(), this method is not bound to a mode whitelist:
-        it only blocks HIGH risk tools.  Session/economic limits require a
-        shared PolicyEngine instance whose session tracker was created via
-        new_session(session_id).  When ToolExecutor constructs a fresh
-        PolicyEngine(None) per call, those limits cannot be enforced here.
-
-        TODO(kilo/p0p1-followup): expose get_policy_engine() singleton and
-        inject it into ToolExecutor so mission/session limits are shared.
+        it blocks HIGH risk tools and enforces session/economic limits when a
+        mission_id is provided.  Limits require a shared PolicyEngine instance
+        and an active session tracker; evaluate_tool will lazily create a
+        tracker with mode='auto' if none exists for the given mission_id.
         """
         d = PolicyDecision(allowed=True)
 
@@ -315,10 +318,13 @@ class PolicyEngine:
                 suggestion="Reduce risk_level or wire explicit approval flow",
             )
 
-        # Shared session tracker only exists if the caller created one.  This
-        # branch is a no-op for fresh PolicyEngine(None) instances.
+        # Shared session tracker: auto-create with mode='auto' if a mission_id
+        # is provided but no tracker exists yet.  Callers (MetaOrchestrator,
+        # BeaOrchestrator) should create the session with the real mode.
         if mission_id:
-            ok, msg = self.check_session_limits(mission_id)
+            tracker = self.ensure_session(mission_id, mode="auto")
+            tracker.record_action()
+            ok, msg = tracker.check_limits()
             if not ok:
                 return d.deny(msg, "Wait for the next session or raise limits")
 
@@ -425,6 +431,24 @@ class PolicyEngine:
         self._sessions.clear()
         log.debug("policy_sessions_cleared", count=before)
 
+    # ── Helpers ───────────────────────────────────────────
+
+    def _cloud_allowed(self) -> bool:
+        """True si le cloud est activé et au moins une clé valide."""
+        if not getattr(self.s, "escalation_enabled", False):
+            return False
+        anthropic_key = getattr(self.s, "anthropic_api_key", "") or ""
+        openai_key    = getattr(self.s, "openai_api_key",    "") or ""
+        # Rejeter les placeholder keys
+        placeholders = ("your-", "sk-your", "changeme", "placeholder")
+        valid_anthropic = anthropic_key and not any(
+            anthropic_key.lower().startswith(p) for p in placeholders
+        )
+        valid_openai = openai_key and not any(
+            openai_key.lower().startswith(p) for p in placeholders
+        )
+        return bool(valid_anthropic or valid_openai)
+
 
 # ══════════════════════════════════════════════════════════════
 # SINGLETON / FACTORY (stable interface)
@@ -450,22 +474,3 @@ def reset_policy_engine() -> None:
     """Reset the singleton. Mainly for tests."""
     global _policy_engine_instance
     _policy_engine_instance = None
-
-
-# ── Helpers ───────────────────────────────────────────
-
-    def _cloud_allowed(self) -> bool:
-        """True si le cloud est activé et au moins une clé valide."""
-        if not getattr(self.s, "escalation_enabled", False):
-            return False
-        anthropic_key = getattr(self.s, "anthropic_api_key", "") or ""
-        openai_key    = getattr(self.s, "openai_api_key",    "") or ""
-        # Rejeter les placeholder keys
-        placeholders = ("your-", "sk-your", "changeme", "placeholder")
-        valid_anthropic = anthropic_key and not any(
-            anthropic_key.lower().startswith(p) for p in placeholders
-        )
-        valid_openai = openai_key and not any(
-            openai_key.lower().startswith(p) for p in placeholders
-        )
-        return bool(valid_anthropic or valid_openai)

@@ -186,8 +186,8 @@ class LazyComponentsMixin:
         """PolicyEngine : autorisation actions + routage LLM."""
         if self._policy is None:
             try:
-                from core.policy_engine import PolicyEngine
-                self._policy = PolicyEngine(self.s)
+                from core.policy_engine import get_policy_engine
+                self._policy = get_policy_engine(self.s)
             except Exception as e:
                 log.debug("orchestrator_no_policy", err=str(e)[:60])
         return self._policy

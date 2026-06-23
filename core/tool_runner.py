@@ -91,6 +91,7 @@ def run_tools_for_mission(
         for tool_name in tools_to_run:
             try:
                 params = _default_params(tool_name, goal)
+                params.setdefault("mission_id", mission_id)
                 result = executor.execute(tool_name, params, approval_mode)
                 results[tool_name] = result
 

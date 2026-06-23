@@ -349,6 +349,12 @@ class MetaOrchestrator(
         """
         mid = mission_id or uuid.uuid4().hex[:16]
         now = time.time()
+        # Ensure a PolicyEngine session tracker exists for the mission lifecycle.
+        try:
+            from core.policy_engine import get_policy_engine
+            get_policy_engine(self.s).ensure_session(mid, mode)
+        except Exception as _pol_err:
+            log.debug("policy_session_ensure_failed", mission_id=mid, err=str(_pol_err)[:80])
         _extra_meta = extra_metadata or {}
         ctx = MissionContext(
             mission_id=mid,

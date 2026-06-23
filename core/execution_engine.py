@@ -415,6 +415,8 @@ def execute_tool_intelligently(
 
     result = {"ok": False, "error": "not_executed"}
     current_params = dict(params)
+    if mission_id:
+        current_params.setdefault("mission_id", mission_id)
 
     # Apply recovery hint if available (pre-adapt params)
     if _recovery_hint and _recovery_hint.get("recovery_type") == "retry_adapted":
@@ -464,7 +466,7 @@ def execute_tool_intelligently(
         if fallback:
             logger.info("fallback_after_retries", primary=tool_name, fallback=fallback)
             telemetry.fallback_used = fallback
-            fb_result = executor.execute(fallback, params, approval_mode)
+            fb_result = executor.execute(fallback, current_params, approval_mode)
             if fb_result.get("ok"):
                 result = fb_result
                 telemetry.success = True
