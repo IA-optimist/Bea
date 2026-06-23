@@ -242,6 +242,7 @@ def run_all():
         ("execute() dry_run",               test_execute_dry_run),
         ("execute_batch()",                  test_execute_batch),
         ("RiskEngine.classify_bulk()",       test_classify_bulk),
+        ("risk_engine exception blocks action", test_risk_engine_exception_blocks_action),
     ]
 
     print("\n=== tests/test_executor.py ===\n")
@@ -342,3 +343,45 @@ def test_parallel_executor_slow_agent_timeouts():
     src = __import__("pathlib").Path("agents/parallel_executor.py").read_text(encoding="utf-8")
     assert "_effective_global = max(self.global_timeout, _longest_individual" in src
     _ok("timeouts agents lents : forge-builder >= 300s, global effectif couvrant")
+
+
+# ══════════════════════════════════════════════════════════════
+# Test 8 : RiskEngine.analyze() en échec → action bloquée (fail-closed)
+# ══════════════════════════════════════════════════════════════
+
+def test_risk_engine_exception_blocks_action():
+    """Régression : si RiskEngine.analyze() lève, l'action ne doit jamais s'exécuter."""
+    from executor.supervised_executor import SupervisedExecutor
+    from core.state import ActionSpec, RiskLevel
+    from config.settings import get_settings
+
+    s = get_settings()
+    s.dry_run = False
+
+    sup = SupervisedExecutor(s)
+
+    class _BrokenRiskEngine:
+        def analyze(self, **kwargs):
+            raise RuntimeError("risk engine exploded")
+
+    sup.risk = _BrokenRiskEngine()
+
+    action = ActionSpec(
+        id="t-risk-fail",
+        action_type="write_file",
+        target="workspace/safe.txt",
+        content="hello",
+        command="",
+        old_str="",
+        new_str="",
+        description="should be blocked",
+    )
+
+    async def run():
+        result = await sup.execute(action, session_id="risk-fail-001")
+        assert not result.success, f"attendu success=False, obtenu {result}"
+        assert action.risk == RiskLevel.HIGH, f"attendu HIGH, obtenu {action.risk}"
+        assert "HIGH" in (result.error or ""), f"erreur sans HIGH : {result.error}"
+
+    asyncio.run(run())
+    _ok("RiskEngine.analyze() exception -> HIGH / action bloquée")

@@ -277,6 +277,53 @@ class PolicyEngine:
 
         return d.allow()
 
+    def evaluate_tool(
+        self,
+        tool_name: str,
+        action_type: str,
+        risk_level: str,
+        mission_id: str = "",
+        params: Any | None = None,
+    ) -> PolicyDecision:
+        """
+        ToolExecutor-compatible guard.
+
+        Unlike check_action(), this method is not bound to a mode whitelist:
+        it only blocks HIGH risk tools.  Session/economic limits require a
+        shared PolicyEngine instance whose session tracker was created via
+        new_session(session_id).  When ToolExecutor constructs a fresh
+        PolicyEngine(None) per call, those limits cannot be enforced here.
+
+        TODO(kilo/p0p1-followup): expose get_policy_engine() singleton and
+        inject it into ToolExecutor so mission/session limits are shared.
+        """
+        d = PolicyDecision(allowed=True)
+
+        if getattr(self.s, "dry_run", False):
+            return d.allow("dry_run_simulation")
+
+        # Tool gate is intentionally fail-closed for dangerous actions.
+        if risk_level == "high":
+            return d.deny(
+                f"Tool '{tool_name}' is HIGH risk and requires explicit approval",
+                suggestion="Approve manually or reduce the action scope",
+            )
+
+        if action_type == "execute" and risk_level in ("unknown", "high"):
+            return d.deny(
+                f"Tool '{tool_name}' executes code when risk is unknown/high",
+                suggestion="Reduce risk_level or wire explicit approval flow",
+            )
+
+        # Shared session tracker only exists if the caller created one.  This
+        # branch is a no-op for fresh PolicyEngine(None) instances.
+        if mission_id:
+            ok, msg = self.check_session_limits(mission_id)
+            if not ok:
+                return d.deny(msg, "Wait for the next session or raise limits")
+
+        return d.allow("tool_allowed")
+
     # ── Routage LLM ───────────────────────────────────────
 
     def select_llm_provider(
@@ -378,7 +425,34 @@ class PolicyEngine:
         self._sessions.clear()
         log.debug("policy_sessions_cleared", count=before)
 
-    # ── Helpers ───────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════
+# SINGLETON / FACTORY (stable interface)
+# ══════════════════════════════════════════════════════════════
+
+_policy_engine_instance: PolicyEngine | None = None
+
+
+def get_policy_engine(settings: Any | None = None) -> PolicyEngine:
+    """Return a shared PolicyEngine instance.
+
+    ToolExecutor and orchestrators should use this instead of constructing
+    PolicyEngine(None) on every call, otherwise session/economic limits remain
+    unenforced.
+    """
+    global _policy_engine_instance
+    if _policy_engine_instance is None:
+        _policy_engine_instance = PolicyEngine(settings)
+    return _policy_engine_instance
+
+
+def reset_policy_engine() -> None:
+    """Reset the singleton. Mainly for tests."""
+    global _policy_engine_instance
+    _policy_engine_instance = None
+
+
+# ── Helpers ───────────────────────────────────────────
 
     def _cloud_allowed(self) -> bool:
         """True si le cloud est activé et au moins une clé valide."""

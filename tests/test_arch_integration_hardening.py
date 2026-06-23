@@ -24,6 +24,7 @@ Areas covered:
 """
 from __future__ import annotations
 
+import asyncio
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -158,7 +159,7 @@ class TestCapabilityDispatcherWiring(unittest.TestCase):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestRiskEngineContractSafety(unittest.TestCase):
-    """Risk engine failure produces a safe fallback RiskReport, never raises."""
+    """Risk engine failure produces a blocked HIGH RiskReport, never LOW."""
 
     def _make_action(self, action_type="write_file", target="test.txt"):
         from core.state import ActionSpec
@@ -172,52 +173,39 @@ class TestRiskEngineContractSafety(unittest.TestCase):
             new_str="",
         )
 
-    def test_risk_engine_analyze_fallback_on_exception(self):
-        """When analyze() raises, supervised_executor produces a safe LOW fallback."""
+    def test_risk_engine_analyze_fallback_blocks_action(self):
+        """When analyze() raises, the action is classified HIGH and blocked."""
         from core.state import RiskLevel
         settings = MagicMock()
         settings.dry_run = False
 
-        with patch("executor.supervised_executor.RiskEngine") as MockRiskEngine:
-            mock_engine = MagicMock()
-            mock_engine.analyze.side_effect = RuntimeError("engine exploded")
-            MockRiskEngine.return_value = mock_engine
+        from executor.supervised_executor import SupervisedExecutor
+        executor = SupervisedExecutor(settings)
 
-            from executor.supervised_executor import SupervisedExecutor
-            executor = SupervisedExecutor(settings)
-            executor.risk = mock_engine
+        mock_engine = MagicMock()
+        mock_engine.analyze.side_effect = RuntimeError("engine exploded")
+        executor.risk = mock_engine
 
-            action = self._make_action()
-            # Should not raise — fallback kicks in
-            # We test the fallback report is created correctly
-            try:
-                from risk.engine import RiskReport
-                report = RiskReport(
-                    level=RiskLevel.LOW,
-                    action_type=action.action_type,
-                    target=action.target or "",
-                    estimated_impact="unknown (risk analysis failed)",
-                )
-                self.assertEqual(report.level, RiskLevel.LOW)
-                self.assertEqual(report.action_type, "write_file")
-                self.assertEqual(report.target, "test.txt")
-                self.assertIn("failed", report.estimated_impact)
-            except Exception as e:
-                self.fail(f"Fallback RiskReport construction raised: {e}")
+        action = self._make_action()
+        result = asyncio.run(executor.execute(action, session_id="test-risk-fail"))
+        self.assertFalse(result.success)
+        self.assertIn("HIGH", result.error or "")
+        self.assertEqual(action.risk, RiskLevel.HIGH)
 
-    def test_risk_engine_fallback_report_is_low_risk(self):
-        """Fallback report must be LOW (fail-safe, not fail-closed)."""
+    def test_risk_engine_fallback_report_is_high_risk(self):
+        """Fallback report must be HIGH (fail-closed, not fail-open)."""
         from core.state import RiskLevel
         from risk.engine import RiskReport
         fallback = RiskReport(
-            level=RiskLevel.LOW,
+            level=RiskLevel.HIGH,
             action_type="write_file",
             target="output.txt",
-            estimated_impact="unknown (risk analysis failed)",
+            estimated_impact="unknown (risk analysis failed) - action blocked for safety",
+            requires_validation=True,
+            reasons=["RiskEngine analyze() raised an exception"],
         )
-        self.assertEqual(fallback.level, RiskLevel.LOW)
-        self.assertFalse(fallback.backup_required)
-        self.assertTrue(fallback.reversible)
+        self.assertEqual(fallback.level, RiskLevel.HIGH)
+        self.assertTrue(fallback.requires_validation)
 
     def test_supervised_executor_source_has_try_except_around_analyze(self):
         """Regression: supervised_executor.py must wrap analyze() in try/except."""
@@ -251,10 +239,12 @@ class TestRiskEngineContractSafety(unittest.TestCase):
         from core.state import RiskLevel
         from risk.engine import RiskReport
         report = RiskReport(
-            level=RiskLevel.LOW,
+            level=RiskLevel.HIGH,
             action_type="execute_shell",
             target="cmd.sh",
-            estimated_impact="unknown (risk analysis failed)",
+            estimated_impact="unknown (risk analysis failed) - action blocked for safety",
+            requires_validation=True,
+            reasons=["RiskEngine analyze() raised an exception"],
         )
         self.assertEqual(report.action_type, "execute_shell")
         self.assertEqual(report.target, "cmd.sh")

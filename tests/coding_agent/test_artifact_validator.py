@@ -198,3 +198,54 @@ def test_supervisor_refuses_code_session_without_test_artifact(tmp_path):
     assert ok is False
     assert error_class == "needs_action_output"
     assert "test command is required" in reason
+
+
+def test_code_mission_partial_actions_refuse_completed(tmp_path):
+    _report_path, report = _write_report(
+        tmp_path,
+        files_created=["src/sha256_file.py"],
+        actions_executed=[],
+        actions_pending=[],
+        _raw_actions=[{"target": "src/sha256_file.py"}],
+    )
+
+    result = validate_mission_report_artifacts(report, repo_root=tmp_path)
+
+    assert result.ok is False
+    assert result.status == "NEEDS_ACTION_OUTPUT"
+    assert "actions appear partial" in result.message
+
+
+def test_code_mission_tests_run_without_test_result_refuse_completed(tmp_path):
+    _report_path, report = _write_report(
+        tmp_path,
+        files_created=["src/sha256_file.py"],
+        tests_run=["pytest tests/test_sha256_file.py -q"],
+        test_result={},
+    )
+
+    result = validate_mission_report_artifacts(report, repo_root=tmp_path)
+
+    assert result.ok is False
+    assert result.status == "NEEDS_ACTION_OUTPUT"
+    assert "test_result is required" in result.message
+
+
+def test_python_artifact_without_syntax_validation_refuse_completed(tmp_path):
+    source = tmp_path / "src" / "solution.py"
+    source.parent.mkdir()
+    source.write_text("def solve(): pass\n", encoding="utf-8")
+    _report_path, report = _write_report(
+        tmp_path,
+        goal="Write a python solution module",
+        files_created=["src/solution.py"],
+        expected_artifact="src/solution.py",
+        tests_run=["pytest tests/test_solution.py -q"],
+        test_result=None,
+    )
+
+    result = validate_mission_report_artifacts(report, repo_root=tmp_path)
+
+    assert result.ok is False
+    assert result.status == "NEEDS_ACTION_OUTPUT"
+    assert "python artifact requires syntax validation proof" in result.message

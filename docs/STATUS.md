@@ -27,6 +27,9 @@ Packaging truth:
 | Windows CI job | 🟢 Added `test-windows` job T5.4 |
 | OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
 | Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
+| Policy/tool guardrails cleanup | 🟡 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé — limites session/économiques encore non partagées |
+| OrchestratorV2 | 🟡 `core/orchestrator_v2.py` — compat wrapper; delegates to MetaOrchestrator/BeaOrchestrator path |
+| DevinAgent | 🔵 Blueprint only — originally **BEA MAX v3** prototype, not wired to current orchestrator |
 | V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |
 | Plugin signatures | 🟢 HMAC-SHA256 `plugins/signatures.py` T6.4 — verify on registry |
 | Client surfaces | 🟡 Inventoriées PR #85 — 2 canoniques, 1 supported (Flutter), 1 expérimental (React) |
@@ -243,6 +246,13 @@ See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
 ---
 
 ## ⚠️ Known issues
+
+### Policy / risk guardrails
+- `core/execution_policy.Decision` constants (`AUTO_APPROVED`, `REQUIRES_APPROVAL`, `BLOCKED`) now centralisent les statuts de décision.
+- `core/tool_executor.py` utilise les constantes `Decision`, le dead code `requires_approval` est supprimé, et la double validation `_validate_params` est éliminée.
+- `core/policy_engine.py` expose `get_policy_engine()` / `reset_policy_engine()` pour préparer un tracker partagé.
+- `scripts/check_internal_imports.py` est intégré à `validate_local.py --quick` : 0 import interne cassé non protégé, 21 imports protégés par try/except.
+- **Dette résiduelle** : `PolicyEngine.evaluate_tool()` ne peut pas encore appliquer les limites session/économiques car `ToolExecutor` n'injecte pas de tracker partagé. La gate reste fail-closed sur les outils HIGH risk / execute.
 
 ### Security
 The remaining high-risk auth drifts listed in earlier audits are now resolved:

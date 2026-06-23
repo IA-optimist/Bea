@@ -5,6 +5,48 @@
 - `smoke_e2e_cycle`: local fixture gate, no LLM required.
 - `bea_eval`: expected to remain green after mission report ingestion.
 - Provider runtime: outside this PR; this change does not touch providers.
+
+## Legacy Components Treated in this PR
+
+- `core/orchestrator_v2.py` is preserved as a compat wrapper around the current
+  `core.bea_executor.BeaOrchestrator` path. The old `core.orchestrator_LEGACY_20260407`
+  reference has been removed.
+- `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent.
+  It now instantiates without requiring a live LLM or the removed `MemoryBank`,
+  but is not wired into the active mission pipeline.
+
+## Code-Mission Truth Gate
+
+- `core/coding_agent/artifact_validator.py` now rejects `COMPLETED`/`SUCCESS` when:
+  - the report is text-only without materialized artifacts;
+  - declared files are missing;
+  - `tests_run` is present but `test_result` is empty;
+  - planned actions exceed executed + pending actions;
+  - a Python artifact is declared without syntax-validation proof.
+
+## Risk / Policy Fail-Closed
+
+- `executor/supervised_executor.py`: if `RiskEngine.analyze()` raises, the action
+  is classified `HIGH` and blocked (no dry-run bypass).
+- `core/tool_executor.py`: uses `core.policy_engine.PolicyEngine.evaluate_tool`;
+  if the policy engine is unavailable, execute / high-risk tools are blocked.
+- `core/execution_policy.Decision` centralizes `AUTO_APPROVED`, `REQUIRES_APPROVAL`,
+  `BLOCKED` and replaces bare string comparisons in `tool_executor`.
+- `scripts/check_internal_imports.py` is now part of `validate_local.py --quick`
+  and reports 0 `broken_unprotected` internal imports.
+
+## Known remaining debt (non-blocking for this PR)
+
+- `core/policy_engine.py`: `evaluate_tool()` overlaps with `check_action()` and
+  does not yet enforce real per-session limits because `ToolExecutor` does not
+  inject a shared `PolicyEngine` instance whose session tracker was created via
+  `new_session()`. It provides HIGH-risk / execute blocking only.
+- `core/coding_agent/artifact_validator.py`: partial-action accounting is now
+  centralized in `_actions_accounted_for()`; `_successful_tool_actions()` uses it.
+- `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent and
+  is not wired into the active mission pipeline.
+- `core/orchestrator_v2.py` remains a compat wrapper.
+
 - Code mission artifact gate: added for `needs_actions=True` missions.
 - Code execution loop: helper added to strip markdown from Python blocks and
   validate syntax before accepting a materialized artifact.

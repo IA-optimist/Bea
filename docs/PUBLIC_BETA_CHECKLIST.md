@@ -56,7 +56,18 @@
 - [x] `pytest` passes (all critical tests)
 - [x] `python scripts/validate_local.py --quick` passes all gates
 - [x] CI smoke enforced on PR (fixture-backed, no provider key required)
+- [x] `python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json` passes
+- [x] `python scripts/check_internal_imports.py` reports 0 broken_unprotected imports
+- [x] Policy decision constants centralized (`core.execution_policy.Decision`)
 - [ ] `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` runs clean on public seed
+
+## Policy / risk guardrails
+
+- [x] `core/tool_executor.py` uses `Decision` constants and blocks `REQUIRES_APPROVAL`/`BLOCKED`
+- [x] Policy-unavailable fallback blocks `execute` / high-risk tools
+- [x] `RiskEngine.analyze()` exception falls back to `HIGH` / blocked
+- [x] Artifact validator rejects code missions without verifiable artifact evidence
+- [ ] `PolicyEngine` enforces shared session/economic limits end-to-end (tracker still not wired)
 
 ## Provider readiness
 
