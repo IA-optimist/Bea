@@ -470,6 +470,8 @@ class OrchestratorV2:
     Falls back gracefully if BeaOrchestrator is unavailable.
     """
 
+    MATURITY = "active"
+
     def __init__(self, settings):
         self.s            = settings
         self._checkpoints = CheckpointStore(settings)
@@ -484,7 +486,14 @@ class OrchestratorV2:
 
     def _get_inner(self):
         if self._inner is None:
-            from core.orchestrator_LEGACY_20260407 import BeaOrchestrator
+            # Audit S8 (2026-05-20): core.orchestrator_LEGACY_20260407 was removed;
+            # BeaOrchestrator lives in core.bea_executor (canonical) with a backward-
+            # compatibility shim in core.orchestrator.
+            try:
+                from core.bea_executor import BeaOrchestrator
+            except Exception as _err:
+                log.warning("bea_executor_import_failed", err=str(_err)[:80])
+                from core.orchestrator import BeaOrchestrator
             self._inner = BeaOrchestrator(self.s)
         return self._inner
 
