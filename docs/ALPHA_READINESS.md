@@ -38,14 +38,14 @@
 ## Known remaining debt (non-blocking for this PR)
 
 - `core/policy_engine.py`: `evaluate_tool()` overlaps with `check_action()` — minor;
-  session tracker is now wired end-to-end (PR fix/policy-engine-session-limits-singleton):
-  `evaluate_tool()` calls `ensure_session()` + `record_action()` + `check_limits()`.
+  session tracker is now wired end-to-end (`fix/policy-engine-session-limits-singleton`):
+  `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`.
   `ToolExecutor` uses `get_policy_engine()` singleton; `MetaOrchestrator` and
-  `BeaOrchestrator` call `ensure_session()` at run start. Limits are only effective
-  when `mission_id` is propagated through the call chain. **Propagation audit complete**
-  (PR fix/mission-id-propagation-audit): 3 runtime gaps closed (missions route missing
-  `mission_id` kwarg, `tool_pipeline` not forwarding it to child calls, recovery engine
-  using stale `_mission_id` key). Remaining documented debt: `api/routes/system_v2.py`
+  `BeaOrchestrator` call `ensure_session()` at run start. 88 critical policy/tool
+  tests are green and `validate_local.py --quick` and full pass. **Propagation audit
+  complete** (fix/mission-id-propagation-audit): 3 runtime gaps closed (missions route
+  missing `mission_id` kwarg, `tool_pipeline` not forwarding it to child calls, recovery
+  engine using stale `_mission_id` key). Remaining documented debt: `api/routes/system_v2.py`
   debug endpoint (P2, caller-controlled params) and `core/business/mission_runner.py`
   `StepExecutor._execute_with_tools` (dead code, `MissionEngine` never instantiated in
   prod). Ratchet `scripts/check_tool_executor_mission_id.py` guards all 6 known call sites.

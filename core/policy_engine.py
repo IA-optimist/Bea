@@ -202,18 +202,21 @@ class PolicyEngine:
         self,
         session_id: str,
         mode:       str = "auto",
+        limits:     dict[str, int | float] | None = None,
     ) -> SessionPolicy:
         """Crée un tracker de politique pour une session."""
-        limits = dict(_DEFAULT_LIMITS)
+        effective_limits = dict(_DEFAULT_LIMITS)
+        if limits:
+            effective_limits.update(limits)
 
         # Ajustements selon le mode
         if mode == "night":
-            limits["max_actions_per_session"] = 30
-            limits["session_timeout_s"]        = 1800
+            effective_limits["max_actions_per_session"] = 30
+            effective_limits["session_timeout_s"]        = 1800
         elif mode == "improve":
-            limits["max_actions_per_session"] = 15
+            effective_limits["max_actions_per_session"] = 15
 
-        tracker = SessionPolicy(session_id, limits)
+        tracker = SessionPolicy(session_id, effective_limits)
         self._sessions[session_id] = tracker
         log.debug("policy_session_created", mission_id=session_id, mode=mode)
         return tracker
@@ -323,10 +326,10 @@ class PolicyEngine:
         # BeaOrchestrator) should create the session with the real mode.
         if mission_id:
             tracker = self.ensure_session(mission_id, mode="auto")
-            tracker.record_action()
             ok, msg = tracker.check_limits()
             if not ok:
                 return d.deny(msg, "Wait for the next session or raise limits")
+            tracker.record_action()
 
         return d.allow("tool_allowed")
 

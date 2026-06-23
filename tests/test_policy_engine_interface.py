@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from unittest.mock import patch
-
 import pytest
 
 from core.policy_engine import PolicyEngine, PolicyDecision, get_policy_engine, reset_policy_engine
+
+
+@pytest.fixture(autouse=True)
+def _reset_policy_engine_singleton():
+    reset_policy_engine()
+    yield
+    reset_policy_engine()
 
 
 class TestEvaluateToolInterface:
@@ -61,3 +66,56 @@ class TestEvaluateToolInterface:
             params={"cmd": "ls"},
         )
         assert isinstance(d, PolicyDecision)
+
+
+class TestSharedSessionTracker:
+    """PolicyEngine session/economic limits must be shared across ToolExecutor calls."""
+
+    def test_same_mission_id_increments_shared_counter(self):
+        pe = PolicyEngine(None)
+        pe.new_session("shared-mission", "auto", limits={"max_actions_per_session": 5})
+        for _ in range(3):
+            d = pe.evaluate_tool("list_project_structure", "read", "low", mission_id="shared-mission")
+            assert d.allowed is True
+        tracker = pe.get_session("shared-mission")
+        assert tracker.actions_done == 3
+
+    def test_different_mission_ids_have_separate_counters(self):
+        pe = PolicyEngine(None)
+        pe.new_session("mission-a", "auto", limits={"max_actions_per_session": 5})
+        pe.new_session("mission-b", "auto", limits={"max_actions_per_session": 5})
+        pe.evaluate_tool("x", "read", "low", mission_id="mission-a")
+        pe.evaluate_tool("x", "read", "low", mission_id="mission-a")
+        pe.evaluate_tool("x", "read", "low", mission_id="mission-b")
+        assert pe.get_session("mission-a").actions_done == 2
+        assert pe.get_session("mission-b").actions_done == 1
+
+    def test_action_limit_blocks_further_calls(self):
+        pe = PolicyEngine(None)
+        pe.new_session("limited", "auto", limits={"max_actions_per_session": 2})
+        assert pe.evaluate_tool("x", "read", "low", mission_id="limited").allowed is True
+        assert pe.evaluate_tool("x", "read", "low", mission_id="limited").allowed is True
+        blocked = pe.evaluate_tool("x", "read", "low", mission_id="limited")
+        assert blocked.allowed is False
+        assert "Limite actions" in blocked.reason
+
+    def test_low_risk_allowed_before_limit(self):
+        pe = PolicyEngine(None)
+        pe.new_session("low-risk", "auto", limits={"max_actions_per_session": 10})
+        d = pe.evaluate_tool("list_project_structure", "read", "low", mission_id="low-risk")
+        assert d.allowed is True
+
+    def test_reset_session_clears_counter(self):
+        pe = PolicyEngine(None)
+        pe.new_session("reset-me", "auto", limits={"max_actions_per_session": 2})
+        pe.evaluate_tool("x", "read", "low", mission_id="reset-me")
+        pe.clear_sessions()
+        d = pe.evaluate_tool("x", "read", "low", mission_id="reset-me")
+        assert d.allowed is True
+        assert pe.get_session("reset-me").actions_done == 1
+
+    def test_no_mission_id_is_safe_and_does_not_create_session(self):
+        pe = PolicyEngine(None)
+        d = pe.evaluate_tool("x", "read", "low", mission_id="")
+        assert d.allowed is True
+        assert not pe._sessions
