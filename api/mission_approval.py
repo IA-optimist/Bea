@@ -86,7 +86,7 @@ def approve_mission_for_resume(
             if item_id:
                 from core.approval_queue import approve as approve_queue_item
 
-                approve_queue_item(item_id, approved_by="human")
+                approve_queue_item(item_id, approved_by=principal_id)
     except Exception as exc:
         logger.debug("approval_queue_approve_skipped", err=str(exc)[:60])
 
@@ -146,6 +146,7 @@ def reject_mission_payload(
     mission_system: Any,
     logger: Any,
     silent_logger: Any,
+    rejected_by: str | None = None,
 ) -> dict[str, Any]:
     """Reject a pending mission and update bridge/approval queue state."""
     record = mission_system.reject(mission_id, note=note)
@@ -168,7 +169,7 @@ def reject_mission_payload(
             if item_id:
                 from core.approval_queue import reject as reject_queue_item
 
-                reject_queue_item(item_id, rejected_by="human")
+                reject_queue_item(item_id, rejected_by=rejected_by)
     except Exception:
         silent_logger.debug("suppressed_exception", src="mission_approval.py")
 

@@ -134,6 +134,15 @@ def main(argv: list[str] | None = None) -> int:
             [sys.executable, "scripts/check_policy_principal_binding.py", "--summary"],
         ),
     )
+    _record(
+        results,
+        failures,
+        "approval hardcoded principals ratchet",
+        _run(
+            "approval hardcoded principals ratchet",
+            [sys.executable, "scripts/check_approval_hardcoded_principals.py"],
+        ),
+    )
 
     security_type_files = [
         "api/auth.py",
