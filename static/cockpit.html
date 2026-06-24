@@ -297,7 +297,9 @@
 
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────────
-let TOKEN = '';
+const _urlToken = new URLSearchParams(window.location.search).get('token') || '';
+let TOKEN = _urlToken;
+if (_urlToken) { window.addEventListener('DOMContentLoaded', () => { document.getElementById('token').value = _urlToken; refreshAll(); }); }
 function saveToken(){ TOKEN = document.getElementById('token').value.trim(); refreshAll(); }
 function authHeaders(extra){
   const h = Object.assign({}, extra || {});
