@@ -51,13 +51,23 @@ def approve_mission_for_resume(
     get_orchestrator: Callable[[], Any],
     logger: Any,
     silent_logger: Any,
+    principal_id: str | None = None,
 ) -> dict[str, Any]:
-    """Approve a pending mission and schedule its forced-approved resumption."""
-    record = mission_system.approve(mission_id, note=note)
+    """Approve a pending mission and schedule its forced-approved resumption.
+
+    `principal_id` here is the *approver's* identity (from the approval request).
+    The *submitter's* identity is read from record.submitted_by and used for
+    PolicyEngine session binding — so the resume runs under the same session
+    limits as the original submission, not the approver's session.
+    """
+    record = mission_system.approve(mission_id, note=note, approved_by=principal_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' not found.")
     if record.status not in ("APPROVED", "PENDING_VALIDATION"):
         return {"ok": False, "error": f"Mission is in status '{record.status}', cannot approve."}
+
+    # Persist approved_by separately from submitted_by — they are distinct principals.
+    record.approved_by = principal_id
 
     try:
         from core.orchestration_bridge import get_orchestration_bridge
@@ -88,6 +98,12 @@ def approve_mission_for_resume(
     # BUSINESS/CODE et changeait le plan d'agents à la reprise.
     original_mode = record.decision_trace.get("mode") or "auto"
 
+    # Use the submitter's principal for PolicyEngine session binding, NOT the
+    # approver's. This ensures the resumed mission runs under the same session
+    # limits as the original submission (same session key: submitted_by:mission_id).
+    # Fall back to approver principal for legacy records without submitted_by.
+    _resume_principal = record.submitted_by or principal_id
+
     async def _resume_mission() -> None:
         try:
             orchestrator = get_orchestrator()
@@ -96,6 +112,7 @@ def approve_mission_for_resume(
                 mode=original_mode,
                 mission_id=mission_id,
                 force_approved=True,
+                principal_id=_resume_principal,
             )
             final = getattr(session, "result", "") or getattr(session, "final_report", "") or ""
             if final:

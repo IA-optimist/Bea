@@ -48,33 +48,67 @@
 
 ## Known remaining debt (non-blocking for this PR)
 
-### principal-binding (P3 — tracked)
+### principal-binding (P2 — fixed on `feat/principal-auth-binding`)
 
-`feat/principal-auth-binding` wires `principal_id` as an explicit trusted parameter
-to `evaluate_tool()` and `check_action()` (instead of reading it from the
-client-supplied `params` dict, which was falsifiable).
+The authenticated identity is now bound to PolicyEngine sessions instead of
+being naïvely extracted from `params`.
 
-**What is fixed:**
-- `evaluate_tool(principal_id=...)` now uses the explicit arg; `params` is never
-  consulted for principal extraction.
-- `check_action(principal_id=...)` now uses `_session_key()` for the session lookup.
-- `ToolExecutor.execute(principal_id=...)` threads the principal to `evaluate_tool()`.
-- Callers must extract `principal_id` from `request.state.user["username"]` (set by
-  `AccessEnforcementMiddleware`) or `Depends(require_auth)` and pass it explicitly.
+**Canonical source of principal:**
+- `request.state.user` is populated by `AccessEnforcementMiddleware`
+  (`api/middleware.py`) after token validation.
+- `api/auth_principal.py` exposes `get_authenticated_principal(request)` which
+  returns a stable, non-secret identifier:
+  - access token -> `access_token:<token_id>`
+  - JWT -> `jwt:<sub>`
+  - static token -> `static:api`
+- No secret, token or API key is used as the principal value.
 
-**Remaining gap (P3 — not blocking alpha):**
-- The full orchestrator chain (`MetaOrchestrator` → `BeaOrchestrator` →
-  `ToolExecutor`) does not yet receive `principal_id` from the HTTP request context
-  because `MissionResult` has no `submitted_by` field.  When `principal_id=None`
-  the session key falls back to `mission_id` alone — safe for single-tenant but
-  insufficient for multi-tenant beta.
-- Resolution: add `submitted_by` to `MissionResult`, store the authenticated
-  username at submission time, and thread it into `ToolExecutor.execute()` calls.
-  This is the recommended next branch (`fix/mission-submitted-by`).
-- This gap is **not a regression**: before this PR, `principal_id` was extracted
-  from params (worse — falsifiable).  After this PR, `principal_id` is None for
-  internal callers (safe fallback) and can be explicitly set by callers that have
-  access to the request context.
+**Propagation path:**
+1. Public routes extract the validated principal:
+   - `POST /api/v2/task`, `/api/v2/missions/submit`, `/api/mission`
+   - `POST /api/v1/missions`
+   - `POST /api/v2/missions/{id}/approve`
+   - `POST /api/v3/tools/{tool_id}/execute`
+   - `POST /api/v2/tools/test`
+2. It flows through:
+   - `KernelAdapter.submit(principal_id=...)`
+   - `kernel.runtime.kernel.execute()` -> `MetaOrchestrator.run_mission(principal_id=...)`
+   - `BeaOrchestrator.run(principal_id=...)`
+   - `tool_runner.run_tools_for_mission(principal_id=...)`
+   - `execution_engine.execute_tool_intelligently(principal_id=...)`
+   - `tool_pipeline_tool.tool_pipeline(principal_id=...)`
+3. The trusted key `_bea_principal_id` is injected into params before
+   `ToolExecutor.execute()` is called.
+4. `PolicyEngine._extract_principal_id()` prefers `_bea_principal_id` over any
+   client-supplied `principal_id` / `user_id` fallback.
+5. `PolicyEngine.evaluate_tool()` accepts an explicit `principal_id` parameter
+   and never reads the principal from the client params dict.
+6. `PolicyEngine.ensure_session()` uses `_session_key(session_id, principal_id)`
+   so the same `mission_id` with two different principals yields two isolated
+   sessions.
+
+**Client override protection:** public routes strip/overwrite any user-provided
+`principal_id` or `_bea_principal_id` in request payloads.
+
+**Internal/test fallback:** internal callers (dev mode, background agents,
+profiling harness, autonomous runners) may omit `principal_id`; the session key
+falls back to `mission_id` alone. This is documented and safe for single-tenant
+operation, but insufficient for true multi-tenant deployments.
+
+**Ratchets:**
+- `scripts/check_tool_executor_mission_id.py --summary` enforces mission_id
+  propagation (6/6 call sites clean).
+- `scripts/check_policy_principal_binding.py --summary` enforces principal
+  propagation on public/runtime paths (24/24 call sites clean).
+
+**Remaining gap (P3 — multi-worker / multi-tenant):**
+- Session state remains in-process memory only (`PolicyEngine._sessions`).
+  Multi-worker deployments or horizontal scaling still require a shared
+  Redis-backed session store.
+- Internal agent execution loops that bypass `tool_runner` (e.g. LangGraph flow,
+  autonomous runners) do not yet propagate `principal_id` to every tool call.
+
+Public beta remains NO-GO until secrets/memory/E2E hardening is complete.
 
 - `core/policy_engine.py`: session tracker is now hardened end-to-end
   (`fix/policy-engine-session-hardening`):

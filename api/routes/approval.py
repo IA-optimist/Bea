@@ -1,8 +1,9 @@
 """API routes for approval queue."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 import logging
 
 from api._deps import require_auth
+from api.auth_principal import get_authenticated_principal
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/approval", tags=["approval"], dependencies=[Depends(require_auth)])
@@ -21,8 +22,13 @@ async def get_pending_approvals():
 
 
 @router.post("/approve/{item_id}")
-async def approve_action(item_id: str, approved_by: str = "human"):
-    """Approuve une action en attente."""
+async def approve_action(request: Request, item_id: str):
+    """Approuve une action en attente.
+
+    approved_by is derived from the authenticated request context, never
+    accepted as a client-supplied query parameter.
+    """
+    approved_by = get_authenticated_principal(request) or "authenticated_user"
     try:
         from core.approval_queue import approve
         success = approve(item_id, approved_by)
@@ -33,8 +39,13 @@ async def approve_action(item_id: str, approved_by: str = "human"):
 
 
 @router.post("/reject/{item_id}")
-async def reject_action(item_id: str, rejected_by: str = "human"):
-    """Rejette une action en attente."""
+async def reject_action(request: Request, item_id: str):
+    """Rejette une action en attente.
+
+    rejected_by is derived from the authenticated request context, never
+    accepted as a client-supplied query parameter.
+    """
+    rejected_by = get_authenticated_principal(request) or "authenticated_user"
     try:
         from core.approval_queue import reject
         success = reject(item_id, rejected_by)

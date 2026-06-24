@@ -90,7 +90,7 @@ class MissionSystem:
 
     # ── API principale ────────────────────────────────────────────────────────
 
-    def submit(self, user_input: str) -> MissionResult:
+    def submit(self, user_input: str, submitted_by: str | None = None) -> MissionResult:
         """
         Soumet une mission en langage naturel.
 
@@ -136,6 +136,7 @@ class MissionSystem:
             intent=intent,
             status=MissionStatus.ANALYZING,
             domain=domain,
+            submitted_by=submitted_by,
         )
         self._missions[mission_id] = result
         self._save()
@@ -340,7 +341,12 @@ class MissionSystem:
             r.updated_at   = time.time()
             self._save_mission(r)
 
-    def approve(self, mission_id: str, note: str = "") -> MissionResult|None:
+    def approve(
+        self,
+        mission_id: str,
+        note: str = "",
+        approved_by: str | None = None,
+    ) -> MissionResult|None:
         """Approuve une mission en attente de validation.
 
         Accepte PENDING_VALIDATION et AWAITING_APPROVAL : submit() place les
@@ -358,9 +364,10 @@ class MissionSystem:
             aq.approve(aid, note=note)
 
         r.status     = MissionStatus.APPROVED
+        r.approved_by = approved_by
         r.updated_at = time.time()
         self._save_mission(r)
-        log.info("mission_approved", id=mission_id)
+        log.info("mission_approved", id=mission_id, approved_by=approved_by)
         return r
 
     def complete(self, mission_id: str, result_text: str = "") -> MissionResult|None:

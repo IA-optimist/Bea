@@ -11,8 +11,9 @@ import time
 from typing import Annotated, Optional
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from api.auth_principal import get_authenticated_principal
 from api.mission_outputs import extract_agent_outputs
 from api.mission_agents import schedule_agent_trigger
 from api.mission_approval import (
@@ -33,6 +34,7 @@ from api.schemas_missions import (
     TriggerRequest,
 )
 from api._deps import (
+    _REQUIRE_AUTH,
     _check_auth,
     _extract_final_output,
     _get_mission_system,
@@ -63,12 +65,23 @@ _running_missions_lock = asyncio.Lock()
 async def submit_task(
     req: TaskRequest,
     background_tasks: BackgroundTasks,
+    request: Request,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Soumettre une nouvelle tâche/mission."""
     _check_auth(x_bea_token, authorization)
     ms      = _get_mission_system()
-    result  = ms.submit(req.input)
+
+    # Identité authentifiée validée par le middleware — gagne sur tout
+    # principal_id fourni par le client.
+    _principal_id = get_authenticated_principal(request)
+    if _principal_id is None and _REQUIRE_AUTH:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated principal required to submit a mission.",
+        )
+
+    result  = ms.submit(req.input, submitted_by=_principal_id)
     # Persister le mode demandé : la reprise post-approbation
     # (approve_mission_for_resume) relançait TOUT en mode "auto", perdant
     # le mode BUSINESS/CODE choisi à la soumission.
@@ -76,6 +89,11 @@ async def submit_task(
         result.decision_trace["mode"] = req.mode
     except Exception:
         log.debug("mode_trace_skip", mission_id=result.mission_id)
+
+    # Persister le principal du soumetteur sur la mission — posé ici une seule
+    # fois depuis l'identité auth validée. Le client ne peut pas fournir ce
+    # champ via le body (il n'est pas dans TaskRequest). Utilisé à la reprise.
+    result.submitted_by = _principal_id
 
     # ── Anti-duplicate execution guard (atomic check-and-add) ────────
     async with _running_missions_lock:
@@ -303,6 +321,7 @@ async def submit_task(
                     approval_mode="SUPERVISED",
                     max_tools=2,
                     mission_id=str(result.mission_id),
+                    principal_id=_principal_id or "",
                 )
                 if _tool_context_prefix:
                     _enriched_input = format_goal_with_context(req.input, _tool_context_prefix)
@@ -325,6 +344,7 @@ async def submit_task(
                     goal=_enriched_input,
                     mission_id=str(result.mission_id),
                     mode=req.mode,
+                    principal_id=_principal_id,
                 )
                 log.debug("api_kernel_adapter_used", mission_id=result.mission_id)
                 _adapter_out = getattr(session, "output", "") or ""
@@ -341,6 +361,7 @@ async def submit_task(
                     user_input=_enriched_input,
                     mode=req.mode,
                     session_id=result.mission_id,
+                    principal_id=_principal_id,
                 )
                 log.debug("api_kernel_execute_fallback", mission_id=result.mission_id)
 
@@ -853,6 +874,7 @@ async def abort_mission(
 async def submit_mission(
     req: MissionSubmitRequest,
     background_tasks: BackgroundTasks,
+    request: Request,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Soumettre une mission (interface Flutter — champ `goal` + `mode`)."""
@@ -861,7 +883,7 @@ async def submit_mission(
         task_req = TaskRequest(input=req.goal, mode=req.mode)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-    return await submit_task(task_req, background_tasks, x_bea_token, authorization)
+    return await submit_task(task_req, background_tasks, request, x_bea_token, authorization)
 
 
 @router.get("/api/v2/missions")
@@ -923,11 +945,12 @@ async def trigger_agent(
 async def legacy_post_mission(
     req: TaskRequest,
     background_tasks: BackgroundTasks,
+    request: Request,
     x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """Alias v1 → POST /api/v2/task"""
-    return await submit_task(req, background_tasks, x_bea_token, authorization)
+    return await submit_task(req, background_tasks, request, x_bea_token, authorization)
 
 
 @router.get("/api/health")
@@ -983,6 +1006,7 @@ async def reject_task(
 async def approve_mission(
     mission_id: str,
     background_tasks: BackgroundTasks,
+    request: Request,
     req: Optional[ApproveRequest] = None,
     x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
@@ -993,6 +1017,7 @@ async def approve_mission(
     """
     _check_auth(x_bea_token, authorization)
     note = (req.note if req else None) or "Approved by human supervisor"
+    principal_id = get_authenticated_principal(request)
     return approve_mission_for_resume(
         mission_id=mission_id,
         note=note,
@@ -1001,6 +1026,7 @@ async def approve_mission(
         get_orchestrator=_get_orchestrator,
         logger=log,
         silent_logger=log,
+        principal_id=principal_id,
     )
 
 @router.post("/api/v2/missions/{mission_id}/reject")
