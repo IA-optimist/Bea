@@ -115,6 +115,26 @@ def main(argv: list[str] | None = None) -> int:
         _run("test-marker-ratchet", [sys.executable, "scripts/check_test_marker_baseline.py"]),
     )
 
+    _record(
+        results,
+        failures,
+        "mission_id propagation ratchet",
+        _run(
+            "mission_id propagation ratchet",
+            [sys.executable, "scripts/check_tool_executor_mission_id.py", "--summary"],
+        ),
+    )
+
+    _record(
+        results,
+        failures,
+        "principal binding ratchet",
+        _run(
+            "principal binding ratchet",
+            [sys.executable, "scripts/check_policy_principal_binding.py", "--summary"],
+        ),
+    )
+
     security_type_files = [
         "api/auth.py",
         "api/routes/auth.py",

@@ -51,6 +51,8 @@ class PersistedMission:
     routed_provider: str = ""
     approval_item_id: str = ""
     approval_status: str = ""  # "", "pending", "granted", "denied"
+    submitted_by: str | None = None  # auth-derived principal of the submitter
+    approved_by: str | None = None   # audit: principal who approved/resumed
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -68,6 +70,8 @@ class PersistedMission:
             "routed_provider": self.routed_provider,
             "approval_item_id": self.approval_item_id,
             "approval_status": self.approval_status,
+            "submitted_by": self.submitted_by,
+            "approved_by": self.approved_by,
             "metadata": {k: str(v)[:200] for k, v in (self.metadata or {}).items()},
         }
 
@@ -87,6 +91,8 @@ class PersistedMission:
             routed_provider=d.get("routed_provider", ""),
             approval_item_id=d.get("approval_item_id", ""),
             approval_status=d.get("approval_status", ""),
+            submitted_by=d.get("submitted_by"),
+            approved_by=d.get("approved_by"),
             metadata=d.get("metadata", {}),
         )
 
@@ -109,6 +115,8 @@ class PersistedMission:
             routed_provider=routing.get("provider_id", ""),
             approval_item_id=meta.get("approval_item_id", ""),
             approval_status=meta.get("approval_status", ""),
+            submitted_by=getattr(ctx, "submitted_by", None),
+            approved_by=getattr(ctx, "approved_by", None),
             metadata={
                 k: v for k, v in meta.items()
                 if k not in ("routing_decision", "approval_item_id", "approval_status")
@@ -386,6 +394,8 @@ def load_missions(path: Path, logger) -> tuple[dict[str, Any], bool]:
                         risk_score=row.get("risk_score") or 0,
                         complexity=row.get("complexity") or "medium",
                         error=row.get("error") or "",
+                        submitted_by=row.get("submitted_by") or None,
+                        approved_by=row.get("approved_by") or None,
                     )
                     missions[mission.mission_id] = mission
                 except Exception as exc:
@@ -454,8 +464,8 @@ def sqlite_upsert_mission(result: Any, logger) -> bool:
                 action_ids, requires_validation, auto_approved, created_at,
                 updated_at, completed_at, note, final_output, summary, agents_selected,
                 domain, execution_trace, decision_trace, risk_score, complexity, error,
-                phase_cursor)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                phase_cursor, submitted_by, approved_by)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 result.mission_id,
                 result.user_input,
@@ -484,6 +494,8 @@ def sqlite_upsert_mission(result: Any, logger) -> bool:
                 result.complexity,
                 result.error,
                 getattr(result, "phase_cursor", ""),
+                getattr(result, "submitted_by", None),
+                getattr(result, "approved_by", None),
             ),
         )
         return True

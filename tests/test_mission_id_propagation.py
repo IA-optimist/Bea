@@ -9,7 +9,7 @@ Tests:
   2. execution_engine propagates mission_id into current_params
   3. MetaOrchestrator creates a policy session with the correct mission_id
   4. Two parallel missions have separate, isolated sessions
-  5. Call without mission_id is safe (no crash, policy skips session tracking)
+  5. Call without mission_id is blocked (fail-closed for session limits)
   6. tool_pipeline propagates mission_id to child tool calls
   7. api/routes/missions run_tools_for_mission receives mission_id
 """
@@ -39,17 +39,6 @@ if "structlog" not in sys.modules:
 
 import pytest
 from core.policy_engine import PolicyEngine, get_policy_engine, reset_policy_engine
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Fixture: reset singleton between tests
-# ─────────────────────────────────────────────────────────────────────────────
-
-@pytest.fixture(autouse=True)
-def _reset_policy():
-    reset_policy_engine()
-    yield
-    reset_policy_engine()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -87,7 +76,10 @@ def test_execution_engine_propagates_mission_id():
     import core.execution_engine as ee_mod
     src = inspect.getsource(ee_mod)
 
-    assert 'current_params.setdefault("mission_id", mission_id)' in src, (
+    assert (
+        'current_params.setdefault("mission_id", mission_id)' in src
+        or 'current_params["mission_id"] = mission_id' in src
+    ), (
         "core.execution_engine does not propagate mission_id — "
         "policy session limits will be bypassed for intelligent tool execution"
     )
@@ -153,17 +145,17 @@ def test_parallel_missions_have_separate_sessions():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 5 : Call without mission_id is safe (no crash)
+# Test 5 : Call without mission_id is blocked (fail-closed)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_missing_mission_id_is_safe():
+def test_missing_mission_id_is_blocked():
     """
-    evaluate_tool() with an empty mission_id must not crash and must still
-    allow low-risk tools (fail-open for read-only tools without a session).
+    evaluate_tool() with an empty mission_id must not crash and must deny
+    the call so that session/economic limits cannot be bypassed.
     """
     engine = PolicyEngine(None)
 
-    # No session created, empty mission_id — must not raise
+    # No session created, empty mission_id — must not raise and must be denied
     decision = engine.evaluate_tool(
         tool_name="read_file",
         action_type="read",
@@ -171,10 +163,23 @@ def test_missing_mission_id_is_safe():
         mission_id="",
     )
 
-    # Low-risk read tool without a session must be allowed (fail-open)
-    assert decision.allowed, (
-        f"Low-risk tool without mission_id should be allowed, got: {decision.reason}"
+    assert not decision.allowed, (
+        f"Low-risk tool without mission_id should be blocked, got: {decision.reason}"
     )
+    assert "mission_id" in decision.reason.lower()
+
+
+def test_high_risk_without_mission_id_still_blocked():
+    """HIGH risk tools must stay blocked even when mission_id is missing."""
+    engine = PolicyEngine(None)
+    decision = engine.evaluate_tool(
+        tool_name="git_push",
+        action_type="write",
+        risk_level="high",
+        mission_id="",
+    )
+    assert not decision.allowed
+    assert "HIGH risk" in decision.reason
 
 
 # ─────────────────────────────────────────────────────────────────────────────

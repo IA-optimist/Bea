@@ -45,6 +45,7 @@ def run_tools_for_mission(
     approval_mode: str = "SUPERVISED",
     max_tools: int = 2,
     mission_id: str = "",
+    principal_id: str = "",
 ) -> tuple[str, dict]:
     """
     Exécute les tools pertinents pour la mission.
@@ -78,7 +79,7 @@ def run_tools_for_mission(
 
         if _use_engine:
             return _run_with_engine(
-                goal, tools_to_run, approval_mode, mission_id,
+                goal, tools_to_run, approval_mode, mission_id, principal_id,
             )
 
         # Legacy path
@@ -92,6 +93,7 @@ def run_tools_for_mission(
             try:
                 params = _default_params(tool_name, goal)
                 params.setdefault("mission_id", mission_id)
+                params.setdefault("_bea_principal_id", principal_id)
                 result = executor.execute(tool_name, params, approval_mode)
                 results[tool_name] = result
 
@@ -120,6 +122,7 @@ def _run_with_engine(
     tools_to_run: list[str],
     approval_mode: str,
     mission_id: str,
+    principal_id: str,
 ) -> tuple[str, dict]:
     """Execute tools using the intelligent execution engine."""
     from core.execution_engine import (
@@ -137,6 +140,7 @@ def _run_with_engine(
             tool_name=tool_name,
             params=params,
             mission_id=mission_id,
+            principal_id=principal_id,
             step_id=f"pre-{i}",
             approval_mode=approval_mode,
             max_retries=2,

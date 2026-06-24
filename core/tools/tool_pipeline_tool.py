@@ -44,11 +44,13 @@ def tool_pipeline(
     approval_mode: str = "SUPERVISED",
     stop_on_error: bool = True,
     mission_id: str = "",
+    principal_id: str = "",
 ) -> dict:
     """Exécute `steps` (liste de `{"tool": str, "params": dict}`) séquentiellement.
 
     Renvoie le dict outil standard ; `logs` contient le résultat par étape.
-    mission_id is propagated into each step's params so policy limits are tracked.
+    mission_id and principal_id are propagated into each step's params so
+    policy session limits are tracked per authenticated identity.
     """
     if not isinstance(steps, list) or not steps:
         return _err("empty_steps")
@@ -64,10 +66,15 @@ def tool_pipeline(
         params = step.get("params", {}) or {}
         if tool == _SELF_NAME:
             return _err(f"step {i}: récursion interdite ({_SELF_NAME})", results)
-        # Propagate mission_id so policy engine can track per-session limits.
+        # Propagate mission_id and validated principal so policy engine can
+        # track per-session limits per identity. The validated principal always
+        # wins over any caller-provided principal field.
+        params = dict(params)
         if mission_id:
-            params = dict(params)
             params.setdefault("mission_id", mission_id)
+        if principal_id:
+            params["_bea_principal_id"] = principal_id
+            params.pop("principal_id", None)
         try:
             res = executor.execute(tool, params, approval_mode=approval_mode)
         except Exception as e:  # fail-closed par étape

@@ -73,10 +73,12 @@ class MissionContext:
     status:     MissionStatus
     created_at: float
     updated_at: float
-    result:     str | None = None
-    error:      str | None = None
-    metadata:   dict       = field(default_factory=dict)
-    project_id: str | None = None  # Phase 2: Multi-project isolation
+    result:       str | None = None
+    error:        str | None = None
+    metadata:     dict       = field(default_factory=dict)
+    project_id:   str | None = None  # Phase 2: Multi-project isolation
+    submitted_by: str | None = None  # Auth-derived principal of the submitter
+    approved_by:  str | None = None  # Audit: principal who approved/resumed
 
     def get_output(self, agent: str) -> str:
         """Get agent output — compatibility with BeaSession interface."""
@@ -97,6 +99,8 @@ class MissionContext:
             "result":     self.result or "",
             "error":      self.error,
             "metadata":   self.metadata,
+            "submitted_by": self.submitted_by,
+            "approved_by":  self.approved_by,
         }
 
     def is_terminal(self) -> bool:

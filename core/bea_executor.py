@@ -102,6 +102,7 @@ class BeaOrchestrator(
         session_id: str | None = None,
         chat_id: int = 0,
         callback: CB | None = None,
+        principal_id: str | None = None,
     ) -> BeaSession:
         self.s.ensure_dirs()
         session = BeaSession(
@@ -111,7 +112,7 @@ class BeaOrchestrator(
         )
         # Ensure a shared PolicyEngine session tracker exists for this mission.
         try:
-            self.policy.ensure_session(session.session_id, mode)
+            self.policy.ensure_session(session.session_id, mode, principal_id=principal_id)
         except Exception as _pol_err:
             log.debug("policy_session_ensure_failed", mission_id=session.session_id, err=str(_pol_err)[:80])
 

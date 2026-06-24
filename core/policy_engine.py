@@ -32,6 +32,7 @@ Usage :
 """
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -68,6 +69,9 @@ _CLOUD_COST_ESTIMATE = {
     "openai":    0.03,   # GPT-4o ~0.03$/appel moyen
     "ollama":    0.00,   # local = gratuit
 }
+
+# Cap mémoire du map de sessions en mémoire
+_MAX_SESSIONS = 1000
 
 
 # ══════════════════════════════════════════════════════════════
@@ -131,6 +135,7 @@ class SessionPolicy:
         self.cloud_calls  = 0
         self.cost_usd     = 0.0
         self.started_at   = time.monotonic()
+        self._lock        = threading.Lock()
 
     def record_action(self) -> None:
         self.actions_done += 1
@@ -156,6 +161,15 @@ class SessionPolicy:
             return False, f"Session timeout ({int(elapsed)}s/{self.limits['session_timeout_s']}s)"
         return True, ""
 
+    def check_and_record(self) -> tuple[bool, str]:
+        """Atomically check limits and, if OK, record one action."""
+        with self._lock:
+            ok, msg = self.check_limits()
+            if not ok:
+                return False, msg
+            self.record_action()
+            return True, ""
+
     def to_dict(self) -> dict[str, object]:
         elapsed = time.monotonic() - self.started_at
         return {
@@ -166,6 +180,29 @@ class SessionPolicy:
             "cost_usd":     round(self.cost_usd, 4),
             "elapsed_s":    round(elapsed, 1),
         }
+
+
+def _extract_principal_id(params: Any) -> str | None:
+    """Extract a principal/owner identifier from params/context.
+
+    Priority:
+      1. `_bea_principal_id` — trusted key set by canonical auth/propagation
+         paths (routes, orchestrator, tool_runner, execution_engine). This key
+         must never be accepted from an untrusted client; public routes
+         overwrite it after auth.
+      2. `principal_id`, `user_id`, `tenant_id`, `owner_id` — fallback for
+         internal/test callers explicitly marked as safe.
+    """
+    if not isinstance(params, dict):
+        return None
+    trusted = params.get("_bea_principal_id")
+    if trusted:
+        return str(trusted)
+    for key in ("principal_id", "user_id", "tenant_id", "owner_id"):
+        value = params.get(key)
+        if value:
+            return str(value)
+    return None
 
 
 # ══════════════════════════════════════════════════════════════
@@ -195,41 +232,95 @@ class PolicyEngine:
     def __init__(self, settings: Any) -> None:
         self.s        = settings
         self._sessions: dict[str, SessionPolicy] = {}
+        # Cap mémoire du map de sessions. Peut être surchargé via settings.max_policy_sessions.
+        self._max_sessions = getattr(settings, "max_policy_sessions", None) or _MAX_SESSIONS
 
     # ── Gestion des sessions ──────────────────────────────
+
+    def _session_key(self, mission_id: str, principal_id: str | None = None) -> str:
+        """Normalise la clé de session.
+
+        Quand un principal/owner est disponible, il est intégré à la clé pour
+        éviter qu'un caller ne pollue la session d'un autre principal en
+        connaissant le mission_id. Sans principal, la clé reste le mission_id
+        brut (compatibilité interne / tests).
+        """
+        if principal_id:
+            return f"{principal_id}:{mission_id}"
+        return mission_id
+
+    def _cleanup_expired_sessions(self) -> None:
+        """Evince les sessions expirées (timeout) puis applique le cap mémoire."""
+        now = time.monotonic()
+        expired = [
+            key for key, tracker in self._sessions.items()
+            if now - tracker.started_at >= tracker.limits["session_timeout_s"]
+        ]
+        for key in expired:
+            del self._sessions[key]
+        # Cap mémoire : évince les sessions les plus anciennes en cas de dépassement.
+        if len(self._sessions) > self._max_sessions:
+            sorted_by_age = sorted(
+                self._sessions.items(), key=lambda kv: kv[1].started_at
+            )
+            overflow = len(self._sessions) - self._max_sessions
+            for key, _ in sorted_by_age[:overflow]:
+                del self._sessions[key]
 
     def new_session(
         self,
         session_id: str,
         mode:       str = "auto",
         limits:     dict[str, int | float] | None = None,
+        principal_id: str | None = None,
     ) -> SessionPolicy:
-        """Crée un tracker de politique pour une session."""
-        effective_limits = dict(_DEFAULT_LIMITS)
-        if limits:
-            effective_limits.update(limits)
+        """Crée un tracker de politique pour une session.
 
-        # Ajustements selon le mode
+        Ordre de résolution des limites :
+          1.Defaults (_DEFAULT_LIMITS)
+          2.Presets du mode (night / improve)
+          3.Limites explicites fournies par l'appelant (gagnent toujours)
+        """
+        effective_limits = dict(_DEFAULT_LIMITS)
+
+        # 2. Presets du mode
         if mode == "night":
             effective_limits["max_actions_per_session"] = 30
             effective_limits["session_timeout_s"]        = 1800
         elif mode == "improve":
             effective_limits["max_actions_per_session"] = 15
 
+        # 3. Limites explicites (override presets et defaults)
+        if limits:
+            effective_limits.update(limits)
+
         tracker = SessionPolicy(session_id, effective_limits)
-        self._sessions[session_id] = tracker
-        log.debug("policy_session_created", mission_id=session_id, mode=mode)
+        key = self._session_key(session_id, principal_id)
+        self._sessions[key] = tracker
+        log.debug(
+            "policy_session_created",
+            mission_id=session_id,
+            mode=mode,
+            principal_id=principal_id,
+        )
         return tracker
 
-    def ensure_session(self, session_id: str, mode: str = "auto") -> SessionPolicy:
+    def ensure_session(
+        self,
+        session_id: str,
+        mode: str = "auto",
+        principal_id: str | None = None,
+    ) -> SessionPolicy:
         """Return an existing session tracker or create one. Idempotent."""
-        tracker = self._sessions.get(session_id)
+        self._cleanup_expired_sessions()
+        key = self._session_key(session_id, principal_id)
+        tracker = self._sessions.get(key)
         if tracker is None:
-            tracker = self.new_session(session_id, mode)
+            tracker = self.new_session(session_id, mode, principal_id=principal_id)
         return tracker
 
-    def get_session(self, session_id: str) -> SessionPolicy | None:
-        return self._sessions.get(session_id)
+    def get_session(self, session_id: str, principal_id: str | None = None) -> SessionPolicy | None:
+        return self._sessions.get(self._session_key(session_id, principal_id))
 
     # ── Vérification d'actions ────────────────────────────
 
@@ -239,6 +330,7 @@ class PolicyEngine:
         risk_level:   str = "low",   # "low" | "medium" | "high"
         mode:         str = "auto",
         session_id:   str = "",
+        principal_id: str | None = None,
     ) -> PolicyDecision:
         """
         Vérifie si une action est autorisée.
@@ -279,7 +371,8 @@ class PolicyEngine:
 
         # 5. Limites de session
         if session_id:
-            tracker = self._sessions.get(session_id)
+            # Use _session_key so principal-bound sessions are found correctly.
+            tracker = self._sessions.get(self._session_key(session_id, principal_id))
             if tracker:
                 ok, msg = tracker.check_limits()
                 if not ok:
@@ -294,6 +387,7 @@ class PolicyEngine:
         risk_level: str,
         mission_id: str = "",
         params: Any | None = None,
+        principal_id: str | None = None,
     ) -> PolicyDecision:
         """ToolExecutor-compatible guard.
 
@@ -302,6 +396,18 @@ class PolicyEngine:
         mission_id is provided.  Limits require a shared PolicyEngine instance
         and an active session tracker; evaluate_tool will lazily create a
         tracker with mode='auto' if none exists for the given mission_id.
+
+        Security note:
+          - mission_id is required (except in dry-run) so limits cannot be bypassed.
+          - principal_id MUST come from the authenticated request context (middleware/JWT),
+            NOT from the user-facing params dict.  Callers must extract the principal from
+            request.state.user or Depends(require_auth) and pass it here explicitly.
+          - params is kept for backwards-compat but principal_id is never read from it;
+            reading principal from client-supplied params would be falsifiable.
+
+        Remaining debt (P3): when principal_id is None (internal/test callers) the session
+        key falls back to mission_id alone — safe for single-tenant but not multi-tenant.
+        See docs/ALPHA_READINESS.md §principal-binding.
         """
         d = PolicyDecision(allowed=True)
 
@@ -321,15 +427,20 @@ class PolicyEngine:
                 suggestion="Reduce risk_level or wire explicit approval flow",
             )
 
-        # Shared session tracker: auto-create with mode='auto' if a mission_id
-        # is provided but no tracker exists yet.  Callers (MetaOrchestrator,
-        # BeaOrchestrator) should create the session with the real mode.
-        if mission_id:
-            tracker = self.ensure_session(mission_id, mode="auto")
-            ok, msg = tracker.check_limits()
-            if not ok:
-                return d.deny(msg, "Wait for the next session or raise limits")
-            tracker.record_action()
+        # A mission_id is required so session/economic limits cannot be bypassed.
+        # High-risk tools are already blocked above regardless of mission_id.
+        if not mission_id:
+            return d.deny(
+                "Tool execution requires a mission_id for session tracking",
+                suggestion="Provide a mission_id in params or call context",
+            )
+
+        # principal_id must come from the explicit parameter (trusted auth context).
+        # Do NOT call _extract_principal_id(params) here — params is client-supplied.
+        tracker = self.ensure_session(mission_id, mode="auto", principal_id=principal_id)
+        ok, msg = tracker.check_and_record()
+        if not ok:
+            return d.deny(msg, "Wait for the next session or raise limits")
 
         return d.allow("tool_allowed")
 
@@ -407,12 +518,16 @@ class PolicyEngine:
 
     # ── Limites de session ────────────────────────────────
 
-    def check_session_limits(self, session_id: str) -> tuple[bool, str]:
+    def check_session_limits(
+        self,
+        session_id: str,
+        principal_id: str | None = None,
+    ) -> tuple[bool, str]:
         """
         Vérifie les limites pour une session existante.
         Retourne (ok, message).
         """
-        tracker = self._sessions.get(session_id)
+        tracker = self.get_session(session_id, principal_id)
         if not tracker:
             return True, ""
         return tracker.check_limits()
@@ -421,6 +536,7 @@ class PolicyEngine:
 
     def get_report(self) -> dict[str, object]:
         """Rapport global de toutes les sessions actives."""
+        self._cleanup_expired_sessions()
         return {
             "active_sessions": len(self._sessions),
             "sessions": {sid: t.to_dict() for sid, t in self._sessions.items()},

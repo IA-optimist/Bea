@@ -511,10 +511,12 @@ The hard blockers that can never be bypassed are listed separately.
 
 | Gate | Module | Behaviour |
 |------|--------|-----------|
-| PolicyEngine.evaluate_tool() | `core/policy_engine.py` via `get_policy_engine()` | HIGH-risk tools always blocked; session limits enforced when `mission_id` is propagated; falls back fail-CLOSED for execute/high-risk when unavailable |
+| PolicyEngine.evaluate_tool() | `core/policy_engine.py` via `get_policy_engine()` | HIGH-risk tools always blocked; session limits enforced atomically; explicit limits override mode presets; expired sessions evicted and capped; empty/`None` `mission_id` is denied; `principal_id` is taken from the explicit trusted argument (auth context), with `_bea_principal_id` as the only trusted params key; same `mission_id` with different principals yields isolated sessions; falls back fail-CLOSED for execute/high-risk when unavailable |
 | RiskEngine.analyze() | `executor/supervised_executor.py` | Exception → classified HIGH → blocked (no dry-run bypass) |
 | SupervisedExecutor | `executor/supervised_executor.py` | Enforces approval gate; approval workflow managed by `core/tool_permissions.py` |
 | Kill switch | `BEA_EXECUTION_DISABLED=1` env var | Blocks all tool execution process-wide |
 | Circuit breaker | `core/resilience` via `get_circuit_breaker()` | Blocks tools in open state (fail-CLOSED) |
 
 **Policy singleton discipline:** `ToolExecutor` must always call `get_policy_engine()` (the shared singleton) — never `PolicyEngine(None)` directly. Constructing a fresh instance bypasses session tracking and makes economic limits invisible across orchestrator calls. This is verified by `tests/test_tool_executor_singleton.py`.
+
+**Principal propagation discipline:** public routes extract the validated identity from `request.state.user` via `api/auth_principal.py` and pass `principal_id` downstream. The trusted key `_bea_principal_id` must be injected into tool params by canonical callers; `_extract_principal_id()` ignores client-supplied `principal_id` when `_bea_principal_id` is present. Verified by `tests/test_policy_engine_principal_binding.py`, `tests/test_principal_propagation.py` and `scripts/check_policy_principal_binding.py`.

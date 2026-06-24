@@ -33,13 +33,6 @@ def _mk_policy_mock(allowed: bool = True, reason: str = "tool_allowed"):
     return m
 
 
-@pytest.fixture(autouse=True)
-def _reset_policy_singleton():
-    reset_policy_engine()
-    yield
-    reset_policy_engine()
-
-
 @pytest.mark.parametrize("tool", ["shell_command", "execute_code"])
 def test_policy_unavailable_blocks_execute_tools(tool):
     """Regression: policy engine failure must block high-risk execute tools."""
@@ -135,13 +128,11 @@ def test_tool_executor_respects_session_action_limit():
     assert "Limite actions" in blocked.get("error", "")
 
 
-def test_tool_executor_without_mission_id_skips_session_limits():
-    """Without a mission_id the tool call is allowed even if a session exists."""
+def test_tool_executor_without_mission_id_is_blocked():
+    """Without a mission_id the tool call is blocked by policy (fail-closed)."""
     executor = get_tool_executor()
     mocks = _allowing_permission_check()
     policy = PolicyEngine(None)
-    # A session with exhausted limits should not affect calls without mission_id.
-    policy.new_session("other", "auto", limits={"max_actions_per_session": 0})
 
     with (
         patch("core.policy_engine.get_policy_engine", return_value=policy),
@@ -151,4 +142,5 @@ def test_tool_executor_without_mission_id_skips_session_limits():
         patch.object(executor, "_tools", {"list_project_structure": lambda **_: {"ok": True, "result": "ok"}}),
     ):
         result = executor.execute("list_project_structure", {"path": "."})
-    assert result.get("ok") is True
+    assert result.get("blocked_by_policy") is True
+    assert "mission_id" in result.get("error", "").lower()

@@ -67,6 +67,11 @@ class MissionResult:
     agents_selected:  list[str]       = field(default_factory=list)
     domain:           str             = "general"
 
+    # Identity binding — auth-derived principal of the submitter / approver.
+    # Never trust a value supplied by the client in the request body.
+    submitted_by:     str | None      = None
+    approved_by:      str | None      = None
+
     # Phase checkpointing (ADR-003): last completed phase, empty if not started.
     # Written at each phase boundary by MetaOrchestrator for crash recovery.
     phase_cursor: str                 = ""

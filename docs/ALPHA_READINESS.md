@@ -30,6 +30,17 @@
   is classified `HIGH` and blocked (no dry-run bypass).
 - `core/tool_executor.py`: uses `core.policy_engine.PolicyEngine.evaluate_tool`;
   if the policy engine is unavailable, execute / high-risk tools are blocked.
+  Non-empty `mission_id` is now required by `evaluate_tool()` (fail-closed);
+  session limits cannot be bypassed by omitting `mission_id`.
+- `core/policy_engine.py`:
+  - `evaluate_tool()` uses `SessionPolicy.check_and_record()` for atomic
+    `check_limits()` + `record_action()`.
+  - Mode presets are applied before explicit `limits`, so explicit limits always
+    win.
+  - `_session_key(mission_id, principal_id)` isolates sessions per principal
+    when a `principal_id`, `user_id`, `tenant_id` or `owner_id` is provided.
+  - `_cleanup_expired_sessions()` evicts timed-out sessions and enforces a
+    `_max_sessions` cap; called from `ensure_session()` and `get_report()`.
 - `core/execution_policy.Decision` centralizes `AUTO_APPROVED`, `REQUIRES_APPROVAL`,
   `BLOCKED` and replaces bare string comparisons in `tool_executor`.
 - `scripts/check_internal_imports.py` is now part of `validate_local.py --quick`
@@ -37,18 +48,101 @@
 
 ## Known remaining debt (non-blocking for this PR)
 
-- `core/policy_engine.py`: `evaluate_tool()` overlaps with `check_action()` — minor;
-  session tracker is now wired end-to-end (`fix/policy-engine-session-limits-singleton`):
-  `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`.
+### principal-binding and mission submitter identity (P2 — fixed on `feat/principal-auth-binding` + `fix/mission-submitted-by`)
+
+The authenticated identity is now bound to PolicyEngine sessions instead of
+being naïvely extracted from `params`.
+
+**Canonical source of principal:**
+- `request.state.user` is populated by `AccessEnforcementMiddleware`
+  (`api/middleware.py`) after token validation.
+- `api/auth_principal.py` exposes `get_authenticated_principal(request)` which
+  returns a stable, non-secret identifier:
+  - access token -> `access_token:<token_id>`
+  - JWT -> `jwt:<sub>`
+  - static token -> `static:api`
+- No secret, token or API key is used as the principal value.
+
+**Propagation path:**
+1. Public routes extract the validated principal:
+   - `POST /api/v2/task`, `/api/v2/missions/submit`, `/api/mission`
+   - `POST /api/v1/missions`
+   - `POST /api/v2/missions/{id}/approve`
+   - `POST /api/v3/tools/{tool_id}/execute`
+   - `POST /api/v2/tools/test`
+2. It flows through:
+   - `KernelAdapter.submit(principal_id=...)`
+   - `kernel.runtime.kernel.execute()` -> `MetaOrchestrator.run_mission(principal_id=...)`
+   - `BeaOrchestrator.run(principal_id=...)`
+   - `tool_runner.run_tools_for_mission(principal_id=...)`
+   - `execution_engine.execute_tool_intelligently(principal_id=...)`
+   - `tool_pipeline_tool.tool_pipeline(principal_id=...)`
+3. The trusted key `_bea_principal_id` is injected into params before
+   `ToolExecutor.execute()` is called.
+4. `PolicyEngine._extract_principal_id()` prefers `_bea_principal_id` over any
+   client-supplied `principal_id` / `user_id` fallback.
+5. `PolicyEngine.evaluate_tool()` accepts an explicit `principal_id` parameter
+   and never reads the principal from the client params dict.
+6. `PolicyEngine.ensure_session()` uses `_session_key(session_id, principal_id)`
+   so the same `mission_id` with two different principals yields two isolated
+   sessions.
+
+**Mission submitter identity (closed on `fix/mission-submitted-by`):**
+- `core/mission_models.MissionResult` now carries `submitted_by` and `approved_by`.
+- Public submit endpoints (`POST /api/v2/task`, `/api/v2/missions/submit`,
+  `/api/mission`, `POST /api/v1/missions`) store the authenticated principal as
+  `submitted_by` and fail-closed when auth is required but no principal is present.
+- Client-supplied `submitted_by` / `_bea_principal_id` / `principal_id` values in
+  request bodies are ignored; the canonical auth-derived value always wins.
+- On approval/resume, `api/mission_approval.py` and `MetaOrchestrator.resolve_approval()`
+  use `record.submitted_by` (or the recovered in-memory `MissionContext.submitted_by`)
+  as the PolicyEngine execution principal, so the resumed mission runs under the
+  submitter's session (`submitter:mission_id`), not the approver's session.
+- `approved_by` is stored separately for audit only; it is never used as the
+  policy/session identity.
+- Backward compatibility: old records without `submitted_by` fall back to the
+  approver principal on resume; a warning is logged.
+
+**Client override protection:** public routes strip/overwrite any user-provided
+`principal_id`, `_bea_principal_id` or `submitted_by` in request payloads.
+
+**Internal/test fallback:** internal callers (dev mode, background agents,
+profiling harness, autonomous runners) may omit `principal_id`; the session key
+falls back to `mission_id` alone. This is documented and safe for single-tenant
+operation, but insufficient for true multi-tenant deployments.
+
+**Ratchets:**
+- `scripts/check_tool_executor_mission_id.py --summary` enforces mission_id
+  propagation (6/6 call sites clean).
+- `scripts/check_policy_principal_binding.py --summary` enforces principal
+  propagation on public/runtime paths (24/24 call sites clean).
+
+**Remaining gap (P3 — multi-worker / multi-tenant):**
+- Session state remains in-process memory only (`PolicyEngine._sessions`).
+  Multi-worker deployments or horizontal scaling still require a shared
+  Redis-backed session store.
+- Internal agent execution loops that bypass `tool_runner` (e.g. LangGraph flow,
+  autonomous runners) do not yet propagate `principal_id` to every tool call.
+- Mission submitter identity is now persisted in-process (JSON/SQLite) and in
+  `MissionContext`; a future Redis-backed persistence layer should carry
+  `submitted_by`/`approved_by` across workers too.
+
+Public beta remains NO-GO until secrets/memory/E2E hardening is complete.
+
+- `core/policy_engine.py`: session tracker is now hardened end-to-end
+  (`fix/policy-engine-session-hardening`):
+  - `evaluate_tool()` calls `ensure_session()` + `check_and_record()` atomically.
+  - Explicit limits override mode presets.
+  - Expired sessions are evicted and a `_max_sessions` cap is enforced.
+  - Empty/`None` `mission_id` is denied (fail-closed); high-risk without
+    `mission_id` stays blocked.
+  - `_session_key(mission_id, principal_id)` separates sessions per principal
+    when a principal identifier is available; raw `mission_id` remains supported
+    for internal/test compatibility.
   `ToolExecutor` uses `get_policy_engine()` singleton; `MetaOrchestrator` and
-  `BeaOrchestrator` call `ensure_session()` at run start. 88 critical policy/tool
-  tests are green and `validate_local.py --quick` and full pass. **Propagation audit
-  complete** (fix/mission-id-propagation-audit): 3 runtime gaps closed (missions route
-  missing `mission_id` kwarg, `tool_pipeline` not forwarding it to child calls, recovery
-  engine using stale `_mission_id` key). Remaining documented debt: `api/routes/system_v2.py`
-  debug endpoint (P2, caller-controlled params) and `core/business/mission_runner.py`
-  `StepExecutor._execute_with_tools` (dead code, `MissionEngine` never instantiated in
-  prod). Ratchet `scripts/check_tool_executor_mission_id.py` guards all 6 known call sites.
+  `BeaOrchestrator` call `ensure_session()` at run start. 25+ critical policy/tool
+  tests are green and `validate_local.py --quick` and full pass. Limits are only
+  effective when `mission_id` is propagated through the call chain.
 - `core/coding_agent/artifact_validator.py`: partial-action accounting is now
   centralized in `_actions_accounted_for()`; `_successful_tool_actions()` uses it.
 - `agents/autonomous/devin_agent.py` is a **blueprint / experimental** agent and
