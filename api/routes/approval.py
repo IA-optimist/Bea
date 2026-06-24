@@ -1,8 +1,8 @@
 """API routes for approval queue."""
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 import logging
 
-from api._deps import require_auth
+from api._deps import require_auth, _REQUIRE_AUTH
 from api.auth_principal import get_authenticated_principal
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,12 @@ async def approve_action(request: Request, item_id: str):
     approved_by is derived from the authenticated request context, never
     accepted as a client-supplied query parameter.
     """
-    approved_by = get_authenticated_principal(request) or "authenticated_user"
+    approved_by = get_authenticated_principal(request)
+    if approved_by is None and _REQUIRE_AUTH:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated principal required to approve.",
+        )
     try:
         from core.approval_queue import approve
         success = approve(item_id, approved_by)
@@ -45,7 +50,12 @@ async def reject_action(request: Request, item_id: str):
     rejected_by is derived from the authenticated request context, never
     accepted as a client-supplied query parameter.
     """
-    rejected_by = get_authenticated_principal(request) or "authenticated_user"
+    rejected_by = get_authenticated_principal(request)
+    if rejected_by is None and _REQUIRE_AUTH:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated principal required to reject.",
+        )
     try:
         from core.approval_queue import reject
         success = reject(item_id, rejected_by)

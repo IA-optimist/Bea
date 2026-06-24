@@ -146,6 +146,15 @@ def main(argv: list[str] | None = None) -> int:
     _record(
         results,
         failures,
+        "approval hardcoded principals ratchet",
+        _run(
+            "approval hardcoded principals ratchet",
+            [sys.executable, "scripts/check_approval_hardcoded_principals.py"],
+        ),
+    )
+    _record(
+        results,
+        failures,
         "policy session store ratchet",
         _run(
             "policy session store ratchet",
