@@ -24,6 +24,8 @@ _EXPECTED_PARAMS = {
     "force_approved",
     "project_id",
     "extra_metadata",
+    "submitted_by",
+    "principal_id",
 }
 
 

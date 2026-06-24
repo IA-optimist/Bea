@@ -64,7 +64,7 @@ Voir [SECURITY_MODEL.md](SECURITY_MODEL.md).
 - `model_used` reflète ce qu'on envoie à OpenRouter, pas ce qu'il exécute côté serveur
 - Sessions chat fast-path ne trackent pas `model_used`
 - Mémoire vectorielle Qdrant nécessite Docker actif
-- Pas de rate-limiting intégré (à implémenter avant exposition publique)
+- Rate-limiting intégré (`BEA_RATE_LIMIT_ENABLED`, défaut 60 req/min via slowapi) — ne pas exposer sans reverse proxy TLS
 - Endpoints `/api/v1` maintenus côté serveur jusqu'à validation APK v3 complète
 
 ## Contribuer

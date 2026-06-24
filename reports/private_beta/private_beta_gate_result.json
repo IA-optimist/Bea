@@ -1,0 +1,57 @@
+{
+  "commit": "410452cf7000bb066e13c2029f2a84f798d65434",
+  "branch": "release/private-beta-0.1",
+  "timestamp": "2026-06-24",
+  "generated_by": "Claude Sonnet 4.6 (Release Manager)",
+  "private_beta_ready": true,
+  "public_beta_ready": false,
+  "blockers": [],
+  "warnings": [
+    "Memory store live: 1 item privé (ecdaea85-db3, fun_fact romantique, private_joke) — hors public seed, action humaine recommandée",
+    "APK Flutter: hors PATH local, CI non vérifiée localement — statut 'supported experimental'",
+    "Memory store: 2 paires de duplicats (eval_result + risk) — non bloquants",
+    "SessionStore: InMemorySessionStore actif en dev — passer à RedisSessionStore pour beta multi-worker",
+    ".env.example: N8N_DOMAIN contient une IP réelle (77.42.40.146) — évaluer rotation si nécessaire"
+  ],
+  "human_required": [
+    "Rotation secrets actifs si repo partagé/forké (BEA_API_TOKEN, BEA_ADMIN_PASSWORD, BEA_SECRET_KEY)",
+    "Validation APK sur device physique Android (docs/APK_PHYSICAL_DEVICE_VALIDATION.md)",
+    "Nettoyage memory item privé: python scripts/audit_memory_store.py --apply --privacy-scan",
+    "Passage à RedisSessionStore pour déploiements bêta multi-process",
+    "Invitations testeurs: générer tokens individuels via API, ne pas committer"
+  ],
+  "fixes_applied_on_branch": [
+    {
+      "file": ".env.example",
+      "fix": "Ajout référence à .env.example.local et .env.example.production",
+      "test_fixed": "test_env_examples::test_env_example_points_to_templates"
+    },
+    {
+      "file": "README_PUBLIC_BETA.md",
+      "fix": "Remplacement claim stale 'Pas de rate-limiting' par 'Rate-limiting intégré'",
+      "test_fixed": "test_public_beta_docs_consistency::test_readme_does_not_say_rate_limiting_missing"
+    },
+    {
+      "file": "kernel/contracts/mission_runner.py",
+      "fix": "Ajout submitted_by et principal_id au Protocol MissionRunner (sync avec MetaOrchestrator)",
+      "test_fixed": "test_mission_runner_protocol::test_meta_orchestrator_signature_unchanged"
+    },
+    {
+      "file": "tests/test_mission_runner_protocol.py",
+      "fix": "Mise à jour _EXPECTED_PARAMS pour inclure submitted_by et principal_id",
+      "test_fixed": "test_mission_runner_protocol::test_meta_orchestrator_signature_unchanged"
+    }
+  ],
+  "commands": [
+    {"cmd": "python scripts/validate_local.py --quick", "result": "PASS", "classification": "gate"},
+    {"cmd": "python scripts/release_check.py", "result": "PASS", "classification": "gate"},
+    {"cmd": "python scripts/check_client_v1_usage.py", "result": "PASS", "classification": "gate"},
+    {"cmd": "python scripts/check_policy_principal_binding.py", "result": "PASS", "classification": "gate"},
+    {"cmd": "python scripts/check_tool_executor_mission_id.py", "result": "PASS", "classification": "gate"},
+    {"cmd": "python -m ruff check .", "result": "PASS", "classification": "gate"},
+    {"cmd": "python scripts/seed_bea_memory.py --report --profile public", "result": "PASS public_safe=True", "classification": "gate"},
+    {"cmd": "python scripts/audit_memory_store.py --dry-run --privacy-scan --json", "result": "WARNING 1 private item in live store", "classification": "warning"},
+    {"cmd": "pytest -q --tb=no -x", "result": "3451 passed 1 failed THEN FIXED", "classification": "gate"},
+    {"cmd": "flutter --version", "result": "ERROR not in PATH", "classification": "human_required"}
+  ]
+}

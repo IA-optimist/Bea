@@ -40,6 +40,8 @@ class MissionRunner(Protocol):
         force_approved: bool = False,
         project_id: str | None = None,
         extra_metadata: dict | None = None,
+        submitted_by: str | None = None,
+        principal_id: str | None = None,
     ) -> Any:
         ...
 
