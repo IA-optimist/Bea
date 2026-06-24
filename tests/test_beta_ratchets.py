@@ -36,14 +36,6 @@ def _run(script: Path, *args: str) -> tuple[int, str, str]:
 class TestApprovalAuditBindingRatchet:
     """check_approval_audit_binding.py must pass on the current codebase."""
 
-    @pytest.mark.xfail(
-        reason=(
-            "fix/approval-queue-auth (SOUS-AGENT A) not yet merged to beta/auth-session-hardening. "
-            "api/mission_approval.py:89,171 still have approved_by/rejected_by='human'. "
-            "This test will pass after that branch is merged."
-        ),
-        strict=True,
-    )
     def test_no_hardcoded_approved_by_human(self):
         """No approved_by='human' in non-test source files."""
         rc, out, err = _run(CHECK_APPROVAL)

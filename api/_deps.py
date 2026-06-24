@@ -116,7 +116,7 @@ def _check_auth(token: str | None, authorization: str | None = None) -> None:
             if token_data:
                 return  # Valid access token
         except Exception as e:
-            log.warning(f"access_token_verification_failed token={candidate[:10]}... err={e}")
+            log.warning("access_token_verification_failed token_prefix=jv-*** err=%s", e)
 
     # 2. Check static API token (X-Bea-Token or Bearer) if configured
     if _API_TOKEN:
