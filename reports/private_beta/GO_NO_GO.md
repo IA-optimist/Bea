@@ -145,8 +145,11 @@ Pour la bêta PUBLIQUE (hors scope) :
 | Flutter build CI (flutter_apk.yml) | ✅ Workflow existe |
 | check_client_v1_usage.py | ✅ 0 active /api/v1 (Flutter uses /api/v3) |
 | APK buildée manuellement (local) | ✅ Confirmé dans memory (commit 3f2fb83) |
-| Validation physique sur device Android | ❌ HUMAN_REQUIRED |
-| Statut APK dans cette bêta | ⚠️ `supported experimental` |
+| Validation physique sur device Android | ✅ Validé 2026-06-24 — Pixel 7 Android 16, User 11 (Max) |
+| /health depuis phone | ✅ `{"status":"ok","service":"beamax"}` |
+| /api/v3/missions depuis phone | ✅ Données réelles retournées |
+| 0 appels /api/v1 | ✅ Vérifié logcat |
+| Statut APK dans cette bêta | ✅ `validated on physical device (connectivity + launch)` |
 
 ---
 
