@@ -235,7 +235,6 @@ class PolicyEngine:
         self.s        = settings
         # Session store — injected for tests; built from env vars in production.
         self._sessions = store if store is not None else build_session_store()
-        self._sessions = self._sessions  # backward-compat alias for tests
         # Cap mémoire (InMemory only). RedisSessionStore uses server-side TTL eviction.
         self._max_sessions = getattr(settings, "max_policy_sessions", None) or _MAX_SESSIONS
 

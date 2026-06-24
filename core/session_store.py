@@ -26,6 +26,7 @@ import os
 import threading
 import time
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse, urlunparse
 
 if TYPE_CHECKING:
     from core.policy_engine import SessionPolicy
@@ -125,14 +126,30 @@ class RedisSessionStore:
 
     _PREFIX = "bea:policy:session:"
 
+    @staticmethod
+    def _redact_url(url: str) -> str:
+        """Return a Redis URL safe for logs: hide password, keep scheme/host/port."""
+        try:
+            parsed = urlparse(url)
+            if not parsed.hostname:
+                return "<redacted>"
+            safe_netloc = parsed.hostname
+            if parsed.port:
+                safe_netloc = f"{safe_netloc}:{parsed.port}"
+            rebuilt = parsed._replace(netloc=safe_netloc)
+            return urlunparse(rebuilt)
+        except Exception:
+            return "<redacted>"
+
     def __init__(self, redis_url: str, ttl_seconds: int = 3600) -> None:
         import redis as _redis
         try:
             self._client = _redis.from_url(redis_url, decode_responses=True)
             self._client.ping()
         except Exception as exc:
+            safe_url = self._redact_url(redis_url)
             raise RuntimeError(
-                f"POLICY_SESSION_STORE=redis: cannot reach Redis at {redis_url!r}. "
+                f"POLICY_SESSION_STORE=redis: cannot reach Redis at {safe_url}. "
                 f"No fallback to memory. Fix Redis or set POLICY_SESSION_STORE=memory. "
                 f"Cause: {exc}"
             ) from exc

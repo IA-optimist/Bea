@@ -34,6 +34,19 @@ async def _on_startup(app) -> None:  # noqa: ANN001
         log.critical("PRODUCTION_STARTUP_BLOCKED", error=str(e))
         raise
 
+    # SECURITY: production/beta deployments must use a shared session store,
+    # otherwise sessions are isolated per-process and multi-worker limits break.
+    _bea_production = os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
+    _policy_store = os.environ.get("POLICY_SESSION_STORE", "memory").strip().lower()
+    if _bea_production and _policy_store != "redis":
+        msg = (
+            "BEA_PRODUCTION=true requires POLICY_SESSION_STORE=redis for shared "
+            "multi-worker session state. Set REDIS_URL and POLICY_SESSION_STORE=redis, "
+            "or unset BEA_PRODUCTION to run in dev mode."
+        )
+        log.critical("PRODUCTION_STARTUP_BLOCKED", error=msg)
+        raise RuntimeError(msg)
+
     try:
         from core.workspace_cleaner import run_cleanup
         metrics = run_cleanup()
