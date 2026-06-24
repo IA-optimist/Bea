@@ -1,0 +1,51 @@
+name: Beta Feedback
+about: General feedback, confusion, or observations during the private beta
+title: "[BETA] "
+labels: ["feedback", "beta/private"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for things that are not clear-cut bugs: confusion, missing docs, UX friction, or observations about model output.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit SHA
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options:
+        - Onboarding / setup
+        - Docs
+        - API surface
+        - Web / Flutter UI
+        - Mission behavior
+        - Memory / Qdrant
+        - Provider behavior
+        - Self-improvement
+        - Other
+  - type: textarea
+    id: observation
+    attributes:
+      label: What happened?
+      description: Describe the situation in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Did it block you, slow you down, or just confuse you?
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: What would have made it better?
+  - type: checkboxes
+    id: clean_report
+    attributes:
+      label: No secrets or private data
+      options:
+        - label: I confirm that this report contains no secret API key, password, token, personal data, or customer data.
+          required: true

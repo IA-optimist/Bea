@@ -219,8 +219,21 @@ class Settings:
     night_worker_cycle_timeout: int = field(default_factory=lambda: _i("NIGHT_WORKER_CYCLE_TIMEOUT", 300))
 
     # ── Self-improve ──────────────────────────────────────────
-    self_improve_enabled:     bool = field(default_factory=lambda: _b("SELF_IMPROVE_ENABLED", "true"))
+    # SECURITY: disabled by default for private beta. An operator must
+    # explicitly set SELF_IMPROVE_ENABLED=true (or BEA_CONTINUOUS_IMPROVEMENT=1)
+    # after reviewing the risks. Never enable by default.
+    self_improve_enabled:     bool = field(default_factory=lambda: _b(
+        "BEA_CONTINUOUS_IMPROVEMENT",
+        str(os.environ.get("SELF_IMPROVE_ENABLED", "false")).lower(),
+    ))
     self_improve_max_patches: int  = field(default_factory=lambda: _i("SELF_IMPROVE_MAX_PATCHES", 5))
+
+    # ── Beta safety gates ─────────────────────────────────────
+    # BEA_SKIP_IMPROVEMENT_GATE is intentionally absent from examples. Setting
+    # it to true disables the safety gate around self-improvement. Do not use.
+    bea_skip_improvement_gate: bool = field(default_factory=lambda: _b("BEA_SKIP_IMPROVEMENT_GATE"))
+    # Canonical alias for the readiness gate output. May be used by scripts.
+    bea_private_beta_ready: bool = field(default_factory=lambda: _b("BEA_PRIVATE_BETA_READY"))
 
     # ── Browser ───────────────────────────────────────────────
     browser_headless: bool = field(default_factory=lambda: _b("BROWSER_HEADLESS", "true"))

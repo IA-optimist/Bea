@@ -1,12 +1,25 @@
 #!/bin/bash
 # ACTIVATION SELF-IMPROVEMENT V3
 # Usage: ./scripts/activate_si_v3.sh [API_KEY]
+#
+# ⚠️  PRIVATE BETA WARNING:
+#    Self-improvement lets Béa write and apply code patches autonomously.
+#    It is DISABLED by default for the private beta. Only run this script if:
+#      - you are an operator who accepts autonomous changes;
+#      - you are running in an isolated, recoverable environment;
+#      - you have a rollback plan.
+#    NEVER enable this on a shared or production-like deployment.
+#    NEVER set BEA_SKIP_IMPROVEMENT_GATE=1.
 
 set -e
 cd "$(dirname "$0")/.."
 
 echo "🔧 ACTIVATION SELF-IMPROVEMENT V3"
 echo "=================================="
+echo ""
+echo "⚠️  This enables autonomous code patches. Press Ctrl+C to abort."
+echo "    Waiting 5 seconds..."
+sleep 5
 
 # Vérifier clé LLM
 if [ -z "$1" ]; then

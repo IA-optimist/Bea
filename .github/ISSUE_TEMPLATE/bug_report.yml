@@ -1,0 +1,96 @@
+name: Bug Report
+about: Report something broken during the private beta
+title: "[BUG] "
+labels: ["bug", "beta/private"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Béa. Please fill every section and **redact all secrets**.
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "e.g. Windows 11 / macOS 14 / Ubuntu 24.04"
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit SHA
+      description: Run `git rev-parse HEAD` and paste the output.
+      placeholder: "a1b2c3d..."
+    validations:
+      required: true
+  - type: dropdown
+    id: launch_mode
+    attributes:
+      label: Launch mode
+      options:
+        - python main.py
+        - Docker Compose
+        - Docker
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: LLM provider
+      options:
+        - OpenRouter
+        - Anthropic
+        - OpenAI
+        - Ollama
+        - None / DRY_RUN
+        - Other
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface used
+      options:
+        - API
+        - Flutter
+        - Web SPA
+        - Memory / Qdrant
+        - Provider configuration
+        - Mission execution
+        - Docs
+        - Other / Unknown
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Start server... 2. Call endpoint... 3. Observe..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (redacted)
+      description: Paste relevant log lines. Replace tokens/IPs with REDACTED.
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      placeholder: "Anything you did to keep going?"
+  - type: checkboxes
+    id: clean_report
+    attributes:
+      label: No secrets or private data
+      options:
+        - label: I confirm that this report contains no secret API key, password, token, personal data, or customer data.
+          required: true
