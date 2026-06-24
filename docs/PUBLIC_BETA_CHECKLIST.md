@@ -61,6 +61,30 @@
 - [x] Policy decision constants centralized (`core.execution_policy.Decision`)
 - [ ] `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` runs clean on public seed
 
+## Identité d'exécution vs identité d'audit
+
+| Champ | Rôle | Source | Utilisé par |
+|---|---|---|---|
+| `submitted_by` | Identité d'exécution | `get_authenticated_principal()` à la soumission | PolicyEngine, ToolExecutor |
+| `approved_by` | Audit uniquement | `get_authenticated_principal()` à l'approval | Logs, historique |
+| `rejected_by` | Audit uniquement | `get_authenticated_principal()` au rejet | Logs, historique |
+
+⚠️ `approved_by`/`rejected_by` ne sont **jamais** passés à `PolicyEngine`, `ToolExecutor`, `MetaOrchestrator.run_mission` ou tout mécanisme d'exécution.
+
+## Session Store PolicyEngine
+
+| Backend | Cas d'usage | Multi-worker |
+|---|---|---|
+| `InMemorySessionStore` | dev/test uniquement | ❌ Non (état local au process) |
+| `RedisSessionStore` | beta/prod | ✅ Oui |
+
+**Pour beta publique : `POLICY_SESSION_STORE=redis` requis.** Si Redis indisponible et mode redis → démarrage refusé (fail-closed).
+
+- [ ] `POLICY_SESSION_STORE=redis` configuré et Redis opérationnel en beta/prod
+- [ ] `InMemorySessionStore` bloqué si `BEA_PRODUCTION=true`
+- [ ] Clé de session = `principal_id:mission_id` — jamais `mission_id` seul
+- [ ] Abstraction `core/session_store.py` complète et testée (`beta/auth-session-hardening` SOUS-AGENT B — en cours 2026-06-24)
+
 ## Policy / risk guardrails
 
 - [x] `core/tool_executor.py` uses `Decision` constants and blocks `REQUIRES_APPROVAL`/`BLOCKED`
@@ -71,6 +95,7 @@
 - [x] `mission_id` propagation audited end-to-end — 3 runtime gaps fixed (missions route, tool_pipeline, recovery key), ratchet `scripts/check_tool_executor_mission_id.py` guards against regression, 9 tests cover propagation invariants (PR fix/mission-id-propagation-audit)
 - [x] Authenticated principal binding end-to-end — validated identity is extracted from `request.state.user` via `api/auth_principal.py`, propagated through routes → `KernelAdapter` → `MetaOrchestrator`/`BeaOrchestrator` → `tool_runner` → `execution_engine` → `tool_pipeline_tool` → `PolicyEngine`; public routes overwrite client-supplied `principal_id`; `_bea_principal_id` is the trusted params key; ratchet `scripts/check_policy_principal_binding.py` guards against regression (`feat/principal-auth-binding`)
 - [x] Mission submitter identity persists across approval/resume — `submitted_by` is stored on `MissionResult`, `MissionContext`, and `PersistedMission` at submit time; public routes derive it from authenticated context and fail-closed when auth is required; approval/resume paths run the mission under `submitted_by` for PolicyEngine session binding; `approved_by` is stored separately for audit; ratchets and new tests in `tests/test_mission_submitted_by.py` guard regression (`fix/mission-submitted-by`)
+- [x] Approval queue auth hardened — `approved_by`/`rejected_by` derived from `get_authenticated_principal()` on all routes; hardcoded `"human"` removed from `api/mission_approval.py`; `reject_mission` route now passes `rejected_by` from auth context; `core/approval_queue` defaults changed from `"human"` to `None`; ratchet `scripts/check_approval_hardcoded_principals.py` prevents reintroduction (`fix/approval-queue-auth`)
 
 ## Provider readiness
 

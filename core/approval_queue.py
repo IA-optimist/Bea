@@ -165,7 +165,7 @@ def submit_for_approval(
         return {"approved": False, "item_id": None, "pending": False, "auto": False, "error": str(e)}
 
 
-def approve(item_id: str, approved_by: str = "human") -> bool:
+def approve(item_id: str, approved_by: str | None = None) -> bool:
     """Approuve un item en attente."""
     try:
         items = _load()
@@ -183,7 +183,7 @@ def approve(item_id: str, approved_by: str = "human") -> bool:
         return False
 
 
-def reject(item_id: str, rejected_by: str = "human") -> bool:
+def reject(item_id: str, rejected_by: str | None = None) -> bool:
     """Rejette un item en attente."""
     try:
         items = _load()

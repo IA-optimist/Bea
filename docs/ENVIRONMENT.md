@@ -45,6 +45,17 @@
 | `BEA_RATE_LIMIT_PER_MINUTE` | `60` | Requests per IP per minute |
 | `BEA_API_URL` | `http://127.0.0.1:8000` | Base URL of the API |
 
+## Policy Session Store
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `POLICY_SESSION_STORE` | No | `memory` | Session backend for PolicyEngine: `memory` (dev/test) or `redis` (beta/prod). **Must be `redis` in production.** |
+| `POLICY_SESSION_TTL_SECONDS` | No | `3600` | Session TTL in seconds. Sessions are evicted after this delay. |
+
+**Production rule**: `BEA_PRODUCTION=true` + `POLICY_SESSION_STORE=memory` → **startup blocked**.  
+`POLICY_SESSION_STORE=redis` + Redis unreachable → **startup blocked** (fail-closed).  
+`InMemorySessionStore` is single-process only — not safe for multi-worker deployments.
+
 ## Self-improvement
 
 | Variable | Default | Description |

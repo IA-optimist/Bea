@@ -1037,12 +1037,23 @@ async def approve_mission(
 @router.post("/api/v2/missions/{mission_id}/reject")
 async def reject_mission(
     mission_id: str,
+    request: Request,
     req: Optional[AbortRequest] = None,
     x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Reject a mission that is PENDING_VALIDATION."""
+    """Reject a mission that is PENDING_VALIDATION.
+
+    rejected_by is derived from the authenticated request context (middleware/JWT),
+    never accepted as a client-supplied field.
+    """
     _check_auth(x_bea_token, authorization)
+    _rejected_by = get_authenticated_principal(request)
+    if _rejected_by is None and _REQUIRE_AUTH:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated principal required to reject a mission.",
+        )
     note = (req.reason if req else None) or "Rejected by human supervisor"
     return reject_mission_payload(
         mission_id=mission_id,
@@ -1050,6 +1061,7 @@ async def reject_mission(
         mission_system=_get_mission_system(),
         logger=log,
         silent_logger=log,
+        rejected_by=_rejected_by,
     )
 
 # ── System mode (Flutter setMode uses POST /api/system/mode) ──

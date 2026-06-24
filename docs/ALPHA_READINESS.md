@@ -111,11 +111,23 @@ profiling harness, autonomous runners) may omit `principal_id`; the session key
 falls back to `mission_id` alone. This is documented and safe for single-tenant
 operation, but insufficient for true multi-tenant deployments.
 
+**Approval queue auth (closed on `fix/approval-queue-auth`):**
+- `api/mission_approval.py` no longer passes `approved_by="human"` or
+  `rejected_by="human"` to `approval_queue.approve/reject`.
+- `approve_mission_for_resume()` passes `principal_id or "api"` (the approver).
+- `reject_mission_payload()` now receives `rejected_by` from the route caller.
+- `reject_mission` route extracts `get_authenticated_principal(request)` and
+  passes it as `rejected_by` — never accepted from client body/query.
+- `core/approval_queue.approve/reject` defaults changed from `"human"` to `None`.
+- Ratchet `scripts/check_approval_hardcoded_principals.py` prevents reintroduction.
+
 **Ratchets:**
 - `scripts/check_tool_executor_mission_id.py --summary` enforces mission_id
   propagation (6/6 call sites clean).
 - `scripts/check_policy_principal_binding.py --summary` enforces principal
   propagation on public/runtime paths (24/24 call sites clean).
+- `scripts/check_approval_hardcoded_principals.py` enforces no hardcoded
+  "human"/"admin"/"system" as approved_by/rejected_by (0 violations).
 
 **Remaining gap (P3 — multi-worker / multi-tenant):**
 - Session state remains in-process memory only (`PolicyEngine._sessions`).
@@ -362,6 +374,32 @@ The current APK on Pixel 7 (User 11) may still call v1 endpoints.
 **Sunset deadline: 2026-10-01** (Deprecation + Sunset headers already set via V1DeprecationMiddleware)
 
 See `docs/API_VERSIONING.md` for the full 4-phase deprecation timeline.
+
+## Identité d'exécution vs identité d'audit
+
+| Champ | Rôle | Source | Utilisé par |
+|---|---|---|---|
+| `submitted_by` | Identité d'exécution | `get_authenticated_principal()` à la soumission | PolicyEngine, ToolExecutor |
+| `approved_by` | Audit uniquement | `get_authenticated_principal()` à l'approval | Logs, historique |
+| `rejected_by` | Audit uniquement | `get_authenticated_principal()` au rejet | Logs, historique |
+
+⚠️ `approved_by`/`rejected_by` ne sont **jamais** passés à `PolicyEngine`, `ToolExecutor`, `MetaOrchestrator.run_mission` ou tout mécanisme d'exécution. La reprise d'une mission approuvée utilise `record.submitted_by or principal_id` — jamais `approved_by`.
+
+## Session Store PolicyEngine
+
+| Backend | Cas d'usage | Multi-worker |
+|---|---|---|
+| `InMemorySessionStore` (en cours, `beta/auth-session-hardening`) | dev/test uniquement | ❌ Non (état local au process) |
+| `RedisSessionStore` (en cours, `beta/auth-session-hardening`) | beta/prod | ✅ Oui |
+
+**Pour beta publique : `POLICY_SESSION_STORE=redis` requis.**
+
+- Si Redis indisponible et `POLICY_SESSION_STORE=redis` → démarrage refusé (fail-closed).
+- `InMemorySessionStore` : jamais utilisé en beta/prod. Démarrage bloqué si `BEA_PRODUCTION=true` et `POLICY_SESSION_STORE=memory`.
+- Variables : `POLICY_SESSION_STORE=memory|redis`, `REDIS_URL`, `POLICY_SESSION_TTL_SECONDS` (défaut 3600).
+- Clé de session strictement `principal_id:mission_id` — jamais `mission_id` seul, jamais `approved_by`/`rejected_by`.
+
+⚠️ **État actuel (2026-06-24)** : abstraction en cours sur `beta/auth-session-hardening` (SOUS-AGENT B). Redis non encore déployé. Beta publique **NO-GO** jusqu'à validation complète.
 
 ## Remaining Risks
 

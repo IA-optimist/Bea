@@ -38,6 +38,8 @@ from dataclasses import dataclass, field
 from typing import Any
 import structlog
 
+from core.session_store import build_session_store
+
 log = structlog.get_logger()
 
 
@@ -229,10 +231,11 @@ class PolicyEngine:
         llm = settings.get_llm(route.provider)
     """
 
-    def __init__(self, settings: Any) -> None:
+    def __init__(self, settings: Any, store: Any | None = None) -> None:
         self.s        = settings
-        self._sessions: dict[str, SessionPolicy] = {}
-        # Cap mémoire du map de sessions. Peut être surchargé via settings.max_policy_sessions.
+        # Session store — injected for tests; built from env vars in production.
+        self._sessions = store if store is not None else build_session_store()
+        # Cap mémoire (InMemory only). RedisSessionStore uses server-side TTL eviction.
         self._max_sessions = getattr(settings, "max_policy_sessions", None) or _MAX_SESSIONS
 
     # ── Gestion des sessions ──────────────────────────────
@@ -250,22 +253,30 @@ class PolicyEngine:
         return mission_id
 
     def _cleanup_expired_sessions(self) -> None:
-        """Evince les sessions expirées (timeout) puis applique le cap mémoire."""
+        """Evince les sessions expirées (timeout) puis applique le cap mémoire.
+
+        For RedisSessionStore, server-side TTL handles expiry — only the memory
+        cap is applied (cheaply via len check before fetching all keys).
+        """
         now = time.monotonic()
+        all_items = self._sessions.items()
         expired = [
-            key for key, tracker in self._sessions.items()
-            if now - tracker.started_at >= tracker.limits["session_timeout_s"]
+            key for key, tracker in all_items
+            if tracker is not None
+            and now - tracker.started_at >= tracker.limits["session_timeout_s"]
         ]
         for key in expired:
-            del self._sessions[key]
+            self._sessions.delete(key)
         # Cap mémoire : évince les sessions les plus anciennes en cas de dépassement.
         if len(self._sessions) > self._max_sessions:
+            fresh_items = self._sessions.items()
             sorted_by_age = sorted(
-                self._sessions.items(), key=lambda kv: kv[1].started_at
+                [(k, t) for k, t in fresh_items if t is not None],
+                key=lambda kv: kv[1].started_at,
             )
             overflow = len(self._sessions) - self._max_sessions
             for key, _ in sorted_by_age[:overflow]:
-                del self._sessions[key]
+                self._sessions.delete(key)
 
     def new_session(
         self,
@@ -296,7 +307,7 @@ class PolicyEngine:
 
         tracker = SessionPolicy(session_id, effective_limits)
         key = self._session_key(session_id, principal_id)
-        self._sessions[key] = tracker
+        self._sessions.set(key, tracker)
         log.debug(
             "policy_session_created",
             mission_id=session_id,
@@ -441,6 +452,9 @@ class PolicyEngine:
         ok, msg = tracker.check_and_record()
         if not ok:
             return d.deny(msg, "Wait for the next session or raise limits")
+        # Persist the mutated tracker so Redis-backed stores see the new counters.
+        key = self._session_key(mission_id, principal_id)
+        self._sessions.set(key, tracker)
 
         return d.allow("tool_allowed")
 
@@ -537,9 +551,10 @@ class PolicyEngine:
     def get_report(self) -> dict[str, object]:
         """Rapport global de toutes les sessions actives."""
         self._cleanup_expired_sessions()
+        items = self._sessions.items()
         return {
-            "active_sessions": len(self._sessions),
-            "sessions": {sid: t.to_dict() for sid, t in self._sessions.items()},
+            "active_sessions": len(items),
+            "sessions": {sid: t.to_dict() for sid, t in items if t is not None},
             "cloud_allowed": self._cloud_allowed(),
             "dry_run": getattr(self.s, "dry_run", False),
         }
@@ -582,10 +597,15 @@ def get_policy_engine(settings: Any | None = None) -> PolicyEngine:
     ToolExecutor and orchestrators should use this instead of constructing
     PolicyEngine(None) on every call, otherwise session/economic limits remain
     unenforced.
+
+    The session store backend is selected from POLICY_SESSION_STORE env var:
+      memory (default) — InMemorySessionStore, dev/test only.
+      redis            — RedisSessionStore, requires REDIS_URL, fail-closed.
     """
     global _policy_engine_instance
     if _policy_engine_instance is None:
-        _policy_engine_instance = PolicyEngine(settings)
+        store = build_session_store()
+        _policy_engine_instance = PolicyEngine(settings, store=store)
     return _policy_engine_instance
 
 
