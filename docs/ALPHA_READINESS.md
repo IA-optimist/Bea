@@ -48,7 +48,7 @@
 
 ## Known remaining debt (non-blocking for this PR)
 
-### principal-binding (P2 — fixed on `feat/principal-auth-binding`)
+### principal-binding and mission submitter identity (P2 — fixed on `feat/principal-auth-binding` + `fix/mission-submitted-by`)
 
 The authenticated identity is now bound to PolicyEngine sessions instead of
 being naïvely extracted from `params`.
@@ -87,8 +87,24 @@ being naïvely extracted from `params`.
    so the same `mission_id` with two different principals yields two isolated
    sessions.
 
+**Mission submitter identity (closed on `fix/mission-submitted-by`):**
+- `core/mission_models.MissionResult` now carries `submitted_by` and `approved_by`.
+- Public submit endpoints (`POST /api/v2/task`, `/api/v2/missions/submit`,
+  `/api/mission`, `POST /api/v1/missions`) store the authenticated principal as
+  `submitted_by` and fail-closed when auth is required but no principal is present.
+- Client-supplied `submitted_by` / `_bea_principal_id` / `principal_id` values in
+  request bodies are ignored; the canonical auth-derived value always wins.
+- On approval/resume, `api/mission_approval.py` and `MetaOrchestrator.resolve_approval()`
+  use `record.submitted_by` (or the recovered in-memory `MissionContext.submitted_by`)
+  as the PolicyEngine execution principal, so the resumed mission runs under the
+  submitter's session (`submitter:mission_id`), not the approver's session.
+- `approved_by` is stored separately for audit only; it is never used as the
+  policy/session identity.
+- Backward compatibility: old records without `submitted_by` fall back to the
+  approver principal on resume; a warning is logged.
+
 **Client override protection:** public routes strip/overwrite any user-provided
-`principal_id` or `_bea_principal_id` in request payloads.
+`principal_id`, `_bea_principal_id` or `submitted_by` in request payloads.
 
 **Internal/test fallback:** internal callers (dev mode, background agents,
 profiling harness, autonomous runners) may omit `principal_id`; the session key
@@ -107,6 +123,9 @@ operation, but insufficient for true multi-tenant deployments.
   Redis-backed session store.
 - Internal agent execution loops that bypass `tool_runner` (e.g. LangGraph flow,
   autonomous runners) do not yet propagate `principal_id` to every tool call.
+- Mission submitter identity is now persisted in-process (JSON/SQLite) and in
+  `MissionContext`; a future Redis-backed persistence layer should carry
+  `submitted_by`/`approved_by` across workers too.
 
 Public beta remains NO-GO until secrets/memory/E2E hardening is complete.
 

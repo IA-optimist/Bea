@@ -115,7 +115,9 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         risk_score INTEGER DEFAULT 0,
         complexity TEXT DEFAULT 'medium',
         error TEXT DEFAULT '',
-        phase_cursor TEXT DEFAULT ''
+        phase_cursor TEXT DEFAULT '',
+        submitted_by TEXT,
+        approved_by TEXT
     );
 
     CREATE TABLE IF NOT EXISTS goals (
@@ -138,6 +140,14 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+
+    # Migrate existing DBs: add identity-binding columns
+    for _col in ("submitted_by", "approved_by"):
+        try:
+            conn.execute(f"ALTER TABLE missions ADD COLUMN {_col} TEXT")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
 
 
 def get_db() -> sqlite3.Connection | None:

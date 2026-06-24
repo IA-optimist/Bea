@@ -13,6 +13,7 @@ from typing import Optional
 
 # ── L4 policy constants ───────────────────────────────────────────────────────
 from core.execution_policy import Decision
+from core.policy_engine import _extract_principal_id
 
 # ── L4 tool modules ───────────────────────────────────────────────────────────
 try:
@@ -682,6 +683,11 @@ class ToolExecutor:
         """
         if tool_name not in self._tools:
             return {"ok": False, "result": "", "error": f"unknown_tool: {tool_name}", "blocked_by_policy": False}
+
+        # Principal resolution: explicit trusted argument wins, then trusted
+        # params key (_bea_principal_id), then documented internal/test keys.
+        if principal_id is None and isinstance(params, dict):
+            principal_id = _extract_principal_id(params)
 
         # Validate required parameters first — give useful feedback before policy gates
         _early_missing = self._validate_params(tool_name, params)

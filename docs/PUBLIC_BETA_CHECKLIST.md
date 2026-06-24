@@ -67,8 +67,10 @@
 - [x] Policy-unavailable fallback blocks `execute` / high-risk tools
 - [x] `RiskEngine.analyze()` exception falls back to `HIGH` / blocked
 - [x] Artifact validator rejects code missions without verifiable artifact evidence
-- [x] `PolicyEngine` enforces shared session/economic limits end-to-end — `evaluate_tool()` calls `ensure_session()` + `check_limits()` + `record_action()`; `ToolExecutor`/`MetaOrchestrator`/`BeaOrchestrator` use the `get_policy_engine()` singleton and inject `mission_id` (`fix/policy-engine-session-limits-singleton`)
+- [x] `PolicyEngine` enforces shared session/economic limits end-to-end — `evaluate_tool()` calls `ensure_session()` + atomic `check_and_record()`; explicit limits override mode presets; sessions are evicted after timeout and capped; empty/`None` `mission_id` is denied; `_session_key()` supports optional `principal_id`; `ToolExecutor`/`MetaOrchestrator`/`BeaOrchestrator` use the `get_policy_engine()` singleton and inject `mission_id` (`fix/policy-engine-session-hardening`)
 - [x] `mission_id` propagation audited end-to-end — 3 runtime gaps fixed (missions route, tool_pipeline, recovery key), ratchet `scripts/check_tool_executor_mission_id.py` guards against regression, 9 tests cover propagation invariants (PR fix/mission-id-propagation-audit)
+- [x] Authenticated principal binding end-to-end — validated identity is extracted from `request.state.user` via `api/auth_principal.py`, propagated through routes → `KernelAdapter` → `MetaOrchestrator`/`BeaOrchestrator` → `tool_runner` → `execution_engine` → `tool_pipeline_tool` → `PolicyEngine`; public routes overwrite client-supplied `principal_id`; `_bea_principal_id` is the trusted params key; ratchet `scripts/check_policy_principal_binding.py` guards against regression (`feat/principal-auth-binding`)
+- [x] Mission submitter identity persists across approval/resume — `submitted_by` is stored on `MissionResult`, `MissionContext`, and `PersistedMission` at submit time; public routes derive it from authenticated context and fail-closed when auth is required; approval/resume paths run the mission under `submitted_by` for PolicyEngine session binding; `approved_by` is stored separately for audit; ratchets and new tests in `tests/test_mission_submitted_by.py` guard regression (`fix/mission-submitted-by`)
 
 ## Provider readiness
 

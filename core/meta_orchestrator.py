@@ -340,6 +340,8 @@ class MetaOrchestrator(
         force_approved: bool = False,
         project_id: str | None = None,  # Phase 2.1: Project isolation
         extra_metadata: dict | None = None,  # Extra context (e.g. conversation history)
+        principal_id: str | None = None,  # Authenticated identity for PolicyEngine sessions
+        submitted_by: str | None = None,  # Submitter identity for resume/approval
     ) -> MissionContext:
         """
         Enhanced mission lifecycle with classification, context assembly,
@@ -352,7 +354,7 @@ class MetaOrchestrator(
         # Ensure a PolicyEngine session tracker exists for the mission lifecycle.
         try:
             from core.policy_engine import get_policy_engine
-            get_policy_engine(self.s).ensure_session(mid, mode)
+            get_policy_engine(self.s).ensure_session(mid, mode, principal_id=principal_id)
         except Exception as _pol_err:
             log.debug("policy_session_ensure_failed", mission_id=mid, err=str(_pol_err)[:80])
         _extra_meta = extra_metadata or {}
@@ -364,10 +366,13 @@ class MetaOrchestrator(
             created_at=now,
             updated_at=now,
             project_id=project_id,  # Phase 2.1: Project isolation
+            submitted_by=submitted_by,
         )
         # Inject extra_metadata (conversation context, etc.) into ctx
         if _extra_meta:
             ctx.metadata.update(_extra_meta)
+        if submitted_by:
+            ctx.metadata["_bea_submitted_by"] = submitted_by
         with self._lock:
             self._missions[mid] = ctx
         # ── Setup event stream ────────────────────────────────────────
@@ -717,6 +722,8 @@ class MetaOrchestrator(
                         updated_at=record.updated_at,
                         error=record.error,
                         metadata=record.metadata,
+                        submitted_by=record.submitted_by,
+                        approved_by=record.approved_by,
                     )
                     with self._lock:
                         self._missions[mission_id] = ctx
@@ -750,12 +757,15 @@ class MetaOrchestrator(
             log.info("mission.approval_resumed", mission_id=mission_id)
             # Re-execute from the beginning (safe checkpoint resume)
             try:
+                _submitter = ctx.submitted_by or ctx.metadata.get("_bea_submitted_by")
                 resumed = await self.run_mission(
                     goal=ctx.goal,
                     mode=ctx.mode,
                     mission_id=mission_id,
                     callback=callback,
                     force_approved=True,
+                    principal_id=_submitter,
+                    submitted_by=_submitter,
                 )
                 return resumed
             except Exception as e:
@@ -799,6 +809,8 @@ class MetaOrchestrator(
                     updated_at=record.updated_at,
                     error=record.error or "Awaiting human approval",
                     metadata=record.metadata or {},
+                    submitted_by=record.submitted_by,
+                    approved_by=record.approved_by,
                 )
                 with self._lock:
                     self._missions[record.mission_id] = ctx
@@ -826,6 +838,7 @@ class MetaOrchestrator(
         session_id: str | None = None,
         chat_id: int = 0,
         callback: CB | None = None,
+        principal_id: str | None = None,
     ):
         """
         Compatibilité ascendante avec BeaOrchestrator.run().
@@ -844,6 +857,7 @@ class MetaOrchestrator(
             mode=mode,
             mission_id=mid,
             callback=callback,
+            principal_id=principal_id,
         )
         return ctx
 

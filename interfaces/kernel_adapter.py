@@ -106,6 +106,7 @@ class KernelAdapter:
         mission_id: Optional[str] = None,
         callback: Optional[Callable] = None,
         metadata: Optional[dict] = None,
+        principal_id: Optional[str] = None,
     ) -> AdapterResult:
         """
         Submit a goal to the kernel for execution.
@@ -115,6 +116,10 @@ class KernelAdapter:
         _mid = mission_id or f"adp-{uuid.uuid4().hex[:8]}"
         _t0 = time.time()
         self._call_count += 1
+
+        _meta = dict(metadata or {})
+        if principal_id:
+            _meta["_bea_principal_id"] = principal_id
 
         _kernel = self._get_kernel()
         if _kernel is None:
@@ -134,7 +139,7 @@ class KernelAdapter:
                 mission_id=_mid,
                 mode=mode,
                 callback=callback,
-                metadata=metadata or {},
+                metadata=_meta,
             )
             exec_result = await _kernel.execute(req)
 

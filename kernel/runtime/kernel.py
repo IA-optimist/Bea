@@ -615,6 +615,7 @@ class BeaKernel:
                 mode=request.mode,
                 mission_id=mid,
                 callback=request.callback,
+                principal_id=request.metadata.get("_bea_principal_id"),
             )
             exec_result = ExecutionResult.from_context(raw)
             log.info("kernel_execute_done",

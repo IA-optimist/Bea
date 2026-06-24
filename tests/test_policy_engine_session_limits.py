@@ -193,11 +193,11 @@ def test_evaluate_tool_blocks_high_risk():
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Test 11: evaluate_tool permet les tools LOW-risk sans mission_id
+# Test 11: evaluate_tool bloque les tools LOW-risk sans mission_id
 # ──────────────────────────────────────────────────────────────────────────────
 
-def test_evaluate_tool_allows_low_risk_no_mission():
-    """Low-risk tools without mission_id must be allowed."""
+def test_evaluate_tool_blocks_low_risk_no_mission():
+    """Low-risk tools without mission_id must be blocked to prevent limit bypass."""
     engine = PolicyEngine(None)
     decision = engine.evaluate_tool(
         tool_name="read_file",
@@ -205,7 +205,8 @@ def test_evaluate_tool_allows_low_risk_no_mission():
         risk_level="low",
         mission_id="",
     )
-    assert decision.allowed
+    assert not decision.allowed
+    assert "mission_id" in decision.reason.lower()
 
 
 # ──────────────────────────────────────────────────────────────────────────────

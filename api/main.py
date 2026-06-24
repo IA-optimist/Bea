@@ -246,12 +246,12 @@ class MissionSubmitRequest(BaseModel):  # type: ignore[misc]
 _running_missions: set[str] = set()
 
 
-async def _run_mission(mission_id: str, goal: str, mode: str = "auto") -> None:
+async def _run_mission(mission_id: str, goal: str, mode: str = "auto", principal_id: str | None = None) -> None:
     """Execute a single mission via MetaOrchestrator. Anti-duplicate guard enforced."""
     _running_missions.add(mission_id)
     try:
         orch = _get_orchestrator()
-        await orch.run(mission_id=mission_id, goal=goal, mode=mode)
+        await orch.run(mission_id=mission_id, goal=goal, mode=mode, principal_id=principal_id)
     except Exception as _rm_err:
         log.warning("run_mission_failed", mission_id=mission_id, err=str(_rm_err)[:80])
     finally:

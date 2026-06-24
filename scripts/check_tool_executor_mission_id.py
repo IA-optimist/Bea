@@ -17,6 +17,7 @@ Exit codes:
 Usage:
   python scripts/check_tool_executor_mission_id.py
   python scripts/check_tool_executor_mission_id.py --verbose
+  python scripts/check_tool_executor_mission_id.py --summary
 """
 from __future__ import annotations
 
@@ -42,8 +43,8 @@ ALLOWLIST: dict[str, str] = {
     # own exception handler, where the outer execute() already tracked mission_id.
     "core/resilience/recovery_engine.py": "DOCUMENT_AS_SAFE:called_only_from_tool_executor_retry",
 
-    # tool_pipeline_tool propagates mission_id via kwarg (patched in this audit).
-    "core/tools/tool_pipeline_tool.py": "OK:mission_id_propagated_via_kwarg",
+    # tool_pipeline_tool propagates mission_id and principal via kwargs.
+    "core/tools/tool_pipeline_tool.py": "OK:mission_id_and_principal_propagated_via_kwarg",
 
     # Self-improvement executors (SafeExecutor, sandbox) operate on improvement
     # candidates, not on tool/mission sessions. They are gated by the improvement
@@ -57,16 +58,13 @@ ALLOWLIST: dict[str, str] = {
     # It is NOT core ToolExecutor and is not subject to this policy audit.
     "executor/supervised_executor.py": "DOCUMENT_AS_SAFE:SupervisedExecutor_not_ToolExecutor",
 
-    # Debug/test endpoint: /api/v2/tools/test passes the caller's params dict.
-    # Callers can include mission_id in params. Low-priority dev tool (P2).
-    "api/routes/system_v2.py": "LEGACY_TODO:debug_endpoint_params_caller_controlled",
+    # Debug/test endpoint now injects a validated principal and falls back to
+    # the caller-controlled mission_id; principal_id is enforced above params.
+    "api/routes/system_v2.py": "OK:debug_endpoint_injects_validated_principal",
 
-    # execution_engine.py: execute_tool_intelligently() injects mission_id into
-    # current_params at line ~419 BEFORE calling executor.execute(). The grep
-    # window misses the injection because it is ~10 lines above the call.
-    # Lines 428/469 both use current_params which already carries mission_id.
-    # Line 19 is a docstring reference, not an actual call.
-    "core/execution_engine.py": "OK:mission_id_injected_into_current_params_above_call",
+    # execution_engine.py: execute_tool_intelligently() injects mission_id and
+    # principal into current_params BEFORE calling executor.execute().
+    "core/execution_engine.py": "OK:mission_id_and_principal_injected_into_current_params_above_call",
 }
 
 # Regex to find ToolExecutor.execute() call sites via known import patterns.
@@ -143,11 +141,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print all findings, not just failures")
+    parser.add_argument("--summary", action="store_true",
+                        help="Print a concise pass/fail summary only")
     args = parser.parse_args(argv)
 
     findings = scan()
     failures = [f for f in findings if f["verdict"] == "PATCH_NEEDED"]
     ok_count = len(findings) - len(failures)
+
+    if args.summary:
+        status = "PASS" if not failures else "FAIL"
+        _safe_write(
+            f"{status}: {ok_count}/{len(findings)} ToolExecutor call sites audited, "
+            f"{len(failures)} unresolved mission_id gap(s).\n"
+        )
+        return 1 if failures else 0
 
     sep = "=" * 70
     if args.verbose or failures:

@@ -10,12 +10,13 @@ This module defines the stable v1 API surface. All routes here are:
 Deprecated routes should be moved to api/routes/legacy/ with deprecation headers.
 """
 import structlog
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Request
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
 import uuid
 
-from api._deps import require_auth, _get_mission_system, _get_orchestrator
+from api.auth_principal import get_authenticated_principal
+from api._deps import require_auth, _get_mission_system, _get_orchestrator, _REQUIRE_AUTH
 from config.settings import get_settings
 from core.observability.eval_publisher import load_eval_scores, publish_eval_scores
 
@@ -89,19 +90,30 @@ class MemoryStoreRequest(BaseModel):
 async def submit_mission(
     req: MissionRequest,
     background_tasks: BackgroundTasks,
+    request: Request,
     user: dict = Depends(require_auth),
 ) -> APIResponse:
     """Submit a new mission to Bea (v1 stable surface)."""
     try:
         ms = _get_mission_system()
-        result = ms.submit(req.goal)
+        principal_id = get_authenticated_principal(request)
+        if principal_id is None and _REQUIRE_AUTH:
+            raise HTTPException(
+                status_code=401,
+                detail="Authenticated principal required to submit a mission.",
+            )
+        result = ms.submit(req.goal, submitted_by=principal_id)
         mission_id = result.mission_id
 
         async def _execute() -> None:
             try:
                 orch = _get_orchestrator()
                 if orch and hasattr(orch, "run"):
-                    await orch.run(mission_id=mission_id, user_input=req.goal)
+                    await orch.run(
+                        mission_id=mission_id,
+                        user_input=req.goal,
+                        principal_id=principal_id,
+                    )
             except Exception as exc:
                 log.error("v1_mission_exec_failed", mission_id=mission_id, err=str(exc)[:120])
 

@@ -5,11 +5,12 @@ Endpoints for tool registry, readiness, execution, plans, templates, history.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
 from api._deps import require_auth
+from api.auth_principal import get_authenticated_principal
 
 router = APIRouter(tags=["operational-tools"])
 
@@ -59,12 +60,21 @@ class ToolExecRequest(BaseModel):
 
 @router.post("/api/v3/tools/{tool_id}/execute")
 async def execute_tool(
-    tool_id: str, req: ToolExecRequest, _user: dict = Depends(require_auth)
+    tool_id: str,
+    req: ToolExecRequest,
+    request: Request,
+    _user: dict = Depends(require_auth),
 ):
     from core.tools_operational.tool_executor import get_tool_executor
+    inputs = dict(req.inputs)
+    # Inject validated principal. Any client-supplied `_bea_principal_id` or
+    # `principal_id` is overwritten; public routes never trust user identity.
+    principal_id = get_authenticated_principal(request)
+    inputs["_bea_principal_id"] = principal_id or ""
+    inputs.pop("principal_id", None)
     result = get_tool_executor().execute(
         tool_id=tool_id,
-        inputs=req.inputs,
+        inputs=inputs,
         mission_id=req.mission_id,
         simulate=req.simulate,
         approval_override=req.approval_override,

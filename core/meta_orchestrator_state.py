@@ -52,6 +52,8 @@ except ImportError:
         error: str | None = None
         metadata: dict = field(default_factory=dict)
         project_id: str | None = None
+        submitted_by: str | None = None
+        approved_by: str | None = None
 
         def get_output(self, agent: str) -> str:
             outputs = self.metadata.get("agent_outputs", {})
@@ -71,6 +73,8 @@ except ImportError:
                 "result": (self.result or "")[:500],
                 "error": self.error,
                 "metadata": self.metadata,
+                "submitted_by": self.submitted_by,
+                "approved_by": self.approved_by,
             }
 
 

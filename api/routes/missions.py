@@ -1018,6 +1018,11 @@ async def approve_mission(
     _check_auth(x_bea_token, authorization)
     note = (req.note if req else None) or "Approved by human supervisor"
     principal_id = get_authenticated_principal(request)
+    if principal_id is None and _REQUIRE_AUTH:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated principal required to approve a mission.",
+        )
     return approve_mission_for_resume(
         mission_id=mission_id,
         note=note,

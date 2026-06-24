@@ -183,9 +183,21 @@ class SessionPolicy:
 
 
 def _extract_principal_id(params: Any) -> str | None:
-    """Extract a principal/owner identifier from params/context if available."""
+    """Extract a principal/owner identifier from params/context.
+
+    Priority:
+      1. `_bea_principal_id` — trusted key set by canonical auth/propagation
+         paths (routes, orchestrator, tool_runner, execution_engine). This key
+         must never be accepted from an untrusted client; public routes
+         overwrite it after auth.
+      2. `principal_id`, `user_id`, `tenant_id`, `owner_id` — fallback for
+         internal/test callers explicitly marked as safe.
+    """
     if not isinstance(params, dict):
         return None
+    trusted = params.get("_bea_principal_id")
+    if trusted:
+        return str(trusted)
     for key in ("principal_id", "user_id", "tenant_id", "owner_id"):
         value = params.get(key)
         if value:

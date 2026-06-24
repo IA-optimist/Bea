@@ -5,13 +5,6 @@ import pytest
 from core.policy_engine import PolicyEngine, PolicyDecision, get_policy_engine, reset_policy_engine
 
 
-@pytest.fixture(autouse=True)
-def _reset_policy_engine_singleton():
-    reset_policy_engine()
-    yield
-    reset_policy_engine()
-
-
 class TestEvaluateToolInterface:
     """Stable-interface tests for the ToolExecutor policy gate."""
 
@@ -114,8 +107,9 @@ class TestSharedSessionTracker:
         assert d.allowed is True
         assert pe.get_session("reset-me").actions_done == 1
 
-    def test_no_mission_id_is_safe_and_does_not_create_session(self):
+    def test_no_mission_id_is_blocked_and_does_not_create_session(self):
         pe = PolicyEngine(None)
         d = pe.evaluate_tool("x", "read", "low", mission_id="")
-        assert d.allowed is True
+        assert d.allowed is False
+        assert "mission_id" in d.reason.lower()
         assert not pe._sessions

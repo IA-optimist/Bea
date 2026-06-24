@@ -344,6 +344,7 @@ def execute_tool_intelligently(
     tool_name: str,
     params: dict,
     mission_id: str = "",
+    principal_id: str = "",
     step_id: str = "",
     approval_mode: str = "SUPERVISED",
     max_retries: int = 2,
@@ -379,7 +380,7 @@ def execute_tool_intelligently(
                 logger.info("using_fallback_tool", primary=tool_name, fallback=fallback)
                 telemetry.fallback_used = fallback
                 result, _ = execute_tool_intelligently(
-                    fallback, params, mission_id, step_id,
+                    fallback, params, mission_id, principal_id, step_id,
                     approval_mode, max_retries=1, allow_fallback=False,
                 )
                 telemetry.success = result.get("ok", False)
@@ -416,7 +417,11 @@ def execute_tool_intelligently(
     result = {"ok": False, "error": "not_executed"}
     current_params = dict(params)
     if mission_id:
-        current_params.setdefault("mission_id", mission_id)
+        current_params["mission_id"] = mission_id
+    if principal_id:
+        # Trusted, auth-derived principal always wins over any client-provided keys.
+        current_params["_bea_principal_id"] = principal_id
+        current_params.pop("principal_id", None)
 
     # Apply recovery hint if available (pre-adapt params)
     if _recovery_hint and _recovery_hint.get("recovery_type") == "retry_adapted":

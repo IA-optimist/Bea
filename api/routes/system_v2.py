@@ -33,6 +33,7 @@ logger = logging.getLogger("bea.api.system_v2")
 # Fail-hard on auth import: a silent fail-open fallback would make
 # every route parameter default to None, bypassing Depends entirely.
 from api._deps import require_auth
+from api.auth_principal import get_authenticated_principal
 _auth = Depends(require_auth)
 
 router = APIRouter(tags=["system"])
@@ -167,12 +168,18 @@ async def get_tools_registry(_user: dict = _auth):
 
 
 @router.post("/api/v2/tools/test")
-async def test_tool_live(payload: dict, _user: dict = _auth):
+async def test_tool_live(
+    payload: dict, request: Request, _user: dict = _auth
+):
     """Test live d'un tool. Body: {"tool": "name", "params": {...}}"""
     tool_name = payload.get("tool", "")
-    params = payload.get("params", {})
+    params = dict(payload.get("params", {}))
     if not tool_name:
         return {"ok": False, "error": "tool name required"}
+    # Inject validated principal — client-supplied principal_id is ignored.
+    principal_id = get_authenticated_principal(request)
+    params["_bea_principal_id"] = principal_id or ""
+    params.pop("principal_id", None)
     try:
         from core.tool_executor import get_tool_executor
         result = get_tool_executor().execute(tool_name, params, approval_mode="SUPERVISED")
