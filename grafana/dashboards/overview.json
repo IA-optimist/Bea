@@ -1,0 +1,146 @@
+{
+  "__inputs": [{"name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus"}],
+  "__requires": [{"type": "grafana", "id": "grafana", "version": "10.0.0"}],
+  "title": "Béa — Overview",
+  "uid": "bea-overview",
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Missions actives",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "targets": [{
+        "expr": "bea_missions_active_total",
+        "legendFormat": "Actives"
+      }],
+      "options": {"colorMode": "background", "graphMode": "none"}
+    },
+    {
+      "id": 2,
+      "title": "Missions terminées (1h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "targets": [{
+        "expr": "increase(bea_missions_completed_total[1h])",
+        "legendFormat": "Terminées"
+      }],
+      "options": {"colorMode": "background", "graphMode": "none"}
+    },
+    {
+      "id": 3,
+      "title": "Missions échouées (1h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "targets": [{
+        "expr": "increase(bea_missions_failed_total[1h])",
+        "legendFormat": "Échouées"
+      }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "thresholds": {
+          "steps": [
+            {"color": "green", "value": 0},
+            {"color": "yellow", "value": 1},
+            {"color": "red", "value": 5}
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Taux de succès missions",
+      "type": "gauge",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "targets": [{
+        "expr": "rate(bea_missions_completed_total[5m]) / (rate(bea_missions_completed_total[5m]) + rate(bea_missions_failed_total[5m]) + 0.001) * 100",
+        "legendFormat": "Succès %"
+      }],
+      "options": {
+        "minValue": 0,
+        "maxValue": 100,
+        "thresholds": {
+          "steps": [
+            {"color": "red", "value": 0},
+            {"color": "yellow", "value": 70},
+            {"color": "green", "value": 90}
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Durée moyenne des missions (s)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(bea_mission_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(bea_mission_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(bea_mission_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Missions par type (5m)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [{
+        "expr": "rate(bea_missions_total[5m])",
+        "legendFormat": "{{task_type}}"
+      }]
+    },
+    {
+      "id": 7,
+      "title": "Circuit breaker Orchestrateur",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 12},
+      "targets": [{
+        "expr": "bea_circuit_breaker_state",
+        "legendFormat": "État (0=CLOSED, 1=OPEN)"
+      }],
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "steps": [
+            {"color": "green", "value": 0},
+            {"color": "red", "value": 1}
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Approbations en attente",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 12},
+      "targets": [{
+        "expr": "bea_approval_queue_pending_total",
+        "legendFormat": "En attente"
+      }],
+      "options": {"colorMode": "background"}
+    },
+    {
+      "id": 9,
+      "title": "Compactions de contexte (1h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 12},
+      "targets": [{
+        "expr": "increase(bea_context_compactions_total[1h])",
+        "legendFormat": "Compactions"
+      }],
+      "options": {"colorMode": "background"}
+    }
+  ]
+}
