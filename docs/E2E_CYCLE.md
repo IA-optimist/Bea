@@ -14,7 +14,7 @@ The smoke cycle is:
 4. Run `scripts/ingest_mission_report.py --json` against the report.
 5. Store mission-learning memories in an isolated operational memory DB.
 6. Verify expected memory types were created.
-7. Run `scripts/bea_eval.py --json` and require a green result.
+7. Run `scripts/bea_eval.py --json --isolated` and require a green result.
 
 The default command runs both a successful fixture and a failing fixture:
 
@@ -280,6 +280,43 @@ when file paths are relative to a temporary artifact directory, plus
 `files_created` or `expected_artifact` for the source file, `tests_run` for the
 validation command, and `provider_used` / `model_used` / `test_result` in the
 final report.
+
+## Completion Truth Gate
+
+A code mission (`mission_type=coding_agent` or `needs_actions=True`) must never
+be recorded as `COMPLETED`, `DONE`, or `SUCCESS` unless all of the following
+are present:
+
+1. At least one verifiable artifact (file path that exists, or non-empty diff)
+2. `tests_run` — non-empty list of test commands
+3. `test_result` — explicit pass/fail from running those tests
+4. Syntax validity for `.py` artifacts (no Markdown leaking into `.py` files)
+5. `provider_used` and `model_used` for runtime reports
+
+Reports that lack any of these evidence fields are rejected with status
+`NEEDS_ACTION_OUTPUT` by `validate_mission_report_artifacts()`.  A non-code
+mission (`needs_actions=False`) is exempt from these requirements.
+
+Use `validate_coding_report(report, artifact_root=...)` for a clean interface
+that returns `.valid` / `.reason` alongside the existing `.ok` / `.message`.
+
+Regression tests are in `tests/test_false_completed_regression.py`.
+
+## bea_eval Isolated Mode
+
+`python scripts/bea_eval.py --json --isolated` runs the full eval suite in a
+temporary SQLite store that is discarded after the run.
+
+- Does not read from the global `operational_memory.db`
+- Does not write to the global `operational_memory.db`
+- Produces the same JSON schema as the non-isolated run
+- Two consecutive runs produce the same score (no store pollution)
+- CI uses `--isolated` via `pr-smoke.yml`
+
+The previous `python scripts/bea_eval.py --json` (without `--isolated`) is
+valid for local development when you want to accumulate eval results in the
+global store, but must not be used in CI where a dirty store can cause
+flaky results.
 
 ## Local Validation Note
 

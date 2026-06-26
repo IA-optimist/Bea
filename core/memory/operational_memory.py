@@ -18,10 +18,13 @@ from typing import Any, Iterable
 from core.memory.memory_item import MemoryItem, MemoryItemStatus, MemoryItemType
 
 
-_DEFAULT_DB = os.environ.get(
-    "BEA_OPERATIONAL_MEMORY_DB",
-    os.path.join(os.environ.get("BEA_ROOT", "/opt/beamax"), "workspace", "operational_memory.db"),
-)
+def _default_db() -> str:
+    # Read at call time so --isolated mode can override BEA_OPERATIONAL_MEMORY_DB
+    # after module import without stale path being captured at import time.
+    return os.environ.get(
+        "BEA_OPERATIONAL_MEMORY_DB",
+        os.path.join(os.environ.get("BEA_ROOT", "/opt/beamax"), "workspace", "operational_memory.db"),
+    )
 
 
 def _ensure_dir(path: str) -> None:
@@ -77,7 +80,7 @@ class OperationalMemoryStore:
     """
 
     def __init__(self, db_path: str = "") -> None:
-        self.db_path = db_path or _DEFAULT_DB
+        self.db_path = db_path or _default_db()
         if self.db_path != ":memory:":
             _ensure_dir(self.db_path)
         self._conn: sqlite3.Connection | None = None
