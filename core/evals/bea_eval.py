@@ -416,7 +416,11 @@ class BeaEval:
     def eval_repo_map_tests(self) -> EvalResult:
         start = _now_ms()
         try:
-            target = "core/memory/memory_item.py"
+            # Use a file with a directly heuristic-discoverable test file so this
+            # eval is reproducible in both isolated and global-store modes.
+            # core/memory/memory_item.py has no dedicated test_memory_item.py and
+            # only passes when the global store is warm (prior persist runs cached it).
+            target = "core/evaluation/model_router.py"
             self.repo_map.persist(force=False)
             tests = self.repo_map.find_tests_for_file(target)
             success = len(tests) > 0
