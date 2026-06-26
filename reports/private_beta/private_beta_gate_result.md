@@ -5,9 +5,10 @@ PUBLIC_BETA_READY: false
 
 Generated during docs truth sync on 2026-06-26.
 
-Important: `python scripts/private_beta_gate.py --json` failed on the current
-commit because `scripts/private_beta_gate.py` is absent. This report is a manual
-truth-sync result based on the scripts and configs that are present.
+`python scripts/private_beta_gate.py --json` now exists as a minimal wrapper. It
+calls the docs truth gate, the Flutter v1 usage check, and
+`validate_local.py --quick`. It keeps Qdrant cleanup, historical/shared secret
+rotation, and Android mission UI/offline validation as HUMAN_REQUIRED.
 
 ## Result
 
@@ -19,6 +20,7 @@ NO-GO for public beta.
 | Evidence | Result |
 |---|---|
 | `python scripts/validate_local.py --quick` | PASS |
+| `python scripts/private_beta_gate.py --json` | PASS |
 | `python scripts/check_client_v1_usage.py` | PASS, 0 active `/api/v1` calls |
 | `python scripts/check_policy_principal_binding.py` | PASS |
 | `python scripts/check_tool_executor_mission_id.py` | PASS |

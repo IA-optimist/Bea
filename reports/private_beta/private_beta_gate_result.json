@@ -1,6 +1,6 @@
 {
-  "commit": "a59b034ad93c0ff71ed1b6692eb6d045a782b3c8",
-  "branch": "docs/truth-sync-private-beta",
+  "commit": "924c0f68a25b8de9d3bb6464876f1a166ed4cbd5",
+  "branch": "main",
   "timestamp": "2026-06-26",
   "generated_by": "Codex docs truth sync",
   "private_beta_ready": true,
@@ -10,11 +10,10 @@
     "Qdrant live memory cleanup required: 1 private item detected by privacy scan",
     "Historical/shared secret rotation not proved in repo evidence",
     "Android mission UI not proved",
-    "Android offline/network-failure behavior not proved",
-    "scripts/private_beta_gate.py absent on current commit"
+    "Android offline/network-failure behavior not proved"
   ],
   "warnings": [
-    "Full pytest -q did not complete during the initial docs truth command loop",
+    "Full pytest -q has residual failures outside the docs truth gate; see docs_truth_final.md",
     "RedisSessionStore required/recommended for multi-process or multi-worker testing",
     "Self-improvement must remain disabled by default",
     "Dangerous actions must remain gated or out of scope"
@@ -28,8 +27,8 @@
     "HUMAN_REQUIRED: use RedisSessionStore for multi-process or multi-worker testing"
   ],
   "commands": [
-    {"cmd": "git rev-parse HEAD", "result": "a59b034ad93c0ff71ed1b6692eb6d045a782b3c8"},
-    {"cmd": "python scripts/private_beta_gate.py --json", "result": "FAIL: script absent"},
+    {"cmd": "git rev-parse HEAD", "result": "924c0f68a25b8de9d3bb6464876f1a166ed4cbd5"},
+    {"cmd": "python scripts/private_beta_gate.py --json", "result": "PASS: wrapper gate passed; HUMAN_REQUIRED items preserved"},
     {"cmd": "python scripts/validate_local.py --quick", "result": "PASS"},
     {"cmd": "python scripts/check_client_v1_usage.py", "result": "PASS: 0 active /api/v1 calls"},
     {"cmd": "python scripts/check_policy_principal_binding.py", "result": "PASS"},
