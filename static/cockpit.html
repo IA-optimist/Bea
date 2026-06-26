@@ -299,7 +299,12 @@
 // ── Auth ──────────────────────────────────────────────────────────────────────
 const _urlToken = new URLSearchParams(window.location.search).get('token') || '';
 let TOKEN = _urlToken;
-if (_urlToken) { window.addEventListener('DOMContentLoaded', () => { document.getElementById('token').value = _urlToken; refreshAll(); }); }
+if (_urlToken) {
+  // Remove token from URL immediately to avoid leaking it in browser history,
+  // server logs, and Referer headers. Token-in-URL is dev-only convenience.
+  history.replaceState(null, '', window.location.pathname);
+  window.addEventListener('DOMContentLoaded', () => { document.getElementById('token').value = _urlToken; refreshAll(); });
+}
 function saveToken(){ TOKEN = document.getElementById('token').value.trim(); refreshAll(); }
 function authHeaders(extra){
   const h = Object.assign({}, extra || {});

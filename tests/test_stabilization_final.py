@@ -139,7 +139,14 @@ class TestDocumentation(unittest.TestCase):
         """Reports should be in docs/, not cluttering root."""
         root_mds = [f for f in os.listdir(".") if f.endswith(".md")]
         # CONTRIBUTING.md is conventional at repo root (GitHub picks it up)
-        allowed = {"README.md", "ARCHITECTURE.md", "CHANGELOG.md", "CONTRIBUTING.md"}
+        # Beta docs added during Private Beta 0.1 preparation are intentional at root:
+        # README_PUBLIC_BETA.md, PUBLIC_BETA_CHECKLIST.md, RELEASE_NOTES.md,
+        # GETTING_STARTED.md, TROUBLESHOOTING.md, SECURITY_MODEL.md
+        allowed = {
+            "README.md", "ARCHITECTURE.md", "CHANGELOG.md", "CONTRIBUTING.md",
+            "README_PUBLIC_BETA.md", "PUBLIC_BETA_CHECKLIST.md", "RELEASE_NOTES.md",
+            "GETTING_STARTED.md", "TROUBLESHOOTING.md", "SECURITY_MODEL.md",
+        }
         extra = set(root_mds) - allowed
         self.assertEqual(extra, set(), f"Found non-essential .md files at root: {extra}")
 

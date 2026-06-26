@@ -1,7 +1,7 @@
 """Pydantic request schemas for mission routes."""
 from __future__ import annotations
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 class TaskRequest(BaseModel):
     input: str
     mode:  str = "auto"
@@ -37,7 +37,7 @@ class AbortRequest(BaseModel):
 
 
 class MissionSubmitRequest(BaseModel):
-    goal: str = ""
+    goal: str = Field(default="", min_length=0, max_length=8000)
     mode: str = "auto"
 
 
