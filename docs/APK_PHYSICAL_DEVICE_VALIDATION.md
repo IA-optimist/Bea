@@ -1,91 +1,43 @@
-# Béa APK — Physical Device Validation
+# Android APK Physical Device Validation
 
-> Statut actuel : **VALIDÉ** — 2026-06-24, Pixel 7 (Android 16 / SDK 36), session Max (User 11)
-> Validé via ADB wireless + Claude Code Release Manager.
+Current status: partially validated.
 
----
+The APK must not be described as complete. The current evidence supports
+launch/connectivity only. Mission UI and offline/network-failure behavior remain
+HUMAN_REQUIRED.
 
-## Prérequis
+## Evidence Currently Accepted
 
-- Device Android physique (Pixel 7 recommandé, Android 12+)
-- ADB installé et device reconnu (`adb devices`)
-- API Béa accessible (locale ou via Tailscale)
-- APK buildée (`beamax_app/` — voir `docs/MOBILE_HARDENING.md`)
+| Area | Status | Notes |
+|---|---:|---|
+| Physical install | PARTIAL | Prior Pixel 7 session reported install and launch |
+| API connectivity | PARTIAL | Prior session reported `/health` and `/api/v3/missions` connectivity |
+| Active Flutter `/api/v1` calls | PASS | `python scripts/check_client_v1_usage.py` reports 0 active calls |
+| Tokens in logcat | PARTIAL | Prior session reported no token in logcat; repeat before wider testing |
 
----
+## Not Yet Proved
 
-## Construction de l'APK
+- HUMAN_REQUIRED: submit a mission from the Android mission UI and capture the result.
+- HUMAN_REQUIRED: test API unavailable at launch.
+- HUMAN_REQUIRED: test API loss during an active mission.
+- HUMAN_REQUIRED: test token rejection/expired-token behavior.
+- HUMAN_REQUIRED: record device, Android version, APK SHA, backend commit, and
+  date for the next run.
 
-L'APK doit être buildée avec les bons `--dart-define` :
+## Validation Checklist
 
-```bash
-# Depuis une copie ASCII du projet (éviter les accents dans le chemin)
-cd C:\bea_app  # Copie de beamax_app sans accent dans le chemin
+- [ ] APK installs on a physical device.
+- [ ] App launches without crash.
+- [ ] API host configuration is visible to the tester/operator.
+- [ ] `/health` succeeds.
+- [ ] `/api/v3/missions` succeeds.
+- [ ] Mission is submitted through the UI.
+- [ ] Mission result or failure state is visible in the UI.
+- [ ] Offline startup behavior is understandable.
+- [ ] Network loss during a mission is handled without data loss.
+- [ ] No token or private data appears in logs.
 
-flutter build apk --release --no-tree-shake-icons \
-  --dart-define=JARVIS_API_TOKEN=votre-token \
-  --dart-define=JARVIS_API_HOST=127.0.0.1 \
-  --dart-define=JARVIS_API_SCHEME=http \
-  --dart-define=JARVIS_AUTO_LOGIN=true \
-  --dart-define=JARVIS_USERNAME=admin
-```
+## Status For Private Beta 0.1
 
-Pour accès Tailscale : remplacer `JARVIS_API_HOST` par l'IP Tailscale.
-
----
-
-## Checklist de validation physique
-
-À remplir par le validateur humain. Cocher et noter le résultat.
-
-### Installation
-
-- [x] APK installée sans erreur (`adb install -r --user 11 app-release.apk`) ✅
-- [x] App se lance sans crash — Flutter Impeller/Vulkan chargé ✅
-- [x] Version précédente (2026-06-02) remplacée par 2026-06-22 ✅
-
-### Configuration
-
-- [x] API URL : `http://127.0.0.1:8000` via `adb reverse tcp:8000 tcp:8000` ✅
-- [x] Pas de credentials hardcodés visibles dans l'UI ✅
-
-### Authentification
-
-- [x] Auto-login actif (dart-define JARVIS_AUTO_LOGIN=true) ✅
-- [x] Dashboard principal affiché — "En ligne" visible ✅
-- [x] Session Max (User 11) isolée de l'Owner ✅
-
-### Connectivité
-
-- [x] GET /health → `{"status":"ok","service":"beamax"}` ✅
-- [x] GET /api/v3/missions → données réelles retournées ✅
-- [x] Reverse port actif : ping 127.0.0.1 0% loss, 0.36ms avg ✅
-
-### Mission simple
-
-- [ ] Mission "Résume le README du projet." soumise — À tester manuellement via l'UI ⏳
-
-### Réseau
-
-- [ ] Comportement si API inaccessible — À tester manuellement ⏳
-
-### Logs / traces
-
-- [x] 0 appels `/api/v1` détectés dans logcat ✅
-- [x] 0 token visible dans logcat système ✅
-
----
-
-## Résultats
-
-| Validateur | Date | Device | Android version | APK sha256 | Résultat |
-|------------|------|--------|-----------------|------------|----------|
-| Claude Code (ADB wireless) + Max | 2026-06-24 | Pixel 7 (panther) | Android 16 / SDK 36 | `c2242f6d` | **VALIDÉ PARTIEL** — connectivité ✅, mission UI ⏳ |
-
----
-
-## Statut dans le gate
-
-**Flutter APK : `validated on physical device (connectivity + launch)` — mission UI test restant**
-
-Preuve : ADB wireless `192.168.129.208:45821`, User 11 (Max), 2026-06-24 20:58.
+Android can be offered only as an experimental companion surface. Testers must
+be able to use the API directly if the APK fails.

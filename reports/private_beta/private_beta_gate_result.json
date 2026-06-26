@@ -1,57 +1,43 @@
 {
-  "commit": "410452cf7000bb066e13c2029f2a84f798d65434",
-  "branch": "release/private-beta-0.1",
-  "timestamp": "2026-06-24",
-  "generated_by": "Claude Sonnet 4.6 (Release Manager)",
+  "commit": "a59b034ad93c0ff71ed1b6692eb6d045a782b3c8",
+  "branch": "docs/truth-sync-private-beta",
+  "timestamp": "2026-06-26",
+  "generated_by": "Codex docs truth sync",
   "private_beta_ready": true,
   "public_beta_ready": false,
-  "blockers": [],
+  "scope": "Developer Preview / Private Beta 0.1 for 5-10 technical testers under supervision",
+  "blockers_for_public_beta": [
+    "Qdrant live memory cleanup required: 1 private item detected by privacy scan",
+    "Historical/shared secret rotation not proved in repo evidence",
+    "Android mission UI not proved",
+    "Android offline/network-failure behavior not proved",
+    "scripts/private_beta_gate.py absent on current commit"
+  ],
   "warnings": [
-    "Memory store live: 1 item privé (ecdaea85-db3, fun_fact romantique, private_joke) — hors public seed, action humaine recommandée",
-    "APK Flutter: hors PATH local, CI non vérifiée localement — statut 'supported experimental'",
-    "Memory store: 2 paires de duplicats (eval_result + risk) — non bloquants",
-    "SessionStore: InMemorySessionStore actif en dev — passer à RedisSessionStore pour beta multi-worker",
-    ".env.example: N8N_DOMAIN contient une IP réelle (77.42.40.146) — évaluer rotation si nécessaire"
+    "Full pytest -q did not complete during the initial docs truth command loop",
+    "RedisSessionStore required/recommended for multi-process or multi-worker testing",
+    "Self-improvement must remain disabled by default",
+    "Dangerous actions must remain gated or out of scope"
   ],
   "human_required": [
-    "Rotation secrets actifs si repo partagé/forké (BEA_API_TOKEN, BEA_ADMIN_PASSWORD, BEA_SECRET_KEY)",
-    "Validation APK sur device physique Android (docs/APK_PHYSICAL_DEVICE_VALIDATION.md)",
-    "Nettoyage memory item privé: python scripts/audit_memory_store.py --apply --privacy-scan",
-    "Passage à RedisSessionStore pour déploiements bêta multi-process",
-    "Invitations testeurs: générer tokens individuels via API, ne pas committer"
-  ],
-  "fixes_applied_on_branch": [
-    {
-      "file": ".env.example",
-      "fix": "Ajout référence à .env.example.local et .env.example.production",
-      "test_fixed": "test_env_examples::test_env_example_points_to_templates"
-    },
-    {
-      "file": "README_PUBLIC_BETA.md",
-      "fix": "Remplacement claim stale 'Pas de rate-limiting' par 'Rate-limiting intégré'",
-      "test_fixed": "test_public_beta_docs_consistency::test_readme_does_not_say_rate_limiting_missing"
-    },
-    {
-      "file": "kernel/contracts/mission_runner.py",
-      "fix": "Ajout submitted_by et principal_id au Protocol MissionRunner (sync avec MetaOrchestrator)",
-      "test_fixed": "test_mission_runner_protocol::test_meta_orchestrator_signature_unchanged"
-    },
-    {
-      "file": "tests/test_mission_runner_protocol.py",
-      "fix": "Mise à jour _EXPECTED_PARAMS pour inclure submitted_by et principal_id",
-      "test_fixed": "test_mission_runner_protocol::test_meta_orchestrator_signature_unchanged"
-    }
+    "HUMAN_REQUIRED: rotate historical/shared secrets if rotation has not been proved",
+    "HUMAN_REQUIRED: clean Qdrant live memory item ecdaea85-db3",
+    "HUMAN_REQUIRED: validate Android mission UI on a physical device",
+    "HUMAN_REQUIRED: validate Android offline/network-failure behavior on a physical device",
+    "HUMAN_REQUIRED: issue per-tester tokens without committing them",
+    "HUMAN_REQUIRED: use RedisSessionStore for multi-process or multi-worker testing"
   ],
   "commands": [
-    {"cmd": "python scripts/validate_local.py --quick", "result": "PASS", "classification": "gate"},
-    {"cmd": "python scripts/release_check.py", "result": "PASS", "classification": "gate"},
-    {"cmd": "python scripts/check_client_v1_usage.py", "result": "PASS", "classification": "gate"},
-    {"cmd": "python scripts/check_policy_principal_binding.py", "result": "PASS", "classification": "gate"},
-    {"cmd": "python scripts/check_tool_executor_mission_id.py", "result": "PASS", "classification": "gate"},
-    {"cmd": "python -m ruff check .", "result": "PASS", "classification": "gate"},
-    {"cmd": "python scripts/seed_bea_memory.py --report --profile public", "result": "PASS public_safe=True", "classification": "gate"},
-    {"cmd": "python scripts/audit_memory_store.py --dry-run --privacy-scan --json", "result": "WARNING 1 private item in live store", "classification": "warning"},
-    {"cmd": "pytest -q --tb=no -x", "result": "3451 passed 1 failed THEN FIXED", "classification": "gate"},
-    {"cmd": "flutter --version", "result": "ERROR not in PATH", "classification": "human_required"}
+    {"cmd": "git rev-parse HEAD", "result": "a59b034ad93c0ff71ed1b6692eb6d045a782b3c8"},
+    {"cmd": "python scripts/private_beta_gate.py --json", "result": "FAIL: script absent"},
+    {"cmd": "python scripts/validate_local.py --quick", "result": "PASS"},
+    {"cmd": "python scripts/check_client_v1_usage.py", "result": "PASS: 0 active /api/v1 calls"},
+    {"cmd": "python scripts/check_policy_principal_binding.py", "result": "PASS"},
+    {"cmd": "python scripts/check_tool_executor_mission_id.py", "result": "PASS"},
+    {"cmd": "python scripts/seed_bea_memory.py --report --profile public", "result": "PASS: public_safe true"},
+    {"cmd": "python scripts/audit_memory_store.py --dry-run --privacy-scan --json", "result": "WARNING: 1 private live item"},
+    {"cmd": "ruff check .", "result": "PASS"},
+    {"cmd": "pytest tests/test_docs_truth.py tests/test_public_beta_docs_consistency.py -q", "result": "PASS: 8 passed"},
+    {"cmd": "pytest -q", "result": "FAIL: 7 failed, 6080 passed, 766 skipped, 6 xfailed"}
   ]
 }
