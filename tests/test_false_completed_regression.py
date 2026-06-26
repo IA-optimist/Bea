@@ -142,7 +142,7 @@ def test_valid_code_report_with_real_file(tmp_path: pytest.MonkeyPatch) -> None:
         files_created=[str(good_py)],
         expected_artifact=str(good_py),
         tests_run=["pytest tests/test_sha256_file.py"],
-        test_result="passed",
+        test_result={"py_compile": {"passed": True}, "outcome": "passed"},
     )
     result = validate_coding_report(report, artifact_root=str(tmp_path))
     assert result.valid, f"Valid report should pass: {result.reason}"

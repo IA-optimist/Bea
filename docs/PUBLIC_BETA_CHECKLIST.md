@@ -39,7 +39,7 @@ supervision.
 - [ ] `docs/KNOWN_LIMITATIONS.md` is current
 - [ ] `docs/PRIVACY_FOR_TESTERS.md` is accurate
 - [ ] `docs/TROUBLESHOOTING.md` covers common issues
-- [ ] No "production ready" or "stable" claims anywhere
+- [ ] No maturity overclaims (run `scripts/check_docs_truth.py` to verify)
 - [ ] All doc links resolve (no 404s)
 
 ## Security
@@ -95,5 +95,5 @@ supervision.
 ```bash
 # Should return nothing:
 rg "sk-|OPENROUTER_API_KEY=|Bearer " docs .github README_PUBLIC_BETA.md
-rg "production ready|stable public beta|guaranteed" docs README_PUBLIC_BETA.md
+# check_docs_truth.py enforces maturity claim patterns automatically
 ```
