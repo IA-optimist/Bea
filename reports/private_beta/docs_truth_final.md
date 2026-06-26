@@ -16,7 +16,10 @@ This final report covers the Developer Preview / Private Beta 0.1 truth sync.
 
 ## Commit SHA Final
 
-To be updated after the final commit is created.
+Docs truth sync commit: `e974ee14c04cedaa820a813de3f4b24d833f8b8f`.
+
+Note: a commit cannot contain its own final hash without changing that hash. The
+branch tip is available from Git and the PR metadata.
 
 ## Fichiers Modifies
 
