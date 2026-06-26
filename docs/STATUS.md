@@ -1,333 +1,78 @@
-# Béa — Component Status
+# Bea Status
 
-> Honest per-component maturity rating. Last verified: **2026-06-24**, branch `beta/auth-session-hardening` (builds on `fix/mission-submitted-by` + `fix/approval-queue-auth`).
-> Verified by direct code reading + runtime observation + gate test results.
+Last truth sync baseline: 2026-06-26, commit
+`a59b034ad93c0ff71ed1b6692eb6d045a782b3c8`.
 
-Packaging truth:
-- License: MIT
-- Build metadata: `pyproject.toml` (PEP 621, `name=beamax`, `version=0.1.0`)
-- Version line: SemVer `0.x` until the public API is frozen
-- Wheel validated: `python -m build` → `beamax-0.1.0-py3-none-any.whl`, `import beamax_cli / core / api` OK (T1.5 ✅)
+PRIVATE_BETA_READY: true for 5-10 technical testers under supervision.
+PUBLIC_BETA_READY: false.
 
-## Summary (June 2026)
+Bea is a Developer Preview / Private Beta 0.1. This document is the source of
+record for active component status. Older reports can be useful history, but
+they do not override this page.
 
-| Area | State |
+## Current Verdict
+
+| Question | Answer |
 |---|---|
-| API (590+ routes) | 🟢 Running — PID stable, 400+ tests passing |
-| Auto-improvement daemon | 🟢 **End-to-end working** — first `proposal_saved` 2026-06-16 |
-| Business engine | 🟢 AutoContentFlow + CVOptimIA live on Railway |
-| Telegram bot | 🟢 Codex gpt-5.5, vision (photos + YouTube), persistent task |
-| Mobile APK | 🟢 Flutter 3.41.9, Tailscale access, rebuilt 2026-06-07 |
-| Docker stack | 🟢 Back in service 2026-06-05 (postgres/redis/qdrant healthy) |
-| Renommage jarvis→bea | ✅ Done 2026-06-07, 823 files, commit `aaee8c6` |
-| Forge-builder | 🟢 Committed 2026-06-12, suite verte Windows |
-| Provider fallback chain | 🟢 FallbackChainProvider T5.2 — 12 tests |
-| Provider runtime health | 🟢 PR #92 — `check_provider_health()`, Ollama autodiscovery, `scripts/provider_healthcheck.py` |
-| Sandbox killswitch | 🟢 DockerSandbox timeout+kill() T5.3 — 11 tests |
-| Windows CI job | 🟢 Added `test-windows` job T5.4 |
-| OTel tracing shim | 🟡 `core/observability/tracing.py` T6.1 — optionnel, fail-open |
-| Eval publisher | 🟢 `core/observability/eval_publisher.py` T6.2 — GET/POST /api/v1/evaluations |
-| Policy/tool guardrails cleanup | 🟢 Constantes `Decision` centralisées, `tool_executor` nettoyé, ratchet import interne activé, tracker de session partagé branché via `PolicyEngine.ensure_session()` + `check_and_record()` atomique + `_session_key()` avec `principal_id`; `ToolExecutor`/`MetaOrchestrator`/`BeaOrchestrator` propagent et utilisent `get_policy_engine()` singleton (`fix/policy-engine-session-hardening`) — **mission_id propagation audit terminé** (`fix/mission-id-propagation-audit`) — **principal/auth binding terminé** (`feat/principal-auth-binding`) : helper canonique `api/auth_principal.py`, principal injecté depuis `request.state.user` dans les routes missions/v1/operational_tools/system_v2, propagé via `MetaOrchestrator.run_mission()`, `KernelAdapter.submit()`, `tool_runner`, `execution_engine`, `tool_pipeline_tool` et durci dans `PolicyEngine.evaluate_tool()`; ratchet `scripts/check_policy_principal_binding.py`, 3 nouveaux fichiers de tests — **mission submitter identity terminé** (`fix/mission-submitted-by`) : `submitted_by`/`approved_by` persistés, reprise post-approbation sous l'identité du submitter, compatibilité arrière assurée — **approval queue auth terminé** (`fix/approval-queue-auth`) : `approved_by`/`rejected_by` toujours depuis `get_authenticated_principal()`, plus de "human" hardcodé, ratchet `scripts/check_approval_hardcoded_principals.py` — **SessionStore abstraction en cours** (`beta/auth-session-hardening`) : `InMemorySessionStore` (dev) + `RedisSessionStore` (beta/prod, fail-closed), clé strictement `principal_id:mission_id` |
-| OrchestratorV2 | 🟡 `core/orchestrator_v2.py` — compat wrapper; delegates to MetaOrchestrator/BeaOrchestrator path |
-| DevinAgent | 🔵 Blueprint only — originally **BEA MAX v3** prototype, not wired to current orchestrator |
-| V1 API surface | 🟡 `/api/v1/*` gelé T6.3 — 6 endpoints restants, 3 load-bearing Flutter |
-| Plugin signatures | 🟢 HMAC-SHA256 `plugins/signatures.py` T6.4 — verify on registry |
-| Client surfaces | 🟡 Inventoriées PR #85 — 2 canoniques, 1 supported (Flutter), 1 expérimental (React) |
+| Private beta for supervised technical testers? | Conditional GO |
+| Open beta? | NO-GO |
+| Can testers use real secrets or sensitive real data? | No |
+| Can dangerous actions run without gates? | No |
+| Is self-improvement enabled by default? | No |
 
-**Maturity legend:**
-- 🟢 **PROVEN** — Real implementation, used in runtime, gate-tested
-- 🟡 **WIRED** — Connected to orchestrator, not proven end-to-end
-- 🔵 **SCAFFOLDING** — Code exists, not yet wired (awaiting integration)
-- 🔴 **STUB** — Boilerplate only, no real logic
-- ⚫ **PLANNED** — Not yet started
+## Proved
 
----
+| Area | Evidence |
+|---|---|
+| Quick local gate | `python scripts/validate_local.py --quick` passed on 2026-06-26 |
+| Lint | `ruff check .` passed on 2026-06-26 |
+| Flutter active v1 usage | `python scripts/check_client_v1_usage.py` passed: 0 active `/api/v1` calls |
+| Principal binding | `python scripts/check_policy_principal_binding.py` passed: 24 call sites audited, 0 unresolved gaps |
+| Mission ID propagation | `python scripts/check_tool_executor_mission_id.py` passed: 6 call sites audited, 0 unresolved gaps |
+| Public memory seed | `python scripts/seed_bea_memory.py --report --profile public` passed: public-safe seed |
+| PR smoke | `.github/workflows/pr-smoke.yml` exists and runs on pull requests |
+| Dependencies | `requirements.txt` contains FastAPI, pytest, psutil, structlog, langchain packages, Redis, Qdrant client, and slowapi |
 
-## 🟢 PROVEN — Production-grade
+## Partially Validated
 
-### Cognitive Core
-| Component | File | Evidence |
-|-----------|------|----------|
-| MetaOrchestrator | `core/meta_orchestrator.py` | 1973 lines, 12 phases, used at every mission, gate-tested |
-| Mission lifecycle | `core/mission_system.py` | CRUD + persistence verified by `test_canonical_mission_persistence.py` (17 tests) |
-| ConfidencePolicy | `core/orchestration/confidence_policy.py` | 5-tier system with real behavioral consequences (abort line 958, approval line 965, decompose line 988) |
-| MissionReasoningState | `core/orchestration/mission_reasoning_state.py` | Full lifecycle: build → update → diff (550+ lines) |
-| MemoryRetrieval | `core/orchestration/memory_retrieval.py` | Real `facade.search()` queries with 0.40 score threshold |
-| Reasoning engine | `core/orchestration/reasoning_engine.py` | Pre-execution shape/complexity analysis (~1000 lines) |
-| Mission classifier | `core/orchestration/mission_classifier.py` | 3-tier fallback, used by routing + policy |
-| Learning loop | `core/orchestration/learning_loop.py` | Lesson extraction + storage + retrieval |
-| Execution supervisor | `core/orchestration/execution_supervisor.py` | Real approval gate, retry (MAX=2, 180s timeout) |
-| LLM Factory | `core/llm_factory.py` | 803 lines, Ollama circuit breaker, role routing, safer_model |
+| Area | Status |
+|---|---|
+| Core agentic runtime | Advanced and covered by local gates, but still Developer Preview |
+| Auth/principal binding | Advanced, checked by script and tests |
+| Policy gates | Advanced, checked by local validation and focused scripts |
+| Mission ID propagation | Advanced, checked by script |
+| Android mobile | Launch/connectivity previously validated; mission UI and offline/network-failure remain HUMAN_REQUIRED |
+| Qdrant live memory | Scan ran and found 1 private live item; cleanup required |
+| CI | Workflows exist for main CI, PR smoke, and Flutter APK; branch result still depends on GitHub execution |
 
-### Kernel
-| Component | File | Evidence |
-|-----------|------|----------|
-| Boot sequence | `kernel/runtime/boot.py` | 11 registrations at startup |
-| BeaKernel singleton | `kernel/runtime/kernel.py` | `run_cognitive_cycle()` is the cognitive brain |
-| Memory interfaces | `kernel/memory/interfaces.py` | 5 typed memory categories with registration slots |
-| Capability registry | `kernel/capabilities/registry.py` | 19 capabilities registered |
-| Evaluator | `kernel/evaluation/scorer.py` | Real heuristic + core reflection/critique vote |
-| Learner | `kernel/learning/learner.py` | Lesson extraction + storage |
-| Planner | `kernel/planning/planner.py` | Core planner registered + heuristic fallback |
-| Contracts | `kernel/contracts/types.py` | Mission, Goal, Plan, Action, Decision types |
+## Experimental Or Partial
 
-### Execution
-| Component | File | Evidence |
-|-----------|------|----------|
-| ActionExecutor (runtime) | `core/action_executor.py` | Daemon thread, dispatch by keyword, used by agents |
-| Execution engine | `executor/execution_engine.py` | Heapq priority queue, retry, timeout, 4 workers |
-| Task queue | `executor/task_queue.py` | Async priority queue |
-| Action runner | `executor/runner.py` | 10 action types, whitelist/blacklist, post-write guard |
-| Capability dispatch | `executor/capability_dispatch.py` | Native / plugin / MCP routing |
+- HexStrike and offensive/cyber workflows are out of Private Beta 0.1 scope.
+- Business automation, venture workflows, SaaS deployment, browser automation,
+  voice, and multimodal features are experimental or partial unless a current
+  validation report proves a narrower claim.
+- Self-improvement is disabled by default and must stay opt-in with operator
+  review.
 
-### Auth & Security
-| Component | File | Evidence |
-|-----------|------|----------|
-| AccessEnforcementMiddleware | `api/middleware.py` | Validates token before route handler runs |
-| JWT auth | `api/auth.py` | HS256 with `hmac.compare_digest`, PyJWT |
-| Per-route auth (require_auth) | `api/_deps.py` | Used by 46/53 route files |
-| Rate limiter | `api/rate_limiter.py` | Sliding window, Redis-backed (in-memory fallback) |
-| Production secret enforcement | `config/settings.py:enforce_production_secrets` | Hard-fails on insecure defaults if `BEA_PRODUCTION=true` |
+## Runtime Boundaries
 
-### Tests & CI
-| Component | Status |
-|-----------|--------|
-| Gate tests | Current hardening lane green ✅ |
-| Mission persistence regression | 17 tests, all green |
-| Terminal state truth (ghost-DONE fix) | 20 tests, all green |
-| Cognitive upgrade tests | Phase 1+2+3 covered |
-| Access enforcement | 30 tests, all green |
-| Self-improvement execution | Patch lifecycle covered |
+| Component | Current truth |
+|---|---|
+| `RedisSessionStore` | Required/recommended for multi-process or multi-worker testing |
+| `InMemorySessionStore` | Acceptable only for local single-process testing |
+| Dangerous tool execution | Must be gated or out of scope |
+| Real sensitive data | Not allowed for testers |
+| API v1 | Server compatibility may remain, but active Flutter `/api/v1` calls are 0 by script |
 
-### Self-improvement pipeline
-| Component | File | Evidence |
-|-----------|------|----------|
-| Engine | `core/self_improvement/engine.py` | Full cycle: collect → plan → generate → execute |
-| Test runner | `core/self_improvement/test_runner.py` | Real pytest integration, regression detection |
-| Promotion pipeline | `core/self_improvement/promotion_pipeline.py` | Sandbox + secret scrubbing + decisions |
-| Sandbox safety | `--network=none`, secret scrubbing | Verified |
+## HUMAN_REQUIRED
 
-### Business handlers (wired into orchestrator)
-| Mission type | Status |
-|--------------|--------|
-| `business.scan_opportunities` | 🟢 Real API calls (Product Hunt RSS, Reddit JSON, HN Algolia) |
-| `business.optimize_taxes` | 🟢 Real France tax calculation |
-| `business.check_compliance` | 🟢 Regex-based blacklist/greylist (RED/YELLOW/GREEN) |
-
-### Web canonical interface
-| Component | File | Evidence |
-|-----------|------|----------|
-| Web SPA | `static/app.html` (973 lines) | Canonical web control surface; kept alongside API and Flutter |
-| Admin cockpit | `static/cockpit.html` | Secondary admin view — missions, agents, security, business metrics |
-
-### Mobile canonical interface
-| Component | File | Evidence |
-|-----------|------|----------|
-| Flutter app | `beamax_app/` (~7,400 lines) | Canonical mobile path. Secure storage, token refresh, WS reconnect. |
-
-### Client surfaces — API version usage (PR #85, 2026-06-21)
-
-| Surface | Status | v1 calls | v3 calls | Notes |
-|---------|--------|----------|----------|-------|
-| `static/app.html` | CANONICAL | 0 | ✅ all | auth via v2 only |
-| `static/cockpit.html` | CANONICAL | 0 | ✅ all | v2 for agents |
-| `beamax_app/` (Flutter) | SUPPORTED | **3** (allowlisted) | ✅ majority | pause/resume/stream blocked on v3 endpoints |
-| `frontend/` (React) | EXPERIMENTAL | 0 | ✅ most | v2 for self-improvement endpoints |
-| `orchestrate-cli/` | SUPPORTED | 0 | ✅ all | Python CLI, no browser |
-
-**3 v1 calls remain in Flutter** — all in `beamax_app/lib/services/api_service.dart`:
-- `POST /api/v1/missions/{id}/pause` (line 550) → needs `/api/v3/missions/{id}/pause`
-- `POST /api/v1/missions/{id}/resume` (line 559) → needs `/api/v3/missions/{id}/resume`
-- `GET /api/v1/missions/{id}/stream` (line 753) → needs `/api/v3/missions/{id}/stream`
-
-See `docs/FRONTEND_SURFACES.md` for full inventory and migration plan.
-
----
-
-## 🟡 WIRED — Connected, not fully proven
-
-| Component | File | Why wired vs proven |
-|-----------|------|---------------------|
-| MemoryFacade | `core/memory_facade.py` | Registered in main.py:189-218 with K1 wrapper. Used by retrieval. Not stress-tested with live Qdrant. |
-| MCP server (bea_mcp) | `core/mcp/bea/bea_mcp_server.py` | 3 read-only tools (memory_search, mission_status, list_missions). Untested with live MCP clients. |
-| MCP registry | `core/mcp/mcp_registry.py` | Infrastructure ready, sidecars defined, not actively called by orchestrator |
-| Adapters | `kernel/adapters/*.py` | 5 adapter modules (capability/event/plan/mission/result/policy). Used at boot. |
-| Connectors (filesystem, HTTP, GitHub) | `connectors/*.py` | Code exists, agents use direct tools instead |
-| Reasoning prepass | `core/orchestration/reasoning_engine.py` | Called from meta_orchestrator @ line 438. Real logic. Edge cases not fully covered. |
-| WebSocket auth | `api/ws.py` | Token validated before `accept()`. Live connection edge cases not fully tested. |
-
-### Business handlers (wired but partial)
-| Mission type | Status |
-|--------------|--------|
-| `business.build_product` | 🟡 Handler wired, but `ProductBuilder` generates static HTML template (no React/Next.js, no deploy) |
-| `business.deploy_product` | 🟡 Handler exists, deployment logic is `# TODO: Implement actual deployment (Vercel API + Railway API)` |
-| `business.track_revenue` | 🟡 Handler wired, but `RevenueEngine` is dataclasses-only (no Stripe integration) |
-
----
-
-## 🔵 SCAFFOLDING — Awaiting orchestrator integration
-
-> These files exist with substantial code but are not yet wired. **Do not delete** — they're being progressively integrated.
-
-### Business top-level (1,274 lines)
-| File | Lines | Notes |
-|------|-------|-------|
-| `business/business_engine.py` | 342 | Orchestrator-style facade for SaaS generation pipeline |
-| `business/business_orchestrator.py` | 240 | Higher-level workflow coordinator |
-| `business/business_knowledge.py` | 450 | Domain knowledge base |
-| `business/layer.py` | 242 | Business layer abstraction |
-
-### Future revenue streams
-| File | Lines | Status |
-|------|-------|--------|
-| `agent_marketplace/marketplace.py` | 511 | AgentListing dataclasses, future marketplace |
-| `data_intelligence/market_intel_service.py` | 401 | Competitor/market trend service skeleton |
-| `security/blue_team/soc_service.py` | (TBD) | SOC service class, standalone |
-
-### Capabilities
-| File | Lines | Status |
-|------|-------|--------|
-| `executor/desktop_env/browser.py` | 58 | Browser automation skeleton |
-| `executor/desktop_env/editor.py` | 106 | File editor capability |
-| `executor/desktop_env/sandbox.py` | 146 | Sandbox execution |
-| `executor/desktop_env/terminal.py` | 141 | Terminal interaction |
-| `core/agent_specialization.py` | 888 | Task clustering / agent specialization (test-only currently) |
-
-### Plugins
-| File | Status |
-|------|--------|
-| `plugins/plugin_registry.py` | Production-ready infrastructure, registry currently empty |
-
----
-
-## 🔴 STUB — Boilerplate only
-
-### HexStrike v2 refactor (5% complete)
-| File | Lines | Status |
-|------|-------|--------|
-| `mcp/hexstrike_v2/recon/nmap_tool.py` | 85 | Auto-extracted template, `# TODO: Extract implementation` |
-| `mcp/hexstrike_v2/recon/amass_tool.py` | 85 | Same template |
-| `mcp/hexstrike_v2/recon/dnsenum_tool.py` | 85 | Same template |
-| `mcp/hexstrike_v2/recon/masscan_tool.py` | 85 | Same template |
-| `mcp/hexstrike_v2/recon/nmap_advanced_tool.py` | 85 | Same template |
-| `mcp/hexstrike_v2/recon/subfinder_tool.py` | 85 | Same template |
-| `mcp/hexstrike_v2/scanning/*` (3 tools) | 85 each | Same template |
-| `mcp/hexstrike_v2/web/*` (6 tools) | 85 each | Same template |
-| `mcp/hexstrike_v2/exploitation/*` (2 tools) | 85 each | Same template |
-
-**17 tools extracted as stubs / 156 total in `hexstrike-ai/hexstrike_server.py`** (the legacy 17,289-line monolith). Refactor migration is ~5% complete. **`hexstrike_v2` import currently fails** because `psutil` is missing from `requirements.txt`.
-
-### Other stubs
-| Item | File | Issue |
-|------|------|-------|
-| Multimodal endpoints | `api/routes/multimodal.py` | Stub responses (no real provider integration) |
-| Voice routes | `api/routes/voice.py` | Gated behind `ENABLE_STUB_ROUTES` |
-| Browser routes | `api/routes/browser.py` | Gated behind `ENABLE_STUB_ROUTES` |
-| Playbooks | `api/routes/playbooks.py` | Static data |
-| Venture | `api/routes/venture.py` | Static experiments |
-
----
-
-## 🚧 SECONDARY (lower priority than canonical)
-
-### React frontend (`frontend/`)
-36 TS/TSX files. React 18 + Vite + Tailwind + Recharts. Beautiful UI.
-- **Status**: 🟡 Wired, with some legacy route debt
-- The client now uses same-origin auth and the remaining API surface is mostly v2/v3 mixed
-- `Dashboard` still suppresses some fetch failures, so empty panels can hide backend drift
-- **Action needed**: keep pruning stale `/api/v2/*` calls as the shell migrates to the stable surface
-
-### React Native mobile (`mobile/`)
-2,767 lines. Expo SDK 50.
-- **Status**: 🟡 Secondary / legacy
-- Kept for compatibility; Flutter remains canonical mobile
-- Freeze this surface unless it is intentionally revived
-
----
-
-## ⚠️ Known issues
-
-### Policy / risk guardrails
-- `core/execution_policy.Decision` constants (`AUTO_APPROVED`, `REQUIRES_APPROVAL`, `BLOCKED`) now centralisent les statuts de décision.
-- `core/tool_executor.py` utilise les constantes `Decision`, le dead code `requires_approval` est supprimé, et la double validation `_validate_params` est éliminée.
-- `core/policy_engine.py` expose `get_policy_engine()` / `reset_policy_engine()` pour un tracker partagé.
-- `scripts/check_internal_imports.py` est intégré à `validate_local.py --quick` : 0 import interne cassé non protégé, 21 imports protégés par try/except.
-- **Session tracker durci (branche `fix/policy-engine-session-hardening`)** : `evaluate_tool()` appelle `ensure_session()` + `check_and_record()` atomique ; les limites explicites l'emportent toujours sur les presets de mode ; les sessions expirées sont evincées via `_cleanup_expired_sessions()` et un cap mémoire `_max_sessions` ; `mission_id` vide/`None` est refusé (fail-closed) ; `_session_key(mission_id, principal_id)` isole les sessions par principal quand un `principal_id`/`user_id`/`tenant_id`/`owner_id` est disponible. `ToolExecutor` utilise `get_policy_engine(None)` (singleton partagé). `MetaOrchestrator` et `BeaOrchestrator` appellent `get_policy_engine().ensure_session()` en début de run. 25+ tests couvrent l'atomicité, l'éviction, les limites explicites, le rejet sans `mission_id` et la séparation par principal.
-- **Mission submitter identity (`fix/mission-submitted-by`)** : `submitted_by` et `approved_by` ajoutés à `MissionResult`, `MissionContext` et `PersistedMission`. Les endpoints publics de submit enregistrent le principal authentifié comme `submitted_by` (fail-closed si manquant quand l'auth est requise). À la reprise post-approbation, l'identité d'exécution policy est `submitted_by`, pas le principal de l'approbateur ; `approved_by` est réservé à l'audit. Les anciens records sans `submitted_by` restent lisibles et basculent en mode dégradé sur l'approbateur.
-
-### Security
-The remaining high-risk auth drifts listed in earlier audits are now resolved:
-
-- `api/routes/extensions.py` keeps router-level `Depends(require_auth)`.
-- `api/routes/venture.py` imports `require_auth` hard and does not fall back to a permissive router.
-- `api/routes/metrics_mobile.py` no longer has a silent bypass when `BEA_API_TOKEN` is absent.
-- `api/main.py` fails closed in production if the access-enforcement middleware cannot load.
-
-The residual security debt is now concentrated in the broader exception-swallows / legacy API surface, not in these auth entry points.
-
-### Code quality
-- Bare `except Exception: pass` patterns reduced to ~0 in source; remaining silent paths use structured `swallowed_exception` logs.
-- 4 copies of `_check_auth` (1 canonical + 3 local in routes)
-- `class Mission` still exists in more than one layer for now
-- `_extract_final_output` duplicate already removed
-
-### Repo hygiene
-- `.env.agents` is not present in the current tree
-- 3 unused dependencies in `requirements.txt`: `beautifulsoup4`, `lxml`, `pandas`
-- Missing dependencies: `psutil` (causes `hexstrike_v2` import failure), `structlog`, `langchain_*`
-- Outdated versions: `pytest==7.4.4` (current 8.x), `fastapi==0.109.0` (current 0.115.x)
-
-### CI gates
-- `ruff check .` is **blocking**
-- `mypy` runs as a **delta gate** via `scripts/check_mypy_baseline.py`
-- Coverage gate is **blocking** with `--cov-fail-under=60`
-- `except/pass`, test marker, Bandit, and pip-audit debt are protected by ratchet baselines
-- Wheel build is checked in CI and in full local validation when `build` is installed
-- `pytest` blocks merge
-- `scripts/validate_local.py` mirrors the key gates locally
-
-### Docker
-- Dockerfile runs as non-root user `bea` (`USER bea` line 69)
-- Health endpoint in Dockerfile points to `/health`; verify `compose.prod.yml` alignment
-
-### Tests
-- **Gate tests: current hardening lane green** ✅
-- Full suite: ~4730 pass / 170 fail (most failures are stale tests for deleted UI patterns)
-
----
-
-## Maturity summary
-
-| Maturity | Components | LOC estimate |
-|----------|-----------|--------------|
-| 🟢 PROVEN | Cognitive core, kernel, execution, auth, gate tests, observability store, eval publisher, plugin signatures | ~50,000 |
-| 🟡 WIRED | MemoryFacade, MCP (manifests + signed tool loader), connectors, business handlers, plugins (signed) | ~10,000 |
-| 🔵 SCAFFOLDING | business top-level, marketplace, data intelligence, desktop_env | ~3,500 |
-| 🔴 STUB | HexStrike v2 tools, multimodal endpoints, voice, browser | ~2,000 |
-| ⚫ PLANNED | Full HexStrike v2 split, Stripe integration hardening, deploy automation | — |
-
-**Bottom line**: The Bea cognitive core is **PROVEN and stable**. The business automation layer is **scaffolding being progressively wired in**. MCP and plugin layers now have signatures. HexStrike v2 is staged for external extraction under `subprojects/hexstrike_v2/`.
-
----
-
-## Task 6 — Observability & public surface
-
-| # | Item | Status |
-|---|------|--------|
-| 6.1 | OpenTelemetry tracing shim (`core/observability/tracing.py`, wired in startup) | 🟢 Done |
-| 6.2 | Eval scores auto-published (`core/observability/eval_publisher.py`, `GET/POST /api/v1/evaluations`) | 🟢 Done |
-| 6.3 | V1 → V2 migration guide endpoint (`GET /api/v1/migration`, sunset 2026-10-01) | 🟢 Done |
-| 6.4 | Plugin registry signatures (`plugins/signatures.py`, metadata signed, registry verifies) | 🟢 Done |
-| 6.5 | Canonical frontend ADR-002 (web SPA canonical; Flutter/React Native not in this repo) | 🟢 Done |
-| 6.6 | HexStrike v2 staged for split (`subprojects/hexstrike_v2/`, vendored module deprecated) | 🟡 In progress |
-
----
-
-## How to use this file
-
-- **New contributor**: Read this first. Understand which components are PROVEN vs SCAFFOLDING.
-- **Before deleting code**: Check if it's marked SCAFFOLDING — those files are pre-positioned for integration.
-- **Before claiming a feature**: Verify the maturity level here.
-- **Before running tests**: Gate tests must pass. Full suite has ~170 known stale failures (documented in CODE_REVIEW.md).
-
-Last updated: 2026-06-20
+- HUMAN_REQUIRED: rotate historical/shared secrets if rotation is not proved
+  outside the repo.
+- HUMAN_REQUIRED: clean Qdrant live memory item `ecdaea85-db3` detected by the
+  privacy scan.
+- HUMAN_REQUIRED: validate Android mission UI on a physical device.
+- HUMAN_REQUIRED: validate Android offline/network-failure behavior on a
+  physical device.
+- HUMAN_REQUIRED: issue per-tester tokens without committing them.
+- HUMAN_REQUIRED: configure `RedisSessionStore` before multi-process or
+  multi-worker testing.

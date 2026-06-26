@@ -1,73 +1,49 @@
-# Béa — Developer Preview
+# Bea - Developer Preview / Private Beta 0.1
 
-> **Status: Developer Preview (limited)**
-> Not yet stable for production use. APIs and behaviour may change between releases.
+PUBLIC_BETA_READY: false
 
-Béa is a self-improving multi-agent platform: mission orchestration, persistent
-vector memory, provider routing, and a gated self-improvement loop.
+This repository is not ready for an open beta. The current target is a
+supervised Private Beta 0.1 for 5-10 technical testers only.
 
-## Ce que Béa sait faire aujourd'hui
+## What Is Proved
 
-| Capacité | Statut |
-|----------|--------|
-| Missions code (forge-builder) — génération Python + syntax check + test proof | ✅ Validé |
-| Missions recherche (scout-research) — analyse de documents locaux | ✅ Validé |
-| Missions conseil structuré (shadow-advisor) — JSON strict | ✅ Validé |
-| Pipeline multi-agent avec mémoire vectorielle (Qdrant) | ✅ Validé |
-| Provider routing advisory (non-prescriptif) : OpenRouter + Ollama | ✅ Validé |
-| Bot Telegram : texte, photos, analyse YouTube | ✅ Validé |
-| AutoContentFlow : génération SEO asynchrone (Railway) | ✅ En production |
-| CVOptimIA : SaaS CV/ATS FR | ✅ En cours |
+| Area | Current evidence |
+|---|---|
+| Local validation | `python scripts/validate_local.py --quick` passed on 2026-06-26 |
+| Python lint | `ruff check .` passed on 2026-06-26 |
+| Flutter client API usage | `python scripts/check_client_v1_usage.py` passed: 0 active `/api/v1` calls under `beamax_app/lib` |
+| Principal binding | `python scripts/check_policy_principal_binding.py` passed: 24 audited call sites, 0 unresolved gaps |
+| Mission ID propagation | `python scripts/check_tool_executor_mission_id.py` passed: 6 audited call sites, 0 unresolved gaps |
+| Public memory seed | `python scripts/seed_bea_memory.py --report --profile public` passed: 8 items checked, public safe |
+| PR smoke workflow | `.github/workflows/pr-smoke.yml` exists and runs on `pull_request` |
+| Rate-limiting | Rate-limiting intégré via `BEA_RATE_LIMIT_PER_MINUTE` / slowapi; do not expose the API without supervised network controls |
 
-## Ce que Béa ne sait pas encore faire
+## Partially Validated
 
-- **Router automatique** basé sur benchmark : advisory seulement (`runtime_enforced=false`)
-- **CI enforcement** du benchmark réel (pas encore sur PR)
-- **APK mobile v3** : Flutter utilise /api/v3 partout, mais build non validé en CI
-- **Multi-tenant** sans review manuelle
-- **Self-improvement autonome** sans gate opérateur (opt-in uniquement)
-- **Rate-limiting** intégré sur l'API (blocker avant production)
+| Area | Status |
+|---|---|
+| Android APK | Launch and connectivity were previously validated on a physical Pixel 7. Mission UI and offline/network-failure behavior remain HUMAN_REQUIRED. |
+| Qdrant live memory | Privacy scan ran on 2026-06-26 and found 1 private item in the live store. Cleanup is HUMAN_REQUIRED before any wider release. |
+| Session storage | `RedisSessionStore` is the required/recommended backend for multi-process or multi-worker use. `InMemorySessionStore` is acceptable only for local single-process testing. |
+| API versioning | Active Flutter `/api/v1` calls are 0 by script. Server-side v1 compatibility can remain only as a rollback surface until removal is deliberately validated. |
 
-## Prérequis
+## Experimental Or Out Of Scope
 
-- Python 3.11+
-- Docker Desktop (Postgres, Redis, Qdrant)
-- OpenRouter API key (compte gratuit suffisant pour dev) — `sk-or-v1-...`
-- Ollama (optionnel, pour fallback local : `gemma4:12b`)
+- Self-improvement must stay disabled by default.
+- Dangerous actions must remain gated or out of scope.
+- HexStrike, business automation, multimodal, voice, browser automation, venture workflows, and SaaS deployment are experimental or partial unless a current gate proves otherwise.
+- Testers must not use real secrets, private data, medical data, financial data, or customer data.
 
-## Quick Start
+## Human Required
 
-Voir [GETTING_STARTED.md](GETTING_STARTED.md).
+- HUMAN_REQUIRED: rotate any historical or shared secrets if rotation has not been proved outside the repo.
+- HUMAN_REQUIRED: clean the Qdrant live store item detected by the privacy scan.
+- HUMAN_REQUIRED: validate Android mission UI and offline/network-failure behavior on a physical device.
+- HUMAN_REQUIRED: issue per-tester tokens without committing them.
+- HUMAN_REQUIRED: use `RedisSessionStore` before multi-process or multi-worker testing.
 
-## Modèles / Providers
+## Recommendation
 
-| Provider | Modèle | Forge-builder | Scout-research | Shadow-advisor |
-|----------|--------|:---:|:---:|:---:|
-| OpenRouter | gpt-oss-120b:free | ✅ 1.0 | ✅ 1.0 | ✅ 1.0 |
-| Ollama | gemma4:12b | ❌ 0.0 | ✅ 1.0 | ❌ 0.33 |
-
-Recommandation advisory : **OpenRouter pour les 3 rôles** (non enforced au runtime).
-
-## Avertissement self-improvement
-
-Le module d'auto-amélioration (`BEA_CONTINUOUS_IMPROVEMENT=1`) est désactivé par
-défaut. Quand activé, chaque cycle passe par un gate kernel R4 (approbation opérateur).
-`BEA_SKIP_IMPROVEMENT_GATE` bypass TOTAL — **ne jamais utiliser en production**.
-
-## Sécurité
-
-Voir [SECURITY_MODEL.md](SECURITY_MODEL.md).
-
-## Limites connues
-
-- Ollama `gemma4:12b` : `artifact_invalid` sur forge-builder, `json_invalid` sur shadow-advisor
-- `model_used` reflète ce qu'on envoie à OpenRouter, pas ce qu'il exécute côté serveur
-- Sessions chat fast-path ne trackent pas `model_used`
-- Mémoire vectorielle Qdrant nécessite Docker actif
-- Rate-limiting intégré (`BEA_RATE_LIMIT_ENABLED`, défaut 60 req/min via slowapi) — ne pas exposer sans reverse proxy TLS
-- Endpoints `/api/v1` maintenus côté serveur jusqu'à validation APK v3 complète
-
-## Contribuer
-
-Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) et [docs/STATUS.md](docs/STATUS.md).
-Issues et PRs bienvenues après avoir lu [SECURITY_MODEL.md](SECURITY_MODEL.md).
+Private Beta 0.1 can proceed only for 5-10 technical testers under direct
+supervision after the HUMAN_REQUIRED items are accepted and tracked.
+Public beta remains NO-GO.

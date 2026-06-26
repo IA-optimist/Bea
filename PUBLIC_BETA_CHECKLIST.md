@@ -1,98 +1,58 @@
-# Béa — Public Beta Readiness Checklist
+# Bea - Public Beta Checklist
 
-> Évaluation au 2026-06-22. Recommandation : **Developer Preview** (pas encore Public Beta stable).
+PUBLIC_BETA_READY: false
 
-## Go / No-Go par critère
+This checklist tracks what blocks an open beta. It is not a launch checklist.
+Checked items require a command, workflow, or file-level proof.
 
-### Installation
+## Current Recommendation
 
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| `git clone` + `pip install -e .` | ✅ | `pyproject.toml` OK |
-| `.env.example` présent et à jour | ✅ | Champs Béa présents |
-| `docker compose up -d` démarre | ✅ | beamax-postgres / redis / qdrant healthy |
-| `bea-api-local` répond sur :8000 | ✅ | `/api/v3/system/health` 200 |
+| Decision | Value |
+|---|---|
+| Release label | Developer Preview / Private Beta 0.1 |
+| Private beta | Conditional GO for 5-10 technical testers under supervision |
+| Public beta | NO-GO |
+| Documentation truth sync | In progress on `docs/truth-sync-private-beta` |
 
-### Provider
+## Proved By Current Checks
 
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| OpenRouter key valide | ✅ | `sk-or-v1-...` 73 chars |
-| OpenRouter forge-builder PASS | ✅ | score 1.0 |
-| Ollama optionnel documenté | ✅ | scout-research OK, autres rôles KO |
-| Provider indisponible → skipped, pas crash | ✅ | Tests 117/117 |
+| Check | Status | Evidence |
+|---|---:|---|
+| Local validation quick gate | PASS | `python scripts/validate_local.py --quick`, 2026-06-26 |
+| Ruff | PASS | `ruff check .`, 2026-06-26 |
+| Flutter active `/api/v1` calls | PASS | `python scripts/check_client_v1_usage.py`: 0 active calls |
+| Principal binding | PASS | `python scripts/check_policy_principal_binding.py`: 24 call sites audited |
+| Mission ID propagation | PASS | `python scripts/check_tool_executor_mission_id.py`: 6 call sites audited |
+| Public seed | PASS | `python scripts/seed_bea_memory.py --report --profile public`: 8 public-safe items |
+| PR smoke workflow present | PASS | `.github/workflows/pr-smoke.yml` runs on `pull_request` |
+| Flutter APK workflow present | PARTIAL | `.github/workflows/flutter_apk.yml` exists; PR path gates v1 usage and `flutter pub get`; release build needs workflow/tag context |
 
-### Smoke / Validation
+## Not Proved Or Blocked
 
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| `smoke_e2e_cycle --fixture sha256` | ✅ | `[OK]` |
-| `bea_eval --json` | ✅ | 25/25 (1.0) |
-| `benchmark_model_roles --mock` | ✅ | 6/6 score 1.0 |
-| `validate_local --quick` | ✅ | All checks passed |
+| Item | Status | Required action |
+|---|---:|---|
+| Public beta | BLOCKED | Keep `PUBLIC_BETA_READY: false` |
+| Qdrant live memory privacy | CLEANUP_REQUIRED | 2026-06-26 dry-run scan found 1 private live item |
+| Historical secret rotation | HUMAN_REQUIRED | Rotation is not proved in repo evidence |
+| Android mission UI | HUMAN_REQUIRED | Physical launch/connectivity is not enough |
+| Android offline/network-failure behavior | HUMAN_REQUIRED | Must be tested on a device |
+| Full `pytest -q` during truth sync | NOT COMPLETED | Initial command loop timed out before a result file was produced |
+| `scripts/private_beta_gate.py --json` | FAILED | Script is absent on current `main` commit `a59b034` |
+| Multi-worker session storage | HUMAN_REQUIRED | Use `RedisSessionStore`; `InMemorySessionStore` only for local single-process testing |
 
-### Dogfood & Advisory
+## Public Beta Exit Criteria
 
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| 5 missions dogfood fixture | ✅ | 4/5 passed |
-| `routing_advisor` génère recommandations | ✅ | runtime_enforced=false |
-| `dogfood_routing_advice.py` stable | ✅ | mode=fixture, 117 tests |
+- [ ] Qdrant live memory privacy scan proves 0 private items.
+- [ ] Historical/shared secrets are rotated by a human owner and recorded outside this repo.
+- [ ] Android mission UI is validated on a physical device.
+- [ ] Android offline and network-failure flows are validated on a physical device.
+- [ ] `RedisSessionStore` is configured for multi-process or multi-worker use.
+- [ ] Public tester guide explicitly forbids real secrets and sensitive real data.
+- [ ] Full validation gate is green in CI for a PR.
+- [ ] No open critical contradiction exists in the active docs.
 
-### APK Mobile
+## Private Beta 0.1 Scope
 
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| Flutter utilise /api/v3 uniquement | ✅ | grep : 0 appel /api/v1 dans lib/ |
-| Build APK release exécuté en CI | ✅ | `flutter_apk.yml` — PR: v1-gate + pub-get; release: workflow_dispatch |
-| APK testée sur device réel | ⚠️ | Pixel 7 (User 11), validée manuellement |
-| `_V1_ALLOWLIST` vide | ✅ | `tests/test_client_v1_allowlist.py` garde |
-
-### Sécurité
-
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| Aucun secret dans les docs | ✅ | grep : 0 clé exposée |
-| `BEA_CONTINUOUS_IMPROVEMENT` désactivé par défaut | ✅ | opt-in uniquement |
-| `runtime_enforced=false` invariant | ✅ | Tests 117/117 |
-| `BEA_SKIP_IMPROVEMENT_GATE` documenté comme dangereux | ✅ | SECURITY_MODEL.md |
-| Rate-limiting API | ✅ | slowapi 60/min (BEA_RATE_LIMIT_PER_MINUTE), Redis en prod |
-| CORS configuré (pas wildcard) | ✅ | BEA_CORS_ORIGINS, jamais wildcard+credentials, fail-hard en prod |
-| Auth 2FA cockpit admin | ❌ | Pas implémenté |
-
-### Documentation
-
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| `README_PUBLIC_BETA.md` | ✅ | Ce release |
-| `GETTING_STARTED.md` | ✅ | Ce release |
-| `SECURITY_MODEL.md` | ✅ | Ce release |
-| `TROUBLESHOOTING.md` | ✅ | Ce release |
-| `docs/MODEL_ROUTING.md` | ✅ | Advisory + benchmark documentés |
-| `docs/DOGFOODING_REPORT.md` | ✅ | 5 missions + matched_advice |
-| `docs/ALPHA_READINESS.md` | ✅ | À jour |
-
-### CI / Checks
-
-| Critère | Statut | Notes |
-|---------|:------:|-------|
-| Ruff sur PR | ⚠️ | CI locale seulement (pas GitHub Actions) |
-| Pytest sur PR | ⚠️ | CI locale seulement |
-| Smoke enforced sur PR | ❌ | Non configuré |
-| Benchmark réel en CI | ❌ | Trop lent / coûteux pour CI |
-
-## Blockers restants pour Public Beta
-
-1. ~~**Rate-limiting API**~~ ✅ Résolu — slowapi + BEA_RATE_LIMIT_PER_MINUTE
-2. ~~**CORS**~~ ✅ Résolu — BEA_CORS_ORIGINS, pas de wildcard, fail-hard prod
-3. **CI GitHub Actions** — smoke + pytest sur chaque PR
-4. ~~**APK build CI**~~ ✅ `flutter_apk.yml` actif — PR gate + workflow_dispatch release
-5. ~~**Audit endpoints v1 serveur**~~ ✅ Plan en 4 phases documenté dans `docs/API_VERSIONING.md` — Flutter code migré (v3), APK rebuild pending, sunset 2026-10-01
-
-## Recommandation
-
-**Developer Preview** — prêt pour des testeurs identifiés avec supervision.
-
-Pas encore **Public Beta stable** en raison des blockers CI.
-
-Prochaine milestone : CI GitHub Actions smoke → passer en Beta.
+Private Beta 0.1 can be considered for 5-10 technical testers only when the
+owner accepts the remaining HUMAN_REQUIRED work. Testers must use toy data and
+must expect manual supervision.

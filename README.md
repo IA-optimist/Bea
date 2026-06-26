@@ -1,10 +1,13 @@
 # Bea
 
-Bea is a self-improving agent platform built around a policy kernel, a
-FastAPI runtime, mission orchestration, persistent memory, and a gated
-self-improvement loop.
+Bea is a Developer Preview / Private Beta 0.1 agent platform built around a
+policy kernel, a FastAPI runtime, mission orchestration, persistent memory, and
+a gated self-improvement loop.
 
-The repository is kept intentionally honest:
+PUBLIC_BETA_READY: false
+
+The repository is intentionally conservative about claims:
+
 - `kernel/` is the policy and safety layer.
 - `api/` exposes the runtime surface.
 - `core/` holds orchestration, memory, and self-improvement logic.
@@ -14,16 +17,10 @@ The repository is kept intentionally honest:
 ## Status
 
 The current truth of the project is tracked in [docs/STATUS.md](docs/STATUS.md).
-That file is the source of record for component maturity and known debt.
+Private Beta 0.1 can be considered only for 5-10 technical testers under
+supervision. Public beta remains NO-GO.
 
-## Packaging
-
-The repository uses standard Python packaging via `pyproject.toml`.
-- Package name: `beamax`
-- Version line: `0.1.0`
-- License: MIT
-
-## Local setup
+## Local Setup
 
 ```bash
 python -m venv .venv
@@ -36,10 +33,12 @@ python scripts/run_api_local.py
 ## Validation
 
 ```bash
-python scripts/validate_local.py
+python scripts/validate_local.py --quick
+python scripts/check_client_v1_usage.py
+python scripts/check_docs_truth.py
 ```
 
-## Useful entry points
+## Useful Entry Points
 
 ```bash
 bea-api-local
@@ -47,14 +46,11 @@ bea-validate
 bea-benchmark
 ```
 
-## Architecture
+## Safety Notes
 
-The repo is organized as an OS-like stack:
-- kernel: policy, safety, budgeting
-- missions: durable work units
-- tools: bounded side-effectful actions
-- memory: persistent state
-- self-improvement: reviewed update loop
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the deeper module map.
-
+- Self-improvement is disabled by default.
+- Dangerous actions must stay gated or out of scope.
+- Testers must not use real secrets, private data, medical data, financial data,
+  or customer data.
+- `RedisSessionStore` is required/recommended for multi-process or multi-worker
+  use; `InMemorySessionStore` is only for local single-process testing.
