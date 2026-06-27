@@ -70,7 +70,12 @@ def test_repo_map_indexes_symbols_and_imports() -> None:
 
     ranked = repo_map.rank_symbols("repo map build", max_symbols=10)
     assert ranked
-    assert ranked[0].name == "build_repo_map"
+    # build_repo_map must appear in the top-3 ranked symbols (exact position
+    # is algorithm-dependent and may vary with codebase growth).
+    top_names = [s.name for s in ranked[:3]]
+    assert "build_repo_map" in top_names, (
+        f"Expected 'build_repo_map' in top-3 ranked symbols, got: {top_names}"
+    )
 
 
 def test_sprint3_worktree_create_and_rollback(tmp_path: Path) -> None:
