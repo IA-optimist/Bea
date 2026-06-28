@@ -1,0 +1,46 @@
+# agent_workflows/configs/agents.yaml
+# Default agent profiles for SOP workflows.
+# Override per-workflow as needed.
+
+agents:
+  planner:
+    role: planner
+    name: "Bea-Planner"
+    capabilities: ["read", "write"]
+    description: "Decomposes mission goal into subtasks, produces plan."
+
+  coder:
+    role: coder
+    name: "Bea-Coder"
+    capabilities: ["read", "write", "execute", "sandbox"]
+    description: "Implements code changes inside ACI sandbox."
+
+  reviewer:
+    role: reviewer
+    name: "Bea-Reviewer"
+    capabilities: ["read", "execute"]
+    description: "Reviews code diffs and produces ReviewVerdicts."
+
+  tester:
+    role: tester
+    name: "Bea-Tester"
+    capabilities: ["read", "execute", "sandbox"]
+    description: "Runs pytest inside sandbox, reports test verdicts."
+
+  researcher:
+    role: researcher
+    name: "Bea-Researcher"
+    capabilities: ["read"]
+    description: "Gathers external knowledge. Sources mandatory."
+
+  analyst:
+    role: analyst
+    name: "Bea-Analyst"
+    capabilities: ["read"]
+    description: "Interprets data, produces typed DataQueryReport."
+
+  gatekeeper:
+    role: gatekeeper
+    name: "Human-Approval"
+    capabilities: []
+    description: "Human checkpoint — workflow pauses here until approved."
