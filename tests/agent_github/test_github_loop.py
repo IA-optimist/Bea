@@ -17,7 +17,7 @@ def _issue(number: int, title: str, body: str = "", labels: list[str] | None = N
         "number": number,
         "title": title,
         "body": body,
-        "labels": [{"name": l} for l in (labels or [])],
+        "labels": [{"name": lbl} for lbl in (labels or [])],
     }
 
 
@@ -28,7 +28,7 @@ class TestBEALabels:
         assert len(BEA_LABELS) > 0
 
     def test_severity_labels_present(self):
-        names = {l.name for l in BEA_LABELS}
+        names = {lbl.name for lbl in BEA_LABELS}
         assert {"P0", "P1", "P2", "P3"}.issubset(names)
 
     def test_agentic_label_present(self):
@@ -136,7 +136,7 @@ class TestGitHubMissionLoop:
 
     def test_pr_draft_created_never_merges(self):
         classified = self.clf.classify(_issue(20, "Add pagination to API", labels=["enhancement"]))
-        plan = self.loop.plan(classified)
+        self.loop.plan(classified)
         updated = self.loop.mark_pr_draft_created(20, "https://github.com/test/repo/pull/999")
         assert updated.status == MissionStatus.PR_DRAFT_CREATED
         assert updated.pr_draft is True  # never auto-merge

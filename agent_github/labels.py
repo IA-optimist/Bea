@@ -37,4 +37,4 @@ BEA_LABELS: tuple[GHLabel, ...] = (
     GHLabel("agentic", "5319e7", "Created by Béa agentic loop"),
 )
 
-LABEL_NAMES: frozenset[str] = frozenset(l.name for l in BEA_LABELS)
+LABEL_NAMES: frozenset[str] = frozenset(lbl.name for lbl in BEA_LABELS)

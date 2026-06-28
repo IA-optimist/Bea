@@ -6,7 +6,6 @@ The LLM-based planning step happens in mission_loop.py.
 """
 from __future__ import annotations
 
-import re
 from enum import Enum
 from typing import Any
 
@@ -71,8 +70,8 @@ class IssueClassifier:
         title = issue.get("title", "")
         body = issue.get("body", "") or ""
         labels = [
-            (l.get("name") if isinstance(l, dict) else str(l))
-            for l in issue.get("labels", [])
+            (lbl.get("name") if isinstance(lbl, dict) else str(lbl))
+            for lbl in issue.get("labels", [])
         ]
 
         kind, confidence, rationale = self._classify_text(title, body, labels)
@@ -93,7 +92,7 @@ class IssueClassifier:
         self, title: str, body: str, labels: list[str]
     ) -> tuple[IssueKind, float, str]:
         text = f"{title}\n{body}".lower()
-        label_set = {l.lower() for l in labels}
+        label_set = {lbl.lower() for lbl in labels}
 
         # Label override
         if "security" in label_set:

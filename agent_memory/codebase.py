@@ -133,8 +133,8 @@ class CodebaseMemoryService:
                             file_path=rel,
                             line=node.lineno,
                         ))
-            except Exception:
-                pass
+            except Exception as exc:  # noqa: BLE001
+                log.debug("codebase_ast_scan_file_error", error=str(exc)[:80])
         top = sorted(symbols, key=lambda s: s.name)[:20]
         return CodebaseSnapshot(
             root=self.root,
@@ -173,6 +173,6 @@ class CodebaseMemoryService:
                         results.append({"file": rel, "line": i, "content": line.rstrip()})
                         if len(results) >= 500:
                             return results
-            except Exception:
-                pass
+            except Exception as exc:  # noqa: BLE001
+                log.debug("codebase_grep_file_error", error=str(exc)[:80])
         return results

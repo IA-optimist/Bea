@@ -114,8 +114,8 @@ def import_from_lesson_memory(
             )
             store.add(memory)
             imported += 1
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            log.debug("lesson_import_entry_error", error=str(exc)[:80])
 
     log.info("lesson_memory_imported", count=imported)
     return imported

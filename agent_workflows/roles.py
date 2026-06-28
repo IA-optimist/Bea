@@ -7,7 +7,6 @@ Inspired by MetaGPT's role-based architecture.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel, Field
 

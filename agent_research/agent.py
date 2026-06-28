@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any, Callable, Awaitable
 import structlog
 
-from agent_research.sources import ResearchSource, SourceKind, is_social_media_url
+from agent_research.sources import ResearchSource, is_social_media_url
 from agent_research.reports import ResearchReport, ReportSection
 
 log = structlog.get_logger("bea.research.agent")

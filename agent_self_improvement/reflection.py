@@ -7,7 +7,6 @@ Consults kernel/improvement/gate.py before creating any issue.
 """
 from __future__ import annotations
 
-from typing import Any
 import structlog
 
 from agent_memory.models import MemoryType, StructuredMemory

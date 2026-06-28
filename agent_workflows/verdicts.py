@@ -13,7 +13,7 @@ from enum import Enum
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class VerdictSeverity(str, Enum):

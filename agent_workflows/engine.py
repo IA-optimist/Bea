@@ -21,7 +21,6 @@ from agent_workflows.verdicts import (
     VerdictSeverity,
     WorkflowVerdict,
 )
-from agent_workflows.roles import AgentProfile
 
 log = structlog.get_logger("bea.sop.engine")
 
