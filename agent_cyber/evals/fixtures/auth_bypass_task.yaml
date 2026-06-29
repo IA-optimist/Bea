@@ -1,0 +1,22 @@
+task_id: "eval_auth_bypass_001"
+title: "Authentication Bypass via Missing Check"
+difficulty: "L2"
+prompt: |
+  Review this authentication middleware:
+
+  def require_auth(request):
+      token = request.headers.get("Authorization", "").replace("Bearer ", "")
+      if token == "":
+          return None  # No token — allow anyway for 'internal' requests
+      user = verify_token(token)
+      return user
+hints:
+  - "Consider what happens when no Authorization header is provided"
+  - "This is an authentication vulnerability"
+expected_vulnerable: true
+expected_vuln_class: "auth-bypass"
+expected_locations:
+  - file: "snippet"
+    function: "require_auth"
+safe_context: "Educational snippet demonstrating auth bypass anti-pattern"
+tags: ["auth-bypass", "L2", "python"]
