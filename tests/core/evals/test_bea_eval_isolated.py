@@ -38,7 +38,7 @@ def test_isolated_json_structure() -> None:
     data = json.loads(r.stdout)
     assert "summary" in data, f"Missing 'summary' key: {list(data.keys())}"
     # overall_score lives inside summary (not top-level)
-    assert "overall_score" in data["summary"], f"Missing 'summary.overall_score'"
+    assert "overall_score" in data["summary"], "Missing 'summary.overall_score'"
     assert "total" in data["summary"]
     assert "passed" in data["summary"]
     assert "failed" in data["summary"]

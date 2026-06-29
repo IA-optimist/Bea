@@ -51,6 +51,25 @@ REDIS_URL = os.getenv("REDIS_URL", "").strip()
 _STORAGE_URI = "memory://"
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+RATE_LIMIT_ENABLED = _env_bool("BEA_RATE_LIMIT_ENABLED", True)
+
+if (
+    os.environ.get("BEA_PRODUCTION", "").lower() in ("1", "true", "yes")
+    and not RATE_LIMIT_ENABLED
+):
+    raise RuntimeError(
+        "PRODUCTION STARTUP BLOCKED - BEA_RATE_LIMIT_ENABLED=false is forbidden "
+        "when BEA_PRODUCTION is true."
+    )
+
+
 def _redis_reachable(url: str, timeout: float = 1.0) -> bool:
     """TCP-probe Redis at startup; returns False if unreachable."""
     try:
@@ -108,7 +127,7 @@ def _i(key: str, default: int) -> int:
 _per_minute = _i("BEA_RATE_LIMIT_PER_MINUTE", 60)
 limiter = Limiter(
     key_func=get_rate_limit_key,
-    default_limits=[f"{_per_minute}/minute"],  # configurable via BEA_RATE_LIMIT_PER_MINUTE
+    default_limits=[f"{_per_minute}/minute"] if RATE_LIMIT_ENABLED else [],
     storage_uri=_STORAGE_URI,
     # Bea loads configuration explicitly. Disable slowapi's implicit .env
     # read, which uses the Windows locale encoding and breaks on UTF-8.
