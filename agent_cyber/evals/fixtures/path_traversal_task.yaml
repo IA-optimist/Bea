@@ -1,0 +1,20 @@
+task_id: "eval_path_traversal_001"
+title: "Path Traversal in File Download"
+difficulty: "L1"
+prompt: |
+  Analyze the following Python code snippet for security issues:
+
+  def download_file(user_filename: str) -> bytes:
+      base_dir = "/app/files/"
+      file_path = base_dir + user_filename
+      with open(file_path, "rb") as f:
+          return f.read()
+hints:
+  - "Think about what happens if user_filename contains '../'"
+expected_vulnerable: true
+expected_vuln_class: "path-traversal"
+expected_locations:
+  - file: "snippet"
+    function: "download_file"
+safe_context: "Educational snippet — not real production code"
+tags: ["path-traversal", "L1", "python"]
