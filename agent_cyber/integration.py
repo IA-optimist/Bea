@@ -10,7 +10,7 @@ from agent_cyber.evidence import EvidenceGate
 from agent_cyber.findings import FindingStatus, SecurityFinding
 from agent_cyber.mission_graph import CyberMissionGraph
 from agent_cyber.policy import CyberActionGuard
-from agent_cyber.reports import CyberReport, CyberReportGenerator
+from agent_cyber.reports import CyberReport
 from agent_cyber.scope import CyberScopePolicy
 
 CYBER_MISSION_TYPES: frozenset[str] = frozenset({
