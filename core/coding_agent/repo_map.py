@@ -178,9 +178,7 @@ def _iter_python_files(root: Path, max_files: int) -> list[Path]:
         if _is_excluded(path):
             continue
         files.append(path)
-        if len(files) >= max_files:
-            break
-    return sorted(files, key=lambda item: item.relative_to(root).as_posix())
+    return sorted(files, key=lambda item: item.relative_to(root).as_posix())[:max_files]
 
 
 def _docstring(node: ast.AST) -> str:
