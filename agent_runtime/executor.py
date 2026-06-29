@@ -1,32 +1,24 @@
 """
-agent_runtime/executor.py — ACIExecutor: the central ACI enforcement point.
+agent_runtime/executor.py - ACIExecutor, the central ACI enforcement point.
 
-Every agent action goes through execute().  The executor:
-1. Checks the action is registered (deny-by-default).
-2. Checks agent capabilities.
-3. Checks path scope for file actions.
-4. Checks risk level against policy.
-5. Logs everything via structlog (no secrets).
-6. Delegates to the registered handler (or sandbox for dangerous actions).
+Every agent action goes through execute(). The executor is deny-by-default,
+capability-checked, realm/path scoped, risk gated, and audited with redacted
+payload summaries.
 """
 from __future__ import annotations
 
 import time
+from datetime import datetime
+from typing import Any
 
 import structlog
 
-from agent_runtime.actions import ActionRequest, ActionResult, ActionType
-from agent_runtime.policy import (
-    CommandPolicy,
-    RiskLevel,
-    ACTION_RISK,
-    is_sensitive_path,
-)
+from agent_runtime.actions import ActionRequest, ActionResult, ActionType, redact_value
+from agent_runtime.policy import ACTION_RISK, CommandPolicy, RiskLevel, is_sensitive_path
 from agent_runtime.registry import ACIActionRegistry, get_default_registry
 
 log = structlog.get_logger("bea.aci.executor")
 
-# Actions that touch the filesystem via payload["path"] or payload["target"]
 _PATH_ACTIONS = frozenset({
     ActionType.READ_FILE,
     ActionType.APPLY_PATCH,
@@ -35,24 +27,21 @@ _PATH_ACTIONS = frozenset({
 
 
 class ACIExecutor:
-    """
-    Stateless ACI enforcement layer.
-
-    Usage:
-        executor = ACIExecutor(registry, agent_capabilities={"read", "write"})
-        result = executor.execute(request, policy)
-    """
+    """Stateless ACI enforcement layer."""
 
     def __init__(
         self,
         registry: ACIActionRegistry | None = None,
         agent_capabilities: set[str] | None = None,
-    ):
+        audit_sink: list[dict[str, Any]] | None = None,
+    ) -> None:
         self._registry = registry or get_default_registry()
         self._capabilities: set[str] = agent_capabilities or set()
+        self._audit_sink = audit_sink
 
     def execute(self, request: ActionRequest, policy: CommandPolicy) -> ActionResult:
         t0 = time.monotonic()
+        risk = ACTION_RISK.get(request.action_type, RiskLevel.HIGH)
         _log = log.bind(
             action=request.action_type.value,
             mission_id=request.mission_id,
@@ -60,74 +49,83 @@ class ACIExecutor:
             realm=request.realm,
         )
 
-        # 1. Check registered
+        def blocked(reason: str) -> ActionResult:
+            _log.warning("aci_action_blocked", reason=reason[:200])
+            result = ActionResult.blocked(request.action_id, reason)
+            result.audit_ref = self._audit(request, allowed=False, reason=reason, risk=risk)
+            return result
+
         if not self._registry.is_registered(request.action_type):
-            _log.warning("aci_action_unknown")
-            return ActionResult.blocked(
-                request.action_id,
-                f"action '{request.action_type.value}' is not registered — deny-by-default",
-            )
+            return blocked(f"action '{request.action_type.value}' is not registered - deny-by-default")
 
-        # 2. Check policy allows this action
         if not policy.allows(request.action_type):
-            _log.warning("aci_action_denied_by_policy")
-            return ActionResult.blocked(
-                request.action_id,
-                f"action '{request.action_type.value}' denied by CommandPolicy",
-            )
+            return blocked(f"action '{request.action_type.value}' denied by CommandPolicy")
 
-        # 3. Check agent capabilities
+        if not policy.realm_allowed(request.realm):
+            return blocked(f"realm '{request.realm}' denied by CommandPolicy")
+
         allowed, reason = self._registry.check_capabilities(
             request.action_type, self._capabilities
         )
         if not allowed:
-            _log.warning("aci_capability_missing", reason=reason)
-            return ActionResult.blocked(request.action_id, f"capability check failed: {reason}")
+            return blocked(f"capability check failed: {reason}")
 
-        # 4. Path scope check for file-touching actions
         path = request.payload.get("path") or request.payload.get("target", "")
         if path and request.action_type in _PATH_ACTIONS:
             if is_sensitive_path(path) and not policy.path_allowed(path):
-                _log.warning("aci_sensitive_path_blocked", path=path)
-                return ActionResult.blocked(
-                    request.action_id,
-                    f"path '{path}' is in a sensitive area — explicit allow required",
-                )
+                return blocked(f"path '{path}' is in a sensitive area - explicit allow required")
             if not policy.path_allowed(path) and request.action_type != ActionType.READ_FILE:
-                _log.warning("aci_path_out_of_scope", path=path)
-                return ActionResult.blocked(
-                    request.action_id,
-                    f"path '{path}' is outside allowed scope: {policy.allowed_paths}",
-                )
+                return blocked(f"path '{path}' is outside allowed scope: {policy.allowed_paths}")
 
-        # 5. Risk level check
-        risk = ACTION_RISK.get(request.action_type, RiskLevel.HIGH)
         if _risk_exceeds(risk, policy.require_approval_above_risk):
-            _log.info("aci_approval_required", risk=risk.value)
-            return ActionResult.approval_required(
-                request.action_id,
+            approval_reason = (
                 f"action risk '{risk.value}' exceeds threshold "
-                f"'{policy.require_approval_above_risk.value}' — human approval required",
+                f"'{policy.require_approval_above_risk.value}' - human approval required"
             )
+            result = ActionResult.approval_required(request.action_id, approval_reason)
+            result.audit_ref = self._audit(request, allowed=False, reason=approval_reason, risk=risk)
+            return result
 
-        # 6. Execute
         reg = self._registry.get(request.action_type)
-        assert reg is not None  # already checked above
+        assert reg is not None
         try:
             result = reg.handler(request)
         except Exception as exc:
             _log.exception("aci_handler_exception", error=str(exc)[:200])
             result = ActionResult.error_result(request.action_id, str(exc)[:200])
 
-        duration_ms = int((time.monotonic() - t0) * 1000)
-        result.duration_ms = duration_ms
+        result.duration_ms = int((time.monotonic() - t0) * 1000)
         _log.info(
             "aci_action_executed",
             status=result.status,
-            duration_ms=duration_ms,
+            duration_ms=result.duration_ms,
             has_error=result.error is not None,
         )
+        result.audit_ref = self._audit(
+            request,
+            allowed=result.status == "success",
+            reason=result.error or result.status,
+            risk=risk,
+        )
         return result
+
+    def _audit(self, request: ActionRequest, *, allowed: bool, reason: str, risk: RiskLevel) -> str | None:
+        if self._audit_sink is None:
+            return None
+        audit_ref = f"audit:{len(self._audit_sink)}"
+        self._audit_sink.append({
+            "audit_ref": audit_ref,
+            "who": request.agent_id,
+            "what": request.action_type.value,
+            "mission_id": request.mission_id,
+            "action": request.action_type.value,
+            "allowed": allowed,
+            "reason": reason,
+            "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
+            "risk": risk.value,
+            "payload_summary": str(redact_value(request.payload))[:1000],
+        })
+        return audit_ref
 
 
 _RISK_ORDER = [

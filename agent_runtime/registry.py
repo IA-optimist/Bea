@@ -103,7 +103,7 @@ def get_default_registry() -> ACIActionRegistry:
 
 def _build_default_registry() -> ACIActionRegistry:
     """Build the default registry with stub handlers for all ActionTypes."""
-    from agent_runtime.results import not_implemented_handler
+    from agent_runtime.results import apply_patch_handler, not_implemented_handler, write_report_handler
     reg = ACIActionRegistry()
     # Safe read-only actions
     for at in (ActionType.READ_FILE, ActionType.LIST_FILES,
@@ -113,7 +113,7 @@ def _build_default_registry() -> ACIActionRegistry:
                      risk_level=RiskLevel.SAFE,
                      description=f"Read-only: {at.value}")
     # Write/exec actions
-    reg.register(ActionType.APPLY_PATCH, not_implemented_handler,
+    reg.register(ActionType.APPLY_PATCH, apply_patch_handler,
                  required_capabilities={"write", "sandbox"},
                  risk_level=RiskLevel.HIGH,
                  description="Apply unified diff patch inside sandbox")
@@ -141,7 +141,7 @@ def _build_default_registry() -> ACIActionRegistry:
                  required_capabilities={"git", "github"},
                  risk_level=RiskLevel.HIGH,
                  description="Create GitHub PR draft — never auto-merge")
-    reg.register(ActionType.WRITE_REPORT, not_implemented_handler,
+    reg.register(ActionType.WRITE_REPORT, write_report_handler,
                  required_capabilities={"write"},
                  risk_level=RiskLevel.LOW,
                  description="Write structured report to workspace")

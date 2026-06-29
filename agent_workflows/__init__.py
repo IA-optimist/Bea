@@ -12,10 +12,13 @@ from __future__ import annotations
 from agent_workflows.verdicts import ReviewVerdict, VerdictSeverity
 from agent_workflows.roles import AgentRole
 from agent_workflows.engine import SOPWorkflowEngine, SOPStep, WorkflowResult
+from agent_workflows.review_gate import FinalReviewVerdict, ReviewGate
 
 __all__ = [
     "ReviewVerdict",
     "VerdictSeverity",
+    "FinalReviewVerdict",
+    "ReviewGate",
     "AgentRole",
     "SOPWorkflowEngine",
     "SOPStep",

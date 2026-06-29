@@ -14,6 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from enum import Enum
+from typing import Any
+import re
 
 from pydantic import BaseModel, Field
 import structlog
@@ -179,7 +181,7 @@ class GitHubMissionLoop:
 
     @staticmethod
     def _branch_name(issue_number: int, kind: IssueKind) -> str:
-        kind_slug = kind.value.lower().replace("_", "-")
+        kind_slug = _safe_branch_slug(kind.value)
         return f"bea/issue-{issue_number}/{kind_slug}"
 
     @staticmethod
@@ -200,3 +202,67 @@ class GitHubMissionLoop:
         base.append("8. Add label 'pr-draft' and 'agentic'")
         base.append("9. Notify human for review")
         return base
+
+    def build_pr_body(
+        self,
+        plan: MissionPlan,
+        *,
+        tests_run: list[str],
+        tests_missing: list[str],
+        review_verdict: Any,
+        changes: list[str] | None = None,
+        risks: list[str] | None = None,
+        artifacts: list[str] | None = None,
+    ) -> str:
+        """Build the required draft PR body. Never enables auto-merge."""
+        if not tests_run:
+            raise ValueError("tests_run is required before creating a PR body")
+        if review_verdict is None:
+            raise ValueError("review_verdict is required before creating a PR body")
+        verdict = getattr(review_verdict, "verdict", "unknown")
+        severity = getattr(review_verdict, "severity", "unknown")
+        human_summary = getattr(review_verdict, "human_summary", "")
+        risks = risks or getattr(review_verdict, "risk_areas", []) or ["No additional risk areas reported"]
+        changes = changes or plan.steps
+        artifacts = artifacts or []
+        return "\n".join([
+            "## Mission",
+            f"Issue #{plan.issue_number}: {plan.goal_summary}",
+            "",
+            "## Plan",
+            "\n".join(f"- {step}" for step in plan.steps),
+            "",
+            "## Changes",
+            "\n".join(f"- {item}" for item in changes),
+            "",
+            "## Tests run",
+            "\n".join(f"- {test}" for test in tests_run),
+            "",
+            "## Tests not run",
+            "\n".join(f"- {test}" for test in tests_missing) if tests_missing else "- None reported",
+            "",
+            "## Security review",
+            f"- Reviewer verdict: {verdict}",
+            f"- Severity: {severity}",
+            f"- Summary: {human_summary}",
+            "",
+            "## Risks",
+            "\n".join(f"- {risk}" for risk in risks),
+            "",
+            "## Reviewer verdict",
+            f"- `{verdict}`",
+            "",
+            "## Human approval needed",
+            f"- {plan.requires_human_approval}",
+            "- Auto-merge: disabled",
+            "",
+            "## Artifacts/logs",
+            "\n".join(f"- {artifact}" for artifact in artifacts) if artifacts else "- None",
+            "",
+        ])
+
+
+def _safe_branch_slug(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9._/-]+", "-", value.lower().replace("_", "-"))
+    slug = re.sub(r"-+", "-", slug).strip("-./")
+    return slug or "mission"

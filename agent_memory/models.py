@@ -17,7 +17,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from agent_runtime.actions import redact_text
 
 
 class MemoryType(str, Enum):
@@ -49,11 +51,13 @@ class StructuredMemory(BaseModel):
     source: str = Field(min_length=2, max_length=256)  # who/what created this
     confidence: float = Field(ge=0.0, le=1.0)
     content: str = Field(min_length=5, max_length=4000)
+    sensitive: bool = False
     tags: list[str] = Field(default_factory=list)
     mission_id: str | None = None
     agent_id: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     superseded_by: str | None = None  # memory_id of the replacement
 
@@ -67,6 +71,13 @@ class StructuredMemory(BaseModel):
     def tags_lowercase(cls, v: list[str]) -> list[str]:
         return [t.lower().strip() for t in v]
 
+    @model_validator(mode="after")
+    def redact_sensitive_content(self) -> "StructuredMemory":
+        redacted = redact_text(self.content)
+        if redacted is not None:
+            self.content = redacted
+        return self
+
     @property
     def is_uncertain(self) -> bool:
         return self.confidence < 0.5
@@ -74,6 +85,10 @@ class StructuredMemory(BaseModel):
     @property
     def is_superseded(self) -> bool:
         return self.superseded_by is not None
+
+    @property
+    def is_expired(self) -> bool:
+        return self.expires_at is not None and self.expires_at <= datetime.utcnow()
 
     @property
     def is_security_sensitive(self) -> bool:

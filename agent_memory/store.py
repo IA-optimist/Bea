@@ -30,6 +30,7 @@ class AgentMemoryStore:
 
     def add(self, memory: StructuredMemory) -> str:
         """Persist a memory entry.  Returns the memory_id."""
+        memory = memory.model_copy(update={"content": memory.content})
         if memory.is_security_sensitive:
             log.info(
                 "agent_memory_security_note",
@@ -49,7 +50,13 @@ class AgentMemoryStore:
         return memory.memory_id
 
     def get(self, memory_id: str) -> StructuredMemory | None:
-        return self._store.get(memory_id)
+        item = self._store.get(memory_id)
+        if item is not None and item.is_expired:
+            return None
+        return item
+
+    def delete(self, memory_id: str) -> bool:
+        return self._store.pop(memory_id, None) is not None
 
     def supersede(self, old_id: str, new_memory: StructuredMemory) -> str:
         """Mark old_id as superseded and store the new memory."""
@@ -74,6 +81,8 @@ class AgentMemoryStore:
         """Filtered recall.  Returns most-recent entries first."""
         results: list[StructuredMemory] = []
         for m in self._store.values():
+            if m.is_expired:
+                continue
             if exclude_superseded and m.is_superseded:
                 continue
             if memory_type and m.memory_type != memory_type:

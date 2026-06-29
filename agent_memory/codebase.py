@@ -147,8 +147,63 @@ class CodebaseMemoryService:
     def find_symbol(self, name: str) -> list[SymbolInfo]:
         return self.snapshot().find(name)
 
+    def index_repo(self, *, force: bool = False) -> CodebaseSnapshot:
+        """Build or refresh the codebase index."""
+        return self.snapshot(force=force)
+
     def symbols_in_file(self, file_path: str) -> list[SymbolInfo]:
         return self.snapshot().symbols_in_file(file_path)
+
+    def symbols_for_file(self, file_path: str) -> list[SymbolInfo]:
+        return self.symbols_in_file(file_path)
+
+    def search_code(self, pattern: str, *, file_glob: str = "*.py") -> list[dict[str, Any]]:
+        return self.grep(pattern, file_glob=file_glob)
+
+    def imports_for_file(self, file_path: str) -> list[str]:
+        import ast
+
+        path = Path(self.root) / file_path
+        if not path.exists():
+            return []
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
+            return []
+        imports: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imports.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imports.add(node.module.split(".")[0])
+        return sorted(imports)
+
+    def impacted_files(self, changed_file: str) -> list[str]:
+        """Return a conservative heuristic set of files impacted by a change."""
+        rel = changed_file.replace("\\", "/")
+        stem = Path(rel).stem
+        impacted: set[str] = {rel}
+        for hit in self.grep(stem):
+            impacted.add(hit["file"])
+        for test in self.likely_tests_for_change(rel):
+            impacted.add(test)
+        return sorted(impacted)
+
+    def likely_tests_for_change(self, changed_file: str) -> list[str]:
+        rel = changed_file.replace("\\", "/")
+        stem = Path(rel).stem
+        candidates: set[str] = set()
+        root = Path(self.root)
+        for test_file in list(root.rglob(f"test_{stem}.py")) + list(root.rglob(f"test_{stem}s.py")):
+            candidates.add(str(test_file.relative_to(root)).replace("\\", "/"))
+        for test_file in root.rglob("test_*.py"):
+            try:
+                text = test_file.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            if stem in text or rel.removesuffix(".py").replace("/", ".") in text:
+                candidates.add(str(test_file.relative_to(root)).replace("\\", "/"))
+        return sorted(candidates)
 
     def grep(self, pattern: str, *, file_glob: str = "*.py") -> list[dict[str, Any]]:
         """
