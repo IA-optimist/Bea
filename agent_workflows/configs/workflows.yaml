@@ -1,0 +1,113 @@
+# agent_workflows/configs/workflows.yaml
+# Standard SOP workflow definitions.
+
+workflows:
+  code_review:
+    description: "Standard code review SOP: plan → code → review → test → gate"
+    steps:
+      - id: plan
+        role: planner
+        name: "Plan changes"
+        required: true
+      - id: code
+        role: coder
+        name: "Implement changes"
+        required: true
+      - id: review
+        role: reviewer
+        name: "Review diff"
+        required: true
+      - id: test
+        role: tester
+        name: "Run tests"
+        required: true
+      - id: human_gate
+        role: gatekeeper
+        name: "Human approval"
+        required: true
+
+  research_report:
+    description: "Research SOP: scope → gather → synthesize → report"
+    steps:
+      - id: scope
+        role: planner
+        name: "Define research scope"
+        required: true
+      - id: gather
+        role: researcher
+        name: "Gather sources (no social media, no cookies)"
+        required: true
+      - id: synthesize
+        role: analyst
+        name: "Synthesize findings"
+        required: true
+      - id: report
+        role: researcher
+        name: "Produce sourced report"
+        required: true
+
+  github_mission:
+    description: "GitHub Mission Loop: classify → plan → branch → implement → test → PR draft"
+    steps:
+      - id: classify
+        role: planner
+        name: "Classify GitHub issue"
+        required: true
+      - id: plan
+        role: planner
+        name: "Plan implementation"
+        required: true
+      - id: branch
+        role: coder
+        name: "Create worktree/branch"
+        required: true
+      - id: implement
+        role: coder
+        name: "Implement changes in sandbox"
+        required: true
+      - id: test
+        role: tester
+        name: "Run tests"
+        required: true
+      - id: review
+        role: reviewer
+        name: "Self-review diff"
+        required: true
+      - id: pr_draft
+        role: coder
+        name: "Create PR draft — NEVER auto-merge"
+        required: true
+      - id: human_gate
+        role: gatekeeper
+        name: "Human review and merge"
+        required: true
+
+  data_query:
+    description: "Data Agent SOP: scope → explain plan → human approve → execute → report"
+    steps:
+      - id: scope
+        role: analyst
+        name: "Define query scope"
+        required: true
+      - id: explain
+        role: analyst
+        name: "Explain SQL before execution"
+        required: true
+      - id: human_gate
+        role: gatekeeper
+        name: "Human approves SQL"
+        required: true
+      - id: execute
+        role: analyst
+        name: "Execute read-only SQL (SELECT only)"
+        required: true
+      - id: report
+        role: analyst
+        name: "Produce DataQueryReport"
+        required: true
+
+verdict_policy:
+  P0: "stop_immediately"
+  P1: "fail_continue"
+  P2: "warn_continue"
+  P3: "info_continue"

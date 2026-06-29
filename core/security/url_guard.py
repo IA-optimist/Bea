@@ -19,7 +19,7 @@ _BLOCKED_HOSTS: frozenset[str] = frozenset({
     "169.254.169.254",        # AWS / GCP / Azure instance metadata
     "metadata.google.internal",  # GCP metadata
     "metadata.aws.internal",     # AWS metadata alias
-    "0.0.0.0",
+    "0.0.0.0",  # nosec B104
     "::1",
     "[::1]",
 })
@@ -28,7 +28,7 @@ _BLOCKED_HOSTS: frozenset[str] = frozenset({
 _LOCAL_HOSTS: frozenset[str] = frozenset({
     "localhost",
     "127.0.0.1",
-    "0.0.0.0",
+    "0.0.0.0",  # nosec B104
     "::1",
     "[::1]",
 })

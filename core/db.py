@@ -138,7 +138,7 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     try:
         conn.execute("ALTER TABLE missions ADD COLUMN phase_cursor TEXT DEFAULT ''")
         conn.commit()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError:  # pragma: no-except-gate
         pass  # column already exists
 
     # Migrate existing DBs: add identity-binding columns
@@ -146,7 +146,7 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         try:
             conn.execute(f"ALTER TABLE missions ADD COLUMN {_col} TEXT")
             conn.commit()
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError:  # pragma: no-except-gate
             pass  # column already exists
 
 

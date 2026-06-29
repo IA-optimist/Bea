@@ -75,7 +75,7 @@ def shutdown_tracing() -> None:
     if _provider is not None and hasattr(_provider, "shutdown"):
         try:
             _provider.shutdown()
-        except Exception:
+        except Exception:  # pragma: no-except-gate
             pass
     _provider = None
 

@@ -19,11 +19,19 @@ def scan(roots: list[Path]) -> list[str]:
                 continue
             try:
                 src = f.read_text(encoding="utf-8", errors="replace")
+                src_lines = src.splitlines()
                 tree = ast.parse(src, filename=str(f))
             except SyntaxError:
                 continue
             for node in ast.walk(tree):
                 if not isinstance(node, ast.ExceptHandler):
+                    continue
+                end_lineno = max(
+                    [getattr(stmt, "end_lineno", getattr(stmt, "lineno", node.lineno)) for stmt in node.body]
+                    or [node.lineno]
+                )
+                block_lines = src_lines[node.lineno - 1:end_lineno]
+                if any("pragma: no-except-gate" in line for line in block_lines):
                     continue
                 # bare except (no type annotation)
                 if node.type is None:

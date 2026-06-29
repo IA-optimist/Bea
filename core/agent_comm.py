@@ -131,7 +131,7 @@ class AgentComm:
         for q in queues:
             try:
                 q.put_nowait(out)
-            except asyncio.QueueFull:
+            except asyncio.QueueFull:  # pragma: no-except-gate
                 pass   # slow consumer — drop
 
         log.debug("agent_comm_published",

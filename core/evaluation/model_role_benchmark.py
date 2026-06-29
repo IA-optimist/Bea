@@ -24,6 +24,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from core.security.url_guard import validate_outbound_url
+
 # ── Prompts ────────────────────────────────────────────────────────────────
 
 _FORGE_BUILDER_PROMPT = """Tu es un expert Python. Genere:
@@ -325,11 +327,12 @@ def _check_openrouter(api_key: str, base_url: str = _OPENROUTER_BASE) -> bool:
     if not api_key or len(api_key) < 20:
         return False
     try:
+        url = validate_outbound_url(f"{base_url.rstrip('/')}/models")
         req = urllib.request.Request(
-            f"{base_url.rstrip('/')}/models",
+            url,
             headers={"Authorization": f"Bearer {api_key}"},
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
             return resp.status == 200
     except Exception:  # noqa: BLE001
         return False
@@ -337,7 +340,8 @@ def _check_openrouter(api_key: str, base_url: str = _OPENROUTER_BASE) -> bool:
 
 def _check_ollama(base_url: str = _OLLAMA_BASE) -> bool:
     try:
-        with urllib.request.urlopen(f"{base_url.rstrip('/')}/api/tags", timeout=5) as resp:
+        url = validate_outbound_url(f"{base_url.rstrip('/')}/api/tags", allow_localhost=True)
+        with urllib.request.urlopen(url, timeout=5) as resp:  # nosec B310
             return resp.status == 200
     except Exception:  # noqa: BLE001
         return False
@@ -353,6 +357,7 @@ def _call_openrouter(
     timeout: int = _PROVIDER_TIMEOUT,
     max_tokens: int = 1024,
 ) -> str:
+    url = validate_outbound_url(f"{base_url.rstrip('/')}/chat/completions")
     payload = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -360,7 +365,7 @@ def _call_openrouter(
         "temperature": 0.2,
     }).encode()
     req = urllib.request.Request(
-        f"{base_url.rstrip('/')}/chat/completions",
+        url,
         data=payload,
         headers={
             "Authorization": f"Bearer {api_key}",
@@ -370,7 +375,7 @@ def _call_openrouter(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
         body = json.loads(resp.read().decode())
     return body["choices"][0]["message"]["content"]
 
@@ -382,6 +387,7 @@ def _call_ollama(
     timeout: int = _PROVIDER_TIMEOUT,
     max_tokens: int = 2048,
 ) -> str:
+    url = validate_outbound_url(f"{base_url.rstrip('/')}/api/chat", allow_localhost=True)
     payload = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -389,12 +395,12 @@ def _call_ollama(
         "options": {"temperature": 0.2, "num_predict": max_tokens, "num_ctx": 4096},
     }).encode()
     req = urllib.request.Request(
-        f"{base_url.rstrip('/')}/api/chat",
+        url,
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
         body = json.loads(resp.read().decode())
     return body["message"]["content"]
 

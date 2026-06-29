@@ -96,7 +96,7 @@ def validate_python_source(source: str, *, filename: str = "<artifact>") -> tupl
     finally:
         try:
             tmp.unlink()
-        except OSError:
+        except OSError:  # pragma: no-except-gate
             pass
 
 

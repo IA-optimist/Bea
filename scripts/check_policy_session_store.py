@@ -60,7 +60,7 @@ AUDIT_IN_SESSION_PATTERNS: list[re.Pattern] = [
 def _check_session_store_exists() -> list[str]:
     violations: list[str] = []
     if not SESSION_STORE.exists():
-        violations.append(f"core/session_store.py does not exist")
+        violations.append("core/session_store.py does not exist")
         return violations
 
     text = SESSION_STORE.read_text(encoding="utf-8", errors="ignore")
@@ -126,7 +126,7 @@ def main() -> int:
             f"check_policy_session_store: {status} ({n_pass}/{len(checks)} checks, {total} violations)\n"
         )
     else:
-        sys.stdout.write(f"check_policy_session_store: scanning core/session_store.py + core/policy_engine.py...\n")
+        sys.stdout.write("check_policy_session_store: scanning core/session_store.py + core/policy_engine.py...\n")
         for name, viols in checks:
             status = "PASS" if not viols else "FAIL"
             sys.stdout.write(f"  {status}: {name} ({len(viols)} violations)\n")

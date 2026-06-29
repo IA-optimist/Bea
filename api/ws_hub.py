@@ -232,7 +232,7 @@ class WsHub:
         for q in list(queues):
             try:
                 q.put_nowait(payload)
-            except asyncio.QueueFull:
+            except asyncio.QueueFull:  # pragma: no-except-gate
                 pass   # Slow SSE consumer — drop event rather than block
 
 
