@@ -83,10 +83,13 @@ class RepoMap:
 
         scored: list[tuple[float, int, SymbolInfo]] = []
         for index, symbol in enumerate(self.symbols):
+            symbol_terms = _symbol_terms(symbol.name)
             haystack = " ".join([symbol.name, symbol.path, symbol.kind, symbol.docstring]).lower()
             score = 0.0
             for token in query_tokens:
-                if token in symbol.name.lower():
+                if token in symbol_terms:
+                    score += 12.0
+                elif token in symbol.name.lower():
                     score += 8.0
                 if token in symbol.path.lower():
                     score += 3.0
@@ -94,6 +97,13 @@ class RepoMap:
                     score += 2.0
                 if token in haystack:
                     score += 1.0
+            if query_tokens.issubset(symbol_terms):
+                extra_terms = max(0, len(symbol_terms - query_tokens))
+                score += max(1.0, 8.0 - float(extra_terms))
+            if "." not in symbol.name:
+                score += 10.0
+            else:
+                score -= 4.0
             scored.append((score, -index, symbol))
 
         ranked = [item[2] for item in sorted(scored, key=lambda item: (item[0], item[1]), reverse=True)]
@@ -140,6 +150,11 @@ class RepoMap:
 
 def _tokens(value: str) -> set[str]:
     return {token for token in re.findall(r"[a-z0-9_]+", value.lower()) if len(token) >= 3}
+
+
+def _symbol_terms(value: str) -> set[str]:
+    spaced = re.sub(r"(?<!^)(?=[A-Z])", " ", value.replace(".", " ").replace("_", " "))
+    return {token for token in re.findall(r"[a-z0-9]+", spaced.lower()) if len(token) >= 3}
 
 
 def _compact(value: str, max_chars: int) -> str:

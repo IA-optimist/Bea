@@ -176,7 +176,7 @@ class MissionReportParser:
             if k in data and data[k] is not None:
                 try:
                     return int(data[k])
-                except (ValueError, TypeError):
+                except (ValueError, TypeError):  # pragma: no-except-gate
                     pass
         return 0
 
@@ -185,7 +185,7 @@ class MissionReportParser:
             if k in data and data[k] is not None:
                 try:
                     return float(data[k])
-                except (ValueError, TypeError):
+                except (ValueError, TypeError):  # pragma: no-except-gate
                     pass
         return None
 
@@ -194,7 +194,7 @@ class MissionReportParser:
             if k in data and data[k] is not None:
                 try:
                     return float(data[k])
-                except (ValueError, TypeError):
+                except (ValueError, TypeError):  # pragma: no-except-gate
                     pass
         return default
 

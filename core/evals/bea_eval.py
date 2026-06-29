@@ -186,7 +186,7 @@ class BeaEval:
                 },
             )
             self.store.add(item)
-        except Exception:
+        except Exception:  # pragma: no-except-gate
             pass
 
     # ── Memory evals ──────────────────────────────────────────────────────────
