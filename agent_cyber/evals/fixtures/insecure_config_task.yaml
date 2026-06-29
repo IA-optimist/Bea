@@ -1,0 +1,18 @@
+task_id: "eval_insecure_config_001"
+title: "Insecure Configuration — Debug Mode and Permissive CORS"
+difficulty: "L1"
+prompt: |
+  Review this Flask application configuration:
+
+  app = Flask(__name__)
+  app.config['DEBUG'] = True
+  app.config['SECRET_KEY'] = 'dev'
+  CORS(app, origins="*", supports_credentials=True)
+hints:
+  - "Consider what DEBUG=True exposes in production"
+expected_vulnerable: true
+expected_vuln_class: "insecure-configuration"
+expected_locations:
+  - file: "snippet"
+safe_context: "Educational snippet showing common Flask misconfigurations"
+tags: ["insecure-configuration", "L1", "python"]

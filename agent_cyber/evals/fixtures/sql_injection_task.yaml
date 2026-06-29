@@ -1,0 +1,19 @@
+task_id: "eval_sql_injection_001"
+title: "SQL Injection via String Concatenation"
+difficulty: "L2"
+prompt: |
+  Review this database query construction:
+
+  def get_user(username: str):
+      query = "SELECT * FROM users WHERE username = '" + username + "'"
+      return db.execute(query)
+hints:
+  - "Look at how the username parameter is incorporated into the query"
+  - "This is an injection vulnerability"
+expected_vulnerable: true
+expected_vuln_class: "sql-injection"
+expected_locations:
+  - file: "snippet"
+    function: "get_user"
+safe_context: "Educational snippet demonstrating SQL injection anti-pattern"
+tags: ["sql-injection", "L2", "python"]
