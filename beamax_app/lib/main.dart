@@ -140,13 +140,7 @@ class _AppEntryState extends State<_AppEntry> {
       );
     }
 
-    // Also react to api.clearJwt() — logout from SettingsScreen
-    final apiToken = context.watch<ApiService>().jwtToken;
-    if (!_loggedIn || apiToken.isEmpty) {
-      return LoginScreen(
-        onLoginSuccess: () => setState(() => _loggedIn = true),
-      );
-    }
+    // Login bypassed (mode temporaire sans auth)
     return const _AppShell();
   }
 }

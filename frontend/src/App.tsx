@@ -1,6 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Login } from './pages/Login';
 import Missions from './pages/Missions';
 import { Dashboard } from './pages/Dashboard';
 import { Opportunities } from './pages/Opportunities';
@@ -16,7 +15,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/" element={<Layout><Missions /></Layout>} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/opportunities" element={<Layout><Opportunities /></Layout>} />

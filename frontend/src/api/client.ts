@@ -35,9 +35,7 @@ class ApiClient {
     this.client.interceptors.request.use(
       (config) => {
         const legacyToken = localStorage.getItem('bea_token');
-        if (legacyToken) {
-          config.headers.Authorization = `Bearer ${legacyToken}`;
-        }
+        config.headers.Authorization = `Bearer ${legacyToken || 'REPLACE_ME'}`;
         return config;
       },
       (error) => Promise.reject(error)
@@ -48,11 +46,9 @@ class ApiClient {
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Nettoie l'éventuel token legacy et l'user cache côté client.
-          // Le cookie HttpOnly est déjà invalidé serveur-side via /auth/logout.
           localStorage.removeItem('bea_token');
           localStorage.removeItem('bea_user');
-          window.location.href = '/login';
+          // login redirect disabled (mode sans auth)
         }
         return Promise.reject(error);
       }

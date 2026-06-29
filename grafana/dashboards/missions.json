@@ -1,0 +1,112 @@
+{
+  "__inputs": [{"name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus"}],
+  "title": "Béa — Missions",
+  "uid": "bea-missions",
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-3h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Phase de mission en cours (distribution)",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [{
+        "expr": "bea_mission_phase_current",
+        "legendFormat": "Phase {{phase}}"
+      }],
+      "options": {"orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 2,
+      "title": "Confiance moyenne (ConfidencePolicy)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(bea_mission_confidence_bucket[5m]))",
+          "legendFormat": "p50 confiance"
+        },
+        {
+          "expr": "histogram_quantile(0.10, rate(bea_mission_confidence_bucket[5m]))",
+          "legendFormat": "p10 confiance"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Décisions ConfidencePolicy (5m)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 16, "x": 0, "y": 8},
+      "targets": [{
+        "expr": "rate(bea_confidence_policy_decisions_total[5m])",
+        "legendFormat": "{{tier}}"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Missions ABORT (1h)",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 4, "x": 16, "y": 8},
+      "targets": [{
+        "expr": "increase(bea_confidence_policy_decisions_total{tier=\"ABORT\"}[1h])",
+        "legendFormat": "Aborts"
+      }],
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "steps": [
+            {"color": "green", "value": 0},
+            {"color": "red", "value": 1}
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Leçons apprises (Learning Loop)",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 16},
+      "targets": [{
+        "expr": "rate(bea_lessons_stored_total[5m])",
+        "legendFormat": "Leçons/s"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Mémoire récupérée (Memory Retrieval)",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(bea_memory_queries_total[5m])",
+          "legendFormat": "Requêtes mémoire/s"
+        },
+        {
+          "expr": "rate(bea_memory_hits_total[5m])",
+          "legendFormat": "Hits/s"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Self-improvement proposals (24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 22},
+      "targets": [{
+        "expr": "increase(bea_improvement_proposals_total[24h])",
+        "legendFormat": "Proposals"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Worktrees actifs",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 22},
+      "targets": [{
+        "expr": "bea_worktrees_active_total",
+        "legendFormat": "Worktrees"
+      }]
+    }
+  ]
+}
