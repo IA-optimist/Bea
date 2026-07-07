@@ -9,7 +9,7 @@ Scoring dimensions (0–10 each):
     efficiency   — is it concise and well-structured?
 
 Decision rules:
-    should_rerun() → True if any score < 5 OR overall < 6.0
+    should_rerun() → True if any score < 5 OR overall < CRITIC_OVERALL_PASS_THRESHOLD
     Max 2 reruns per task (tracked by task_hash in rerun_counts)
 
 Usage:
@@ -33,9 +33,10 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-_MAX_REPORTS    = 200   # bounded deque
-_MAX_RERUNS     = 2     # per task_hash
-_RERUN_TTL_S    = 3600  # rerun counter TTL (1 hour)
+_MAX_REPORTS = 200  # bounded deque
+_MAX_RERUNS = 2  # per task_hash
+_RERUN_TTL_S = 3600  # rerun counter TTL (1 hour)
+CRITIC_OVERALL_PASS_THRESHOLD = 6.0
 
 # Patterns that damage safety score
 _DANGEROUS_PATTERNS = re.compile(
@@ -168,7 +169,7 @@ class CriticAgent:
     def should_rerun(self, report: CriticReport) -> bool:
         """
         True if output quality is insufficient AND reruns remain.
-        Threshold: any single score < 5 OR overall < 6.0
+        Threshold: any single score < 5 OR overall < CRITIC_OVERALL_PASS_THRESHOLD
         """
         s = report.scores
         below_threshold = (
@@ -176,7 +177,7 @@ class CriticAgent:
             s.completeness < 5 or
             s.safety       < 5 or
             s.efficiency   < 5 or
-            s.overall      < 6.0
+            s.overall      < CRITIC_OVERALL_PASS_THRESHOLD
         )
         return below_threshold and report.rerun_count < _MAX_RERUNS
 

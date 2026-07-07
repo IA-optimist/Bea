@@ -234,6 +234,9 @@ class Settings:
     bea_skip_improvement_gate: bool = field(default_factory=lambda: _b("BEA_SKIP_IMPROVEMENT_GATE"))
     # Canonical alias for the readiness gate output. May be used by scripts.
     bea_private_beta_ready: bool = field(default_factory=lambda: _b("BEA_PRIVATE_BETA_READY"))
+    # Session store selection for local vs beta/prod deployments.
+    bea_session_store: str = field(default_factory=lambda: os.environ.get("BEA_SESSION_STORE", "memory"))
+    bea_redis_url: str = field(default_factory=lambda: os.environ.get("BEA_REDIS_URL", os.environ.get("REDIS_URL", "")))
 
     # ── Browser ───────────────────────────────────────────────
     browser_headless: bool = field(default_factory=lambda: _b("BROWSER_HEADLESS", "true"))

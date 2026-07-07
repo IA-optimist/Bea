@@ -42,12 +42,64 @@ from typing import Any
 
 import structlog
 
+from core.resource_guard import SystemStatus, get_resource_guard
+from core.self_critic import CRITIC_OVERALL_PASS_THRESHOLD, _MAX_RERUNS
+
 log = structlog.get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════
 # 1. Budget
 # ══════════════════════════════════════════════════════════════
+
+def _critic_rerun_log_context(
+    *,
+    agent_name: str,
+    before: float,
+    after: float,
+    forced: bool,
+) -> dict[str, object]:
+    return {
+        "agent": agent_name,
+        "before": before,
+        "after": after,
+        "delta": round(after - before, 2),
+        "forced": forced,
+    }
+
+
+_VIABILITY_PRUDENCE_THRESHOLD = 0.4
+_MARGINAL_OVERALL_BAND = 1.5
+
+
+def _resource_viability_score(status: SystemStatus) -> float | None:
+    if status == SystemStatus.UNKNOWN:
+        return None
+    if status == SystemStatus.NORMAL:
+        return 1.0
+    if status == SystemStatus.SOFT_WARN:
+        return 0.65
+    if status == SystemStatus.SAFE:
+        return 0.3
+    if status == SystemStatus.BLOCKED:
+        return 0.0
+    return None
+
+
+def _should_force_low_viability_rerun(
+    *,
+    natural_should_rerun: bool,
+    viability: float | None,
+    report,
+) -> bool:
+    if natural_should_rerun or viability is None:
+        return False
+    marginal = report.overall < (
+        CRITIC_OVERALL_PASS_THRESHOLD + _MARGINAL_OVERALL_BAND
+    )
+    within_cap = report.rerun_count < _MAX_RERUNS
+    return viability < _VIABILITY_PRUDENCE_THRESHOLD and marginal and within_cap
+
 
 # Cost per 1K tokens (approximate)
 _COST_PER_1K: dict[str, float] = {
@@ -679,8 +731,19 @@ class OrchestratorV2:
         critic = get_critic(self.s)
         cr     = await critic.evaluate(session_id, agent_name, task, report)
 
-        if not critic.should_rerun(cr):
-            return report
+        forced = False
+        should = critic.should_rerun(cr)
+        if not should:
+            snap = get_resource_guard(self.s).get_status()
+            via = _resource_viability_score(getattr(snap, "status", SystemStatus.UNKNOWN))
+            forced = _should_force_low_viability_rerun(
+                natural_should_rerun=should,
+                viability=via,
+                report=cr,
+            )
+            should = forced
+            if not should:
+                return report
 
         # ── Emit WS thinking event ─────────────────────────────
         try:
@@ -722,10 +785,12 @@ class OrchestratorV2:
 
             log.info(
                 "critic_rerun_complete",
-                agent=agent_name,
-                before=cr.overall,
-                after=new_cr.overall,
-                delta=round(new_cr.overall - cr.overall, 2),
+                **_critic_rerun_log_context(
+                    agent_name=agent_name,
+                    before=cr.overall,
+                    after=new_cr.overall,
+                    forced=forced,
+                ),
             )
             return new_report
 
