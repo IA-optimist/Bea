@@ -222,6 +222,16 @@ class Settings:
     self_improve_enabled:     bool = field(default_factory=lambda: _b("SELF_IMPROVE_ENABLED", "true"))
     self_improve_max_patches: int  = field(default_factory=lambda: _i("SELF_IMPROVE_MAX_PATCHES", 5))
 
+    # ── Beta safety gates ─────────────────────────────────────
+    # BEA_SKIP_IMPROVEMENT_GATE is intentionally absent from examples. Setting
+    # it to true disables the safety gate around self-improvement. Do not use.
+    bea_skip_improvement_gate: bool = field(default_factory=lambda: _b("BEA_SKIP_IMPROVEMENT_GATE"))
+    # Canonical alias for the readiness gate output. May be used by scripts.
+    bea_private_beta_ready: bool = field(default_factory=lambda: _b("BEA_PRIVATE_BETA_READY"))
+    # Session store selection for local vs beta/prod deployments.
+    bea_session_store: str = field(default_factory=lambda: os.environ.get("BEA_SESSION_STORE", "memory"))
+    bea_redis_url: str = field(default_factory=lambda: os.environ.get("BEA_REDIS_URL", os.environ.get("REDIS_URL", "")))
+
     # ── Browser ───────────────────────────────────────────────
     browser_headless: bool = field(default_factory=lambda: _b("BROWSER_HEADLESS", "true"))
     browser_timeout:  int  = field(default_factory=lambda: _i("BROWSER_TIMEOUT", 30000))
