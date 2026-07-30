@@ -15,6 +15,7 @@ for human review. It does not merge automatically.
 6. Detect changed files with `git status --porcelain`.
 7. Select targeted tests:
    - explicit `requested_tests` win;
+   - `core/coding_agent/*` maps to `tests/coding_agent`;
    - `api/routes/*` maps to `tests/api` when present;
    - `core/self_improvement/*` maps to `tests/self_improvement`;
    - `core/memory/*` maps to `tests/memory`;
