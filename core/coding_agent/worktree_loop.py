@@ -107,16 +107,30 @@ def _existing_or_default(repo_root: Path, candidates: list[str], default: list[s
     return existing or default
 
 
+def _unique_normalized(items: list[str]) -> list[str]:
+    unique: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        normalized = _normalize(item)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(normalized)
+    return unique
+
+
 def select_targeted_tests(mission: MissionInput, changed_files: list[str], repo_root: Path) -> list[str]:
     """Select a small deterministic test set for the mission."""
     if mission.requested_tests:
-        return [_normalize(test) for test in mission.requested_tests]
+        return _unique_normalized(mission.requested_tests)
 
     files = [_normalize(path) for path in changed_files or mission.target_files]
     candidates: list[str] = []
 
     if any(path.startswith("api/routes/") for path in files):
         candidates.append("tests/api")
+    if any(path.startswith("core/coding_agent/") for path in files):
+        candidates.append("tests/coding_agent")
     if any(path.startswith("core/self_improvement/") for path in files):
         candidates.append("tests/self_improvement")
     if any(path.startswith("core/memory/") for path in files):
@@ -203,7 +217,7 @@ class CodingAgentRunner:
         if unified_diff.strip():
             patch_file = worktree / ".coding_agent.patch"
             patch_file.write_text(unified_diff, encoding="utf-8")
-            applied = self.command_runner(["git", "apply", str(patch_file)], worktree, 60)
+            applied = self.command_runner(["git", "apply", "--ignore-space-change", str(patch_file)], worktree, 60)
             patch_file.unlink(missing_ok=True)
             if not applied.ok:
                 run.status = "FAILED"
