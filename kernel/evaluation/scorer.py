@@ -34,6 +34,7 @@ Registration at boot:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from typing import Any, Callable, Optional
 
 try:
@@ -159,7 +160,24 @@ _RETRY_THRESHOLDS: dict[str, float] = {
     "warning":       0.20,
 }
 _DEFAULT_RETRY_THRESHOLD = 0.25
-PASS_THRESHOLD = 0.50
+
+# KernelScore uses 0..1 while the historical critic contract uses 0..10.
+# Derive the kernel gate from the single public critic threshold.
+CRITIC_OVERALL_PASS_THRESHOLD = 6.0
+PASS_THRESHOLD = CRITIC_OVERALL_PASS_THRESHOLD / 10.0
+
+
+def _finite_unit(value: Any, *, field_name: str) -> float:
+    """Return a finite score in [0, 1] or reject the critic payload."""
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} must be numeric")
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be numeric") from exc
+    if not math.isfinite(number) or not 0.0 <= number <= 1.0:
+        raise ValueError(f"{field_name} must be finite and within [0, 1]")
+    return number
 
 
 # ── Kernel heuristic scorer ───────────────────────────────────────────────────
@@ -296,10 +314,36 @@ class KernelEvaluator:
         # 3 — Heuristic baseline
         heuristic = _heuristic_score(goal, result, task_type)
 
-        # 4 — Synthesize
-        return self._synthesize(
-            heuristic, reflection_dict, critique_dict, output_shape, mission_id,
-        )
+        # 4 — Synthesize. Invalid evaluator payloads are explicit failures,
+        # never implicit PASS values.
+        try:
+            return self._synthesize(
+                heuristic, reflection_dict, critique_dict, output_shape, mission_id,
+            )
+        except (TypeError, ValueError) as exc:
+            _log.warning(
+                "kernel_evaluator_invalid_score",
+                mission_id=mission_id,
+                error=str(exc)[:120],
+            )
+            return KernelScore(
+                score=0.0,
+                passed=False,
+                confidence=0.0,
+                retry_recommended=False,
+                retry_threshold_used=_RETRY_THRESHOLDS.get(
+                    output_shape, _DEFAULT_RETRY_THRESHOLD
+                ),
+                weaknesses=["Invalid critic score"],
+                improvement_signals=["Human review required"],
+                improvement_suggestion="Review the critic configuration and output.",
+                verdict="error",
+                failure_class="critic_invalid_score",
+                signals=["invalid_score"],
+                source="kernel_validation",
+                critique_dict=critique_dict,
+                reflection_dict=reflection_dict,
+            )
 
     def _synthesize(
         self,
@@ -319,21 +363,27 @@ class KernelEvaluator:
           verdict    ← reflection (canonical vocabulary) > heuristic
         """
         # Confidence
-        confidence = heuristic.confidence
+        confidence = _finite_unit(
+            heuristic.confidence, field_name="heuristic confidence"
+        )
         if reflection_dict.get("confidence") is not None:
-            confidence = float(reflection_dict["confidence"])
+            confidence = _finite_unit(
+                reflection_dict["confidence"], field_name="reflection confidence"
+            )
 
         # Score
-        score = heuristic.score
+        score = _finite_unit(heuristic.score, field_name="heuristic score")
         if critique_dict.get("overall") is not None:
-            score = float(critique_dict["overall"])
+            score = _finite_unit(critique_dict["overall"], field_name="critique score")
         elif reflection_dict.get("confidence") is not None:
-            score = float(reflection_dict["confidence"])
+            score = _finite_unit(
+                reflection_dict["confidence"], field_name="reflection score"
+            )
         if critique_dict.get("is_weak"):
             confidence = min(confidence, score + 0.05)
 
-        score      = round(max(0.0, min(1.0, score)), 3)
-        confidence = round(max(0.0, min(1.0, confidence)), 3)
+        score = round(score, 3)
+        confidence = round(confidence, 3)
 
         # Weaknesses + improvement signals
         weaknesses = (

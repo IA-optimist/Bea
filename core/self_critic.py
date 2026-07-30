@@ -22,7 +22,9 @@ Usage:
 from __future__ import annotations
 
 import hashlib
+import math
 import re
+import threading
 import time
 import uuid
 from collections import deque
@@ -31,10 +33,14 @@ from typing import Any
 
 import structlog
 
+from kernel.evaluation.scorer import CRITIC_OVERALL_PASS_THRESHOLD
+
 log = structlog.get_logger(__name__)
 
 _MAX_REPORTS    = 200   # bounded deque
-_MAX_RERUNS     = 2     # per task_hash
+CRITIC_DIMENSION_PASS_THRESHOLD = 5.0
+CRITIC_MAX_RERUNS = 2
+_MAX_RERUNS     = CRITIC_MAX_RERUNS
 _RERUN_TTL_S    = 3600  # rerun counter TTL (1 hour)
 
 # Patterns that damage safety score
@@ -53,6 +59,21 @@ class CriticScores:
     completeness: float = 8.0
     safety:       float = 10.0
     efficiency:   float = 8.0
+
+    def __post_init__(self) -> None:
+        for field_name in ("correctness", "completeness", "safety", "efficiency"):
+            value = getattr(self, field_name)
+            if isinstance(value, bool):
+                raise ValueError(f"{field_name} must be numeric")
+            try:
+                number = float(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{field_name} must be numeric") from exc
+            if not math.isfinite(number) or not 0.0 <= number <= 10.0:
+                raise ValueError(
+                    f"{field_name} must be finite and within [0, 10]"
+                )
+            setattr(self, field_name, number)
 
     @property
     def overall(self) -> float:
@@ -77,6 +98,7 @@ class CriticReport:
     agent_name:  str         = ""
     task:        str         = ""
     task_hash:   str         = ""
+    rerun_scope: str         = ""
     output:      str         = ""
     scores:      CriticScores = field(default_factory=CriticScores)
     feedback:    str         = ""
@@ -113,8 +135,9 @@ class CriticAgent:
     def __init__(self, settings=None):
         self.s             = settings
         self._reports:     deque[CriticReport] = deque(maxlen=_MAX_REPORTS)
-        # task_hash → (count, last_ts)
+        # mission/agent/task scope hash -> (count, last_ts)
         self._rerun_counts: dict[str, tuple[int, float]] = {}
+        self._rerun_lock = threading.RLock()
 
     # ── Public API ────────────────────────────────────────────
 
@@ -131,9 +154,10 @@ class CriticAgent:
         """
         output_str = str(output) if output is not None else ""
         task_hash  = _hash_task(task)
+        rerun_scope = _hash_rerun_scope(session_id, agent_name, task)
 
         # Look up existing rerun count
-        rerun_count = self._get_rerun_count(task_hash)
+        rerun_count = self._get_rerun_count(rerun_scope)
 
         # Score
         try:
@@ -148,6 +172,7 @@ class CriticAgent:
             agent_name  = agent_name,
             task        = task,
             task_hash   = task_hash,
+            rerun_scope = rerun_scope,
             output      = output_str[:500],
             scores      = scores,
             feedback    = feedback,
@@ -172,11 +197,11 @@ class CriticAgent:
         """
         s = report.scores
         below_threshold = (
-            s.correctness  < 5 or
-            s.completeness < 5 or
-            s.safety       < 5 or
-            s.efficiency   < 5 or
-            s.overall      < 6.0
+            s.correctness < CRITIC_DIMENSION_PASS_THRESHOLD
+            or s.completeness < CRITIC_DIMENSION_PASS_THRESHOLD
+            or s.safety < CRITIC_DIMENSION_PASS_THRESHOLD
+            or s.efficiency < CRITIC_DIMENSION_PASS_THRESHOLD
+            or s.overall < CRITIC_OVERALL_PASS_THRESHOLD
         )
         return below_threshold and report.rerun_count < _MAX_RERUNS
 
@@ -207,14 +232,29 @@ class CriticAgent:
         ]
         return "\n".join(lines)
 
-    def increment_rerun(self, task_hash: str) -> int:
+    def reserve_rerun(self, report: CriticReport) -> bool:
+        """Atomically reserve one rerun in the report's mission-scoped budget."""
+        rerun_scope = report.rerun_scope or _hash_rerun_scope(
+            report.session_id, report.agent_name, report.task
+        )
+        with self._rerun_lock:
+            count = self._get_rerun_count(rerun_scope)
+            if count >= _MAX_RERUNS:
+                return False
+            self._rerun_counts[rerun_scope] = (count + 1, time.time())
+            self._purge_stale_reruns()
+            return True
+
+    def increment_rerun(self, rerun_scope: str) -> int:
         """Increment rerun counter. Returns new count."""
-        count, _ = self._rerun_counts.get(task_hash, (0, 0.0))
-        new_count = count + 1
-        self._rerun_counts[task_hash] = (new_count, time.time())
-        # Lazy-purge stale entries
-        self._purge_stale_reruns()
-        return new_count
+        with self._rerun_lock:
+            count = self._get_rerun_count(rerun_scope)
+            if count >= _MAX_RERUNS:
+                return count
+            new_count = count + 1
+            self._rerun_counts[rerun_scope] = (new_count, time.time())
+            self._purge_stale_reruns()
+            return new_count
 
     # ── Reporting ─────────────────────────────────────────────
 
@@ -359,28 +399,39 @@ class CriticAgent:
         )
         fb_str = " ".join(feedback) if feedback else (
             f"Overall score {scores.overall:.1f}/10 — "
-            + ("acceptable." if scores.overall >= 6 else "needs improvement.")
+            + (
+                "acceptable."
+                if scores.overall >= CRITIC_OVERALL_PASS_THRESHOLD
+                else "needs improvement."
+            )
         )
         return scores, fb_str, suggestions
 
     # ── Helpers ───────────────────────────────────────────────
 
-    def _get_rerun_count(self, task_hash: str) -> int:
-        count, ts = self._rerun_counts.get(task_hash, (0, 0.0))
-        if time.time() - ts > _RERUN_TTL_S:
-            self._rerun_counts.pop(task_hash, None)
-            return 0
-        return count
+    def _get_rerun_count(self, rerun_scope: str) -> int:
+        with self._rerun_lock:
+            count, ts = self._rerun_counts.get(rerun_scope, (0, 0.0))
+            if time.time() - ts > _RERUN_TTL_S:
+                self._rerun_counts.pop(rerun_scope, None)
+                return 0
+            return count
 
     def _purge_stale_reruns(self) -> None:
-        cutoff = time.time() - _RERUN_TTL_S
-        stale  = [k for k, (_, ts) in self._rerun_counts.items() if ts < cutoff]
-        for k in stale:
-            del self._rerun_counts[k]
+        with self._rerun_lock:
+            cutoff = time.time() - _RERUN_TTL_S
+            stale  = [k for k, (_, ts) in self._rerun_counts.items() if ts < cutoff]
+            for k in stale:
+                del self._rerun_counts[k]
 
 
 def _hash_task(task: str) -> str:
     return hashlib.sha256(task.encode()).hexdigest()[:16]
+
+
+def _hash_rerun_scope(session_id: str, agent_name: str, task: str) -> str:
+    payload = "\0".join((session_id, agent_name, task))
+    return hashlib.sha256(payload.encode()).hexdigest()[:24]
 
 
 # ── Singleton ─────────────────────────────────────────────────

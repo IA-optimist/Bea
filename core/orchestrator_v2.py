@@ -705,7 +705,9 @@ class OrchestratorV2:
         augmented = critic.build_rerun_prompt(task, report, cr.feedback, cr.suggestions)
         try:
             guard.charge(augmented)
-            critic.increment_rerun(cr.task_hash)
+            if not critic.reserve_rerun(cr):
+                log.info("critic_rerun_limit_reached", agent=agent_name)
+                return report
             inner       = self._get_inner()
             rerun_sid   = f"{session_id}-rerun-{uuid.uuid4().hex[:6]}"
             rerun_sess  = await inner.run(
