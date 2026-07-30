@@ -1,14 +1,14 @@
-"""
+﻿"""
 DEPRECATED: Use core.actions.action_model.CanonicalAction for new code.
 
-BEA MAX — CoreTaskQueue
-Queue async pour les tâches de fond avec retry et backoff exponentiel.
+BEA MAX â€” CoreTaskQueue
+Queue async pour les tÃ¢ches de fond avec retry et backoff exponentiel.
 
 Architecture :
     CoreTaskQueue
-    ├── asyncio.Queue — FIFO thread-safe
-    ├── dict[id, BackgroundTask] — registre en mémoire
-    └── asyncio.Lock — opérations atomiques sur le registre
+    â”œâ”€â”€ asyncio.Queue â€” FIFO thread-safe
+    â”œâ”€â”€ dict[id, BackgroundTask] â€” registre en mÃ©moire
+    â””â”€â”€ asyncio.Lock â€” opÃ©rations atomiques sur le registre
 
 Usage :
     queue = get_core_task_queue()
@@ -27,7 +27,7 @@ from enum import Enum
 from typing import Any
 
 
-# ── States ────────────────────────────────────────────────────
+# â”€â”€ States â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TaskState(str, Enum):
     PENDING   = "pending"
@@ -37,7 +37,7 @@ class TaskState(str, Enum):
     CANCELLED = "cancelled"
 
 
-# ── Task dataclass ────────────────────────────────────────────
+# â”€â”€ Task dataclass â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @dataclass
 class BackgroundTask:
@@ -56,7 +56,7 @@ class BackgroundTask:
     mission_id:   str       = ""
     kind:         str       = "task"   # "task" | "conversation"
 
-    # ── Retry helpers ──────────────────────────────────────────
+    # â”€â”€ Retry helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def retry_delay(self) -> float:
         """Exponential backoff: base * 2^attempts, capped at max_delay_s."""
@@ -86,7 +86,7 @@ class BackgroundTask:
         }
 
 
-# ── Queue ─────────────────────────────────────────────────────
+# â”€â”€ Queue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class CoreTaskQueue:
     """
@@ -101,7 +101,7 @@ class CoreTaskQueue:
         self._registry: dict[str, BackgroundTask]     = {}
         self._lock:     asyncio.Lock                  = asyncio.Lock()
 
-    # ── Enqueue ──────────────────────────────────────────────
+    # â”€â”€ Enqueue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def enqueue(
         self,
@@ -130,7 +130,7 @@ class CoreTaskQueue:
         await self._q.put(task)
         return task
 
-    # ── Dequeue ──────────────────────────────────────────────
+    # â”€â”€ Dequeue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def dequeue(self, timeout: float = 1.0) -> BackgroundTask | None:
         """
@@ -152,7 +152,7 @@ class CoreTaskQueue:
                 stored.updated_at = time.time()
         return task
 
-    # ── Requeue (retry) ──────────────────────────────────────
+    # â”€â”€ Requeue (retry) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def requeue(self, task: BackgroundTask) -> None:
         """Put a task back as PENDING after a failure (for retry logic)."""
@@ -163,7 +163,7 @@ class CoreTaskQueue:
                 stored.updated_at = time.time()
         await self._q.put(task)
 
-    # ── Terminal state setters ────────────────────────────────
+    # â”€â”€ Terminal state setters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def mark_done(self, task_id: str, result: Any = None) -> None:
         async with self._lock:
@@ -191,7 +191,24 @@ class CoreTaskQueue:
                 return True
         return False
 
-    # ── Queries ───────────────────────────────────────────────
+    async def cancel_mission(self, mission_id: str) -> bool:
+        """Alias métier: annule la tâche de fond associée à une mission.
+
+        Marque l'état CANCELLED via cancel(). La vraie annulation de coroutine
+        se fait côté registre API (_active_mission_tasks), qui détient les
+        asyncio.Task.
+        """
+        cancelled = await self.cancel(mission_id)
+        async with self._lock:
+            task_ids = [
+                t.id
+                for t in self._registry.values()
+                if t.mission_id == mission_id and not t.is_terminal()
+            ]
+        for task_id in task_ids:
+            cancelled = (await self.cancel(task_id)) or cancelled
+        return cancelled
+    # â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def list_tasks(
         self,
@@ -234,7 +251,7 @@ class CoreTaskQueue:
         }
 
 
-# ── Singleton ─────────────────────────────────────────────────
+# â”€â”€ Singleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _queue: CoreTaskQueue | None = None
 
@@ -244,3 +261,4 @@ def get_core_task_queue() -> CoreTaskQueue:
     if _queue is None:
         _queue = CoreTaskQueue()
     return _queue
+

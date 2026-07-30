@@ -41,9 +41,12 @@ from typing import Any
 
 import structlog
 from core.affect_state import AffectState
+from core.cognitive_events import EventType, emit
 from core.homeostasis import Homeostasis
 from core.resource_guard import get_resource_guard
+from core.self_critic import CRITIC_OVERALL_PASS_THRESHOLD, _MAX_RERUNS
 from core.viability_adapter import ViabilityAdapter
+from core.wellbeing_tracker import WellbeingTracker
 
 log = structlog.get_logger(__name__)
 
@@ -465,6 +468,17 @@ _CONTEXT_PROVIDERS = frozenset({
     "security-agent", "planner-agent", "researcher-agent", "auditor-agent"
 })
 
+# Couplage INVERSÉ viabilité-prudence (anti-desperation) : sous faible
+# viabilité, relève la barre sur le travail MARGINAL. Ne rerun PAS le
+# travail déjà bon, ne dépasse JAMAIS _MAX_RERUNS.
+_VIABILITY_PRUDENCE_THRESHOLD = 0.4
+_MARGINAL_OVERALL_BAND = 1.5
+RIGOR_FLOOR_THRESHOLD = 7.0
+# Plancher de rigueur : sous ce seuil, Béa revérifie TOUJOURS le travail,
+# indépendamment de sa viabilité. Valeur de départ, calibrable à l'observation
+# (comme momentum, EMA_ALPHA, etc.). Vient EN PLUS du couplage viabilité
+# existant (_VIABILITY_PRUDENCE_THRESHOLD + _MARGINAL_OVERALL_BAND), pas à sa place.
+
 
 class OrchestratorV2:
     """
@@ -483,6 +497,7 @@ class OrchestratorV2:
         self._comm        = None   # lazy AgentComm
         self.homeostasis = Homeostasis()
         self.affect      = AffectState(baseline_provider=self.homeostasis.target_vad)
+        self.wellbeing   = WellbeingTracker()
         self.viability   = ViabilityAdapter(self.homeostasis, get_resource_guard(self.s))
 
     def _get_comm(self):
@@ -520,6 +535,8 @@ class OrchestratorV2:
         guard = BudgetGuard(cfg)
         sid   = session_id or str(uuid.uuid4())
 
+        self.wellbeing.observe()
+
         # charge the input tokens
         try:
             guard.charge(user_input)
@@ -530,8 +547,11 @@ class OrchestratorV2:
         self.viability.update()   # homéostasie → état resource réel (lissé EMA)
 
         _aff = self.affect.render_guidance()
+        _wellbeing = self.wellbeing.render_guidance()
         if _aff:
             user_input = f"{_aff}\n\n{user_input}"
+        if _wellbeing:
+            user_input = f"{_wellbeing}\n\n{user_input}"
 
         await self._checkpoints.ensure_table()
 
@@ -700,7 +720,34 @@ class OrchestratorV2:
         critic = get_critic(self.s)
         cr     = await critic.evaluate(session_id, agent_name, task, report)
 
-        if not critic.should_rerun(cr):
+        via = None
+        forced = False
+        floor_triggered = False
+        should = critic.should_rerun(cr)
+        if not should:
+            via = self.homeostasis.viability()
+            marginal = cr.scores.overall < (CRITIC_OVERALL_PASS_THRESHOLD + _MARGINAL_OVERALL_BAND)
+            within_cap = cr.rerun_count < _MAX_RERUNS
+            if via < _VIABILITY_PRUDENCE_THRESHOLD and marginal and within_cap:
+                should = True
+                forced = True
+                log.info(
+                    "critic_rerun_forced_low_viability",
+                    viability=round(via, 3),
+                    overall=cr.scores.overall,
+                    rerun_count=cr.rerun_count,
+                )
+            elif cr.scores.overall < RIGOR_FLOOR_THRESHOLD and within_cap:
+                should = True
+                forced = True
+                floor_triggered = True
+                log.info(
+                    "critic_rerun_forced_rigor_floor",
+                    overall=cr.scores.overall,
+                    rerun_count=cr.rerun_count,
+                )
+
+        if not should:
             return report
 
         # ── Emit WS thinking event ─────────────────────────────
@@ -750,6 +797,23 @@ class OrchestratorV2:
                 before=cr.overall,
                 after=new_cr.overall,
                 delta=round(new_cr.overall - cr.overall, 2),
+                forced=forced,
+            )
+            emit(
+                event_type=EventType.SYSTEM_EVENT,
+                summary="critic_rerun",
+                source="orchestrator_v2",
+                session_id=session_id,
+                payload={
+                    "kind": "critic_rerun",
+                    "forced": forced,
+                    "floor_triggered": floor_triggered,
+                    "before": cr.overall,
+                    "after": new_cr.overall,
+                    "delta": round(new_cr.overall - cr.overall, 2),
+                    "viability": round(via, 3) if via is not None else None,
+                },
+                tags=["critic", "rerun"],
             )
             return new_report
 

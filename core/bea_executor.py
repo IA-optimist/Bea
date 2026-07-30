@@ -1,18 +1,18 @@
-"""
+﻿"""
 core.bea_executor
 =================
-BeaOrchestrator — internal execution delegate used by MetaOrchestrator.
+BeaOrchestrator â€” internal execution delegate used by MetaOrchestrator.
 
 External callers: use get_meta_orchestrator() from core.meta_orchestrator.
 BeaOrchestrator is an internal component, not a public API.
 
 All heavy logic lives in the executor mixins under core/executor/:
-  LazyComponentsMixin   — lazy subsystem properties
-  PipelineAutoMixin     — _run_auto, _run_parallel, _run_observer,
+  LazyComponentsMixin   â€” lazy subsystem properties
+  PipelineAutoMixin     â€” _run_auto, _run_parallel, _run_observer,
                           _process_actions, _evaluate_session_async,
                           classify_intent, _compute_mission_complexity
-  PipelineModesMixin    — _run_chat, _run_night, _run_improve, _run_workflow
-  ReportingMixin        — _compute_session_status, _generate_report
+  PipelineModesMixin    â€” _run_chat, _run_night, _run_improve, _run_workflow
+  ReportingMixin        â€” _compute_session_status, _generate_report
 """
 from __future__ import annotations
 import asyncio
@@ -53,11 +53,11 @@ class BeaOrchestrator(
     Internal execution delegate for MetaOrchestrator.
 
     Dispatches a BeaSession to the appropriate pipeline mixin based on mode:
-      auto/code/business/plan/research → PipelineAutoMixin._run_auto
-      chat                             → PipelineModesMixin._run_chat
-      night                            → PipelineModesMixin._run_night
-      improve                          → PipelineModesMixin._run_improve
-      workflow                         → PipelineModesMixin._run_workflow
+      auto/code/business/plan/research â†’ PipelineAutoMixin._run_auto
+      chat                             â†’ PipelineModesMixin._run_chat
+      night                            â†’ PipelineModesMixin._run_night
+      improve                          â†’ PipelineModesMixin._run_improve
+      workflow                         â†’ PipelineModesMixin._run_workflow
     """
 
     INTENT_MAP: dict[str, str] = {
@@ -93,7 +93,7 @@ class BeaOrchestrator(
         self._agent_memory = None
         self._bg_tasks: set = set()
 
-    # ── Public entry point ────────────────────────────────────────────────
+    # â”€â”€ Public entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def run(
         self,
@@ -124,6 +124,7 @@ class BeaOrchestrator(
                     log.warning("emit_failed", err=str(e))
 
         timeout = SESSION_TIMEOUTS.get(mode, 600)
+        _cancelled = False
         try:
             await asyncio.wait_for(self._dispatch(session, mode, emit), timeout=timeout)
             session.status = SessionStatus.COMPLETED
@@ -135,13 +136,13 @@ class BeaOrchestrator(
         except asyncio.CancelledError:
             session.status = SessionStatus.CANCELLED
             await emit("Session annulee.")
+            _cancelled = True
         except Exception as e:
-            log.error("orchestrator_error", mission_id=session.session_id, err=str(e))
             session.status = SessionStatus.ERROR
             session.error  = str(e)
             await emit(f"Erreur interne : {str(e)[:200]}")
 
-        # ── Inject provider/model metadata into session.metadata ──────────────
+        # ── Inject provider/model metadata into session.metadata ─────────────
         # Reads from session_meta_bus: actual LLM calls (llm_factory) take precedence
         # over planned routing (execution_supervised_runner).  Never overwrites an
         # existing value — older code paths that populate metadata directly are
@@ -159,9 +160,10 @@ class BeaOrchestrator(
         except Exception as _bus_exc:
             log.debug("session_metadata_inject_failed", err=str(_bus_exc)[:80])
 
+        if _cancelled:
+            raise asyncio.CancelledError()
         return session
-
-    # ── Mode dispatcher ───────────────────────────────────────────────────
+    # â”€â”€ Mode dispatcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def _dispatch(self, session: BeaSession, mode: str, emit: CB):
         if mode == "chat":
@@ -174,3 +176,4 @@ class BeaOrchestrator(
             await self._run_workflow(session, emit)
         else:
             await self._run_auto(session, emit)
+

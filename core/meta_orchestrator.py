@@ -1,22 +1,22 @@
-"""
-BEA MAX — MetaOrchestrator
+﻿"""
+BEA MAX â€” MetaOrchestrator
 ==============================
-Point d'entrée unique et source de vérité pour le cycle de vie des missions.
+Point d'entrÃ©e unique et source de vÃ©ritÃ© pour le cycle de vie des missions.
 
 Architecture :
-    MetaOrchestrator          ← vous êtes ici (facade + state machine)
-        └─► BeaOrchestrator  (logique métier, agents, mémoire)
-        └─► OrchestratorV2      (budget, DAG, checkpoint — missions complexes)
+    MetaOrchestrator          â† vous Ãªtes ici (facade + state machine)
+        â””â”€â–º BeaOrchestrator  (logique mÃ©tier, agents, mÃ©moire)
+        â””â”€â–º OrchestratorV2      (budget, DAG, checkpoint â€” missions complexes)
 
-Transitions d'état déterministes :
-    CREATED → PLANNED → RUNNING → REVIEW → DONE
-                                         ↘ FAILED
+Transitions d'Ã©tat dÃ©terministes :
+    CREATED â†’ PLANNED â†’ RUNNING â†’ REVIEW â†’ DONE
+                                         â†˜ FAILED
 
-Règles d'usage :
-    - TOUJOURS utiliser MetaOrchestrator comme point d'entrée.
-    - BeaOrchestrator et OrchestratorV2 restent accessibles pour compatibilité
-      ascendante, mais ne doivent plus être instanciés directement dans le code neuf.
-    - Chaque transition de statut est loguée via structlog (observable, auditabl).
+RÃ¨gles d'usage :
+    - TOUJOURS utiliser MetaOrchestrator comme point d'entrÃ©e.
+    - BeaOrchestrator et OrchestratorV2 restent accessibles pour compatibilitÃ©
+      ascendante, mais ne doivent plus Ãªtre instanciÃ©s directement dans le code neuf.
+    - Chaque transition de statut est loguÃ©e via structlog (observable, auditabl).
 """
 from __future__ import annotations
 
@@ -33,22 +33,22 @@ log = structlog.get_logger(__name__)
 CB = Callable[[str], Awaitable[None]]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Circuit breaker — prevents cascade failures when the delegate is broken
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Circuit breaker â€” prevents cascade failures when the delegate is broken
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# ── _CircuitBreaker déplacé dans core/orchestration/mission_circuit_breaker.py ──
-# Alias conservé pour compatibilité avec les tests qui inspectent self._circuit_breaker.
+# â”€â”€ _CircuitBreaker dÃ©placÃ© dans core/orchestration/mission_circuit_breaker.py â”€â”€
+# Alias conservÃ© pour compatibilitÃ© avec les tests qui inspectent self._circuit_breaker.
 from core.orchestration.mission_circuit_breaker import MissionCircuitBreaker as _CircuitBreaker  # noqa: E402,F401
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# State machine — KERNEL-CANONICAL: kernel/state/mission_state.py
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# State machine â€” KERNEL-CANONICAL: kernel/state/mission_state.py
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # MissionContext and VALID_TRANSITIONS now live in the kernel.
 # MetaOrchestrator imports them and owns the side-effect layer
 # (event emission, persistence) on top of kernel state transitions.
-from core.state import MissionStatus  # noqa: F811  — single source of truth enum
+from core.state import MissionStatus  # noqa: F811  â€” single source of truth enum
 
 from core.meta_orchestrator_state import (
     MissionContext as MissionContext,
@@ -58,15 +58,15 @@ from core.meta_orchestrator_state import (
 )
 
 # MetaOrchestrator
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-# ── _strip_execution_outcome déplacé dans core/orchestration/mission_text_utils.py ──
-# Alias conservé (wrapper qui appelle la fonction publique).
+# â”€â”€ _strip_execution_outcome dÃ©placÃ© dans core/orchestration/mission_text_utils.py â”€â”€
+# Alias conservÃ© (wrapper qui appelle la fonction publique).
 from core.orchestration.mission_text_utils import strip_execution_outcome as _strip_execution_outcome  # noqa: E402,F401
 from core.meta_custom_handlers import CustomMissionHandlerMixin  # noqa: E402
-# ── Phase « learning » déplacée dans core/orchestration/learning_mixin.py ──
-# (PR 1 — docs/refactor/meta_orchestrator_split.md)
+# â”€â”€ Phase Â« learning Â» dÃ©placÃ©e dans core/orchestration/learning_mixin.py â”€â”€
+# (PR 1 â€” docs/refactor/meta_orchestrator_split.md)
 from core.orchestration.learning_mixin import LearningMixin  # noqa: E402
 from core.orchestration.outcome_mixin import OutcomeMixin  # noqa: E402
 from core.orchestration.routing_mixin import RoutingMixin  # noqa: E402
@@ -78,14 +78,14 @@ class MetaOrchestrator(
 ):
     """
     Cerveau unique de BeaMax.
-    Délègue l'exécution à BeaOrchestrator (missions standard) ou
-    OrchestratorV2 (missions avec budget/DAG), mais maintient lui-même
+    DÃ©lÃ¨gue l'exÃ©cution Ã  BeaOrchestrator (missions standard) ou
+    OrchestratorV2 (missions avec budget/DAG), mais maintient lui-mÃªme
     le cycle de vie (MissionStatus) et les logs de transition.
     """
     def __init__(self, settings=None):
         from config.settings import get_settings
         self.s = settings or get_settings()
-        # Orchestrateurs délégués (lazy)
+        # Orchestrateurs dÃ©lÃ©guÃ©s (lazy)
         self._bea: Any = None     # BeaOrchestrator
         self._v2: Any     = None     # OrchestratorV2
         # Registre des missions actives {mission_id: MissionContext}
@@ -97,7 +97,7 @@ class MetaOrchestrator(
         self._circuit_breaker = _CircuitBreaker(failure_threshold=5, reset_s=60.0)
         # Custom mission handlers registry {mission_type: handler_fn}
         self._custom_handlers: dict[str, Callable] = {}
-    # ── Phase checkpointing (ADR-003) ────────────────────────────────────────
+    # â”€â”€ Phase checkpointing (ADR-003) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _checkpoint(self, mission_id: str, phase: str) -> None:
         """Write phase cursor for crash recovery. Always fail-open."""
@@ -107,10 +107,10 @@ class MetaOrchestrator(
         except Exception:
             pass
 
-    # ── Lazy accessors ──────────────────────────────────────────────────────
+    # â”€â”€ Lazy accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @property
     def bea(self):
-        """BeaOrchestrator — orchestrateur principal."""
+        """BeaOrchestrator â€” orchestrateur principal."""
         if self._bea is None:
             from core.bea_executor import BeaOrchestrator
             self._bea = BeaOrchestrator(self.s)
@@ -118,7 +118,7 @@ class MetaOrchestrator(
         return self._bea
     @property
     def v2(self):
-        """OrchestratorV2 — missions avec budget + DAG."""
+        """OrchestratorV2 â€” missions avec budget + DAG."""
         if self._v2 is None:
             from core.orchestrator_v2 import OrchestratorV2
             self._v2 = OrchestratorV2(self.s)
@@ -126,7 +126,7 @@ class MetaOrchestrator(
         return self._v2
     @property
     def capability_dispatcher(self):
-        """CapabilityDispatcher — routing unified native/plugin/MCP tools."""
+        """CapabilityDispatcher â€” routing unified native/plugin/MCP tools."""
         if not hasattr(self, "_capability_dispatcher"):
             try:
                 from executor.capability_dispatch import get_capability_dispatcher
@@ -136,11 +136,11 @@ class MetaOrchestrator(
                 log.warning("meta_orchestrator.capability_dispatcher_unavailable", err=str(e))
                 self._capability_dispatcher = None
         return self._capability_dispatcher
-    # ── State machine ────────────────────────────────────────────────────────
+    # â”€â”€ State machine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _transition(self, ctx: MissionContext, target: MissionStatus, **extra) -> None:
         """
-        Effectue une transition d'état avec validation et logging.
-        Lève ValueError si la transition est invalide.
+        Effectue une transition d'Ã©tat avec validation et logging.
+        LÃ¨ve ValueError si la transition est invalide.
         Persists state to disk on every transition (fail-open).
         Validation delegated to kernel/state/MissionStateMachine (fail-open fallback
         to local _VALID_TRANSITIONS if kernel unavailable).
@@ -157,7 +157,7 @@ class MetaOrchestrator(
             allowed = _VALID_TRANSITIONS.get(ctx.status, set())
             if target not in allowed:
                 raise ValueError(
-                    f"Transition interdite : {ctx.status.value} → {target.value} "
+                    f"Transition interdite : {ctx.status.value} â†’ {target.value} "
                     f"(mission={ctx.mission_id})"
                 )
             prev = ctx.status
@@ -179,7 +179,7 @@ class MetaOrchestrator(
                 _evt = Observation(
                     source="system",
                     observation_type="status_change",
-                    content=f"{prev.value} → {target.value}",
+                    content=f"{prev.value} â†’ {target.value}",
                     metadata={"from": prev.value, "to": target.value,
                               "mission_id": ctx.mission_id},
                 )
@@ -205,13 +205,13 @@ class MetaOrchestrator(
                     _ms._save_mission(_ms_rec)
             except Exception:
                 log.debug("swallowed_exception", exc_info=True)
-    # ── Kernel cognitive pre-computation (Pass 18) ───────────────────────────
+    # â”€â”€ Kernel cognitive pre-computation (Pass 18) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _run_kernel_cognitive_cycle(
         self,
         goal: str,
         mode: str,
         mid: str,
-        ctx,   # MissionContext — receives metadata writes
+        ctx,   # MissionContext â€” receives metadata writes
         trace, # DecisionTrace
     ) -> tuple:
         """
@@ -246,7 +246,7 @@ class MetaOrchestrator(
         except Exception as _kcc_err:
             log.debug("kernel_cognitive_cycle_skipped", err=str(_kcc_err)[:100])
             return {}, None, None
-    # ── Private helper methods (run_mission refactoring) ─────────────────────
+    # â”€â”€ Private helper methods (run_mission refactoring) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _setup_event_stream(self, mid: str, ctx) -> None:
         """Setup EventStream for WebSocket consumers (lines 356-365)."""
         try:
@@ -324,12 +324,12 @@ class MetaOrchestrator(
             deregister_mission_stream(mid)
         except Exception as _exc:
             log.warning("swallowed_exception", action="ws_stream_deregister", exc_type=type(_exc).__name__, exc_msg=str(_exc)[:200])
-    # _post_mission_learning → core/orchestration/learning_mixin.py (PR 1)
-    # ── Phase extraction methods (refactored from run_mission) ───────────────
-    # _store_mission_memories → core/orchestration/learning_mixin.py (PR 1)
+    # _post_mission_learning â†’ core/orchestration/learning_mixin.py (PR 1)
+    # â”€â”€ Phase extraction methods (refactored from run_mission) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # _store_mission_memories â†’ core/orchestration/learning_mixin.py (PR 1)
     # _execute_kernel_learning, _record_skills, _store_to_memory_facade
-    # → core/orchestration/learning_mixin.py (PR 1)
-    # ── Public API ───────────────────────────────────────────────────────────
+    # â†’ core/orchestration/learning_mixin.py (PR 1)
+    # â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async def run_mission(
         self,
         goal: str,
@@ -375,12 +375,12 @@ class MetaOrchestrator(
             ctx.metadata["_bea_submitted_by"] = submitted_by
         with self._lock:
             self._missions[mid] = ctx
-        # ── Setup event stream ────────────────────────────────────────
+        # â”€â”€ Setup event stream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         self._setup_event_stream(mid, ctx)
-        # ── Circuit breaker guard ─────────────────────────────────────
+        # â”€â”€ Circuit breaker guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if self._check_circuit_breaker(mid, ctx):
             return ctx
-        # ── Decision trace ────────────────────────────────────────────
+        # â”€â”€ Decision trace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         trace, needs_approval = self._initialize_decision_trace(mid)
         # Override needs_approval from extra_metadata (API request)
         if _extra_meta.get("requires_validation"):
@@ -397,15 +397,15 @@ class MetaOrchestrator(
         except Exception:
             log.debug("swallowed_exception", exc_info=True)
         log.info("mission.created", mission_id=mid, mode=mode, goal=goal[:80])
-        # ── Emit mission events ───────────────────────────────────────
+        # â”€â”€ Emit mission events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         self._emit_mission_events(mid, goal, mode)
-        # ── Mission guards: iteration limit + budget ──────────────────
+        # â”€â”€ Mission guards: iteration limit + budget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         self._register_mission_guards(mid)
-        # ══ KERNEL COGNITIVE PRE-COMPUTATION (BLOC 2 — kernel-first authority) ═
+        # â•â• KERNEL COGNITIVE PRE-COMPUTATION (BLOC 2 â€” kernel-first authority) â•
         # kernel.run_cognitive_cycle() is the SINGLE authority for:
-        #   classify → plan → route → retrieve (lessons)
+        #   classify â†’ plan â†’ route â†’ retrieve (lessons)
         # When this succeeds (_kernel_precomp_ok=True), inline fallback phases
-        # 0b, 0d, 0e are SKIPPED — they are decorative/redundant.
+        # 0b, 0d, 0e are SKIPPED â€” they are decorative/redundant.
         # Only Phase 0c (routing) and Phase 1b (planning) keep their own fallback
         # paths because they check ctx.metadata keys that run_cognitive_cycle sets.
         # try/except guards below ensure fail-open behavior for Phase 0c.
@@ -414,36 +414,36 @@ class MetaOrchestrator(
         # True when kernel pre-computation produced real cognitive outputs.
         # Used below to gate decorative/redundant inline phases.
         _kernel_precomp_ok = bool(_kernel_context)
-        # ═════════════════════════════════════════════════════════════════════
-        # ── Cognitive pre-mission analysis ────────────────────────────
+        # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        # â”€â”€ Cognitive pre-mission analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         self._run_cognitive_analysis(goal, mode, ctx)
-        # ── Reasoning pre-pass (intelligence upgrade) ─────────────────
+        # â”€â”€ Reasoning pre-pass (intelligence upgrade) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _is_chat_mode, _reasoning_result = self._execute_reasoning_prepass(
             goal, mid, ctx, trace
         )
+        _cancelled = False
         try:
-            # ── Phase 1: Classify (extracted method) ──────────────
             self._classify_mission(
                 goal, mode, ctx, trace, _k_classification_obj
             )
             self._checkpoint(mid, "classify")
-            # ── Phase 0b: Match AI OS capabilities (extracted method) ────
+            # â”€â”€ Phase 0b: Match AI OS capabilities (extracted method) â”€â”€â”€â”€
             self._match_ai_os_capabilities(
                 goal, ctx, trace, _kernel_precomp_ok
             )
-            # ── Phase 0c: Capability-first routing (extracted method) ────
+            # â”€â”€ Phase 0c: Capability-first routing (extracted method) â”€â”€â”€â”€
             self._route_mission(goal, mode, ctx, trace, mid)
-            # ── Phase 0d: Kernel capability registry enrichment (extracted method) ───
+            # â”€â”€ Phase 0d: Kernel capability registry enrichment (extracted method) â”€â”€â”€
             self._enrich_kernel_registry(ctx, trace, _kernel_precomp_ok)
-            # ── Phase 0e: Kernel performance intelligence (extracted method) ─────────
+            # â”€â”€ Phase 0e: Kernel performance intelligence (extracted method) â”€â”€â”€â”€â”€â”€â”€â”€â”€
             self._apply_performance_intelligence(ctx, trace, _kernel_precomp_ok)
-            # ── Phase 1b: Kernel planning (extracted method) ─────────────
+            # â”€â”€ Phase 1b: Kernel planning (extracted method) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _kernel_plan, _skill_context = await self._kernel_planning(
                 goal, mode, ctx, trace, mid, _kernel_plan, _is_chat_mode
             )
-            # ── Phase 3-P42: Pre-planning memory retrieval ────────
+            # â”€â”€ Phase 3-P42: Pre-planning memory retrieval â”€â”€â”€â”€â”€â”€â”€â”€
             # Retrieve 3 failures + 3 successes BEFORE context assembly
-            # so planner has explicit "avoid/reuse" guidance (Pass 42 — Phase 3).
+            # so planner has explicit "avoid/reuse" guidance (Pass 42 â€” Phase 3).
             _mission_lessons = None
             if not _is_chat_mode:
                 try:
@@ -470,7 +470,7 @@ class MetaOrchestrator(
                 except Exception as _ml_err:
                     log.warning("phase_failed", phase="pre_planning_memory",
                                 err=str(_ml_err)[:100])
-            # ── Phase 2: Assemble context ─────────────────────────
+            # â”€â”€ Phase 2: Assemble context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             rich_ctx = self._assemble_mission_context(mid, goal, ctx, trace)
             # CREATED -> PLANNED
             self._transition(ctx, MissionStatus.PLANNED)
@@ -480,12 +480,12 @@ class MetaOrchestrator(
             # PLANNED -> RUNNING
             self._transition(ctx, MissionStatus.RUNNING)
             self._checkpoint(mid, "execute")
-            # ── Creative Mode dispatcher ──────────────────────────────────────────────────
+            # â”€â”€ Creative Mode dispatcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _creative_ctx = await self._execute_creative_mode(goal, mode, mid, ctx, trace)
             if _creative_ctx is not None:
                 return _creative_ctx
-            # ── BeaTeam dispatcher (mode=improve/lab/dev) ──────────────────────────
-            # Route to architect→coder→reviewer→qa chain when mode indicates improvement.
+            # â”€â”€ BeaTeam dispatcher (mode=improve/lab/dev) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # Route to architectâ†’coderâ†’reviewerâ†’qa chain when mode indicates improvement.
             if mode in ("improve", "lab", "dev") and not _is_chat_mode:
                 try:
                     from core.orchestration.bea_team_dispatcher import dispatch_improve
@@ -508,7 +508,7 @@ class MetaOrchestrator(
                 except Exception as _jt_err:
                     log.warning("bea_team.dispatch_failed", err=str(_jt_err)[:80])
                     # Fall through to standard pipeline
-            # ── Phase 3: Supervised execution ─────────────────────
+            # â”€â”€ Phase 3: Supervised execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             outcome = await self._execute_supervised(
                 mid=mid,
                 goal=goal,
@@ -540,7 +540,7 @@ class MetaOrchestrator(
                              reason=d.get("error", ""),
                              **{k: v for k, v in d.items()
                                 if k not in ("step", "error", "reason")})
-            # ── Phase 1-P42 post-exec: update_observed ────────────────────────\n            # Close the loop on MissionReasoningState: fill observed effects\n            # and compute expected vs observed diff. Fail-open.
+            # â”€â”€ Phase 1-P42 post-exec: update_observed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n            # Close the loop on MissionReasoningState: fill observed effects\n            # and compute expected vs observed diff. Fail-open.
             # _mission_state was created in _execute_supervised and stored in ctx.metadata
             if ctx.metadata.get("mission_reasoning_state") is not None:
                 try:
@@ -614,8 +614,8 @@ class MetaOrchestrator(
             ctx.error = "Mission annulée"
             self._transition(ctx, MissionStatus.FAILED, reason="cancelled")
             trace.record("complete", "failed", reason="cancelled")
+            _cancelled = True
         except Exception as e:
-            ctx.error = str(e)[:300]
             log.error("mission.exception",
                       mission_id=mid, err=str(e)[:120], exc_info=True)
             if ctx.status not in (MissionStatus.DONE, MissionStatus.FAILED):
@@ -628,9 +628,9 @@ class MetaOrchestrator(
         # Save decision trace
         ctx.metadata["decision_trace"] = trace.summary()
         trace.save()
-        # ── Post-mission: cognitive learning + guardian cleanup ────
+        # â”€â”€ Post-mission: cognitive learning + guardian cleanup â”€â”€â”€â”€
         self._post_mission_learning(mid, goal, mode, ctx)
-        # ── Training data collection (fire-and-forget) ────────────
+        # â”€â”€ Training data collection (fire-and-forget) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try:
             from core.training_data_collector import collect_training_example
             # Extract mission data for training
@@ -659,16 +659,17 @@ class MetaOrchestrator(
             ))
         except Exception as _tdc_err:
             log.debug("training_data_collection_skipped", err=str(_tdc_err)[:80])
-        # ── Deregister EventStream (mission complete or failed) ────
+        # â”€â”€ Deregister EventStream (mission complete or failed) â”€â”€â”€â”€
         self._cleanup_event_stream(mid)
+        if _cancelled:
+            raise asyncio.CancelledError()
         return ctx
-# ══════════════════════════════════════════════════════════════════════════════
 # TESTS REMOVED - now using manual checks
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     def get_status(self) -> dict:
         """
-        État observable de MetaOrchestrator.
-        Utilisé par l'API /status et le monitoring.
+        Ã‰tat observable de MetaOrchestrator.
+        UtilisÃ© par l'API /status et le monitoring.
         """
         with self._lock:
             snapshot = list(self._missions.values())
@@ -703,8 +704,8 @@ class MetaOrchestrator(
     ) -> MissionContext | None:
         """
         Resume or close a mission after approval decision.
-        granted=True  → transition AWAITING_APPROVAL → RUNNING → re-execute
-        granted=False → transition AWAITING_APPROVAL → FAILED
+        granted=True  â†’ transition AWAITING_APPROVAL â†’ RUNNING â†’ re-execute
+        granted=False â†’ transition AWAITING_APPROVAL â†’ FAILED
         """
         ctx = self.get_mission(mission_id)
         if not ctx:
@@ -797,9 +798,9 @@ class MetaOrchestrator(
         recovered = {"awaiting_approval": 0, "marked_failed": 0, "total": len(records)}
         for record in records:
             if record.mission_id in self._missions:
-                continue  # Already in memory — skip
+                continue  # Already in memory â€” skip
             if record.is_awaiting_approval:
-                # Restore to memory — waiting for approval resolution
+                # Restore to memory â€” waiting for approval resolution
                 ctx = MissionContext(
                     mission_id=record.mission_id,
                     goal=record.goal,
@@ -817,7 +818,7 @@ class MetaOrchestrator(
                 recovered["awaiting_approval"] += 1
                 log.info("recovery.awaiting_restored", mission_id=record.mission_id)
             else:
-                # RUNNING/PLANNED missions interrupted by restart — mark failed
+                # RUNNING/PLANNED missions interrupted by restart â€” mark failed
                 store.update_status(
                     record.mission_id,
                     status="FAILED",
@@ -828,8 +829,8 @@ class MetaOrchestrator(
                         mission_id=record.mission_id, was_status=record.status)
         log.info("recovery.complete", **recovered)
         return recovered
-    # ── Backward-compat shims ────────────────────────────────────────────────
-    # Ces méthodes permettent aux modules qui appelaient BeaOrchestrator.run()
+    # â”€â”€ Backward-compat shims â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # Ces mÃ©thodes permettent aux modules qui appelaient BeaOrchestrator.run()
     # de migrer progressivement vers MetaOrchestrator sans casser les imports.
     async def run(
         self,
@@ -841,12 +842,12 @@ class MetaOrchestrator(
         principal_id: str | None = None,
     ):
         """
-        Compatibilité ascendante avec BeaOrchestrator.run().
-        Délègue à run_mission() et retourne la session BeaSession originale.
+        CompatibilitÃ© ascendante avec BeaOrchestrator.run().
+        DÃ©lÃ¨gue Ã  run_mission() et retourne la session BeaSession originale.
         """
         mid = session_id or uuid.uuid4().hex[:16]
-        # BLOC 2: ALL modes route through run_mission() — kernel cognitive pipeline.
-        # Previous bypass (mode != "auto" → bea.run() directly) skipped:
+        # BLOC 2: ALL modes route through run_mission() â€” kernel cognitive pipeline.
+        # Previous bypass (mode != "auto" â†’ bea.run() directly) skipped:
         #   - kernel cognitive cycle
         #   - kernel policy check
         #   - kernel evaluation
@@ -862,9 +863,9 @@ class MetaOrchestrator(
         return ctx
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Module-level test helpers
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def check():
     """Simple check - MetaOrchestrator can be instantiated."""
@@ -877,9 +878,9 @@ def check():
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Module-level singleton (optionnel — certains modules préfèrent l'injection)
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Module-level singleton (optionnel â€” certains modules prÃ©fÃ¨rent l'injection)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _meta: MetaOrchestrator | None = None
 _meta_lock = threading.Lock()
@@ -888,7 +889,7 @@ _meta_lock = threading.Lock()
 def get_meta_orchestrator(settings=None) -> MetaOrchestrator:
     """
     Retourne l'instance singleton de MetaOrchestrator.
-    Premier appel = initialisation ; appels suivants = même instance.
+    Premier appel = initialisation ; appels suivants = mÃªme instance.
     Thread-safe double-checked locking.
     """
     global _meta
@@ -900,5 +901,6 @@ def get_meta_orchestrator(settings=None) -> MetaOrchestrator:
     return _meta
 
 
-# Alias for backward compatibility — some modules import get_orchestrator
+# Alias for backward compatibility â€” some modules import get_orchestrator
 get_orchestrator = get_meta_orchestrator
+

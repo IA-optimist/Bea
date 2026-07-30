@@ -1,4 +1,4 @@
-"""Pilote Béa depuis Telegram (dev/test, long-polling).
+﻿"""Pilote Béa depuis Telegram (dev/test, long-polling).
 
 Permet de tester le modèle (bea-v31) et l'agent (orchestration) sans l'APK.
 
@@ -24,6 +24,7 @@ import asyncio
 import logging
 import os
 import subprocess
+from contextlib import suppress
 
 import httpx
 
@@ -81,6 +82,9 @@ def _allowlist() -> set[str] | None:
 import re as _re
 
 from gateway.local_tools import TOOLS_DOC, parse_tool_call, run_tool
+
+# Registre des traitements actifs par chat_id pour la sérialisation : un seul par chat.
+_active_chat_tasks: dict[str, asyncio.Task[None]] = {}
 
 # System prompt : Béa a de VRAIS outils exécutables (boucle tool_call -> tool_result).
 TOOLS_AGENT = (
@@ -555,25 +559,83 @@ async def _keep_typing(client, base_url: str, chat_id: str) -> None:
 
 
 async def _send_reply(client, base_url: str, chat_id: str, msg_id, text: str) -> None:
-    """Édite le placeholder avec la réponse finale (UNE seule bulle).
-    Ne découpe en messages de suite que si la réponse dépasse la limite Telegram."""
-    text = (text or "").strip() or "(aucune réponse)"
+    """?dite le placeholder avec la r?ponse finale (UNE seule bulle).
+    Ne d?coupe en messages de suite que si la r?ponse d?passe la limite Telegram."""
+    text = (text or "").strip() or "(aucune r?ponse)"
     _MAX = 4000
     first, rest = text[:_MAX], text[_MAX:]
     edited = msg_id is not None and await _tg(
         client, base_url, "editMessageText",
         {"chat_id": chat_id, "message_id": msg_id, "text": first})
-    if not edited:                       # édition impossible -> message neuf
+    if not edited:                       # ?dition impossible -> message neuf
         await _tg(client, base_url, "sendMessage", {"chat_id": chat_id, "text": first})
-    while rest:                          # surplus (réponses très longues) en suite
+    while rest:                          # surplus (r?ponses tr?s longues) en suite
         chunk, rest = rest[:_MAX], rest[_MAX:]
         await _tg(client, base_url, "sendMessage", {"chat_id": chat_id, "text": chunk})
 
 
-# ── Vision : analyse de photos via modèle multimodal OpenRouter ──
-_VISION_MODEL = os.getenv("VISION_MODEL", "nvidia/nemotron-nano-12b-v2-vl:free")
-_VISION_FALLBACK = os.getenv("VISION_FALLBACK",
-                             "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free")
+async def _send_busy_notice(client, base_url: str, chat_id: str) -> None:
+    await _tg(
+        client,
+        base_url,
+        "sendMessage",
+        {"chat_id": chat_id, "text": "Je termine encore ta demande pr?c?dente. Renvoie ton message quand j'ai termin?."},
+    )
+
+
+async def _process_message(chat_id: str, event: MessageEvent, ph, runner, client, adapter) -> None:
+    """Traitement en tâche de fond pour un message d'un chat donné.
+    
+    Remplace l'ancienne _process_chat_message et ajoute un try/except autour de runner.handle.
+    Sans lui, une exception dans une tâche lancée par create_task serait avalée silencieusement,
+    laissant l'utilisateur sans réponse et le typing potentiellement actif.
+    """
+    typing = asyncio.create_task(_keep_typing(client, adapter.base_url, chat_id))
+    response = None
+    try:
+        try:
+            response = await runner.handle(event)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("telegram_handle_failed chat_id=%s err=%s", chat_id, str(exc)[:200])
+            response = "Une erreur interne est survenue."
+    finally:
+        typing.cancel()
+        with suppress(asyncio.CancelledError):
+            await typing
+    
+    if response is not None:
+        try:
+            await _send_reply(
+                client, adapter.base_url, chat_id,
+                ph.get("message_id") if ph else None,
+                response,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("telegram_reply_failed chat_id=%s err=%s", chat_id, str(exc)[:200])
+    
+    # Nettoyage : retirer du registre dans tous les cas (y compris en cas d'erreur).
+    _active_chat_tasks.pop(chat_id, None)
+
+
+async def _process_chat_message(runner, client, adapter, event: MessageEvent, ph) -> None:
+    """Pourrait être supprimé après déploiement, _process_message le remplace maintenant.
+    """
+    chat_id = event.chat_id
+    await _process_message(chat_id, event, ph, runner, client, adapter)
+
+
+async def _start_chat_message(runner, client, adapter, event: MessageEvent) -> bool:
+    chat_id = event.chat_id
+    # Règle : un seul traitement actif par chat
+    if chat_id in _active_chat_tasks and not _active_chat_tasks[chat_id].done():
+        # Refus poli sans placeholder/typing pour refus
+        await _send_reply(client, adapter.base_url, chat_id, None, "Je termine encore ta demande précédente. Renvoie ton message quand j'ai terminé.")
+        return False
+    
+    ph = await _tg(client, adapter.base_url, "sendMessage", {"chat_id": chat_id, "text": "Testing..."})
+    task = asyncio.create_task(_process_message(chat_id, event, ph, runner, client, adapter))
+    _active_chat_tasks[chat_id] = task
+    return True
 
 
 async def _analyze_photo(client, adapter, file_id: str, question: str) -> str:
@@ -759,63 +821,60 @@ async def main() -> None:
 
     offset = 0
     async with httpx.AsyncClient(timeout=40) as client:
-        # Rapport quotidien 8h00 — tâche parallèle, ne bloque pas le polling.
+        # Rapport quotidien 8h00 ??? t?che parall?le, ne bloque pas le polling.
         asyncio.create_task(
             _daily_report_loop(client, adapter, _allowlist()))
 
-        while True:
-            try:
-                r = await client.get(f"{adapter.base_url}/getUpdates",
-                                     params={"offset": offset, "timeout": 30})
-                for upd in r.json().get("result", []):
-                    offset = upd["update_id"] + 1
-                    event = adapter.parse(upd)
-                    if not event:
-                        _m = upd.get("message") or upd.get("edited_message") or {}
-                        # Photo -> analyse vision
-                        if _m.get("photo"):
-                            _uid = str((_m.get("from") or {}).get("id", ""))
-                            if not runner.is_authorized(_uid):
+        try:
+            while True:
+                try:
+                    r = await client.get(f"{adapter.base_url}/getUpdates",
+                                         params={"offset": offset, "timeout": 30})
+                    for upd in r.json().get("result", []):
+                        offset = upd["update_id"] + 1
+                        event = adapter.parse(upd)
+                        if not event:
+                            _m = upd.get("message") or upd.get("edited_message") or {}
+                            # Photo -> analyse vision
+                            if _m.get("photo"):
+                                _uid = str((_m.get("from") or {}).get("id", ""))
+                                if not runner.is_authorized(_uid):
+                                    continue
+                                _cid = str((_m.get("chat") or {}).get("id", ""))
+                                _q = _m.get("caption") or "D?cris et analyse cette image en d?tail."
+                                _fid = _m["photo"][-1]["file_id"]      # plus haute r?solution
+                                log.info("photo from %s (l?gende: %s)", _uid, _q[:60])
+                                _ph = await _tg(client, adapter.base_url, "sendMessage",
+                                                {"chat_id": _cid, "text": "??? B?a analyse l'image?"})
+                                _typing = asyncio.create_task(
+                                    _keep_typing(client, adapter.base_url, _cid))
+                                try:
+                                    _ans = await _analyze_photo(client, adapter, _fid, _q)
+                                except Exception as _e:  # noqa: BLE001
+                                    _ans = f"Erreur analyse image : {_e}"
+                                finally:
+                                    _typing.cancel()
+                                    with suppress(asyncio.CancelledError):
+                                        await _typing
+                                await _send_reply(client, adapter.base_url, _cid,
+                                                  _ph.get("message_id") if _ph else None, _ans)
                                 continue
-                            _cid = str((_m.get("chat") or {}).get("id", ""))
-                            _q = _m.get("caption") or "Décris et analyse cette image en détail."
-                            _fid = _m["photo"][-1]["file_id"]      # plus haute résolution
-                            log.info("photo from %s (légende: %s)", _uid, _q[:60])
-                            _ph = await _tg(client, adapter.base_url, "sendMessage",
-                                            {"chat_id": _cid, "text": "🖼️ Béa analyse l'image…"})
-                            _typing = asyncio.create_task(
-                                _keep_typing(client, adapter.base_url, _cid))
-                            try:
-                                _ans = await _analyze_photo(client, adapter, _fid, _q)
-                            except Exception as _e:  # noqa: BLE001
-                                _ans = f"Erreur analyse image : {_e}"
-                            finally:
-                                _typing.cancel()
-                            await _send_reply(client, adapter.base_url, _cid,
-                                              _ph.get("message_id") if _ph else None, _ans)
+                            log.info("update ignor? (pas de texte ??? vocal/autre ?) : champs=%s",
+                                     list(_m.keys()))
                             continue
-                        log.info("update ignoré (pas de texte — vocal/autre ?) : champs=%s",
-                                 list(_m.keys()))
-                        continue
-                    log.info("msg from %s: %s", event.user_id, event.text[:80])
-                    if not runner.is_authorized(event.user_id):
-                        continue                       # allowlist : ignore en silence
-                    # 1) placeholder instantané « réfléchit » (= UNE bulle, éditée ensuite)
-                    ph = await _tg(client, adapter.base_url, "sendMessage",
-                                   {"chat_id": event.chat_id, "text": _THINKING})
-                    # 2) indicateur « … écrit » maintenu pendant tout le traitement
-                    typing = asyncio.create_task(
-                        _keep_typing(client, adapter.base_url, event.chat_id))
-                    try:
-                        response = await runner.handle(event)
-                    finally:
-                        typing.cancel()
-                    # 3) la réponse REMPLACE le placeholder (pas de nouvelle section)
-                    await _send_reply(client, adapter.base_url, event.chat_id,
-                                      ph.get("message_id") if ph else None, response)
-            except Exception as e:  # noqa: BLE001
-                log.warning("poll_error: %s", e)
-                await asyncio.sleep(3)
+                        log.info("msg from %s: %s", event.user_id, event.text[:80])
+                        if not runner.is_authorized(event.user_id):
+                            continue                       # allowlist : ignore en silence
+                        await _start_chat_message(runner, client, adapter, event)
+                except Exception as e:  # noqa: BLE001
+                    log.warning("poll_error: %s", e)
+                    await asyncio.sleep(3)
+        finally:
+            active_tasks = [t for t in _active_chat_tasks.values() if not t.done()]
+            for _task in active_tasks:
+                _task.cancel()
+            if active_tasks:
+                await asyncio.gather(*active_tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

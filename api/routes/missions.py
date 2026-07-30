@@ -1,5 +1,5 @@
-"""
-api/routes/missions.py — Mission, task, and agent endpoints.
+﻿"""
+api/routes/missions.py â€” Mission, task, and agent endpoints.
 Single source for all /api/v2/task, /api/v2/tasks, /api/v2/missions, /api/v2/agents routes.
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ from api._deps import (
     _get_mission_system,
     _get_orchestrator,
     _get_task_queue,
-    # BLOC E: _get_kernel removed — dead import, never called.
+    # BLOC E: _get_kernel removed â€” dead import, never called.
     # Use _get_kernel_adapter()
     # Use _get_kernel_adapter() (R8 canonical boundary) for all kernel access.
     _get_kernel_adapter,
@@ -56,6 +56,7 @@ router = APIRouter(tags=["missions"])
 # NOTE: does NOT protect across multiple uvicorn workers (--workers > 1).
 # For multi-worker deployments use a Redis-backed set instead.
 _running_missions: set[str] = set()
+_active_mission_tasks: dict[str, asyncio.Task] = {}
 _running_missions_lock = asyncio.Lock()
 
 
@@ -68,11 +69,11 @@ async def submit_task(
     request: Request,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Soumettre une nouvelle tâche/mission."""
+    """Soumettre une nouvelle tÃ¢che/mission."""
     _check_auth(x_bea_token, authorization)
     ms      = _get_mission_system()
 
-    # Identité authentifiée validée par le middleware — gagne sur tout
+    # IdentitÃ© authentifiÃ©e validÃ©e par le middleware â€” gagne sur tout
     # principal_id fourni par le client.
     _principal_id = get_authenticated_principal(request)
     if _principal_id is None and _REQUIRE_AUTH:
@@ -82,20 +83,20 @@ async def submit_task(
         )
 
     result  = ms.submit(req.input, submitted_by=_principal_id)
-    # Persister le mode demandé : la reprise post-approbation
-    # (approve_mission_for_resume) relançait TOUT en mode "auto", perdant
-    # le mode BUSINESS/CODE choisi à la soumission.
+    # Persister le mode demandÃ© : la reprise post-approbation
+    # (approve_mission_for_resume) relanÃ§ait TOUT en mode "auto", perdant
+    # le mode BUSINESS/CODE choisi Ã  la soumission.
     try:
         result.decision_trace["mode"] = req.mode
     except Exception:
         log.debug("mode_trace_skip", mission_id=result.mission_id)
 
-    # Persister le principal du soumetteur sur la mission — posé ici une seule
-    # fois depuis l'identité auth validée. Le client ne peut pas fournir ce
-    # champ via le body (il n'est pas dans TaskRequest). Utilisé à la reprise.
+    # Persister le principal du soumetteur sur la mission â€” posÃ© ici une seule
+    # fois depuis l'identitÃ© auth validÃ©e. Le client ne peut pas fournir ce
+    # champ via le body (il n'est pas dans TaskRequest). UtilisÃ© Ã  la reprise.
     result.submitted_by = _principal_id
 
-    # ── Anti-duplicate execution guard (atomic check-and-add) ────────
+    # â”€â”€ Anti-duplicate execution guard (atomic check-and-add) â”€â”€â”€â”€â”€â”€â”€â”€
     async with _running_missions_lock:
         if result.mission_id in _running_missions:
             log.warning("mission_already_running", mission_id=result.mission_id)
@@ -109,7 +110,7 @@ async def submit_task(
     async def _run_mission():
         _mission_start = time.time()
 
-        # ── Event stream registration (fail-open) ──────────────────────────
+        # â”€â”€ Event stream registration (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # Register BEFORE execution so WS clients can connect immediately.
         # The stream persists for 1 hour after completion (TTL in event_stream.py)
         # allowing late-connecting clients to replay the full history.
@@ -123,7 +124,7 @@ async def submit_task(
             await _ws_stream.append(Observation(
                 source="system",
                 observation_type="mission_started",
-                content=f"Mission démarrée : {req.input[:200]}",
+                content=f"Mission dÃ©marrÃ©e : {req.input[:200]}",
                 metadata={"mission_id": str(result.mission_id), "mode": req.mode},
             ))
         except Exception as _es_err:
@@ -176,7 +177,7 @@ async def submit_task(
                         exc_msg=str(_exc)[:200],
                     )
                 return
-            # ── Knowledge Memory lookup (fail-open) ──────────────────────────
+            # â”€â”€ Knowledge Memory lookup (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _km_bonus_confidence = 0.0
             _km_priority_tools: list = []
             _km_priority_agents: list = []
@@ -209,9 +210,9 @@ async def submit_task(
                         exc_type=type(_exc).__name__,
                         exc_msg=str(_exc)[:200],
                     )
-            # ── end knowledge lookup ──────────────────────────────────────────
+            # â”€â”€ end knowledge lookup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            # ── Mission Planning (fail-open) ──────────────────────────────────
+            # â”€â”€ Mission Planning (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _plan_used = False
             _plan_steps_count = 0
             _plan_success_rate = 0.0
@@ -235,7 +236,7 @@ async def submit_task(
                         _plan_used = True
                         _plan_steps_count = _plan.total_steps
 
-                        # Exécution séquentielle des étapes via le routing normal
+                        # ExÃ©cution sÃ©quentielle des Ã©tapes via le routing normal
                         _all_step_results = []
                         for _step in _plan.steps:
                             _next = _planner.get_next_steps(_plan)
@@ -245,7 +246,7 @@ async def submit_task(
                             _planner.execute_step(_step_to_run)
                             try:
                                 # Build sub-goal for this step
-                                _step_goal = f"{_step_to_run.description} — contexte: {req.input[:100]}"
+                                _step_goal = f"{_step_to_run.description} â€” contexte: {req.input[:100]}"
                                 # Select agents for this step (real routing)
                                 from agents.crew import select_agents
                                 _step_agents = select_agents(
@@ -274,9 +275,9 @@ async def submit_task(
                         _plan_success_rate = _plan.success_rate
             except Exception as _plan_err:
                 logger.warning(f"[MissionPlanning] error (fail-open): {_plan_err}")
-            # ── end Mission Planning ──────────────────────────────────────────
+            # â”€â”€ end Mission Planning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            # ── Tool trace (fail-open) — rend les tools VISIBLES dans decision_trace ──
+            # â”€â”€ Tool trace (fail-open) â€” rend les tools VISIBLES dans decision_trace â”€â”€
             try:
                 from core.tool_registry import get_tool_registry
                 from core.tool_executor import get_tool_executor
@@ -303,9 +304,9 @@ async def submit_task(
                         exc_type=type(_exc).__name__,
                         exc_msg=str(_exc)[:200],
                     )
-            # ── end tool trace ────────────────────────────────────────────────
+            # â”€â”€ end tool trace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            # ── Tool pre-execution (fail-open) ────────────────────────────────
+            # â”€â”€ Tool pre-execution (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _enriched_input = req.input
             _tool_run_results: dict = {}
             try:
@@ -331,15 +332,15 @@ async def submit_task(
                     exc_type=type(_exc).__name__,
                     exc_msg=str(_exc)[:200],
                 )
-            # ── end tool pre-execution ────────────────────────────────────────
+            # â”€â”€ end tool pre-execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            # ── kernel.execute() via KernelAdapter (Pass 26 — R8) ───────────
+            # â”€â”€ kernel.execute() via KernelAdapter (Pass 26 â€” R8) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             # R8: API never touches kernel internals directly.
             # KernelAdapter is the ONLY sanctioned bridge (interfaces/).
-            # Fallback chain: KernelAdapter → legacy orch.run()
+            # Fallback chain: KernelAdapter â†’ legacy orch.run()
             _adapter = _get_kernel_adapter()
             if _adapter is not None:
-                await _ws_emit("Exécution via KernelAdapter…", otype="kernel_start", source="kernel")
+                await _ws_emit("ExÃ©cution via KernelAdapterâ€¦", otype="kernel_start", source="kernel")
                 session = await _adapter.submit(
                     goal=_enriched_input,
                     mission_id=str(result.mission_id),
@@ -355,7 +356,7 @@ async def submit_task(
                     await _ws_emit(_adapter_err[:500], otype="error", source="kernel", is_error=True)
             else:
                 # Fallback: legacy MetaOrchestrator.run() path
-                await _ws_emit("Exécution via MetaOrchestrator…", otype="orch_start", source="orchestrator")
+                await _ws_emit("ExÃ©cution via MetaOrchestratorâ€¦", otype="orch_start", source="orchestrator")
                 orch    = _get_orchestrator()
                 session = await orch.run(
                     user_input=_enriched_input,
@@ -365,12 +366,28 @@ async def submit_task(
                 )
                 log.debug("api_kernel_execute_fallback", mission_id=result.mission_id)
 
-            # ── Handle AWAITING_APPROVAL (MetaOrchestrator paused for human review) ──
+            # â”€â”€ Handle AWAITING_APPROVAL (MetaOrchestrator paused for human review) â”€â”€
             # AdapterResult.status is a lowercase string; BeaSession has an enum.
             _sess_status = getattr(session, "status", None)
             _status_val  = (_sess_status.value
                             if hasattr(_sess_status, "value")
                             else str(_sess_status or ""))
+            _status_norm = str(_status_val).lower()
+            _session_error = str(getattr(session, "error", "") or "").lower()
+            if (
+                _status_norm == "cancelled"
+                or (_status_norm in ("failed", "error")
+                    and ("cancel" in _session_error or "annul" in _session_error))
+            ):
+                ms.cancel(result.mission_id, reason=_session_error or "cancelled")
+                await _ws_emit(
+                    "Mission annulée.",
+                    otype="mission_cancelled",
+                    source="system",
+                    is_error=True,
+                )
+                return
+
             if _status_val in ("AWAITING_APPROVAL", "awaiting_approval"):
                 _ms_aw = ms.get(result.mission_id)
                 if _ms_aw:
@@ -384,12 +401,12 @@ async def submit_task(
                 log.info("mission_awaiting_approval", mission_id=result.mission_id)
                 return  # leave in PENDING_VALIDATION; do not call ms.complete()
 
-            # Niveau 0 : extraire selon le type de session retournée
+            # Niveau 0 : extraire selon le type de session retournÃ©e
             _final = ""
             _fallback_level = 0
             _final_source = "agent"
             if hasattr(session, "get_output"):
-                # BeaSession — pipeline multi-agents avec outputs nommés
+                # BeaSession â€” pipeline multi-agents avec outputs nommÃ©s
                 for _agent in ("lens-reviewer", "shadow-advisor", "map-planner",
                                "scout-research", "forge-builder"):
                     _out = session.get_output(_agent)
@@ -399,8 +416,8 @@ async def submit_task(
                 if not _final:
                     _final = getattr(session, "final_report", "") or ""
             else:
-                # AdapterResult (R8 path) — résultat dans .output
-                # Legacy MissionContext (fallback path) — résultat dans .result
+                # AdapterResult (R8 path) â€” rÃ©sultat dans .output
+                # Legacy MissionContext (fallback path) â€” rÃ©sultat dans .result
                 _final = (
                     getattr(session, "output", None)
                     or getattr(session, "result", None)
@@ -413,14 +430,14 @@ async def submit_task(
                 )
             _final = _extract_final_output(_final)
 
-            # Niveau 0b: quality check — if _final is workspace noise (listing files
+            # Niveau 0b: quality check â€” if _final is workspace noise (listing files
             # instead of answering the question), prefer agent_outputs synthesis.
             # Workspace noise pattern: contains "fichier(s)" or "Workspace :" in
             # the first 500 chars, which indicates repo_inspector injection, not
             # a real answer. The actual LLM responses are in agent_outputs.
             if _final and ("fichier(s)" in _final[:500] or "Workspace :" in _final[:500]):
                 _workspace_agent_outputs = extract_agent_outputs(result.mission_id)
-                # Filter out vault-memory and internal agents — keep real analysis agents
+                # Filter out vault-memory and internal agents â€” keep real analysis agents
                 _useful = {k: v for k, v in _workspace_agent_outputs.items()
                            if k not in ("vault-memory", "pulse-ops", "observer")
                            and v and len(str(v).strip()) >= 10}
@@ -430,11 +447,11 @@ async def submit_task(
                         if _aout and str(_aout).strip():
                             _parts.append(f"## {_aname}\n{str(_aout)[:1500]}")
                     if _parts:
-                        _final = "# Résultats de mission\n\n" + "\n\n".join(_parts)
+                        _final = "# RÃ©sultats de mission\n\n" + "\n\n".join(_parts)
                         _final_source = "agent_outputs_preferred"
                         _fallback_level = 0
 
-            # Niveau 1 : synthétiser depuis les agent_outputs bruts (MissionStateStore)
+            # Niveau 1 : synthÃ©tiser depuis les agent_outputs bruts (MissionStateStore)
             if not _final or not _final.strip():
                 _fallback_level = 1
                 _final_source = "synthesis"
@@ -445,19 +462,19 @@ async def submit_task(
                         if _aout and str(_aout).strip():
                             _parts.append(f"[{_aname}] {str(_aout)[:500]}")
                     if _parts:
-                        _final = "Résultats de l'analyse :\n\n" + "\n\n".join(_parts)
+                        _final = "RÃ©sultats de l'analyse :\n\n" + "\n\n".join(_parts)
 
-            # Niveau 2 : message explicite — jamais vide
+            # Niveau 2 : message explicite â€” jamais vide
             if not _final or not _final.strip():
                 _fallback_level = 2
                 _final_source = "fallback_message"
                 _final = (
-                    f"Mission exécutée. Objectif traité : {req.input}\n\n"
-                    "Aucun résultat structuré n'a été produit par les agents. "
-                    "Reformulez la demande pour obtenir une réponse plus précise."
+                    f"Mission exÃ©cutÃ©e. Objectif traitÃ© : {req.input}\n\n"
+                    "Aucun rÃ©sultat structurÃ© n'a Ã©tÃ© produit par les agents. "
+                    "Reformulez la demande pour obtenir une rÃ©ponse plus prÃ©cise."
                 )
 
-            # ── LangGraph integration — fail-open, USE_LANGGRAPH=true to activate ──
+            # â”€â”€ LangGraph integration â€” fail-open, USE_LANGGRAPH=true to activate â”€â”€
             if os.getenv("USE_LANGGRAPH", "false").lower() == "true":
                 try:
                     from core.orchestrator_lg.langgraph_flow import invoke as lg_invoke
@@ -472,7 +489,7 @@ async def submit_task(
                 except Exception as _lg_err:
                     log.error("langgraph_api_integration_failed", err=str(_lg_err)[:100])
                     # Continue with existing _final from legacy pipeline
-            # ── end LangGraph integration ──────────────────────────────────────
+            # â”€â”€ end LangGraph integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
             # Tracer la source du final_output dans decision_trace
             try:
@@ -510,7 +527,7 @@ async def submit_task(
                             exc_type=type(_exc).__name__,
                             exc_msg=str(_exc)[:200],
                         )
-                    # ── Knowledge Memory confidence bonus ──────────────────────────────
+                    # â”€â”€ Knowledge Memory confidence bonus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     try:
                         if _km_bonus_confidence > 0:
                             _current_conf = float(_ms_ref.decision_trace.get("confidence_score", 0.5))
@@ -521,8 +538,8 @@ async def submit_task(
                             exc_type=type(_exc).__name__,
                             exc_msg=str(_exc)[:200],
                         )
-                    # ── end km bonus ───────────────────────────────────────────────────
-                    # ── Mission Planning trace ─────────────────────────────────────────
+                    # â”€â”€ end km bonus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                    # â”€â”€ Mission Planning trace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     try:
                         _ms_ref.decision_trace["plan_used"] = _plan_used
                         _ms_ref.decision_trace["plan_steps"] = _plan_steps_count
@@ -533,7 +550,7 @@ async def submit_task(
                             exc_type=type(_exc).__name__,
                             exc_msg=str(_exc)[:200],
                         )
-                    # ── end plan trace ─────────────────────────────────────────────────
+                    # â”€â”€ end plan trace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             except Exception as _exc:
                 log.warning(
                     "missions_plan_trace_wrap_failed",
@@ -545,7 +562,7 @@ async def submit_task(
             try:
                 from core.execution_policy import get_execution_policy, ActionContext
                 _pol = get_execution_policy()
-                # Détermine action_type dominant à partir du mission_type
+                # DÃ©termine action_type dominant Ã  partir du mission_type
                 _ACTION_FROM_MISSION = {
                     "coding_task": "write",
                     "debug_task": "execute",
@@ -605,7 +622,7 @@ async def submit_task(
                         exc_msg=str(_exc)[:200],
                     )
 
-            # ── Tool results dans decision_trace (fail-open) ──────────────────
+            # â”€â”€ Tool results dans decision_trace (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             try:
                 _ms_tr2 = ms.get(result.mission_id)
                 if _ms_tr2 is not None and _tool_run_results:
@@ -619,7 +636,7 @@ async def submit_task(
                     exc_type=type(_exc).__name__,
                     exc_msg=str(_exc)[:200],
                 )
-            # ── end tool results trace ────────────────────────────────────────
+            # â”€â”€ end tool results trace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
             ms.set_final_output(result.mission_id, _final)
             # Garde-fou : ne pas marquer DONE si la mission attend une validation
@@ -628,7 +645,7 @@ async def submit_task(
                 log.warning(
                     "background_task_skip_complete_pending",
                     id=result.mission_id,
-                    hint="Mission requires human approval — not auto-completing",
+                    hint="Mission requires human approval â€” not auto-completing",
                 )
             else:
                 ms.complete(result.mission_id, result_text=_final)
@@ -662,7 +679,7 @@ async def submit_task(
                         exc_msg=str(_exc)[:200],
                     )
 
-            # ── Knowledge Memory store (fail-open) ────────────────────────────
+            # â”€â”€ Knowledge Memory store (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             try:
                 from core.knowledge_memory import get_knowledge_memory
                 _km_store = get_knowledge_memory()
@@ -684,9 +701,9 @@ async def submit_task(
                     exc_type=type(_exc).__name__,
                     exc_msg=str(_exc)[:200],
                 )
-            # ── end km store ──────────────────────────────────────────────────
+            # â”€â”€ end km store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-            # ── Observability + Self-Improvement trigger (fail-open) ──────────────
+            # â”€â”€ Observability + Self-Improvement trigger (fail-open) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             try:
                 from core.observability.store import get_observability_store, MissionMetrics
                 import time as _time
@@ -712,7 +729,7 @@ async def submit_task(
             try:
                 from core.self_improvement import get_self_improvement_manager
                 _sim = get_self_improvement_manager()
-                # Analyse asynchrone legere — ne bloque pas la reponse
+                # Analyse asynchrone legere â€” ne bloque pas la reponse
                 _sim.analyze_patterns()  # resultat ignore ici, mis en cache implicitement
             except Exception as _exc:
                 log.warning(
@@ -720,17 +737,17 @@ async def submit_task(
                     exc_type=type(_exc).__name__,
                     exc_msg=str(_exc)[:200],
                 )
-            # ── fin Observability ─────────────────────────────────────────────────
+            # â”€â”€ fin Observability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         except Exception as e:
             log.error("background_mission_failed", err=str(e)[:100])
             await _ws_emit(f"Erreur interne : {str(e)[:200]}", otype="error", source="system", is_error=True)
-            # Garantir que la mission se termine même en cas d'erreur interne
+            # Garantir que la mission se termine mÃªme en cas d'erreur interne
             try:
                 _err_output = (
-                    f"Mission exécutée. Objectif traité : {req.input}\n\n"
+                    f"Mission exÃ©cutÃ©e. Objectif traitÃ© : {req.input}\n\n"
                     "Une erreur interne s'est produite lors du traitement. "
-                    "Reformulez la demande pour obtenir une réponse plus précise."
+                    "Reformulez la demande pour obtenir une rÃ©ponse plus prÃ©cise."
                 )
                 _cur = ms.get(result.mission_id)
                 if _cur and _cur.status not in ("DONE", "PENDING_VALIDATION"):
@@ -742,12 +759,16 @@ async def submit_task(
                           err=str(_completion_err)[:120])
         finally:
             await _ws_emit(
-                f"Mission terminée en {int((time.time() - _mission_start)*1000)} ms",
+                f"Mission terminÃ©e en {int((time.time() - _mission_start)*1000)} ms",
                 otype="mission_done", source="system",
             )
-            _running_missions.discard(result.mission_id)
+            async with _running_missions_lock:
+                _running_missions.discard(result.mission_id)
+                _active_mission_tasks.pop(result.mission_id, None)
 
-    background_tasks.add_task(_run_mission)
+    task = asyncio.create_task(_run_mission())
+    async with _running_missions_lock:
+        _active_mission_tasks[result.mission_id] = task
 
     try:
         from api.event_emitter import emit_mission_created
@@ -767,12 +788,12 @@ async def submit_task(
 
 @router.get("/api/v2/task/{task_id}")
 async def get_task(task_id: str, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
-    """Statut d'une tâche."""
+    """Statut d'une tÃ¢che."""
     _check_auth(x_bea_token, authorization)
     ms = _get_mission_system()
     r  = ms.get(task_id)
     if not r:
-        raise HTTPException(status_code=404, detail=f"Tâche '{task_id}' introuvable.")
+        raise HTTPException(status_code=404, detail=f"TÃ¢che '{task_id}' introuvable.")
     return {"ok": True, "data": r.to_dict()}
 
 
@@ -784,7 +805,7 @@ async def list_tasks(
     offset: int           = Query(0, ge=0),
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Lister les tâches — source='missions' (MissionSystem) ou source='queue' (CoreTaskQueue)."""
+    """Lister les tÃ¢ches â€” source='missions' (MissionSystem) ou source='queue' (CoreTaskQueue)."""
     _check_auth(x_bea_token, authorization)
     if source == "queue":
         from core.task_queue import get_core_task_queue, TaskState
@@ -824,7 +845,7 @@ async def get_background_task(
     task_id: str,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Statut et résultat d'une tâche de fond (CoreTaskQueue)."""
+    """Statut et rÃ©sultat d'une tÃ¢che de fond (CoreTaskQueue)."""
     _check_auth(x_bea_token, authorization)
     from core.task_queue import get_core_task_queue
     q    = get_core_task_queue()
@@ -839,7 +860,7 @@ async def cancel_background_task(
     task_id: str,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Annuler une tâche de fond (CoreTaskQueue)."""
+    """Annuler une tÃ¢che de fond (CoreTaskQueue)."""
     _check_auth(x_bea_token, authorization)
     from core.task_queue import get_core_task_queue
     q  = get_core_task_queue()
@@ -857,18 +878,24 @@ async def abort_mission(
 ):
     """Annuler une mission en cours."""
     _check_auth(x_bea_token, authorization)
+    async with _running_missions_lock:
+        task = _active_mission_tasks.get(mission_id)
+    if task and not task.done():
+        task.cancel()
     queue = _get_task_queue()
     await queue.cancel_mission(mission_id)
     ms = _get_mission_system()
-    r  = ms.reject(mission_id, note=req.reason)
+    r  = ms.cancel(mission_id, reason=req.reason)
+    if not r:
+        r = ms.reject(mission_id, note=req.reason)
     if not r:
         raise HTTPException(status_code=404, detail=f"Mission '{mission_id}' introuvable.")
     return {"ok": True, "data": {"mission_id": mission_id, "status": r.status}}
 
 
-# ══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MISSIONS
-# ══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.post("/api/v2/missions/submit", status_code=201)
 async def submit_mission(
@@ -877,7 +904,7 @@ async def submit_mission(
     request: Request,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Soumettre une mission (interface Flutter — champ `goal` + `mode`)."""
+    """Soumettre une mission (interface Flutter â€” champ `goal` + `mode`)."""
     _check_auth(x_bea_token, authorization)
     try:
         task_req = TaskRequest(input=req.goal, mode=req.mode)
@@ -913,9 +940,9 @@ async def get_mission(mission_id: str, x_bea_token: Annotated[Optional[str], Hea
     return {"ok": True, "data": data}
 
 
-# ══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # AGENTS
-# ══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # NOTE: GET /api/v2/agents is served by api.routes.agent_builder (mounted first).
 
 
@@ -926,7 +953,7 @@ async def trigger_agent(
     background_tasks: BackgroundTasks,
     x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Déclencher un agent manuellement."""
+    """DÃ©clencher un agent manuellement."""
     _check_auth(x_bea_token, authorization)
 
     return schedule_agent_trigger(
@@ -937,9 +964,9 @@ async def trigger_agent(
         logger=log,
     )
 
-# ══════════════════════════════════════════════════════════════
-# COMPATIBILITÉ v1
-# ══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# COMPATIBILITÃ‰ v1
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.post("/api/mission", status_code=201, deprecated=True)
 async def legacy_post_mission(
@@ -949,13 +976,13 @@ async def legacy_post_mission(
     x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Alias v1 → POST /api/v2/task"""
+    """Alias v1 â†’ POST /api/v2/task"""
     return await submit_task(req, background_tasks, request, x_bea_token, authorization)
 
 
 @router.get("/api/health")
 async def legacy_health():
-    """Alias v1 → GET /api/v2/health"""
+    """Alias v1 â†’ GET /api/v2/health"""
     return await legacy_health_payload()
 
 
@@ -966,7 +993,7 @@ async def legacy_missions(
     x_bea_token: Annotated[Optional[str], Header()] = None,
     authorization: Annotated[Optional[str], Header()] = None,
 ):
-    """Alias v1 → GET /api/v2/missions"""
+    """Alias v1 â†’ GET /api/v2/missions"""
     return await list_missions(
         status=status,
         limit=limit,
@@ -977,11 +1004,11 @@ async def legacy_missions(
 
 @router.get("/api/stats", deprecated=True)
 async def legacy_stats():
-    """Alias v1 → GET /api/v2/metrics. Used by mobile."""
+    """Alias v1 â†’ GET /api/v2/metrics. Used by mobile."""
     return legacy_stats_payload(_get_mission_system)
 
 
-# ── Task approve/reject (Flutter uses these) ──────────────────
+# â”€â”€ Task approve/reject (Flutter uses these) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post("/api/v2/tasks/{task_id}/approve")
 async def approve_task(task_id: str, x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
@@ -1000,7 +1027,7 @@ async def reject_task(
     note = req.reason if req else "Rejected via API"
     return reject_task_payload(task_id, note)
 
-# ── Mission-level approve/reject + resumption ────────────────
+# â”€â”€ Mission-level approve/reject + resumption â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post("/api/v2/missions/{mission_id}/approve")
 async def approve_mission(
@@ -1064,7 +1091,7 @@ async def reject_mission(
         rejected_by=_rejected_by,
     )
 
-# ── System mode (Flutter setMode uses POST /api/system/mode) ──
+# â”€â”€ System mode (Flutter setMode uses POST /api/system/mode) â”€â”€
 @router.get("/api/system/mode")
 async def get_system_mode(x_bea_token: Annotated[Optional[str], Header()] = None, authorization: Annotated[Optional[str], Header()] = None):
     """Get current system operation mode."""
@@ -1081,19 +1108,19 @@ async def set_system_mode(req: ModeRequest, x_bea_token: Annotated[Optional[str]
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-# ── Legacy SSE alias (Flutter may call this path) ─────────────
+# â”€â”€ Legacy SSE alias (Flutter may call this path) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.get("/api/mission/{mission_id}/stream")
 # NOTE: /api/v1/missions/{mission_id}/stream is handled by mission_control_router
 # (prefix="/api/v1", mounted first at line ~178 in main.py). Duplicate removed.
 async def stream_mission_compat(mission_id: str):
-    """SSE stream — legacy alias; /api/v1/missions/{id}/stream handled by mission_control."""
+    """SSE stream â€” legacy alias; /api/v1/missions/{id}/stream handled by mission_control."""
     try:
         return await legacy_stream_response(mission_id)
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
-# ── Livrable export endpoint ───────────────────────────────────────────────────
+# â”€â”€ Livrable export endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.get("/api/v3/missions/{mission_id}/livrable")
 async def get_mission_livrable(
@@ -1103,7 +1130,7 @@ async def get_mission_livrable(
     authorization: Annotated[Optional[str], Header()] = None,
 ):
     """
-    Retourne le livrable client generé pour cette mission.
+    Retourne le livrable client generÃ© pour cette mission.
     fmt=markdown -> texte .md
     fmt=html     -> HTML complet pour impression/PDF
     """
@@ -1116,7 +1143,7 @@ async def get_mission_livrable(
         candidates = list(livrable_dir.glob(f'*{mid_short}*.md'))
 
         if not candidates:
-            # Générer à la demande si la mission est COMPLETED
+            # GÃ©nÃ©rer Ã  la demande si la mission est COMPLETED
             ms = _get_mission_system()
             m = ms.get(mission_id)
             if not m:
