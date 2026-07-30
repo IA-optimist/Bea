@@ -680,6 +680,7 @@ class OrchestratorV2:
         """
         try:
             from core.self_critic import get_critic
+            from core.resource_guard import SystemStatus, get_resource_guard
         except ImportError:
             return report   # modules not available yet
 
@@ -702,7 +703,28 @@ class OrchestratorV2:
 
         # ── Rerun with injected feedback ───────────────────────
         augmented = critic.build_rerun_prompt(task, report, cr.feedback, cr.suggestions)
+        resource_guard = None
+        slot_acquired = False
         try:
+            resource_guard = get_resource_guard(self.s)
+            resource_status = resource_guard.get_status().status
+            if resource_status not in {
+                SystemStatus.NORMAL,
+                SystemStatus.SOFT_WARN,
+            }:
+                log.info(
+                    "critic_rerun_resource_blocked",
+                    agent=agent_name,
+                    status=resource_status.value,
+                )
+                return report
+            slot_acquired = resource_guard.acquire_slot(
+                "compatibility-critic-rerun",
+                timeout=0.0,
+            )
+            if not slot_acquired:
+                log.info("critic_rerun_slot_unavailable", agent=agent_name)
+                return report
             guard.charge(augmented)
             if not critic.reserve_rerun(cr):
                 log.info("critic_rerun_limit_reached", agent=agent_name)
@@ -733,3 +755,6 @@ class OrchestratorV2:
         except Exception as rerun_err:
             log.warning("critic_rerun_failed", agent=agent_name, err=str(rerun_err)[:80])
             return report
+        finally:
+            if slot_acquired and resource_guard is not None:
+                resource_guard.release_slot("compatibility-critic-rerun")
