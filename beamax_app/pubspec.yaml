@@ -16,7 +16,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   flutter_secure_storage: ^9.0.0
   connectivity_plus: ^6.0.0
-  flutter_local_notifications: ^21.0.0   # Notifications locales (approval alerts)
+  flutter_local_notifications: ^22.0.1   # Notifications locales (approval alerts)
   flutter_markdown: ^0.7.6                # Rendu markdown dans les réponses
 
 flutter:
