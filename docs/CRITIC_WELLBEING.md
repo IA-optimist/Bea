@@ -39,7 +39,10 @@ Un rerun naturel est demandé si le `KernelScore` :
 Un PASS naturel ne déclenche aucun rerun. Le chemin canonique autorise au plus
 un rerun critic par mission, en plus des retries d'exécution déjà comptabilisés.
 Le critic de compatibilité conserve un budget de deux réservations atomiques,
-isolées par mission, agent et tâche.
+isolées par mission, agent et tâche, ainsi qu'un registre borné. Son historique
+processus est expurgé des tâches, sorties, feedbacks et identifiants de session
+bruts. L'identifiant de session y sert uniquement de corrélation ; il ne
+constitue jamais une identité de sécurité.
 
 Un rerun naturel n'est permis que si ResourceGuard rapporte `NORMAL` ou
 `SOFT_WARN` et si un slot peut être réservé. `SAFE`, `BLOCKED` et `UNKNOWN`
@@ -65,9 +68,18 @@ naturel en erreur, bloqué ou toujours insuffisant empêche `DONE`.
 
 ## Sélection du meilleur résultat
 
-Chaque rerun est évalué avec le même `KernelEvaluator`. Il remplace l'original
-uniquement si son score est strictement supérieur. La longueur du texte n'est
-pas un critère d'acceptation.
+Chaque rerun canonique est évalué avec le même `KernelEvaluator`. Un rerun
+naturel remplace l'original insuffisant seulement s'il obtient un verdict
+`ACCEPT`; ce verdict prévaut sur un score original numériquement supérieur mais
+explicitement non passant. Un rerun forcé ne remplace le résultat déjà passant
+que s'il est lui-même `ACCEPT` et strictement mieux noté. La longueur du texte
+n'est jamais un critère d'acceptation.
+
+Le chemin de compatibilité `OrchestratorV2.run_dag` conserve son critic
+historique et son `BudgetGuard`; il ne décide pas le statut terminal d'une
+mission canonique. Lorsqu'il effectue un rerun, il retourne uniquement le
+rapport dont le score historique est strictement supérieur. Il n'est pas
+présenté comme une deuxième autorité du chemin standard.
 
 Les métadonnées de mission contiennent seulement la décision, les scores avant
 et après, le delta, le statut ResourceGuard et le fait que le candidat a été
@@ -101,8 +113,10 @@ La configuration est immuable. Une cible ou une configuration invalide est
 rejetée avant toute mutation. La vitesse est finie et bornée dans `[-2, 2]`.
 
 `FunctionalWellbeing` traduit un snapshot ResourceGuard en ressources et charge
-normalisées, puis en une cible VAD. Une observation `UNKNOWN` ou invalide
-conserve le dernier état valide et reste marquée `known=false`.
+normalisées, puis en une cible VAD. Seuls `NORMAL` et `SOFT_WARN` produisent une
+observation `known=true`. Une observation `UNKNOWN`, `SAFE`, `BLOCKED` ou
+invalide conserve le dernier état valide et reste marquée `known=false`; un
+statut restrictif ne peut donc pas être présenté comme une télémétrie saine.
 
 ## Persistance, isolation et méta-plasticité
 
