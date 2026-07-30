@@ -42,6 +42,7 @@ from typing import Any
 
 import structlog
 
+from core.cognitive_events import EventType, emit
 from core.resource_guard import SystemStatus, get_resource_guard
 from core.self_critic import CRITIC_OVERALL_PASS_THRESHOLD, _MAX_RERUNS
 
@@ -731,6 +732,7 @@ class OrchestratorV2:
         critic = get_critic(self.s)
         cr     = await critic.evaluate(session_id, agent_name, task, report)
 
+        via = None
         forced = False
         should = critic.should_rerun(cr)
         if not should:
@@ -791,6 +793,21 @@ class OrchestratorV2:
                     after=new_cr.overall,
                     forced=forced,
                 ),
+            )
+            emit(
+                event_type=EventType.SYSTEM_EVENT,
+                summary="critic_rerun",
+                source="orchestrator_v2",
+                session_id=session_id,
+                payload={
+                    "kind": "critic_rerun",
+                    "forced": forced,
+                    "before": cr.overall,
+                    "after": new_cr.overall,
+                    "delta": round(new_cr.overall - cr.overall, 2),
+                    "viability": round(via, 3) if via is not None else None,
+                },
+                tags=["critic", "rerun"],
             )
             return new_report
 
