@@ -19,12 +19,9 @@ METAPLASTICITY_ENABLED = False
 
 
 def _finite_number(value: object, *, field_name: str) -> float:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{field_name} must be numeric")
-    try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
-        raise TypeError(f"{field_name} must be numeric") from exc
+    number = float(value)
     if not math.isfinite(number):
         raise ValueError(f"{field_name} must be finite")
     return number
@@ -53,14 +50,25 @@ def _validated_vad(
     if not isinstance(values, valid_types) or len(values) != 3:
         expected = "tuple" if require_tuple else "sequence"
         raise TypeError(f"{field_name} must be a three-value {expected}")
-    return tuple(
+    return (
         _bounded_number(
-            value,
-            field_name=f"{field_name}[{index}]",
+            values[0],
+            field_name=f"{field_name}[0]",
             lower=-1.0,
             upper=1.0,
-        )
-        for index, value in enumerate(values)
+        ),
+        _bounded_number(
+            values[1],
+            field_name=f"{field_name}[1]",
+            lower=-1.0,
+            upper=1.0,
+        ),
+        _bounded_number(
+            values[2],
+            field_name=f"{field_name}[2]",
+            lower=-1.0,
+            upper=1.0,
+        ),
     )
 
 
@@ -153,26 +161,34 @@ class AffectState:
         """Apply one validated second-order update without partial mutation."""
         target_vad = _validated_vad(target, field_name="target")
         with self._lock:
-            new_velocity = tuple(
+            velocity_values = [
                 _clip(
-                    self.config.momentum * velocity
-                    + (1.0 - self.config.momentum) * (target_value - state),
+                    self.config.momentum * self._velocity[index]
+                    + (1.0 - self.config.momentum)
+                    * (target_vad[index] - self._state[index]),
                     -2.0,
                     2.0,
                 )
-                for velocity, target_value, state in zip(
-                    self._velocity, target_vad, self._state, strict=True
-                )
+                for index in range(3)
+            ]
+            new_velocity: VAD = (
+                velocity_values[0],
+                velocity_values[1],
+                velocity_values[2],
             )
-            new_state = tuple(
+            state_values = [
                 _clip(
-                    state + self.config.update_rate * velocity,
+                    self._state[index]
+                    + self.config.update_rate * new_velocity[index],
                     -1.0,
                     1.0,
                 )
-                for state, velocity in zip(
-                    self._state, new_velocity, strict=True
-                )
+                for index in range(3)
+            ]
+            new_state: VAD = (
+                state_values[0],
+                state_values[1],
+                state_values[2],
             )
             if not all(
                 math.isfinite(value) for value in (*new_velocity, *new_state)

@@ -20,24 +20,18 @@ from core.resource_guard import ResourceSnapshot, SystemStatus
 
 
 def _unit(value: object, *, field_name: str) -> float:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{field_name} must be numeric")
-    try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
-        raise TypeError(f"{field_name} must be numeric") from exc
+    number = float(value)
     if not math.isfinite(number) or not 0.0 <= number <= 1.0:
         raise ValueError(f"{field_name} must be finite and within [0, 1]")
     return number
 
 
 def _percentage(value: object, *, field_name: str) -> float:
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{field_name} must be numeric")
-    try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
-        raise TypeError(f"{field_name} must be numeric") from exc
+    number = float(value)
     if not math.isfinite(number) or not 0.0 <= number <= 100.0:
         raise ValueError(f"{field_name} must be finite and within [0, 100]")
     return number
@@ -59,7 +53,7 @@ def _vad(values: object, *, field_name: str) -> VAD:
                 f"{field_name}[{index}] must be finite and within [-1, 1]"
             )
         result.append(number)
-    return tuple(result)
+    return (result[0], result[1], result[2])
 
 
 def _clip(value: float, lower: float, upper: float) -> float:
@@ -135,7 +129,10 @@ class FunctionalWellbeing:
 
     def observe(self, *, resources: object, load: object) -> WellbeingSnapshot:
         """Validate an observation, update VAD, and publish one snapshot."""
-        homeostasis = Homeostasis(resources=resources, load=load)
+        homeostasis = Homeostasis(
+            resources=_unit(resources, field_name="resources"),
+            load=_unit(load, field_name="load"),
+        )
         target = homeostasis.target_vad(baseline=self._affect.config.baseline)
         with self._lock:
             affect = self._affect.update(target)
