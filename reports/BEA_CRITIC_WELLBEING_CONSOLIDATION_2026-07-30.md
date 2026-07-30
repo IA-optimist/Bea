@@ -1,149 +1,236 @@
 # Consolidation canonique critic/wellbeing — 2026-07-30
 
-Statut du document : contrat et matrice écrits avant l'implémentation principale.
+Statut du document : rapport de consolidation et preuve de validation. Le
+contrat et la matrice différentielle ont été créés dans le premier commit,
+avant l'implémentation principale.
 
-## Références vérifiées
+## Références et préflight
 
 | Référence | SHA vérifié | Rôle |
 |---|---|---|
-| `origin/main` | `a2f7ec4cb7e363c5901f26087fe0deb116f49049` | base immuable de la consolidation |
+| `origin/main` | `a2f7ec4cb7e363c5901f26087fe0deb116f49049` | base immuable |
 | `recovery/july-2026-working-tree-accented-2ab7fb4f` | `0588a9284f12ae496d93662af42aee376dcf8cd0` | variante accentuée |
 | `recovery/july-2026-working-tree-ascii-bb4e956e` | `dcfbce5dbe89a3ac136fd9252031215e85468fa1` | variante ASCII |
 | `recovery/july-2026-affective-chain-f7647511` | `f7647511f752d97c4989b499dbe67c212b3bc382` | chaîne affective originale |
 
-Worktree propre : `C:\Users\maxen\Documents\Bea-consolidation-july-critic-wellbeing`
-
-Branche : `consolidation/july-critic-wellbeing-hybrid`
-
-La branche distante homonyme était absente au préflight.
+- Worktree créé proprement depuis `origin/main` :
+  `C:\Users\maxen\Documents\Bea-consolidation-july-critic-wellbeing`.
+- Branche : `consolidation/july-critic-wellbeing-hybrid`.
+- La branche distante homonyme était absente au préflight.
+- Tip d'implémentation avant le commit de ce rapport :
+  `9e9ec95414caba842c2c448266522247b5d80ea5`.
+- Aucun cherry-pick, merge, rebase ou force-push n'a été utilisé.
 
 ## Matrice différentielle
 
-| Élément | `main` | Accentué `0588a928` | ASCII `dcfbce5d` | Affective `f7647511` | Décision proposée | Preuve |
+| Élément | `main` | Accentué `0588a928` | ASCII `dcfbce5d` | Affective `f7647511` | Décision canonique | Preuve |
 |---|---|---|---|---|---|---|
-| Autorité d'évaluation | `KernelEvaluator`, résultat `KernelScore` structuré, seuil `0.50` | critic séparé dans `OrchestratorV2` | même critic séparé | critic de `main` inchangé | conserver le Kernel comme autorité unique et mapper le contrat `6.0/10` vers `0.60` | `OutcomeMixin._handle_success_outcome` appelle le Kernel sur le chemin canonique |
-| Seuil global | littéral `6.0` dans `core/self_critic.py`, Kernel à `0.50` | constante publique `6.0`, puis gates implicites `7.0/7.5` | constante publique `6.0` | littéral `6.0` | retenir uniquement `CRITIC_OVERALL_PASS_THRESHOLD = 6.0`; rejeter `7.0/7.5` | main et deux variantes concordent sur `6.0`; aucune preuve produit pour les autres seuils |
-| Scores critic | quatre dimensions `0..10`, valeurs LLM non validées | identique | identique | identique | exiger nombres finis et bornés; donnée invalide = erreur explicite | `NaN` rend les comparaisons fausses dans les variantes |
-| Critic naturel | actif seulement dans `OrchestratorV2.run_dag`; un rerun | idem | idem | idem | décision canonique issue du `KernelScore`, sur le chemin `MetaOrchestrator`; aucun rerun si le résultat passe | `MetaOrchestrator` est l'entrée canonique et utilise déjà le Kernel |
-| Critic forcé | absent | faible viabilité + score `<7.5`, mais chemin mort | faible ressource + score marginal | absent | gate serveur explicite, désactivé par défaut, uniquement si le critic naturel passe et si les ressources autorisent le travail | les variantes forcent du calcul quand les ressources se dégradent |
-| Cap de rerun | un retry Kernel + compteur critic global par hash de tâche | cap annoncé 2, un rerun par appel | idem | idem | une tentative canonique totale par mission; état dans `MissionContext`, aucun compteur utilisateur global | empêche boucle/récursion et fuite entre missions |
-| ResourceGuard | absent du retry Kernel et du critic naturel | produit une « viabilité » mais ne réserve rien | la pénurie déclenche le rerun | alimente VAD, pas le gate | ResourceGuard est une permission; `SAFE`, `BLOCKED`, `UNKNOWN` refusent le rerun critic; `NORMAL` et `SOFT_WARN` peuvent l'autoriser | inversion du comportement dangereux des deux variantes |
-| Résultat dégradé | retry Kernel accepté sur longueur, pas sur score | dernier résultat toujours retenu | dernier résultat toujours retenu | dernier résultat toujours retenu | réévaluer et conserver le meilleur score; jamais accepter selon la seule longueur | les trois chemins peuvent remplacer par une sortie moins bonne |
-| Erreur du critic | évaluation Kernel fail-open vers confiance `0.7` | sortie faible retournée | sortie faible retournée | sortie faible retournée | résultat critic requis invalide/exceptionnel = statut explicite et mission non `DONE` | exigence « aucun faux COMPLETED » |
-| Compteur/isolation | singleton critic par hash de texte | singleton + état affectif partagé | singleton critic | singleton affectif partagé | scope par mission interne; aucune identité client utilisée comme autorité | deux missions identiques partagent actuellement le cap |
-| VAD | absent | `AffectState` repris de la chaîne | absent | VAD deuxième ordre, `momentum=.6`, `rate=.5` | reconstruire l'équation avec configuration immuable, validation avant mutation et bornes `[-1,1]` | concept utile; implémentation source accepte `NaN`, `inf` et shapes invalides |
-| Homeostasis | absent | ressources/charge et viabilité | absent | ressources/charge et viabilité | retenir comme état fonctionnel en mémoire, télémétrique, sans autorité de sécurité | formule simple mais non validée comme politique produit |
-| Guidance affective | absente | injection de ton, mais état jamais mis à jour | absente | injection de ton, mais état jamais mis à jour | rejeter | chemin inerte, seuils non prouvés, changement silencieux du ton |
-| Wellbeing persistant | absent | `WellbeingTracker` global dans `data/`, cycle nocturne | absent | absent | rejeter; aucune persistance par défaut | fuite inter-utilisateurs et couplage fuseau/horaires |
-| Méta-plasticité | absente | absente | absente | absente | explicitement désactivée; aucun mécanisme d'auto-modification ajouté | aucune source ne démontre un comportement sûr |
-| Événement critic | logs existants | événement cognitif + données wellbeing | événement numérique naturel/forcé | absent | conserver une télémétrie structurée sans tâche, sortie ou état utilisateur | principe auditable, données sensibles inutiles |
-| Tests | couverture Kernel/orchestrateur existante | scénarios nombreux, 31 diagnostics Ruff dans le snapshot | 12 tests, dont doublons et forcing dangereux | scripts sans tests pytest | réécrire des tests déterministes ciblant le contrat; ne pas importer les snapshots | couvertures sources incomplètes ou couplées aux défauts |
-
-## Matrice par fichier et fonction
-
-| Fichier / symbole | Source utile | Modification prévue | Risque contrôlé |
-|---|---|---|---|
-| `kernel/evaluation/scorer.py::CRITIC_OVERALL_PASS_THRESHOLD` | accentué + ASCII + main | source canonique `6.0`, échelle Kernel dérivée `0.60`, validation finie | deux seuils contradictoires |
-| `core/self_critic.py::CriticScores` | main + ASCII | importer la constante canonique; valider chaque score `0..10` | `NaN`, infini, valeurs hors plage |
-| `core/self_critic.py::CriticAgent` | main | scope des comptes par mission/tâche, verrou atomique | fuite et dépassement concurrent |
-| `core/affect_state.py::AffectState` | chaîne affective, reconstruite | VAD borné, momentum `0.6`, taux `0.5`, validation transactionnelle | état empoisonné et paramètres silencieux |
-| `core/wellbeing.py::FunctionalWellbeing` | chaîne affective, reconstruite | état éphémère de ressources/charge et snapshot VAD | conscience déclarée, persistance globale |
-| `core/orchestration/critic_policy.py` | structure ASCII, reconstruite | décision naturel/forcé/refus ressources, résultat structuré | forcing sous pression, boucle |
-| `core/orchestration/outcome_mixin.py::_handle_kernel_retry` | main | utiliser la décision structurée, ResourceGuard, meilleur score, erreur fail-closed | faux `DONE`, retry dégradé |
-| tests ciblés | concepts des trois sources | propriétés VAD, décision critic, runtime canonique, isolation | régressions non détectées |
+| Autorité standard | `KernelEvaluator` sur `MetaOrchestrator` | critic V2 parallèle | critic V2 parallèle | chemin de main | conserver le Kernel comme autorité du chemin standard | `OutcomeMixin._handle_success_outcome` évalue avant `DONE` |
+| Seuil global | critic historique `6.0`, Kernel `0.50` | `6.0` plus gates implicites `7.0/7.5` | `6.0` plus gates marginaux | `6.0` | source unique `6.0`, soit `0.60` Kernel | constante exportée et tests de frontière |
+| Données invalides | validation partielle | `NaN`/infini possibles | idem | idem | score ou confiance invalide = erreur structurée | tests score/VAD invalides |
+| Critic naturel | retry Kernel partiel | rerun V2 | rerun V2 | idem | rerun uniquement sur échec structuré, jamais sur PASS | policy et runtime tests |
+| Critic forcé | absent | pression/viabilité pouvait forcer | distinction naturel/forcé | absent | gate serveur explicite, défaut off, PASS marginal seulement | setting et tests |
+| Ressources | non reliées au retry Kernel | viabilité non réservante | pénurie pouvait déclencher | télémétrie VAD | ressources = permission, jamais déclencheur | `ResourceGuard` + slot, standard et V2 |
+| Rerun | résultat parfois choisi par longueur | dernier résultat | dernier résultat | dernier résultat | naturel : candidat `ACCEPT`; forcé : `ACCEPT` et score supérieur | tests de dégradation et verdict incohérent |
+| Échec critic | fallback pouvant passer | sortie conservée | sortie conservée | sortie conservée | exception terminale/score invalide ne peut pas produire `DONE` | tests lifecycle |
+| VAD | absent | copie de la chaîne | absent | dynamique ordre 2, `.6/.5` | reconstruction validée, bornée, transactionnelle | tests de propriétés |
+| Wellbeing | absent | tracker global et cycle nocturne | absent | homeostasis simple | télémétrie fonctionnelle éphémère par mission | aucune écriture et isolation testées |
+| Persistance | métadonnées de mission | tracker et historique | improvement memory | aucune isolation | historique critic expurgé; aucune persistance affective ou d'amélioration | tests + suppression du write V2 |
+| Méta-plasticité | absente | non prouvée | non prouvée | absente | explicitement désactivée | constante `False`, config immuable |
+| Guidance affective | absente | injection de ton | absente | injection de ton | rejetée | aucune injection dans le diff |
 
 ## Contrat fonctionnel canonique
 
 ### Critic naturel
 
-- Le chemin canonique `MetaOrchestrator` évalue chaque résultat réussi avec le `KernelEvaluator`.
-- Le résultat est un `KernelScore` structuré. Tous les scores utilisés pour décider sont finis et bornés.
-- `CRITIC_OVERALL_PASS_THRESHOLD = 6.0`, soit `0.60` sur l'échelle Kernel.
-- Un résultat qui atteint le seuil et ne porte aucun signal d'échec ne déclenche aucun rerun.
-- Un score de dimension historique inférieur à `5.0` reste insuffisant dans le critic de compatibilité.
+- Le handler standard passe de `RUNNING` à `REVIEW`, puis appelle
+  `KernelEvaluator`.
+- `CRITIC_OVERALL_PASS_THRESHOLD = 6.0`; l'échelle Kernel dérivée vaut `0.60`.
+- Un `KernelScore` passant ne déclenche aucun rerun naturel.
+- Un score sous le seuil, `passed=false` ou `retry_recommended=true` demande au
+  plus un rerun canonique, si les ressources et le budget le permettent.
+- Le rerun est réévalué. Il remplace l'original insuffisant seulement si sa
+  décision est `ACCEPT`, même si le score incohérent de l'original était
+  numériquement supérieur.
 
 ### Critic forcé
 
-- Il exige un gate serveur explicite `BEA_CRITIC_FORCE_MARGINAL_RERUN=true`, désactivé par défaut.
-- Il ne peut s'appliquer qu'à un résultat naturellement acceptable mais marginal, jamais pour contourner un échec.
-- ResourceGuard doit autoriser l'opération. Une pénurie de ressources n'est jamais un déclencheur.
-- La valeur fournie par un client, y compris un identifiant, n'est jamais une identité de sécurité ni un signal d'autorisation.
+- Il exige `BEA_CRITIC_FORCE_MARGINAL_RERUN=true`, désactivé par défaut.
+- Il exige un résultat naturellement passant, un signal structuré explicite,
+  une mission de plus de 80 caractères, aucun rerun/retry antérieur et
+  `ResourceGuard=NORMAL`.
+- Un candidat forcé ne remplace l'original que s'il est `ACCEPT` et strictement
+  mieux noté. Toute erreur ou insuffisance conserve le PASS original.
+- Aucune identité fournie par un client n'active le gate ou ne sert
+  d'autorisation.
 
-### Bornes et absence de boucle
+### Bornes, ressources et absence de boucle
 
-- Une mission ne peut effectuer qu'un rerun critic canonique.
-- Le suffixe interne du rerun et le drapeau du `MissionContext` empêchent toute chaîne récursive.
-- BudgetGuard reste applicable dans le delegate budgété; ResourceGuard s'applique avant tout rerun.
-- Le résultat rerun est réévalué et n'est retenu que si son score canonique est strictement meilleur.
+- Le chemin canonique effectue zéro ou un rerun.
+- Le suffixe interne, le drapeau du `MissionContext`, `asyncio.wait_for` et le
+  slot `ResourceGuard` empêchent récursion et travail non borné.
+- `NORMAL` et `SOFT_WARN` permettent un rerun naturel; `SAFE`, `BLOCKED` et
+  `UNKNOWN` le refusent. Le forcé exige `NORMAL`.
+- Le chemin de compatibilité V2 garde son budget de deux réservations
+  atomiques, mais exige également `ResourceGuard` en `NORMAL`/`SOFT_WARN` et un
+  slot disponible. Il ne décide pas le statut terminal canonique.
 
-### Wellbeing fonctionnel
+### Wellbeing et VAD
 
-- « Wellbeing » désigne exclusivement un état logiciel fonctionnel de régulation et de télémétrie.
-- Aucune conscience, émotion ressentie, intériorité ou identité subjective n'est revendiquée.
-- Les ressources et la charge sont des nombres finis bornés dans `[0,1]`.
-- L'état reste en mémoire, dans le scope d'une évaluation de mission. Il n'est ni global ni partagé entre utilisateurs.
-- Une donnée absente ou invalide n'est pas interprétée comme un état sain.
+- « Wellbeing » décrit uniquement un état logiciel fonctionnel. Il ne prétend
+  ni conscience, ni émotion ressentie, ni intériorité.
+- L'ordre VAD est valence, arousal, dominance.
+- État/cible sont finis dans `[-1,1]`; vitesse finie dans `[-2,2]`.
+- Dynamique : `vitesse = .6 * vitesse + .4 * (cible - état)`, puis
+  `état = clip(état + .5 * vitesse)`.
+- Momentum `0.6`, taux `0.5`, baseline `(0,0,0)` et trajectoire maximale `64`
+  sont explicites et immuables.
+- Les constructeurs publics et les mises à jour rejettent types, shapes,
+  `NaN`, infinis et valeurs hors bornes avant mutation.
+- `NORMAL`/`SOFT_WARN` donnent une observation connue. `UNKNOWN`, `SAFE`,
+  `BLOCKED` ou données invalides restent `known=false` et ne sont jamais
+  présentés comme un état sain.
 
-### VAD
+### Persistance, isolation et échecs
 
-- L'ordre est `valence`, `arousal`, `dominance`.
-- État et cible sont finis et bornés dans `[-1,1]`.
-- L'équation retenue de la chaîne originale est :
-  `vitesse = momentum * vitesse + (1 - momentum) * (cible - état)`,
-  puis `état = clip(état + taux * vitesse)`.
-- Les paramètres runtime historiques sont conservés explicitement : momentum `0.6`, taux `0.5`.
-- `0 <= momentum < 1` et `0 < taux <= 1`. Configuration et cible invalides sont rejetées avant mutation.
-- Aucun paramètre n'est modifié silencieusement.
+- VAD/wellbeing est recréé pour chaque évaluation et reste en mémoire.
+- L'historique du singleton critic de compatibilité est borné et expurgé des
+  tâches, sorties, feedbacks, suggestions et identifiants de session bruts.
+- Le scope de session sert de corrélation interne, jamais d'identité de
+  sécurité. L'accès applicatif doit rester authentifié en amont.
+- Le chemin V2 ne persiste plus tâche/feedback/score dans
+  `improvement_memory`.
+- Une exception terminale de l'évaluateur, un verdict invalide ou un rerun
+  naturel toujours insuffisant place la mission standard en `FAILED`; le
+  circuit breaker n'enregistre pas un faux succès.
 
-### Méta-plasticité
+## Décisions hybrides et provenance
 
-- Elle est désactivée et non implémentée dans cette consolidation.
-- La configuration affective est immuable; aucun code, modèle, policy ou paramètre ne s'auto-modifie.
-- Une future méta-plasticité demanderait un chantier séparé, un opt-in serveur et des bornes testées.
+Aucun fichier source n'a été cherry-pické. Les sources ont fourni des preuves
+de comportement; l'implémentation a été reconstruite manuellement sur la base
+`main`.
 
-### Persistance et isolation
-
-- Seuls le résultat critic structuré et une télémétrie numérique minimale peuvent être placés dans les métadonnées de la mission.
-- Aucun texte de tâche, sortie brute, trajectoire VAD ou état utilisateur n'est ajouté à une persistance globale par ce chantier.
-- Les états VAD/wellbeing sont éphémères. Les compteurs sont liés à une mission interne, pas au texte seul.
-
-### Échecs
-
-- Une exception, un score non fini ou une structure critic invalide ne constitue jamais un PASS.
-- Si le critic canonique ne peut établir un verdict valide, la mission ne doit pas être marquée `DONE`.
-- Si un résultat est insuffisant et qu'un rerun est impossible faute de ressources, la mission reste en revue/échec explicite; elle ne devient pas faussement réussie.
-- Une exception du rerun ne remplace pas le résultat original et ne masque pas le verdict insuffisant.
-
-## Décisions hybrides
-
-| Composant | Source retenue | Modification | Tests attendus | Statut initial |
+| Composant | Source retenue | Modification | Tests | Statut |
 |---|---|---|---|---|
-| seuil `6.0` | accentué + ASCII + main | source de vérité unique et échelle Kernel dérivée | seuil exact et frontières | décidé |
-| distinction naturel/forcé | ASCII | reconstruite avec gate serveur et ressource comme permission | naturel, forcé, absent, tous statuts ressources | décidé |
-| télémétrie critic | ASCII | payload numérique minimal | événement/log fail-open | décidé |
-| VAD deuxième ordre | chaîne affective | validation, immutabilité, isolation | bornes, momentum, taux, invalides, NaN/inf | décidé |
-| homeostasis fonctionnelle | chaîne affective | état éphémère, sans persistance | bornes, données manquantes | décidé |
-| gate ResourceGuard | reconstruction minimale | interdit `SAFE`, `BLOCKED`, `UNKNOWN`; permet `NORMAL`/`SOFT_WARN` | permission/refus | décidé |
-| meilleur résultat | reconstruction minimale | comparaison des évaluations avant/après | amélioration et dégradation | décidé |
-| `RIGOR_FLOOR=7.0` / seuil `7.5` | rejet des variantes | aucun port | preuve d'absence | rejeté |
-| WellbeingTracker nocturne | rejet accentué | aucun port | aucune écriture/persistance | rejeté |
-| guidance de ton | rejet affectif/accentué | aucun port | absence d'injection | rejeté |
-| analyseur de forcing | rejet ASCII | aucun port | sans objet | rejeté |
-| méta-plasticité | rejet des trois versions | hard-disabled | immutabilité et flag off | rejeté |
+| seuil `6.0` | main + accentué + ASCII | constante unique et échelle `0.60` | frontières et invalides | PASS |
+| distinction naturel/forcé | concept ASCII | policy déterministe, gate serveur off | toutes décisions/ressources | PASS |
+| télémétrie critic | concept ASCII | payload mission minimal | runtime | PASS |
+| VAD ordre 2 | chaîne affective | reconstruction bornée `.6/.5` | propriétés et invalides | PASS |
+| homeostasis | chaîne affective + accentué | état éphémère sans autorité sécurité | ressources/charge/status | PASS |
+| ResourceGuard | reconstruction minimale | permission + réservation standard/V2 | statuts et slot | PASS |
+| sélection résultat | reconstruction minimale | PASS prioritaire; forcé strictement meilleur | dégradation/verdict FAIL | PASS |
+| isolation critic | reconstruction minimale | historique expurgé et registres bornés | deux sessions/cardinalité | PASS |
+| `7.0`/`7.5` | rejet des variantes | aucun port | absence dans policy | PASS |
+| tracker nocturne | rejet accentué | aucun port | aucune écriture | PASS |
+| guidance de ton | rejet affectif/accentué | aucun port | aucune injection | PASS |
+| méta-plasticité | rejet des trois | hard-disabled | immutabilité | PASS |
 
-## Chantiers explicitement exclus
+## Matrice finale par fichier
 
-- Telegram ;
-- cancellation générique ;
-- identité, principal, approval et auth ;
-- SessionStore et Beta Doctor ;
-- private readiness ;
-- Cyber Foundation ;
-- Verifier complet ;
-- APK et dépendances sans lien direct ;
-- auto-amélioration et mémoire d'amélioration globale.
+| Fichier | Source/provenance | Rôle retenu |
+|---|---|---|
+| `.env.example`, `config/settings.py` | reconstruction | gate forcé serveur, défaut désactivé |
+| `kernel/evaluation/scorer.py` | main + seuil concordant | seuil unique, validation finie, erreur structurée |
+| `kernel/runtime/kernel.py` | reconstruction | exception evaluator = échec, jamais PASS implicite |
+| `core/orchestration/critic_policy.py` | concept ASCII, reconstruction | décision naturel/forcé/bloqué/erreur |
+| `core/orchestration/outcome_mixin.py` | main, reconstruction ciblée | gate lifecycle, ResourceGuard, réévaluation, meilleur résultat valide |
+| `core/orchestrator_v2.py` | main, compatibilité corrigée | réservation atomique, ResourceGuard, meilleur score, aucune persistance globale |
+| `core/self_critic.py` | main + seuil concordant | scores bornés, compteurs isolés, historique expurgé |
+| `core/affect_state.py` | équation affective, reconstruction | VAD borné et transactionnel |
+| `core/wellbeing.py` | homeostasis affective, reconstruction | télémétrie éphémère et statuts prudents |
+| `tests/test_canonical_critic_contract.py` | nouveau | seuils, policy, isolation, concurrence |
+| `tests/test_canonical_critic_runtime.py` | nouveau | lifecycle, reruns, erreurs, faux `DONE` |
+| `tests/test_functional_wellbeing.py` | nouveau | VAD/wellbeing/invariants/persistance |
+| `tests/test_orchestrator_v2_runtime.py` | main étendu | compatibilité, meilleur résultat, ResourceGuard |
+| `docs/CRITIC_WELLBEING.md` | nouveau | claims fonctionnels, limites et exploitation |
+| `reports/BEA_CRITIC_WELLBEING_CONSOLIDATION_2026-07-30.md` | nouveau | contrat, provenance et preuves |
 
-## Journal d'implémentation et validation
+## Éléments explicitement rejetés
 
-Cette section sera complétée après chaque petit commit. Aucun test ni résultat de qualité n'est revendiqué à ce stade.
+- `core/wellbeing_tracker.py` accentué : état global, fichiers runtime et cycle
+  nocturne.
+- Guidance/injection de ton de `core/affect_state.py` et des orchestrateurs
+  récupérés : politique non prouvée et état inerte.
+- Seuils secondaires `RIGOR_FLOOR=7.0` et `7.5`.
+- Pression de ressources comme déclencheur de rerun.
+- `tests/core/analyze_critic_forcing.py` et tests de forcing des snapshots :
+  mécanisme dangereux ou couplé à l'architecture récupérée.
+- Characterization scripts et audits de recherche historiques : preuves
+  consultées, mais non portées comme runtime canonique.
+- Snapshots complets de `core/meta_orchestrator.py`, `core/orchestrator_v2.py`,
+  `core/self_critic.py` et `core/affect_state.py`.
+- Telegram, cancellation, identity/principal/approval/auth, SessionStore,
+  Beta Doctor, private readiness, Cyber Foundation, Verifier complet et APK.
 
+## Commits d'implémentation
+
+| SHA court | Commit |
+|---|---|
+| `fe4a8fc` | `docs(affect): define canonical critic and wellbeing contract` |
+| `bbd14a5` | `test(critic): define canonical critic and rerun behavior` |
+| `bbe2a75` | `test(wellbeing): define VAD and functional state invariants` |
+| `972a688` | `feat(critic): implement bounded natural and forced critic policy` |
+| `9d9f431` | `feat(wellbeing): implement bounded mission-scoped affect state` |
+| `ce7b910` | `test(orchestration): define canonical critic lifecycle gate` |
+| `a6f251f` | `feat(orchestration): wire critic and wellbeing into canonical runtime` |
+| `0b75a65` | `docs(affect): document functional claims and runtime limits` |
+| `3acd617` | `fix(quality): resolve touched critic and wellbeing diagnostics` |
+| `d2d8bc4` | `fix(orchestration): retain only valid critic rerun results` |
+| `5822500` | `fix(critic): isolate and bound compatibility state` |
+| `3b779a8` | `fix(wellbeing): enforce public state and resource invariants` |
+| `3ad4251` | `docs(affect): clarify rerun and restricted-resource semantics` |
+| `2ff0c95` | `fix(critic): remove global improvement persistence` |
+| `9e9ec95` | `fix(critic): resource-gate compatibility reruns` |
+
+## Validation et qualité
+
+| Contrôle | Commande/résultat | Statut |
+|---|---|---|
+| Compilation | `py_compile` des 13 fichiers Python touchés | PASS |
+| Ruff touché | `ruff check` sur tous les Python touchés, 0 diagnostic | PASS |
+| Tests ciblés | 218 réussis, 2 ignorés, 1 avertissement | PASS |
+| Tests critic/V2 après revue | 171 puis 17 puis 4 réussis sur les correctifs successifs | PASS |
+| Gate rapide | `scripts/validate_local.py --quick`; 149 tests critiques; MyPy `864 <= 870` | PASS |
+| Vérité documentaire | `DOCS_TRUTH_SYNC: true` | PASS |
+| Suite complète finale | `PENDING_FINAL_FULL_SUITE` | EN COURS |
+| Gitleaks stagé | avant chaque commit, config dépôt + ignore + `--redact=100` | PASS |
+| Gitleaks plage finale | `PENDING_FINAL_RANGE_SCAN` | EN COURS |
+
+Les avertissements observés sont des dépréciations existantes
+`python_multipart`, `httpx` et `datetime.utcnow`; aucun contournement de test ou
+abaissement de gate n'a été ajouté.
+
+## Revue de sécurité et périmètre
+
+- Aucun secret, `.env`, token, clé, credential, base locale, cache ou état
+  runtime n'est inclus.
+- Le répertoire non suivi `MagicMock/`, créé par la suite de tests, est un
+  artefact runtime exclu; il sera déplacé hors du worktree avant publication.
+- Aucun appel outil direct, identité cliente de sécurité, boucle non bornée,
+  état VAD global, auto-amélioration activée ou revendication de conscience
+  n'est ajouté.
+- Le gate forcé est serveur, désactivé par défaut.
+- Le diff ne contient aucun fichier Telegram, cancellation, approval/auth,
+  SessionStore, Beta Doctor, Cyber, APK ou chantier privé.
+- Aucun fichier versionné n'est supprimé.
+
+## Limites et risques restants
+
+- Le gate lifecycle couvre le handler standard `MetaOrchestrator`.
+  Les fast paths historiques chat, creative, BeaTeam et alignment peuvent
+  terminer avant ce handler; ils restent explicitement hors périmètre.
+- `OrchestratorV2.run_dag` reste un chemin de compatibilité à scores
+  historiques `0..10`; il est borné et resource-gated, mais ne remplace pas
+  l'autorité Kernel du chemin standard.
+- Les métadonnées `kernel_score` historiques peuvent contenir des faiblesses
+  textuelles déjà produites par le Kernel. Ce chantier n'ajoute aucune sortie
+  brute à une persistance globale.
+- Une future persistance wellbeing par utilisateur ou toute méta-plasticité
+  exige un chantier séparé, un scope serveur authentifié et un opt-in explicite.
+
+## Publication
+
+Le push non destructif, la vérification du SHA distant et la PR brouillon sont
+effectués seulement après la suite complète finale, le scan Gitleaks exact et
+la propreté du worktree. Le SHA distant et l'URL de PR sont consignés dans le
+handoff final, car ils sont produits après le commit de ce rapport.
