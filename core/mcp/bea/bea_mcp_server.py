@@ -39,7 +39,7 @@ import json
 import os
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -207,7 +207,7 @@ def _build_server() -> Any:
                         "status": "submitted",
                         "goal": goal,
                         "mission_type": mission_type,
-                        "created_at": datetime.utcnow().isoformat(),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
                     },
                     f,
                     ensure_ascii=False,

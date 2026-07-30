@@ -398,35 +398,39 @@ class TestProposalApplicator:
 
 class TestDecisionReplayMethods:
 
-    def _make_replay(self):
+    def _make_replay(self, tmp_path):
         from unittest.mock import MagicMock
         from core.decision_replay import DecisionReplay
-        return DecisionReplay(settings=MagicMock())
+        # workspace_dir réel : un MagicMock nu ferait écrire decision_replay.json
+        # dans un répertoire "MagicMock/" à la racine du repo.
+        settings = MagicMock()
+        settings.workspace_dir = str(tmp_path)
+        return DecisionReplay(settings=settings)
 
-    def test_get_errors_empty(self):
-        dr = self._make_replay()
+    def test_get_errors_empty(self, tmp_path):
+        dr = self._make_replay(tmp_path)
         errors = dr.get_errors()
         assert isinstance(errors, list)
         assert errors == []
 
-    def test_explain_session_missing(self):
-        dr = self._make_replay()
+    def test_explain_session_missing(self, tmp_path):
+        dr = self._make_replay(tmp_path)
         explanation = dr.explain_session("nonexistent-session")
         assert isinstance(explanation, str)
 
-    def test_clear_is_idempotent(self):
-        dr = self._make_replay()
+    def test_clear_is_idempotent(self, tmp_path):
+        dr = self._make_replay(tmp_path)
         dr.clear()
         dr.clear()
         assert dr.get_errors() == []
 
-    def test_clear_session(self):
-        dr = self._make_replay()
+    def test_clear_session(self, tmp_path):
+        dr = self._make_replay(tmp_path)
         dr.clear_session("no-such-session")
         assert dr.get_errors() == []
 
-    def test_get_errors_with_n(self):
-        dr = self._make_replay()
+    def test_get_errors_with_n(self, tmp_path):
+        dr = self._make_replay(tmp_path)
         errors = dr.get_errors(n=5)
         assert isinstance(errors, list)
 

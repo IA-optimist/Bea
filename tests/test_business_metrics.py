@@ -11,19 +11,25 @@ Tests:
 import sys
 from pathlib import Path
 
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add repo root to path (mode script standalone)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from prometheus_client import REGISTRY, generate_latest
 
 
-def test_imports():
+def _check_imports():
     """Test that all imports work"""
     print("=" * 80)
     print("TEST 1: Import Business Engine")
     print("=" * 80)
 
     try:
+        from business.business_engine import (  # noqa: F401
+            COMPLIANCE_CHECKS,
+            OPPORTUNITY_SCANS,
+            PRODUCT_BUILDS,
+            BusinessEngine,
+        )
         print("✅ BusinessEngine imported successfully")
 
         # Check metrics are registered
@@ -34,13 +40,17 @@ def test_imports():
         return False
 
 
-def test_metrics_registration():
+def _check_metrics_registration():
     """Test that metrics are registered in Prometheus registry"""
     print("\n" + "=" * 80)
     print("TEST 2: Metrics Registration")
     print("=" * 80)
 
     try:
+        # Import explicite : les métriques ne sont enregistrées qu'au chargement
+        # du module — sans lui, le registre est vide (dépendance d'ordre de test).
+        import business.business_engine  # noqa: F401
+
         metrics_output = generate_latest(REGISTRY).decode('utf-8')
 
         # Check for our custom metrics
@@ -73,7 +83,7 @@ def test_metrics_registration():
         return False
 
 
-def test_logging_format():
+def _check_logging_format():
     """Test structured logging format"""
     print("\n" + "=" * 80)
     print("TEST 3: Structured Logging")
@@ -100,7 +110,7 @@ def test_logging_format():
         return False
 
 
-def test_metrics_increment():
+def _check_metrics_increment():
     """Test incrementing metrics"""
     print("\n" + "=" * 80)
     print("TEST 4: Metrics Increment")
@@ -138,7 +148,7 @@ def test_metrics_increment():
         return False
 
 
-def test_metrics_endpoint_format():
+def _check_metrics_endpoint_format():
     """Test the metrics endpoint output format"""
     print("\n" + "=" * 80)
     print("TEST 5: Metrics Endpoint Format")
@@ -174,6 +184,28 @@ def test_metrics_endpoint_format():
         return False
 
 
+# ── Wrappers pytest : les _check_* renvoient un bool (mode script via main()),
+# pytest a besoin d'assert pour réellement échouer (PytestReturnNotNoneWarning).
+def test_imports():
+    assert _check_imports()
+
+
+def test_metrics_registration():
+    assert _check_metrics_registration()
+
+
+def test_logging_format():
+    assert _check_logging_format()
+
+
+def test_metrics_increment():
+    assert _check_metrics_increment()
+
+
+def test_metrics_endpoint_format():
+    assert _check_metrics_endpoint_format()
+
+
 def main():
     """Run all tests"""
     print("\n" + "=" * 80)
@@ -183,11 +215,11 @@ def main():
     results = []
 
     # Run tests
-    results.append(("Import Test", test_imports()))
-    results.append(("Metrics Registration", test_metrics_registration()))
-    results.append(("Structured Logging", test_logging_format()))
-    results.append(("Metrics Increment", test_metrics_increment()))
-    results.append(("Metrics Endpoint Format", test_metrics_endpoint_format()))
+    results.append(("Import Test", _check_imports()))
+    results.append(("Metrics Registration", _check_metrics_registration()))
+    results.append(("Structured Logging", _check_logging_format()))
+    results.append(("Metrics Increment", _check_metrics_increment()))
+    results.append(("Metrics Endpoint Format", _check_metrics_endpoint_format()))
 
     # Summary
     print("\n" + "=" * 80)

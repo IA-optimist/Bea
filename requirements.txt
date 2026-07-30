@@ -72,7 +72,8 @@ pytest-asyncio==1.4.0
 
 # Média / analyse vidéo YouTube (vision + transcription) — bot Telegram
 youtube-transcript-api==1.2.4
-yt-dlp==2026.6.9
+# yt-dlp 2026.6.9 → 2026.7.4 (CVE-2026-55404)
+yt-dlp==2026.7.4
 
 # Utilities
 psutil==5.9.8
@@ -101,6 +102,7 @@ qdrant-client==1.17.1
 httpx==0.27.2
 aiohttp==3.14.1
 slowapi==0.1.9
-mcp==1.27.0
+# mcp 1.27.0 → 1.28.1 (PYSEC-2026-3481, PYSEC-2026-3482, PYSEC-2026-3483)
+mcp==1.28.1
 sentence-transformers==5.6.0
 docker==7.1.0
