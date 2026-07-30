@@ -59,3 +59,8 @@ d98da3673bd6731af0077417993e56d798631355:.tokens.json:generic-api-key:25
 ab3a9b122b3a17cd82efabe134db79f60c52b8c9:docker-compose.yml:generic-api-key:67
 b4ae9dca3bbd2faa2abf5c5558e812631a282875:beamax_app/lib/config/hardcoded_config.dart:generic-api-key:9
 f00039995ac5f9795410d66a796dbd1ea91c40da:docs/API_REFERENCE.md:generic-api-key:74
+
+# Cyber eval fixture — credentials volontairement fictives (sk_live_FAKEFAKEFAKE...),
+# entraînement à la détection de secrets. Version initiale du fixture (commit 9d983d7),
+# déjà assouplie dans f3d280a ; l'entrée couvre l'occurrence historique.
+9d983d7383c5971cb19ae4898521c059088023f8:agent_cyber/evals/fixtures/secret_hardcoded_task.yaml:stripe-access-token:8
