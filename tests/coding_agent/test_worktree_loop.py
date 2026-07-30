@@ -55,6 +55,25 @@ def test_select_targeted_tests_uses_file_heuristics(tmp_path: Path) -> None:
     assert tests == ["tests/self_improvement"]
 
 
+def test_select_targeted_tests_uses_coding_agent_heuristics(tmp_path: Path) -> None:
+    (tmp_path / "tests" / "coding_agent").mkdir(parents=True)
+    mission = MissionInput(title="Patch coder", description="Target coding agent")
+
+    tests = select_targeted_tests(mission, ["core/coding_agent/worktree_loop.py"], tmp_path)
+
+    assert tests == ["tests/coding_agent"]
+
+
+def test_select_targeted_tests_deduplicates_requested_tests(tmp_path: Path) -> None:
+    mission = MissionInput(
+        title="Normalize tests",
+        description="Requested tests may arrive twice",
+        requested_tests=["tests/unit/test_parser.py", ".\\tests\\unit\\test_parser.py"],
+    )
+
+    assert select_targeted_tests(mission, ["README.md"], tmp_path) == ["tests/unit/test_parser.py"]
+
+
 def test_select_targeted_tests_falls_back_to_safe_minimal(tmp_path: Path) -> None:
     mission = MissionInput(title="Docs", description="No direct tests")
 
@@ -78,6 +97,7 @@ def test_coding_mission_creates_worktree_and_does_not_modify_main(tmp_path: Path
     assert Path(run.worktree_path).exists()
     assert run.branch_name.startswith("codex/agent-")
     assert any(call[0][:3] == ["git", "worktree", "add"] for call in fake.calls)
+    assert any(call[0][:3] == ["git", "apply", "--ignore-space-change"] for call in fake.calls)
     assert all(call[1] != tmp_path for call in fake.calls if "pytest" in call[0] or "ruff" in call[0])
 
 
