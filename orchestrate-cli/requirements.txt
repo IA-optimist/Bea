@@ -14,7 +14,7 @@ langchain-community>=0.0.2
 langchain-core>=0.1.0
 
 # AutoGen dependencies
-autogen>=0.2.0
+autogen>=0.14.0
 
 # CrewAI dependencies
 crewai>=0.28.0
