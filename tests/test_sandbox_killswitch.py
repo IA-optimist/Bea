@@ -6,6 +6,8 @@ DockerSandbox with a mock docker client to avoid Docker dependency.
 """
 from __future__ import annotations
 
+import shlex
+import sys
 import unittest.mock as mock
 from pathlib import Path
 
@@ -28,7 +30,10 @@ class TestLocalFallbackSandbox:
         monkeypatch.setenv("BEA_ALLOW_LOCAL_SANDBOX", "1")
         sb = LocalFallbackSandbox(str(tmp_path))
         sb.start()
-        rc, out = sb.execute("python -c \"print('hello')\"")
+        # sys.executable : `python` n'est pas garanti sur le PATH hors CI
+        # (ex. Linux avec seulement python3). shlex.quote pour les chemins
+        # avec espaces.
+        rc, out = sb.execute(f"{shlex.quote(sys.executable)} -c \"print('hello')\"")
         assert rc == 0
         assert "hello" in out
 
