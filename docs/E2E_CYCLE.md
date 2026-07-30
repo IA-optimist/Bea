@@ -117,3 +117,41 @@ external service dependencies.
 `scripts/validate_local.py` currently runs the broader local gate even when
 called with `--quick`; it does not implement a dedicated quick parser yet. For
 this PR, use the independent smoke command above for the cheap E2E cycle gate.
+
+## Real Alpha Runtime Cycle
+
+The fixture smoke above proves the learning loop without a live LLM. The alpha
+runtime gate proves the same handoff with a real provider, `MetaOrchestrator`,
+memory retrieval, report ingestion, and `bea_eval`.
+
+```bash
+python scripts/run_alpha_cycle.py
+```
+
+For a non-polluting branch validation run:
+
+```bash
+python scripts/run_alpha_cycle.py --isolated-memory --json
+```
+
+Prerequisites:
+
+- OpenRouter: set `OPENROUTER_API_KEY`; the health status should be `READY`.
+- Ollama fallback: start `ollama serve`, pull `gemma4:12b`, and set
+  `OLLAMA_HOST=http://127.0.0.1:11434`; the health status may be `DEGRADED`
+  when OpenRouter is absent.
+
+The alpha command verifies:
+
+- provider health and provider selection
+- kernel boot through `MetaOrchestrator`
+- mission classification and routing
+- security gate execution in read-only `force_approved` alpha scope
+- memory retrieval
+- real LLM response
+- ingestion-compatible report fields, including `provider_used`
+- operational memories after ingestion
+- `python scripts/bea_eval.py --json`
+
+If no provider is available, the script exits cleanly with a configuration hint
+and without a traceback.

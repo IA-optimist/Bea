@@ -98,6 +98,33 @@ python scripts/provider_healthcheck.py
 python scripts/provider_healthcheck.py --json
 ```
 
+## Alpha runtime provider gate
+
+The real alpha cycle uses the same provider health layer and then proves that a
+mission can receive an actual LLM response:
+
+```bash
+python scripts/run_alpha_cycle.py --isolated-memory --json
+```
+
+Provider selection rules:
+
+- `READY`: OpenRouter is usable; the cycle selects OpenRouter.
+- `DEGRADED`: OpenRouter is absent or unusable, but Ollama is reachable; the
+  cycle selects Ollama and remains valid for local alpha.
+- `UNAVAILABLE`: no provider can answer; the cycle fails with a clear setup
+  message.
+
+For local Windows CLI runs, avoid `OLLAMA_HOST=0.0.0.0:11434`; clients should
+use:
+
+```env
+OLLAMA_HOST=http://127.0.0.1:11434
+```
+
+`scripts/run_alpha_cycle.py` normalizes that common local misconfiguration for
+the current process only. It does not print provider secrets.
+
 ### Sortie exemple — READY
 
 ```

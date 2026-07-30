@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -21,6 +22,7 @@ if str(ROOT) not in sys.path:
 
 
 def _run(args: argparse.Namespace) -> int:
+    _normalize_cli_ollama_host()
     try:
         from core.providers.runtime_health import check_provider_health_sync
     except ImportError as exc:
@@ -38,7 +40,18 @@ def _run(args: argparse.Namespace) -> int:
     else:
         _print_human(health)
 
-    return 0 if health.status == "READY" else 1
+    return _exit_code_for_status(health.status)
+
+
+def _normalize_cli_ollama_host() -> None:
+    """Make local Windows CLI values usable by HTTP clients."""
+    host = os.environ.get("OLLAMA_HOST", "").strip()
+    if host in {"0.0.0.0:11434", "http://0.0.0.0:11434", "https://0.0.0.0:11434"}:
+        os.environ["OLLAMA_HOST"] = "http://127.0.0.1:11434"
+
+
+def _exit_code_for_status(status: str) -> int:
+    return 0 if status in {"READY", "DEGRADED"} else 1
 
 
 def _print_human(health) -> None:
