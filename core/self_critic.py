@@ -28,7 +28,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import structlog
@@ -38,6 +38,7 @@ from kernel.evaluation.scorer import CRITIC_OVERALL_PASS_THRESHOLD
 log = structlog.get_logger(__name__)
 
 _MAX_REPORTS    = 200   # bounded deque
+_MAX_RERUN_SCOPES = 1024
 CRITIC_DIMENSION_PASS_THRESHOLD = 5.0
 CRITIC_MAX_RERUNS = 2
 _MAX_RERUNS     = CRITIC_MAX_RERUNS
@@ -128,8 +129,8 @@ class CriticReport:
 class CriticAgent:
     """
     Evaluates agent outputs using heuristics (+ optional LLM scoring).
-    Stores all reports in a bounded deque.
-    Tracks rerun counts per task_hash to enforce MAX_RERUNS limit.
+    Stores only redacted report history in a bounded deque.
+    Tracks bounded, mission-scoped rerun counts to enforce MAX_RERUNS.
     """
 
     def __init__(self, settings=None):
@@ -138,6 +139,7 @@ class CriticAgent:
         # mission/agent/task scope hash -> (count, last_ts)
         self._rerun_counts: dict[str, tuple[int, float]] = {}
         self._rerun_lock = threading.RLock()
+        self._report_lock = threading.RLock()
 
     # ── Public API ────────────────────────────────────────────
 
@@ -179,7 +181,18 @@ class CriticAgent:
             suggestions = suggestions,
             rerun_count = rerun_count,
         )
-        self._reports.append(report)
+        # History is diagnostic only: retain no task, output, feedback, raw session
+        # identifier, or suggestions in the process-global compatibility instance.
+        history_report = replace(
+            report,
+            session_id=_hash_session_scope(session_id),
+            task="",
+            output="",
+            feedback="",
+            suggestions=[],
+        )
+        with self._report_lock:
+            self._reports.append(history_report)
 
         log.debug(
             "critic_evaluated",
@@ -260,19 +273,28 @@ class CriticAgent:
 
     def get_reports(
         self,
-        session_id: str | None = None,
+        session_id: str,
         agent_name: str | None = None,
         limit:      int        = 20,
     ) -> list[CriticReport]:
-        reports = list(self._reports)
-        if session_id:
-            reports = [r for r in reports if r.session_id == session_id]
+        """Return redacted diagnostics for one correlation scope.
+
+        ``session_id`` is never an authorization identity. Callers remain
+        responsible for authenticated access before invoking this internal API.
+        """
+        session_scope = _hash_session_scope(session_id)
+        with self._report_lock:
+            reports = [
+                report
+                for report in self._reports
+                if report.session_id == session_scope
+            ]
         if agent_name:
             reports = [r for r in reports if r.agent_name == agent_name]
         return reports[-limit:]
 
-    def agent_summary(self, agent_name: str) -> dict:
-        reports = [r for r in self._reports if r.agent_name == agent_name]
+    def agent_summary(self, session_id: str, agent_name: str) -> dict:
+        reports = self.get_reports(session_id, agent_name=agent_name)
         if not reports:
             return {"agent": agent_name, "total": 0}
         overalls = [r.overall for r in reports]
@@ -423,10 +445,22 @@ class CriticAgent:
             stale  = [k for k, (_, ts) in self._rerun_counts.items() if ts < cutoff]
             for k in stale:
                 del self._rerun_counts[k]
+            overflow = len(self._rerun_counts) - _MAX_RERUN_SCOPES
+            if overflow > 0:
+                oldest = sorted(
+                    self._rerun_counts.items(),
+                    key=lambda item: item[1][1],
+                )[:overflow]
+                for rerun_scope, _ in oldest:
+                    del self._rerun_counts[rerun_scope]
 
 
 def _hash_task(task: str) -> str:
     return hashlib.sha256(task.encode()).hexdigest()[:16]
+
+
+def _hash_session_scope(session_id: str) -> str:
+    return hashlib.sha256(session_id.encode()).hexdigest()[:24]
 
 
 def _hash_rerun_scope(session_id: str, agent_name: str, task: str) -> str:

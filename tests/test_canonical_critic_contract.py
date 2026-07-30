@@ -312,3 +312,47 @@ def test_reserve_rerun_is_atomic_under_concurrency():
         reservations = list(executor.map(lambda _: reserve_once(), range(attempts)))
 
     assert sum(reservations) == 2
+
+
+@pytest.mark.asyncio
+async def test_compatibility_report_history_is_redacted_and_session_scoped():
+    critic = CriticAgent()
+
+    live_a = await critic.evaluate(
+        "session-a",
+        "agent",
+        "private task a",
+        "private output a",
+    )
+    await critic.evaluate(
+        "session-b",
+        "agent",
+        "private task b",
+        "private output b",
+    )
+
+    reports_a = critic.get_reports("session-a")
+    reports_b = critic.get_reports("session-b")
+
+    assert live_a.task == "private task a"
+    assert live_a.output == "private output a"
+    assert len(reports_a) == len(reports_b) == 1
+    assert reports_a[0].session_id not in {"session-a", "session-b"}
+    assert reports_a[0].task == ""
+    assert reports_a[0].output == ""
+    assert reports_a[0].feedback == ""
+    assert reports_a[0].suggestions == []
+    assert reports_a[0].report_id != reports_b[0].report_id
+    assert critic.get_reports("missing-session") == []
+
+
+def test_rerun_scope_registry_is_cardinality_bounded(monkeypatch):
+    monkeypatch.setattr("core.self_critic._MAX_RERUN_SCOPES", 3)
+    critic = CriticAgent()
+
+    for index in range(5):
+        assert critic.reserve_rerun(
+            _report(session_id=f"session-{index}")
+        ) is True
+
+    assert len(critic._rerun_counts) == 3
