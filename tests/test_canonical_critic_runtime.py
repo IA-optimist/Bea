@@ -247,6 +247,22 @@ async def test_natural_rerun_is_resource_gated_re_evaluated_and_bounded(
 
 
 @pytest.mark.asyncio
+async def test_natural_rerun_selects_pass_over_higher_failed_score(
+    monkeypatch,
+) -> None:
+    _, ctx, _, _, _, _, result = await _run_retry(
+        monkeypatch,
+        _score(0.9, passed=False),
+        rerun_score=_score(0.8, passed=True),
+        rerun_result="lower score with a passing verdict",
+    )
+
+    assert result == pytest.approx(0.8)
+    assert ctx.result == "lower score with a passing verdict"
+    assert ctx.metadata["critic_rerun"]["accepted"] is True
+
+
+@pytest.mark.asyncio
 async def test_degraded_natural_rerun_keeps_original_and_rejects_quality(
     monkeypatch,
 ) -> None:
@@ -338,6 +354,36 @@ async def test_forced_rerun_requires_server_gate_and_keeps_best_result(
     assert guard.acquire_calls == guard.release_calls == 1
     assert len(calls) == 1
     assert host.transitions == [MissionStatus.RUNNING, MissionStatus.REVIEW]
+
+
+@pytest.mark.asyncio
+async def test_forced_rerun_never_replaces_pass_with_failed_verdict(
+    monkeypatch,
+) -> None:
+    _, ctx, _, guard, _, calls, result = await _run_retry(
+        monkeypatch,
+        _score(0.65, passed=True, weaknesses=["missing evidence"]),
+        rerun_score=_score(
+            0.8,
+            passed=False,
+            retry_recommended=True,
+            weaknesses=["critical omission"],
+        ),
+        rerun_result="higher score but failed verdict",
+        force=True,
+    )
+
+    assert result == pytest.approx(0.65)
+    assert ctx.result == "original result"
+    assert ctx.metadata["critic_rerun"] == {
+        "before": 0.65,
+        "after": 0.8,
+        "delta": 0.15,
+        "forced": True,
+        "accepted": False,
+    }
+    assert guard.acquire_calls == guard.release_calls == 1
+    assert len(calls) == 1
 
 
 @pytest.mark.asyncio

@@ -450,7 +450,11 @@ class OutcomeMixin:
                 return result_confidence
             raise CriticEvaluationError(retry_decision.reason)
 
-        accepted = retry_score.score > kernel_score.score
+        retry_passed = retry_decision.action is CriticAction.ACCEPT
+        accepted = retry_passed and (
+            decision.action is CriticAction.NATURAL_RERUN
+            or retry_score.score > kernel_score.score
+        )
         if accepted:
             ctx.result = retry_outcome.result
             ctx.metadata["kernel_score"] = retry_score.to_dict()

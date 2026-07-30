@@ -737,7 +737,7 @@ class OrchestratorV2:
                 after=new_cr.overall,
                 delta=round(new_cr.overall - cr.overall, 2),
             )
-            return new_report
+            return new_report if new_cr.overall > cr.overall else report
 
         except BudgetExceeded:
             log.warning("critic_rerun_budget_exceeded", agent=agent_name)
