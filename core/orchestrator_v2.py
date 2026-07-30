@@ -680,7 +680,6 @@ class OrchestratorV2:
         """
         try:
             from core.self_critic import get_critic
-            from core.improvement_memory import get_improvement_memory
         except ImportError:
             return report   # modules not available yet
 
@@ -716,19 +715,8 @@ class OrchestratorV2:
             new_report  = getattr(rerun_sess, "final_report", "") or report
             guard.charge(new_report)
 
-            # Evaluate rerun and record improvement
+            # Evaluate the rerun without persisting task/output-derived state.
             new_cr = await critic.evaluate(session_id, agent_name, task, new_report)
-            try:
-                mem = get_improvement_memory(self.s)
-                await mem.record_improvement(
-                    agent_name   = agent_name,
-                    task         = task,
-                    score_before = cr.overall,
-                    score_after  = new_cr.overall,
-                    feedback     = cr.feedback,
-                )
-            except Exception as mem_err:
-                log.warning("improvement_record_failed", err=str(mem_err)[:80])
 
             log.info(
                 "critic_rerun_complete",

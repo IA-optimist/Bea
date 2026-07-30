@@ -78,8 +78,9 @@ n'est jamais un critère d'acceptation.
 Le chemin de compatibilité `OrchestratorV2.run_dag` conserve son critic
 historique et son `BudgetGuard`; il ne décide pas le statut terminal d'une
 mission canonique. Lorsqu'il effectue un rerun, il retourne uniquement le
-rapport dont le score historique est strictement supérieur. Il n'est pas
-présenté comme une deuxième autorité du chemin standard.
+rapport dont le score historique est strictement supérieur. Il n'écrit plus la
+tâche, le feedback ou le score dans `improvement_memory`. Il n'est pas présenté
+comme une deuxième autorité du chemin standard.
 
 Les métadonnées de mission contiennent seulement la décision, les scores avant
 et après, le delta, le statut ResourceGuard et le fait que le candidat a été

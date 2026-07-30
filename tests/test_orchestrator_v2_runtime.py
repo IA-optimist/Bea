@@ -54,19 +54,11 @@ async def test_compatibility_critic_returns_only_a_strictly_better_rerun(
         async def run(self, **kwargs):
             return SimpleNamespace(final_report="improved")
 
-    class _ImprovementMemory:
-        async def record_improvement(self, **kwargs):
-            return None
-
     class _Hub:
         async def emit_agent_thinking(self, *args, **kwargs):
             return None
 
     monkeypatch.setattr("core.self_critic.get_critic", lambda settings=None: _Critic())
-    monkeypatch.setattr(
-        "core.improvement_memory.get_improvement_memory",
-        lambda settings=None: _ImprovementMemory(),
-    )
     monkeypatch.setattr("api.ws_hub.get_hub", lambda: _Hub())
 
     v2 = OrchestratorV2(get_settings())
