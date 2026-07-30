@@ -364,7 +364,16 @@ class BeaKernel:
         except Exception as e:
             log.debug("kernel_evaluate_failed", err=str(e)[:80])
             from kernel.evaluation.scorer import KernelScore
-            return KernelScore(score=0.5, passed=True, source="kernel_error_fallback")
+            return KernelScore(
+                score=0.0,
+                passed=False,
+                confidence=0.0,
+                retry_recommended=False,
+                verdict="error",
+                failure_class="critic_evaluation_error",
+                signals=["evaluation_error"],
+                source="kernel_error_fallback",
+            )
 
     # ── Cognitive cycle pre-computation (Pass 11) ────────────────────────────
 

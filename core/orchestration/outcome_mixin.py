@@ -1,10 +1,20 @@
 """Outcome mixin extracted mechanically from core.meta_orchestrator."""
 from __future__ import annotations
 
+import asyncio
 import time
 
 import structlog
 
+from core.orchestration.critic_policy import (
+    CriticAction,
+    CriticEvaluationError,
+    CriticPipelineError,
+    CriticQualityRejected,
+    CriticResourceBlocked,
+    CriticRerunFailed,
+    decide_critic_action,
+)
 from core.orchestration.mission_text_utils import strip_execution_outcome as _strip_execution_outcome
 from core.state import MissionStatus
 
@@ -48,7 +58,6 @@ class OutcomeMixin:
         _mission_timeout = ctx.metadata.get("_exec_mission_timeout", 600)
         needs_approval = ctx.metadata.get("_exec_needs_approval", False)
 
-        self._circuit_breaker.record_success()
         # RUNNING -> REVIEW
         self._transition(ctx, MissionStatus.REVIEW)
         # Unwrap nested ExecutionOutcome — outcome.result may itself be an ExecutionOutcome
@@ -115,19 +124,54 @@ class OutcomeMixin:
                          retry=_kernel_score.retry_recommended,
                          source=_kernel_score.source)
         except Exception as _keval_err:
-            log.debug("kernel_evaluation_skipped", err=str(_keval_err)[:100])
-            result_confidence = 0.7
+            log.error("kernel_evaluation_failed", err=str(_keval_err)[:100])
+            result_confidence = 0.0
+            ctx.error = f"critic_evaluation_failed: {str(_keval_err)[:160]}"
+            ctx.metadata["critic_terminal"] = {
+                "status": "failed",
+                "reason": "critic_evaluation_failed",
+            }
+            self._transition(
+                ctx,
+                MissionStatus.FAILED,
+                reason="critic_evaluation_failed",
+            )
+            trace.record("evaluate", "critic_failed", reason="evaluation_error")
+            return result_confidence
 
-        # ── Kernel → Retry (bounded, 1 attempt, shape-aware) ─────
-        # Primary: kernel_score.retry_recommended + score vs threshold
-        # Fallback: ctx.metadata["critique"] dict (populated above by kernel)
-        result_confidence = await self._handle_kernel_retry(
-            ctx, mid, goal, mode, trace, outcome, _reasoning_result,
-            enriched_goal, risk, needs_approval, force_approved, callback,
-            delegate, _mission_timeout, result_confidence, _shape_val
-        )
+        # ── Kernel → canonical critic gate (one bounded attempt) ──
+        try:
+            result_confidence = await self._handle_kernel_retry(
+                ctx, mid, goal, mode, trace, outcome, _reasoning_result,
+                enriched_goal, risk, needs_approval, force_approved, callback,
+                delegate, _mission_timeout, result_confidence, _shape_val,
+                kernel_score=_kernel_score,
+            )
+        except CriticPipelineError as critic_error:
+            ctx.error = str(critic_error)[:300]
+            ctx.metadata["critic_terminal"] = {
+                "status": "failed",
+                "reason": type(critic_error).__name__,
+            }
+            self._transition(
+                ctx,
+                MissionStatus.FAILED,
+                reason=type(critic_error).__name__,
+            )
+            trace.record(
+                "evaluate",
+                "critic_failed",
+                reason=type(critic_error).__name__,
+            )
+            return result_confidence
 
         # REVIEW -> DONE
+        final_score = ctx.metadata.get("kernel_score", {}).get("score")
+        ctx.metadata["critic_terminal"] = {
+            "status": "passed",
+            "score": final_score,
+        }
+        self._circuit_breaker.record_success()
         self._transition(ctx, MissionStatus.DONE,
                          result_len=len(ctx.result),
                          retries=outcome.retries,
@@ -203,76 +247,127 @@ class OutcomeMixin:
         _mission_timeout: float,
         result_confidence: float,
         _shape_val: str,
+        kernel_score,
     ) -> float:
-        """
-        Handle kernel-based retry logic (bounded, 1 attempt, shape-aware).
-        
-        Returns updated result_confidence.
-        """
-        _kernel_score_meta = ctx.metadata.get("kernel_score", {})
-        _critique_obj      = ctx.metadata.get("critique", {})
-        _did_retry         = ctx.metadata.get("_critique_retry_done", False)
-        _retry_threshold   = _kernel_score_meta.get(
-            "retry_threshold_used",
-            {"direct_answer": 0.20, "patch": 0.30, "diagnosis": 0.30,
-             "plan": 0.30, "report": 0.35, "warning": 0.20}.get(_shape_val, 0.25),
+        """Apply one mission-scoped, ResourceGuard-bounded critic decision."""
+        from core.resource_guard import ResourceSnapshot, SystemStatus, get_resource_guard
+        from core.wellbeing import FunctionalWellbeing
+
+        try:
+            resource_guard = get_resource_guard(self.s)
+            resource_snapshot = resource_guard.get_status()
+        except Exception as resource_error:
+            log.warning(
+                "critic_resource_status_failed",
+                mission_id=mid,
+                err=str(resource_error)[:80],
+            )
+            resource_guard = None
+            resource_snapshot = ResourceSnapshot(status=SystemStatus.UNKNOWN)
+
+        wellbeing = FunctionalWellbeing().observe_resource_snapshot(
+            resource_snapshot
         )
-        # Retry recommended by kernel, or critique says weak at threshold
-        _score_for_retry = _kernel_score_meta.get(
-            "score", _critique_obj.get("overall", 1.0),
+        ctx.metadata["functional_wellbeing"] = wellbeing.to_dict()
+
+        already_reran = bool(
+            ctx.metadata.get("_canonical_critic_rerun_done")
+            or mid.endswith("-critic-rerun")
+            or mid.endswith("-retry")
         )
-        _is_weak_for_retry = (
-            _kernel_score_meta.get("retry_recommended", False) or
-            _critique_obj.get("is_weak", False)
+        decision = decide_critic_action(
+            kernel_score,
+            resource_snapshot.status,
+            forced_enabled=bool(
+                getattr(self.s, "critic_force_marginal_rerun", False)
+            ),
+            already_reran=already_reran,
+            execution_retries=outcome.retries,
+            goal_length=len(goal.strip()),
         )
-        if (
-            _is_weak_for_retry
-            and _score_for_retry < _retry_threshold
-            and not _did_retry
-            and outcome.retries == 0
-            and len(goal.strip()) > 80           # skip retry for short/conversational goals
-            and not mid.endswith("-retry")       # prevent retry chains
-        ):
-            ctx.metadata["_critique_retry_done"] = True
-            log.info("mission.critique_retry",
-                     mission_id=mid,
-                     score=_score_for_retry,
-                     weaknesses=(_kernel_score_meta.get(
-                         "weaknesses", _critique_obj.get("weaknesses", []),
-                     ))[:2])
+        ctx.metadata["critic_decision"] = decision.to_dict()
+        trace.record(
+            "evaluate",
+            "critic_decision",
+            action=decision.action.value,
+            score=decision.score,
+            forced=decision.forced,
+            resource_status=decision.resource_status,
+        )
+
+        if decision.action is CriticAction.ERROR:
+            raise CriticEvaluationError(decision.reason)
+        if decision.action is CriticAction.BLOCKED:
+            if decision.reason == "resource_guard_unavailable":
+                raise CriticResourceBlocked(decision.reason)
+            raise CriticQualityRejected(decision.reason)
+        if decision.action is CriticAction.ACCEPT:
+            return result_confidence
+
+        if resource_guard is None:
+            if decision.forced:
+                return result_confidence
+            raise CriticResourceBlocked("resource_guard_unavailable")
+
+        try:
+            current_status = resource_guard.get_status().status
+        except Exception as resource_error:
+            log.warning(
+                "critic_resource_recheck_failed",
+                mission_id=mid,
+                err=str(resource_error)[:80],
+            )
+            current_status = SystemStatus.UNKNOWN
+        allowed_statuses = (
+            {SystemStatus.NORMAL}
+            if decision.forced
+            else {SystemStatus.NORMAL, SystemStatus.SOFT_WARN}
+        )
+        if current_status not in allowed_statuses:
+            if decision.forced:
+                ctx.metadata["critic_rerun_skipped"] = "resource_status_changed"
+                return result_confidence
+            raise CriticResourceBlocked("resource_status_changed")
+
+        weaknesses = "; ".join(
+            str(weakness)[:160] for weakness in kernel_score.weaknesses[:3]
+        )
+        suggestion = str(kernel_score.improvement_suggestion)[:300]
+        retry_goal = (
+            f"{enriched_goal}\n\n"
+            "---\nCANONICAL CRITIC REVIEW:\n"
+            f"Weaknesses: {weaknesses or 'quality below canonical threshold'}\n"
+            f"Improvement needed: {suggestion}\n"
+            "Produce a more specific, complete, and actionable response."
+        )
+
+        slot_name = "canonical-critic-rerun"
+        if not resource_guard.acquire_slot(slot_name, timeout=0.0):
+            if decision.forced:
+                ctx.metadata["critic_rerun_skipped"] = "resource_slot_unavailable"
+                return result_confidence
+            raise CriticResourceBlocked("resource_slot_unavailable")
+
+        ctx.metadata["_canonical_critic_rerun_done"] = True
+
+        from core.orchestration.execution_supervisor import supervise
+
+        retry_outcome = None
+        retry_error: Exception | None = None
+        try:
+            self._transition(
+                ctx,
+                MissionStatus.RUNNING,
+                reason="canonical_critic_rerun",
+            )
             try:
-                # Build retry goal — kernel weaknesses preferred
-                _weak_list = (
-                    _kernel_score_meta.get("weaknesses", []) or
-                    _critique_obj.get("weaknesses", [])
-                )
-                _weak_reasons = "; ".join(_weak_list[:3])
-                _suggestion = (
-                    _kernel_score_meta.get("improvement_suggestion", "") or
-                    _critique_obj.get("improvement_suggestion", "")
-                )
-                _retry_goal = (
-                    f"{enriched_goal}\n\n"
-                    f"---\nPREVIOUS ATTEMPT WAS WEAK:\n"
-                    f"Weaknesses: {_weak_reasons}\n"
-                    f"Improvement needed: {_suggestion}\n"
-                    f"Produce a more specific, complete, and actionable response."
-                )
-                # Re-run with feedback
-                # Canonical supervise lives in core.orchestration.execution_supervisor.
-                # The previous import (`from core.supervisor import supervise`) pointed
-                # to a module that does not exist — ImportError would be swallowed by
-                # the outer try/except and silently skip the retry path.
-                from core.orchestration.execution_supervisor import supervise
-                import asyncio
-                self._transition(ctx, MissionStatus.RUNNING, reason="critique_retry")
-                _retry_outcome = await asyncio.wait_for(
+                retry_outcome = await asyncio.wait_for(
                     supervise(
                         delegate.run,
-                        mission_id=f"{mid}-retry",
-                        goal=_retry_goal,
+                        mission_id=f"{mid}-critic-rerun",
+                        goal=retry_goal,
                         mode=mode,
-                        session_id=f"{mid}-retry",
+                        session_id=f"{mid}-critic-rerun",
                         risk_level=risk,
                         requires_approval=needs_approval,
                         skip_approval=force_approved,
@@ -280,28 +375,112 @@ class OutcomeMixin:
                     ),
                     timeout=_mission_timeout,
                 )
-                if _retry_outcome.success and _retry_outcome.result:
-                    _retry_len = len(_retry_outcome.result.strip())
-                    _orig_len = len((ctx.result or "").strip())
-                    # Accept retry if it produced more content
-                    if _retry_len > _orig_len * 0.5:
-                        ctx.result = _retry_outcome.result
-                        result_confidence = min(0.8, result_confidence + 0.2)
-                        ctx.metadata["critique_retry_used"] = True
-                        log.info("mission.critique_retry_accepted",
-                                 mission_id=mid,
-                                 orig_len=_orig_len,
-                                 retry_len=_retry_len)
-                        trace.record("retry", "critique_accepted",
-                                     improvement=f"{_orig_len}→{_retry_len}")
-                # Re-enter REVIEW for the retry
-                self._transition(ctx, MissionStatus.REVIEW, reason="post_retry")
-            except Exception as _retry_err:
-                log.warning("mission.critique_retry_failed",
-                            mission_id=mid, err=str(_retry_err)[:80])
-                # Stay with original result
-                self._transition(ctx, MissionStatus.REVIEW, reason="retry_failed")
+            except Exception as exc:
+                retry_error = exc
+            finally:
+                self._transition(
+                    ctx,
+                    MissionStatus.REVIEW,
+                    reason="post_canonical_critic_rerun",
+                )
+        finally:
+            resource_guard.release_slot(slot_name)
 
+        if retry_error is not None:
+            log.warning(
+                "canonical_critic_rerun_failed",
+                mission_id=mid,
+                forced=decision.forced,
+                err=str(retry_error)[:80],
+            )
+            if decision.forced:
+                return result_confidence
+            raise CriticRerunFailed("canonical_critic_rerun_failed") from retry_error
+        if (
+            retry_outcome is None
+            or not retry_outcome.success
+            or not retry_outcome.result
+        ):
+            if decision.forced:
+                return result_confidence
+            raise CriticRerunFailed("canonical_critic_rerun_returned_no_result")
+
+        from kernel.evaluation.scorer import get_evaluator
+
+        task_type = (
+            ctx.metadata.get("classification", {}).get("task_type", "") or ""
+        )
+        if hasattr(task_type, "value"):
+            task_type = task_type.value
+        try:
+            retry_score = get_evaluator().evaluate(
+                goal=goal,
+                result=retry_outcome.result,
+                task_type=str(task_type),
+                mission_id=mid,
+                duration_ms=retry_outcome.duration_ms,
+                retries=retry_outcome.retries,
+                output_shape=_shape_val,
+                reasoning_frame=(
+                    _reasoning_result.frame if _reasoning_result else None
+                ),
+            )
+        except Exception as evaluation_error:
+            if decision.forced:
+                log.warning(
+                    "forced_critic_rerun_evaluation_failed",
+                    mission_id=mid,
+                    err=str(evaluation_error)[:80],
+                )
+                return result_confidence
+            raise CriticEvaluationError(
+                "critic_rerun_evaluation_failed"
+            ) from evaluation_error
+
+        retry_decision = decide_critic_action(
+            retry_score,
+            resource_snapshot.status,
+            forced_enabled=False,
+            already_reran=True,
+            execution_retries=0,
+            goal_length=len(goal.strip()),
+        )
+        if retry_decision.action is CriticAction.ERROR:
+            if decision.forced:
+                return result_confidence
+            raise CriticEvaluationError(retry_decision.reason)
+
+        accepted = retry_score.score > kernel_score.score
+        if accepted:
+            ctx.result = retry_outcome.result
+            ctx.metadata["kernel_score"] = retry_score.to_dict()
+            if retry_score.critique_dict:
+                ctx.metadata["critique"] = retry_score.critique_dict
+            if retry_score.reflection_dict:
+                ctx.metadata["reflection"] = retry_score.reflection_dict
+            result_confidence = retry_score.confidence
+
+        ctx.metadata["critic_rerun"] = {
+            "before": round(kernel_score.score, 3),
+            "after": round(retry_score.score, 3),
+            "delta": round(retry_score.score - kernel_score.score, 3),
+            "forced": decision.forced,
+            "accepted": accepted,
+        }
+        log.info(
+            "canonical_critic_rerun_complete",
+            mission_id=mid,
+            before=kernel_score.score,
+            after=retry_score.score,
+            forced=decision.forced,
+            accepted=accepted,
+        )
+
+        if (
+            decision.action is CriticAction.NATURAL_RERUN
+            and retry_decision.action is not CriticAction.ACCEPT
+        ):
+            raise CriticQualityRejected("critic_quality_below_threshold_after_rerun")
         return result_confidence
 
     def _emit_completion_events(

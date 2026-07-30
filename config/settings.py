@@ -290,6 +290,12 @@ class Settings:
     resource_hard_ram_mb: int = field(default_factory=lambda: _i("RESOURCE_HARD_RAM_MB", 0))
     resource_max_agents:  int = field(default_factory=lambda: _i("RESOURCE_MAX_AGENTS", 0))
 
+    # Optional critic rerun for naturally passing outputs with an explicit
+    # quality signal. Server-side only and disabled by default.
+    critic_force_marginal_rerun: bool = field(
+        default_factory=lambda: _b("BEA_CRITIC_FORCE_MARGINAL_RERUN", "false")
+    )
+
     # ── HuggingFace ───────────────────────────────────────────
     huggingface_api_key:  str = field(default_factory=lambda: os.environ.get("HUGGINGFACE_API_KEY", ""))
     embedding_provider:   str = field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "local"))

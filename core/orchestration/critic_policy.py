@@ -101,11 +101,22 @@ def decide_critic_action(
         score = float(kernel_score.score)
     except (TypeError, ValueError):
         score = math.nan
+    try:
+        confidence = float(kernel_score.confidence)
+    except (TypeError, ValueError):
+        confidence = math.nan
 
     if (
         not math.isfinite(score)
         or not 0.0 <= score <= 1.0
-        or kernel_score.failure_class == "critic_invalid_score"
+        or not math.isfinite(confidence)
+        or not 0.0 <= confidence <= 1.0
+        or not isinstance(kernel_score.passed, bool)
+        or not isinstance(kernel_score.retry_recommended, bool)
+        or kernel_score.failure_class in {
+            "critic_invalid_score",
+            "critic_evaluation_error",
+        }
     ):
         return CriticDecision(
             action=CriticAction.ERROR,

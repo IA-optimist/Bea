@@ -9,6 +9,7 @@ from core.orchestration.critic_policy import (
     CriticEvaluationError,
     CriticQualityRejected,
     CriticResourceBlocked,
+    CriticRerunFailed,
 )
 from core.orchestration.execution_supervisor import ExecutionOutcome
 from core.orchestration.outcome_mixin import OutcomeMixin
@@ -151,18 +152,22 @@ async def _run_retry(
     force: bool = False,
     already_reran: bool = False,
     execution_retries: int = 0,
+    acquire_slot: bool = True,
+    rerun_exception: Exception | None = None,
 ):
     host = _Host(force=force)
     ctx = _ctx()
     if already_reran:
         ctx.metadata["_canonical_critic_rerun_done"] = True
     trace = _Trace()
-    guard = _ResourceGuard(resource_status)
+    guard = _ResourceGuard(resource_status, acquire=acquire_slot)
     evaluator = _Evaluator(*(score for score in [rerun_score] if score is not None))
     supervisor_calls: list[dict] = []
 
     async def _supervise(*args, **kwargs):
         supervisor_calls.append(kwargs)
+        if rerun_exception is not None:
+            raise rerun_exception
         return ExecutionOutcome(success=True, result=rerun_result)
 
     monkeypatch.setattr("core.resource_guard.get_resource_guard", lambda settings=None: guard)
@@ -267,6 +272,40 @@ async def test_natural_rerun_blocked_by_resource_guard_is_not_executed(
 
 
 @pytest.mark.asyncio
+async def test_natural_rerun_is_blocked_when_resource_slot_cannot_be_reserved(
+    monkeypatch,
+) -> None:
+    with pytest.raises(CriticResourceBlocked):
+        await _run_retry(
+            monkeypatch,
+            _score(0.4, passed=False),
+            acquire_slot=False,
+        )
+
+
+@pytest.mark.asyncio
+async def test_natural_rerun_exception_is_explicit_and_not_a_loop(
+    monkeypatch,
+) -> None:
+    with pytest.raises(CriticRerunFailed):
+        await _run_retry(
+            monkeypatch,
+            _score(0.4, passed=False),
+            rerun_exception=RuntimeError("delegate unavailable"),
+        )
+
+
+@pytest.mark.asyncio
+async def test_natural_rerun_limit_prevents_a_second_attempt(monkeypatch) -> None:
+    with pytest.raises(CriticQualityRejected):
+        await _run_retry(
+            monkeypatch,
+            _score(0.4, passed=False),
+            already_reran=True,
+        )
+
+
+@pytest.mark.asyncio
 async def test_invalid_critic_score_is_an_explicit_error(monkeypatch) -> None:
     with pytest.raises(CriticEvaluationError):
         await _run_retry(
@@ -337,6 +376,46 @@ async def test_failed_canonical_critic_never_transitions_to_done(
     assert MissionStatus.DONE not in host.transitions
     assert host._circuit_breaker.successes == 0
     assert ctx.metadata["critic_terminal"]["status"] == "failed"
+
+
+@pytest.mark.asyncio
+async def test_critic_exception_never_transitions_to_done(monkeypatch) -> None:
+    host = _Host()
+    ctx = _ctx()
+    ctx.status = MissionStatus.RUNNING
+    trace = _Trace()
+
+    class _RaisingEvaluator:
+        def evaluate(self, **kwargs):
+            raise RuntimeError("critic unavailable")
+
+    monkeypatch.setattr(
+        "kernel.evaluation.scorer.get_evaluator",
+        lambda: _RaisingEvaluator(),
+    )
+
+    result = await host._handle_success_outcome(
+        outcome=ExecutionOutcome(
+            success=True,
+            result="original result",
+            retries=0,
+            duration_ms=10,
+        ),
+        ctx=ctx,
+        mid="mission-error",
+        goal="A sufficiently long canonical mission goal " * 3,
+        mode="auto",
+        trace=trace,
+        _reasoning_result=None,
+        force_approved=False,
+        callback=None,
+    )
+
+    assert result == 0.0
+    assert ctx.status is MissionStatus.FAILED
+    assert MissionStatus.DONE not in host.transitions
+    assert host._circuit_breaker.successes == 0
+    assert ctx.metadata["critic_terminal"]["reason"] == "critic_evaluation_failed"
 
 
 @pytest.mark.asyncio

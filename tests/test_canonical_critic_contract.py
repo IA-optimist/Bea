@@ -31,10 +31,12 @@ def _kernel_score(
     retry_recommended: bool = False,
     weaknesses: list[str] | None = None,
     verdict: str = "accept",
+    confidence: float = 0.7,
 ) -> KernelScore:
     return KernelScore(
         score=score,
         passed=passed,
+        confidence=confidence,
         retry_recommended=retry_recommended,
         weaknesses=weaknesses or [],
         verdict=verdict,
@@ -212,6 +214,41 @@ def test_invalid_kernel_scores_produce_an_error_decision(invalid_score):
         _kernel_score(invalid_score, passed=False),
     )
     assert decision.action is CriticAction.ERROR
+
+
+@pytest.mark.parametrize(
+    "invalid_confidence",
+    [float("nan"), float("inf"), float("-inf"), -0.01, 1.01],
+)
+def test_invalid_kernel_confidence_produces_an_error_decision(
+    invalid_confidence,
+):
+    decision = _decision(
+        _kernel_score(
+            0.8,
+            passed=True,
+            confidence=invalid_confidence,
+        ),
+    )
+    assert decision.action is CriticAction.ERROR
+
+
+def test_kernel_runtime_evaluation_exception_is_never_a_pass():
+    from kernel.runtime.kernel import BeaKernel
+
+    class RaisingEvaluator:
+        def evaluate(self, **kwargs):
+            raise RuntimeError("evaluator unavailable")
+
+    kernel = BeaKernel()
+    kernel._evaluator = RaisingEvaluator()
+
+    score = kernel.evaluate("goal", "result")
+
+    assert score.passed is False
+    assert score.score == 0.0
+    assert score.failure_class == "critic_evaluation_error"
+    assert _decision(score).action is CriticAction.ERROR
 
 
 def test_critic_scores_accept_inclusive_bounds():
