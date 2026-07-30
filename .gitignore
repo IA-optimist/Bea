@@ -51,6 +51,8 @@ beamax-*/
 .mypy_cache/
 .ruff_cache/
 pytest-cache-files-*/
+# Répertoire scratch de scripts/validate_local.py (rapports mypy/bandit/pip-audit)
+.tmp/
 
 # ── Repo hygiene (audit Sprint 1) ────────────────────────────
 snapshots/beamax_memory_*/
