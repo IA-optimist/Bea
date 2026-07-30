@@ -179,7 +179,7 @@ def sign_patch(
         "algorithm": PATCH_SIGNATURE_ALGORITHM,
         "signature": base64.b64encode(raw_sig).decode("ascii"),
         "content_hash": content_hash,
-        "signed_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "signed_at": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
 

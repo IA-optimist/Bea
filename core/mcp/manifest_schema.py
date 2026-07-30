@@ -32,7 +32,7 @@ import hmac
 import json
 import os
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -86,7 +86,7 @@ class ToolManifest:
     requires_approval: bool = False
     dangerous_actions: List[str] = field(default_factory=list)
     signature: str = ""
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -174,7 +174,7 @@ class ToolManifest:
             requires_approval=data.get("requires_approval", False),
             dangerous_actions=data.get("dangerous_actions", []),
             signature=data.get("signature", ""),
-            created_at=data.get("created_at", datetime.utcnow().isoformat()),
+            created_at=data.get("created_at", datetime.now(timezone.utc).isoformat()),
         )
 
     @classmethod
