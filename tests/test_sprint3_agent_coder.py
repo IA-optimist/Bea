@@ -7,6 +7,7 @@ from pathlib import Path
 from core.coding_agent.failure_memory import FailureMemory, FailureRecord
 from core.coding_agent.repo_map import build_repo_map
 from core.coding_agent.swe_lite import run_swe_lite_v1
+import scripts.sprint3_worktree as sprint3_worktree
 from scripts.sprint3_worktree import create_worktree, rollback
 
 
@@ -88,6 +89,50 @@ def test_sprint3_worktree_create_and_rollback(tmp_path: Path) -> None:
 
     removed = rollback(tmp_path, worktree, created["branch"])
     assert removed["ok"] is True
+
+
+def test_sprint3_worktree_cli_accepts_task_id_for_all_subcommands(monkeypatch, tmp_path: Path, capsys) -> None:
+    calls: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(sprint3_worktree, "_repo_root", lambda start=None: tmp_path)
+    monkeypatch.setattr(
+        sprint3_worktree,
+        "create_worktree",
+        lambda root, task_id, base=sprint3_worktree.BASE_BRANCH: {
+            "ok": True,
+            "worktree": str(tmp_path / ".sprint3-worktrees" / task_id),
+            "branch": f"sprint3/{task_id}",
+            "rollback": "rb",
+        },
+    )
+    monkeypatch.setattr(
+        sprint3_worktree,
+        "run_gates",
+        lambda path: calls.append(("run-gates", str(path))) or {"ok": True, "checks": {}},
+    )
+    monkeypatch.setattr(
+        sprint3_worktree,
+        "diff",
+        lambda path: calls.append(("diff", str(path))) or {"ok": True, "diff": ""},
+    )
+    monkeypatch.setattr(
+        sprint3_worktree,
+        "rollback",
+        lambda root, path, branch=None: calls.append(("rollback", f"{path}|{branch}")) or {"ok": True, "output": "removed"},
+    )
+
+    assert sprint3_worktree._main(["create", "demo"]) == 0
+    assert sprint3_worktree._main(["run-gates", "demo"]) == 0
+    assert sprint3_worktree._main(["diff", "demo"]) == 0
+    assert sprint3_worktree._main(["rollback", "demo"]) == 0
+
+    output = capsys.readouterr().out
+    assert "sprint3/demo" in output
+    assert calls == [
+        ("run-gates", str(tmp_path / ".sprint3-worktrees" / "demo")),
+        ("diff", str(tmp_path / ".sprint3-worktrees" / "demo")),
+        ("rollback", f"{tmp_path / '.sprint3-worktrees' / 'demo'}|sprint3/demo"),
+    ]
 
 
 def test_swe_lite_v1_passes_for_sprint3_primitives() -> None:
