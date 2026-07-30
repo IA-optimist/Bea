@@ -125,6 +125,37 @@ class AffectSnapshot:
     state: VAD
     velocity: VAD
 
+    def __post_init__(self) -> None:
+        state = _validated_vad(
+            self.state,
+            field_name="state",
+            require_tuple=True,
+        )
+        if not isinstance(self.velocity, tuple) or len(self.velocity) != 3:
+            raise TypeError("velocity must be a three-value tuple")
+        velocity: VAD = (
+            _bounded_number(
+                self.velocity[0],
+                field_name="velocity[0]",
+                lower=-2.0,
+                upper=2.0,
+            ),
+            _bounded_number(
+                self.velocity[1],
+                field_name="velocity[1]",
+                lower=-2.0,
+                upper=2.0,
+            ),
+            _bounded_number(
+                self.velocity[2],
+                field_name="velocity[2]",
+                lower=-2.0,
+                upper=2.0,
+            ),
+        )
+        object.__setattr__(self, "state", state)
+        object.__setattr__(self, "velocity", velocity)
+
 
 class AffectState:
     """Mission-scoped, transactionally updated VAD state."""

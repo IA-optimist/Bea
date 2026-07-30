@@ -42,12 +42,9 @@ def _vad(values: object, *, field_name: str) -> VAD:
         raise TypeError(f"{field_name} must be a three-value tuple")
     result: list[float] = []
     for index, value in enumerate(values):
-        if isinstance(value, bool):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise TypeError(f"{field_name}[{index}] must be numeric")
-        try:
-            number = float(value)
-        except (TypeError, ValueError) as exc:
-            raise TypeError(f"{field_name}[{index}] must be numeric") from exc
+        number = float(value)
         if not math.isfinite(number) or not -1.0 <= number <= 1.0:
             raise ValueError(
                 f"{field_name}[{index}] must be finite and within [-1, 1]"
@@ -99,6 +96,19 @@ class WellbeingSnapshot:
     target_vad: VAD
     affect: AffectSnapshot
     resource_status: str = SystemStatus.UNKNOWN.value
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.known, bool):
+            raise TypeError("known must be a boolean")
+        viability = _unit(self.viability, field_name="viability")
+        target_vad = _vad(self.target_vad, field_name="target_vad")
+        if not isinstance(self.affect, AffectSnapshot):
+            raise TypeError("affect must be an AffectSnapshot")
+        allowed_statuses = {status.value for status in SystemStatus} | {"INVALID"}
+        if self.resource_status not in allowed_statuses:
+            raise ValueError("resource_status must be a known ResourceGuard status")
+        object.__setattr__(self, "viability", viability)
+        object.__setattr__(self, "target_vad", target_vad)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -156,7 +166,11 @@ class FunctionalWellbeing:
             )
         except (TypeError, ValueError):
             return self._unknown("INVALID")
-        if status is SystemStatus.UNKNOWN:
+        if status in {
+            SystemStatus.UNKNOWN,
+            SystemStatus.SAFE,
+            SystemStatus.BLOCKED,
+        }:
             return self._unknown(status.value)
 
         try:

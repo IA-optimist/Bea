@@ -199,6 +199,51 @@ def test_affect_configuration_and_snapshots_are_immutable() -> None:
         snapshot.state = VAD_ZERO
 
 
+@pytest.mark.parametrize(
+    "state,velocity",
+    [
+        ((float("nan"), 0.0, 0.0), VAD_ZERO),
+        ((1.01, 0.0, 0.0), VAD_ZERO),
+        (VAD_ZERO, (float("inf"), 0.0, 0.0)),
+        (VAD_ZERO, (2.01, 0.0, 0.0)),
+    ],
+)
+def test_affect_snapshot_constructor_enforces_public_invariants(
+    state,
+    velocity,
+) -> None:
+    with pytest.raises(ValueError):
+        AffectSnapshot(state=state, velocity=velocity)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"known": "yes"},
+        {"viability": float("nan")},
+        {"viability": 1.01},
+        {"target_vad": (0.0, float("inf"), 0.0)},
+        {"target_vad": (0.0, 1.01, 0.0)},
+        {"affect": object()},
+        {"resource_status": "HEALTHY"},
+    ],
+)
+def test_wellbeing_snapshot_constructor_enforces_public_invariants(
+    kwargs,
+) -> None:
+    values = {
+        "known": True,
+        "viability": 0.5,
+        "target_vad": VAD_ZERO,
+        "affect": AffectState().snapshot(),
+        "resource_status": SystemStatus.NORMAL.value,
+        **kwargs,
+    }
+
+    with pytest.raises((TypeError, ValueError)):
+        WellbeingSnapshot(**values)
+
+
 def test_metaplasticity_is_disabled_and_updates_do_not_modify_configuration() -> None:
     config = AffectConfig(momentum=0.7, update_rate=0.4)
     affect = AffectState(config)
@@ -322,7 +367,13 @@ def test_invalid_direct_observation_is_transactional(
     assert after.affect == before.affect
 
 
-def test_normal_resource_snapshot_produces_known_bounded_state() -> None:
+@pytest.mark.parametrize(
+    "status",
+    [SystemStatus.NORMAL, SystemStatus.SOFT_WARN],
+)
+def test_permitted_resource_snapshot_produces_known_bounded_state(
+    status,
+) -> None:
     wellbeing = FunctionalWellbeing()
     resource = ResourceSnapshot(
         ram_total_mb=16_384,
@@ -331,7 +382,7 @@ def test_normal_resource_snapshot_produces_known_bounded_state() -> None:
         ram_pct=37.5,
         cpu_pct=25.0,
         active_agents=1,
-        status=SystemStatus.NORMAL,
+        status=status,
     )
 
     snapshot = wellbeing.observe_resource_snapshot(resource)
@@ -357,6 +408,30 @@ def test_unknown_resource_snapshot_is_not_treated_as_healthy_and_does_not_mutate
     assert unknown.viability == before.viability
     assert unknown.target_vad == before.target_vad
     assert unknown.affect == before.affect
+
+
+@pytest.mark.parametrize("status", [SystemStatus.SAFE, SystemStatus.BLOCKED])
+def test_restricted_resource_status_is_never_reported_as_known_healthy(
+    status,
+) -> None:
+    wellbeing = FunctionalWellbeing()
+
+    snapshot = wellbeing.observe_resource_snapshot(
+        ResourceSnapshot(
+            ram_total_mb=16_384,
+            ram_used_mb=0,
+            ram_avail_mb=16_384,
+            ram_pct=0.0,
+            cpu_pct=0.0,
+            active_agents=0,
+            status=status,
+        )
+    )
+
+    assert snapshot.known is False
+    assert snapshot.viability == 0.0
+    assert snapshot.resource_status == status.value
+    assert snapshot.affect == AffectState().snapshot()
 
 
 @pytest.mark.parametrize(
