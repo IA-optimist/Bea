@@ -106,7 +106,7 @@ pytest-mock>=3.15.1
 black>=23.7.0
 flake8>=6.0.0
 mypy>=2.1.0
-pre-commit>=3.3.0
+pre-commit>=4.6.0
 
 # Optional dependencies
 # Uncomment if needed for specific features
