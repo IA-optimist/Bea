@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from core.coding_agent.artifact_validator import (
     validate_code_artifacts,
+    validate_completion_evidence,
     validate_mission_report_artifacts,
 )
 from scripts import smoke_e2e_cycle
@@ -84,7 +85,7 @@ def test_code_mission_with_only_text_refuses_completed(tmp_path):
 
     assert result.ok is False
     assert result.status == "NEEDS_ACTION_OUTPUT"
-    assert "verifiable artifact" in result.message
+    assert "verifiable evidence" in result.message
 
 
 def test_code_mission_with_missing_declared_file_refuses_completed(tmp_path):
@@ -130,8 +131,70 @@ def test_report_without_report_path_has_clear_warning(tmp_path):
 
     result = validate_mission_report_artifacts(report, repo_root=tmp_path)
 
-    assert result.ok is True
-    assert any("report_path" in warning for warning in result.warnings)
+    assert result.ok is False
+    assert result.status == "NEEDS_ACTION_OUTPUT"
+    assert "report_path" in result.message
+
+
+def test_completion_evidence_rejects_markdown_python_file(tmp_path):
+    source = tmp_path / "src" / "sha256_file.py"
+    source.parent.mkdir()
+    source.write_text(
+        "from __future__ import annotations\n\n"
+        "Here is markdown text that must not live in a .py file.\n",
+        encoding="utf-8",
+    )
+    report_path, report = _write_report(
+        tmp_path,
+        files_created=["src/sha256_file.py"],
+        artifacts=["src/sha256_file.py"],
+        tests_run=["python -m pytest tests/test_sha256_file.py -q"],
+        test_result={"syntax_check": {"passed": False, "error": "SyntaxError"}, "pytest": {"passed": True}},
+        expected_artifact="src/sha256_file.py",
+    )
+
+    result = validate_completion_evidence(report, repo_root=tmp_path, require_report_path=True, require_report_metadata=True)
+
+    assert result.ok is False
+    assert result.status == "ARTIFACT_INVALID"
+    assert "syntax validation failed" in result.message
+    assert str(report_path) == report["report_path"]
+
+
+def test_completion_evidence_rejects_missing_test_proof(tmp_path):
+    source = tmp_path / "src" / "sha256_file.py"
+    source.parent.mkdir()
+    source.write_text("def sha256_file(path: str) -> str:\n    return 'abc'\n", encoding="utf-8")
+    _report_path, report = _write_report(
+        tmp_path,
+        artifacts=["src/sha256_file.py"],
+        files_created=["src/sha256_file.py"],
+        tests_run=[],
+        test_result={"syntax_check": {"passed": True}},
+        expected_artifact="src/sha256_file.py",
+    )
+
+    result = validate_completion_evidence(report, repo_root=tmp_path, require_report_path=True, require_report_metadata=True)
+
+    assert result.ok is False
+    assert result.status == "TEST_MISSING"
+    assert "test command is required" in result.message
+
+
+def test_completion_evidence_marks_provider_unavailable_separately(tmp_path):
+    _report_path, report = _write_report(
+        tmp_path,
+        provider_status="provider_unavailable",
+        success=False,
+        passed=False,
+        error_category="provider_unavailable",
+    )
+
+    result = validate_completion_evidence(report, repo_root=tmp_path, require_report_path=True, require_report_metadata=True)
+
+    assert result.ok is False
+    assert result.status == "PROVIDER_UNAVAILABLE"
+    assert result.error_class == "provider_unavailable"
 
 
 def test_non_code_completed_without_artifact_is_allowed(tmp_path):

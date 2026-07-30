@@ -48,6 +48,8 @@
 - [ ] `pytest` passes (all critical tests)
 - [ ] `python scripts/validate_local.py --quick` passes all 8 gates
 - [ ] `python scripts/audit_memory_store.py --dry-run --privacy-scan --json` runs clean on public seed
+- [ ] PR smoke CI enforces `python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json`
+- [ ] Code missions cannot reach `COMPLETED` without report evidence, syntax validation, and test proof
 
 ## Provider readiness
 
@@ -62,6 +64,7 @@
 - [ ] APK v3 not validated in CI
 - [ ] `bea_eval` may timeout on large local stores
 - [ ] v1 endpoints maintained for Flutter rollback
+- [ ] `REPORT_MISSING`, `ARTIFACT_INVALID`, `TEST_MISSING`, and `PROVIDER_UNAVAILABLE` are documented for mission debugging
 
 ## Grep checks
 

@@ -83,6 +83,9 @@ The current PR raises the bar:
 - Declared files must exist.
 - Explicit code missions require test evidence and syntax validation.
 - Text-only answers cannot be promoted to `COMPLETED`.
+- `REPORT_MISSING`, `ARTIFACT_INVALID`, `TEST_MISSING`, and
+  `PROVIDER_UNAVAILABLE` are now surfaced explicitly instead of being folded
+  into a generic success path.
 - The SHA256 smoke fixture proves source extraction, syntax validation, test
   execution, report generation, ingestion, and memory creation with no
   provider dependency.
@@ -225,6 +228,9 @@ See `docs/API_VERSIONING.md` for the full 4-phase deprecation timeline.
   correctness by itself.
 - A report can document a test command without this smoke executing that exact
   command.
+- A code mission with Markdown in a `.py` file is now rejected, but older
+  historical reports may still show optimistic completion if they were never
+  revalidated.
 - Runtime provider behavior remains covered by provider and alpha cycle gates,
   not by this PR.
 - Existing historical mission records may still show optimistic statuses until

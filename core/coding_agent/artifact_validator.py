@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from core.coding_agent.code_artifacts import validate_python_file
+
 
 @dataclass(frozen=True)
 class ArtifactValidationResult:
@@ -22,8 +24,22 @@ class ArtifactValidationResult:
     warnings: list[str] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class CompletionEvidenceResult:
+    """Completion verdict for mission reports and execution sessions."""
+
+    ok: bool
+    status: str
+    message: str
+    error_class: str = ""
+    artifacts: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
 _CODE_MARKERS = ("code", "coding", "coding_agent", "forge", "sha256", "python")
 _TEST_MARKERS = ("pytest", "unittest", "ruff", "mypy", "tox", "python -m pytest")
+_COMPLETED_STATES = {"COMPLETED", "DONE", "SUCCESS"}
+_PROVIDER_UNAVAILABLE = "provider_unavailable"
 
 
 def validate_code_artifacts(
@@ -33,7 +49,20 @@ def validate_code_artifacts(
 ) -> ArtifactValidationResult:
     """Validate that a needs-actions mission has a materialized artifact."""
     data = _to_mapping(session_or_report)
-    return _validate(data, repo_root=Path(repo_root))
+    verdict = _validate_completion_evidence(
+        data,
+        repo_root=Path(repo_root),
+        force_completion=True,
+        require_report_path=False,
+        require_report_metadata=False,
+    )
+    return ArtifactValidationResult(
+        ok=verdict.ok,
+        status="COMPLETED" if verdict.ok else "NEEDS_ACTION_OUTPUT",
+        message=verdict.message,
+        artifacts=verdict.artifacts,
+        warnings=verdict.warnings,
+    )
 
 
 def validate_mission_report_artifacts(
@@ -42,26 +71,88 @@ def validate_mission_report_artifacts(
     repo_root: str | Path = ".",
 ) -> ArtifactValidationResult:
     """Validate artifact metadata in a mission report dictionary."""
-    return _validate(dict(report), repo_root=Path(repo_root))
+    verdict = _validate_completion_evidence(
+        dict(report),
+        repo_root=Path(repo_root),
+        force_completion=False,
+        require_report_path=True,
+        require_report_metadata=True,
+    )
+    return ArtifactValidationResult(
+        ok=verdict.ok,
+        status="COMPLETED" if verdict.ok else "NEEDS_ACTION_OUTPUT",
+        message=verdict.message,
+        artifacts=verdict.artifacts,
+        warnings=verdict.warnings,
+    )
 
 
-def _validate(data: Mapping[str, Any], *, repo_root: Path) -> ArtifactValidationResult:
+def validate_completion_evidence(
+    session_or_report: Any,
+    *,
+    repo_root: str | Path = ".",
+    force_completion: bool = False,
+    require_report_path: bool = False,
+    require_report_metadata: bool = False,
+) -> CompletionEvidenceResult:
+    """Return a completion verdict with explicit failure classes."""
+    data = _to_mapping(session_or_report)
+    return _validate_completion_evidence(
+        data,
+        repo_root=Path(repo_root),
+        force_completion=force_completion,
+        require_report_path=require_report_path,
+        require_report_metadata=require_report_metadata,
+    )
+
+
+def _validate_completion_evidence(
+    data: Mapping[str, Any],
+    *,
+    repo_root: Path,
+    force_completion: bool,
+    require_report_path: bool,
+    require_report_metadata: bool,
+) -> CompletionEvidenceResult:
     warnings: list[str] = []
     artifacts: list[str] = []
     missing: list[str] = []
 
-    if not data.get("report_path"):
-        warnings.append("report_path is missing; ingestion traceability is weaker")
-
     needs_actions = bool(data.get("needs_actions"))
     code_mission = _is_code_mission(data)
-    if not needs_actions and not code_mission:
-        return ArtifactValidationResult(
-            ok=True,
-            status="COMPLETED",
-            message="mission does not require action artifacts",
+    completed = force_completion or _is_completed_candidate(data)
+
+    provider_status = _provider_unavailable_status(data)
+    if provider_status:
+        return CompletionEvidenceResult(
+            ok=False,
+            status="PROVIDER_UNAVAILABLE",
+            message="provider unavailable; completion was not evaluated",
+            error_class=provider_status,
+            artifacts=artifacts,
             warnings=warnings,
         )
+
+    if not completed:
+        return CompletionEvidenceResult(
+            ok=True,
+            status="SKIPPED",
+            message="completion was not requested",
+            artifacts=artifacts,
+            warnings=warnings,
+        )
+
+    report_path_value = str(data.get("report_path") or "").strip()
+    if require_report_path and not report_path_value:
+        missing.append("report_path is required for a completed mission report")
+    elif report_path_value:
+        report_path = Path(report_path_value)
+        if not report_path.is_absolute():
+            report_path = repo_root / report_path
+        if not report_path.exists():
+            missing.append(f"report_path does not exist: {report_path_value}")
+        else:
+            artifacts.append(f"report:{report_path_value}")
 
     if needs_actions and not _has_expected_artifact(data):
         missing.append("expected_artifact is required when needs_actions=True")
@@ -80,29 +171,19 @@ def _validate(data: Mapping[str, Any], *, repo_root: Path) -> ArtifactValidation
     test_commands = _test_commands(data)
     if test_commands:
         artifacts.extend(f"test:{command}" for command in test_commands)
+    elif code_mission:
+        missing.append("test command is required for a completed code mission")
 
     tool_actions = _successful_tool_actions(data)
     if tool_actions:
         artifacts.extend(f"action:{action}" for action in tool_actions)
 
-    if code_mission and not test_commands:
-        missing.append("test command is required for a completed code mission")
-
-    report_like = bool(
-        data.get("report_path")
-        or data.get("provider_used")
-        or data.get("model_used")
-        or data.get("test_result")
-        or data.get("artifacts")
-        or data.get("files_created")
-        or data.get("tests_run")
-    )
-
-    if code_mission and report_like:
-        for field_name in ("provider_used", "model_used", "artifacts", "tests_run", "test_result"):
-            value = data.get(field_name)
-            if value in (None, "", [], {}, ()):  # explicit proof required
-                missing.append(f"{field_name} is required for a completed code mission")
+    if code_mission:
+        if require_report_metadata:
+            for field_name in ("provider_used", "model_used", "artifacts", "tests_run", "test_result"):
+                value = data.get(field_name)
+                if value in (None, "", [], {}, ()):  # explicit proof required
+                    missing.append(f"{field_name} is required for a completed code mission")
         if not data.get("files_created") and not data.get("unified_diff") and not data.get("diff") and not data.get("patch"):
             missing.append("files_created or a non-empty diff is required for a completed code mission")
 
@@ -110,34 +191,77 @@ def _validate(data: Mapping[str, Any], *, repo_root: Path) -> ArtifactValidation
     if needs_actions and not has_materialized_artifact:
         missing.append("needs_actions=True requires at least one verifiable artifact")
 
-    success = data.get("success")
-    completed_status = str(data.get("status") or "").upper() in {"COMPLETED", "DONE", "SUCCESS"}
-    if (success is True or completed_status) and missing:
-        return ArtifactValidationResult(
-            ok=False,
-            status="NEEDS_ACTION_OUTPUT",
-            message="completed action mission is missing verifiable artifact evidence: "
-            + "; ".join(missing),
-            artifacts=artifacts,
-            warnings=warnings,
-        )
+    syntax_missing = _validate_python_artifacts(file_paths, repo_root, artifacts, warnings)
+    missing.extend(syntax_missing)
 
     if missing:
-        return ArtifactValidationResult(
+        if any(item.startswith("report_path") for item in missing):
+            status = "REPORT_MISSING"
+            error_class = "report_missing"
+        elif any(item.startswith("syntax validation failed") or item.startswith("declared file path(s)")
+                 or item.startswith("files_created or a non-empty diff")
+                 or item.startswith("expected_artifact")
+                 or item.startswith("needs_actions=True requires")
+                 for item in missing):
+            status = "ARTIFACT_INVALID"
+            error_class = "artifact_invalid"
+        else:
+            status = "TEST_MISSING"
+            error_class = "test_missing"
+        return CompletionEvidenceResult(
             ok=False,
-            status="NEEDS_ACTION_OUTPUT",
-            message="action mission is missing verifiable artifact evidence: " + "; ".join(missing),
+            status=status,
+            message="completed mission is missing verifiable evidence: " + "; ".join(missing),
+            error_class=error_class,
             artifacts=artifacts,
             warnings=warnings,
         )
 
-    return ArtifactValidationResult(
+    return CompletionEvidenceResult(
         ok=True,
         status="COMPLETED",
         message="verifiable artifact evidence present",
         artifacts=artifacts,
         warnings=warnings,
     )
+
+
+def _validate_python_artifacts(
+    paths: Iterable[str],
+    repo_root: Path,
+    artifacts: list[str],
+    warnings: list[str],
+) -> list[str]:
+    missing: list[str] = []
+    for raw_path in paths:
+        if not raw_path.endswith(".py"):
+            continue
+        path = Path(raw_path)
+        if not path.is_absolute():
+            path = repo_root / path
+        if not path.exists():
+            continue
+        syntax_ok, syntax_error = validate_python_file(path)
+        if syntax_ok:
+            artifacts.append(f"syntax:{raw_path}")
+        else:
+            warnings.append(f"syntax validation failed for {raw_path}: {syntax_error}")
+            missing.append(f"syntax validation failed for {raw_path}")
+    return missing
+
+
+def _is_completed_candidate(data: Mapping[str, Any]) -> bool:
+    success = data.get("success")
+    status = str(data.get("status") or "").upper()
+    return success is True or status in _COMPLETED_STATES
+
+
+def _provider_unavailable_status(data: Mapping[str, Any]) -> str:
+    for key in ("provider_status", "skip_reason", "error_category"):
+        value = str(data.get(key) or "").strip().lower()
+        if value == _PROVIDER_UNAVAILABLE:
+            return _PROVIDER_UNAVAILABLE
+    return ""
 
 
 def _to_mapping(value: Any) -> dict[str, Any]:
@@ -159,14 +283,17 @@ def _to_mapping(value: Any) -> dict[str, Any]:
         "mission_type",
         "mode",
         "needs_actions",
+        "provider_status",
         "patch",
         "provider_used",
+        "skip_reason",
         "model_used",
         "report_path",
         "artifacts",
-        "files_created",
         "tests_run",
         "test_result",
+        "syntax_check",
+        "syntax_valid",
         "status",
         "success",
         "task_mode",
@@ -174,7 +301,6 @@ def _to_mapping(value: Any) -> dict[str, Any]:
         "test_command",
         "test_commands",
         "tests",
-        "tests_run",
         "unified_diff",
         "user_input",
     ):

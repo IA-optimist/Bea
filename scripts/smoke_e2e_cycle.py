@@ -365,10 +365,15 @@ def _validate_action_artifacts(report: dict[str, Any], report_path: Path) -> dic
     if not report.get("needs_actions"):
         return {"ok": True, "status": "SKIPPED", "message": "needs_actions is false"}
 
-    from core.coding_agent.artifact_validator import validate_mission_report_artifacts
+    from core.coding_agent.artifact_validator import validate_completion_evidence
 
     artifact_root = Path(str(report.get("artifact_root") or report_path.parent))
-    result = validate_mission_report_artifacts(report, repo_root=artifact_root)
+    result = validate_completion_evidence(
+        report,
+        repo_root=artifact_root,
+        require_report_path=True,
+        require_report_metadata=True,
+    )
     if not result.ok:
         raise SmokeE2EError(f"{report_path}: {result.message}")
     return {

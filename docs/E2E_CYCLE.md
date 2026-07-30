@@ -139,6 +139,18 @@ file paths in `files_created`, `files_changed`, or `expected_artifact` must
 exist under `artifact_root` or the report directory, unless the mission proves
 itself through a non-empty diff.
 
+The completion validator returns explicit failure classes instead of silently
+accepting weak evidence:
+
+- `REPORT_MISSING` / `report_missing`
+- `ARTIFACT_INVALID` / `artifact_invalid`
+- `TEST_MISSING` / `test_missing`
+- `PROVIDER_UNAVAILABLE` / `provider_unavailable`
+
+Use `artifact_invalid` when a generated `.py` file contains prose, Markdown
+fences, or any other syntax error. That is a failed execution, not a completed
+mission.
+
 The SHA256 fixture exercises this rule:
 
 ```bash
@@ -148,6 +160,14 @@ python scripts/smoke_e2e_cycle.py --fixture sha256 --skip-bea-eval --json
 It creates `src/sha256_file.py`, `tests/test_sha256_file.py`, a compatible
 mission report, validates the artifact metadata, runs `py_compile`, runs
 `pytest`, ingests the report, and requires a `test_map` memory.
+
+If the SHA256 fixture fails completion validation, check these first:
+
+- `report_path` is present
+- `files_created` points to existing paths
+- `tests_run` is non-empty
+- the materialized Python file compiles
+- the report is not only a text answer with no action evidence
 
 ## Model-Role Benchmark
 
