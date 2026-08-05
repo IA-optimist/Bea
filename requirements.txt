@@ -50,7 +50,7 @@ playwright==1.41.2
 #   - pyjwt 2.13.0 HS256 round-trip OK
 #   - asyncpg 0.31.0 imports clean (SCRAM uses cryptography ≥ 41 — no break)
 #   - Smoke harness 13/13 module imports clean
-cryptography==48.0.1
+cryptography==50.0.0
 # pyjwt 2.8.0 → 2.12.0 (CVE-2026-32597)
 pyjwt==2.13.0
 
