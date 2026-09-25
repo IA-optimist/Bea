@@ -1,103 +1,73 @@
-"""Tests for core/tool_registry.py — tool definitions and scoring."""
+"""Tests d'intégration des outils builtin."""
+import sys
+
+import pytest
+from tools import registry
+from tools.builtin import register_builtin_tools
 
 
-def test_import():
-    pass
+@pytest.fixture(autouse=True)
+def setup_registry():
+    registry.reset()
+    register_builtin_tools()
+    yield
+    registry.reset()
 
 
-def test_registry_has_base_tools():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    tools = reg.list_tools()
-    assert len(tools) >= 7  # base tools
-    names = [t.name for t in tools]
-    assert "read_file" in names
-    assert "write_file" in names
-    assert "list_directory" in names
+def test_all_builtin_tools_registered():
+    names = {t.name for t in registry.list_tools()}
+    expected = {"read_file", "write_file", "run_command", "http_get", "http_post", "web_search"}
+    assert expected.issubset(names)
 
 
-def test_get_tool_by_name():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    tool = reg.get_tool("read_file")
-    assert tool is not None
-    assert tool.risk_level == "low"
-    assert tool.idempotent is True
+def test_schemas_are_valid():
+    schemas = registry.list_schemas()
+    assert len(schemas) >= 6
+    for s in schemas:
+        assert "name" in s
+        assert "description" in s
+        assert "input_schema" in s
+        assert "permission" in s
 
 
-def test_get_tool_nonexistent():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    assert reg.get_tool("nonexistent_tool") is None
+@pytest.mark.asyncio
+async def test_dispatch_read_file_missing(tmp_path):
+    result = await registry.dispatch("read_file", {"path": str(tmp_path / "ghost.py")})
+    assert not result.success
+    assert "introuvable" in result.error
 
 
-def test_get_tools_for_mission_type():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    coding_tools = reg.get_tools_for_mission_type("coding_task")
-    names = [t.name for t in coding_tools]
-    assert "write_file" in names
+@pytest.mark.asyncio
+async def test_dispatch_write_then_read(tmp_path):
+    path = str(tmp_path / "hello.md")
+    write_result = await registry.dispatch("write_file", {"path": path, "content": "# Hello"})
+    assert write_result.success
+
+    read_result = await registry.dispatch("read_file", {"path": path})
+    assert read_result.success
+    assert read_result.output == "# Hello"
 
 
-def test_get_tools_for_unknown_mission():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    tools = reg.get_tools_for_mission_type("nonexistent_mission")
-    assert tools == []
+@pytest.mark.asyncio
+async def test_run_command_echo():
+    result = await registry.dispatch("run_command", {"command": "echo béa"})
+    assert result.success
+    assert "béa" in result.output
 
 
-def test_safe_tools_manual_returns_empty():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    assert reg.get_safe_tools("MANUAL") == []
+@pytest.mark.asyncio
+async def test_run_command_timeout():
+    command = f'"{sys.executable}" -c "import time; time.sleep(10)"'
+    result = await registry.dispatch("run_command", {"command": command, "timeout": 1})
+    assert not result.success
+    assert "timeout" in result.error.lower()
 
 
-def test_safe_tools_supervised():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    safe = reg.get_safe_tools("SUPERVISED")
-    for t in safe:
-        assert t.risk_level == "low"
-
-
-def test_summary_format():
-    from core.tool_registry import get_tool_registry
-    reg = get_tool_registry()
-    summary = reg.summary()
-    assert isinstance(summary, list)
-    if summary:
-        assert "name" in summary[0]
-        assert "risk" in summary[0]
-
-
-# ── Scoring ───────────────────────────────────────────────────
-
-def test_score_returns_float():
-    from core.tool_registry import score_tool_relevance
-    score = score_tool_relevance("read a file from disk", "read_file")
-    assert isinstance(score, float)
-    assert 0.0 <= score <= 1.0
-
-
-def test_rank_tools():
-    from core.tool_registry import rank_tools_for_task
-    ranked = rank_tools_for_task("search for pattern in files", top_k=3)
-    assert isinstance(ranked, list)
-    assert len(ranked) <= 3
-    if ranked:
-        assert "name" in ranked[0]
-        assert "score" in ranked[0]
-
-
-def test_should_create_tool():
-    from core.tool_registry import should_create_tool
-    result = should_create_tool("read a file")
-    assert isinstance(result, dict)
-    assert "should_create" in result
-    assert "reason" in result
-
-
-def test_list_all_tools():
-    from core.tool_registry import list_all_tools
-    tools = list_all_tools()
-    assert isinstance(tools, list)
+@pytest.mark.asyncio
+async def test_write_file_blocked_critical():
+    result = await registry.dispatch(
+        "write_file",
+        {"path": "config/settings.py", "content": "malicious"}
+    )
+    assert not result.success
+    assert "bloqu" in result.error

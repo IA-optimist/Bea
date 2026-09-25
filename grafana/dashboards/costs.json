@@ -1,0 +1,101 @@
+{
+  "__inputs": [{"name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus"}],
+  "title": "Béa — Coûts LLM",
+  "uid": "bea-costs",
+  "version": 1,
+  "refresh": "1m",
+  "time": {"from": "now-24h", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Tokens totaux (24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{
+        "expr": "increase(bea_llm_tokens_total[24h])",
+        "legendFormat": "Tokens"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Tokens par provider",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 4},
+      "targets": [{
+        "expr": "sum by (provider) (increase(bea_llm_tokens_total[24h]))",
+        "legendFormat": "{{provider}}"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Tokens par rôle agent",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 4},
+      "targets": [{
+        "expr": "sum by (role) (increase(bea_llm_tokens_total[24h]))",
+        "legendFormat": "{{role}}"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Tokens input vs output (1h)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "rate(bea_llm_input_tokens_total[5m])",
+          "legendFormat": "Input — {{provider}}"
+        },
+        {
+          "expr": "rate(bea_llm_output_tokens_total[5m])",
+          "legendFormat": "Output — {{provider}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Appels LLM par provider (5m)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [{
+        "expr": "rate(bea_llm_calls_total[5m])",
+        "legendFormat": "{{provider}} / {{role}}"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Erreurs LLM (5m)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [{
+        "expr": "rate(bea_llm_errors_total[5m])",
+        "legendFormat": "{{provider}} — {{error_type}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "fixed", "fixedColor": "red"}
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Circuit breaker Ollama",
+      "type": "timeseries",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 28},
+      "targets": [{
+        "expr": "bea_ollama_circuit_breaker_state",
+        "legendFormat": "État (0=CLOSED, 1=HALF, 2=OPEN)"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "Fallbacks provider (1h)",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 28},
+      "targets": [{
+        "expr": "increase(bea_llm_fallbacks_total[1h])",
+        "legendFormat": "Fallbacks"
+      }]
+    }
+  ]
+}
