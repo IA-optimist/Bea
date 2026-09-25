@@ -40,6 +40,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import structlog
+from core.affect_state import AffectState
+from core.homeostasis import Homeostasis
+from core.resource_guard import get_resource_guard
+from core.viability_adapter import ViabilityAdapter
 
 log = structlog.get_logger(__name__)
 
@@ -477,6 +481,9 @@ class OrchestratorV2:
         self._checkpoints = CheckpointStore(settings)
         self._inner       = None   # lazy BeaOrchestrator
         self._comm        = None   # lazy AgentComm
+        self.homeostasis = Homeostasis()
+        self.affect      = AffectState(baseline_provider=self.homeostasis.target_vad)
+        self.viability   = ViabilityAdapter(self.homeostasis, get_resource_guard(self.s))
 
     def _get_comm(self):
         if self._comm is None:
@@ -519,6 +526,12 @@ class OrchestratorV2:
         except BudgetExceeded as e:
             log.warning("budget_exceeded_on_input", err=str(e))
             raise
+
+        self.viability.update()   # homéostasie → état resource réel (lissé EMA)
+
+        _aff = self.affect.render_guidance()
+        if _aff:
+            user_input = f"{_aff}\n\n{user_input}"
 
         await self._checkpoints.ensure_table()
 
@@ -703,6 +716,9 @@ class OrchestratorV2:
 
         # ── Rerun with injected feedback ───────────────────────
         augmented = critic.build_rerun_prompt(task, report, cr.feedback, cr.suggestions)
+        _aff = self.affect.render_guidance()
+        if _aff:
+            augmented = f"{_aff}\n\n{augmented}"
         try:
             guard.charge(augmented)
             critic.increment_rerun(cr.task_hash)
